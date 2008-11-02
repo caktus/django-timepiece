@@ -266,7 +266,6 @@ class ClockOutTestCase(TestCase):
     - Entry must belong to user
     - Entry must be open
     - Entry may be paused, but must be unpaused after being closed
-    - Must provide an activity type
     """
 
     fixtures = ['activities', 'projects', 'users', 'entries']
@@ -348,11 +347,11 @@ class ClockOutTestCase(TestCase):
 
         # try to close without posting any information
         response = self.post_response(id, {})
-        self.assertEquals(response.status_code, 200)
+        self.assertEquals(response.status_code, 302)
 
         # try to close posting no activity
         response = self.post_response(id, {'comments': "closing the entry"})
-        self.assertEquals(response.status_code, 200)
+        self.assertEquals(response.status_code, 302)
 
         # try to close posting minimal information
         response = self.post_response(id, {'activity': 1})
@@ -409,11 +408,11 @@ class ClockOutTestCase(TestCase):
 
         # try to close without posting any information
         response = self.post_response(id, {})
-        self.assertEquals(response.status_code, 200)
+        self.assertEquals(response.status_code, 302)
 
         # try to close posting no activity
         response = self.post_response(id, {'comments': "closing the entry"})
-        self.assertEquals(response.status_code, 200)
+        self.assertEquals(response.status_code, 302)
 
         # try to close posting minimal information
         response = self.post_response(id, {'activity': 1})
@@ -723,7 +722,6 @@ class AddEntryTestCase(TestCase):
     - Start time is in the past
     - End time is in the past
     - Start time is before end time
-    - Activity is specified
     """
 
     fixtures = ['activities', 'projects', 'users', 'entries']

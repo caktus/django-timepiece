@@ -4,7 +4,10 @@
         "model": "pendulum.Activity",
         "fields": {
             "code": "FUN",
-            "name": "Fun and Games"
+            "name": "Fun and Games",
+            "sites": [
+                1
+            ]
         }
     },
     {
@@ -12,7 +15,10 @@
         "model": "pendulum.Activity",
         "fields": {
             "code": "WRK",
-            "name": "Work"
+            "name": "Work",
+            "sites": [
+                1
+            ]
         }
     }
 ]
