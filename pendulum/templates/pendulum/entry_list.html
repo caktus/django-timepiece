@@ -1,4 +1,5 @@
 {% extends 'pendulum/pendulum_base.html' %}
+{% load pendulum_tags %}
 
 {% block title %}Pendulum Entries{% endblock %}
 
@@ -59,8 +60,59 @@
         </td>
     </tr>
     {% if entry.comments %}<tr class="{{ rowclass }}">
-        <td colspan="6" class="entry-comments">{{ entry.comments }}</td>
-    </tr>{% endif %}{% endfor %}
+        <td colspan="7" class="entry-comments">{{ entry.comments }}</td>
+    </tr>{% endif %}
+    {% endfor %}
 </table>
+
+{% if entries %}
+<table>
+    <tr>
+        <th colspan="2">Statistics</th>
+    </tr>
+    <tr>
+        <th>Projects</th>
+        <th>Activities</th>
+    </tr>
+    <tr>
+        <td>
+        {% entries_projects entries as projects %}
+        {% for project in projects %}
+        {% if forloop.first %}<table>{% endif %}
+            <tr>
+                <th>{{ project.name }}</th>
+                <td>{% filter floatformat:2 %}
+                    {% hours_in_period project period %}
+                {% endfilter %}</td>
+            </tr>
+        {% if forloop.last %}</table>{% endif %}
+        {% endfor %}
+        </td>
+        <td>
+        {% entries_activities entries as activities %}
+        {% for activity in activities %}
+        {% if forloop.first %}<table>{% endif %}
+            <tr>
+                <th>{{ activity.name }}</th>
+                <td>{% filter floatformat:2 %}
+                    {% hours_in_period activity period %}
+                {% endfilter %}</td>
+            </tr>
+        {% if forloop.last %}</table>{% endif %}
+        {% endfor %}
+        </td>
+    </tr>
+    <tr>
+        <th>Total Hours</th>
+        <td>{% filter floatformat:2 %}
+            {% total_hours_for_period period user %}
+        {% endfilter %}</td>
+    </tr>
+    <tr>
+        <th>Total Entries</th>
+        <td>{{ entries.count }}</td>
+    </tr>
+</table>
+{% endif %}
 
 {% endblock %}

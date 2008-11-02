@@ -18,3 +18,5 @@ pendulum/templates/pendulum/clock_out.html
 pendulum/templates/pendulum/delete_entry.html
 pendulum/templates/pendulum/entry_list.html
 pendulum/templates/pendulum/pendulum_base.html
+pendulum/templatetags/__init__.py
+pendulum/templatetags/pendulum_tags.py

@@ -36,7 +36,7 @@ for path, dirs, files in os.walk(pendulum_dir):
 
 setup(
     name='django-pendulum',
-    version='0.1',
+    version='0.1.1',
     url='http://code.google.com/p/django-pendulum/',
     author='Josh VanderLinden',
     author_email='codekoala@gmail.com',

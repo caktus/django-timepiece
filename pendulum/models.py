@@ -158,7 +158,7 @@ class EntryManager(models.Manager):
         This will pull back any log entries for the current period.
         """
         try:
-            set = self.get_query_set().filter(start_time__range=determine_period())
+            set = self.in_period(determine_period())
         except PendulumConfiguration.DoesNotExist:
             raise Exception, "Please configure Pendulum!"
         else:
@@ -167,7 +167,17 @@ class EntryManager(models.Manager):
             return set
 
     def previous(self, delta, user=None):
-        set = self.get_query_set().filter(start_time__range=determine_period(delta=delta))
+        set = self.in_period(determine_period(delta=delta))
+
+        if user:
+            return set.filter(user=user)
+        return set
+
+    def in_period(self, period, user=None):
+        if not isinstance(period, tuple) or len(period) != 2:
+            raise Exception('Invalid period specified')
+
+        set = self.get_query_set().filter(start_time__range=period)
 
         if user:
             return set.filter(user=user)
@@ -204,7 +214,7 @@ class Entry(models.Model):
             seconds = delta.seconds - self.seconds_paused
         else:
             seconds = 0
-            delta = 0
+            delta = timedelta(days=0)
 
         return seconds / 3600.0 + delta.days * 24
     total_hours = property(__total_hours)
