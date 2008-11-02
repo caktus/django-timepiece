@@ -1,0 +1,19 @@
+{% extends 'base.html' %}
+
+{% block content %}
+{% block pendulum-controls %}
+<ul class="pendulum-controls">
+    <li>Logged in as <strong>{{ user }}</strong></li>
+    <li><a href="{% url pendulum-clock-in %}">Clock In</a></li>
+    <li><a href="{% url pendulum-add %}">Add Entry</a></li>
+    <li><a href="{% url pendulum-entries %}">Current Entries</a></li>
+    <li><a href="/accounts/logout/">Log Out</a></li>
+</ul>
+{% endblock %}
+
+{% if messages %}<div>
+    <ul id="django-messages">
+        {% for msg in messages %}<li>{{ msg }}</li>{% endfor %}
+    </ul>
+</div>{% endif %}
+{% endblock %}

@@ -1,0 +1,18 @@
+[
+    {
+        "pk": 1,
+        "model": "pendulum.Activity",
+        "fields": {
+            "code": "FUN",
+            "name": "Fun and Games"
+        }
+    },
+    {
+        "pk": 2,
+        "model": "pendulum.Activity",
+        "fields": {
+            "code": "WRK",
+            "name": "Work"
+        }
+    }
+]

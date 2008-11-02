@@ -1,0 +1,14 @@
+{% extends 'pendulum/pendulum_base.html' %}
+
+{% block content %}
+{{ block.super }}
+
+<h2>Clock Out of Project</h2>
+
+<form action="{% url pendulum-clock-out entry.id %}" method="post">
+<table>
+{{ form }}
+</table>
+<input type="submit" value="Clock Out" />
+</form>
+{% endblock %}

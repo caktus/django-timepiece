@@ -1,0 +1,29 @@
+{% extends 'pendulum/pendulum_base.html' %}
+
+{% block title %}Clock In{% endblock %}
+
+{% block content %}
+<h2>Clock Into Project</h2>
+
+{{ block.super }}
+
+<form action="{% url pendulum-clock-in %}" method="post">
+<table>
+{{ form }}
+{% if user.clocked_in %}<tr>
+
+    <td colspan="2">
+        You are currently clocked into another project.  Check the box below to pause the other entry.
+    </td>
+</tr>
+<tr>
+    <td colspan="2">
+        <input type="checkbox" id="pause_logs" name="pause_open" value="1" />
+        <label for="pause_logs">Pause open log</label>
+    </td>
+</tr>
+{% endif %}
+</table>
+<input type="submit" value="Clock In" />
+</form>
+{% endblock %}
