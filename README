@@ -1,0 +1,89 @@
+This application will allow users of Django-powered websites keep track of the time they spend on different projects.  It's a work in process.
+
+==Features==
+
+  * Configurable: Pendulum can be configured to operate on several Django-powered sites.  The period lengths can be configured as monthly or as a fixed-length period.
+  * Projects: You can have an unlimited number of projects to be able to categorize hours spent working on certain tasks.  Each project can be activated/deactivated as necessary via the Django admin.
+  * Activities: Activities allow you to further categorize work done on particular tasks for each project.
+
+==Requirements==
+
+`django-pendulum` requires a modern version of the Django framework.  By modern I simply mean a version with the `newforms-admin` functionality.  If you're running on Django 1.0 or later, you're good.
+
+`django-pendulum` also relies upon the `django.contrib.auth` and `django.contrib.sites` frameworks.
+
+==Installation==
+
+Download `django-pendulum` using *one* of the following methods:
+
+===Checkout from Subversion===
+
+{{{
+svn co http://django-pendulum.googlecode.com/svn/trunk/pendulum pendulum
+}}}
+
+===Package Download===
+
+Download the latest `.tar.gz` file from the downloads section and extract it somewhere you'll remember.  Use `python setup.py install` to install it.
+
+==Configuration==
+
+First of all, you must add this project to your list of `INSTALLED_APPS` in `settings.py`:
+
+{{{
+INSTALLED_APPS = (
+    'django.contrib.admin',
+    'django.contrib.auth',
+    'django.contrib.contenttypes',
+    'django.contrib.sessions',
+    'django.contrib.sites',
+    ...
+    'pendulum',
+    ...
+)
+}}}
+
+Run `manage.py syncdb`.  This creates a few tables in your database that are necessary for operation.
+
+Next, you should add an entry to your main `urls.py` file.  For example:
+
+{{{
+from django.conf.urls.defaults import *
+
+from django.contrib import admin
+admin.autodiscover()
+
+urlpatterns = patterns('',
+    (r'^admin/(.*)', admin.site.root),
+    (r'^pendulum/', include('pendulum.urls')),
+)
+}}}
+
+The next thing you will want to do is configure Pendulum for the active Django sites.  Do this by going into the Django admin and clicking the "add" link next to Pendulum Configurations.
+
+The first step in the configuration is to choose which site this particular configuration will apply to.  The decision is easy if you only have one site :)
+
+Next, you must choose what kind of "accounting period" you wish to use.  If you want month-long periods, ensure the "Is monthly" check box is selected.  Then enter the day of the month that the periods begin.  Periods that begin on the first of the month will always range from midnight on the first of each month to 11:59:59 PM on the last day of each month.  Periods that begin on the 16th of the month will range from midnight on the 16th of each month to 11:59:59 PM on the 15th of the following month.  Be wise about choosing start days such as the 31st of the month--it's not a wise choice no matter what situation you're in.
+
+Alternatively, you may choose fixed-length accounting periods.  The installation date does not necessarily have to be the actual installation date.  This field is used as a reference point for creating periods.  For example, if you have 2-week long accounting periods that begin on Sundays and end two Saturdays later, you would select _any_ Sunday from any month from any year.  Then you would enter 14 for the period length.  Periods will automatically be constructed that will begin at midnight each Sunday and end at 11:59:59 PM two Saturdays in the future.
+
+If you fail to configure Pendulum for a given site, you will likely receive HTTP 500 errors if you try to access Pendulum via the front-end.
+
+===Add Projects===
+
+Next, you should add at least one project to Pendulum.  This can easily be accomplished via the Django admin.  The same goes for activities, but these are not required.
+
+===Permissions===
+
+Finally, be sure set people up with the appropriate permissions using Django's Auth framework.  The front end side of Pendulum respects these permissions.  That means that if a user doesn't have the permission to clock in, the will be presented with a login screen (even if they're logged in already) when they try to clock in on the front end site.
+
+An easy way to assign the same Pendulum permissions to several users is to create a Group using the Auth framework.  There is a custom command for creating a group with all of the permissions necessary for the front end, including the ability to:
+
+  * add entries
+  * update entries
+  * delete entries
+  * clock in
+  * clock out
+  * pause/unpause entries
+
+To use this command, simply run `./manage.py create_pendulum_group`.  You may run `./manage.py help create_pendulum_group` to learn about options for this command.

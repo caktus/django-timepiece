@@ -1,0 +1,2 @@
+include README pendulum/templates/pendulum/add_update_entry.html pendulum/templates/pendulum/clock_in.html pendulum/templates/pendulum/clock_out.html pendulum/templates/pendulum/delete_entry.html pendulum/templates/pendulum/entry_list.html pendulum/templates/pendulum/pendulum_base.html
+recursive-include pendulum/*
