@@ -31,7 +31,7 @@
     </tr>
     {% for entry in entries %}<tr class="{% cycle odd,even as rowclass %}">
         <td class="entry-date">
-            {% if entry.is_closed %}<a href="{% url pendulum-update entry.id %}" title="Update this entry">{% endif %}{{ entry.start_time|date:"d M Y" }}{% if entry.is_closed %}</a>{% endif %}
+            {% if entry.is_closed %}<a href="{% url pendulum-update entry.id %}" title="Update this entry">{% endif %}{{ entry.start_time|date:"j N Y" }}{% if entry.is_closed %}</a>{% endif %}
         </td>
         <td class="entry-start">{{ entry.start_time|date:"P" }}</td>
         <td class="entry-end">{% if entry.end_time %}

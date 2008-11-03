@@ -4,6 +4,16 @@ from django.contrib.auth.models import User
 from datetime import datetime, date, timedelta
 from pendulum.utils import determine_period
 
+try:
+    """
+    if the app is installed from the start of a site, the sites table does
+    not exist and it causes problems.  This exception block seems to fix
+    the problem.
+    """
+    CURRENT_SITE = Site.objects.get_current()
+except:
+    CURRENT_SITE = Site.objects.all()
+
 class PendulumConfiguration(models.Model):
     """
     This will hold a single record that maintains the configuration of the
@@ -56,7 +66,7 @@ class ProjectManager(models.Manager):
     Return all active projects.
     """
     def get_query_set(self):
-        return super(ProjectManager, self).get_query_set().filter(sites__exact=Site.objects.get_current())
+        return super(ProjectManager, self).get_query_set().filter(sites__exact=CURRENT_SITE)
 
     def active(self):
         return self.get_query_set().filter(is_active=True)
@@ -107,7 +117,7 @@ class ActivityManager(models.Manager):
     Return all active activities.
     """
     def get_query_set(self):
-        return super(ActivityManager, self).get_query_set().filter(sites__exact=Site.objects.get_current())
+        return super(ActivityManager, self).get_query_set().filter(sites__exact=CURRENT_SITE)
 
 class Activity(models.Model):
     """
@@ -151,7 +161,7 @@ class Activity(models.Model):
 
 class EntryManager(models.Manager):
     #def get_query_set(self):
-    #    return super(EntryManager, self).get_query_set().filter(site__exact=Site.objects.get_current())
+    #    return super(EntryManager, self).get_query_set().filter(site__exact=CURRENT_SITE)
 
     def current(self, user=None):
         """
@@ -191,7 +201,7 @@ class Entry(models.Model):
     user = models.ForeignKey(User, related_name='pendulum_entries')
     project = models.ForeignKey(Project,
                                 limit_choices_to={'is_active': True,
-                                                  'sites': Site.objects.get_current()},
+                                                  'sites': CURRENT_SITE},
                                 related_name='entries')
     activity = models.ForeignKey(Activity, blank=True, null=True, related_name='entries')
     start_time = models.DateTimeField()
@@ -273,7 +283,7 @@ class Entry(models.Model):
         if not self.is_closed:
             self.user = user
             self.project = project
-            self.site = Site.objects.get_current()
+            self.site = CURRENT_SITE
             self.start_time = datetime.now()
 
     def clock_out(self, activity, comments):
