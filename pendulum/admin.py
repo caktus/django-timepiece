@@ -28,7 +28,14 @@ class ActivityAdmin(admin.ModelAdmin):
 
 class EntryAdmin(admin.ModelAdmin):
     model = Entry
-    list_display = ('user', 'project', 'activity', 'start_time', 'end_time', 'hours')
+    list_display = ('user',
+                    'project',
+                    'activity',
+                    'start_time',
+                    'end_time',
+                    'hours',
+                    'is_closed',
+                    'is_paused')
     list_filter = ['project']
     search_fields = ['user', 'project', 'activity', 'comments']
     date_hierarchy = 'start_time'

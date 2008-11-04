@@ -10,13 +10,15 @@ This application will allow users of Django-powered websites keep track of the t
 
 `django-pendulum` requires a modern version of the Django framework.  By modern I simply mean a version with the `newforms-admin` functionality.  If you're running on Django 1.0 or later, you're good.
 
-`django-pendulum` also relies upon the `django.contrib.auth` and `django.contrib.sites` frameworks.
+`django-pendulum` also relies upon the `django.contrib.auth`, `django.contrib.contenttypes`, and `django.contrib.sites` frameworks.
 
 ==Installation==
 
 Download `django-pendulum` using *one* of the following methods:
 
 ===Checkout from Subversion===
+
+Execute the following command (or use the equivalent function in a GUI such as TortoiseSVN), and make sure you're checking Pendulum out somewhere on the `PYTHONPATH`.
 
 {{{
 svn co http://django-pendulum.googlecode.com/svn/trunk/pendulum pendulum
@@ -25,6 +27,16 @@ svn co http://django-pendulum.googlecode.com/svn/trunk/pendulum pendulum
 ===Package Download===
 
 Download the latest `.tar.gz` file from the downloads section and extract it somewhere you'll remember.  Use `python setup.py install` to install it.
+
+===Verifying Installation===
+
+The easiest way to ensure that you have successfully installed Pendulum is to execute a command such as:
+
+{{{
+python -c "import pendulum; pendulum.get_version()"
+}}}
+
+If that displays the version of Pendulum that you tried to install, you're good to roll.  If you see something other than that, you probably need to check your `PYTHONPATH` environment variable.
 
 ==Configuration==
 
@@ -75,7 +87,7 @@ Next, you should add at least one project to Pendulum.  This can easily be accom
 
 ===Permissions===
 
-Finally, be sure set people up with the appropriate permissions using Django's Auth framework.  The front end side of Pendulum respects these permissions.  That means that if a user doesn't have the permission to clock in, the will be presented with a login screen (even if they're logged in already) when they try to clock in on the front end site.
+Finally, be sure set people up with the appropriate permissions using Django's Auth framework.  The front end side of Pendulum respects these permissions.  That means that if a user doesn't have the permission to clock in, the will be presented with a login screen (even if they're logged in already) when they try to clock in on the front end site.  The same goes for other operations such as pausing/unpausing entries, updating entries, deleting entries, etc.
 
 An easy way to assign the same Pendulum permissions to several users is to create a Group using the Auth framework.  There is a custom command for creating a group with all of the permissions necessary for the front end, including the ability to:
 
@@ -87,3 +99,47 @@ An easy way to assign the same Pendulum permissions to several users is to creat
   * pause/unpause entries
 
 To use this command, simply run `./manage.py create_pendulum_group`.  You may run `./manage.py help create_pendulum_group` to learn about options for this command.
+
+==The Date Field==
+
+I've been hesitant to do anything to make the date/time fields more user-friendly when adding or updating entries.  I don't want to tie anyone down to my particular way of doing things.  I personally prefer jQuery for this sort of thing, but I do realize that jQuery disgusts many other people out there.  Therefore, the first versions of the application didn't come with anything to make those fields easier to use and understand.
+
+However, that seems to be the most common complaint amongst those who have played with the application--the lack of user-friendly date pickers.  As such, I have added some jQuery-based utilities to make choosing a date easier and more intuitive.
+
+By default, the application will expect to find the appropriate files in a directory called `pendulum` within your media directory.  All you should need to do is copy or symlink the `media` folder from the Pendulum application directory.  If you copy the `media` folder, rename it to `pendulum`.  If you create a symlink to Pendulum's `media` folder, make sure the symlink is called `pendulum`.  This directory should hold all of the necessary files to make the date picker work.
+
+In your `add_update_entry.html` template (if you override the default ones), make sure you have a code block such as:
+
+{{{
+{% block extra-head %}
+{{ form.media }}
+<script type="text/javascript">
+$(document).ready(function () {
+    $('input.vDateField').datepicker({
+            dateFormat: $.datepicker.W3C,
+            showOn: 'both',
+            buttonImage: '{{ MEDIA_URL }}pendulum/img/calendar.png',
+            buttonImageOnly: true
+        });
+});
+</script>
+{% endblock %}
+}}}
+
+This is just jQuery's way of attaching the date picker to the appropriate fields.
+
+===Customizing The Date Picker===
+
+I tried to put some utilities in the application to allow you to change the date picker that is used with ease.  There is a variable that you can define in your `settings.py` file to override the default date picker: `PENDULUM_DATE_MEDIA`.  If you simply want to change the styling CSS,, for example, you could use this variable.  The default value is:
+
+{{{
+PENDULUM_DATE_MEDIA = {
+    'js': (settings.MEDIA_URL + 'pendulum/js/jquery.js',
+            settings.MEDIA_URL + 'pendulum/js/jquery.ui.js'),
+    'css': {
+        'all': (settings.MEDIA_URL + 'pendulum/css/jquery-ui.css',)
+    }
+}
+}}}
+
+You can see that it is a dictionary with two keys: `js` and `css`.  The values of these two items conform to the concepts outlined in [http://docs.djangoproject.com/en/dev/topics/forms/media/ Django's documentation].  Changing the values within `PENDULUM_DATE_MEDIA` should permit you to completely remove or replace the date picker as you desire.

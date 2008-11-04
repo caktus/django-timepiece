@@ -1,6 +1,19 @@
 {% extends 'pendulum/pendulum_base.html' %}
 
 {% block title %}{{ add_update }} Entry{% endblock %}
+{% block extra-head %}
+{{ form.media }}
+<script type="text/javascript">
+$(document).ready(function () {
+    $('input.vDateField').datepicker({
+            dateFormat: $.datepicker.W3C,
+            showOn: 'both',
+            buttonImage: '{{ MEDIA_URL }}pendulum/img/calendar.png',
+            buttonImageOnly: true
+        });
+});
+</script>
+{% endblock %}
 
 {% block content %}
 <h2>{{ add_update }} Entry</h2>

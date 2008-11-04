@@ -32,12 +32,20 @@ including the ability to:
 
         # determine the content type for the Pendulum.Entry model
         from django.contrib.contenttypes.models import ContentType
-        content_type = ContentType.objects.get(app_label='pendulum',
-                                               model='entry')
+        try:
+            content_type = ContentType.objects.get(app_label='pendulum',
+                                                   model='entry')
+        except ContentType.DoesNotExist:
+            print 'The content type for Pendulum.Entry is not available.  The user group cannot be created.'
+            return
 
         # find all permissions for the Entry model
         from django.contrib.auth.models import Permission, Group
         permissions = Permission.objects.filter(content_type=content_type)
+
+        if len(permissions) <= 3:
+            print 'Please install the ContentTypes application.'
+            return
 
         try:
             # remove the existing group if necessary

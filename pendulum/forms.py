@@ -1,6 +1,9 @@
 from django import forms
 from pendulum.models import Project, Activity, Entry
+from pendulum.widgets import PendulumDateTime
 from datetime import datetime
+
+format_help = 'Please enter dates in the format YYYY-MM-DD and times in the format HH:MM.'
 
 class ClockInForm(forms.Form):
     """
@@ -24,6 +27,11 @@ class AddUpdateEntryForm(forms.ModelForm):
     This form will provide a way for users to add missed log entries and to
     update existing log entries.
     """
+
+    start_time = forms.DateTimeField(widget=PendulumDateTime,
+                                     help_text=format_help)
+    end_time = forms.DateTimeField(widget=PendulumDateTime,
+                                     help_text=format_help)
 
     class Meta:
         model = Entry
