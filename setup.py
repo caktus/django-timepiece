@@ -2,6 +2,7 @@
 # -*- coding: utf-8 -*-
 
 from distutils.core import setup
+import pendulum
 import sys, os
 
 def fullsplit(path, result=None):
@@ -36,7 +37,7 @@ for path, dirs, files in os.walk(pendulum_dir):
 
 setup(
     name='django-pendulum',
-    version='0.1.5',
+    version=pendulum.version(),
     url='http://code.google.com/p/django-pendulum/',
     author='Josh VanderLinden',
     author_email='codekoala@gmail.com',
@@ -57,5 +58,20 @@ Features include:
         activated/deactivated as necessary via the Django admin.
     - Activities: Activities allow you to further categorize work done on
         particular tasks for each project.
-"""
+""",
+    keywords='django, time tracking, pendulum',
+    classifiers=[
+        'Development Status :: 4 - Beta',
+        'Environment :: Web Environment',
+        'Framework :: Django',
+        'Intended Audience :: Developers',
+        'Intended Audience :: End Users/Desktop',
+        'License :: OSI Approved :: MIT License',
+        'Natural Language :: English',
+        'Operating System :: OS Independent',
+        'Programming Language :: Python',
+        'Topic :: Internet :: WWW/HTTP :: Dynamic Content',
+        'Topic :: Office/Business :: Financial :: Accounting',
+        'Topic :: Office/Business :: Scheduling',
+    ]
 )

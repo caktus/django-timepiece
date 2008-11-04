@@ -10,11 +10,25 @@ This application will allow users of Django-powered websites keep track of the t
 
 `django-pendulum` requires a modern version of the Django framework.  By modern I simply mean a version with the `newforms-admin` functionality.  If you're running on Django 1.0 or later, you're good.
 
-`django-pendulum` also relies upon the `django.contrib.auth`, `django.contrib.contenttypes`, and `django.contrib.sites` frameworks.
+`django-pendulum` also relies upon the `django.contrib.admin`, `django.contrib.auth`, `django.contrib.contenttypes`, and `django.contrib.sites` frameworks.
 
 ==Installation==
 
 Download `django-pendulum` using *one* of the following methods:
+
+===easy_install===
+
+You can download the package from the [http://pypi.python.org/pypi/django-pendulum/ CheeseShop] or use 
+
+{{{
+easy_install django-pendulum
+}}}
+
+to download and install `django-pendulum`.
+
+===Package Download===
+
+Download the latest `.tar.gz` file from the downloads section and extract it somewhere you'll remember.  Use `python setup.py install` to install it.
 
 ===Checkout from Subversion===
 
@@ -23,10 +37,6 @@ Execute the following command (or use the equivalent function in a GUI such as T
 {{{
 svn co http://django-pendulum.googlecode.com/svn/trunk/pendulum pendulum
 }}}
-
-===Package Download===
-
-Download the latest `.tar.gz` file from the downloads section and extract it somewhere you'll remember.  Use `python setup.py install` to install it.
 
 ===Verifying Installation===
 
