@@ -18,7 +18,7 @@ Download `django-pendulum` using *one* of the following methods:
 
 ===easy_install===
 
-You can download the package from the [http://pypi.python.org/pypi/django-pendulum/ CheeseShop] or use 
+You can download the package from the [http://pypi.python.org/pypi/django-pendulum/ CheeseShop] or use
 
 {{{
 easy_install django-pendulum
@@ -43,7 +43,7 @@ svn co http://django-pendulum.googlecode.com/svn/trunk/pendulum pendulum
 The easiest way to ensure that you have successfully installed Pendulum is to execute a command such as:
 
 {{{
-python -c "import pendulum; pendulum.get_version()"
+python -c "import pendulum; print pendulum.get_version()"
 }}}
 
 If that displays the version of Pendulum that you tried to install, you're good to roll.  If you see something other than that, you probably need to check your `PYTHONPATH` environment variable.

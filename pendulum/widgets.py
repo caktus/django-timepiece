@@ -29,16 +29,15 @@ class TimeWidget(forms.TextInput):
     def __init__(self, attrs={}):
         super(TimeWidget, self).__init__(attrs={'class': 'vTimeField', 'size': '8'})
 
-class PendulumDateTime(forms.SplitDateTimeWidget):
-    """
-    A SplitDateTime Widget that has some Pendulum-specific styling.
-    """
-
+class PendulumDateTimeWidget(forms.MultiWidget):
     def __init__(self, attrs=None):
         widgets = [DateWidget, TimeWidget]
-        # Note that we're calling MultiWidget, not SplitDateTimeWidget, because
-        # we want to define widgets.
-        forms.MultiWidget.__init__(self, widgets, attrs)
+        super(PendulumDateTimeWidget, self).__init__(widgets, attrs)
+
+    def decompress(self, value):
+        if value:
+            return [value.date(), value.time().replace(microsecond=0)]
+        return [None, None]
 
     def format_output(self, rendered_widgets):
         # make things a little more accessible by adding labels to the output

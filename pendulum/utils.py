@@ -1,5 +1,6 @@
 from django.contrib.sites.models import Site
-from datetime import date, datetime, timedelta
+from datetime import date, datetime, timedelta, time as time_obj
+import time
 import calendar
 
 def determine_period(the_date=date.today(), delta=0):
@@ -125,3 +126,36 @@ def determine_period(the_date=date.today(), delta=0):
     end_date = datetime(ey, em, ed, 23, 59, 59)
 
     return (start_date, end_date)
+
+DEFAULT_TIME_FORMATS = [
+    '%H:%M',        # 23:15         => 23:15:00
+    '%H:%M:%S',     # 05:50:21      => 05:50:21
+    '%I:%M:%S %p',  # 11:40:53 PM   => 23:40:53
+    '%I:%M %p',     # 6:21 AM       => 06:21:00
+    '%I %p',        # 1 pm          => 13:00:00
+    '%I:%M:%S%p',   # 8:45:52pm     => 23:45:52
+    '%I:%M%p',      # 12:03am       => 00:03:00
+    '%I%p',         # 12pm          => 12:00:00
+    '%H',           # 22            => 22:00:00
+]
+def parse_time(time_str, input_formats=None):
+    """
+    This function will take a string with some sort of representation of time
+    in it.  The string will be parsed using a variety of formats until a match
+    is found for the format given.  The return value is a datetime.time object.
+    """
+    formats = input_formats or DEFAULT_TIME_FORMATS
+
+    # iterate over all formats until we find a match
+    for format in formats:
+        try:
+            # attempt to parse the time with the current format
+            value = time.strptime(time_str, format)
+        except ValueError:
+            continue
+        else:
+            # turn the time_struct into a datetime.time object
+            return time_obj(*value[3:6])
+
+    # return None if there's no matching format
+    return None

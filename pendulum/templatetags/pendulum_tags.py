@@ -1,5 +1,6 @@
 from django import template
 from pendulum.models import Entry
+from datetime import datetime, timedelta, time
 
 register = template.Library()
 
@@ -113,7 +114,94 @@ def hours_in_period(parser, token):
 
     return HoursInPeriodNode(obj, period)
 
+class DayTotalsNode(template.Node):
+    def __init__(self, date_obj):
+        self.date_obj = template.Variable(date_obj)
+
+    def render(self, context):
+        date_obj = self.date_obj.resolve(context)
+        entries = Entry.objects.filter(start_time__year=date_obj.year,
+                                       start_time__month=date_obj.month,
+                                       start_time__day=date_obj.day,
+                                       user=context['user'])
+
+        # If there is only one (or 0) entry for a particular day, there's no
+        # need to go any further
+        if len(entries) <= 1: return ''
+
+        hours = [e.total_hours for e in entries]
+        total = sum(hours)
+
+        context['day_total'] = total
+        context['day'] = date_obj
+
+        t = template.loader.get_template('pendulum/_day_totals.html')
+        return t.render(context)
+
+def day_totals(parser, token):
+    """
+    Calculates how many total hours were worked in a given day
+    """
+
+    try:
+        t, date_obj = token.split_contents()
+    except ValueError:
+        raise template.TemplateSyntaxError('day_totals usage: {% day_totals entry.start_time.date_obj %}')
+
+    return DayTotalsNode(date_obj)
+
+def week_bounds(year, week):
+    """
+    Finds the beginning and end of a week given a year and week number
+    Source: http://bytes.com/forum/thread499819.html
+    """
+    # TODO: Make sure this work with weeks that don't begin on Sunday
+    startOfYear = datetime(year, 1, 1)
+    week0 = startOfYear - timedelta(days=startOfYear.isoweekday())
+    sun = week0 + timedelta(weeks=week)
+    sat = (sun + timedelta(days=6))
+    return sun, datetime.combine(sat, time(23, 59, 59))
+
+class WeekTotalsNode(template.Node):
+    def __init__(self, date_obj):
+        self.date_obj = template.Variable(date_obj)
+
+    def render(self, context):
+        date_obj = self.date_obj.resolve(context)
+
+        date_range = week_bounds(date_obj.year, int(date_obj.strftime('%U')))
+        entries = Entry.objects.filter(start_time__range=date_range,
+                                       user=context['user'])
+
+        # If there is only one (or 0) entry for a particular week, there's no
+        # need to go any further
+        if len(entries) <= 1: return ''
+
+        hours = [e.total_hours for e in entries]
+        total = sum(hours)
+
+        context['week_total'] = total
+        context['week_range'] = {'start': date_range[0],
+                                 'end': date_range[1]}
+
+        t = template.loader.get_template('pendulum/_week_totals.html')
+        return t.render(context)
+
+def week_totals(parser, token):
+    """
+    Calculates how many total hours were worked in a given week
+    """
+
+    try:
+        t, date_obj = token.split_contents()
+    except ValueError:
+        raise template.TemplateSyntaxError('week_totals usage: {% week_totals entry.start_time %}')
+
+    return WeekTotalsNode(date_obj)
+
 register.simple_tag(total_hours_for_period)
 register.tag(entries_projects)
 register.tag(entries_activities)
 register.tag(hours_in_period)
+register.tag(day_totals)
+register.tag(week_totals)

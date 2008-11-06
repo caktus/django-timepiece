@@ -1,9 +1,8 @@
 from django import forms
 from pendulum.models import Project, Activity, Entry
-from pendulum.widgets import PendulumDateTime
+from pendulum.fields import PendulumDateTimeField
+from pendulum.widgets import PendulumDateTimeWidget
 from datetime import datetime
-
-format_help = 'Please enter dates in the format YYYY-MM-DD and times in the format HH:MM.'
 
 class ClockInForm(forms.Form):
     """
@@ -28,10 +27,11 @@ class AddUpdateEntryForm(forms.ModelForm):
     update existing log entries.
     """
 
-    start_time = forms.DateTimeField(widget=PendulumDateTime,
-                                     help_text=format_help)
-    end_time = forms.DateTimeField(widget=PendulumDateTime,
-                                     help_text=format_help)
+    #start_time = forms.DateTimeField(widget=PendulumDateTimeWidget)
+    #end_time = forms.DateTimeField(widget=PendulumDateTimeWidget)
+
+    start_time = PendulumDateTimeField()
+    end_time = PendulumDateTimeField()
 
     class Meta:
         model = Entry
@@ -63,7 +63,7 @@ class AddUpdateEntryForm(forms.ModelForm):
         try:
             start = self.cleaned_data['start_time']
         except KeyError:
-            raise forms.ValidationError('Please enter an start time.')
+            raise forms.ValidationError('Please enter a start time.')
 
         try:
             end = self.cleaned_data['end_time']
@@ -78,3 +78,6 @@ class AddUpdateEntryForm(forms.ModelForm):
             raise forms.ValidationError('The entry must start before it ends!')
 
         return end
+
+    #def clean(self):
+    #    print self.cleaned_data

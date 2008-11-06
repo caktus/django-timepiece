@@ -29,7 +29,12 @@
         <th>Project</th>
         <th colspan="2">Activity</th>
     </tr>
-    {% for entry in entries %}<tr class="{% cycle odd,even as rowclass %}">
+    {% for entry in entries %}
+    {% with entry.start_time|date:"W" as week_of_year %}
+    {% ifchanged week_of_year %}{% week_totals entry.start_time.date %}{% endifchanged %}
+    {% endwith %}
+    {% ifchanged entry.start_time.date %}{% day_totals entry.start_time.date %}{% endifchanged %}
+    <tr class="{% cycle odd,even as rowclass %}">
         <td class="entry-date">
             {% if entry.is_closed %}<a href="{% url pendulum-update entry.id %}" title="Update this entry">{% endif %}{{ entry.start_time|date:"j N Y" }}{% if entry.is_closed %}</a>{% endif %}
         </td>
