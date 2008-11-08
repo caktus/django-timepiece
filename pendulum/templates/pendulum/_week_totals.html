@@ -1,9 +1,9 @@
     <tr>
         <td>&nbsp;</td>
         <th colspan="2">
-            Hours worked
-            {{ week_range.start|date:"j N y" }} to
-            {{ week_range.end|date:"j N y" }}:
+            Hours for
+            {{ week_range.start|date:"j N" }}-
+            {{ week_range.end|date:"j N" }}:
         </th>
         <td>{{ week_total|floatformat:2 }}</td>
         <td colspan="3">&nbsp;</td>
