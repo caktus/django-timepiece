@@ -1,8 +1,13 @@
 from django import template
 from pendulum.models import Entry
+from pendulum import utils
 from datetime import datetime, timedelta, time
 
 register = template.Library()
+
+def seconds_for_entries(entries):
+    seconds = [e.get_seconds() for e in entries]
+    return sum(seconds)
 
 def total_hours_for_period(period, user=None):
     """
@@ -17,6 +22,17 @@ def total_hours_for_period(period, user=None):
 
     # add up all items in the list
     return sum(hours)
+
+def total_time_for_period(period, user=None):
+    """
+    Determines how much time has been logged for the current period.
+    """
+
+    # find all entries in the period
+    entries = Entry.objects.in_period(period, user)
+
+    seconds = seconds_for_entries(entries)
+    return utils.get_total_time(seconds)
 
 class EntriesProjectsOrActivitiesNode(template.Node):
     """
@@ -81,14 +97,15 @@ def entries_activities(parser, token):
 
     return EntriesProjectsOrActivitiesNode(entries, varname, activities=True)
 
-class HoursInPeriodNode(template.Node):
+class TimeInPeriodNode(template.Node):
     """
     Determines how many hours were logged during the specified period for a
     project or an activity (or any other object with an "entries" attribute).
     """
-    def __init__(self, obj, period):
+    def __init__(self, obj, period, time=False):
         self.obj = template.Variable(obj)
         self.period = template.Variable(period)
+        self.time = time
 
     def render(self, context):
         # pull the object back from the context
@@ -99,8 +116,13 @@ class HoursInPeriodNode(template.Node):
 
         # find all entries in that period
         entries = obj.entries.in_period(period, context['user'])
-        hours = [e.total_hours for e in entries]
-        return sum(hours)
+
+        if self.time:
+            seconds = seconds_for_entries(entries)
+            return utils.get_total_time(seconds)
+        else:
+            hours = [e.total_hours for e in entries]
+            return float(sum(hours))
 
 def hours_in_period(parser, token):
     """
@@ -112,7 +134,19 @@ def hours_in_period(parser, token):
     except ValueError:
         raise template.TemplateSyntaxError('hours_in_period usage: {% hours_in_period project period %}')
 
-    return HoursInPeriodNode(obj, period)
+    return TimeInPeriodNode(obj, period)
+
+def time_in_period(parser, token):
+    """
+    Used to determine how much time was logged for a particular project or
+    activitiy during the specified period.
+    """
+    try:
+        t, obj, period = token.split_contents()
+    except ValueError:
+        raise template.TemplateSyntaxError('time_in_period usage: {% time_in_period project period %}')
+
+    return TimeInPeriodNode(obj, period, time=True)
 
 class DayTotalsNode(template.Node):
     def __init__(self, date_obj):
@@ -133,6 +167,7 @@ class DayTotalsNode(template.Node):
         total = sum(hours)
 
         context['day_total'] = total
+        context['day_time'] = utils.get_total_time(seconds_for_entries(entries))
         context['day'] = date_obj
 
         t = template.loader.get_template('pendulum/_day_totals.html')
@@ -181,6 +216,7 @@ class WeekTotalsNode(template.Node):
         total = sum(hours)
 
         context['week_total'] = total
+        context['week_time'] = utils.get_total_time(seconds_for_entries(entries))
         context['week_range'] = {'start': date_range[0],
                                  'end': date_range[1]}
 
@@ -200,8 +236,10 @@ def week_totals(parser, token):
     return WeekTotalsNode(date_obj)
 
 register.simple_tag(total_hours_for_period)
+register.simple_tag(total_time_for_period)
 register.tag(entries_projects)
 register.tag(entries_activities)
 register.tag(hours_in_period)
+register.tag(time_in_period)
 register.tag(day_totals)
 register.tag(week_totals)

@@ -4,6 +4,9 @@
             Hours for
             {{ day|date:"N j" }}:
         </th>
-        <td>{{ day_total|floatformat:2 }}</td>
+        <td>
+            {{ day_time }}<br />
+            ({{ day_total|floatformat:2 }})
+        </td>
         <td colspan="3">&nbsp;</td>
     </tr>

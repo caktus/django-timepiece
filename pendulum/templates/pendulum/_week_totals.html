@@ -5,6 +5,9 @@
             {{ week_range.start|date:"N j" }}-
             {{ week_range.end|date:"N j" }}:
         </th>
-        <td>{{ week_total|floatformat:2 }}</td>
+        <td>
+            {{ week_time }}<br />
+            {{ week_total|floatformat:2 }}
+        </td>
         <td colspan="3">&nbsp;</td>
     </tr>

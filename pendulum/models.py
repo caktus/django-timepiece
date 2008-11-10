@@ -2,7 +2,7 @@ from django.db import models
 from django.contrib.sites.models import Site
 from django.contrib.auth.models import User
 from datetime import datetime, date, timedelta
-from pendulum.utils import determine_period
+from pendulum import utils
 
 try:
     """
@@ -168,7 +168,7 @@ class EntryManager(models.Manager):
         This will pull back any log entries for the current period.
         """
         try:
-            set = self.in_period(determine_period())
+            set = self.in_period(utils.determine_period())
         except PendulumConfiguration.DoesNotExist:
             raise Exception, "Please configure Pendulum!"
         else:
@@ -177,7 +177,7 @@ class EntryManager(models.Manager):
             return set
 
     def previous(self, delta, user=None):
-        set = self.in_period(determine_period(delta=delta))
+        set = self.in_period(utils.determine_period(delta=delta))
 
         if user:
             return set.filter(user=user)
@@ -214,9 +214,10 @@ class Entry(models.Model):
 
     objects = EntryManager()
 
-    def __total_hours(self):
+    def get_seconds(self):
         """
-        Determine the total number of hours worked in this entry
+        Determines the difference between the starting and ending time.  The
+        result is returned as an integer of seconds.
         """
         if self.start_time and self.end_time:
             # only calculate when the start and end are defined
@@ -226,8 +227,22 @@ class Entry(models.Model):
             seconds = 0
             delta = timedelta(days=0)
 
-        return seconds / 3600.0 + delta.days * 24
+        return seconds + (delta.days * 86400)
+
+    def __total_hours(self):
+        """
+        Determined the total number of hours worked in this entry
+        """
+        return self.get_seconds() / 3600.0
     total_hours = property(__total_hours)
+
+    def __total_time(self):
+        """
+        Determines the amount of time spent and return it as a string formatted
+        as HH:MM:SS
+        """
+        return utils.get_total_time(self.get_seconds())
+    total_time = property(__total_time)
 
     def __hours(self):
         """

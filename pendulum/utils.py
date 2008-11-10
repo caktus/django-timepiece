@@ -159,3 +159,14 @@ def parse_time(time_str, input_formats=None):
 
     # return None if there's no matching format
     return None
+
+def get_total_time(seconds):
+    """
+    Returns the specified number of seconds in an easy-to-read HH:MM:SS format
+    """
+    hours = int(seconds / 3600)
+    seconds %= 3600
+    minutes = int(seconds / 60)
+    seconds %= 60
+
+    return u'%02i:%02i:%02i' % (hours, minutes, seconds)

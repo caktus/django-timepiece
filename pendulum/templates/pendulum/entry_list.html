@@ -44,7 +44,8 @@
             <a href="{% url pendulum-clock-out entry.id %}">Clock Out</a>
         {% endif %}</td>
         <td class="entry-hours">{% if entry.end_time %}
-            {{ entry.hours }}{% else %}
+            {{ entry.total_time }}<br />
+            ({{ entry.hours }}){% else %}
             {% if entry.is_paused %}
             <a href="{% url pendulum-toggle-paused entry.id %}">Unpause</a>
             {% else %}
@@ -86,9 +87,10 @@
         {% if forloop.first %}<table>{% endif %}
             <tr>
                 <th>{{ project.name }}</th>
-                <td>{% filter floatformat:2 %}
-                    {% hours_in_period project period %}
-                {% endfilter %}</td>
+                <td>
+                    {% time_in_period project period %}
+                    ({% filter floatformat:2 %}{% hours_in_period project period %}{% endfilter %})
+                </td>
             </tr>
         {% if forloop.last %}</table>{% endif %}
         {% endfor %}
@@ -99,9 +101,10 @@
         {% if forloop.first %}<table>{% endif %}
             <tr>
                 <th>{{ activity.name }}</th>
-                <td>{% filter floatformat:2 %}
-                    {% hours_in_period activity period %}
-                {% endfilter %}</td>
+                <td>
+                    {% time_in_period activity period %}
+                    ({% filter floatformat:2 %}{% hours_in_period activity period %}{% endfilter %})
+                </td>
             </tr>
         {% if forloop.last %}</table>{% endif %}
         {% endfor %}
@@ -109,9 +112,10 @@
     </tr>
     <tr>
         <th>Total Hours</th>
-        <td>{% filter floatformat:2 %}
-            {% total_hours_for_period period user %}
-        {% endfilter %}</td>
+        <td>
+            {% total_time_for_period period user %}
+            ({% filter floatformat:2 %}{% total_hours_for_period period user %}{% endfilter %})
+        </td>
     </tr>
     <tr>
         <th>Total Entries</th>
