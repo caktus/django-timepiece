@@ -244,6 +244,13 @@ class Entry(models.Model):
         return utils.get_total_time(self.get_seconds())
     total_time = property(__total_time)
 
+    def __paused_time(self):
+        """
+        Returns the total time paused for this entry in HH:MM:SS format
+        """
+        return utils.get_total_time(self.seconds_paused)
+    paused_time = property(__paused_time)
+
     def __hours(self):
         """
         Print the hours in a nice, rounded format

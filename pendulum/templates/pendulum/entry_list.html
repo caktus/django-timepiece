@@ -65,6 +65,12 @@
             <a href="{% url pendulum-delete entry.id %}">&times;</a>
         </td>
     </tr>
+    {% if entry.seconds_paused %}<tr class="{{ rowclass }}">
+        <td colspan="2">&nbsp;</td>
+        <th>Breaks:</th>
+        <td class="entry-paused">{{ entry.paused_time }}</td>
+        <td colspan="3">&nbsp;</td>
+    </tr>{% endif %}
     {% if entry.comments %}<tr class="{{ rowclass }}">
         <td colspan="7" class="entry-comments">{{ entry.comments }}</td>
     </tr>{% endif %}
