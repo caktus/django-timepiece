@@ -159,8 +159,13 @@ def toggle_paused(request, entry_id):
         # save it
         entry.save()
 
+        if entry.is_paused:
+            action = 'paused'
+        else:
+            action = 'resumed'
+
         # create a message that can be displayed to the user
-        request.user.message_set.create(message='The log entry has been paused.')
+        request.user.message_set.create(message='The log entry has been %s.' % action)
 
     # redirect to the log entry list
     return HttpResponseRedirect(reverse('pendulum-entries'))

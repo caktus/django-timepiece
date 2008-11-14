@@ -8,15 +8,14 @@
 {{ block.super }}
 
 <form action="{% url pendulum-clock-in %}" method="post">
-<table>
+<table class="clock-in">
 {{ form }}
-{% if user.clocked_in %}<tr>
-
+{% if user.clocked_in %}<tr class="even">
     <td colspan="2">
         You are currently clocked into another project.  Check the box below to pause the other entry.
     </td>
 </tr>
-<tr>
+<tr class="odd">
     <td colspan="2">
         <input type="checkbox" id="pause_logs" name="pause_open" value="1" />
         <label for="pause_logs">Pause open log</label>

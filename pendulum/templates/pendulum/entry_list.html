@@ -45,7 +45,7 @@
         {% endif %}</td>
         <td class="entry-hours">{% if entry.end_time %}
             {{ entry.total_time }}<br />
-            ({{ entry.hours }}){% else %}
+            <span class="hours">({{ entry.hours }})</span>{% else %}
             {% if entry.is_paused %}
             <a href="{% url pendulum-toggle-paused entry.id %}">Unpause</a>
             {% else %}
@@ -65,7 +65,7 @@
             <a href="{% url pendulum-delete entry.id %}">&times;</a>
         </td>
     </tr>
-    {% if entry.seconds_paused %}<tr class="{{ rowclass }}">
+    {% if entry.seconds_paused %}<tr class="{{ rowclass }} entry-paused">
         <td colspan="2">&nbsp;</td>
         <th>Breaks:</th>
         <td class="entry-paused">{{ entry.paused_time }}</td>
@@ -78,7 +78,7 @@
 </table>
 
 {% if entries %}
-<table>
+<table class="entry-statistics">
     <tr>
         <th colspan="2">Statistics</th>
     </tr>
@@ -91,7 +91,7 @@
         {% entries_projects entries as projects %}
         {% for project in projects %}
         {% if forloop.first %}<table>{% endif %}
-            <tr>
+            <tr class="{% cycle odd,even as rowclass %}">
                 <th>{{ project.name }}</th>
                 <td>
                     {% time_in_period project period %}
@@ -105,7 +105,7 @@
         {% entries_activities entries as activities %}
         {% for activity in activities %}
         {% if forloop.first %}<table>{% endif %}
-            <tr>
+            <tr class="{% cycle odd,even as rowclass %}">
                 <th>{{ activity.name }}</th>
                 <td>
                     {% time_in_period activity period %}
@@ -116,14 +116,14 @@
         {% endfor %}
         </td>
     </tr>
-    <tr>
+    <tr class="odd">
         <th>Total Hours</th>
         <td>
             {% total_time_for_period period user %}
             ({% filter floatformat:2 %}{% total_hours_for_period period user %}{% endfilter %})
         </td>
     </tr>
-    <tr>
+    <tr class="even">
         <th>Total Entries</th>
         <td>{{ entries.count }}</td>
     </tr>

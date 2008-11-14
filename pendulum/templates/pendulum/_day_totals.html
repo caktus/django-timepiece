@@ -1,10 +1,10 @@
-    <tr>
+    <tr class="day-summary">
         <td>&nbsp;</td>
         <th colspan="2">
             Hours for
             {{ day|date:"N j" }}:
         </th>
-        <td>
+        <td class="entry-hours">
             {{ day_time }}<br />
             ({{ day_total|floatformat:2 }})
         </td>

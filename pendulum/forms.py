@@ -27,11 +27,11 @@ class AddUpdateEntryForm(forms.ModelForm):
     update existing log entries.
     """
 
-    #start_time = forms.DateTimeField(widget=PendulumDateTimeWidget)
-    #end_time = forms.DateTimeField(widget=PendulumDateTimeWidget)
+    start_time = forms.DateTimeField(widget=PendulumDateTimeWidget)
+    end_time = forms.DateTimeField(widget=PendulumDateTimeWidget)
 
-    start_time = PendulumDateTimeField()
-    end_time = PendulumDateTimeField()
+    #start_time = PendulumDateTimeField()
+    #end_time = PendulumDateTimeField()
 
     class Meta:
         model = Entry
