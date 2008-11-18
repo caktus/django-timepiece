@@ -1,0 +1,22 @@
+{% extends "base.html" %}
+
+{% block title %}Member Registration{% endblock %}
+
+{% block content %}
+<h2>Member Registration</h2>
+
+<form action="." method="post">
+  {% if form.has_errors %}
+    <p class="error">Please correct the errors below.</p>
+  {% endif %}
+
+  <p>Please enter your desired account information in the form below.</p>
+
+  <table class="registration">
+    {{ form }}
+    <tr>
+      <td colspan="2" class="buttons"><input type="submit" value="Create My Account" /></td>
+    </tr>
+  </table>
+</form>
+{% endblock %}
