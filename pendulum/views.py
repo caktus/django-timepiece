@@ -4,10 +4,11 @@ from django.core.urlresolvers import reverse
 from django.http import HttpResponse, HttpResponseRedirect, Http404
 from django.contrib.auth.decorators import login_required, permission_required
 from django.contrib.sites.models import Site
-from pendulum.forms import ClockInForm, ClockOutForm, AddUpdateEntryForm
-from pendulum.models import Entry
+from pendulum.forms import ClockInForm, ClockOutForm, AddUpdateEntryForm, DateForm
+from pendulum.models import Entry, Project
 from pendulum.utils import determine_period
 from datetime import datetime
+
 
 @login_required
 def view_entries(request, delta=0):
@@ -293,3 +294,33 @@ def add_entry(request):
                                'add_update': 'Add',
                                'callback': reverse('pendulum-add')},
                               context_instance=RequestContext(request))
+
+
+def summary(request):
+    if request.GET:
+        form = DateForm(request.GET)
+        if form.is_valid():
+            from_date, to_date = form.save()
+    else:
+        form = DateForm()
+        from_date, to_date = None, None
+    projects = Project.objects.all()
+    for project in projects:
+        if from_date or to_date:
+            entries = project.entries
+            if from_date:
+                entries = project.entries.filter(start_time__gte=from_date)
+            if to_date:
+                entries = project.entries.filter(end_time__lt=to_date)
+        else:
+            entries = project.entries.all()
+        project.hours = sum([e.total_hours for e in entries])
+    context = {
+        'form': form,
+        'projects': projects,
+    }
+    return render_to_response(
+        'pendulum/summary.html',
+        context,
+        context_instance=RequestContext(request),
+    )

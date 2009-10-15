@@ -1,0 +1,26 @@
+{% extends 'pendulum/pendulum_base.html' %}
+{% load pendulum_tags %}
+
+{% block title %}Pendulum Entries{% endblock %}
+
+{% block content %}
+<h2>Report</h2>
+
+{{ block.super }}
+
+<form action="" method="get" accept-charset="utf-8">
+    <table>
+        {{ form }}
+    </table>
+</form>
+
+<table>
+    {% for project in projects %}
+    <tr>
+        <th>{{ project.name }}</th>
+        <td>{{ project.hours|floatformat:2 }}</td>
+    </tr>
+    {% endfor %}
+</table>
+
+{% endblock %}

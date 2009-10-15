@@ -81,3 +81,14 @@ class AddUpdateEntryForm(forms.ModelForm):
 
     #def clean(self):
     #    print self.cleaned_data
+
+
+class DateForm(forms.Form):
+    from_date = forms.DateField(label="From", required=False)
+    to_date = forms.DateField(label="To", required=False)
+    
+    def save(self):
+        return (
+            self.cleaned_data.get('from_date', ''),
+            self.cleaned_data.get('to_date', ''),
+        )

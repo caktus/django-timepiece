@@ -11,4 +11,6 @@ urlpatterns = patterns('',
     url(r'^add/$', views.add_entry, name='pendulum-add'),
     url(r'^update/(?P<entry_id>\d+)/$', views.update_entry, name='pendulum-update'),
     url(r'^delete/(?P<entry_id>\d+)/$', views.delete_entry, name='pendulum-delete'),
+    
+    url(r'^summary/', views.summary, name='pendulum-summary'),
 )
