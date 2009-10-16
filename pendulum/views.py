@@ -307,8 +307,6 @@ def summary(request):
     projects = Project.objects.all()
     total_hours = 0.0
     
-    Entry.objects.values('project').annotate('')
-    
     for project in projects:
         if from_date or to_date:
             entries = project.entries
