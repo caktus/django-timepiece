@@ -305,18 +305,24 @@ def summary(request):
         form = DateForm()
         from_date, to_date = None, None
     projects = Project.objects.all()
+    total_hours = 0.0
+    
+    Entry.objects.values('project').annotate('')
+    
     for project in projects:
         if from_date or to_date:
             entries = project.entries
             if from_date:
-                entries = project.entries.filter(start_time__gte=from_date)
+                entries = entries.filter(start_time__gte=from_date)
             if to_date:
-                entries = project.entries.filter(end_time__lt=to_date)
+                entries = entries.filter(end_time__lte=to_date)
         else:
             entries = project.entries.all()
         project.hours = sum([e.total_hours for e in entries])
+        total_hours += project.hours
     context = {
         'form': form,
+        'total_hours': total_hours,
         'projects': projects,
     }
     return render_to_response(
