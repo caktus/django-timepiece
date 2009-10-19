@@ -1,5 +1,5 @@
 from django.contrib import admin
-from pendulum.models import PendulumConfiguration, Activity, Entry, Project
+from pendulum import models as pendulum
 
 class PendulumConfigurationAdmin(admin.ModelAdmin):
     list_display = ('site',
@@ -23,11 +23,11 @@ class PendulumConfigurationAdmin(admin.ModelAdmin):
     )
 
 class ActivityAdmin(admin.ModelAdmin):
-    model = Activity
+    model = pendulum.Activity
     list_display = ('code', 'name', 'log_count', 'total_hours')
 
 class EntryAdmin(admin.ModelAdmin):
-    model = Entry
+    model = pendulum.Entry
     list_display = ('user',
                     'project',
                     'activity',
@@ -41,10 +41,23 @@ class EntryAdmin(admin.ModelAdmin):
     date_hierarchy = 'start_time'
 
 class ProjectAdmin(admin.ModelAdmin):
-    model = Project
+    model = pendulum.Project
     list_display = ('name', 'is_active', 'log_count', 'total_hours')
 
-admin.site.register(PendulumConfiguration, PendulumConfigurationAdmin)
-admin.site.register(Activity, ActivityAdmin)
-admin.site.register(Entry, EntryAdmin)
-admin.site.register(Project, ProjectAdmin)
+
+class RepeatPeriodAdmin(admin.ModelAdmin):
+    list_display = ('project', 'count', 'interval')
+    list_filter = ('interval',)
+admin.site.register(pendulum.RepeatPeriod, RepeatPeriodAdmin)
+
+
+class BillingWindowAdmin(admin.ModelAdmin):
+    list_display = ('id', 'period', 'date', 'end_date')
+    list_filter = ('period',)
+admin.site.register(pendulum.BillingWindow, BillingWindowAdmin)
+
+
+admin.site.register(pendulum.PendulumConfiguration, PendulumConfigurationAdmin)
+admin.site.register(pendulum.Activity, ActivityAdmin)
+admin.site.register(pendulum.Entry, EntryAdmin)
+admin.site.register(pendulum.Project, ProjectAdmin)

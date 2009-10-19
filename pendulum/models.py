@@ -1,8 +1,13 @@
+import datetime
+
 from django.db import models
 from django.contrib.sites.models import Site
 from django.contrib.auth.models import User
-from datetime import datetime, date, timedelta
+
 from pendulum import utils
+
+from dateutil.relativedelta import relativedelta
+
 
 try:
     """
@@ -270,14 +275,14 @@ class Entry(models.Model):
         If this entry is not paused, pause it.
         """
         if not self.is_paused:
-            self.pause_time = datetime.now()
+            self.pause_time = datetime.datetime.now()
 
     def unpause(self):
         """
         If this entry is paused, unpause it
         """
         if self.is_paused:
-            delta = datetime.now() - self.pause_time
+            delta = datetime.datetime.now() - self.pause_time
             self.seconds_paused += delta.seconds
             self.pause_time = None
 
@@ -306,7 +311,7 @@ class Entry(models.Model):
             self.user = user
             self.project = project
             self.site = CURRENT_SITE
-            self.start_time = datetime.now()
+            self.start_time = datetime.datetime.now()
 
     def clock_out(self, activity, comments):
         """
@@ -316,7 +321,7 @@ class Entry(models.Model):
             self.unpause()
 
         if not self.is_closed:
-            self.end_time = datetime.now()
+            self.end_time = datetime.datetime.now()
             self.activity = activity
             self.comments = comments
 
@@ -353,3 +358,61 @@ class Entry(models.Model):
 # Add a utility method to the User class that will tell whether or not a
 # particular user has any unclosed entries
 User.clocked_in = property(lambda user: user.pendulum_entries.filter(end_time__isnull=True).count() > 0)
+
+
+class RepeatPeriod(models.Model):
+    INTERVAL_CHOICES = (
+        ('day', 'Day(s)'),
+        ('week', 'Week(s)'),
+        ('month', 'Month(s)'),
+        ('year', 'Year(s)'),
+    )
+    project = models.ForeignKey(Project, unique=True)
+    count = models.PositiveSmallIntegerField(
+        # null=True,
+        # blank=True,
+        choices=[(x,x) for x in range(1,32)],
+    )
+    interval = models.CharField(
+        # null=True,
+        # blank=True,
+        max_length=10,
+        choices=INTERVAL_CHOICES,
+    )
+    active = models.BooleanField(default=False)
+    
+    def __unicode__(self):
+        return "%d %s for %s" % (self.count, self.get_interval_display(), self.project)
+    
+    def delta(self):
+        return relativedelta(**{str(self.interval + 's'): self.count})
+    
+    def update_billing_windows(self):
+        windows = []
+        try:
+            window = self.billing_windows.order_by('-date').select_related()[0]
+        except IndexError:
+            window = None
+        if window:
+            while window.date + self.delta() <= datetime.date.today():
+                window.id = None
+                window.date += repeat_period.delta()
+                window.end_date += repeat_period.delta()
+                window.save(force_insert=True)
+                windows.append(window)
+        else:
+            window = self.billing_windows.create(
+                date=datetime.date.today(),
+                end_date=datetime.date.today() + self.delta(),
+            )
+            windows.append(window)
+        return windows
+
+
+class BillingWindow(models.Model):
+    period = models.ForeignKey(RepeatPeriod, related_name='billing_windows')
+    date = models.DateField()
+    end_date = models.DateField()
+    
+    def __unicode__(self):
+        return "%s through %s" % (self.date, self.end_date)
