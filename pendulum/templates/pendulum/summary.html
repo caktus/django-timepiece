@@ -15,10 +15,10 @@
 </form>
 
 <table>
-    {% for project in projects %}
+    {% for entry in entries %}
     <tr>
-        <th>{{ project.name }}</th>
-        <td>{{ project.hours|floatformat:2 }}</td>
+        <th>{{ entry.project__name }}</th>
+        <td>{{ entry.hours|floatformat:2 }}</td>
     </tr>
     {% endfor %}
 </table>

@@ -216,6 +216,7 @@ class Entry(models.Model):
     comments = models.TextField(blank=True, null=True)
     date_updated = models.DateTimeField(auto_now=True)
     site = models.ForeignKey(Site, related_name='pendulum_entries')
+    hours = models.DecimalField(max_digits=8, decimal_places=2)
 
     objects = EntryManager()
 
@@ -261,7 +262,7 @@ class Entry(models.Model):
         Print the hours in a nice, rounded format
         """
         return "%.02f" % self.total_hours
-    hours = property(__hours)
+    nice_hours = property(__hours)
 
     def __is_paused(self):
         """
@@ -347,7 +348,7 @@ class Entry(models.Model):
         return '%s on %s' % (self.user, self.project)
 
     class Meta:
-        ordering = ['-start_time']
+        # ordering = ['-start_time']
         verbose_name_plural = 'entries'
         permissions = (
             ('can_clock_in', 'Can use Pendulum to clock in'),

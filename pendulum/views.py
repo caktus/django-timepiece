@@ -4,6 +4,9 @@ from django.core.urlresolvers import reverse
 from django.http import HttpResponse, HttpResponseRedirect, Http404
 from django.contrib.auth.decorators import login_required, permission_required
 from django.contrib.sites.models import Site
+from django.db.models import Sum
+
+
 from pendulum.forms import ClockInForm, ClockOutForm, AddUpdateEntryForm, DateForm
 from pendulum.models import Entry, Project
 from pendulum.utils import determine_period
@@ -304,24 +307,15 @@ def summary(request):
     else:
         form = DateForm()
         from_date, to_date = None, None
-    projects = Project.objects.all()
-    total_hours = 0.0
-    
-    for project in projects:
-        if from_date or to_date:
-            entries = project.entries
-            if from_date:
-                entries = entries.filter(start_time__gte=from_date)
-            if to_date:
-                entries = entries.filter(end_time__lte=to_date)
-        else:
-            entries = project.entries.all()
-        project.hours = sum([e.total_hours for e in entries])
-        total_hours += project.hours
+    entries = Entry.objects.values('project__name').order_by('project__name')
+    if from_date:
+        entries = entries.filter(start_time__gte=from_date)
+    if to_date:
+        entries = entries.filter(end_time__lte=to_date)
+    entries = entries.annotate(hours=Sum('hours'))
     context = {
         'form': form,
-        'total_hours': total_hours,
-        'projects': projects,
+        'entries': entries,
     }
     return render_to_response(
         'pendulum/summary.html',
