@@ -397,8 +397,8 @@ class RepeatPeriod(models.Model):
         if window:
             while window.date + self.delta() <= datetime.date.today():
                 window.id = None
-                window.date += repeat_period.delta()
-                window.end_date += repeat_period.delta()
+                window.date += self.delta()
+                window.end_date += self.delta()
                 window.save(force_insert=True)
                 windows.append(window)
         else:
@@ -408,6 +408,22 @@ class RepeatPeriod(models.Model):
             )
             windows.append(window)
         return windows
+    
+    def get_window(self, window_id):
+        try:
+            window = self.billing_windows.select_related().get(pk=window_id)
+        except BillingWindow.DoesNotExist:
+            window = None
+        return window
+    
+    def get_latest_window(self):
+        try:
+             window = self.billing_windows.select_related().latest()
+        except BillingWindow.DoesNotExist:
+            window = None
+        if not window or window.date + window.period.delta() <= datetime.date.today():
+            window = self.update_billing_windows()[-1]
+        return window
 
 
 class BillingWindow(models.Model):
@@ -415,5 +431,48 @@ class BillingWindow(models.Model):
     date = models.DateField()
     end_date = models.DateField()
     
+    class Meta:
+        get_latest_by = 'date'
+    
     def __unicode__(self):
         return "%s through %s" % (self.date, self.end_date)
+    
+    def get_entries(self):
+        if not hasattr(self, '_entries'):
+            self._entries = Entry.objects.filter(
+                project=self.period.project,
+                start_time__gte=self.date,
+                end_time__lt=self.end_date,
+            ).select_related().order_by('start_time')
+        return self._entries
+    
+    def total_hours(self):
+        return Entry.objects.filter(
+            project=self.period.project,
+            start_time__gte=self.date,
+            end_time__lt=self.end_date,
+        ).aggregate(hours=models.Sum('hours'))['hours']
+    
+    def next(self):
+        if not hasattr(self, '_next'):
+            try:
+                window = BillingWindow.objects.filter(
+                    period=self.period,
+                    date__gt=self.date,
+                ).order_by('date')[0]
+            except IndexError:
+                window = None
+            self._next = window
+        return self._next
+    
+    def previous(self):
+        if not hasattr(self, '_previous'):
+            try:
+                window = BillingWindow.objects.filter(
+                    period=self.period,
+                    date__lt=self.date,
+                ).order_by('-date')[0]
+            except IndexError:
+                window = None
+            self._previous = window
+        return self._previous

@@ -1,5 +1,7 @@
+import datetime
+
 from django.template import RequestContext
-from django.shortcuts import render_to_response
+from django.shortcuts import render_to_response, get_object_or_404
 from django.core.urlresolvers import reverse
 from django.http import HttpResponse, HttpResponseRedirect, Http404
 from django.contrib.auth.decorators import login_required, permission_required
@@ -8,9 +10,8 @@ from django.db.models import Sum
 
 
 from pendulum.forms import ClockInForm, ClockOutForm, AddUpdateEntryForm, DateForm
-from pendulum.models import Entry, Project
+from pendulum import models as pendulum 
 from pendulum.utils import determine_period
-from datetime import datetime
 
 
 @login_required
@@ -25,12 +26,12 @@ def view_entries(request, delta=0):
         if delta < 0: raise Http404
 
         # we have a delta, so show previous entries according to the delta
-        entries = Entry.objects.previous(delta, request.user)
+        entries = pendulum.Entry.objects.previous(delta, request.user)
         next = delta - 1
         has_next = True
     else:
         # no delta, so just show the current entries
-        entries = Entry.objects.current(request.user)
+        entries = pendulum.Entry.objects.current(request.user)
         next = None
         has_next = False
 
@@ -67,7 +68,7 @@ def clock_in(request):
 
             # if the user chose to pause any open entries, pause them
             if request.POST.get('pause_open', '0') == '1':
-                open = Entry.objects.current().filter(user=request.user,
+                open = pendulum.Entry.objects.current().filter(user=request.user,
                                                       end_time__isnull=True,
                                                       pause_time__isnull=True)
                 for log in open:
@@ -105,7 +106,7 @@ def clock_out(request, entry_id):
 
     try:
         # grab the entry from the database
-        entry = Entry.objects.get(pk=entry_id,
+        entry = pendulum.Entry.objects.get(pk=entry_id,
                                   user=request.user,
                                   end_time__isnull=True)
     except:
@@ -150,7 +151,7 @@ def toggle_paused(request, entry_id):
 
     try:
         # retrieve the log entry
-        entry = Entry.objects.get(pk=entry_id,
+        entry = pendulum.Entry.objects.get(pk=entry_id,
                                   user=request.user,
                                   end_time__isnull=True)
     except:
@@ -188,7 +189,7 @@ def update_entry(request, entry_id):
 
     try:
         # retrieve the log entry
-        entry = Entry.objects.get(pk=entry_id,
+        entry = pendulum.Entry.objects.get(pk=entry_id,
                                   user=request.user,
                                   end_time__isnull=False)
     except:
@@ -234,7 +235,7 @@ def delete_entry(request, entry_id):
 
     try:
         # retrieve the log entry
-        entry = Entry.objects.get(pk=entry_id,
+        entry = pendulum.Entry.objects.get(pk=entry_id,
                                   user=request.user)
     except:
         # entry does not exist
@@ -307,7 +308,7 @@ def summary(request):
     else:
         form = DateForm()
         from_date, to_date = None, None
-    entries = Entry.objects.values('project__name').order_by('project__name')
+    entries = pendulum.Entry.objects.values('project__name').order_by('project__name')
     if from_date:
         entries = entries.filter(start_time__gte=from_date)
     if to_date:
@@ -319,6 +320,29 @@ def summary(request):
     }
     return render_to_response(
         'pendulum/summary.html',
+        context,
+        context_instance=RequestContext(request),
+    )
+
+
+def project_time_sheet(request, proj_id, window_id=None):
+    try:
+        period = pendulum.RepeatPeriod.objects.select_related().get(
+            project__id=proj_id,
+        )
+    except pendulum.RepeatPeriod.DoesNotExist:
+        raise Http404
+    if window_id:
+        window = period.get_window(window_id)
+    else:
+        window = period.get_latest_window()
+    context = {
+        'project': period.project,
+        'period': period,
+        'window': window,
+    }
+    return render_to_response(
+        'pendulum/period/window.html',
         context,
         context_instance=RequestContext(request),
     )

@@ -235,6 +235,10 @@ def week_totals(parser, token):
 
     return WeekTotalsNode(date_obj)
 
+@register.filter
+def seconds_to_hours(seconds):
+    return round(seconds/3600, 2)
+
 register.simple_tag(total_hours_for_period)
 register.simple_tag(total_time_for_period)
 register.tag(entries_projects)

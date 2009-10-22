@@ -11,6 +11,10 @@ urlpatterns = patterns('',
     url(r'^add/$', views.add_entry, name='pendulum-add'),
     url(r'^update/(?P<entry_id>\d+)/$', views.update_entry, name='pendulum-update'),
     url(r'^delete/(?P<entry_id>\d+)/$', views.delete_entry, name='pendulum-delete'),
-    
     url(r'^summary/', views.summary, name='pendulum-summary'),
+    url(
+        r'^project/(?P<proj_id>\d+)/(?:(?P<window_id>\d+)/)?$',
+        views.project_time_sheet,
+        name='project_time_sheet',
+    ),
 )

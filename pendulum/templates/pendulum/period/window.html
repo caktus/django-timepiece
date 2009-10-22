@@ -1,0 +1,56 @@
+{% extends 'base.html' %}
+{% load pendulum_tags %}
+{% load ledger %}
+
+{% block title %}Pendulum Entries{% endblock %}
+
+{% block content %}
+<h2>{{ project }} Time Sheet ({{ window.date|date:"N jS" }} &mdash; {{ window.end_date|date:"N jS" }})</h2>
+<ul class='header-actions-left'>
+    <li>
+        {% if window.previous %}
+            <a href='{% url project_time_sheet proj_id=project.id,window_id=window.previous.id %}'>Previous Time Sheet</a>
+        {% else %}
+            Previous Time Sheet
+        {% endif %}
+    </li>
+    <li>
+        {% if window.next %}
+            <a href='{% url project_time_sheet proj_id=project.id,window_id=window.next.id %}'>Next Time Sheet</a>
+        {% else %}
+            Next Time Sheet
+        {% endif %}
+    </li>
+</ul>
+
+{% if window.get_entries %}
+    <table>
+        <tr>
+            <th>Date</th>
+            <th>User</th>
+            <th>Clock In</th>
+            <th>Clock Out</th>
+            <th>Breaks</th>
+            <th>Hours</th>
+        </tr>
+        {% for entry in window.get_entries %}
+        <tr>
+            <td>{{ entry.start_time|date:"m/d/Y (D)" }}</td>
+            <td>{{ entry.user.get_full_name }}</td>
+            <td>{{ entry.start_time|date:"P" }}</td>
+            <td>{{ entry.end_time|date:"P" }}</td>
+            <td>{{ entry.seconds_paused|seconds_to_hours }}</td>
+            <td>{{ entry.hours }}</td>
+        </tr>
+        {% endfor %}
+        <tr>
+            <th colspan='5'>Total:</th>
+            <td>{{ window.total_hours|floatformat:2 }}</td>
+        </tr>
+    </table>
+{% else %}
+    <p>No entries exist for this time sheet.</p>
+{% endif %}
+
+
+{% endblock %}
