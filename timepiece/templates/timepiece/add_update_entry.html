@@ -1,0 +1,23 @@
+{% extends 'timepiece/base.html' %}
+
+{% block title %}{{ add_update }} Entry{% endblock %}
+
+{% block content %}
+<h2>{{ add_update }} Entry</h2>
+<ul class='header-actions-left'>
+    <li><a href="{% url timepiece-entries %}">Return to Time Sheet</a></li>
+</ul>
+<form action="{{ callback }}" method="post">
+    <table class='vertical'>
+        {{ form }}
+        <tr>
+            <td>&nbsp;</td>
+            <td class='submit'>
+                <input type='button' value='Cancel' onclick='history.go(-1)' />
+                &nbsp;
+                <input type='submit' name='submit' value='{{ add_update }} &rarr;' />
+            </td>
+        </tr>
+    </table>
+</form>
+{% endblock %}

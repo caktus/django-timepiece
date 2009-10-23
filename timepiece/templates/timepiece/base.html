@@ -1,0 +1,26 @@
+{% extends 'base.html' %}
+
+{% block css %}
+<link rel="stylesheet" href="{{ MEDIA_URL }}pendulum/css/style.css" type="text/css" />
+<link rel="stylesheet" href="{{ MEDIA_URL }}pendulum/css/jquery-ui.css" type="text/css" />
+{% endblock %}
+
+{% block content %}
+{# {% block timepiece-controls %} #}
+{# <div id="timepiece-controls"> #}
+{#     <ul class="timepiece-controls"> #}
+{#         <li>Logged in as <strong>{{ user }}</strong></li> #}
+{#         <li><a href="{% url timepiece-clock-in %}">Clock In</a></li> #}
+{#         <li><a href="{% url timepiece-add %}">Add Entry</a></li> #}
+{#         <li><a href="{% url timepiece-entries %}">Current Entries</a></li> #}
+{#         <li><a href="/accounts/logout/">Log Out</a></li> #}
+{#     </ul> #}
+{# </div> #}
+{# {% endblock %} #}
+{#  #}
+{# {% if messages %}<div id="django-messages"> #}
+{#     <ul> #}
+{#         {% for msg in messages %}<li>{{ msg }}</li>{% endfor %} #}
+{#     </ul> #}
+{# </div>{% endif %} #}
+{% endblock %}

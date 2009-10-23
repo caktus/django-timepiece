@@ -1,0 +1,34 @@
+{% extends 'base.html' %}
+
+{% block title %}Clock In{% endblock %}
+
+{% block content %}
+<h2>Clock Into Project</h2>
+<br />
+<form action="{% url timepiece-clock-in %}" method="post">
+    <table class='vertical'>
+        {{ form }}
+        {% if user.clocked_in %}
+        <tr class="even">
+            <td colspan="2">
+                You are currently clocked into another project.  Check the box below to pause the other entry.
+            </td>
+        </tr>
+        <tr class="odd">
+            <td colspan="2">
+                <input type="checkbox" id="pause_logs" name="pause_open" value="1" />
+                <label for="pause_logs">Pause open log</label>
+            </td>
+        </tr>
+        {% endif %}
+        <tr>
+            <td>&nbsp;</td>
+            <td class='submit'>
+                <input type='button' value='Cancel' onclick='history.go(-1)' />
+                &nbsp;
+                <input type='submit' name='submit' value='Clock In &rarr;' />
+            </td>
+        </tr>
+    </table>
+</form>
+{% endblock %}

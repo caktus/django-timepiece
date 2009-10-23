@@ -1,0 +1,24 @@
+[
+    {
+        "pk": 1,
+        "model": "timepiece.Activity",
+        "fields": {
+            "code": "FUN",
+            "name": "Fun and Games",
+            "sites": [
+                1
+            ]
+        }
+    },
+    {
+        "pk": 2,
+        "model": "timepiece.Activity",
+        "fields": {
+            "code": "WRK",
+            "name": "Work",
+            "sites": [
+                1
+            ]
+        }
+    }
+]

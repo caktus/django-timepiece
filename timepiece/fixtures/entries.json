@@ -1,0 +1,67 @@
+[
+    {
+        "pk": 1,
+        "model": "timepiece.timepiececonfiguration",
+        "fields": {
+            "is_monthly": true,
+            "month_start": 1,
+            "install_date": null,
+            "site": 1,
+            "period_length": null
+        }
+    },
+    {
+        "pk": 1,
+        "model": "timepiece.Entry",
+        "fields": {
+            "user": 2,
+            "project": 1,
+            "activity": 1,
+            "start_time": "2008-04-28 22:00",
+            "seconds_paused": 0,
+            "comments": "Entry owned by another user",
+            "site": 1
+        }
+    },
+    {
+        "pk": 2,
+        "model": "timepiece.Entry",
+        "fields": {
+            "user": 1,
+            "project": 2,
+            "activity": 2,
+            "start_time": "2008-04-28 22:00",
+            "seconds_paused": 0,
+            "pause_time": "2008-04-29 22:00",
+            "comments": "Paused entry owned by test user",
+            "site": 1
+        }
+    },
+    {
+        "pk": 3,
+        "model": "timepiece.Entry",
+        "fields": {
+            "user": 1,
+            "project": 1,
+            "activity": 1,
+            "start_time": "2008-04-28 22:00",
+            "end_time": "2009-04-29 21:15",
+            "seconds_paused": 0,
+            "comments": "Closed entry",
+            "site": 1
+        }
+    },
+    {
+        "pk": 4,
+        "model": "timepiece.Entry",
+        "fields": {
+            "user": 1,
+            "project": 2,
+            "activity": 2,
+            "start_time": "2008-04-28 22:00",
+            "seconds_paused": 300,
+            "comments": "Classic, 5-minute paused entry",
+            "site": 1
+        }
+    }
+]

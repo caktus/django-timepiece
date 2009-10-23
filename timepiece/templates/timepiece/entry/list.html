@@ -1,0 +1,69 @@
+{% extends 'timepiece/base.html' %}
+{% load timepiece_tags %}
+{% load ledger %}
+
+{% block title %}Pendulum Entries{% endblock %}
+
+{% block content %}
+<h2>My Time Sheet</h2>
+<ul class='header-actions-left'>
+    <li><a href="{% url timepiece-clock-in %}">Clock In</a></li>
+    <li><a href="{% url timepiece-add %}">Add Entry</a></li>
+    <li><a href="{% url timepiece-entries %}">Current Entries</a></li>
+</ul>
+
+<table>
+    <tr>
+        <th>Date</th>
+        <th>Project</th>
+        <th>Clock In</th>
+        <th>Clock Out</th>
+        <th>Breaks</th>
+        <th>Hours</th>
+    </tr>
+    {% for entry in entries %}
+    <tr>
+        <td>
+            {% ifchanged entry.start_time.weekday %}
+                {{ entry.start_time|date:"m/d/Y (D)" }}
+            {% endifchanged %}
+        </td>
+        <td><a href='{% url view_project business_id=entry.project.business.id,project_id=entry.project.id %}'>{{ entry.project }}</a></td>
+        <td>{{ entry.start_time|date:"P" }}</td>
+        <td>
+            {% if entry.end_time %}
+                {{ entry.end_time|date:"P" }}
+            {% else %}
+                <a href="{% url timepiece-clock-out entry.id %}">Clock Out</a>
+            {% endif %}
+        </td>
+        <td>
+            {{ entry.seconds_paused|seconds_to_hours|floatformat:2 }}
+            {% if not entry.end_time %}
+                {% if entry.is_paused %}
+                    <a href="{% url timepiece-toggle-paused entry.id %}">(Unpause)</a>
+                {% else %}
+                    <a href="{% url timepiece-toggle-paused entry.id %}">(Pause)</a>
+                {% endif %}
+            {% endif %}
+        </td>
+        <td>{{ entry.hours }}</td>
+        <td>
+            <ul class='actions'>
+                <li><a href="{% url timepiece-update entry.id %}">Change</a></li>
+                <li><a href="{% url timepiece-delete entry.id %}">Remove</a></li>
+            </ul>
+        </td>
+    </tr>
+    {% ifchanged entry.start_time.isocalendar.1 %}
+        {% if not forloop.last %}
+            <tr>
+                <td colspan='8'></td>
+            </tr>
+        {% endif %}
+    {% endifchanged %}
+    {% endfor %}
+</table>
+
+
+{% endblock %}
