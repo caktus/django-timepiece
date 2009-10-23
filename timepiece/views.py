@@ -292,7 +292,8 @@ def add_entry(request):
                               context_instance=RequestContext(request))
 
 
-@render_with('timepiece/summary.html')
+@login_required
+@render_with('timepiece/entry/summary.html')
 def summary(request, username=None):
     if request.GET:
         form = timepiece_forms.DateForm(request.GET)
@@ -327,6 +328,7 @@ def summary(request, username=None):
     return context
 
 
+@login_required
 @render_with('timepiece/period/window.html')
 def project_time_sheet(request, project, window_id=None):
     window = timepiece.BillingWindow.objects.select_related(
