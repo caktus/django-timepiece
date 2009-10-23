@@ -23,17 +23,6 @@ except:
     CURRENT_SITE = Site.objects.all()
 
 
-class ProjectManager(models.Manager):
-    """
-    Return all active projects.
-    """
-    def get_query_set(self):
-        return super(ProjectManager, self).get_query_set().filter(sites__exact=CURRENT_SITE)
-
-    def active(self):
-        return self.get_query_set().filter(is_active=True)
-
-
 class Project(models.Model):
     PROJECT_STATUSES = (
         ('requested', 'Requested'),
@@ -86,6 +75,7 @@ class Project(models.Model):
             except IndexError:
                 self._repeat_period = None
         return self._repeat_period
+
 
 class ProjectRelationship(models.Model):
     types = models.ManyToManyField(
@@ -153,39 +143,6 @@ class Activity(models.Model):
         ordering = ['name']
         verbose_name_plural = 'activities'
 
-class EntryManager(models.Manager):
-    #def get_query_set(self):
-    #    return super(EntryManager, self).get_query_set().filter(site__exact=CURRENT_SITE)
-
-    def current(self, user=None):
-        """
-        This will pull back any log entries for the current period.
-        """
-        try:
-            set = self.in_period(utils.determine_period())
-        except PendulumConfiguration.DoesNotExist:
-            raise Exception, "Please configure Pendulum!"
-        else:
-            if user:
-                return set.filter(user=user)
-            return set
-
-    def previous(self, delta, user=None):
-        set = self.in_period(utils.determine_period(delta=delta))
-
-        if user:
-            return set.filter(user=user)
-        return set
-
-    def in_period(self, period, user=None):
-        if not isinstance(period, tuple) or len(period) != 2:
-            raise Exception('Invalid period specified')
-
-        set = self.get_query_set().filter(start_time__range=period)
-
-        if user:
-            return set.filter(user=user)
-        return set
 
 class Entry(models.Model):
     """
@@ -193,9 +150,13 @@ class Entry(models.Model):
     """
 
     user = models.ForeignKey(User, related_name='timepiece_entries')
-    project = models.ForeignKey(Project,
-                                related_name='entries')
-    activity = models.ForeignKey(Activity, blank=True, null=True, related_name='entries')
+    project = models.ForeignKey(Project, related_name='entries')
+    activity = models.ForeignKey(
+        Activity,
+        blank=True,
+        null=True,
+        related_name='entries',
+    )
     start_time = models.DateTimeField()
     end_time = models.DateTimeField(blank=True, null=True)
     seconds_paused = models.PositiveIntegerField(default=0)
@@ -204,11 +165,6 @@ class Entry(models.Model):
     date_updated = models.DateTimeField(auto_now=True)
     site = models.ForeignKey(Site, related_name='timepiece_entries')
     hours = models.DecimalField(max_digits=8, decimal_places=2)
-
-    objects = EntryManager()
-    
-    def day(self):
-        return self.start_time.replace(hour=0, minute=0, second=0)
     
     def get_seconds(self):
         """
@@ -231,43 +187,21 @@ class Entry(models.Model):
         """
         return self.get_seconds() / 3600.0
     total_hours = property(__total_hours)
-
-    def __total_time(self):
-        """
-        Determines the amount of time spent and return it as a string formatted
-        as HH:MM:SS
-        """
-        return utils.get_total_time(self.get_seconds())
-    total_time = property(__total_time)
-
-    def __paused_time(self):
-        """
-        Returns the total time paused for this entry in HH:MM:SS format
-        """
-        return utils.get_total_time(self.seconds_paused)
-    paused_time = property(__paused_time)
-
-    def __hours(self):
-        """
-        Print the hours in a nice, rounded format
-        """
-        return "%.02f" % self.total_hours
-    nice_hours = property(__hours)
-
+    
     def __is_paused(self):
         """
         Determine whether or not this entry is paused
         """
         return bool(self.pause_time)
     is_paused = property(__is_paused)
-
+    
     def pause(self):
         """
         If this entry is not paused, pause it.
         """
         if not self.is_paused:
             self.pause_time = datetime.datetime.now()
-
+    
     def unpause(self):
         """
         If this entry is paused, unpause it
@@ -276,7 +210,7 @@ class Entry(models.Model):
             delta = datetime.datetime.now() - self.pause_time
             self.seconds_paused += delta.seconds
             self.pause_time = None
-
+    
     def toggle_paused(self):
         """
         Toggle the paused state of this entry.  If the entry is already paused,
@@ -291,9 +225,9 @@ class Entry(models.Model):
         """
         Determine whether this entry has been closed or not
         """
-        return self.end_time != None
+        return bool(self.end_time)
     is_closed = property(__is_closed)
-
+    
     def clock_in(self, user, project):
         """
         Set this entry up for saving the first time, as an open entry.
@@ -303,7 +237,7 @@ class Entry(models.Model):
             self.project = project
             self.site = CURRENT_SITE
             self.start_time = datetime.datetime.now()
-
+    
     def clock_out(self, activity, comments):
         """
         Save some vital pieces of information about this entry upon closing
@@ -338,7 +272,6 @@ class Entry(models.Model):
         return '%s on %s' % (self.user, self.project)
 
     class Meta:
-        # ordering = ['-start_time']
         verbose_name_plural = 'entries'
         permissions = (
             ('can_clock_in', 'Can use Pendulum to clock in'),

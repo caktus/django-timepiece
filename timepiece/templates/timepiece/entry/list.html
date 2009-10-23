@@ -53,13 +53,6 @@
             </ul>
         </td>
     </tr>
-    {% ifchanged entry.start_time.isocalendar.1 %}
-        {% if not forloop.last %}
-            <tr>
-                <td colspan='8'></td>
-            </tr>
-        {% endif %}
-    {% endifchanged %}
     {% endfor %}
 </table>
 
