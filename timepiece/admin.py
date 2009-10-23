@@ -3,7 +3,7 @@ from timepiece import models as timepiece
 
 class ActivityAdmin(admin.ModelAdmin):
     model = timepiece.Activity
-    list_display = ('code', 'name', 'log_count', 'total_hours')
+    list_display = ('code', 'name')
 
 class EntryAdmin(admin.ModelAdmin):
     model = timepiece.Entry

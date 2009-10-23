@@ -1,8 +1,8 @@
 import datetime
+from decimal import Decimal
 
 from django.conf import settings
 from django.db import models
-from django.contrib.sites.models import Site
 from django.contrib.auth.models import User
 
 from timepiece import utils
@@ -10,17 +10,6 @@ from timepiece import utils
 from dateutil.relativedelta import relativedelta
 
 from crm import models as crm
-
-
-try:
-    """
-    if the app is installed from the start of a site, the sites table does
-    not exist and it causes problems.  This exception block seems to fix
-    the problem.
-    """
-    CURRENT_SITE = Site.objects.get_current()
-except:
-    CURRENT_SITE = Site.objects.all()
 
 
 class Project(models.Model):
@@ -96,51 +85,26 @@ class ProjectRelationship(models.Model):
         )
 
 
-class ActivityManager(models.Manager):
-    """
-    Return all active activities.
-    """
-    def get_query_set(self):
-        return super(ActivityManager, self).get_query_set().filter(sites__exact=CURRENT_SITE)
-
 class Activity(models.Model):
     """
     Represents different types of activity: debugging, developing,
     brainstorming, QA, etc...
     """
-
-    code = models.CharField(max_length=5, unique=True,
-                            help_text="""Enter a short code to describe the type of activity that took place.""")
-    name = models.CharField(max_length=50,
-                            help_text="""Now enter a more meaningful name for the activity.""")
-    sites = models.ManyToManyField(Site, related_name='timepiece_activities',
-                                  help_text="""Choose the site(s) that will display this activity.""")
-
-    objects = ActivityManager()
+    code = models.CharField(
+        max_length=5,
+        unique=True,
+        help_text="""Enter a short code to describe the type of activity that took place."""
+    )
+    name = models.CharField(
+        max_length=50,
+        help_text="""Now enter a more meaningful name for the activity.""",
+    )
 
     def __unicode__(self):
-        """
-        The string representation of an instance of this class
-        """
         return self.name
 
-    def __log_count(self):
-        """
-        Determine the number of entries associated with this activity
-        """
-        return self.entries.all().count()
-    log_count = property(__log_count)
-
-    def __total_hours(self):
-        """
-        Determine the number of hours spent doing each type of activity
-        """
-        times = [e.total_hours for e in self.entries.all()]
-        return '%.02f' % sum(times)
-    total_hours = property(__total_hours)
-
     class Meta:
-        ordering = ['name']
+        ordering = ('name',)
         verbose_name_plural = 'activities'
 
 
@@ -163,8 +127,11 @@ class Entry(models.Model):
     pause_time = models.DateTimeField(blank=True, null=True)
     comments = models.TextField(blank=True, null=True)
     date_updated = models.DateTimeField(auto_now=True)
-    site = models.ForeignKey(Site, related_name='timepiece_entries')
-    hours = models.DecimalField(max_digits=8, decimal_places=2)
+    hours = models.DecimalField(max_digits=8, decimal_places=2, default=0)
+    
+    def save(self, force_insert=False, force_update=False):
+        self.hours = Decimal('%.2f' % round(self.total_hours, 2))
+        super(Entry, self).save()
     
     def get_seconds(self):
         """
@@ -235,7 +202,6 @@ class Entry(models.Model):
         if not self.is_closed:
             self.user = user
             self.project = project
-            self.site = CURRENT_SITE
             self.start_time = datetime.datetime.now()
     
     def clock_out(self, activity, comments):
