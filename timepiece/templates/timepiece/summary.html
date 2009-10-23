@@ -6,21 +6,29 @@
 {% block content %}
 <h2>Time Tracking Report</h2>
 
-{{ block.super }}
-
 <form action="" method="get" accept-charset="utf-8">
     <table>
         {{ form }}
     </table>
 </form>
 
+<h3>Hours by Project</h3>
+
+<br />
 <table>
-    {% for entry in entries %}
+    {% for entry in project_totals %}
     <tr>
-        <th>{{ entry.project__name }}</th>
+        <td><a href='{% url view_project entry.project__business__id,entry.project__id %}'>{{ entry.project__name }}</a></td>
         <td>{{ entry.hours|floatformat:2 }}</td>
     </tr>
     {% endfor %}
+    <tr>
+        <th colspan='2'>&nbsp;</th>
+    </tr>
+    <tr>
+        <th>Total:</th>
+        <td>{{ total_hours|floatformat:2 }}</td>
+    </tr>
 </table>
 
 {% endblock %}

@@ -6,10 +6,13 @@
 {% block content %}
 <h2>{{ project }}</h2>
 <ul class='header-actions-left'>
-{% if perms.crm.change_project %}
+{% if perms.timepiece.change_project %}
 	<li><a href='{% url edit_project business_id=project.business.id,project_id=project.id %}'>Edit project</a></li>
 {% endif %}
 	<li><a href='{% url view_business business_id=project.business.id %}'>Return to {{ project.business.name }}</a></li>
+    {% if repeat_period %}
+        <li><a href='{% url project_time_sheet project.id %}'>Project Time Sheet</a></li>
+    {% endif %}
 </ul>
 
 <div id='sidebar'>

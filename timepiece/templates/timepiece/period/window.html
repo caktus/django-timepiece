@@ -7,16 +7,17 @@
 {% block content %}
 <h2>{{ project }} Time Sheet ({{ window.date|date:"N jS" }} &mdash; {{ window.end_date|date:"N jS" }})</h2>
 <ul class='header-actions-left'>
+    <li><a href='{% url view_project project.business.id,project.id %}'>{{ project }}</a></li>
     <li>
         {% if window.previous %}
-            <a href='{% url project_time_sheet proj_id=project.id,window_id=window.previous.id %}'>Previous Time Sheet</a>
+            <a href='{% url project_time_sheet project.id,window.previous.id %}'>Previous Time Sheet</a>
         {% else %}
             Previous Time Sheet
         {% endif %}
     </li>
     <li>
         {% if window.next %}
-            <a href='{% url project_time_sheet proj_id=project.id,window_id=window.next.id %}'>Next Time Sheet</a>
+            <a href='{% url project_time_sheet project.id,window.next.id %}'>Next Time Sheet</a>
         {% else %}
             Next Time Sheet
         {% endif %}

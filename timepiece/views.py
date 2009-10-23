@@ -6,25 +6,26 @@ from django.core.urlresolvers import reverse
 from django.http import HttpResponse, HttpResponseRedirect, Http404
 from django.contrib.auth.decorators import login_required, permission_required
 from django.contrib.sites.models import Site
-from django.db.models import Sum
+from django.db.models import Sum, Q
 from django.db import transaction
 
 from crm.decorators import render_with
 from crm import forms as crm_forms
 
-from timepiece.forms import ClockInForm, ClockOutForm, AddUpdateEntryForm, DateForm
+# from timepiece.forms import ClockInForm, ClockOutForm, AddUpdateEntryForm, DateForm
 from timepiece import models as timepiece 
 from timepiece.utils import determine_period
+from timepiece import forms as timepiece_forms
 
 
 @login_required
 def view_entries(request):
     if request.GET:
-        form = DateForm(request.GET)
+        form = timepiece_forms.DateForm(request.GET)
         if form.is_valid():
             from_date, to_date = form.save()
     else:
-        form = DateForm()
+        form = timepiece_forms.DateForm()
         from_date, to_date = None, None
     entries = timepiece.Entry.objects.order_by('-start_time')
     if from_date:
@@ -86,7 +87,7 @@ def clock_in(request):
 
     if request.method == 'POST':
         # populate the form with the posted values
-        form = ClockInForm(request.POST)
+        form = timepiece_forms.ClockInForm(request.POST)
 
         # validate the form data
         if form.is_valid():
@@ -114,7 +115,7 @@ def clock_in(request):
             request.user.message_set.create(message='Please correct the errors below.')
     else:
         # send back an empty form
-        form = ClockInForm()
+        form = timepiece_forms.ClockInForm()
 
     return render_to_response('timepiece/clock_in.html',
                               {'form': form},
@@ -145,7 +146,7 @@ def clock_out(request, entry_id):
 
     if request.method == 'POST':
         # populate the form with the posted data
-        form = ClockOutForm(request.POST)
+        form = timepiece_forms.ClockOutForm(request.POST)
 
         # validate the form data
         if form.is_valid():
@@ -162,7 +163,7 @@ def clock_out(request, entry_id):
             request.user.message_set.create(message="Invalid entry!")
     else:
         # send back an empty form
-        form = ClockOutForm()
+        form = timepiece_forms.ClockOutForm()
 
     return render_to_response('timepiece/clock_out.html',
                               {'form': form,
@@ -228,7 +229,7 @@ def update_entry(request, entry_id):
 
     if request.method == 'POST':
         # populate the form with the updated data
-        form = AddUpdateEntryForm(request.POST, instance=entry)
+        form = timepiece_forms.AddUpdateEntryForm(request.POST, instance=entry)
 
         # validate the form data
         if form.is_valid():
@@ -245,7 +246,7 @@ def update_entry(request, entry_id):
             request.user.message_set.create(message='Please fix the errors below.')
     else:
         # populate the form with the original entry information
-        form = AddUpdateEntryForm(instance=entry)
+        form = timepiece_forms.AddUpdateEntryForm(instance=entry)
 
     return render_to_response('timepiece/add_update_entry.html',
                               {'form': form,
@@ -300,7 +301,7 @@ def add_entry(request):
 
     if request.method == 'POST':
         # populate the form with the posted data
-        form = AddUpdateEntryForm(request.POST)
+        form = timepiece_forms.AddUpdateEntryForm(request.POST)
 
         # validate the data
         if form.is_valid():
@@ -320,7 +321,7 @@ def add_entry(request):
             request.user.message_set.create(message='Please correct the errors below')
     else:
         # send back an empty form
-        form = AddUpdateEntryForm()
+        form = timepiece_forms.AddUpdateEntryForm()
 
     return render_to_response('timepiece/add_update_entry.html',
                               {'form': form,
@@ -329,52 +330,63 @@ def add_entry(request):
                               context_instance=RequestContext(request))
 
 
+@render_with('timepiece/summary.html')
 def summary(request, username=None):
     if request.GET:
-        form = DateForm(request.GET)
+        form = timepiece_forms.DateForm(request.GET)
         if form.is_valid():
             from_date, to_date = form.save()
     else:
-        form = DateForm()
+        form = timepiece_forms.DateForm()
         from_date, to_date = None, None
-    entries = timepiece.Entry.objects.values('project__name').order_by('project__name')
+    entries = timepiece.Entry.objects.values(
+        'project__id',
+        'project__business__id',
+        'project__name',
+    ).order_by(
+        'project__id',
+        'project__business__id',
+        'project__name',
+    )
+    dates = Q()
     if from_date:
-        entries = entries.filter(start_time__gte=from_date)
+        dates &= Q(start_time__gte=from_date)
     if to_date:
-        entries = entries.filter(end_time__lte=to_date)
-    project_totals = entries.annotate(hours=Sum('hours'))
+        dates &= Q(end_time__lte=to_date)
+    project_totals = entries.filter(dates).annotate(hours=Sum('hours'))
+    total_hours = timepiece.Entry.objects.filter(dates).aggregate(
+        hours=Sum('hours')
+    )['hours']
     context = {
         'form': form,
         'project_totals': project_totals,
+        'total_hours': total_hours,
     }
-    return render_to_response(
-        'timepiece/summary.html',
-        context,
-        context_instance=RequestContext(request),
+    return context
+
+
+@render_with('timepiece/period/window.html')
+def project_time_sheet(request, project, window_id=None):
+    window = timepiece.BillingWindow.objects.select_related(
+        'period__project',
     )
-
-
-def project_time_sheet(request, proj_id, window_id=None):
-    try:
-        period = timepiece.RepeatPeriod.objects.select_related().get(
-            project__id=proj_id,
-        )
-    except timepiece.RepeatPeriod.DoesNotExist:
-        raise Http404
     if window_id:
-        window = period.get_window(window_id)
+        window = window.get(
+            pk=window_id,
+            period__active=True,
+            period__project=project,
+        )
     else:
-        window = period.get_latest_window()
+        window = window.filter(
+            period__active=True,
+            period__project=project,
+        ).order_by('-date')[0]
     context = {
-        'project': period.project,
-        'period': period,
+        'project': project,
+        'period': window.period,
         'window': window,
     }
-    return render_to_response(
-        'timepiece/period/window.html',
-        context,
-        context_instance=RequestContext(request),
-    )
+    return context
 
 
 @permission_required('timepiece.view_project')
@@ -413,6 +425,7 @@ def view_project(request, business, project):
     context = {
         'project': project,
         'add_contact_form': add_contact_form,
+        'repeat_period': project.get_repeat_period(),
     }
     try:
         from ledger.models import Exchange
@@ -456,15 +469,23 @@ def edit_project_relationship(request, business, project, user_id):
 @permission_required('timepiece.add_project')
 @permission_required('timepiece.change_project')
 @render_with('timepiece/project/create_edit.html')
-def create_edit_project(request, business=None, project=None):
+def create_edit_project(request, business, project):
     if request.POST:
-        project_form = crm_forms.ProjectForm(
+        project_form = timepiece_forms.ProjectForm(
             request.POST,
             business=business,
             instance=project,
         )
-        if project_form.is_valid():
+        repeat_period_form = timepiece_forms.RepeatPeriodForm(
+            request.POST,
+            instance=project.get_repeat_period(),
+            prefix='repeat',
+        )
+        if project_form.is_valid() and repeat_period_form.is_valid():
             project = project_form.save()
+            period = repeat_period_form.save(project=project)
+            
+            
             url_kwargs = {
                 'business_id': project.business.id,
                 'project_id': project.id,
@@ -473,14 +494,19 @@ def create_edit_project(request, business=None, project=None):
                 reverse('view_project', kwargs=url_kwargs)
             )
     else:
-        project_form = crm_forms.ProjectForm(
+        project_form = timepiece_forms.ProjectForm(
             business=business, 
             instance=project
+        )
+        repeat_period_form = timepiece_forms.RepeatPeriodForm(
+            instance=project.get_repeat_period(),
+            prefix='repeat',
         )
 
     context = {
         'business': business,
         'project': project,
         'project_form': project_form,
+        'repeat_period_form': repeat_period_form,
     }
     return context

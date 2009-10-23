@@ -146,3 +146,45 @@ class ProjectRelationshipForm(forms.ModelForm):
             choices=self.fields['types'].choices
         )
         self.fields['types'].help_text = ''
+
+
+class RepeatPeriodForm(forms.ModelForm):
+    class Meta:
+        model = timepiece.RepeatPeriod
+        fields = ('active', 'count', 'interval')
+
+    def __init__(self, *args, **kwargs):
+        super(RepeatPeriodForm, self).__init__(*args, **kwargs)
+        if not self.instance.id:
+            print 'hi'
+            self.fields['date'] = forms.DateField()
+            self.fieldOrder = ('active', 'count', 'interval', 'date')
+
+    def _clean_optional(self, name):
+        active = self.cleaned_data.get(name, False)
+        value = self.cleaned_data.get(name, '')
+        if active and not value:
+            raise forms.ValidationError('This field is required.')
+        return self.cleaned_data[name]
+    
+    def clean_count(self):
+        return self._clean_optional('count')
+    
+    def clean_interval(self):
+        return self._clean_optional('interval')
+        
+    def clean_date(self):
+        return self._clean_optional('date')
+    
+    def save(self, project):
+        period = super(RepeatPeriodForm, self).save(commit=False)
+        period.project = project
+        if not self.instance.id and period.active:
+            period.save()
+            period.billing_windows.create(
+                date=self.cleaned_data['date'],
+                end_date=self.cleaned_data['date'] + period.delta(),
+            )
+        elif self.instance.id:
+            period.save()
+        return period

@@ -78,7 +78,14 @@ class Project(models.Model):
 
     def trac_url(self):
         return settings.TRAC_URL % self.trac_environment
-
+    
+    def get_repeat_period(self):
+        if not hasattr(self, '_repeat_period'):
+            try:
+                self._repeat_period = self.billing_periods.all()[0]
+            except IndexError:
+                self._repeat_period = None
+        return self._repeat_period
 
 class ProjectRelationship(models.Model):
     types = models.ManyToManyField(
@@ -351,7 +358,11 @@ class RepeatPeriod(models.Model):
         ('month', 'Month(s)'),
         ('year', 'Year(s)'),
     )
-    project = models.ForeignKey(Project, unique=True)
+    project = models.ForeignKey(
+        Project,
+        unique=True,
+        related_name='billing_periods',
+    )
     count = models.PositiveSmallIntegerField(
         # null=True,
         # blank=True,
@@ -426,7 +437,9 @@ class BillingWindow(models.Model):
                 project=self.period.project,
                 start_time__gte=self.date,
                 end_time__lt=self.end_date,
-            ).select_related().order_by('start_time')
+            ).select_related(
+                'user',
+            ).order_by('start_time')
         return self._entries
     
     def total_hours(self):

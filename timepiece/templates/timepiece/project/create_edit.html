@@ -9,6 +9,32 @@
 	<table class='vertical'>
 		{{ project_form }}
 		<tr>
+			<td colspan='2'>
+				<h2>Billing Period</h2>
+			</td>
+		</tr>
+		<tr>
+		  <td colspan='2'>
+  			<table class="horizontal">
+  			{% if repeat_period_form.errors %}
+  				<tr>
+  					<td>{{ repeat_period_form.active.errors }}</td>
+  					<td>{{ repeat_period_form.count.errors }}</td>
+  					<td>{{ repeat_period_form.interval.errors }}</td>
+  				</tr>
+  			{% endif %}
+  				<tr>
+  					<td>{{ repeat_period_form.active }} <label for="id_repeat-active">repeat this {{ exchange_type|lower }} every</label></td>
+  					<td>{{ repeat_period_form.count }}</td>
+  					<td>{{ repeat_period_form.interval }}</td>
+  					{% if repeat_period_form.date %}
+   					    <td><label for="id_repeat-active">starting on&nbsp;</label>&nbsp;{{ repeat_period_form.date }}</td>
+					{% endif %}
+  				</tr>
+  			</table>
+		  </td>
+		</tr>
+		<tr>
 			<td>&nbsp;</td>
 			<td class='submit'>
 				<input type='button' value='Cancel' onclick='history.go(-1)' />
