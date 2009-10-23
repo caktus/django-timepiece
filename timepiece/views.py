@@ -19,58 +19,20 @@ from timepiece import forms as timepiece_forms
 
 
 @login_required
+@render_with('timepiece/entry/list.html')
 def view_entries(request):
-    if request.GET:
-        form = timepiece_forms.DateForm(request.GET)
-        if form.is_valid():
-            from_date, to_date = form.save()
-    else:
-        form = timepiece_forms.DateForm()
-        from_date, to_date = None, None
-    entries = timepiece.Entry.objects.order_by('-start_time')
-    if from_date:
-        entries = entries.filter(start_time__gte=from_date)
-    if to_date:
-        entries = entries.filter(end_time__lte=to_date)
-    entries = entries.filter(user=request.user)
+    two_weeks_ago = datetime.date.today() - datetime.timedelta(days=14)
+    entries = timepiece.Entry.objects.select_related(
+        'project__business',
+    ).filter(
+        user=request.user,
+        start_time__gte=two_weeks_ago,
+    ).order_by('-start_time')
     context = {
-        'form': form,
         'entries': entries,
     }
-    return render_to_response(
-        'timepiece/entry/list.html',
-        context,
-        context_instance=RequestContext(request),
-    )
-    
-    # 
-    # """
-    # Pull back a list of all entries for the current period for the current user
-    # """
-    # delta = int(delta)
-    # 
-    # if delta:
-    #     # we only go back in time, not forward :)
-    #     if delta < 0: raise Http404
-    # 
-    #     # we have a delta, so show previous entries according to the delta
-    #     entries = timepiece.Entry.objects.previous(delta, request.user)
-    #     next = delta - 1
-    #     has_next = True
-    # else:
-    #     # no delta, so just show the current entries
-    #     entries = timepiece.Entry.objects.current(request.user)
-    #     next = None
-    #     has_next = False
-    # 
-    # return render_to_response('timepiece/entry_list.html',
-    #                           {'entries': entries,
-    #                            'period': determine_period(delta=delta),
-    #                            'is_current': delta != 0,
-    #                            'next_period': next,
-    #                            'has_next': has_next,
-    #                            'previous_period': delta + 1},
-    #                           context_instance=RequestContext(request))
+    return context
+
 
 @permission_required('timepiece.can_clock_in')
 @transaction.commit_on_success

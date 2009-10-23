@@ -12,6 +12,8 @@
     <li><a href="{% url timepiece-summary %}">General Ledger</a></li>
 </ul>
 
+<h3>Past 2 Weeks</h3>
+
 <table>
     <tr>
         <th>Date</th>
@@ -23,11 +25,7 @@
     </tr>
     {% for entry in entries %}
     <tr>
-        <td>
-            {% ifchanged entry.start_time.weekday %}
-                {{ entry.start_time|date:"m/d/Y (D)" }}
-            {% endifchanged %}
-        </td>
+        <td>{{ entry.start_time|date:"m/d/Y (D)" }}</td>
         <td><a href='{% url view_project business_id=entry.project.business.id,project_id=entry.project.id %}'>{{ entry.project }}</a></td>
         <td>{{ entry.start_time|date:"P" }}</td>
         <td>
