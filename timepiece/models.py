@@ -287,20 +287,16 @@ class RepeatPeriod(models.Model):
             window = self.billing_windows.order_by('-date').select_related()[0]
         except IndexError:
             window = None
+        start_date = window.date
         if window:
             while window.date + self.delta() <= datetime.date.today():
                 window.id = None
                 window.date += self.delta()
                 window.end_date += self.delta()
                 window.save(force_insert=True)
-                windows.append(window)
-        else:
-            window = self.billing_windows.create(
-                date=datetime.date.today(),
-                end_date=datetime.date.today() + self.delta(),
-            )
-            windows.append(window)
-        return windows
+        return self.billing_windows.filter(
+            date__gt=start_date
+        ).order_by('date')
     
     def get_window(self, window_id):
         try:

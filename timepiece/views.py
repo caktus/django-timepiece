@@ -474,3 +474,26 @@ def create_edit_project(request, business, project):
         'repeat_period_form': repeat_period_form,
     }
     return context
+
+
+def update_billing_windows():
+    from django.conf import settings
+    
+    active_billing_periods = timepiece.RepeatPeriod.objects.filter(
+        active=True,
+    ).select_related(
+        'project'
+    )
+    windows = []
+    for period in active_billing_periods:
+        windows += period.update_billing_windows()
+        # windo
+        # for window in new_windows:
+        #     url = reverse(
+        #         'project_time_sheet',
+        #         args=(period.project.id, window.id),
+        #     )
+        #     urls.append(settings.APP_URL_BASE+url)
+    return windows
+
+    
