@@ -250,6 +250,19 @@ class Entry(models.Model):
 User.clocked_in = property(lambda user: user.timepiece_entries.filter(end_time__isnull=True).count() > 0)
 
 
+class RepeatPeriodManager(models.Manager):
+    def update_billing_windows(self):
+        active_billing_periods = self.filter(
+            active=True,
+        ).select_related(
+            'project'
+        )
+        windows = []
+        for period in active_billing_periods:
+            windows += ((period, period.update_billing_windows()),)
+        return windows
+
+
 class RepeatPeriod(models.Model):
     INTERVAL_CHOICES = (
         ('day', 'Day(s)'),
@@ -275,6 +288,8 @@ class RepeatPeriod(models.Model):
     )
     active = models.BooleanField(default=False)
     
+    objects = RepeatPeriodManager()
+    
     def __unicode__(self):
         return "%d %s for %s" % (self.count, self.get_interval_display(), self.project)
     
@@ -287,16 +302,18 @@ class RepeatPeriod(models.Model):
             window = self.billing_windows.order_by('-date').select_related()[0]
         except IndexError:
             window = None
-        start_date = window.date
         if window:
+            start_date = window.date
             while window.date + self.delta() <= datetime.date.today():
                 window.id = None
                 window.date += self.delta()
                 window.end_date += self.delta()
                 window.save(force_insert=True)
-        return self.billing_windows.filter(
-            date__gt=start_date
-        ).order_by('date')
+            return self.billing_windows.filter(
+                date__gt=start_date
+            ).order_by('date')
+        else:
+            return []
     
     def get_window(self, window_id):
         try:

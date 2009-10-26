@@ -9,8 +9,6 @@ from timepiece.tests.base import BaseTest
 
 from timepiece import models as timepiece
 
-from timepiece.views import update_billing_windows
-
 from dateutil import relativedelta
 
 
@@ -72,7 +70,8 @@ class BillingPeriodTest(BaseTest):
                     date=start_date,
                     end_date=start_date + p.delta(),
                 )
-                windows = update_billing_windows()
+                windows = \
+                    timepiece.RepeatPeriod.objects.update_billing_windows()
                 for prev, curr, next in previous_and_next(windows):
                     if curr and prev:
                         diff = \

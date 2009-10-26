@@ -5,14 +5,12 @@ from django.shortcuts import render_to_response, get_object_or_404
 from django.core.urlresolvers import reverse
 from django.http import HttpResponse, HttpResponseRedirect, Http404
 from django.contrib.auth.decorators import login_required, permission_required
-from django.contrib.sites.models import Site
 from django.db.models import Sum, Q
 from django.db import transaction
 
 from crm.decorators import render_with
 from crm import forms as crm_forms
 
-# from timepiece.forms import ClockInForm, ClockOutForm, AddUpdateEntryForm, DateForm
 from timepiece import models as timepiece 
 from timepiece.utils import determine_period
 from timepiece import forms as timepiece_forms
@@ -270,7 +268,6 @@ def add_entry(request):
             # the data are valid... save them
             entry = form.save(commit=False)
             entry.user = request.user
-            entry.site = Site.objects.get_current()
             entry.save()
 
             # create a message for the user
@@ -474,26 +471,3 @@ def create_edit_project(request, business, project):
         'repeat_period_form': repeat_period_form,
     }
     return context
-
-
-def update_billing_windows():
-    from django.conf import settings
-    
-    active_billing_periods = timepiece.RepeatPeriod.objects.filter(
-        active=True,
-    ).select_related(
-        'project'
-    )
-    windows = []
-    for period in active_billing_periods:
-        windows += period.update_billing_windows()
-        # windo
-        # for window in new_windows:
-        #     url = reverse(
-        #         'project_time_sheet',
-        #         args=(period.project.id, window.id),
-        #     )
-        #     urls.append(settings.APP_URL_BASE+url)
-    return windows
-
-    
