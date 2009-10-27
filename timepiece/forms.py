@@ -187,4 +187,5 @@ class RepeatPeriodForm(forms.ModelForm):
             )
         elif self.instance.id:
             period.save()
+        period.update_billing_windows()
         return period
