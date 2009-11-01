@@ -10,6 +10,7 @@ from django.db import transaction
 
 from crm.decorators import render_with
 from crm import forms as crm_forms
+from crm import models as crm
 
 from timepiece import models as timepiece 
 from timepiece.utils import determine_period
@@ -406,10 +407,16 @@ def view_project(request, business, project):
 @transaction.commit_on_success
 @render_with('timepiece/project/relationship.html')
 def edit_project_relationship(request, business, project, user_id):
-    user = get_object_or_404(crm.Contact, pk=user_id, projects=project)
-    rel = timepiece.ProjectRelationship.objects.get(project=project, contact=user)
+    try:
+        rel = project.project_relationships.get(contact__pk=user_id)
+    except timepiece.ProjectRelationship.DoesNotExist:
+        raise Http404
+    rel = timepiece.ProjectRelationship.objects.get(
+        project=project,
+        contact=rel.contact,
+    )
     if request.POST:
-        relationship_form = crm_forms.ProjectRelationshipForm(
+        relationship_form = timepiece_forms.ProjectRelationshipForm(
             request.POST,
             instance=rel,
         )
@@ -417,10 +424,11 @@ def edit_project_relationship(request, business, project, user_id):
             rel = relationship_form.save()
             return HttpResponseRedirect(request.REQUEST['next'])
     else:
-        relationship_form = crm_forms.ProjectRelationshipForm(instance=rel)
+        relationship_form = \
+            timepiece_forms.ProjectRelationshipForm(instance=rel)
 
     context = {
-        'user': user,
+        'user': rel.contact,
         'project': project,
         'relationship_form': relationship_form,
     }

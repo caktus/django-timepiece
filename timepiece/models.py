@@ -72,8 +72,14 @@ class ProjectRelationship(models.Model):
         related_name='project_relationships',
         blank=True,
     )
-    contact = models.ForeignKey(crm.Contact, limit_choices_to={'type': 'individual'})
-    project = models.ForeignKey(Project)
+    contact = models.ForeignKey(
+        crm.Contact,
+        limit_choices_to={'type': 'individual'},
+    )
+    project = models.ForeignKey(
+        Project,
+        related_name='project_relationships',
+    )
 
     class Meta:
         unique_together = ('contact', 'project')
