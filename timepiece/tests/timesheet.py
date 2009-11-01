@@ -56,6 +56,14 @@ def previous_and_next(some_iterable):
 
 
 class BillingPeriodTest(BaseTest):
+    def checkWindowBoundaries(self, windows):
+        for prev, curr, next in previous_and_next(windows):
+            if curr and prev:
+                diff = \
+                    relativedelta.relativedelta(curr.date, prev.date)
+                self.assertEqual(prev.date + diff, curr.date)
+                self.assertEqual(prev.end_date, curr.date)
+    
     def testGeneratedWindows(self):
         delta = relativedelta.relativedelta(days=random.randint(20, 100))
         start_date = datetime.datetime.today() - delta
@@ -70,12 +78,31 @@ class BillingPeriodTest(BaseTest):
                     date=start_date,
                     end_date=start_date + p.delta(),
                 )
-                windows = \
-                    timepiece.RepeatPeriod.objects.update_billing_windows()
-                for prev, curr, next in previous_and_next(windows):
-                    if curr and prev:
-                        diff = \
-                            relativedelta.relativedelta(curr.date, prev.date)
-                        self.assertEqual(prev.date + diff, curr.date)
-                        self.assertEqual(prev.end_date, curr.date)
+                p.update_billing_windows()
+                windows = p.billing_windows.order_by('date')
+                self.checkWindowBoundaries(windows)
                 p.delete()
+    
+    
+    def testChangedPeriod(self):
+        """
+        If an existing period is updated with a new delta, check that
+        no time windows are missed when the new delta is applied.
+        """
+        start_date = datetime.date(2009, 9, 4)
+        p = self.project.billing_periods.create(
+            count=2,
+            interval='week',
+            active=True,
+        )
+        window = p.billing_windows.create(
+            date=start_date,
+            end_date=start_date + p.delta(),
+        )
+        p.count = 1
+        p.interval = 'month'
+        p.save()
+        p.update_billing_windows()
+        windows = p.billing_windows.order_by('date')
+        self.checkWindowBoundaries(windows)
+        

@@ -251,7 +251,7 @@ User.clocked_in = property(lambda user: user.timepiece_entries.filter(end_time__
 
 
 class RepeatPeriodManager(models.Manager):
-    def update_billing_windows(self):
+    def update_billing_windows(self, date_boundary=None):
         active_billing_periods = self.filter(
             active=True,
         ).select_related(
@@ -259,7 +259,7 @@ class RepeatPeriodManager(models.Manager):
         )
         windows = []
         for period in active_billing_periods:
-            windows += ((period, period.update_billing_windows()),)
+            windows += ((period, period.update_billing_windows(date_boundary)),)
         return windows
 
 
@@ -276,13 +276,9 @@ class RepeatPeriod(models.Model):
         related_name='billing_periods',
     )
     count = models.PositiveSmallIntegerField(
-        # null=True,
-        # blank=True,
         choices=[(x,x) for x in range(1,32)],
     )
     interval = models.CharField(
-        # null=True,
-        # blank=True,
         max_length=10,
         choices=INTERVAL_CHOICES,
     )
@@ -296,7 +292,9 @@ class RepeatPeriod(models.Model):
     def delta(self):
         return relativedelta(**{str(self.interval + 's'): self.count})
     
-    def update_billing_windows(self):
+    def update_billing_windows(self, date_boundary=None):
+        if not date_boundary:
+            date_boundary = datetime.date.today()
         windows = []
         try:
             window = self.billing_windows.order_by('-date').select_related()[0]
@@ -304,9 +302,14 @@ class RepeatPeriod(models.Model):
             window = None
         if window:
             start_date = window.date
-            while window.date + self.delta() <= datetime.date.today():
+            while window.date + self.delta() <= date_boundary:
                 window.id = None
-                window.date += self.delta()
+                if window.date + self.delta() == window.end_date:
+                    # same delta as last time
+                    window.date += self.delta()
+                else:
+                    # delta changed, make sure to include extra time
+                    window.date = window.end_date
                 window.end_date += self.delta()
                 window.save(force_insert=True)
             return self.billing_windows.filter(
