@@ -21,7 +21,9 @@ class EntryAdmin(admin.ModelAdmin):
 
 class ProjectAdmin(admin.ModelAdmin):
     model = timepiece.Project
-    # list_display = ('name', 'is_active', 'log_count', 'total_hours')
+    raw_id_fields = ('interactions', 'business')
+    list_display = ('name', 'business', 'point_person', 'status', 'type',)
+    list_filter = ('type', 'status')
 
 
 class RepeatPeriodAdmin(admin.ModelAdmin):

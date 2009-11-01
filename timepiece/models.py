@@ -42,7 +42,7 @@ class Project(models.Model):
     status = models.CharField(max_length=15, choices=PROJECT_STATUSES)
     description = models.TextField()
     
-    interactions = models.ManyToManyField(crm.Interaction)
+    interactions = models.ManyToManyField(crm.Interaction, blank=True)
 
     class Meta:
         ordering = ('name', 'status', 'type',)
