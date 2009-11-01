@@ -6,44 +6,52 @@
 <h2>{% if not project %}Create Project{% if business %} for {{ business }}{% endif %}{% else %}Edit {{ project }}{% endif %}</h2>
 
 <form id="create-edit-project" action="" method="post" accept-charset="utf-8">
-	<table class='vertical'>
-		{{ project_form }}
-		<tr>
-			<td colspan='2'>
-				<h2>Billing Period</h2>
-			</td>
-		</tr>
-		<tr>
-		  <td colspan='2'>
-  			<table class="horizontal">
-  			{% if repeat_period_form.errors %}
-  				<tr>
-  					<td>{{ repeat_period_form.active.errors }}</td>
-  					<td>{{ repeat_period_form.count.errors }}</td>
-  					<td>{{ repeat_period_form.interval.errors }}</td>
-  					<td>{{ repeat_period_form.date.errors }}</td>
-  				</tr>
-  			{% endif %}
-  				<tr>
-  					<td>{{ repeat_period_form.active }} <label for="id_repeat-active">repeat this {{ exchange_type|lower }} every</label></td>
-  					<td>{{ repeat_period_form.count }}</td>
-  					<td>{{ repeat_period_form.interval }}</td>
-  					{% if repeat_period_form.date %}
-   					    <td><label for="id_repeat-active">starting on&nbsp;</label>&nbsp;{{ repeat_period_form.date }}</td>
-					{% endif %}
-  				</tr>
-  			</table>
-		  </td>
-		</tr>
-		<tr>
-			<td>&nbsp;</td>
-			<td class='submit'>
-				<input type='button' value='Cancel' onclick='history.go(-1)' />
-				&nbsp;
-				<input type='submit' name='submit' value='Save &rarr;' />
-			</td>
-		</tr>
-	</table>
+    <table class='vertical'>
+        {{ project_form }}
+        <tr>
+            <td colspan='2'>
+                <h2>Billing Period</h2>
+            </td>
+        </tr>
+        <tr>
+            <td colspan='2'>
+                {% if latest_window %}
+                    <strong>Latest billing window: {{ latest_window }}</strong>
+                {% endif %}
+                <table class="horizontal">
+                    {% if repeat_period_form.errors %}
+                        {% if repeat_period_form.non_field_errors %}
+                            <tr>
+                                <td colspan='4'>{{ repeat_period_form.non_field_errors }}<td>
+                            </tr>
+                        {% endif %}
+                        <tr>
+                            <td>{{ repeat_period_form.active.errors }}</td>
+                            <td>{{ repeat_period_form.count.errors }}</td>
+                            <td>{{ repeat_period_form.interval.errors }}</td>
+                            <td>{{ repeat_period_form.date.errors }}</td>
+                        </tr>
+                    {% endif %}
+                    <tr>
+                        <td>{{ repeat_period_form.active }} <label for="id_repeat-active">repeat this {{ exchange_type|lower }} every</label></td>
+                        <td>{{ repeat_period_form.count }}</td>
+                        <td>{{ repeat_period_form.interval }}</td>
+                        {% if repeat_period_form.date %}
+                            <td><label for="id_repeat-active">starting on&nbsp;</label>&nbsp;{{ repeat_period_form.date }}</td>
+                        {% endif %}
+                    </tr>
+                </table>
+            </td>
+        </tr>
+        <tr>
+            <td>&nbsp;</td>
+            <td class='submit'>
+                <input type='button' value='Cancel' onclick='history.go(-1)' />
+                &nbsp;
+                <input type='submit' name='submit' value='Save &rarr;' />
+            </td>
+        </tr>
+    </table>
 </form>
 
 {% endblock %}

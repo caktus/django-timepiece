@@ -155,13 +155,12 @@ class RepeatPeriodForm(forms.ModelForm):
 
     def __init__(self, *args, **kwargs):
         super(RepeatPeriodForm, self).__init__(*args, **kwargs)
-        if not self.instance.id:
-            print 'hi'
-            self.fields['date'] = forms.DateField()
-            self.fieldOrder = ('active', 'count', 'interval', 'date')
-
+        self.fields['count'].required = False
+        self.fields['interval'].required = False
+        self.fields['date'] = forms.DateField(required=False)
+    
     def _clean_optional(self, name):
-        active = self.cleaned_data.get(name, False)
+        active = self.cleaned_data.get('active', False)
         value = self.cleaned_data.get(name, '')
         if active and not value:
             raise forms.ValidationError('This field is required.')
@@ -174,7 +173,18 @@ class RepeatPeriodForm(forms.ModelForm):
         return self._clean_optional('interval')
         
     def clean_date(self):
-        return self._clean_optional('date')
+        date = self.cleaned_data.get('date', '')
+        if not self.instance.id and not date:
+            raise forms.ValidationError('Start date is required for new billing periods')
+        return date
+    
+    def clean(self):
+        date = self.cleaned_data.get('date', '')
+        if self.instance.id and date:
+            latest = self.instance.billing_windows.latest()
+            if self.cleaned_data['active'] and date < latest.end_date:
+                raise forms.ValidationError('New start date must be after %s' % latest.end_date)
+        return self.cleaned_data
     
     def save(self, project):
         period = super(RepeatPeriodForm, self).save(commit=False)
@@ -187,5 +197,13 @@ class RepeatPeriodForm(forms.ModelForm):
             )
         elif self.instance.id:
             period.save()
+            start_date = self.cleaned_data['date']
+            if period.active and start_date:
+                latest = period.billing_windows.latest()
+                if start_date > latest.end_date:
+                    period.billing_windows.create(
+                        date=latest.end_date,
+                        end_date=start_date + period.delta(),
+                    )
         period.update_billing_windows()
         return period

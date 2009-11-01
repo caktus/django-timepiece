@@ -8,6 +8,7 @@ from django.core.urlresolvers import reverse
 from timepiece.tests.base import BaseTest
 
 from timepiece import models as timepiece
+from timepiece import forms as timepiece_forms
 
 from dateutil import relativedelta
 
@@ -56,7 +57,7 @@ def previous_and_next(some_iterable):
 
 
 class BillingPeriodTest(BaseTest):
-    def checkWindowBoundaries(self, windows):
+    def assertWindowBoundaries(self, windows):
         for prev, curr, next in previous_and_next(windows):
             if curr and prev:
                 diff = \
@@ -80,7 +81,7 @@ class BillingPeriodTest(BaseTest):
                 )
                 p.update_billing_windows()
                 windows = p.billing_windows.order_by('date')
-                self.checkWindowBoundaries(windows)
+                self.assertWindowBoundaries(windows)
                 p.delete()
     
     
@@ -102,7 +103,34 @@ class BillingPeriodTest(BaseTest):
         p.count = 1
         p.interval = 'month'
         p.save()
-        p.update_billing_windows()
+        p.update_billing_windows(date_boundary=datetime.date(2009, 10, 17))
         windows = p.billing_windows.order_by('date')
-        self.checkWindowBoundaries(windows)
+        self.assertWindowBoundaries(windows)
+        self.assertEqual(len(windows), 2)
+    
+    def testChangedStartDate(self):
+        start_date = datetime.date(2009, 9, 4)
+        p = self.project.billing_periods.create(
+            count=2,
+            interval='week',
+            active=True,
+        )
+        window = p.billing_windows.create(
+            date=start_date,
+            end_date=start_date + p.delta(),
+        )
+        data = {
+            'repeat-active': 'on',
+            'repeat-count': '1',
+            'repeat-interval': 'month',
+            'repeat-date': '10/01/2009',
+        }
+        form = timepiece_forms.RepeatPeriodForm(
+            data,
+            instance=p,
+            prefix='repeat',
+        )
+        self.assertTrue(form.is_valid())
+        p = form.save(project=self.project)
+        self.assertWindowBoundaries(p.billing_windows.order_by('date'))
         

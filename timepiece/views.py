@@ -463,11 +463,18 @@ def create_edit_project(request, business, project):
             instance=project.get_repeat_period(),
             prefix='repeat',
         )
+    
+    period = project.get_repeat_period()
+    if period:
+        latest_window = period.billing_windows.latest()
+    else:
+        latest_window = None
 
     context = {
         'business': business,
         'project': project,
         'project_form': project_form,
         'repeat_period_form': repeat_period_form,
+        'latest_window': latest_window,
     }
     return context
