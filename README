@@ -8,23 +8,23 @@ This application will allow users of Django-powered websites keep track of the t
 
 ==Requirements==
 
-`django-pendulum` requires a modern version of the Django framework.  By modern I simply mean a version with the `newforms-admin` functionality.  If you're running on Django 1.0 or later, you're good.
+`django-timepiece` requires a modern version of the Django framework.  By modern I simply mean a version with the `newforms-admin` functionality.  If you're running on Django 1.0 or later, you're good.
 
-`django-pendulum` also relies upon the `django.contrib.admin`, `django.contrib.auth`, `django.contrib.contenttypes`, and `django.contrib.sites` frameworks.
+`django-timepiece` also relies upon the `django.contrib.admin`, `django.contrib.auth`, `django.contrib.contenttypes`, and `django.contrib.sites` frameworks.
 
 ==Installation==
 
-Download `django-pendulum` using *one* of the following methods:
+Download `django-timepiece` using *one* of the following methods:
 
 ===easy_install===
 
-You can download the package from the [http://pypi.python.org/pypi/django-pendulum/ CheeseShop] or use
+You can download the package from the [http://pypi.python.org/pypi/django-timepiece/ CheeseShop] or use
 
 {{{
-easy_install django-pendulum
+easy_install django-timepiece
 }}}
 
-to download and install `django-pendulum`.
+to download and install `django-timepiece`.
 
 ===Package Download===
 
@@ -35,7 +35,7 @@ Download the latest `.tar.gz` file from the downloads section and extract it som
 Execute the following command (or use the equivalent function in a GUI such as TortoiseSVN), and make sure you're checking Pendulum out somewhere on the `PYTHONPATH`.
 
 {{{
-svn co http://django-pendulum.googlecode.com/svn/trunk/pendulum pendulum
+svn co http://django-timepiece.googlecode.com/svn/trunk/timepiece timepiece
 }}}
 
 ===Verifying Installation===
@@ -43,7 +43,7 @@ svn co http://django-pendulum.googlecode.com/svn/trunk/pendulum pendulum
 The easiest way to ensure that you have successfully installed Pendulum is to execute a command such as:
 
 {{{
-python -c "import pendulum; print pendulum.get_version()"
+python -c "import timepiece; print timepiece.get_version()"
 }}}
 
 If that displays the version of Pendulum that you tried to install, you're good to roll.  If you see something other than that, you probably need to check your `PYTHONPATH` environment variable.
@@ -60,7 +60,7 @@ INSTALLED_APPS = (
     'django.contrib.sessions',
     'django.contrib.sites',
     ...
-    'pendulum',
+    'timepiece',
     ...
 )
 }}}
@@ -77,7 +77,7 @@ admin.autodiscover()
 
 urlpatterns = patterns('',
     (r'^admin/(.*)', admin.site.root),
-    (r'^pendulum/', include('pendulum.urls')),
+    (r'^timepiece/', include('timepiece.urls')),
 )
 }}}
 
@@ -108,7 +108,7 @@ An easy way to assign the same Pendulum permissions to several users is to creat
   * clock out
   * pause/unpause entries
 
-To use this command, simply run `./manage.py create_pendulum_group`.  You may run `./manage.py help create_pendulum_group` to learn about options for this command.
+To use this command, simply run `./manage.py create_timepiece_group`.  You may run `./manage.py help create_timepiece_group` to learn about options for this command.
 
 ==The Date Field==
 
@@ -116,7 +116,7 @@ I've been hesitant to do anything to make the date/time fields more user-friendl
 
 However, that seems to be the most common complaint amongst those who have played with the application--the lack of user-friendly date pickers.  As such, I have added some jQuery-based utilities to make choosing a date easier and more intuitive.
 
-By default, the application will expect to find the appropriate files in a directory called `pendulum` within your media directory.  All you should need to do is copy or symlink the `media` folder from the Pendulum application directory.  If you copy the `media` folder, rename it to `pendulum`.  If you create a symlink to Pendulum's `media` folder, make sure the symlink is called `pendulum`.  This directory should hold all of the necessary files to make the date picker work.
+By default, the application will expect to find the appropriate files in a directory called `timepiece` within your media directory.  All you should need to do is copy or symlink the `media` folder from the Pendulum application directory.  If you copy the `media` folder, rename it to `timepiece`.  If you create a symlink to Pendulum's `media` folder, make sure the symlink is called `timepiece`.  This directory should hold all of the necessary files to make the date picker work.
 
 In your `add_update_entry.html` template (if you override the default ones), make sure you have a code block such as:
 
@@ -128,7 +128,7 @@ $(document).ready(function () {
     $('input.vDateField').datepicker({
             dateFormat: $.datepicker.W3C,
             showOn: 'both',
-            buttonImage: '{{ MEDIA_URL }}pendulum/img/calendar.png',
+            buttonImage: '{{ MEDIA_URL }}timepiece/img/calendar.png',
             buttonImageOnly: true
         });
 });
@@ -144,10 +144,10 @@ I tried to put some utilities in the application to allow you to change the date
 
 {{{
 PENDULUM_DATE_MEDIA = {
-    'js': (settings.MEDIA_URL + 'pendulum/js/jquery.js',
-            settings.MEDIA_URL + 'pendulum/js/jquery.ui.js'),
+    'js': (settings.MEDIA_URL + 'timepiece/js/jquery.js',
+            settings.MEDIA_URL + 'timepiece/js/jquery.ui.js'),
     'css': {
-        'all': (settings.MEDIA_URL + 'pendulum/css/jquery-ui.css',)
+        'all': (settings.MEDIA_URL + 'timepiece/css/jquery-ui.css',)
     }
 }
 }}}
