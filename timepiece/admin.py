@@ -9,13 +9,15 @@ class EntryAdmin(admin.ModelAdmin):
     model = timepiece.Entry
     list_display = ('user',
                     'project',
+                    'location',
                     'activity',
                     'start_time',
                     'end_time',
                     'hours',
                     'is_closed',
                     'is_paused')
-    list_filter = ['project']
+    list_filter = ['user', 'project']
+    list_editable = ['location']
     search_fields = ['user', 'project', 'activity', 'comments']
     date_hierarchy = 'start_time'
 
