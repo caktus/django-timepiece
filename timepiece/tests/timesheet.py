@@ -27,7 +27,12 @@ class ClockInTest(BaseTest):
     
     def testClockIn(self):
         self.client.login(username='user', password='abc')
-        response = self.client.post(self.url, {'project': self.project.id})
+        data = {
+            'project': self.project.id,
+            'start_time_0': [u'11/02/2009'],
+            'start_time_1': [u'11:09:21'],
+        }
+        response = self.client.post(self.url, data)
         self.assertEqual(response.status_code, 302)
         self.assertEqual(timepiece.Entry.objects.count(), 1)
 

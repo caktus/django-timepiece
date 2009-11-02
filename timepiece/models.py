@@ -126,11 +126,12 @@ class Entry(models.Model):
         null=True,
         related_name='entries',
     )
+    location = models.CharField(max_length=255, blank=True)
     start_time = models.DateTimeField()
     end_time = models.DateTimeField(blank=True, null=True)
     seconds_paused = models.PositiveIntegerField(default=0)
     pause_time = models.DateTimeField(blank=True, null=True)
-    comments = models.TextField(blank=True, null=True)
+    comments = models.TextField(blank=True)
     date_updated = models.DateTimeField(auto_now=True)
     hours = models.DecimalField(max_digits=8, decimal_places=2, default=0)
     
@@ -207,7 +208,8 @@ class Entry(models.Model):
         if not self.is_closed:
             self.user = user
             self.project = project
-            self.start_time = datetime.datetime.now()
+            if not self.start_time:
+                self.start_time = datetime.datetime.now()
     
     def clock_out(self, activity, comments):
         """

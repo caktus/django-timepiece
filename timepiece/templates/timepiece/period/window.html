@@ -5,7 +5,7 @@
 {% block title %}Timepiece Entries{% endblock %}
 
 {% block content %}
-<h2>{{ project }} Time Sheet ({{ window.date|date:"N jS" }} &mdash; {{ window.end_date|date:"N jS" }})</h2>
+<h2>{{ project }} Time Sheet ({{ window.date|date:"N j" }} &mdash; {{ window.end_date|date:"N j" }})</h2>
 <ul class='header-actions-left'>
     <li><a href='{% url timepiece-entries %}'>Time Sheet</a></li>
     <li><a href='{% url view_project project.business.id,project.id %}'>{{ project }}</a></li>
@@ -29,7 +29,8 @@
     <table>
         <tr>
             <th>Date</th>
-            <th>User</th>
+            <th>Person</th>
+            <th>Location</th>
             <th>Clock In</th>
             <th>Clock Out</th>
             <th>Breaks</th>
@@ -39,6 +40,7 @@
         <tr>
             <td>{{ entry.start_time|date:"m/d/Y (D)" }}</td>
             <td>{{ entry.user.get_full_name }}</td>
+            <td>{{ entry.location }}</td>
             <td>{{ entry.start_time|date:"P" }}</td>
             <td>{{ entry.end_time|date:"P" }}</td>
             <td>{{ entry.seconds_paused|seconds_to_hours }}</td>
@@ -46,7 +48,7 @@
         </tr>
         {% endfor %}
         <tr>
-            <th colspan='5'>Total:</th>
+            <th colspan='6'>Total:</th>
             <td>{{ total|floatformat:2 }}</td>
         </tr>
     </table>

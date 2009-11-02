@@ -8,12 +8,28 @@ from timepiece import models as timepiece
 from crm import models as crm
 
 
-class ClockInForm(forms.Form):
-    """
-    Allow users to clock in
-    """
+class ClockInForm(forms.ModelForm):
+    class Meta:
+        model = timepiece.Entry
+        fields = ('project', 'start_time')
 
-    project = forms.ModelChoiceField(queryset=Project.objects.all())
+    def __init__(self, *args, **kwargs):
+        super(ClockInForm, self).__init__(*args, **kwargs)
+        self.fields['start_time'].required = False
+        self.fields['start_time'].widget = forms.SplitDateTimeWidget(
+            attrs={'class': 'timepiece-time'},
+            date_format='%m/%d/%Y',
+        )
+        self.fields['start_time'].initial = datetime.now()
+    
+    def save(self, user, commit=True):
+        entry = super(ClockInForm, self).save(commit=False)
+        entry.hours = 0
+        entry.clock_in(user, self.cleaned_data['project'])
+        if commit:
+            entry.save()
+        return entry
+
 
 class ClockOutForm(forms.Form):
     """

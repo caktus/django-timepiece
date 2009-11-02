@@ -22,6 +22,7 @@
         <th>Clock Out</th>
         <th>Breaks</th>
         <th>Hours</th>
+        <th>Location</th>
     </tr>
     {% for entry in entries %}
     <tr>
@@ -46,6 +47,7 @@
             {% endif %}
         </td>
         <td>{{ entry.hours }}</td>
+        <td>{{ entry.location }}</td>
         <td>
             <ul class='actions'>
                 <li><a href="{% url timepiece-update entry.id %}">Change</a></li>

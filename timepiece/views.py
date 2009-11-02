@@ -36,51 +36,32 @@ def view_entries(request):
 @permission_required('timepiece.can_clock_in')
 @transaction.commit_on_success
 def clock_in(request):
-    """
-    Let a user clock in.  If this method is called via a GET request, a blank
-    form is displayed to the user which has a single field where they choose
-    the project they will be working on.  If the method is invoked via a POST
-    request, the posted form data are validated.  If the data are valid, a new
-    log entry is created and the user is redirected to the entry list.  If the
-    data are invalid, the user is presented with the same form until they abort
-    or enter valid data.
-    """
-
-    if request.method == 'POST':
-        # populate the form with the posted values
+    if request.POST:
         form = timepiece_forms.ClockInForm(request.POST)
-
-        # validate the form data
         if form.is_valid():
-            # the form is valid, so create the new entry
-            e = timepiece.Entry()
-            e.clock_in(request.user, form.cleaned_data['project'])
-            e.hours = 0
-
             # if the user chose to pause any open entries, pause them
             if request.POST.get('pause_open', '0') == '1':
-                open = timepiece.Entry.objects.current().filter(user=request.user,
-                                                      end_time__isnull=True,
-                                                      pause_time__isnull=True)
-                for log in open:
+                open_entries = timepiece.Entry.objects.filter(
+                    user=request.user,
+                    end_time__isnull=True,
+                    pause_time__isnull=True,
+                )
+                for log in open_entries:
                     log.pause()
                     log.save()
-
-            e.save()
-
-            # create a message that may be displayed to the user
-            request.user.message_set.create(message='You have clocked into %s' % e.project)
+            entry = form.save(user=request.user)
+            request.user.message_set.create(message='You have clocked into %s' % entry.project)
             return HttpResponseRedirect(reverse('timepiece-entries'))
         else:
-            # show an error message
             request.user.message_set.create(message='Please correct the errors below.')
     else:
-        # send back an empty form
         form = timepiece_forms.ClockInForm()
+    return render_to_response(
+        'timepiece/clock_in.html',
+        {'form': form},
+        context_instance=RequestContext(request),
+    )
 
-    return render_to_response('timepiece/clock_in.html',
-                              {'form': form},
-                              context_instance=RequestContext(request))
 
 @permission_required('timepiece.can_clock_out')
 def clock_out(request, entry_id):
