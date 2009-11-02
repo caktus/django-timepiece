@@ -32,15 +32,17 @@ class AddUpdateEntryForm(forms.ModelForm):
     """
 
     start_time = forms.DateTimeField(
-        widget=forms.SplitDateTimeWidget(attrs={'class': 'timepiece-time'})
+        widget=forms.SplitDateTimeWidget(
+            attrs={'class': 'timepiece-time'},
+            date_format='%m/%d/%Y',
+        )
     )
     end_time = forms.DateTimeField(
-        widget=forms.SplitDateTimeWidget(attrs={'class': 'timepiece-time'})
+        widget=forms.SplitDateTimeWidget(
+            attrs={'class': 'timepiece-time'},
+            date_format='%m/%d/%Y',)
     )
-
-    #start_time = PendulumDateTimeField()
-    #end_time = PendulumDateTimeField()
-
+    
     class Meta:
         model = Entry
         exclude = ('user', 'pause_time', 'site', 'hours')
