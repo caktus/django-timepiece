@@ -1,3 +1,4 @@
+import csv
 import datetime
 
 from django.template import RequestContext
@@ -15,6 +16,7 @@ from crm import models as crm
 from timepiece import models as timepiece 
 from timepiece.utils import determine_period
 from timepiece import forms as timepiece_forms
+from timepiece.templatetags.timepiece_tags import seconds_to_hours
 
 
 @login_required
@@ -307,9 +309,11 @@ def summary(request, username=None):
     return context
 
 
-@login_required
-@render_with('timepiece/period/window.html')
-def project_time_sheet(request, project, window_id=None):
+def get_project_entries(project, window_id=None):
+    """
+    Returns a tuple of the billing window, corresponding entries, and total 
+    hours for the given project and window_id, if specified.
+    """
     window = timepiece.BillingWindow.objects.select_related('period')
     if window_id:
         window = window.get(
@@ -329,11 +333,14 @@ def project_time_sheet(request, project, window_id=None):
     ).select_related(
         'user',
     ).order_by('start_time')
-    total = timepiece.Entry.objects.filter(
-        project=project,
-        start_time__gte=window.date,
-        end_time__lt=window.end_date,
-    ).aggregate(hours=Sum('hours'))['hours']
+    total = entries.aggregate(hours=Sum('hours'))['hours']
+    return window, entries, total
+
+
+@permission_required('timepiece.view_project_time_sheet')
+@render_with('timepiece/period/window.html')
+def project_time_sheet(request, project, window_id=None):
+    window, entries, total = get_project_entries(project, window_id)
     context = {
         'project': project,
         'period': window.period,
@@ -342,6 +349,38 @@ def project_time_sheet(request, project, window_id=None):
         'total': total,
     }
     return context
+
+
+@permission_required('timepiece.export_project_time_sheet')
+def export_project_time_sheet(request, project, window_id=None):
+    window, entries, total = get_project_entries(project, window_id)
+    response = HttpResponse(mimetype='text/csv')
+    response['Content-Disposition'] = 'attachment; filename="%s Timesheet %s.csv"' % (project.name, window.end_date.strftime('%Y-%m-%d'))
+    writer = csv.writer(response)
+    writer.writerow((
+        'Date',
+        'Weekday',
+        'Developer',
+        'Location',
+        'Time In',
+        'Time Out',
+        'Breaks',
+        'Hours',
+    ))
+    for entry in entries:
+        data = [
+            entry.start_time.strftime('%x'),
+            entry.start_time.strftime('%A'),
+            entry.user.get_full_name(),
+            entry.location,
+            entry.start_time.strftime('%X'),
+            entry.end_time.strftime('%X'),
+            seconds_to_hours(entry.seconds_paused),
+            entry.hours,
+        ]
+        writer.writerow(data)
+    writer.writerow(('', '', '', '', '', '', 'Total:', total))
+    return response
 
 
 @permission_required('timepiece.view_project')

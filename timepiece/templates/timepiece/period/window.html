@@ -23,6 +23,9 @@
             Next Time Sheet
         {% endif %}
     </li>
+    {% if perms.timepiece.export_project_time_sheet %}
+    <li><a href='{% url export_project_time_sheet project.id,window.id %}'>Export as CSV</a></li>
+    {% endif %}
 </ul>
 
 {% if entries %}
@@ -31,8 +34,8 @@
             <th>Date</th>
             <th>Person</th>
             <th>Location</th>
-            <th>Clock In</th>
-            <th>Clock Out</th>
+            <th>Time In</th>
+            <th>Time Out</th>
             <th>Breaks</th>
             <th>Hours</th>
         </tr>

@@ -56,6 +56,8 @@ class Project(models.Model):
         permissions = (
             ('view_project', 'Can view project'),
             ('email_project_report', 'Can email project report'),
+            ('view_project_time_sheet', 'Can view project time sheet'),
+            ('export_project_time_sheet', 'Can export project time sheet'),
         )
 
     def __unicode__(self):

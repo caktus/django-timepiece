@@ -17,6 +17,11 @@ urlpatterns = patterns('',
         views.project_time_sheet,
         name='project_time_sheet',
     ),
+    url(
+        r'^project/(?P<project_id>\d+)/(?:(?P<window_id>\d+)/)?export/$',
+        views.export_project_time_sheet,
+        name='export_project_time_sheet',
+    ),
     
     url(r'^project/list/$', views.list_projects, name='list_projects'),
     url(
