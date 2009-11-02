@@ -14,9 +14,10 @@ from crm import models as crm
 
 class Project(models.Model):
     PROJECT_STATUSES = (
-        ('requested', 'Requested'),
-        ('accepted', 'Accepted'),
-        ('finished', 'Finished'),
+        ('incoming', 'Incoming'),
+        ('current', 'Current'),
+        ('complete', 'Complete'),
+        ('closed', 'Closed'),
     )
 
     PROJECT_TYPES = (
