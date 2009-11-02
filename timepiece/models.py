@@ -221,7 +221,8 @@ class Entry(models.Model):
             self.unpause()
 
         if not self.is_closed:
-            self.end_time = datetime.datetime.now()
+            if not self.end_time:
+                self.end_time = datetime.datetime.now()
             self.activity = activity
             self.comments = comments
 

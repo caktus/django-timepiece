@@ -67,52 +67,30 @@ def clock_in(request):
 
 @permission_required('timepiece.can_clock_out')
 def clock_out(request, entry_id):
-    """
-    Allow a user to clock out or close a log entry.  If this method is invoked
-    via a GET request, the user is presented with a form that allows them to
-    select an activity type and enter comments about their activities.  Only
-    the activity is required.  If this method is invoked via a POST request,
-    the form is validated.  If the form data are valid, the entry is closed and
-    the user is redirected to the entry list.  If the form data are invalid,
-    the user is presented with the form again until they abort or they enter
-    valid data.
-    """
-
-    try:
-        # grab the entry from the database
-        entry = timepiece.Entry.objects.get(pk=entry_id,
-                                  user=request.user,
-                                  end_time__isnull=True)
-    except:
-        # if this entry does not exist, redirect to the entry list
-        request.user.message_set.create(message='Invalid log entry.')
-        return HttpResponseRedirect(reverse('timepiece-entries'))
-
-    if request.method == 'POST':
-        # populate the form with the posted data
-        form = timepiece_forms.ClockOutForm(request.POST)
-
-        # validate the form data
+    entry = get_object_or_404(
+        timepiece.Entry,
+        pk=entry_id,
+        user=request.user,
+        end_time__isnull=True,
+    )
+    if request.POST:
+        form = timepiece_forms.ClockOutForm(request.POST, instance=entry)
         if form.is_valid():
-            # the form is valid, save the entry
-            entry.clock_out(form.cleaned_data['activity'],
-                            form.cleaned_data['comments'])
-            entry.save()
-
-            # create a message to show to the user
+            entry = form.save()
             request.user.message_set.create(message="You've been clocked out.")
             return HttpResponseRedirect(reverse('timepiece-entries'))
-        else:
-            # create an error message for the user
-            request.user.message_set.create(message="Invalid entry!")
     else:
-        # send back an empty form
-        form = timepiece_forms.ClockOutForm()
+        form = timepiece_forms.ClockOutForm(instance=entry)
+    context = {
+        'form': form,
+        'entry': entry,
+    }
+    return render_to_response(
+        'timepiece/clock_out.html',
+        context,
+        context_instance=RequestContext(request),
+    )
 
-    return render_to_response('timepiece/clock_out.html',
-                              {'form': form,
-                               'entry': entry},
-                              context_instance=RequestContext(request))
 
 @permission_required('timepiece.can_pause')
 def toggle_paused(request, entry_id):

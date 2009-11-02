@@ -49,7 +49,12 @@ class ClockOutTest(BaseTest):
             start_time=datetime.datetime.now() - datetime.timedelta(hours=5),
         )
         self.client.login(username='user', password='abc')
-        self.client.post(reverse('timepiece-clock-out', args=[entry.pk]))
+        now = datetime.datetime.now()
+        data = {
+            'end_time_0': now.strftime('%m/%d/%Y'),
+            'end_time_1': now.strftime('%H:%M:00'),
+        }
+        response = self.client.post(reverse('timepiece-clock-out', args=[entry.pk]), data, follow=True)
         entry = timepiece.Entry.objects.get(pk=entry.pk)
         self.assertTrue(entry.is_closed)
 

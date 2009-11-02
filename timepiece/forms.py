@@ -16,11 +16,11 @@ class ClockInForm(forms.ModelForm):
     def __init__(self, *args, **kwargs):
         super(ClockInForm, self).__init__(*args, **kwargs)
         self.fields['start_time'].required = False
+        self.fields['start_time'].initial = datetime.now()
         self.fields['start_time'].widget = forms.SplitDateTimeWidget(
             attrs={'class': 'timepiece-time'},
             date_format='%m/%d/%Y',
         )
-        self.fields['start_time'].initial = datetime.now()
     
     def save(self, user, commit=True):
         entry = super(ClockInForm, self).save(commit=False)
@@ -31,15 +31,33 @@ class ClockInForm(forms.ModelForm):
         return entry
 
 
-class ClockOutForm(forms.Form):
-    """
-    Allow users to clock out
-    """
+class ClockOutForm(forms.ModelForm):
+    class Meta:
+        model = timepiece.Entry
+        fields = ('activity', 'comments')
+        
+    def __init__(self, *args, **kwargs):
+        super(ClockOutForm, self).__init__(*args, **kwargs)
+        self.fields['end_time'] = forms.DateTimeField(
+            widget=forms.SplitDateTimeWidget(
+                attrs={'class': 'timepiece-time'},
+                date_format='%m/%d/%Y',
+            ),
+            initial=datetime.now(),
+        )
+        self.fields.keyOrder = ('activity', 'end_time', 'comments')
+        
+    def save(self, commit=True):
+        entry = super(ClockOutForm, self).save(commit=False)
+        entry.end_time = self.cleaned_data['end_time']
+        entry.clock_out(
+            self.cleaned_data['activity'],
+            self.cleaned_data['comments'],
+        )
+        if commit:
+            entry.save()
+        return entry
 
-    activity = forms.ModelChoiceField(queryset=Activity.objects.all(),
-                                      required=False)
-    comments = forms.CharField(widget=forms.Textarea,
-                               required=False)
 
 class AddUpdateEntryForm(forms.ModelForm):
     """
