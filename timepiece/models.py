@@ -252,6 +252,7 @@ class Entry(models.Model):
             ('can_clock_in', 'Can use Pendulum to clock in'),
             ('can_pause', 'Can pause and unpause log entries'),
             ('can_clock_out', 'Can use Pendulum to clock out'),
+            ('view_entry_summary', 'Can view entry summary page'),
         )
 
 # Add a utility method to the User class that will tell whether or not a

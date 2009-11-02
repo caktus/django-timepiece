@@ -273,7 +273,7 @@ def add_entry(request):
                               context_instance=RequestContext(request))
 
 
-@login_required
+@permission_required('timepiece.view_entry_summary')
 @render_with('timepiece/entry/summary.html')
 def summary(request, username=None):
     if request.GET:
