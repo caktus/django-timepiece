@@ -86,7 +86,7 @@ class ProjectRelationship(models.Model):
     def __unicode__(self):
         return "%s's relationship to %s" % (
             self.project.name,
-            self.user.get_full_name(),
+            self.contact.get_full_name(),
         )
 
 
