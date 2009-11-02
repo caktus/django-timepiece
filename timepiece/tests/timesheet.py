@@ -70,11 +70,13 @@ class BillingPeriodTest(BaseTest):
         start_date = datetime.datetime.today() - delta
         for count in range(1, 30):
             for period, _ in timepiece.RepeatPeriod.INTERVAL_CHOICES:
-                p = self.project.billing_periods.create(
-                    count=count,
-                    interval=period,
+                p = timepiece.RepeatPeriod.objects.create(
+                    count=2,
+                    interval='week',
                     active=True,
                 )
+                self.project.billing_period = p
+                self.project.save()
                 window = p.billing_windows.create(
                     date=start_date,
                     end_date=start_date + p.delta(),
@@ -91,11 +93,13 @@ class BillingPeriodTest(BaseTest):
         no time windows are missed when the new delta is applied.
         """
         start_date = datetime.date(2009, 9, 4)
-        p = self.project.billing_periods.create(
+        p = timepiece.RepeatPeriod.objects.create(
             count=2,
             interval='week',
             active=True,
         )
+        self.project.billing_period = p
+        self.project.save()
         window = p.billing_windows.create(
             date=start_date,
             end_date=start_date + p.delta(),
@@ -110,11 +114,13 @@ class BillingPeriodTest(BaseTest):
     
     def testChangedStartDate(self):
         start_date = datetime.date(2009, 9, 4)
-        p = self.project.billing_periods.create(
+        p = timepiece.RepeatPeriod.objects.create(
             count=2,
             interval='week',
             active=True,
         )
+        self.project.billing_period = p
+        self.project.save()
         window = p.billing_windows.create(
             date=start_date,
             end_date=start_date + p.delta(),
@@ -131,6 +137,6 @@ class BillingPeriodTest(BaseTest):
             prefix='repeat',
         )
         self.assertTrue(form.is_valid())
-        p = form.save(project=self.project)
+        p = form.save()
         self.assertWindowBoundaries(p.billing_windows.order_by('date'))
         

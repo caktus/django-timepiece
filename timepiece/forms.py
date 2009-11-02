@@ -186,9 +186,8 @@ class RepeatPeriodForm(forms.ModelForm):
                 raise forms.ValidationError('New start date must be after %s' % latest.end_date)
         return self.cleaned_data
     
-    def save(self, project):
+    def save(self):
         period = super(RepeatPeriodForm, self).save(commit=False)
-        period.project = project
         if not self.instance.id and period.active:
             period.save()
             period.billing_windows.create(

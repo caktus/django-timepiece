@@ -329,24 +329,36 @@ def summary(request, username=None):
 @login_required
 @render_with('timepiece/period/window.html')
 def project_time_sheet(request, project, window_id=None):
-    window = timepiece.BillingWindow.objects.select_related(
-        'period__project',
-    )
+    window = timepiece.BillingWindow.objects.select_related('period')
     if window_id:
         window = window.get(
             pk=window_id,
             period__active=True,
-            period__project=project,
+            period=project.billing_period,
         )
     else:
         window = window.filter(
             period__active=True,
-            period__project=project,
+            period=project.billing_period,
         ).order_by('-date')[0]
+    entries = timepiece.Entry.objects.filter(
+        project=project,
+        start_time__gte=window.date,
+        end_time__lt=window.end_date,
+    ).select_related(
+        'user',
+    ).order_by('start_time')
+    total = timepiece.Entry.objects.filter(
+        project=project,
+        start_time__gte=window.date,
+        end_time__lt=window.end_date,
+    ).aggregate(hours=Sum('hours'))['hours']
     context = {
         'project': project,
         'period': window.period,
         'window': window,
+        'entries': entries,
+        'total': total,
     }
     return context
 
@@ -387,7 +399,7 @@ def view_project(request, business, project):
     context = {
         'project': project,
         'add_contact_form': add_contact_form,
-        'repeat_period': project.get_repeat_period(),
+        'repeat_period': project.billing_period,
     }
     try:
         from ledger.models import Exchange
@@ -447,20 +459,16 @@ def create_edit_project(request, business, project):
         )
         repeat_period_form = timepiece_forms.RepeatPeriodForm(
             request.POST,
-            instance=project.get_repeat_period(),
+            instance=project.billing_period,
             prefix='repeat',
         )
         if project_form.is_valid() and repeat_period_form.is_valid():
+            period = repeat_period_form.save()
             project = project_form.save()
-            period = repeat_period_form.save(project=project)
-            
-            
-            url_kwargs = {
-                'business_id': project.business.id,
-                'project_id': project.id,
-            }
+            project.billing_period = period
+            project.save()
             return HttpResponseRedirect(
-                reverse('view_project', kwargs=url_kwargs)
+                reverse('view_project', args=(business.id, project.id))
             )
     else:
         project_form = timepiece_forms.ProjectForm(
@@ -468,13 +476,12 @@ def create_edit_project(request, business, project):
             instance=project
         )
         repeat_period_form = timepiece_forms.RepeatPeriodForm(
-            instance=project.get_repeat_period(),
+            instance=project.billing_period,
             prefix='repeat',
         )
     
-    period = project.get_repeat_period()
-    if period:
-        latest_window = period.billing_windows.latest()
+    if project.billing_period:
+        latest_window = project.billing_period.billing_windows.latest()
     else:
         latest_window = None
 

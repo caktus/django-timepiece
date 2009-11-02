@@ -25,7 +25,7 @@
     </li>
 </ul>
 
-{% if window.get_entries %}
+{% if entries %}
     <table>
         <tr>
             <th>Date</th>
@@ -35,7 +35,7 @@
             <th>Breaks</th>
             <th>Hours</th>
         </tr>
-        {% for entry in window.get_entries %}
+        {% for entry in entries %}
         <tr>
             <td>{{ entry.start_time|date:"m/d/Y (D)" }}</td>
             <td>{{ entry.user.get_full_name }}</td>
@@ -47,7 +47,7 @@
         {% endfor %}
         <tr>
             <th colspan='5'>Total:</th>
-            <td>{{ window.total_hours|floatformat:2 }}</td>
+            <td>{{ total|floatformat:2 }}</td>
         </tr>
     </table>
 {% else %}

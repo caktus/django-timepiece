@@ -43,7 +43,14 @@ class Project(models.Model):
     description = models.TextField()
     
     interactions = models.ManyToManyField(crm.Interaction, blank=True)
-
+    
+    billing_period = models.ForeignKey(
+        'RepeatPeriod',
+        null=True,
+        blank=True,
+        related_name='projects',
+    )
+    
     class Meta:
         ordering = ('name', 'status', 'type',)
         permissions = (
@@ -56,14 +63,6 @@ class Project(models.Model):
 
     def trac_url(self):
         return settings.TRAC_URL % self.trac_environment
-    
-    def get_repeat_period(self):
-        if not hasattr(self, '_repeat_period'):
-            try:
-                self._repeat_period = self.billing_periods.all()[0]
-            except IndexError:
-                self._repeat_period = None
-        return self._repeat_period
 
 
 class ProjectRelationship(models.Model):
@@ -276,11 +275,6 @@ class RepeatPeriod(models.Model):
         ('month', 'Month(s)'),
         ('year', 'Year(s)'),
     )
-    project = models.ForeignKey(
-        Project,
-        unique=True,
-        related_name='billing_periods',
-    )
     count = models.PositiveSmallIntegerField(
         choices=[(x,x) for x in range(1,32)],
     )
@@ -293,7 +287,7 @@ class RepeatPeriod(models.Model):
     objects = RepeatPeriodManager()
     
     def __unicode__(self):
-        return "%d %s for %s" % (self.count, self.get_interval_display(), self.project)
+        return "%d %s" % (self.count, self.get_interval_display())
     
     def delta(self):
         return relativedelta(**{str(self.interval + 's'): self.count})
@@ -323,22 +317,6 @@ class RepeatPeriod(models.Model):
             ).order_by('date')
         else:
             return []
-    
-    def get_window(self, window_id):
-        try:
-            window = self.billing_windows.select_related().get(pk=window_id)
-        except BillingWindow.DoesNotExist:
-            window = None
-        return window
-    
-    def get_latest_window(self):
-        try:
-             window = self.billing_windows.select_related().latest()
-        except BillingWindow.DoesNotExist:
-            window = None
-        if not window or window.date + window.period.delta() <= datetime.date.today():
-            window = self.update_billing_windows()[-1]
-        return window
 
 
 class BillingWindow(models.Model):
@@ -351,24 +329,6 @@ class BillingWindow(models.Model):
     
     def __unicode__(self):
         return "%s through %s" % (self.date, self.end_date)
-    
-    def get_entries(self):
-        if not hasattr(self, '_entries'):
-            self._entries = Entry.objects.filter(
-                project=self.period.project,
-                start_time__gte=self.date,
-                end_time__lt=self.end_date,
-            ).select_related(
-                'user',
-            ).order_by('start_time')
-        return self._entries
-    
-    def total_hours(self):
-        return Entry.objects.filter(
-            project=self.period.project,
-            start_time__gte=self.date,
-            end_time__lt=self.end_date,
-        ).aggregate(hours=models.Sum('hours'))['hours']
     
     def next(self):
         if not hasattr(self, '_next'):

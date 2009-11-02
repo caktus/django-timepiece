@@ -6,3 +6,7 @@ COMMIT;
 BEGIN;
 ALTER TABLE timepiece_entry ALTER hours SET NOT NULL;
 COMMIT;
+
+BEGIN;
+ALTER TABLE timepiece_project ADD CONSTRAINT timepiece_project_repeat_period_id_fkey FOREIGN KEY (billing_period_id) REFERENCES "timepiece_repeatperiod" ("id") DEFERRABLE INITIALLY DEFERRED;
+COMMIT;

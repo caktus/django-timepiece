@@ -27,7 +27,7 @@ class ProjectAdmin(admin.ModelAdmin):
 
 
 class RepeatPeriodAdmin(admin.ModelAdmin):
-    list_display = ('project', 'count', 'interval')
+    list_display = ('count', 'interval')
     list_filter = ('interval',)
 admin.site.register(timepiece.RepeatPeriod, RepeatPeriodAdmin)
 
