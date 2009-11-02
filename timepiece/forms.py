@@ -46,7 +46,7 @@ class ClockOutForm(forms.ModelForm):
             initial=datetime.now(),
         )
         self.fields.keyOrder = ('activity', 'end_time', 'comments')
-        
+    
     def save(self, commit=True):
         entry = super(ClockOutForm, self).save(commit=False)
         entry.end_time = self.cleaned_data['end_time']
