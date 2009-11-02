@@ -81,16 +81,10 @@ class AddUpdateEntryForm(forms.ModelForm):
         except:
             raise forms.ValidationError('Please enter an end time.')
 
-        if end > datetime.now():
-            raise forms.ValidationError('You cannot clock out in the future!')
-
         if start >= end:
             raise forms.ValidationError('The entry must start before it ends!')
 
         return end
-
-    #def clean(self):
-    #    print self.cleaned_data
 
 
 class DateForm(forms.Form):
