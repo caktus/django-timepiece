@@ -16,4 +16,6 @@ COMMIT;
 BEGIN;
 ALTER TABLE timepiece_project ALTER COLUMN "type_id" SET NOT NULL;
 ALTER TABLE timepiece_project ALTER COLUMN "status_id" SET NOT NULL;
+ALTER TABLE timepiece_project DROP COLUMN "type";
+ALTER TABLE timepiece_project DROP COLUMN "status";
 COMMIT;
