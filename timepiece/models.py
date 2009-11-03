@@ -11,36 +11,48 @@ from dateutil.relativedelta import relativedelta
 
 from crm import models as crm
 
+class Attribute(models.Model):
+    ATTRIBUTE_TYPES = (
+        ('project-type', 'Project Type'),
+        ('project-status', 'Project Status'),
+    )
+    SORT_ORDER_CHOICES = [(x,x) for x in xrange(-20,21)]
+    type = models.CharField(max_length=32, choices=ATTRIBUTE_TYPES)
+    label = models.CharField(max_length=255)
+    sort_order = models.SmallIntegerField(
+        null=True, 
+        blank=True, 
+        choices=SORT_ORDER_CHOICES,
+    )
+    
+    class Meta:
+        unique_together = ('type', 'label')
+
 
 class Project(models.Model):
-    PROJECT_STATUSES = (
-        ('incoming', 'Incoming'),
-        ('current', 'Current'),
-        ('complete', 'Complete'),
-        ('closed', 'Closed'),
-    )
-
-    PROJECT_TYPES = (
-        ('consultation', 'Consultation'),
-        ('software', 'Software Project'),
-    )
-
     name = models.CharField(max_length = 255)
-    trac_environment = models.CharField(max_length = 255, blank=True, null=True)
+    trac_environment = models.CharField(max_length=255, blank=True, null=True)
     business = models.ForeignKey(
         crm.Contact, 
         related_name='business_projects', 
         limit_choices_to={'type': 'business'},
     )
-    point_person = models.ForeignKey(User, limit_choices_to= {'is_staff':True})
+    point_person = models.ForeignKey(User, limit_choices_to={'is_staff': True})
     contacts = models.ManyToManyField(
         crm.Contact,
         related_name='contact_projects',
         through='ProjectRelationship',
     )
-
-    type = models.CharField(max_length=15, choices=PROJECT_TYPES)
-    status = models.CharField(max_length=15, choices=PROJECT_STATUSES)
+    type = models.ForeignKey(
+        Attribute, 
+        limit_choices_to={'type': 'project-type'},
+        related_name='projects_with_type',
+    )
+    status = models.ForeignKey(
+        Attribute, 
+        limit_choices_to={'type': 'project-status'},
+        related_name='projects_with_status',
+    )
     description = models.TextField()
     
     interactions = models.ManyToManyField(crm.Interaction, blank=True)

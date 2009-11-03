@@ -4,6 +4,8 @@ from timepiece import models as timepiece
 class ActivityAdmin(admin.ModelAdmin):
     model = timepiece.Activity
     list_display = ('code', 'name')
+admin.site.register(timepiece.Activity, ActivityAdmin)
+
 
 class EntryAdmin(admin.ModelAdmin):
     model = timepiece.Entry
@@ -17,15 +19,25 @@ class EntryAdmin(admin.ModelAdmin):
                     'is_closed',
                     'is_paused')
     list_filter = ['user', 'project']
-    list_editable = ['location']
     search_fields = ['user', 'project', 'activity', 'comments']
     date_hierarchy = 'start_time'
+admin.site.register(timepiece.Entry, EntryAdmin)
+
+
+class AttributeAdmin(admin.ModelAdmin):
+    search_fields = ('label', 'type')
+    list_display = ('label', 'type')
+    list_filter = ('type',)
+    ordering = ('type', 'sort_order',) # Django honors only first field
+admin.site.register(timepiece.Attribute, AttributeAdmin)
+
 
 class ProjectAdmin(admin.ModelAdmin):
     model = timepiece.Project
     raw_id_fields = ('interactions', 'business')
     list_display = ('name', 'business', 'point_person', 'status', 'type',)
     list_filter = ('type', 'status')
+admin.site.register(timepiece.Project, ProjectAdmin)
 
 
 class RepeatPeriodAdmin(admin.ModelAdmin):
@@ -40,6 +52,3 @@ class BillingWindowAdmin(admin.ModelAdmin):
 admin.site.register(timepiece.BillingWindow, BillingWindowAdmin)
 
 
-admin.site.register(timepiece.Activity, ActivityAdmin)
-admin.site.register(timepiece.Entry, EntryAdmin)
-admin.site.register(timepiece.Project, ProjectAdmin)
