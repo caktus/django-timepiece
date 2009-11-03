@@ -28,6 +28,9 @@ class Attribute(models.Model):
     class Meta:
         unique_together = ('type', 'label')
 
+    def __unicode__(self):
+        return self.label
+
 
 class Project(models.Model):
     name = models.CharField(max_length = 255)
