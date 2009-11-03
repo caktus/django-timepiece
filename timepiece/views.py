@@ -448,7 +448,11 @@ def edit_project_relationship(request, business, project, user_id):
 @permission_required('timepiece.add_project')
 @permission_required('timepiece.change_project')
 @render_with('timepiece/project/create_edit.html')
-def create_edit_project(request, business, project):
+def create_edit_project(request, business, project=None):
+    if project:
+        billing_period = project.billing_period
+    else:
+        billing_period = None
     if request.POST:
         project_form = timepiece_forms.ProjectForm(
             request.POST,
@@ -457,7 +461,7 @@ def create_edit_project(request, business, project):
         )
         repeat_period_form = timepiece_forms.RepeatPeriodForm(
             request.POST,
-            instance=project.billing_period,
+            instance=billing_period,
             prefix='repeat',
         )
         if project_form.is_valid() and repeat_period_form.is_valid():
@@ -474,15 +478,15 @@ def create_edit_project(request, business, project):
             instance=project
         )
         repeat_period_form = timepiece_forms.RepeatPeriodForm(
-            instance=project.billing_period,
+            instance=billing_period,
             prefix='repeat',
         )
     
-    if project.billing_period:
+    if billing_period:
         latest_window = project.billing_period.billing_windows.latest()
     else:
         latest_window = None
-
+    
     context = {
         'business': business,
         'project': project,

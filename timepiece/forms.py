@@ -203,8 +203,9 @@ class RepeatPeriodForm(forms.ModelForm):
         return self._clean_optional('interval')
         
     def clean_date(self):
+        active = self.cleaned_data.get('active', False)
         date = self.cleaned_data.get('date', '')
-        if not self.instance.id and not date:
+        if active and not self.instance.id and not date:
             raise forms.ValidationError('Start date is required for new billing periods')
         return date
     

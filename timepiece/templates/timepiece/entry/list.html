@@ -9,7 +9,9 @@
 <ul class='header-actions-left'>
     <li><a href="{% url timepiece-clock-in %}">Clock In</a></li>
     <li><a href="{% url timepiece-add %}">Add Entry</a></li>
-    <li><a href="{% url timepiece-summary %}">General Ledger</a></li>
+    {% if perms.timepiece.view_entry_summary %}
+        <li><a href="{% url timepiece-summary %}">General Ledger</a></li>
+    {% endif %}
 </ul>
 
 <h3>Past 2 Weeks</h3>
@@ -54,6 +56,10 @@
                 <li><a href="{% url timepiece-delete entry.id %}">Remove</a></li>
             </ul>
         </td>
+    </tr>
+    {% empty %}
+    <tr>
+        <td colspan='7'>You have no time logged for this period.</td>
     </tr>
     {% endfor %}
 </table>
