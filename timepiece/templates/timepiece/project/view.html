@@ -9,35 +9,68 @@
 {% if perms.timepiece.change_project %}
 	<li><a href='{% url edit_project business_id=project.business.id,project_id=project.id %}'>Edit project</a></li>
 {% endif %}
-	<li><a href='{% url view_business business_id=project.business.id %}'>Return to {{ project.business.name }}</a></li>
-    {% if repeat_period %}
-        <li><a href='{% url project_time_sheet project.id %}'>Project Time Sheet</a></li>
-    {% endif %}
+{% if perms.crm.view_businesses %}
+    <li><a href='{% url view_business business_id=project.business.id %}'>Return to {{ project.business.name }}</a></li>
+{% endif %}
+{% if repeat_period and perms.timepiece.view_project_time_sheet %}
+    <li><a href='{% url project_time_sheet project.id %}'>Project Time Sheet</a></li>
+{% endif %}
 </ul>
 
 <div id='sidebar'>
-	<h3>Contacts</h3>
-	<ul class='people'>
-	{% ifnotequal project.contacts.count 0 %}
-	{% for contact in project.contacts.select_related.all %}
-		<li>
-			<a href='{% url view_person person_id=contact.id %}'>{{ contact.get_full_name }}</a>
-			<a title="Edit {{ contact.get_full_name }}'s relationship to {{ project }}" href='{% url edit_project_relationship business_id=project.business.id,project_id=project.id,user_id=contact.id %}?next={% url view_project business_id=project.business.id,project_id=project.id %}'><img alt="Edit {{ contact.get_full_name }}'s relationship to {{ project }}" src='{{ FAMFAMFAM_URL }}pencil.png' /></a>
-			<a title='Remove {{ contact.get_full_name }}' href='{% url associate_contact business_id=project.business.id,project_id=project.id,user_id=contact.id,action="remove" %}?next={% url view_project business_id=project.business.id,project_id=project.id %}'><img alt='Remove {{ contact.get_full_name }}' src='{{ FAMFAMFAM_URL }}/delete.png' /></a>
-		</li>
-	{% endfor %}
-	{% endifnotequal %}
-	</ul>
-	<form id="add-contact" action='{% url associate_contact business_id=project.business.id,project_id=project.id,action="add" %}?next={% url view_project business_id=project.business.id,project_id=project.id %}' method="post" accept-charset="utf-8">
-		<div class="field-wrapper">
-		    {{ add_contact_form }}
-			<input type="submit" name="submit" value="Add" id="submit" />
-		</div>
-	</form>
+    <h3>Contacts</h3>
+    <ul class='people'>
+    {% ifnotequal project.contacts.count 0 %}
+    {% for contact in project.contacts.select_related.all %}
+        <li>
+            {% if perms.crm.view_contact %}
+                <a href='{% url view_person person_id=contact.id %}'>{{ contact.get_full_name }}</a>
+            {% else %}
+                {{ contact.get_full_name }}
+            {% endif %}
+            {% if perms.timepiece.change_projectrelationship %}
+                <a title="Edit {{ contact.get_full_name }}'s relationship to {{ project }}" href='{% url edit_project_relationship business_id=project.business.id,project_id=project.id,user_id=contact.id %}?next={% url view_project business_id=project.business.id,project_id=project.id %}'><img alt="Edit {{ contact.get_full_name }}'s relationship to {{ project }}" src='{{ FAMFAMFAM_URL }}pencil.png' /></a>
+            {% endif %}
+            {% if perms.timepiece.delete_projectrelationship %}
+                <a title='Remove {{ contact.get_full_name }}' href='{% url associate_contact business_id=project.business.id,project_id=project.id,user_id=contact.id,action="remove" %}?next={% url view_project business_id=project.business.id,project_id=project.id %}'><img alt='Remove {{ contact.get_full_name }}' src='{{ FAMFAMFAM_URL }}/delete.png' /></a>
+            {% endif %}
+        </li>
+    {% endfor %}
+    {% endifnotequal %}
+    </ul>
+    {% if perms.timepiece.add_projectrelationship %}
+    <form id="add-contact" action='{% url associate_contact business_id=project.business.id,project_id=project.id,action="add" %}?next={% url view_project business_id=project.business.id,project_id=project.id %}' method="post" accept-charset="utf-8">
+        <div class="field-wrapper">
+            {{ add_contact_form }}
+            <input type="submit" name="submit" value="Add" id="submit" />
+        </div>
+    </form>
+    {% endif %}
 </div>
 
-{% if project.notes %}
-	<p>{{ project.notes }}</p>
-{% endif %}
+<table class='vertical'>
+    <tr>
+        <th>Type:</th>
+        <td>{{ project.get_type_display }}</td>
+    </tr>
+    <tr>
+        <th>Status:</th>
+        <td>{{ project.get_status_display }}</td>
+    </tr>
+    <tr>
+        <th>Point Person:</th>
+        <td>{{ project.point_person }}</td>
+    </tr>
+    {% if project.billing_period %}
+        <tr>
+            <th>Billing Period:</th>
+            <td>{{ project.billing_period }} - Latest billing window: {{ project.billing_period.billing_windows.latest }}</td>
+        </tr>
+    {% endif %}
+    <tr>
+        <th>Description:</th>
+        <td>{{ project.description|textile }}</td>
+    </tr>
+</table>
 
 {% endblock %}
