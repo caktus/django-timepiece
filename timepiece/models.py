@@ -27,7 +27,8 @@ class Attribute(models.Model):
     
     class Meta:
         unique_together = ('type', 'label')
-
+        ordering = ('sort_order',)
+    
     def __unicode__(self):
         return self.label
 
