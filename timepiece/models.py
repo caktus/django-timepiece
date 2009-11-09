@@ -194,12 +194,11 @@ class Entry(models.Model):
         if not self.is_paused:
             self.pause_time = datetime.datetime.now()
     
-    def unpause(self):
-        """
-        If this entry is paused, unpause it
-        """
+    def unpause(self, date=None):
         if self.is_paused:
-            delta = datetime.datetime.now() - self.pause_time
+            if not date:
+                date = datetime.datetime.now()
+            delta = date - self.pause_time
             self.seconds_paused += delta.seconds
             self.pause_time = None
     
@@ -229,19 +228,6 @@ class Entry(models.Model):
             self.project = project
             if not self.start_time:
                 self.start_time = datetime.datetime.now()
-    
-    def clock_out(self, activity, comments):
-        """
-        Save some vital pieces of information about this entry upon closing
-        """
-        if self.is_paused:
-            self.unpause()
-
-        if not self.is_closed:
-            if not self.end_time:
-                self.end_time = datetime.datetime.now()
-            self.activity = activity
-            self.comments = comments
 
     def __delete_key(self):
         """

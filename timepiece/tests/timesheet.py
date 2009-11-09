@@ -57,6 +57,44 @@ class ClockOutTest(BaseTest):
         response = self.client.post(reverse('timepiece-clock-out', args=[entry.pk]), data, follow=True)
         entry = timepiece.Entry.objects.get(pk=entry.pk)
         self.assertTrue(entry.is_closed)
+    
+    def testClockOutWithSecondsPaused(self):
+        now = datetime.datetime.now()
+        entry = timepiece.Entry.objects.create(
+            user=self.user,
+            project=self.project,
+            activity=self.activity,
+            start_time=now - datetime.timedelta(hours=5),
+            seconds_paused=3600, # 1 hour
+        )
+        end_time = now - datetime.timedelta(hours=1)
+        data = {
+            'end_time_0': end_time.strftime('%m/%d/%Y'),
+            'end_time_1': end_time.strftime('%H:%M:%S'),
+        }
+        form = timepiece_forms.ClockOutForm(data, instance=entry)
+        self.assertTrue(form.is_valid())
+        saved = form.save()
+        self.assertAlmostEqual(saved.hours, 3)
+    
+    def testClockOutWhilePaused(self):
+        now = datetime.datetime.now()
+        entry = timepiece.Entry.objects.create(
+            user=self.user,
+            project=self.project,
+            activity=self.activity,
+            start_time=now - datetime.timedelta(hours=5),
+            pause_time=now - datetime.timedelta(hours=4)
+        )
+        end_time = now - datetime.timedelta(hours=1)
+        data = {
+            'end_time_0': end_time.strftime('%m/%d/%Y'),
+            'end_time_1': end_time.strftime('%H:%M:%S'),
+        }
+        form = timepiece_forms.ClockOutForm(data, instance=entry)
+        self.assertTrue(form.is_valid())
+        saved = form.save()
+        self.assertAlmostEqual(saved.hours, 1)
 
 
 def previous_and_next(some_iterable):

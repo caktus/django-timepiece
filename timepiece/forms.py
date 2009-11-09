@@ -50,10 +50,7 @@ class ClockOutForm(forms.ModelForm):
     def save(self, commit=True):
         entry = super(ClockOutForm, self).save(commit=False)
         entry.end_time = self.cleaned_data['end_time']
-        entry.clock_out(
-            self.cleaned_data['activity'],
-            self.cleaned_data['comments'],
-        )
+        entry.unpause(date=self.cleaned_data['end_time'])
         if commit:
             entry.save()
         return entry
