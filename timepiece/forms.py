@@ -34,7 +34,7 @@ class ClockInForm(forms.ModelForm):
 class ClockOutForm(forms.ModelForm):
     class Meta:
         model = timepiece.Entry
-        fields = ('activity', 'comments')
+        fields = ('activity', 'location', 'comments')
         
     def __init__(self, *args, **kwargs):
         super(ClockOutForm, self).__init__(*args, **kwargs)
@@ -45,7 +45,7 @@ class ClockOutForm(forms.ModelForm):
             ),
             initial=datetime.now(),
         )
-        self.fields.keyOrder = ('activity', 'end_time', 'comments')
+        self.fields.keyOrder = ('activity', 'location', 'end_time', 'comments')
     
     def save(self, commit=True):
         entry = super(ClockOutForm, self).save(commit=False)
