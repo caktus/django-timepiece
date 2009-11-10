@@ -59,5 +59,30 @@
     <p>No entries exist for this time sheet.</p>
 {% endif %}
 
+{% if user_entries %}
+    <table id='person-summary'>
+        <caption>Person Summary</caption>
+    {% for entry in user_entries %}
+        <tr>
+            <td>{{ entry.user__username}} </td>
+            <td>{{ entry.sum }}</td>
+        </tr>
+    {% endfor %}        
+    </table>
+{% endif %}
+
+{% if activity_entries %}
+    <table id='activity-summary'>
+        <caption>Activity Summary</caption>
+    {% for entry in activity_entries %}
+        <tr>
+            <td>{{ entry.activity__name }} </td>
+            <td>{{ entry.sum }}</td>
+        </tr>
+    {% endfor %}        
+    </table>
+{% endif %}
+
+<br style='clear: both' />
 
 {% endblock %}

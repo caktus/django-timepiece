@@ -28,9 +28,17 @@ def view_entries(request):
     ).filter(
         user=request.user,
         start_time__gte=two_weeks_ago,
-    ).order_by('-start_time')
+    )
+    project_entries = entries.values(
+        'project__name',
+    ).annotate(sum=Sum('hours')).order_by('-sum')
+    activity_entries = entries.values(
+        'activity__name',
+    ).annotate(sum=Sum('hours')).order_by('-sum')
     context = {
-        'entries': entries,
+        'entries': entries.order_by('-start_time'),
+        'project_entries': project_entries,
+        'activity_entries': activity_entries,
     }
     return context
 
@@ -319,12 +327,20 @@ def get_project_entries(project, window_id=None):
 @render_with('timepiece/period/window.html')
 def project_time_sheet(request, project, window_id=None):
     window, entries, total = get_project_entries(project, window_id)
+    user_entries = entries.order_by().values(
+        'user__username',
+    ).annotate(sum=Sum('hours')).order_by('-sum')
+    activity_entries = entries.order_by().values(
+        'activity__name',
+    ).annotate(sum=Sum('hours')).order_by('-sum')
     context = {
         'project': project,
         'period': window.period,
         'window': window,
         'entries': entries,
         'total': total,
+        'user_entries': user_entries,
+        'activity_entries': activity_entries,
     }
     return context
 
