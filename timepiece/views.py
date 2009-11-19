@@ -360,7 +360,11 @@ def project_time_sheet(request, project, window_id=None):
 
 @permission_required('timepiece.export_project_time_sheet')
 def export_project_time_sheet(request, project, window_id=None):
-    window, entries, total = get_project_entries(project, window_id)
+    window, entries, total = get_entries(
+        project.billing_period,
+        window_id=window_id,
+        project=project,
+    )
     response = HttpResponse(mimetype='text/csv')
     response['Content-Disposition'] = 'attachment; filename="%s Timesheet %s.csv"' % (project.name, window.end_date.strftime('%Y-%m-%d'))
     writer = csv.writer(response)

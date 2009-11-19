@@ -1,8 +1,7 @@
 {% extends 'timepiece/time-sheet/base.html' %}
-{% load timepiece_tags %}
-{% load ledger %}
+{% load timepiece_tags ledger %}
 
-{% block title %}Timepiece Entries{% endblock %}
+{% block title %}{{ project }} Time Sheet{% endblock %}
 
 {% block content %}
 <h2>{{ project }} Time Sheet ({{ window.date|date:"N j" }} &mdash; {{ window.end_date|date:"N j" }})</h2>
@@ -35,6 +34,7 @@
             <th>Location</th>
             <th>Time In</th>
             <th>Time Out</th>
+            <th>Activity</th>
             <th>Breaks</th>
             <th>Hours</th>
         </tr>
@@ -45,6 +45,7 @@
             <td>{{ entry.location }}</td>
             <td>{{ entry.start_time|date:"P" }}</td>
             <td>{{ entry.end_time|date:"P" }}</td>
+            <td>{{ entry.activity }}</td>
             <td>{{ entry.seconds_paused|seconds_to_hours }}</td>
             <td>{{ entry.hours }}</td>
         </tr>
