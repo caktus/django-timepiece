@@ -342,6 +342,8 @@ def project_time_sheet(request, project, window_id=None):
     )
     user_entries = entries.order_by().values(
         'user__username',
+        'user__first_name',
+        'user__last_name',
     ).annotate(sum=Sum('hours')).order_by('-sum')
     activity_entries = entries.order_by().values(
         'activity__name',

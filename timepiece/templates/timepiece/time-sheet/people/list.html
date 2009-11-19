@@ -22,6 +22,10 @@
         <td>{{ sheet.repeat_period.billing_windows.latest }}</td>
         <td><a href='{% url edit_person_time_sheet sheet.contact.pk %}'>Change</a></td>
     </tr>
+    {% empty %}
+    <tr>
+        <td colspan='3'>No time sheets found.</td>
+    </tr>
     {% endfor %}
 </table>
 
