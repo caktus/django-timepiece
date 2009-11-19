@@ -35,10 +35,14 @@ def view_entries(request):
     activity_entries = entries.values(
         'activity__name',
     ).annotate(sum=Sum('hours')).order_by('-sum')
+    logged_in_entries = timepiece.Entry.objects.filter(
+        end_time__isnull=True,
+    )
     context = {
         'entries': entries.order_by('-start_time'),
         'project_entries': project_entries,
         'activity_entries': activity_entries,
+        'logged_in_entries': logged_in_entries,
     }
     return context
 

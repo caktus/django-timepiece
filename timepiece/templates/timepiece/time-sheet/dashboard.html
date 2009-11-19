@@ -64,7 +64,7 @@
 </table>
 
 {% if project_entries %}
-    <table id='project-summary'>
+    <table id='project-summary' class='timepiece-summary'>
         <caption>Project Summary</caption>
     {% for entry in project_entries %}
         <tr>
@@ -76,12 +76,25 @@
 {% endif %}
 
 {% if activity_entries %}
-    <table id='activity-summary'>
+    <table id='activity-summary' class='timepiece-summary'>
         <caption>Activity Summary</caption>
     {% for entry in activity_entries %}
         <tr>
             <td>{{ entry.activity__name }} </td>
             <td>{{ entry.sum }}</td>
+        </tr>
+    {% endfor %}        
+    </table>
+{% endif %}
+
+{% if logged_in_entries %}
+    <table id='activity-summary' class='timepiece-summary'>
+        <caption>Active Entries</caption>
+    {% for entry in logged_in_entries %}
+        <tr>
+            <td>{{ entry.user.first_name }} {{ entry.user.last_name }}</td>
+            <td>{{ entry.project.name }}</td>
+            <td>{{ entry.start_time|date:"P" }}</td>
         </tr>
     {% endfor %}        
     </table>

@@ -29,13 +29,25 @@ class BaseTest(TestCase):
             type='business',
             description='',
         )
+        status = timepiece.Attribute.objects.create(
+            type='project-status',
+            label='Current',
+        )
+        type_ = timepiece.Attribute.objects.create(
+            type='project-type',
+            label='Web Sites',
+        )
         self.project = timepiece.Project.objects.create(
-            name='Example Project',
+            name='Example Project 1',
+            type=type_,
+            status=status,
             business=self.business,
             point_person=self.user,
         )
         self.project = timepiece.Project.objects.create(
-            name='Example Project',
+            name='Example Project 2',
+            type=type_,
+            status=status,
             business=self.business,
             point_person=self.user2,
         )
