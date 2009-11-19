@@ -329,7 +329,7 @@ def get_entries(period, window_id=None, project=None, user=None):
 
 
 @permission_required('timepiece.view_project_time_sheet')
-@render_with('timepiece/period/window.html')
+@render_with('timepiece/time-sheet/projects/view.html')
 def project_time_sheet(request, project, window_id=None):
     window, entries, total = get_entries(
         project.billing_period,
@@ -561,7 +561,7 @@ def create_edit_project(request, business, project=None):
 @permission_required('timepiece.view_project_time_sheet')
 @render_with('timepiece/time-sheet/projects/list.html')
 def tracked_projects(request):
-    projects = timepiece.Entry.objects.filter(
+    time_sheets = timepiece.Entry.objects.filter(
         project__billing_period__active=True,
     ).values(
         'project__name',
@@ -572,7 +572,7 @@ def tracked_projects(request):
         hours=Sum('hours'),
     ).order_by('project__name')
     return {
-        'projects': projects,
+        'time_sheets': time_sheets,
     }
 
 

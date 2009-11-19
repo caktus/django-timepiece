@@ -1,4 +1,4 @@
-{% extends 'base.html' %}
+{% extends 'timepiece/time-sheet/base.html' %}
 {% load timepiece_tags %}
 {% load ledger %}
 
@@ -7,8 +7,7 @@
 {% block content %}
 <h2>{{ project }} Time Sheet ({{ window.date|date:"N j" }} &mdash; {{ window.end_date|date:"N j" }})</h2>
 <ul class='header-actions-left'>
-    <li><a href='{% url timepiece-entries %}'>Time Sheet</a></li>
-    <li><a href='{% url view_project project.business.id,project.id %}'>{{ project }}</a></li>
+    <li><a href='{% url view_project project.business.id,project.id %}'>Project Information</a></li>
     <li>
         {% if window.previous %}
             <a href='{% url project_time_sheet project.id,window.previous.id %}'>Previous Time Sheet</a>
@@ -79,7 +78,7 @@
             <td>{{ entry.activity__name }} </td>
             <td>{{ entry.sum }}</td>
         </tr>
-    {% endfor %}        
+    {% endfor %}
     </table>
 {% endif %}
 

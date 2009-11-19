@@ -4,26 +4,24 @@
 
 {% block content %}
 
-<h2>Person Timesheets ({{ time_sheets.count }} total)</h2>
+<h2>Project Timesheets ({{ time_sheets.count }} total)</h2>
 <ul class='header-actions-left'>
-{% if perms.timepiece.create_personrepeatperiod %}
-    <li><a href='{% url create_person_time_sheet %}'>Add Person Time Sheet</a></li>
-{% endif %}
+    <li><a href='#'>Create Project Time Sheet</a></li>
 </ul>
 
 <table class='projects'>
     <tr>
         <th>Name</th>
-        <th>Latest</th>
+        <th>Business</th>
+        <th>Hours</th>
     </tr>
     {% for sheet in time_sheets %}
     <tr>
-        <td><a href='{% url view_person_time_sheet sheet.contact.pk,sheet.repeat_period.pk %}'>{{ sheet.contact.first_name }} {{ sheet.contact.last_name }}</a></td>
-        <td>{{ sheet.repeat_period.billing_windows.latest }}</td>
-        <td><a href='{% url edit_person_time_sheet sheet.contact.pk %}'>Change</a></td>
+        <td><a href='{% url project_time_sheet sheet.project__id %}'>{{ sheet.project__name }}</a></td>
+        <td>{{ sheet.project__business__name }}</td>
+        <td>{{ sheet.hours }}</td>
     </tr>
     {% endfor %}
 </table>
 
 {% endblock %}
-
