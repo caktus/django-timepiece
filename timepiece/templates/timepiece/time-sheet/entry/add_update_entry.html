@@ -1,12 +1,9 @@
-{% extends 'timepiece/base.html' %}
+{% extends 'timepiece/time-sheet/base.html' %}
 
 {% block title %}{{ add_update }} Entry{% endblock %}
 
 {% block content %}
 <h2>{{ add_update }} Entry</h2>
-<ul class='header-actions-left'>
-    <li><a href="{% url timepiece-entries %}">Return to Time Sheet</a></li>
-</ul>
 <form action="{{ callback }}" method="post">
     <table class='vertical'>
         {{ form }}

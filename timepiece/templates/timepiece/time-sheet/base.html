@@ -2,7 +2,7 @@
 
 {% block sub_navigation %}
     <ul class='header-actions-left'>
-        <li><a href='{% url timepiece-entries %}'>Timepiece</a></li>
+        <li><strong><a href='{% url timepiece-entries %}'>Timepiece</a></strong></li>
         {% if perms.timepiece.view_project_time_sheet %}
             <li><a href="{% url tracked_projects %}">Projects</a></li>
         {% endif %}

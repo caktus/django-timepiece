@@ -1,10 +1,7 @@
-{% extends 'timepiece/base.html' %}
+{% extends 'timepiece/time-sheet/base.html' %}
 
 {% block content %}
 <h2>Clock Out of Project</h2>
-<ul class='header-actions-left'>
-    <li><a href="{% url timepiece-entries %}">Return to Time Sheet</a></li>
-</ul>
 <form id="general-entry" action="" method="post" accept-charset="utf-8">
     <table class='vertical'>
         {{ form }}
