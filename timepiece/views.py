@@ -20,7 +20,7 @@ from timepiece.templatetags.timepiece_tags import seconds_to_hours
 
 
 @login_required
-@render_with('timepiece/entry/list.html')
+@render_with('timepiece/time-sheet/dashboard.html')
 def view_entries(request):
     two_weeks_ago = datetime.date.today() - datetime.timedelta(days=14)
     entries = timepiece.Entry.objects.select_related(
@@ -67,7 +67,7 @@ def clock_in(request):
     else:
         form = timepiece_forms.ClockInForm()
     return render_to_response(
-        'timepiece/clock_in.html',
+        'timepiece/time-sheet/entry/clock_in.html',
         {'form': form},
         context_instance=RequestContext(request),
     )
@@ -94,7 +94,7 @@ def clock_out(request, entry_id):
         'entry': entry,
     }
     return render_to_response(
-        'timepiece/clock_out.html',
+        'timepiece/time-sheet/entry/clock_out.html',
         context,
         context_instance=RequestContext(request),
     )
@@ -178,7 +178,7 @@ def update_entry(request, entry_id):
         # populate the form with the original entry information
         form = timepiece_forms.AddUpdateEntryForm(instance=entry)
 
-    return render_to_response('timepiece/add_update_entry.html',
+    return render_to_response('timepiece/time-sheet/entry/add_update_entry.html',
                               {'form': form,
                                'add_update': 'Update',
                                'callback': reverse('timepiece-update', args=[entry_id])},
@@ -211,7 +211,7 @@ def delete_entry(request, entry_id):
         else:
             request.user.message_set.create(message='You do not appear to be authorized to delete this entry!')
 
-    return render_to_response('timepiece/delete_entry.html',
+    return render_to_response('timepiece/time-sheet/entry/delete_entry.html',
                               {'entry': entry},
                               context_instance=RequestContext(request))
 
@@ -252,7 +252,7 @@ def add_entry(request):
         # send back an empty form
         form = timepiece_forms.AddUpdateEntryForm()
 
-    return render_to_response('timepiece/add_update_entry.html',
+    return render_to_response('timepiece/time-sheet/entry/add_update_entry.html',
                               {'form': form,
                                'add_update': 'Add',
                                'callback': reverse('timepiece-add')},
@@ -260,7 +260,7 @@ def add_entry(request):
 
 
 @permission_required('timepiece.view_entry_summary')
-@render_with('timepiece/entry/summary.html')
+@render_with('timepiece/time-sheet/general_ledger.html')
 def summary(request, username=None):
     if request.GET:
         form = timepiece_forms.DateForm(request.GET)
