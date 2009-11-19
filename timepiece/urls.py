@@ -12,16 +12,7 @@ urlpatterns = patterns('',
     url(r'^update/(?P<entry_id>\d+)/$', views.update_entry, name='timepiece-update'),
     url(r'^delete/(?P<entry_id>\d+)/$', views.delete_entry, name='timepiece-delete'),
     url(r'^summary/', views.summary, name='timepiece-summary'),
-    url(
-        r'^project/(?P<project_id>\d+)/(?:(?P<window_id>\d+)/)?$',
-        views.project_time_sheet,
-        name='project_time_sheet',
-    ),
-    url(
-        r'^project/(?P<project_id>\d+)/(?:(?P<window_id>\d+)/)?export/$',
-        views.export_project_time_sheet,
-        name='export_project_time_sheet',
-    ),
+
     
     url(r'^project/list/$', views.list_projects, name='list_projects'),
     url(
@@ -44,5 +35,46 @@ urlpatterns = patterns('',
         views.edit_project_relationship,
         name='edit_project_relationship',
     ),
+    
+    ### time sheets ###
+    url(
+        r'^time-sheet/projects/$',
+        views.tracked_projects,
+        name='tracked_projects',
+    ),
+    url(
+        r'^time-sheet/people/$',
+        views.tracked_people,
+        name='tracked_people',
+    ),
+    
+    url(
+        r'^time-sheet/people/create/$',
+        views.create_edit_person_time_sheet,
+        name='create_person_time_sheet',
+    ),
+    url(
+        r'^time-sheet/people/(?P<person_id>\d+)/edit/$',
+        views.create_edit_person_time_sheet,
+        name='edit_person_time_sheet',
+    ),
+    url(
+        r'^time-sheet/people/(?P<person_id>\d+)/period/(?P<period_id>\d+)/(?:(?P<window_id>\d+)/)?$',
+        views.view_person_time_sheet,
+        name='view_person_time_sheet',
+    ),
+    url(
+        r'^time-sheet/project/(?P<project_id>\d+)/(?:(?P<window_id>\d+)/)?$',
+        views.project_time_sheet,
+        name='project_time_sheet',
+    ),
+    url(
+        r'^time-sheet/project/(?P<project_id>\d+)/(?:(?P<window_id>\d+)/)?export/$',
+        views.export_project_time_sheet,
+        name='export_project_time_sheet',
+    ),
+    
+
+
     
 )

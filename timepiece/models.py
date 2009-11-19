@@ -293,6 +293,13 @@ class RepeatPeriod(models.Model):
     )
     active = models.BooleanField(default=False)
     
+    contacts = models.ManyToManyField(
+        crm.Contact,
+        blank=True,
+        through='PersonRepeatPeriod',
+        related_name='repeat_periods',
+    )
+    
     objects = RepeatPeriodManager()
     
     def __unicode__(self):
@@ -362,3 +369,15 @@ class BillingWindow(models.Model):
                 window = None
             self._previous = window
         return self._previous
+
+
+class PersonRepeatPeriod(models.Model):
+    contact = models.ForeignKey(
+        crm.Contact,
+        unique=True,
+        limit_choices_to={'type': 'individual'}
+    )
+    repeat_period = models.ForeignKey(
+        RepeatPeriod,
+        unique=True,
+    )

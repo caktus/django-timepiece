@@ -295,30 +295,35 @@ def summary(request, username=None):
     return context
 
 
-def get_project_entries(project, window_id=None):
+def get_entries(period, window_id=None, project=None, user=None):
     """
     Returns a tuple of the billing window, corresponding entries, and total 
     hours for the given project and window_id, if specified.
     """
+    if not project and not user:
+        raise ValueError('project or user required')
     window = timepiece.BillingWindow.objects.select_related('period')
     if window_id:
         window = window.get(
             pk=window_id,
             period__active=True,
-            period=project.billing_period,
+            period=period,
         )
     else:
         window = window.filter(
             period__active=True,
-            period=project.billing_period,
+            period=period,
         ).order_by('-date')[0]
     entries = timepiece.Entry.objects.filter(
-        project=project,
         start_time__gte=window.date,
         end_time__lt=window.end_date,
     ).select_related(
         'user',
     ).order_by('start_time')
+    if project:
+        entries = entries.filter(project=project)
+    elif user:
+        entries = entries.filter(user=user)
     total = entries.aggregate(hours=Sum('hours'))['hours']
     return window, entries, total
 
@@ -326,7 +331,11 @@ def get_project_entries(project, window_id=None):
 @permission_required('timepiece.view_project_time_sheet')
 @render_with('timepiece/period/window.html')
 def project_time_sheet(request, project, window_id=None):
-    window, entries, total = get_project_entries(project, window_id)
+    window, entries, total = get_entries(
+        project.billing_period,
+        window_id=window_id,
+        project=project,
+    )
     user_entries = entries.order_by().values(
         'user__username',
     ).annotate(sum=Sum('hours')).order_by('-sum')
@@ -375,6 +384,42 @@ def export_project_time_sheet(request, project, window_id=None):
         writer.writerow(data)
     writer.writerow(('', '', '', '', '', '', 'Total:', total))
     return response
+
+
+@permission_required('timepiece.view_person_time_sheet')
+@render_with('timepiece/time-sheet/people/view.html')
+def view_person_time_sheet(request, person_id, period_id, window_id=None):
+    try:
+        time_sheet = timepiece.PersonRepeatPeriod.objects.select_related(
+            'contact',
+            'repeat_period',
+        ).get(
+            contact__id=person_id,
+            repeat_period__id=period_id,
+        )
+    except timepiece.PersonRepeatPeriod.DoesNotExist:
+        raise Http404
+    window, entries, total = get_entries(
+        time_sheet.repeat_period,
+        window_id=window_id,
+        user=time_sheet.contact.user,
+    )
+    project_entries = entries.order_by().values(
+        'project__name',
+    ).annotate(sum=Sum('hours')).order_by('-sum')
+    activity_entries = entries.order_by().values(
+        'activity__name',
+    ).annotate(sum=Sum('hours')).order_by('-sum')
+    context = {
+        'person': time_sheet.contact,
+        'period': window.period,
+        'window': window,
+        'entries': entries,
+        'total': total,
+        'project_entries': project_entries,
+        'activity_entries': activity_entries,
+    }
+    return context
 
 
 @permission_required('timepiece.view_project')
@@ -511,3 +556,87 @@ def create_edit_project(request, business, project=None):
         'latest_window': latest_window,
     }
     return context
+
+
+@permission_required('timepiece.view_project_time_sheet')
+@render_with('timepiece/time-sheet/projects/list.html')
+def tracked_projects(request):
+    projects = timepiece.Entry.objects.filter(
+        project__billing_period__active=True,
+    ).values(
+        'project__name',
+        'project__business__name',
+        'project__id',
+        'project__business__id',
+    ).annotate(
+        hours=Sum('hours'),
+    ).order_by('project__name')
+    return {
+        'projects': projects,
+    }
+
+
+@permission_required('timepiece.view_person_time_sheet')
+@render_with('timepiece/time-sheet/people/list.html')
+def tracked_people(request):
+    time_sheets = timepiece.PersonRepeatPeriod.objects.select_related(
+        'contact',
+        'repeat_period',
+    ).filter(
+        repeat_period__active=True,
+    ).order_by(
+        'contact__sort_name',
+    )
+    return {
+        'time_sheets': time_sheets,
+    }
+
+
+@permission_required('timepiece.view_project_time_sheet')
+@transaction.commit_on_success
+@render_with('timepiece/time-sheet/people/create_edit.html')
+def create_edit_person_time_sheet(request, person_id=None):
+    if person_id:
+        try:
+            time_sheet = timepiece.PersonRepeatPeriod.objects.select_related(
+                'contact',
+                'repeat_period',
+            ).get(contact__id=person_id)
+        except timepiece.PersonRepeatPeriod.DoesNotExist:
+            raise Http404
+        person = time_sheet.contact
+        repeat_period = time_sheet.repeat_period
+        latest_window = repeat_period.billing_windows.latest()
+    else:
+        person = None
+        time_sheet = None
+        repeat_period = None
+        latest_window = None
+    
+    if request.POST:
+        form = timepiece_forms.PersonTimeSheet(
+            request.POST,
+            instance=time_sheet,
+        )
+        repeat_period_form = timepiece_forms.RepeatPeriodForm(
+            request.POST,
+            instance=repeat_period,
+        )
+        if form.is_valid() and repeat_period_form.is_valid():
+            repeat_period = repeat_period_form.save()
+            person_time_sheet = form.save(commit=False)
+            person_time_sheet.repeat_period = repeat_period
+            person_time_sheet.save()
+            return HttpResponseRedirect(reverse('tracked_people'))
+    else:
+        form = timepiece_forms.PersonTimeSheet(instance=time_sheet)
+        repeat_period_form = timepiece_forms.RepeatPeriodForm(
+            instance=repeat_period,
+        )
+    
+    return {
+        'form': form,
+        'person': person,
+        'repeat_period_form': repeat_period_form,
+        'latest_window': latest_window,
+    }

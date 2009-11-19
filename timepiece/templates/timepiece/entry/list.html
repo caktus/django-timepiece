@@ -1,4 +1,4 @@
-{% extends 'timepiece/base.html' %}
+{% extends 'timepiece/time-sheet/base.html' %}
 {% load timepiece_tags %}
 {% load ledger %}
 
@@ -9,9 +9,6 @@
 <ul class='header-actions-left'>
     <li><a href="{% url timepiece-clock-in %}">Clock In</a></li>
     <li><a href="{% url timepiece-add %}">Add Entry</a></li>
-    {% if perms.timepiece.view_entry_summary %}
-        <li><a href="{% url timepiece-summary %}">General Ledger</a></li>
-    {% endif %}
 </ul>
 
 <h3>Past 2 Weeks</h3>
@@ -24,6 +21,7 @@
         <th>Clock Out</th>
         <th>Breaks</th>
         <th>Hours</th>
+        <th>Activity</th>
         <th>Location</th>
     </tr>
     {% for entry in entries %}
@@ -49,6 +47,7 @@
             {% endif %}
         </td>
         <td>{{ entry.hours }}</td>
+        <td>{{ entry.activity }}</td>
         <td>{{ entry.location }}</td>
         <td>
             <ul class='actions'>

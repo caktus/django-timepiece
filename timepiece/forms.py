@@ -234,3 +234,16 @@ class RepeatPeriodForm(forms.ModelForm):
                     )
         period.update_billing_windows()
         return period
+
+
+class PersonTimeSheet(forms.ModelForm):
+    class Meta:
+        model = timepiece.PersonRepeatPeriod
+        fields = ('contact',)
+    
+    def __init__(self, *args, **kwargs):
+        super(PersonTimeSheet, self).__init__(*args, **kwargs)
+        self.fields['contact'].queryset = crm.Contact.objects.filter(
+            type='individual',
+            user__isnull=False,
+        ).order_by('sort_name')
