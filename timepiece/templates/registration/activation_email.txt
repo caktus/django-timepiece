@@ -1,8 +1,0 @@
-Thank you for creating an account on {{ current_site }}!
-
-Please activate your account by going to http://www.yoursite.com/accounts/activate/{{ activation_key }}/
-
-You have {{ expiration_days }} days to activate your account.
-
-Thanks,
-The Goonies
