@@ -1,65 +1,105 @@
-from django.test import TestCase
-from django.test.client import Client
-from timepiece.utils import determine_period
-from datetime import datetime
+import time
+import datetime
+import random
+import itertools
 
-class DetermineDatesTestCase(TestCase):
-    """
-    Make sure the period date boundary function is working properly.  Currently
-    the range calculator will go from the first day of the month to the last
-    day of the same month.  Eventually, this should test for configurable
-    period lengths.
-    """
+from django.core.urlresolvers import reverse
 
-    fixtures = ['activities', 'projects', 'users', 'entries']
+from timepiece.tests.base import BaseTest
 
-    def setUp(self):
-        self.client = Client()
+from timepiece import models as timepiece
+from timepiece import forms as timepiece_forms
 
-    def testDeterminePeriod(self):
-        # try some dates
-        dates_to_try = (
-            datetime(2005, 12, 13), datetime(2006, 4, 12),
-            datetime(2006, 7, 19),  datetime(2007, 1, 9),
-            datetime(2007, 5, 21),  datetime(2007, 6, 10),
-            datetime(2007, 6, 26),  datetime(2007, 7, 2),
-            datetime(2007, 7, 31),  datetime(2007, 9, 6),
-            datetime(2007, 12, 2),  datetime(2008, 1, 30),
-            datetime(2008, 2, 27),  datetime(2008, 6, 6),
+from dateutil import relativedelta
+
+
+def previous_and_next(some_iterable):
+    prevs, items, nexts = itertools.tee(some_iterable, 3)
+    prevs = itertools.chain([None], prevs)
+    nexts = itertools.chain(itertools.islice(nexts, 1, None), [None])
+    return itertools.izip(prevs, items, nexts)
+
+
+class BillingPeriodTest(BaseTest):
+    def assertWindowBoundaries(self, windows):
+        for prev, curr, next in previous_and_next(windows):
+            if curr and prev:
+                diff = \
+                    relativedelta.relativedelta(curr.date, prev.date)
+                self.assertEqual(prev.date + diff, curr.date)
+                self.assertEqual(prev.end_date, curr.date)
+    
+    def testGeneratedWindows(self):
+        delta = relativedelta.relativedelta(days=random.randint(20, 100))
+        start_date = datetime.datetime.today() - delta
+        for count in range(1, 30):
+            for period, _ in timepiece.RepeatPeriod.INTERVAL_CHOICES:
+                p = timepiece.RepeatPeriod.objects.create(
+                    count=2,
+                    interval='week',
+                    active=True,
+                )
+                self.project.billing_period = p
+                self.project.save()
+                window = p.billing_windows.create(
+                    date=start_date,
+                    end_date=start_date + p.delta(),
+                )
+                p.update_billing_windows()
+                windows = p.billing_windows.order_by('date')
+                self.assertWindowBoundaries(windows)
+                p.delete()
+    
+    
+    def testChangedPeriod(self):
+        """
+        If an existing period is updated with a new delta, check that
+        no time windows are missed when the new delta is applied.
+        """
+        start_date = datetime.date(2009, 9, 4)
+        p = timepiece.RepeatPeriod.objects.create(
+            count=2,
+            interval='week',
+            active=True,
         )
-
-        expected_results = [
-            (datetime(2005, 12, 1), datetime(2005, 12, 31)),    # 13 dec 05
-            (datetime(2006, 4, 1), datetime(2006, 4, 30)),      # 12 apr 06
-            (datetime(2006, 7, 1), datetime(2006, 7, 31)),      # 19 jul 06
-            (datetime(2007, 1, 1), datetime(2007, 1, 31)),      # 9 jan 07
-            (datetime(2007, 5, 1), datetime(2007, 5, 31)),      # 21 may 07
-            (datetime(2007, 6, 1), datetime(2007, 6, 30)),      # 10 jun 07
-            (datetime(2007, 6, 1), datetime(2007, 6, 30)),      # 26 jun 07
-            (datetime(2007, 7, 1), datetime(2007, 7, 31)),      # 2 jul 07
-            (datetime(2007, 7, 1), datetime(2007, 7, 31)),      # 31 jul 07
-            (datetime(2007, 9, 1), datetime(2007, 9, 30)),      # 6 sept 07
-            (datetime(2007, 12, 1), datetime(2007, 12, 31)),    # 2 dec 07
-            (datetime(2008, 1, 1), datetime(2008, 1, 31)),      # 30 jan 08
-            (datetime(2008, 2, 1), datetime(2008, 2, 29)),      # 27 feb 08
-            (datetime(2008, 6, 1), datetime(2008, 6, 30)),      # 6 jun 08
-        ]
-
-        count = 0
-        for date in dates_to_try:
-            start, end = determine_period(date)
-
-            exp_s, exp_e = expected_results[count]
-
-            # make sure the resulting start date matches the expected value
-            self.assertEquals(start.year, exp_s.year)
-            self.assertEquals(start.month, exp_s.month)
-            self.assertEquals(start.day, exp_s.day)
-
-            # make sure the resulting end date matches the expected value
-            self.assertEquals(end.year, exp_e.year)
-            self.assertEquals(end.month, exp_e.month)
-            self.assertEquals(end.day, exp_e.day)
-
-            # increment the counter so we can get the correct expected results
-            count += 1
+        self.project.billing_period = p
+        self.project.save()
+        window = p.billing_windows.create(
+            date=start_date,
+            end_date=start_date + p.delta(),
+        )
+        p.count = 1
+        p.interval = 'month'
+        p.save()
+        p.update_billing_windows(date_boundary=datetime.date(2009, 10, 17))
+        windows = p.billing_windows.order_by('date')
+        self.assertWindowBoundaries(windows)
+        self.assertEqual(len(windows), 2)
+    
+    def testChangedStartDate(self):
+        start_date = datetime.date(2009, 9, 4)
+        p = timepiece.RepeatPeriod.objects.create(
+            count=2,
+            interval='week',
+            active=True,
+        )
+        self.project.billing_period = p
+        self.project.save()
+        window = p.billing_windows.create(
+            date=start_date,
+            end_date=start_date + p.delta(),
+        )
+        data = {
+            'repeat-active': 'on',
+            'repeat-count': '1',
+            'repeat-interval': 'month',
+            'repeat-date': '10/01/2009',
+        }
+        form = timepiece_forms.RepeatPeriodForm(
+            data,
+            instance=p,
+            prefix='repeat',
+        )
+        self.assertTrue(form.is_valid())
+        p = form.save()
+        self.assertWindowBoundaries(p.billing_windows.order_by('date'))
