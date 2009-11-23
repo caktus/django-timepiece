@@ -18,12 +18,31 @@ class ClockInTest(BaseTest):
         super(ClockInTest, self).setUp()
         self.url = reverse('timepiece-clock-in')
     
+    def testProjectListFiltered(self):
+        self.client.login(username='user', password='abc')
+        response = self.client.get(self.url)
+        self.assertEquals(response.status_code, 200)
+        projects = list(response.context['form'].fields['project'].queryset)
+        self.assertTrue(self.project in projects)
+        self.assertFalse(self.project2 in projects)
+    
     def testClockInLogin(self):
         response = self.client.get(self.url)
         self.assertEquals(response.status_code, 302)
         self.client.login(username='user', password='abc')
         response = self.client.get(self.url)
         self.assertEquals(response.status_code, 200)
+    
+    def testClockInUnauthorizedProject(self):
+        self.client.login(username='user', password='abc')
+        data = {
+            'project': self.project2.id,
+            'start_time_0': [u'11/02/2009'],
+            'start_time_1': [u'11:09:21'],
+        }
+        response = self.client.post(self.url, data)
+        self.assertEqual(response.status_code, 200)
+        self.assertTrue(response.context['form'].errors)
     
     def testClockIn(self):
         self.client.login(username='user', password='abc')
@@ -95,6 +114,16 @@ class ClockOutTest(BaseTest):
         self.assertTrue(form.is_valid())
         saved = form.save()
         self.assertAlmostEqual(saved.hours, 1)
+
+
+class CreateEditEntry(BaseTest):
+    def testProjectList(self):
+        self.client.login(username='user', password='abc')
+        response = self.client.get(reverse('timepiece-add'))
+        self.assertEqual(response.status_code, 200)
+        projects = list(response.context['form'].fields['project'].queryset)
+        self.assertTrue(self.project in projects)
+        self.assertFalse(self.project2 in projects)
 
 
 def previous_and_next(some_iterable):

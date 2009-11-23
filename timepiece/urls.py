@@ -8,8 +8,8 @@ urlpatterns = patterns('',
     url(r'^clockin/$', views.clock_in, name='timepiece-clock-in'),
     url(r'^clockout/(?P<entry_id>\d+)/$', views.clock_out, name='timepiece-clock-out'),
     url(r'^toggle/(?P<entry_id>\d+)/$', views.toggle_paused, name='timepiece-toggle-paused'),
-    url(r'^add/$', views.add_entry, name='timepiece-add'),
-    url(r'^update/(?P<entry_id>\d+)/$', views.update_entry, name='timepiece-update'),
+    url(r'^add/$', views.create_edit_entry, name='timepiece-add'),
+    url(r'^update/(?P<entry_id>\d+)/$', views.create_edit_entry, name='timepiece-update'),
     url(r'^delete/(?P<entry_id>\d+)/$', views.delete_entry, name='timepiece-delete'),
     url(r'^summary/', views.summary, name='timepiece-summary'),
 
@@ -73,8 +73,4 @@ urlpatterns = patterns('',
         views.export_project_time_sheet,
         name='export_project_time_sheet',
     ),
-    
-
-
-    
 )

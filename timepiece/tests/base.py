@@ -14,10 +14,18 @@ class BaseTest(TestCase):
         self.user2 = User.objects.create_user('user2', 'u2@abc.com', 'abc')
         permissions = Permission.objects.filter(
             content_type=ContentType.objects.get_for_model(timepiece.Entry),
-            codename__in=('can_clock_in', 'can_clock_out', 'can_pause')
+            codename__in=('can_clock_in', 'can_clock_out', 'can_pause', 'change_entry')
         )
         self.user.user_permissions = permissions
         self.user2.user_permissions = permissions
+        self.contact = crm.Contact.objects.create(
+            first_name='John',
+            last_name='Doe',
+            sort_name='doe-john',
+            type='individual',
+            user=self.user,
+            description='',
+        )
         self.activity = timepiece.Activity.objects.create(
             code="WRK",
             name="Work",
@@ -44,10 +52,14 @@ class BaseTest(TestCase):
             business=self.business,
             point_person=self.user,
         )
-        self.project = timepiece.Project.objects.create(
+        self.project2 = timepiece.Project.objects.create(
             name='Example Project 2',
             type=type_,
             status=status,
             business=self.business,
             point_person=self.user2,
+        )
+        timepiece.ProjectRelationship.objects.create(
+            contact=self.contact,
+            project=self.project,
         )

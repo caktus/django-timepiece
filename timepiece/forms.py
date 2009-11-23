@@ -14,6 +14,7 @@ class ClockInForm(forms.ModelForm):
         fields = ('project', 'start_time')
 
     def __init__(self, *args, **kwargs):
+        self.user = kwargs.pop('user')
         super(ClockInForm, self).__init__(*args, **kwargs)
         self.fields['start_time'].required = False
         self.fields['start_time'].initial = datetime.now()
@@ -21,11 +22,14 @@ class ClockInForm(forms.ModelForm):
             attrs={'class': 'timepiece-time'},
             date_format='%m/%d/%Y',
         )
+        self.fields['project'].queryset = timepiece.Project.objects.filter(
+            contacts__user=self.user,
+        )
     
-    def save(self, user, commit=True):
+    def save(self, commit=True):
         entry = super(ClockInForm, self).save(commit=False)
         entry.hours = 0
-        entry.clock_in(user, self.cleaned_data['project'])
+        entry.clock_in(self.user, self.cleaned_data['project'])
         if commit:
             entry.save()
         return entry
@@ -77,7 +81,14 @@ class AddUpdateEntryForm(forms.ModelForm):
     class Meta:
         model = Entry
         exclude = ('user', 'pause_time', 'site', 'hours')
-
+    
+    def __init__(self, *args, **kwargs):
+        self.user = kwargs.pop('user')
+        super(AddUpdateEntryForm, self).__init__(*args, **kwargs)
+        self.fields['project'].queryset = timepiece.Project.objects.filter(
+            contacts__user=self.user,
+        )
+    
     def clean_start_time(self):
         """
         Make sure that the start time is always before the end time
@@ -116,6 +127,13 @@ class AddUpdateEntryForm(forms.ModelForm):
             raise forms.ValidationError('The entry must start before it ends!')
 
         return end
+    
+    def save(self):
+        instance = super(AddUpdateEntryForm, self).save(commit=False)
+        instance.user = self.user
+        instance.save()
+        return instance
+        
 
 
 class DateForm(forms.Form):

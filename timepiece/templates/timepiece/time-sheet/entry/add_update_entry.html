@@ -1,10 +1,10 @@
 {% extends 'timepiece/time-sheet/base.html' %}
 
-{% block title %}{{ add_update }} Entry{% endblock %}
+{% block title %}{% if entry %}Update{% else %}Create{% endif %} Entry{% endblock %}
 
 {% block content %}
-<h2>{{ add_update }} Entry</h2>
-<form action="{{ callback }}" method="post">
+<h2>{% if entry %}Update{% else %}Create{% endif %} Entry</h2>
+<form action="" method="post">
     <table class='vertical'>
         {{ form }}
         <tr>
@@ -12,7 +12,7 @@
             <td class='submit'>
                 <input type='button' value='Cancel' onclick='history.go(-1)' />
                 &nbsp;
-                <input type='submit' name='submit' value='{{ add_update }} &rarr;' />
+                <input type='submit' name='submit' value='Save &rarr;' />
             </td>
         </tr>
     </table>

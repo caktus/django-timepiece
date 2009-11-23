@@ -51,7 +51,7 @@ def view_entries(request):
 @transaction.commit_on_success
 def clock_in(request):
     if request.POST:
-        form = timepiece_forms.ClockInForm(request.POST)
+        form = timepiece_forms.ClockInForm(request.POST, user=request.user)
         if form.is_valid():
             # if the user chose to pause any open entries, pause them
             if request.POST.get('pause_open', '0') == '1':
@@ -63,13 +63,13 @@ def clock_in(request):
                 for log in open_entries:
                     log.pause()
                     log.save()
-            entry = form.save(user=request.user)
+            entry = form.save()
             request.user.message_set.create(message='You have clocked into %s' % entry.project)
             return HttpResponseRedirect(reverse('timepiece-entries'))
         else:
             request.user.message_set.create(message='Please correct the errors below.')
     else:
-        form = timepiece_forms.ClockInForm()
+        form = timepiece_forms.ClockInForm(user=request.user)
     return render_to_response(
         'timepiece/time-sheet/entry/clock_in.html',
         {'form': form},
@@ -139,54 +139,51 @@ def toggle_paused(request, entry_id):
     # redirect to the log entry list
     return HttpResponseRedirect(reverse('timepiece-entries'))
 
+
 @permission_required('timepiece.change_entry')
-def update_entry(request, entry_id):
-    """
-    Give the user the ability to update their closed entries.  If this method
-    is invoked via a GET request, the user is presented with a form that is
-    populated with the entry's original data.  If this method is invoked via a
-    POST request, the data the user entered in the form will be validated.  If
-    the data are valid, the entry will be updated accordingly.  If the data are
-    invalid, the user is presented with the form again, either until they abort
-    or enter valid data.
-    """
-
-    try:
-        # retrieve the log entry
-        entry = timepiece.Entry.objects.get(pk=entry_id,
-                                  user=request.user,
-                                  end_time__isnull=False)
-    except:
-        # entry does not exist
-        request.user.message_set.create(message='No such log entry.')
-        return HttpResponseRedirect(reverse('timepiece-entries'))
-
-    if request.method == 'POST':
-        # populate the form with the updated data
-        form = timepiece_forms.AddUpdateEntryForm(request.POST, instance=entry)
-
-        # validate the form data
+@render_with('timepiece/time-sheet/entry/add_update_entry.html')
+def create_edit_entry(request, entry_id=None):
+    if entry_id:
+        try:
+            entry = timepiece.Entry.objects.get(
+                pk=entry_id,
+                user=request.user,
+                end_time__isnull=False,
+            )
+        except timepiece.Entry.DoesNotExist:
+            raise Http404
+    else:
+        entry = None
+    
+    if request.POST:
+        form = timepiece_forms.AddUpdateEntryForm(
+            request.POST,
+            instance=entry,
+            user=request.user,
+        )
         if form.is_valid():
-            # the data are valid... save them
-            form.save()
-
-            # create a message for the user
-            request.user.message_set.create(message='The entry has been updated successfully.')
-
-            # redirect them to the log entry list
+            entry = form.save()
+            if entry_id:
+                message = 'The entry has been updated successfully.'
+            else:
+                message = 'The entry has been created successfully.'
+            request.user.message_set.create(message=message)
             return HttpResponseRedirect(reverse('timepiece-entries'))
         else:
-            # create an error message
-            request.user.message_set.create(message='Please fix the errors below.')
+            request.user.message_set.create(
+                message='Please fix the errors below.',
+            )
     else:
-        # populate the form with the original entry information
-        form = timepiece_forms.AddUpdateEntryForm(instance=entry)
+        form = timepiece_forms.AddUpdateEntryForm(
+            instance=entry,
+            user=request.user,
+        )
+    
+    return {
+        'form': form,
+        'entry': entry,
+    }
 
-    return render_to_response('timepiece/time-sheet/entry/add_update_entry.html',
-                              {'form': form,
-                               'add_update': 'Update',
-                               'callback': reverse('timepiece-update', args=[entry_id])},
-                              context_instance=RequestContext(request))
 
 @permission_required('timepiece.delete_entry')
 def delete_entry(request, entry_id):
@@ -217,49 +214,6 @@ def delete_entry(request, entry_id):
 
     return render_to_response('timepiece/time-sheet/entry/delete_entry.html',
                               {'entry': entry},
-                              context_instance=RequestContext(request))
-
-@permission_required('timepiece.add_entry')
-def add_entry(request):
-    """
-    Give users a way to add entries in the past.  This is beneficial if the
-    website goes down or there is no connectivity for whatever reason.  When
-    this method is invoked via a GET request, the user is presented with an
-    empty form, which is then posted back to this method.  When this method
-    is invoked via a POST request, the form data are validated.  If the data
-    are valid, they will be saved as a new entry, and the user will be sent
-    back to their log entry list.  If the data are invalid, the user will see
-    the form again with the information they entered until they either abort
-    or enter valid data.
-    """
-
-    if request.method == 'POST':
-        # populate the form with the posted data
-        form = timepiece_forms.AddUpdateEntryForm(request.POST)
-
-        # validate the data
-        if form.is_valid():
-            # the data are valid... save them
-            entry = form.save(commit=False)
-            entry.user = request.user
-            entry.save()
-
-            # create a message for the user
-            request.user.message_set.create(message='The entry has been added successfully.')
-
-            # redirect them to the log entry list
-            return HttpResponseRedirect(reverse('timepiece-entries'))
-        else:
-            # create an error message for the user to see
-            request.user.message_set.create(message='Please correct the errors below')
-    else:
-        # send back an empty form
-        form = timepiece_forms.AddUpdateEntryForm()
-
-    return render_to_response('timepiece/time-sheet/entry/add_update_entry.html',
-                              {'form': form,
-                               'add_update': 'Add',
-                               'callback': reverse('timepiece-add')},
                               context_instance=RequestContext(request))
 
 
