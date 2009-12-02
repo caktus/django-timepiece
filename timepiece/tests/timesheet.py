@@ -5,7 +5,7 @@ import itertools
 
 from django.core.urlresolvers import reverse
 
-from timepiece.tests.base import BaseTest
+from timepiece.tests.base import TimepieceDataTestCase
 
 from timepiece import models as timepiece
 from timepiece import forms as timepiece_forms
@@ -13,7 +13,7 @@ from timepiece import forms as timepiece_forms
 from dateutil import relativedelta
 
 
-class ClockInTest(BaseTest):
+class ClockInTest(TimepieceDataTestCase):
     def setUp(self):
         super(ClockInTest, self).setUp()
         self.url = reverse('timepiece-clock-in')
@@ -56,7 +56,7 @@ class ClockInTest(BaseTest):
         self.assertEqual(timepiece.Entry.objects.count(), 1)
 
 
-class ClockOutTest(BaseTest):
+class ClockOutTest(TimepieceDataTestCase):
     def testBasicClockOut(self):
         entry = timepiece.Entry.objects.create(
             user=self.user,
@@ -117,7 +117,7 @@ class ClockOutTest(BaseTest):
         self.assertAlmostEqual(saved.hours, 1)
 
 
-class CreateEditEntry(BaseTest):
+class CreateEditEntry(TimepieceDataTestCase):
     def testProjectList(self):
         self.client.login(username='user', password='abc')
         response = self.client.get(reverse('timepiece-add'))

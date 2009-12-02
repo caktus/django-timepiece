@@ -6,9 +6,53 @@ from django.db.models import Q
 
 from timepiece import models as timepiece
 from crm import models as crm
+from crm.tests import CrmDataTestCase
 
 
-class BaseTest(TestCase):
+class TimepieceDataTestCase(CrmDataTestCase):
+    def create_project_type(self, data={}):
+        defaults = {
+            'label': self.random_string(30, extra_chars=' '),
+            'type': 'project-type', 
+        }
+        defaults.update(data)
+        return timepiece.Attribute.objects.create(**defaults)
+    
+    def create_project_status(self, data={}):
+        defaults = {
+            'label': self.random_string(30, extra_chars=' '),
+            'type': 'project-status', 
+        }
+        defaults.update(data)
+        return timepiece.Attribute.objects.create(**defaults)
+    
+    def create_project(self, data={}):
+        name = self.random_string(30, extra_chars=' ')
+        defaults = {
+            'name': name,
+            'type': self.create_project_type(),
+            'status': self.create_project_status(),
+        }
+        defaults.update(data)
+        if 'business' not in defaults:
+            defaults['business'] = self.create_business()
+        if 'point_person' not in defaults:
+            defaults['point_person'] = User.objects.create_user(
+                self.random_string(10), 
+                'test@example.com', 
+                'test',
+            )
+        return timepiece.Project.objects.create(**defaults)
+    
+    def create_project_relationship(self, data={}):
+        defaults = {}
+        defaults.update(data)
+        if 'contact' not in defaults:
+            defaults['contact'] = self.create_person()
+        if 'project' not in defaults:
+            defaults['project'] = self.create_project()
+        return timepiece.ProjectRelationship.objects.create(**defaults)
+    
     def setUp(self):
         self.user = User.objects.create_user('user', 'u@abc.com', 'abc')
         self.user2 = User.objects.create_user('user2', 'u2@abc.com', 'abc')

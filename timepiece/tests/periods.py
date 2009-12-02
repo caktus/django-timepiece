@@ -5,7 +5,7 @@ import itertools
 
 from django.core.urlresolvers import reverse
 
-from timepiece.tests.base import BaseTest
+from timepiece.tests.base import TimepieceDataTestCase
 
 from timepiece import models as timepiece
 from timepiece import forms as timepiece_forms
@@ -20,7 +20,7 @@ def previous_and_next(some_iterable):
     return itertools.izip(prevs, items, nexts)
 
 
-class BillingPeriodTest(BaseTest):
+class BillingPeriodTest(TimepieceDataTestCase):
     def assertWindowBoundaries(self, windows):
         for prev, curr, next in previous_and_next(windows):
             if curr and prev:
