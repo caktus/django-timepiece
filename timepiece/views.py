@@ -132,10 +132,22 @@ def toggle_paused(request, entry_id):
             action = 'paused'
         else:
             action = 'resumed'
-
+        
+        delta = datetime.datetime.now() - entry.start_time
+        seconds = delta.seconds - entry.seconds_paused
+        seconds += delta.days * 86400
+        if seconds < 3600:
+            seconds /= 60.0
+            duration = "You've clocked %d minutes." % seconds
+        else:
+            seconds /= 3600.0
+            duration = "You've clocked %.2f hours." % seconds
+        
+        message = 'The log entry has been %s. %s' % (action, duration)
+        
         # create a message that can be displayed to the user
-        request.user.message_set.create(message='The log entry has been %s.' % action)
-
+        request.user.message_set.create(message=message)
+    
     # redirect to the log entry list
     return HttpResponseRedirect(reverse('timepiece-entries'))
 
