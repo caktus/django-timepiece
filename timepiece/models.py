@@ -24,6 +24,10 @@ class Attribute(models.Model):
         blank=True, 
         choices=SORT_ORDER_CHOICES,
     )
+    enable_timetracking = models.BooleanField('Enables time tracking '
+        'functionality for projects with this type or status.',
+        default=False,
+    )
     
     class Meta:
         unique_together = ('type', 'label')

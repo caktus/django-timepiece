@@ -84,6 +84,7 @@ class TimepieceDataTestCase(CrmDataTestCase):
         status = timepiece.Attribute.objects.create(
             type='project-status',
             label='Current',
+            enable_timetracking=True,
         )
         type_ = timepiece.Attribute.objects.create(
             type='project-type',

@@ -1,4 +1,6 @@
 from django import forms
+from django.db.models import Q
+
 from timepiece.models import Project, Activity, Entry
 from timepiece.fields import PendulumDateTimeField
 from timepiece.widgets import PendulumDateTimeWidget
@@ -24,6 +26,9 @@ class ClockInForm(forms.ModelForm):
         )
         self.fields['project'].queryset = timepiece.Project.objects.filter(
             contacts__user=self.user,
+        ).filter(
+            Q(status__enable_timetracking=True) |
+            Q(type__enable_timetracking=True)
         )
     
     def save(self, commit=True):
