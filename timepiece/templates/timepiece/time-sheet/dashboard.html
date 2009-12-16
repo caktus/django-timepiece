@@ -25,7 +25,7 @@
         <th>Location</th>
     </tr>
     {% for entry in entries %}
-    <tr>
+    <tr class='{% if entry.is_paused %}paused{% endif %}'>
         <td>{{ entry.start_time|date:"m/d/Y (D)" }}</td>
         <td><a href='{% url view_project business_id=entry.project.business.id,project_id=entry.project.id %}'>{{ entry.project }}</a></td>
         <td>{{ entry.start_time|date:"P" }}</td>
@@ -40,7 +40,7 @@
             {{ entry.seconds_paused|seconds_to_hours|floatformat:2 }}
             {% if not entry.end_time %}
                 {% if entry.is_paused %}
-                    <a href="{% url timepiece-toggle-paused entry.id %}">(Unpause)</a>
+                    <a href="{% url timepiece-toggle-paused entry.id %}">(Resume)</a>
                 {% else %}
                     <a href="{% url timepiece-toggle-paused entry.id %}">(Pause)</a>
                 {% endif %}
