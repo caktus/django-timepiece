@@ -92,7 +92,7 @@
 {% endif %}
 
 {% if logged_in_entries %}
-    <table id='activity-summary' class='timepiece-summary'>
+    <table id='active-entries' class='timepiece-summary'>
         <caption>Active Entries</caption>
     {% for entry in logged_in_entries %}
         <tr class='{% if entry.is_paused %}paused{% endif %}'>
