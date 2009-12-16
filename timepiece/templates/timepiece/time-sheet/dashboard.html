@@ -11,7 +11,11 @@
     <li><a href="{% url timepiece-add %}">Add Entry</a></li>
 </ul>
 
-<h3>Past 2 Weeks</h3>
+<h3>
+    {% with entries.count as num_entries %}
+        Past 2 Weeks ({{ num_entries }} entr{{ num_entries|pluralize:"y,ies" }})
+    {% endwith %}
+</h3>
 
 <table>
     <tr>
