@@ -1,9 +1,11 @@
+from decimal import Decimal
+
 from django import forms
 from django.db.models import Q
 
 from timepiece.models import Project, Activity, Entry
 from timepiece.fields import PendulumDateTimeField
-from timepiece.widgets import PendulumDateTimeWidget
+from timepiece.widgets import PendulumDateTimeWidget, SecondsToHoursWidget
 from datetime import datetime
 
 from timepiece import models as timepiece
@@ -93,6 +95,19 @@ class AddUpdateEntryForm(forms.ModelForm):
         self.fields['project'].queryset = timepiece.Project.objects.filter(
             contacts__user=self.user,
         )
+        self.fields['seconds_paused'] = forms.DecimalField(
+            min_value=Decimal('0.0'),
+            max_digits=5,
+            decimal_places=2,
+            label='Hours paused',
+            help_text='e.g. 0.75 = 45 minutes',
+            widget=SecondsToHoursWidget(),
+        )
+    
+    def clean_seconds_paused(self):
+        seconds_paused = self.cleaned_data['seconds_paused']
+        seconds_paused = int(seconds_paused * 3600)
+        return seconds_paused
     
     def clean_start_time(self):
         """

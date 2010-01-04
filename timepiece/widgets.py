@@ -1,3 +1,5 @@
+from decimal import Decimal
+
 from django import forms
 from django.conf import settings
 from django.utils.safestring import mark_safe
@@ -55,3 +57,17 @@ class PendulumDateTimeWidget(forms.MultiWidget):
     <label for="%s">Date:</label> %s<br />
     <label for="%s">Time:</label> %s
 </div>''' % (date_id, rendered_widgets[0], time_id, rendered_widgets[1]))
+
+
+class SecondsToHoursWidget(forms.TextInput):
+    def render(self, name, value, attrs=None):
+        if value:
+            # all DB values will be integers (PositiveIntegerField), so
+            # anything else is a form submission (possibly invalid)
+            try:
+                is_integer = float(value).is_integer()
+            except ValueError:
+                is_integer = False
+            if is_integer:
+                value = round(float(value)/3600.0, 2)
+        return super(SecondsToHoursWidget, self).render(name, value, attrs)
