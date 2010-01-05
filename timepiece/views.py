@@ -345,7 +345,6 @@ def export_project_time_sheet(request, project, window_id=None):
         'Time Out',
         'Breaks',
         'Hours',
-        'Comments',
     ))
     for entry in entries:
         data = [
@@ -357,7 +356,6 @@ def export_project_time_sheet(request, project, window_id=None):
             entry.end_time.strftime('%X'),
             seconds_to_hours(entry.seconds_paused),
             entry.hours,
-            entry.comments,
         ]
         writer.writerow(data)
     writer.writerow(('', '', '', '', '', '', 'Total:', total))
