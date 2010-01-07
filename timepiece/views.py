@@ -4,7 +4,7 @@ import datetime
 from django.template import RequestContext
 from django.shortcuts import render_to_response, get_object_or_404
 from django.core.urlresolvers import reverse
-from django.http import HttpResponse, HttpResponseRedirect, Http404
+from django.http import HttpResponse, HttpResponseRedirect, Http404, HttpResponseForbidden
 from django.contrib.auth.decorators import login_required, permission_required
 from django.db.models import Sum, Q
 from django.db import transaction
@@ -362,7 +362,6 @@ def export_project_time_sheet(request, project, window_id=None):
     return response
 
 
-@permission_required('timepiece.view_person_time_sheet')
 @render_with('timepiece/time-sheet/people/view.html')
 def view_person_time_sheet(request, person_id, period_id, window_id=None):
     try:
@@ -373,6 +372,10 @@ def view_person_time_sheet(request, person_id, period_id, window_id=None):
             contact__id=person_id,
             repeat_period__id=period_id,
         )
+        if not (request.user.is_authenticated() and \
+        (request.user.has_perm('timepiece.view_person_time_sheet') or \
+        int(person_id) == time_sheet.contact.user.pk)):
+            return HttpResponseForbidden('Forbidden')
     except timepiece.PersonRepeatPeriod.DoesNotExist:
         raise Http404
     window, entries, total = get_entries(

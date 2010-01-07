@@ -1,4 +1,5 @@
 {% extends "timepiece/base.html" %}
+{% load timepiece_tags %}
 
 {% block sub_navigation %}
     <ul class='header-actions-left'>
@@ -12,5 +13,6 @@
         {% if perms.timepiece.view_entry_summary %}
             <li><a href="{% url timepiece-summary %}">General Ledger</a></li>
         {% endif %}
+        {% my_ledger %}
     </ul>
 {% endblock %}

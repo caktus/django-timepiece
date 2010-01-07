@@ -1,0 +1,3 @@
+{% if period %}
+    <li><strong><a href='{% url view_person_time_sheet period.contact.pk, period.repeat_period.pk %}'>My Ledger</a></strong></li>
+{% endif %}
