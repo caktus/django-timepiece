@@ -13,6 +13,45 @@ from timepiece import forms as timepiece_forms
 from dateutil import relativedelta
 
 
+class MyLedgerTest(TimepieceDataTestCase):
+    def setUp(self):
+        super(MyLedgerTest, self).setUp()
+        self.month_period = timepiece.RepeatPeriod.objects.create(
+            count = 1,
+            interval = 'month',
+            active = True,
+        )
+        self.timesheet = timepiece.PersonRepeatPeriod.objects.create(
+            contact = self.contact,
+            repeat_period = self.month_period
+        )
+        self.billing_window = timepiece.BillingWindow.objects.create(
+            period = self.month_period,
+            date = datetime.datetime.now(),
+            end_date = datetime.datetime.now() + self.month_period.delta()
+        )
+        self.url = reverse('view_person_time_sheet', \
+        kwargs={'person_id': self.contact.pk, 'period_id': self.timesheet.pk})
+        
+    def testMyLedger(self):
+        self.client.login(username='user', password='abc')
+        response = self.client.get(self.url)
+        self.assertEquals(response.status_code, 200)
+        
+    def testNotMyLedger(self):
+        self.client.login(username='user2', password='abc')
+        response = self.client.get(self.url)
+        self.assertEquals(response.status_code, 403)
+    
+    def testNoLedger(self):
+        self.client.login(username='user2', password='abc')
+        self.url = reverse('timepiece-entries')
+        try:
+            response = self.client.get(self.url)
+        except Exception, e:
+            self.fail(e)
+
+        
 class ClockInTest(TimepieceDataTestCase):
     def setUp(self):
         super(ClockInTest, self).setUp()

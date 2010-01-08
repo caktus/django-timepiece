@@ -375,7 +375,7 @@ def view_person_time_sheet(request, person_id, period_id, window_id=None):
     except timepiece.PersonRepeatPeriod.DoesNotExist:
         raise Http404
     if not (request.user.has_perm('timepiece.view_person_time_sheet') or \
-    int(person_id) == time_sheet.contact.user_id):
+    time_sheet.contact.user.pk == request.user.id):
         return HttpResponseForbidden('Forbidden')
     window, entries, total = get_entries(
         time_sheet.repeat_period,
