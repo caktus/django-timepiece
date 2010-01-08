@@ -361,7 +361,7 @@ def export_project_time_sheet(request, project, window_id=None):
     writer.writerow(('', '', '', '', '', '', 'Total:', total))
     return response
 
-
+@login_required
 @render_with('timepiece/time-sheet/people/view.html')
 def view_person_time_sheet(request, person_id, period_id, window_id=None):
     try:
@@ -372,12 +372,11 @@ def view_person_time_sheet(request, person_id, period_id, window_id=None):
             contact__id=person_id,
             repeat_period__id=period_id,
         )
-        if not (request.user.is_authenticated() and \
-        (request.user.has_perm('timepiece.view_person_time_sheet') or \
-        int(person_id) == time_sheet.contact.user.pk)):
-            return HttpResponseForbidden('Forbidden')
     except timepiece.PersonRepeatPeriod.DoesNotExist:
         raise Http404
+    if not (request.user.has_perm('timepiece.view_person_time_sheet') or \
+    int(person_id) == time_sheet.contact.user_id):
+        return HttpResponseForbidden('Forbidden')
     window, entries, total = get_entries(
         time_sheet.repeat_period,
         window_id=window_id,
