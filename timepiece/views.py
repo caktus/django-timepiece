@@ -160,7 +160,6 @@ def create_edit_entry(request, entry_id=None):
             entry = timepiece.Entry.objects.get(
                 pk=entry_id,
                 user=request.user,
-                end_time__isnull=False,
             )
         except timepiece.Entry.DoesNotExist:
             raise Http404

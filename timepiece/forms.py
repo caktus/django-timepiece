@@ -82,20 +82,23 @@ class AddUpdateEntryForm(forms.ModelForm):
     end_time = forms.DateTimeField(
         widget=forms.SplitDateTimeWidget(
             attrs={'class': 'timepiece-time'},
-            date_format='%m/%d/%Y',)
+            date_format='%m/%d/%Y',
+        )
     )
     
     class Meta:
         model = Entry
         exclude = ('user', 'pause_time', 'site', 'hours')
-    
+
     def __init__(self, *args, **kwargs):
         self.user = kwargs.pop('user')
         super(AddUpdateEntryForm, self).__init__(*args, **kwargs)
         self.fields['project'].queryset = timepiece.Project.objects.filter(
             contacts__user=self.user,
         )
-    
+        if not self.instance.end_time:
+            del self.fields['end_time']
+
     def clean_start_time(self):
         """
         Make sure that the start time is always before the end time

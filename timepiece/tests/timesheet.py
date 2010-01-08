@@ -32,17 +32,17 @@ class MyLedgerTest(TimepieceDataTestCase):
         )
         self.url = reverse('view_person_time_sheet', \
         kwargs={'person_id': self.contact.pk, 'period_id': self.timesheet.pk})
-        
+
     def testMyLedger(self):
         self.client.login(username='user', password='abc')
         response = self.client.get(self.url)
         self.assertEquals(response.status_code, 200)
-        
+
     def testNotMyLedger(self):
         self.client.login(username='user2', password='abc')
         response = self.client.get(self.url)
         self.assertEquals(response.status_code, 403)
-    
+
     def testNoLedger(self):
         self.client.login(username='user2', password='abc')
         self.url = reverse('timepiece-entries')
@@ -51,7 +51,7 @@ class MyLedgerTest(TimepieceDataTestCase):
         except Exception, e:
             self.fail(e)
 
-        
+
 class ClockInTest(TimepieceDataTestCase):
     def setUp(self):
         super(ClockInTest, self).setUp()
