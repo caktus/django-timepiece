@@ -30,8 +30,10 @@ class MyLedgerTest(TimepieceDataTestCase):
             date = datetime.datetime.now(),
             end_date = datetime.datetime.now() + self.month_period.delta()
         )
-        self.url = reverse('view_person_time_sheet', \
-        kwargs={'person_id': self.contact.pk, 'period_id': self.timesheet.pk})
+        self.url = reverse('view_person_time_sheet', kwargs={
+            'person_id': self.contact.pk,
+            'period_id': self.timesheet.repeat_period.pk,
+        })
 
     def testMyLedger(self):
         self.client.login(username='user', password='abc')
