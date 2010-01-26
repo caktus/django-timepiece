@@ -198,8 +198,19 @@ class Entry(models.Model):
         if not self.is_paused:
             self.pause_time = datetime.datetime.now()
     
+    def pause_all(self):
+        """
+        Pause all open entries
+        """
+        entries = self.user.timepiece_entries.filter(
+        end_time__isnull=True).all()
+        for entry in entries:
+            entry.pause()
+            entry.save()
+    
     def unpause(self, date=None):
         if self.is_paused:
+            self.pause_all()
             if not date:
                 date = datetime.datetime.now()
             delta = date - self.pause_time
@@ -230,6 +241,7 @@ class Entry(models.Model):
         if not self.is_closed:
             self.user = user
             self.project = project
+            self.pause_all()
             if not self.start_time:
                 self.start_time = datetime.datetime.now()
 

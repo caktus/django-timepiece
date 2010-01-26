@@ -54,15 +54,6 @@ def clock_in(request):
         form = timepiece_forms.ClockInForm(request.POST, user=request.user)
         if form.is_valid():
             # if the user chose to pause any open entries, pause them
-            if request.POST.get('pause_open', '0') == '1':
-                open_entries = timepiece.Entry.objects.filter(
-                    user=request.user,
-                    end_time__isnull=True,
-                    pause_time__isnull=True,
-                )
-                for log in open_entries:
-                    log.pause()
-                    log.save()
             entry = form.save()
             request.user.message_set.create(message='You have clocked into %s' % entry.project)
             return HttpResponseRedirect(reverse('timepiece-entries'))
