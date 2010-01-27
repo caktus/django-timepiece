@@ -29,7 +29,7 @@
         <th>Location</th>
     </tr>
     {% for entry in entries %}
-    <tr{% if entry.comments %} title='{{ entry.comments }}'{% endif %} class='{% if entry.is_paused %}paused{% endif %}{% if not entry.end_time %} active{% endif %}'>
+    <tr{% if entry.comments %} title='{{ entry.comments }}'{% endif %} class='{% if entry.is_paused %}paused{% endif %}{% if not entry.end_time %} active{% endif %} {% if entry.is_overlapping%}overlapping{% endif %}'>
         <td>{{ entry.start_time|date:"m/d/Y (D)" }}</td>
         <td><a href='{% url view_project business_id=entry.project.business.id,project_id=entry.project.id %}'>{{ entry.project }}</a></td>
         <td>{{ entry.start_time|date:"P" }}</td>

@@ -59,6 +59,70 @@ class ClockInTest(TimepieceDataTestCase):
         super(ClockInTest, self).setUp()
         self.url = reverse('timepiece-clock-in')
     
+    def testClockInPause(self):
+        self.client.login(username='user', password='abc')
+        now = datetime.datetime.now()- datetime.timedelta(minutes=20)
+        data = {
+            'project': self.project.id,
+            'start_time_0': now.strftime('%m/%d/%Y'),
+            'start_time_1': now.strftime('%H:%M:00'),
+        }
+        response = self.client.post(self.url, data)
+        now = datetime.datetime.now()+ datetime.timedelta(seconds=1)
+        data = {
+            'project': self.project2.id,
+            'start_time_0': now,
+            'start_time_1': now,
+        }        
+        response = self.client.post(self.url, data)
+        for entry in timepiece.Entry.objects.all():
+            now = datetime.datetime.now()
+            data = {
+                'end_time_0': now.strftime('%m/%d/%Y'),
+                'end_time_1': now.strftime('%H:%M:00'),
+            }
+            response = self.client.post(
+                reverse('timepiece-clock-out', args=[entry.pk]),
+                data,
+                follow=True,
+            )
+        for entry in timepiece.Entry.objects.all():
+            if entry.is_overlapping() != False:
+                self.fail('Overlapping Times')
+    
+    def testPausePause(self):
+        self.client.login(username='user', password='abc')
+        now = datetime.datetime.now()- datetime.timedelta(minutes=20)
+        data = {
+            'project': self.project.id,
+            'start_time_0': now.strftime('%m/%d/%Y'),
+            'start_time_1': now.strftime('%H:%M:00'),
+        }
+        response = self.client.post(self.url, data)
+        e_id = timepiece.Entry.objects.filter(project=self.project.id)[0]
+        now = datetime.datetime.now()+ datetime.timedelta(seconds=1)
+        data = {
+            'project': self.project2.id,
+            'start_time_0': now,
+            'start_time_1': now,
+        }        
+        response = self.client.post(self.url, data)
+        e_id.unpause()
+        for entry in timepiece.Entry.objects.all():
+            now = datetime.datetime.now()+datetime.timedelta(hours=1)
+            data = {
+                'end_time_0': now.strftime('%m/%d/%Y'),
+                'end_time_1': now.strftime('%H:%M:00'),
+            }
+            response = self.client.post(
+                reverse('timepiece-clock-out', args=[entry.pk]),
+                data,
+                follow=True,
+            )
+        for entry in timepiece.Entry.objects.all():
+            if entry.is_overlapping() != False:
+                self.fail('Overlapping Times')
+    
     def testProjectListFiltered(self):
         self.client.login(username='user', password='abc')
         response = self.client.get(self.url)

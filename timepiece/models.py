@@ -3,6 +3,7 @@ from decimal import Decimal
 
 from django.conf import settings
 from django.db import models
+from django.db.models import Q, Avg, Sum, Max, Min
 from django.contrib.auth.models import User
 
 from timepiece import utils
@@ -157,6 +158,26 @@ class Entry(models.Model):
     comments = models.TextField(blank=True)
     date_updated = models.DateTimeField(auto_now=True)
     hours = models.DecimalField(max_digits=8, decimal_places=2, default=0)
+    
+    def is_overlapping(self):
+        if self.start_time and self.end_time:
+            entries = self.user.timepiece_entries.filter(
+            Q(end_time__range=(self.start_time,self.end_time))|\
+            Q(start_time__range=(self.start_time,self.end_time))|\
+            Q(start_time__lte=self.start_time, end_time__gte=self.end_time))
+            totals = entries.aggregate(
+            max=Max('end_time'),min=Min('start_time'))
+            totals['total'] = 0
+            for entry in entries:
+                totals['total'] = totals['total'] + entry.get_seconds()
+            totals['diff'] = totals['max']-totals['min']
+            totals['diff'] = totals['diff'].seconds + totals['diff'].days*86400
+            if totals['total'] > totals['diff']:
+                return True
+            else:
+                return False
+        else:
+            return None
     
     def save(self, force_insert=False, force_update=False):
         self.hours = Decimal('%.2f' % round(self.total_hours, 2))

@@ -39,7 +39,7 @@
             <th>Hours</th>
         </tr>
         {% for entry in entries %}
-        <tr>
+        <tr class="{% if entry.is_overlapping%}overlapping{% endif %}">
             <td>{{ entry.start_time|date:"m/d/Y (D)" }}</td>
             <td>{{ entry.project.name }}</td>
             <td>{{ entry.location }}</td>

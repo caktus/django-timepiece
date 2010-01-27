@@ -1,6 +1,12 @@
 {% extends "timepiece/base.html" %}
 {% load timepiece_tags %}
-
+{% block css %}{{ block.super }}
+<style>
+tr.overlapping {
+    background-color: #ff0000;
+}
+</style>
+{% endblock %}
 {% block sub_navigation %}
     <ul class='header-actions-left'>
         <li><strong><a href='{% url timepiece-entries %}'>Timepiece</a></strong></li>
