@@ -11,7 +11,7 @@
         {{ form }}
     </table>
 </form>
-
+<div style="float:left;padding:10px;">
 <h3>Hours by Project</h3>
 
 <br />
@@ -30,5 +30,20 @@
         <td>{{ total_hours|floatformat:2 }}</td>
     </tr>
 </table>
-
+</div>
+<div style="float:left;padding:10px;">
+<h3>Hours by People</h3>
+<br />
+<table>
+    {% for entry in people_totals %}
+    <tr>
+        <td>{{ entry.user__first_name}} {{ entry.user__last_name }}</td>
+        <td>{{ entry.hours|floatformat:2 }}</td>
+    </tr>
+    {% endfor %}
+    <tr>
+        <th colspan='2'>&nbsp;</th>
+    </tr>
+</table>
+</div>
 {% endblock %}
