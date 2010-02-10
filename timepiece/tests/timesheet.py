@@ -13,6 +13,47 @@ from timepiece import forms as timepiece_forms
 from dateutil import relativedelta
 
 
+class EditableTest(TimepieceDataTestCase):
+    def setUp(self):
+        super(EditableTest, self).setUp()
+        self.day_period = timepiece.RepeatPeriod.objects.create(
+            count = 2,
+            interval = 'day',
+            active = True,
+        )
+        self.timesheet = timepiece.PersonRepeatPeriod.objects.create(
+            contact = self.contact,
+            repeat_period = self.day_period
+        )
+        self.billing_window = timepiece.BillingWindow.objects.create(
+            period = self.day_period,
+            date = datetime.datetime.now() - datetime.timedelta(days=8),
+            end_date = datetime.datetime.now() - datetime.timedelta(days=8) + self.day_period.delta(),
+        )
+        self.entry = timepiece.Entry.objects.create(
+            user = self.user,
+            project = self.project,
+            activity = self.activity,
+            start_time = datetime.datetime.now() - datetime.timedelta(days=6),
+            end_time = datetime.datetime.now() - datetime.timedelta(days=6),
+            seconds_paused = 0
+        )
+        self.entry2 = timepiece.Entry.objects.create(
+            user = self.user,
+            project = self.project,
+            activity = self.activity,
+            start_time = datetime.datetime.now() - datetime.timedelta(days=2),
+            end_time = datetime.datetime.now() - datetime.timedelta(days=2),
+            seconds_paused = 0
+        )
+        timepiece.RepeatPeriod.objects.update_billing_windows()
+        
+    def testUnEditable(self):
+        self.assertFalse(self.entry.is_editable)
+        
+    def testEditable(self):
+        self.assertTrue(self.entry2.is_editable)
+
 class MyLedgerTest(TimepieceDataTestCase):
     def setUp(self):
         super(MyLedgerTest, self).setUp()
