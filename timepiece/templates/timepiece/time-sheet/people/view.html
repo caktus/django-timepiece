@@ -48,6 +48,7 @@
             <td>{{ entry.activity }}</td>
             <td>{{ entry.seconds_paused|seconds_to_hours }}</td>
             <td>{{ entry.hours }}</td>
+            {% if is_editable %}<td><a href="{% url timepiece-update entry.id %}">Edit</a></td>{% endif %}
         </tr>
         {% endfor %}
         <tr>

@@ -10,7 +10,14 @@ from timepiece import utils
 
 from dateutil.relativedelta import relativedelta
 
+from datetime import timedelta
+
 from crm import models as crm
+
+try:
+    settings.TIMEPIECE_TIMESHEET_EDITABLE_DAYS
+except AttributeError:
+    settings.TIMEPIECE_TIMESHEET_EDITABLE_DAYS = 3
 
 class Attribute(models.Model):
     ATTRIBUTE_TYPES = (
@@ -265,7 +272,20 @@ class Entry(models.Model):
             self.pause_all()
             if not self.start_time:
                 self.start_time = datetime.datetime.now()
-
+    
+    def __billing_window(self):
+        return BillingWindow.objects.get(
+            period__contacts__user=self.user,
+            date__lte = self.end_time,
+            end_date__gt = self.end_time)
+    billing_window = property(__billing_window)
+    
+    def __is_editable(self):
+        end_date =self.billing_window.end_date+\
+            timedelta(days=settings.TIMEPIECE_TIMESHEET_EDITABLE_DAYS)
+        return end_date >= datetime.date.today()
+    is_editable = property(__is_editable)
+        
     def __delete_key(self):
         """
         Make it a little more interesting for deleting logs

@@ -8,6 +8,7 @@ from django.http import HttpResponse, HttpResponseRedirect, Http404, HttpRespons
 from django.contrib.auth.decorators import login_required, permission_required
 from django.db.models import Sum, Q
 from django.db import transaction
+from django.conf import settings
 
 from crm.decorators import render_with
 from crm import forms as crm_forms
@@ -18,6 +19,10 @@ from timepiece.utils import determine_period
 from timepiece import forms as timepiece_forms
 from timepiece.templatetags.timepiece_tags import seconds_to_hours
 
+try:
+    settings.TIMEPIECE_TIMESHEET_EDITABLE_DAYS
+except AttributeError:
+    settings.TIMEPIECE_TIMESHEET_EDITABLE_DAYS = 3
 
 @login_required
 @render_with('timepiece/time-sheet/dashboard.html')
@@ -152,6 +157,8 @@ def create_edit_entry(request, entry_id=None):
                 pk=entry_id,
                 user=request.user,
             )
+            if not entry.is_editable:
+                raise Http404
         except timepiece.Entry.DoesNotExist:
             raise Http404
     else:
@@ -378,7 +385,13 @@ def view_person_time_sheet(request, person_id, period_id, window_id=None):
     activity_entries = entries.order_by().values(
         'activity__name',
     ).annotate(sum=Sum('hours')).order_by('-sum')
+    is_editable = window.end_date +\
+        datetime.timedelta(days=settings.TIMEPIECE_TIMESHEET_EDITABLE_DAYS) >=\
+        datetime.date.today()
+        
+        
     context = {
+        'is_editable': is_editable,
         'person': time_sheet.contact,
         'period': window.period,
         'window': window,
