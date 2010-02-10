@@ -391,7 +391,6 @@ class RepeatPeriod(models.Model):
         else:
             return []
 
-
 class BillingWindow(models.Model):
     period = models.ForeignKey(RepeatPeriod, related_name='billing_windows')
     date = models.DateField()
@@ -427,7 +426,12 @@ class BillingWindow(models.Model):
             self._previous = window
         return self._previous
 
-
+    def __entries(self):
+            return Entry.objects.filter(
+                end_time__lte = self.end_date,
+                end_time__gt = self.date)
+    entries = property(__entries)
+    
 class PersonRepeatPeriod(models.Model):
     contact = models.ForeignKey(
         crm.Contact,
@@ -438,3 +442,12 @@ class PersonRepeatPeriod(models.Model):
         RepeatPeriod,
         unique=True,
     )
+    def list_total_hours(self, N = 2):
+        bw = BillingWindow.objects.filter(period=self.repeat_period).order_by('-date')[:N]
+        result = []
+        for b in bw:
+            result.append(self.contact.user.timepiece_entries.filter(
+                end_time__lte = b.end_date,
+                end_time__gt = b.date
+            ).aggregate(total=Sum('hours')))
+        return result
