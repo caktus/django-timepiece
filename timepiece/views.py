@@ -157,8 +157,10 @@ def create_edit_entry(request, entry_id=None):
                 pk=entry_id,
                 user=request.user,
             )
-            if not entry.is_editable:
-                raise Http404
+            if not entry.end_time == None:
+                if not entry.is_editable:
+                    raise Http404
+                    
         except timepiece.Entry.DoesNotExist:
             raise Http404
     else:
