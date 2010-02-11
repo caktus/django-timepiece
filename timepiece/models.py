@@ -143,6 +143,11 @@ class Activity(models.Model):
         ordering = ('name',)
         verbose_name_plural = 'activities'
 
+class Location(models.Model):
+    """
+    Location
+    """
+    name = models.TextField(blank=False)
 
 class Entry(models.Model):
     """
@@ -157,7 +162,7 @@ class Entry(models.Model):
         null=True,
         related_name='entries',
     )
-    location = models.CharField(max_length=255, blank=True)
+    location = models.ForeignKey(Location, related_name='entires')
     start_time = models.DateTimeField()
     end_time = models.DateTimeField(blank=True, null=True)
     seconds_paused = models.PositiveIntegerField(default=0)
@@ -281,9 +286,15 @@ class Entry(models.Model):
     billing_window = property(__billing_window)
     
     def __is_editable(self):
-        end_date =self.billing_window.end_date+\
-            timedelta(days=settings.TIMEPIECE_TIMESHEET_EDITABLE_DAYS)
-        return end_date >= datetime.date.today()
+        if self.end_time:
+            try:
+                end_date =self.billing_window.end_date+\
+                    timedelta(days=settings.TIMEPIECE_TIMESHEET_EDITABLE_DAYS)
+                return end_date >= datetime.date.today()
+            except:
+                return True
+        else:
+            return True
     is_editable = property(__is_editable)
         
     def __delete_key(self):
