@@ -148,6 +148,12 @@ class Location(models.Model):
     Location
     """
     name = models.TextField(blank=False)
+    
+    def __unicode__(self):
+        """
+        The string representation of an instance of this class
+        """
+        return self.name
 
 class Entry(models.Model):
     """

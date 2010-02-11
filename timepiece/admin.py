@@ -51,4 +51,7 @@ class BillingWindowAdmin(admin.ModelAdmin):
     list_filter = ('period',)
 admin.site.register(timepiece.BillingWindow, BillingWindowAdmin)
 
+class LocationAdmin(admin.ModelAdmin):
+    list_display = ('id', 'name')
+admin.site.register(timepiece.Location, LocationAdmin)
 
