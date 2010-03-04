@@ -53,6 +53,33 @@ class TimepieceDataTestCase(CrmDataTestCase):
             defaults['project'] = self.create_project()
         return timepiece.ProjectRelationship.objects.create(**defaults)
     
+    def create_activity(self, data={}):
+        defaults = {
+            'code': self.random_string(5, extra_chars=' '),
+            'name': self.random_string(50, extra_chars=' '),
+        }
+        defaults.update(data)
+        return timepiece.Activity.objects.create(**defaults)
+    
+    def create_location(self, data={}):
+        defaults = {
+            'name': self.random_string(255, extra_chars=' '),
+            'slug': self.random_string(255),
+        }
+        defaults.update(data)
+        return timepiece.Location.objects.create(**defaults)
+    
+    def create_entry(self, data={}):
+        defaults = {}
+        defaults.update(data)
+        if 'activity' not in defaults:
+            defaults['activity'] = self.create_activity()
+        if 'project' not in defaults:
+            defaults['project'] = self.create_project()
+        if 'location' not in defaults:
+            defaults['location'] = self.create_location()
+        return timepiece.Entry.objects.create(**defaults)
+    
     def setUp(self):
         self.user = User.objects.create_user('user', 'u@abc.com', 'abc')
         self.user2 = User.objects.create_user('user2', 'u2@abc.com', 'abc')
@@ -108,3 +135,4 @@ class TimepieceDataTestCase(CrmDataTestCase):
             contact=self.contact,
             project=self.project,
         )
+        self.location = self.create_location()

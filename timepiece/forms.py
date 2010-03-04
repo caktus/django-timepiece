@@ -2,6 +2,7 @@ from decimal import Decimal
 
 from django import forms
 from django.db.models import Q
+from django.conf import settings
 
 from timepiece.models import Project, Activity, Entry
 from timepiece.fields import PendulumDateTimeField
@@ -15,10 +16,22 @@ from crm import models as crm
 class ClockInForm(forms.ModelForm):
     class Meta:
         model = timepiece.Entry
-        fields = ('project', 'start_time')
+        fields = ('location', 'project', 'start_time')
 
     def __init__(self, *args, **kwargs):
         self.user = kwargs.pop('user')
+        default_loc = getattr(
+            settings,
+            'TIMEPIECE_DEFAULT_LOCATION_SLUG',
+            None,
+        )
+        if default_loc:
+            try:
+                loc = timepiece.Location.objects.get(slug=default_loc)
+            except timepiece.Location.DoesNotExist:
+                loc = None
+            if loc:
+                kwargs['initial'] = {'location': loc.pk}
         super(ClockInForm, self).__init__(*args, **kwargs)
         self.fields['start_time'].required = False
         self.fields['start_time'].initial = datetime.now()

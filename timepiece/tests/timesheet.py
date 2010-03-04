@@ -30,22 +30,20 @@ class EditableTest(TimepieceDataTestCase):
             date = datetime.datetime.now() - datetime.timedelta(days=8),
             end_date = datetime.datetime.now() - datetime.timedelta(days=8) + self.day_period.delta(),
         )
-        self.entry = timepiece.Entry.objects.create(
-            user = self.user,
-            project = self.project,
-            activity = self.activity,
-            start_time = datetime.datetime.now() - datetime.timedelta(days=6),
-            end_time = datetime.datetime.now() - datetime.timedelta(days=6),
-            seconds_paused = 0
-        )
-        self.entry2 = timepiece.Entry.objects.create(
-            user = self.user,
-            project = self.project,
-            activity = self.activity,
-            start_time = datetime.datetime.now() - datetime.timedelta(days=2),
-            end_time = datetime.datetime.now() - datetime.timedelta(days=2),
-            seconds_paused = 0
-        )
+        self.entry = self.create_entry({
+            'user': self.user,
+            'project': self.project,
+            'start_time': datetime.datetime.now() - datetime.timedelta(days=6),
+            'end_time':  datetime.datetime.now() - datetime.timedelta(days=6),
+            'seconds_paused': 0,
+        })
+        self.entry2 = self.create_entry({
+            'user': self.user,
+            'project': self.project,
+            'start_time': datetime.datetime.now() - datetime.timedelta(days=2),
+            'end_time':  datetime.datetime.now() - datetime.timedelta(days=2),
+            'seconds_paused': 0,
+        })
         timepiece.RepeatPeriod.objects.update_billing_windows()
         
     def testUnEditable(self):
@@ -138,6 +136,7 @@ class ClockInTest(TimepieceDataTestCase):
             'project': self.project.id,
             'start_time_0': now.strftime('%m/%d/%Y'),
             'start_time_1': now.strftime('%H:%M:00'),
+            'location': self.location.pk,
         }
         response = self.client.post(self.url, data)
         e_id = timepiece.Entry.objects.filter(project=self.project.id)[0]
@@ -146,6 +145,7 @@ class ClockInTest(TimepieceDataTestCase):
             'project': self.project2.id,
             'start_time_0': now,
             'start_time_1': now,
+            'location': self.location.pk,
         }        
         response = self.client.post(self.url, data)
         e_id.unpause()
@@ -154,6 +154,7 @@ class ClockInTest(TimepieceDataTestCase):
             data = {
                 'end_time_0': now.strftime('%m/%d/%Y'),
                 'end_time_1': now.strftime('%H:%M:00'),
+                'location': self.location.pk,
             }
             response = self.client.post(
                 reverse('timepiece-clock-out', args=[entry.pk]),
@@ -196,6 +197,7 @@ class ClockInTest(TimepieceDataTestCase):
             'project': self.project.id,
             'start_time_0': [u'11/02/2009'],
             'start_time_1': [u'11:09:21'],
+            'location': self.location.pk,
         }
         response = self.client.post(self.url, data)
         self.assertEqual(response.status_code, 302)
@@ -204,17 +206,17 @@ class ClockInTest(TimepieceDataTestCase):
 
 class ClockOutTest(TimepieceDataTestCase):
     def testBasicClockOut(self):
-        entry = timepiece.Entry.objects.create(
-            user=self.user,
-            project=self.project,
-            activity=self.activity,
-            start_time=datetime.datetime.now() - datetime.timedelta(hours=5),
-        )
+        entry = self.create_entry({
+            'user': self.user,
+            'project': self.project,
+            'start_time': datetime.datetime.now() - datetime.timedelta(hours=5),
+        })
         self.client.login(username='user', password='abc')
         now = datetime.datetime.now()
         data = {
             'end_time_0': now.strftime('%m/%d/%Y'),
             'end_time_1': now.strftime('%H:%M:00'),
+            'location': self.location.pk,
         }
         response = self.client.post(
             reverse('timepiece-clock-out', args=[entry.pk]),
@@ -226,17 +228,17 @@ class ClockOutTest(TimepieceDataTestCase):
     
     def testClockOutWithSecondsPaused(self):
         now = datetime.datetime.now()
-        entry = timepiece.Entry.objects.create(
-            user=self.user,
-            project=self.project,
-            activity=self.activity,
-            start_time=now - datetime.timedelta(hours=5),
-            seconds_paused=3600, # 1 hour
-        )
+        entry = self.create_entry({
+            'user': self.user,
+            'project': self.project,
+            'start_time': now - datetime.timedelta(hours=5),
+            'seconds_paused': 3600, # 1 hour
+        })
         end_time = now - datetime.timedelta(hours=1)
         data = {
             'end_time_0': end_time.strftime('%m/%d/%Y'),
             'end_time_1': end_time.strftime('%H:%M:%S'),
+            'location': self.location.pk,
         }
         form = timepiece_forms.ClockOutForm(data, instance=entry)
         self.assertTrue(form.is_valid())
@@ -245,17 +247,17 @@ class ClockOutTest(TimepieceDataTestCase):
     
     def testClockOutWhilePaused(self):
         now = datetime.datetime.now()
-        entry = timepiece.Entry.objects.create(
-            user=self.user,
-            project=self.project,
-            activity=self.activity,
-            start_time=now - datetime.timedelta(hours=5),
-            pause_time=now - datetime.timedelta(hours=4)
-        )
+        entry = self.create_entry({
+            'user': self.user,
+            'project': self.project,
+            'start_time': now - datetime.timedelta(hours=5),
+            'pause_time': now - datetime.timedelta(hours=4),
+        })
         end_time = now - datetime.timedelta(hours=1)
         data = {
             'end_time_0': end_time.strftime('%m/%d/%Y'),
             'end_time_1': end_time.strftime('%H:%M:%S'),
+            'location': self.location.pk,
         }
         form = timepiece_forms.ClockOutForm(data, instance=entry)
         self.assertTrue(form.is_valid())

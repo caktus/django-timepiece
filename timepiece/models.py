@@ -143,17 +143,14 @@ class Activity(models.Model):
         ordering = ('name',)
         verbose_name_plural = 'activities'
 
+
 class Location(models.Model):
-    """
-    Location
-    """
-    name = models.TextField(blank=False)
+    name = models.CharField(max_length=255, unique=True)
+    slug = models.CharField(max_length=255, unique=True)
     
     def __unicode__(self):
-        """
-        The string representation of an instance of this class
-        """
         return self.name
+
 
 class Entry(models.Model):
     """
@@ -168,7 +165,10 @@ class Entry(models.Model):
         null=True,
         related_name='entries',
     )
-    location = models.ForeignKey(Location, related_name='entires')
+    location = models.ForeignKey(
+        Location,
+        related_name='entires',
+    )
     start_time = models.DateTimeField()
     end_time = models.DateTimeField(blank=True, null=True)
     seconds_paused = models.PositiveIntegerField(default=0)
