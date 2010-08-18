@@ -40,6 +40,7 @@
     </ul>
     {% if perms.timepiece.add_projectrelationship %}
     <form id="add-contact" action='{% url associate_contact business_id=project.business.id,project_id=project.id,action="add" %}?next={% url view_project business_id=project.business.id,project_id=project.id %}' method="post" accept-charset="utf-8">
+        {% csrf_token %}
         <div class="field-wrapper">
             {{ add_contact_form }}
             <input type="submit" name="submit" value="Add" id="submit" />

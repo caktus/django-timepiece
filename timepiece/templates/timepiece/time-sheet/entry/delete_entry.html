@@ -5,6 +5,7 @@
 {% block content %}
 <h2>Delete Entry</h2>
 <form action="{% url timepiece-delete entry.id %}" method="post">
+    {% csrf_token %}
     <h3>Are you sure you want to delete this entry?</h3>
     <br />
     <input type="submit" value="Yes" />

@@ -3,6 +3,7 @@
 {% block content %}
 <h2>Clock Out of Project</h2>
 <form id="general-entry" action="" method="post" accept-charset="utf-8">
+    {% csrf_token %}
     <table class='vertical'>
         {{ form }}
         <tr>

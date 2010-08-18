@@ -6,6 +6,7 @@
 <h2>{% if not project %}Create Project{% if business %} for {{ business }}{% endif %}{% else %}Edit {{ project }}{% endif %}</h2>
 
 <form id="create-edit-project" action="" method="post" accept-charset="utf-8">
+    {% csrf_token %}
     <table class='vertical'>
         {{ project_form }}
         <tr>

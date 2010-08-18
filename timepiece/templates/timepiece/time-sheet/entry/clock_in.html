@@ -6,6 +6,7 @@
 <h2>Clock Into Project</h2>
 <br />
 <form action="{% url timepiece-clock-in %}" method="post">
+    {% csrf_token %}
     <table class='vertical'>
         {{ form }}
         <tr>

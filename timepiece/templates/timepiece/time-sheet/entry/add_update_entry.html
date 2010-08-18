@@ -5,6 +5,7 @@
 {% block content %}
 <h2>{% if entry %}Update{% else %}Create{% endif %} Entry</h2>
 <form action="" method="post">
+    {% csrf_token %}
     <table class='vertical'>
         {{ form }}
         <tr>
