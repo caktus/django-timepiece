@@ -468,3 +468,28 @@ class PersonRepeatPeriod(models.Model):
                 end_time__gt = b.date
             ).aggregate(total=Sum('hours')))
         return result
+
+
+class ProjectContract(models.Model):
+    project = models.ForeignKey(Project, related_name='contracts')
+    start_date = models.DateField()
+    end_date = models.DateField()
+    num_hours = models.PositiveIntegerField()
+    
+    def __unicode__(self):
+        return unicode(self.project)
+
+
+class ContractAssignment(models.Model):
+    contract = models.ForeignKey(ProjectContract, related_name='assignments')
+    contact = models.ForeignKey(
+        crm.Contact,
+        unique=True,
+        limit_choices_to={'type': 'individual'}
+    )
+    start_date = models.DateField()
+    end_date = models.DateField()
+    num_hours = models.PositiveIntegerField()
+    
+    def __unicode__(self):
+        return unicode(self.contact)

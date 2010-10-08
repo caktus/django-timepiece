@@ -32,11 +32,28 @@ class AttributeAdmin(admin.ModelAdmin):
 admin.site.register(timepiece.Attribute, AttributeAdmin)
 
 
+class ContractAssignmentInline(admin.TabularInline):
+    model = timepiece.ContractAssignment
+
+
+class ProjectContractAdmin(admin.ModelAdmin):
+    model = timepiece.ProjectContract
+    list_display = ('project', 'start_date', 'end_date', 'num_hours')
+    ordering = ('end_date',)
+    inlines = (ContractAssignmentInline,)
+admin.site.register(timepiece.ProjectContract, ProjectContractAdmin)
+
+
+class ProjectContractInline(admin.TabularInline):
+    model = timepiece.ProjectContract
+
+
 class ProjectAdmin(admin.ModelAdmin):
     model = timepiece.Project
     raw_id_fields = ('interactions', 'business')
     list_display = ('name', 'business', 'point_person', 'status', 'type',)
     list_filter = ('type', 'status')
+    inlines = (ProjectContractInline,)
 admin.site.register(timepiece.Project, ProjectAdmin)
 
 
