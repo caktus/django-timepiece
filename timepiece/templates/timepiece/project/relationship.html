@@ -6,6 +6,7 @@
 <h2>Edit {{ user.get_full_name }}'s {{ project }} Relationship</h2>
 
 <form id="edit-project-relationship" action="" method="post" accept-charset="utf-8">
+	{% csrf_token %}
 	<table class='vertical'>
 		{{ relationship_form }}
 		<tr>
