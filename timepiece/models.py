@@ -167,7 +167,7 @@ class Entry(models.Model):
     )
     location = models.ForeignKey(
         Location,
-        related_name='entires',
+        related_name='entries',
     )
     start_time = models.DateTimeField()
     end_time = models.DateTimeField(blank=True, null=True)
@@ -484,12 +484,24 @@ class ContractAssignment(models.Model):
     contract = models.ForeignKey(ProjectContract, related_name='assignments')
     contact = models.ForeignKey(
         crm.Contact,
-        unique=True,
         limit_choices_to={'type': 'individual'}
     )
     start_date = models.DateField()
     end_date = models.DateField()
     num_hours = models.PositiveIntegerField()
-    
+
+    @property
+    def hours_worked(self):
+        # TODO put this in a .extra w/a subselect
+        if not hasattr(self, '_hours_worked'):
+            self._hours_worked = Entry.objects.filter(
+            user=self.contact.user,
+                project=self.contract.project
+            ).aggregate(sum=Sum('hours'))['sum']
+        return self._hours_worked or 0
+
+    class Meta:
+        unique_together = (('contract', 'contact'),)
+
     def __unicode__(self):
         return unicode(self.contact)

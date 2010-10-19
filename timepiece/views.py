@@ -34,6 +34,9 @@ def view_entries(request):
         user=request.user,
         start_time__gte=two_weeks_ago,
     )
+    assignments = timepiece.ContractAssignment.objects.filter(
+        contact__user=request.user
+    ).order_by('end_date')
     project_entries = entries.values(
         'project__name',
     ).annotate(sum=Sum('hours')).order_by('-sum')
@@ -45,6 +48,7 @@ def view_entries(request):
     )
     context = {
         'entries': entries.order_by('-start_time'),
+        'assignments': assignments,
         'project_entries': project_entries,
         'activity_entries': activity_entries,
         'logged_in_entries': logged_in_entries,
