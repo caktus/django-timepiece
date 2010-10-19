@@ -38,7 +38,8 @@ class ContractAssignmentInline(admin.TabularInline):
 
 class ProjectContractAdmin(admin.ModelAdmin):
     model = timepiece.ProjectContract
-    list_display = ('project', 'start_date', 'end_date', 'num_hours')
+    list_display = ('project', 'start_date', 'end_date', 'num_hours',
+                    'hours_assigned', 'hours_worked')
     ordering = ('end_date',)
     inlines = (ContractAssignmentInline,)
 admin.site.register(timepiece.ProjectContract, ProjectContractAdmin)

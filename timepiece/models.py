@@ -472,10 +472,28 @@ class PersonRepeatPeriod(models.Model):
 
 class ProjectContract(models.Model):
     project = models.ForeignKey(Project, related_name='contracts')
-    start_date = models.DateField()
-    end_date = models.DateField()
+    start_date = models.DateTimeField()
+    end_date = models.DateTimeField()
     num_hours = models.PositiveIntegerField()
     
+    def hours_worked(self):
+        # TODO put this in a .extra w/a subselect
+        if not hasattr(self, '_hours_worked'):
+            self._hours_worked = Entry.objects.filter(
+                project=self.project,
+                start_time__gte=self.start_date,
+                end_time__lte=self.end_date,
+            ).aggregate(sum=Sum('hours'))['sum']
+        return self._hours_worked or 0
+
+    @property
+    def hours_assigned(self):
+        # TODO put this in a .extra w/a subselect
+        if not hasattr(self, '_hours_assigned'):
+            self._hours_assigned =\
+              self.assignments.aggregate(sum=Sum('num_hours'))['sum']
+        return self._hours_assigned or 0
+
     def __unicode__(self):
         return unicode(self.project)
 
@@ -486,20 +504,22 @@ class ContractAssignment(models.Model):
         crm.Contact,
         limit_choices_to={'type': 'individual'}
     )
-    start_date = models.DateField()
-    end_date = models.DateField()
+    start_date = models.DateTimeField()
+    end_date = models.DateTimeField()
     num_hours = models.PositiveIntegerField()
 
     @property
     def hours_worked(self):
-        # TODO put this in a .extra w/a subselect
+        # TODO (maybe) put this in a .extra w/a subselect
         if not hasattr(self, '_hours_worked'):
             self._hours_worked = Entry.objects.filter(
-            user=self.contact.user,
-                project=self.contract.project
+                user=self.contact.user,
+                project=self.contract.project,
+                start_time__gte=self.start_date,
+                end_time__lte=self.end_date,
             ).aggregate(sum=Sum('hours'))['sum']
         return self._hours_worked or 0
-
+        
     class Meta:
         unique_together = (('contract', 'contact'),)
 
