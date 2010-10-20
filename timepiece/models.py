@@ -472,8 +472,8 @@ class PersonRepeatPeriod(models.Model):
 
 class ProjectContract(models.Model):
     project = models.ForeignKey(Project, related_name='contracts')
-    start_date = models.DateTimeField()
-    end_date = models.DateTimeField()
+    start_date = models.DateField()
+    end_date = models.DateField()
     num_hours = models.PositiveIntegerField()
     
     def hours_worked(self):
@@ -482,7 +482,7 @@ class ProjectContract(models.Model):
             self._hours_worked = Entry.objects.filter(
                 project=self.project,
                 start_time__gte=self.start_date,
-                end_time__lte=self.end_date,
+                end_time__lt=self.end_date + datetime.timedelta(days=1),
             ).aggregate(sum=Sum('hours'))['sum']
         return self._hours_worked or 0
 
@@ -504,8 +504,8 @@ class ContractAssignment(models.Model):
         crm.Contact,
         limit_choices_to={'type': 'individual'}
     )
-    start_date = models.DateTimeField()
-    end_date = models.DateTimeField()
+    start_date = models.DateField()
+    end_date = models.DateField()
     num_hours = models.PositiveIntegerField()
 
     @property
@@ -516,7 +516,7 @@ class ContractAssignment(models.Model):
                 user=self.contact.user,
                 project=self.contract.project,
                 start_time__gte=self.start_date,
-                end_time__lte=self.end_date,
+                end_time__lt=self.end_date + datetime.timedelta(days=1),
             ).aggregate(sum=Sum('hours'))['sum']
         return self._hours_worked or 0
         
