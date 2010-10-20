@@ -502,7 +502,8 @@ class ContractAssignment(models.Model):
     contract = models.ForeignKey(ProjectContract, related_name='assignments')
     contact = models.ForeignKey(
         crm.Contact,
-        limit_choices_to={'type': 'individual'}
+        limit_choices_to={'type': 'individual'},
+        related_name='assignments',
     )
     start_date = models.DateField()
     end_date = models.DateField()
@@ -529,3 +530,28 @@ class ContractAssignment(models.Model):
 
     def __unicode__(self):
         return unicode(self.contact)
+
+
+class PersonSchedule(models.Model):
+    contact = models.ForeignKey(
+        crm.Contact,
+        unique=True,
+        limit_choices_to={'type': 'individual'}
+    )
+    hours_per_week = models.PositiveIntegerField()
+    end_date = models.DateField()
+
+    @property
+    def hours_available(self):
+        today = datetime.date.today()
+        weeks_remaining = (self.end_date - today).days/7.0
+        return self.hours_per_week * weeks_remaining
+
+    @property
+    def hours_scheduled(self):
+        if not hasattr(self, '_hours_scheduled'):
+            self._hours_scheduled = 0
+            now = datetime.datetime.now()
+            for assignment in self.contact.assignments.filter(end_date__gte=now):
+                self._hours_scheduled += assignment.hours_remaining
+        return self._hours_scheduled

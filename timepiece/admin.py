@@ -71,8 +71,19 @@ class ContractAssignmentAdmin(admin.ModelAdmin):
 
     def remaining(self, obj):
         return "%.2f" % (obj.hours_remaining,)
-    
 admin.site.register(timepiece.ContractAssignment, ContractAssignmentAdmin)
+
+
+class PersonScheduleAdmin(admin.ModelAdmin):
+    list_display = ('contact', 'hours_per_week', 'end_date', 'available',
+                    'scheduled')
+
+    def available(self, obj):
+        return "%.2f" % (obj.hours_available,) 
+  
+    def scheduled(self, obj):
+        return "%.2f" % (obj.hours_scheduled,)    
+admin.site.register(timepiece.PersonSchedule, PersonScheduleAdmin)
 
 
 class RepeatPeriodAdmin(admin.ModelAdmin):
