@@ -60,7 +60,7 @@ admin.site.register(timepiece.Project, ProjectAdmin)
 
 class ContractAssignmentAdmin(admin.ModelAdmin):
     list_display = ('id', 'contract', 'contact', 'start_date',
-                    'end_date', 'num_hours', 'worked')
+                    'end_date', 'num_hours', 'worked', 'remaining')
     list_filter = ('contract',)
     ordering = ('-start_date',)
     
@@ -68,8 +68,10 @@ class ContractAssignmentAdmin(admin.ModelAdmin):
         hours_worked = float(obj.hours_worked)
         percent = hours_worked * 100.0 / obj.num_hours
         return "%.2f (%.2f%%)" % (hours_worked, percent)
-    worked.label = 'Hours Worked'
-    worked.is_safe = True
+
+    def remaining(self, obj):
+        hours = obj.num_hours - obj.hours_worked
+        return "%.2f" % (hours,)
     
 admin.site.register(timepiece.ContractAssignment, ContractAssignmentAdmin)
 
