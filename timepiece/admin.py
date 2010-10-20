@@ -61,7 +61,7 @@ admin.site.register(timepiece.Project, ProjectAdmin)
 class ContractAssignmentAdmin(admin.ModelAdmin):
     list_display = ('id', 'contract', 'contact', 'start_date',
                     'end_date', 'num_hours', 'worked', 'remaining')
-    list_filter = ('contract',)
+    list_filter = ('contract', 'contact')
     ordering = ('-start_date',)
     
     def worked(self, obj):
