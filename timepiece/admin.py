@@ -70,8 +70,7 @@ class ContractAssignmentAdmin(admin.ModelAdmin):
         return "%.2f (%.2f%%)" % (hours_worked, percent)
 
     def remaining(self, obj):
-        hours = obj.num_hours - obj.hours_worked
-        return "%.2f" % (hours,)
+        return "%.2f" % (obj.hours_remaining,)
     
 admin.site.register(timepiece.ContractAssignment, ContractAssignmentAdmin)
 

@@ -519,7 +519,11 @@ class ContractAssignment(models.Model):
                 end_time__lte=self.end_date,
             ).aggregate(sum=Sum('hours'))['sum']
         return self._hours_worked or 0
-        
+
+    @property
+    def hours_remaining(self):
+        return self.num_hours - self.hours_worked
+
     class Meta:
         unique_together = (('contract', 'contact'),)
 
