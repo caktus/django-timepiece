@@ -6,7 +6,7 @@ from django.shortcuts import render_to_response, get_object_or_404
 from django.core.urlresolvers import reverse
 from django.http import HttpResponse, HttpResponseRedirect, Http404, HttpResponseForbidden
 from django.contrib.auth.decorators import login_required, permission_required
-from django.db.models import Sum, Q
+from django.db.models import Sum, Q, F
 from django.db import transaction
 from django.conf import settings
 
@@ -35,7 +35,8 @@ def view_entries(request):
         start_time__gte=two_weeks_ago,
     )
     assignments = timepiece.ContractAssignment.objects.filter(
-        contact__user=request.user
+        contact__user=request.user,
+        contact__project_relationships__project=F('contract__project'),
     ).order_by('end_date')
     project_entries = entries.values(
         'project__name',

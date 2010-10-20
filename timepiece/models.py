@@ -105,6 +105,7 @@ class ProjectRelationship(models.Model):
     contact = models.ForeignKey(
         crm.Contact,
         limit_choices_to={'type': 'individual'},
+        related_name='project_relationships',
     )
     project = models.ForeignKey(
         Project,
