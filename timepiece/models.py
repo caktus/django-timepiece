@@ -475,7 +475,8 @@ class ProjectContract(models.Model):
     project = models.ForeignKey(Project, related_name='contracts')
     start_date = models.DateField()
     end_date = models.DateField()
-    num_hours = models.PositiveIntegerField()
+    num_hours = models.DecimalField(max_digits=8, decimal_places=2,
+                                    default=0)
     
     def hours_worked(self):
         # TODO put this in a .extra w/a subselect
@@ -508,7 +509,8 @@ class ContractAssignment(models.Model):
     )
     start_date = models.DateField()
     end_date = models.DateField()
-    num_hours = models.PositiveIntegerField()
+    num_hours = models.DecimalField(max_digits=8, decimal_places=2,
+                                    default=0)
 
     @property
     def hours_worked(self):
@@ -530,7 +532,7 @@ class ContractAssignment(models.Model):
         unique_together = (('contract', 'contact'),)
 
     def __unicode__(self):
-        return unicode(self.contact)
+        return u'%s / %s' % (self.contact, self.contract.project)
 
 
 class PersonSchedule(models.Model):
@@ -539,14 +541,15 @@ class PersonSchedule(models.Model):
         unique=True,
         limit_choices_to={'type': 'individual'}
     )
-    hours_per_week = models.PositiveIntegerField()
+    hours_per_week = models.DecimalField(max_digits=8, decimal_places=2,
+                                         default=0)
     end_date = models.DateField()
 
     @property
     def hours_available(self):
         today = datetime.date.today()
         weeks_remaining = (self.end_date - today).days/7.0
-        return self.hours_per_week * weeks_remaining
+        return float(self.hours_per_week) * weeks_remaining
 
     @property
     def hours_scheduled(self):
@@ -556,3 +559,6 @@ class PersonSchedule(models.Model):
             for assignment in self.contact.assignments.filter(end_date__gte=now):
                 self._hours_scheduled += assignment.hours_remaining
         return self._hours_scheduled
+
+    def __unicode__(self):
+        return unicode(self.contact)

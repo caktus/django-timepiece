@@ -11,7 +11,7 @@
 </ul>
 
 <h3>My Projects</h3>
-<table>
+<table class='my-projects'>
 	<tr><th>Project</th><th>My Hours</th><th>Hours Worked</th><th>Hours Remaining</th><th>Due Date</th><th></th></tr>
 	{% regroup assignments by contract.project.type as type_list %}
 	{% for type in type_list %}
@@ -19,9 +19,9 @@
 	{% for assignment in type.list %}
 	<tr>
 	   <td>{{ assignment.contract.project }}</td>
-       <td>{{ assignment.num_hours }}</td>
-       <td>{{ assignment.hours_worked|floatformat:2 }} ({% widthratio assignment.hours_worked assignment.num_hours 100 %}%)</td>
-       <td>{{ assignment.hours_remaining|floatformat:2 }}</td>
+       <td class='hours'>{{ assignment.num_hours }}</td>
+       <td class='hours'>{{ assignment.hours_worked|floatformat:2 }} ({% widthratio assignment.hours_worked assignment.num_hours 100 %}%)</td>
+       <td class='hours'>{{ assignment.hours_remaining|floatformat:2 }}</td>
        <td>{{ assignment.end_date }}</td>
        <td> 
 			<ul class='actions'>
