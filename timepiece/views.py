@@ -37,7 +37,7 @@ def view_entries(request):
     assignments = timepiece.ContractAssignment.objects.filter(
         contact__user=request.user,
         contact__project_relationships__project=F('contract__project'),
-    ).order_by('end_date')
+    ).order_by('contract__project__type', 'end_date')
     project_entries = entries.values(
         'project__name',
     ).annotate(sum=Sum('hours')).order_by('-sum')

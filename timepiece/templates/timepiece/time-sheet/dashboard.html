@@ -13,7 +13,10 @@
 <h3>My Projects</h3>
 <table>
 	<tr><th>Project</th><th>My Hours</th><th>Hours Worked</th><th>Hours Remaining</th><th>Due Date</th></tr>
-	{% for assignment in assignments %}
+	{% regroup assignments by contract.project.type as type_list %}
+	{% for type in type_list %}
+	<tr><th colspan='5'>{{ type.grouper }}s</th></tr>
+	{% for assignment in type.list %}
 	<tr>
 	   <td>{{ assignment.contract.project }}</td>
        <td>{{ assignment.num_hours }}</td>
@@ -21,6 +24,7 @@
        <td>{{ assignment.hours_remaining|floatformat:2 }}</td>
        <td>{{ assignment.end_date }}</td>
 	</tr>
+	{% endfor %}
 	{% endfor %}
 </table>
 
