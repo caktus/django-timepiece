@@ -58,6 +58,22 @@ class ProjectAdmin(admin.ModelAdmin):
 admin.site.register(timepiece.Project, ProjectAdmin)
 
 
+class ContractAssignmentAdmin(admin.ModelAdmin):
+    list_display = ('id', 'contract', 'contact', 'start_date',
+                    'end_date', 'num_hours', 'worked')
+    list_filter = ('contract',)
+    ordering = ('-start_date',)
+    
+    def worked(self, obj):
+        hours_worked = float(obj.hours_worked)
+        percent = hours_worked * 100.0 / obj.num_hours
+        return "%.2f (%.2f%%)" % (hours_worked, percent)
+    worked.label = 'Hours Worked'
+    worked.is_safe = True
+    
+admin.site.register(timepiece.ContractAssignment, ContractAssignmentAdmin)
+
+
 class RepeatPeriodAdmin(admin.ModelAdmin):
     list_display = ('count', 'interval')
     list_filter = ('interval',)
