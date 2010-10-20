@@ -75,14 +75,17 @@ admin.site.register(timepiece.ContractAssignment, ContractAssignmentAdmin)
 
 
 class PersonScheduleAdmin(admin.ModelAdmin):
-    list_display = ('contact', 'hours_per_week', 'end_date', 'available',
-                    'scheduled')
+    list_display = ('contact', 'hours_per_week', 'end_date', 'total_available',
+                    'scheduled', 'unscheduled')
 
-    def available(self, obj):
-        return "%.2f" % (obj.hours_available,) 
+    def total_available(self, obj):
+        return "%.2f" % (obj.hours_available,)
   
     def scheduled(self, obj):
-        return "%.2f" % (obj.hours_scheduled,)    
+        return "%.2f" % (obj.hours_scheduled,)
+  
+    def unscheduled(self, obj):
+        return "%.2f" % (obj.hours_available - float(obj.hours_scheduled),)
 admin.site.register(timepiece.PersonSchedule, PersonScheduleAdmin)
 
 
