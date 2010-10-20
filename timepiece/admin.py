@@ -39,9 +39,12 @@ class ContractAssignmentInline(admin.TabularInline):
 class ProjectContractAdmin(admin.ModelAdmin):
     model = timepiece.ProjectContract
     list_display = ('project', 'start_date', 'end_date', 'num_hours',
-                    'hours_assigned', 'hours_worked')
+                    'hours_assigned', 'hours_unassigned', 'hours_worked')
     ordering = ('end_date',)
     inlines = (ContractAssignmentInline,)
+    
+    def hours_unassigned(self, obj):
+        return obj.num_hours - obj.hours_assigned
 admin.site.register(timepiece.ProjectContract, ProjectContractAdmin)
 
 
