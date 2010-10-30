@@ -1,0 +1,29 @@
+{% extends 'timepiece/time-sheet/base.html' %}
+{% load timepiece_tags %}
+
+{% block title %}Payroll Summary{% endblock %}
+
+{% block content %}
+<h2>Payroll</h2>
+
+
+
+{% for ts in time_sheets %}
+    <h3>{{ ts.contact }}</h3>
+    <table>
+        <tr>
+            {% for week in ts.weeks.keys %}
+                <td>Week {{ week }}</td>
+            {% endfor %}
+        </tr>
+        <tr>
+            {% for total in ts.weeks.values %}
+                <td>{{ total }}</td>
+            {% endfor %}
+        </tr>
+    </table>
+{% endfor %}
+
+
+
+{% endblock %}

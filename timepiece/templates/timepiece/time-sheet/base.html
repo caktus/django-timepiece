@@ -19,6 +19,9 @@ tr.overlapping {
         {% if perms.timepiece.view_entry_summary %}
             <li><a href="{% url timepiece-summary %}">General Ledger</a></li>
         {% endif %}
+        {% if perms.timepiece.view_payroll_summary %}
+            <li><a href="{% url payroll_summary %}">Payroll</a></li>
+        {% endif %}
         {% my_ledger %}
     </ul>
 {% endblock %}

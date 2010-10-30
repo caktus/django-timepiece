@@ -1,5 +1,6 @@
 import csv
 import datetime
+from decimal import Decimal
 
 from django.template import RequestContext
 from django.shortcuts import render_to_response, get_object_or_404
@@ -9,6 +10,7 @@ from django.contrib.auth.decorators import login_required, permission_required
 from django.db.models import Sum, Q, F
 from django.db import transaction
 from django.conf import settings
+from django.utils.datastructures import SortedDict
 
 from crm.decorators import render_with
 from crm import forms as crm_forms
@@ -632,4 +634,35 @@ def create_edit_person_time_sheet(request, person_id=None):
         'person': person,
         'repeat_period_form': repeat_period_form,
         'latest_window': latest_window,
+    }
+
+
+@permission_required('timepiece.view_payroll_summary')
+@render_with('timepiece/time-sheet/payroll/summary.html')
+def payroll_summary(request):
+    time_sheets = timepiece.PersonRepeatPeriod.objects.select_related(
+        'contact',
+        'repeat_period',
+    ).filter(
+        repeat_period__active=True,
+    ).order_by(
+        'contact__sort_name',
+    )
+    for ts in time_sheets:
+        bw = timepiece.BillingWindow.objects.filter(period=ts.repeat_period)
+        bw = bw.order_by('-date')[0]
+        entries = ts.contact.user.timepiece_entries.filter(
+            end_time__lte=bw.end_date,
+            end_time__gt=bw.date - datetime.timedelta(days=bw.date.weekday())
+        )
+        weeks = SortedDict()
+        for entry in entries:
+            year, week, weekday = entry.start_time.isocalendar()
+            if week not in weeks:
+                weeks[week] = Decimal('0.0')
+            weeks[week] += entry.hours
+        ts.overtime = sum([v-40 for k,v in weeks.iteritems() if v > 40])
+        ts.weeks = weeks
+    return {
+        'time_sheets': time_sheets,
     }

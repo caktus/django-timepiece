@@ -73,4 +73,10 @@ urlpatterns = patterns('',
         views.export_project_time_sheet,
         name='export_project_time_sheet',
     ),
+    
+    url(
+        r'^payroll/summary/$',
+        views.payroll_summary,
+        name='payroll_summary',
+    ),
 )
