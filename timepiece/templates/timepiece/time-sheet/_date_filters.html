@@ -1,0 +1,12 @@
+<ul class='date-filters'>
+	{% for filter_category, filter_list in filters.iteritems %}
+		<li>
+			<ul>
+				<li class='label'>{{ filter_category }}</li>
+				{% for label, url in filter_list %}
+					<li><a href='{{ url }}'>{{ label }}</a></li>
+				{% endfor %}
+			</ul>
+		</li>
+	{% endfor %}
+</ul>

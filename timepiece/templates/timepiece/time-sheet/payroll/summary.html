@@ -6,6 +6,8 @@
 {% block content %}
 <h2>Weekly Summary</h2>
 
+{% date_filters %}
+
 <form method="get" action="" id="date-filter" accept-charset="utf-8">
     <ul id='ledger-date-fieldlist'>
         {{ form.as_ul }}
