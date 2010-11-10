@@ -4,11 +4,40 @@
 {% block title %}Payroll Summary{% endblock %}
 
 {% block content %}
-<h2>Payroll</h2>
+<h2>Weekly Summary</h2>
+
+<form method="get" action="" id="date-filter" accept-charset="utf-8">
+    <ul id='ledger-date-fieldlist'>
+        {{ form.as_ul }}
+        <li>
+            <input type='submit' name='submit' value='Update' id='id_date_form_submit_btn'/>
+        </li>
+        <li>
+            <input type='button' name='clear' value='Clear' id='id_date_form_clear_btn'/>
+        </li>
+    </ul>
+</form>
 
 
+<table>
+    <tr>
+        <th>&nbsp;</th>
+        {% for week in all_weeks %}
+            <th>Week {{ week }}</th>
+        {% endfor %}
+    </tr>
+    {% for contact in contacts %}
+        <tr{% if contact.overtime > 40.00 %} class='overtime'{% endif %}>
+            <th>{{ contact }}</th>
+            {% for week, hours in contact.weeks %}
+                <td>{{ hours }}</td>
+            {% endfor %}
+        </tr>
+    {% endfor %}
+    
+</table>
 
-{% for ts in time_sheets %}
+{% for contact in contacts %}
     <h3>{{ ts.contact }}</h3>
     <table>
         <tr>
@@ -24,6 +53,5 @@
     </table>
 {% endfor %}
 
-
-
 {% endblock %}
+

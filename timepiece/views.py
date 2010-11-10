@@ -1,6 +1,8 @@
 import csv
 import datetime
+import calendar
 from decimal import Decimal
+from dateutil.relativedelta import relativedelta
 
 from django.template import RequestContext
 from django.shortcuts import render_to_response, get_object_or_404
@@ -640,6 +642,15 @@ def create_edit_person_time_sheet(request, person_id=None):
 @permission_required('timepiece.view_payroll_summary')
 @render_with('timepiece/time-sheet/payroll/summary.html')
 def payroll_summary(request):
+    if request.GET:
+        form = timepiece_forms.DateForm(request.GET)
+        if form.is_valid():
+            from_date, to_date = form.save()
+    else:
+        form = timepiece_forms.DateForm()
+        today = datetime.date.today()
+        from_date = today.replace(day=1)
+        to_date = from_date + relativedelta(months=1)
     time_sheets = timepiece.PersonRepeatPeriod.objects.select_related(
         'contact',
         'repeat_period',
@@ -648,21 +659,37 @@ def payroll_summary(request):
     ).order_by(
         'contact__sort_name',
     )
-    for ts in time_sheets:
-        bw = timepiece.BillingWindow.objects.filter(period=ts.repeat_period)
-        bw = bw.order_by('-date')[0]
-        entries = ts.contact.user.timepiece_entries.filter(
-            end_time__lte=bw.end_date,
-            end_time__gt=bw.date - datetime.timedelta(days=bw.date.weekday())
+    
+    # get list of expected week indexes for specified month
+    cal = calendar.Calendar()
+    days = cal.itermonthdates(from_date.year, from_date.month)
+    all_weeks = []
+    for day in days:
+        year, week, weekday = day.isocalendar()
+        if week not in all_weeks:
+            all_weeks.append(week)
+    
+    user_ids = timepiece.Entry.objects.distinct().values_list('user_id',
+                                                              flat=True)
+    contacts = crm.Contact.objects.filter(user__in=user_ids)
+    for contact in contacts:
+        entries = contact.user.timepiece_entries.filter(
+            end_time__lte=to_date,
+            end_time__gt=from_date - datetime.timedelta(days=from_date.weekday())
         )
-        weeks = SortedDict()
+        weeks = {}
         for entry in entries:
             year, week, weekday = entry.start_time.isocalendar()
             if week not in weeks:
                 weeks[week] = Decimal('0.0')
             weeks[week] += entry.hours
-        ts.overtime = sum([v-40 for k,v in weeks.iteritems() if v > 40])
-        ts.weeks = weeks
+        contact.weeks = []
+        for week in all_weeks:
+            contact.weeks.append((week, weeks.get(week, None)))
+        contact.overtime = sum([v-40 for k,v in weeks.iteritems() if v > 40])
     return {
-        'time_sheets': time_sheets,
+        'form': form,
+        'all_weeks': all_weeks,
+        'contacts': contacts,
     }
+   
