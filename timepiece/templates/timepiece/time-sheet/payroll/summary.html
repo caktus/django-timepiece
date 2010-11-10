@@ -35,7 +35,7 @@
         <tr{% if contact.overtime > 40.00 %} class='overtime'{% endif %}>
             <th>{{ contact }}</th>
             {% for week, hours in contact.weeks %}
-                <td>{{ hours }}</td>
+                <td>{% if hours %}{{ hours }}{% endif %}</td>
             {% endfor %}
         </tr>
     {% endfor %}
