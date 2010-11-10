@@ -663,12 +663,11 @@ def payroll_summary(request):
     # get list of expected week indexes for specified month
     cal = calendar.Calendar()
     days = cal.itermonthdates(from_date.year, from_date.month)
-    all_weeks = []
+    all_weeks = SortedDict()
     for day in days:
         year, week, weekday = day.isocalendar()
         if week not in all_weeks:
-            all_weeks.append(week)
-    
+            all_weeks[week] = day
     user_ids = timepiece.Entry.objects.distinct().values_list('user_id',
                                                               flat=True)
     contacts = crm.Contact.objects.filter(user__in=user_ids)
@@ -684,12 +683,21 @@ def payroll_summary(request):
                 weeks[week] = Decimal('0.0')
             weeks[week] += entry.hours
         contact.weeks = []
-        for week in all_weeks:
+        for week in all_weeks.keys():
             contact.weeks.append((week, weeks.get(week, None)))
         contact.overtime = sum([v-40 for k,v in weeks.iteritems() if v > 40])
+    
+    cals = []
+    date = from_date - relativedelta(months=1)
+    end_date = from_date + relativedelta(months=1)
+    html_cal = calendar.HTMLCalendar(calendar.SUNDAY)
+    while date < end_date:
+        cals.append(html_cal.formatmonth(date.year, date.month))
+        date += relativedelta(months=1)
     return {
         'form': form,
         'all_weeks': all_weeks,
         'contacts': contacts,
+        'cals': cals,
     }
    

@@ -18,12 +18,17 @@
     </ul>
 </form>
 
+<div style='float: right;'>
+{% for cal in cals %}
+{{ cal|safe }}
+{% endfor %}
+</div>
 
 <table>
     <tr>
         <th>&nbsp;</th>
-        {% for week in all_weeks %}
-            <th>Week {{ week }}</th>
+        {% for week, monday in all_weeks.iteritems %}
+            <th>Week {{ week }} ({{ monday|date:"N j" }})</th>
         {% endfor %}
     </tr>
     {% for contact in contacts %}
