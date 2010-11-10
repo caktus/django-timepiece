@@ -670,7 +670,7 @@ def payroll_summary(request):
             all_weeks[week] = day
     user_ids = timepiece.Entry.objects.distinct().values_list('user_id',
                                                               flat=True)
-    contacts = crm.Contact.objects.filter(user__in=user_ids)
+    contacts = crm.Contact.objects.filter(user__in=user_ids).order_by('sort_name')
     for contact in contacts:
         entries = contact.user.timepiece_entries.filter(
             end_time__lte=to_date,
