@@ -75,8 +75,8 @@ urlpatterns = patterns('',
     ),
     
     url(
-        r'^payroll/summary/$',
-        views.payroll_summary,
-        name='payroll_summary',
+        r'^payroll/weekly-report/$',
+        views.payroll_weekly_summary,
+        name='payroll_weekly_summary',
     ),
 )

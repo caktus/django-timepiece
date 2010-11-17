@@ -26,11 +26,13 @@ def my_ledger(context):
 
 
 @register.inclusion_tag('timepiece/time-sheet/_date_filters.html', takes_context=True)
-def date_filters(context):
+def date_filters(context, options):
     request = context['request']
     from_slug = 'from_date'
     to_slug = 'to_date'
     use_range = True
+    if not options:
+        options = ('months', 'quaters', 'years')
     
     def construct_url(from_date, to_date):
         url = '%s?%s=%s' % (
@@ -46,34 +48,38 @@ def date_filters(context):
         return url
 
     filters = {}
-    filters['Past 12 Months'] = []
-    single_month = relativedelta(months=1)
-    from_date = datetime.date.today().replace(day=1) + relativedelta(months=1)
-    for x in range(12):
-        to_date = from_date
-        from_date = to_date - single_month
-        url = construct_url(from_date, to_date - relativedelta(days=1))
-        filters['Past 12 Months'].append((from_date.strftime("%b '%y"), url))
-    filters['Past 12 Months'].reverse()
     
-    start = datetime.date.today().year - 3
+    if 'months' in options:
+        filters['Past 12 Months'] = []
+        single_month = relativedelta(months=1)
+        from_date = datetime.date.today().replace(day=1) + relativedelta(months=1)
+        for x in range(12):
+            to_date = from_date
+            from_date = to_date - single_month
+            url = construct_url(from_date, to_date - relativedelta(days=1))
+            filters['Past 12 Months'].append((from_date.strftime("%b '%y"), url))
+        filters['Past 12 Months'].reverse()
     
-    filters['Years'] = []
-    for year in range(start, start + 3):
-        from_date = datetime.datetime(year, 1, 1)
-        to_date = from_date + relativedelta(years=1)
-        url = construct_url(from_date, to_date - relativedelta(days=1))
-        filters['Years'].append((str(from_date.year), url))
+    if 'years' in options:
+        start = datetime.date.today().year - 3
+        
+        filters['Years'] = []
+        for year in range(start, start + 3):
+            from_date = datetime.datetime(year, 1, 1)
+            to_date = from_date + relativedelta(years=1)
+            url = construct_url(from_date, to_date - relativedelta(days=1))
+            filters['Years'].append((str(from_date.year), url))
 
-    filters['Quaters (Calendar Year)'] = []
-    to_date = datetime.date(datetime.date.today().year - 1, 1, 1)
-    for x in range(8):
-        from_date = to_date
-        to_date = from_date + relativedelta(months=3)
-        url = construct_url(from_date, to_date - relativedelta(days=1))
-        filters['Quaters (Calendar Year)'].append(
-            ('Q%s %s' % ((x % 4) + 1, from_date.year), url)
-        )
+    if 'quaters' in options:
+        filters['Quaters (Calendar Year)'] = []
+        to_date = datetime.date(datetime.date.today().year - 1, 1, 1)
+        for x in range(8):
+            from_date = to_date
+            to_date = from_date + relativedelta(months=3)
+            url = construct_url(from_date, to_date - relativedelta(days=1))
+            filters['Quaters (Calendar Year)'].append(
+                ('Q%s %s' % ((x % 4) + 1, from_date.year), url)
+            )
 
     return {'filters': filters}
 
