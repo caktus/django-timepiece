@@ -4,7 +4,7 @@
 {% block title %}Payroll Summary{% endblock %}
 
 {% block content %}
-<h2>Weekly Summary</h2>
+<h2>Payroll Report</h2>
 
 {% date_filters "months" %}
 
@@ -26,6 +26,29 @@
 {% endfor %}
 </div>
 
+<h3>Hourly Summary</h3>
+
+<table>
+    <tr>
+        <th>&nbsp;</th>
+        <th>Vacation</th>
+        <th>Sick</th>
+        <th>Billable</th>
+        <th>Non-Billable</th>
+        <th>Total</th>
+    </tr>
+    {% for contact in contacts %}
+        <tr>
+            <th>{{ contact }}</th>
+            {% for total in contact.totals %}
+                <td>{% if total %}{{ total }}{% endif %}</td>
+            {% endfor %}
+        </tr>
+    {% endfor %}
+</table>
+
+<h3>Weekly Summary</h3>
+
 <table>
     <tr>
         <th>&nbsp;</th>
@@ -41,7 +64,6 @@
             {% endfor %}
         </tr>
     {% endfor %}
-    
 </table>
 
 {% for contact in contacts %}
