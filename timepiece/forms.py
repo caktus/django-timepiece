@@ -4,7 +4,7 @@ from django import forms
 from django.db.models import Q
 from django.conf import settings
 
-from timepiece.models import Project, Activity, Entry
+from timepiece.models import Project, Entry
 from timepiece.fields import PendulumDateTimeField
 from timepiece.widgets import PendulumDateTimeWidget, SecondsToHoursWidget
 from datetime import datetime
@@ -16,7 +16,7 @@ from crm import models as crm
 class ClockInForm(forms.ModelForm):
     class Meta:
         model = timepiece.Entry
-        fields = ('location', 'project', 'start_time')
+        fields = ('location', 'project', 'start_time', 'billable')
 
     def __init__(self, *args, **kwargs):
         self.user = kwargs.pop('user')
@@ -58,7 +58,7 @@ class ClockInForm(forms.ModelForm):
 class ClockOutForm(forms.ModelForm):
     class Meta:
         model = timepiece.Entry
-        fields = ('activity', 'location', 'comments')
+        fields = ('location', 'comments')
         
     def __init__(self, *args, **kwargs):
         super(ClockOutForm, self).__init__(*args, **kwargs)
@@ -69,7 +69,7 @@ class ClockOutForm(forms.ModelForm):
             ),
             initial=datetime.now(),
         )
-        self.fields.keyOrder = ('activity', 'location', 'end_time', 'comments')
+        self.fields.keyOrder = ('location', 'end_time', 'comments')
     
     def save(self, commit=True):
         entry = super(ClockOutForm, self).save(commit=False)
@@ -101,7 +101,7 @@ class AddUpdateEntryForm(forms.ModelForm):
     
     class Meta:
         model = Entry
-        exclude = ('user', 'pause_time', 'site', 'hours')
+        exclude = ('user', 'pause_time', 'site', 'hours', 'activity')
 
     def __init__(self, *args, **kwargs):
         self.user = kwargs.pop('user')

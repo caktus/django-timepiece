@@ -177,7 +177,8 @@ class Entry(models.Model):
     comments = models.TextField(blank=True)
     date_updated = models.DateTimeField(auto_now=True)
     hours = models.DecimalField(max_digits=8, decimal_places=2, default=0)
-    
+    billable = models.BooleanField(default=True)
+
     def is_overlapping(self):
         if self.start_time and self.end_time:
             entries = self.user.timepiece_entries.filter(

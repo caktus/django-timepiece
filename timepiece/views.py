@@ -682,8 +682,9 @@ def payroll_weekly_summary(request):
         sick = entries.filter(project__name='Sick Time',
                               project__business=94).aggregate(total=Sum('hours'))['total']
         work = entries.exclude(project__name__in=('Vacation/Holiday Time', 'Sick Time'))
-        billable = work.exclude(activity__code='nobil').aggregate(total=Sum('hours'))['total']
-        non_billable = work.filter(activity__code='nobil').aggregate(total=Sum('hours'))['total']
+        billable = work.values('billable').annotate(Sum('hours'))
+        print billable
+        non_billable = work.filter(billable=False).aggregate(total=Sum('hours'))['total']
         contact.totals = (vacation, sick, billable, non_billable, total)
         entries = contact.user.timepiece_entries.filter(
             end_time__lte=to_date,
