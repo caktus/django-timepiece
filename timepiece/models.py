@@ -177,7 +177,8 @@ class Entry(models.Model):
     comments = models.TextField(blank=True)
     date_updated = models.DateTimeField(auto_now=True)
     hours = models.DecimalField(max_digits=8, decimal_places=2, default=0)
-    
+    billable = models.BooleanField(default=True)
+
     def is_overlapping(self):
         if self.start_time and self.end_time:
             entries = self.user.timepiece_entries.filter(
@@ -198,9 +199,9 @@ class Entry(models.Model):
         else:
             return None
     
-    def save(self, force_insert=False, force_update=False):
+    def save(self, **kwargs):
         self.hours = Decimal('%.2f' % round(self.total_hours, 2))
-        super(Entry, self).save()
+        super(Entry, self).save(**kwargs)
     
     def get_seconds(self):
         """
@@ -460,6 +461,27 @@ class PersonRepeatPeriod(models.Model):
         RepeatPeriod,
         unique=True,
     )
+    
+    def summary(self, date, end_date):
+        projects = getattr(settings, 'TIMEPIECE_PROJECTS', {})
+        user = self.contact.user
+        entries = user.timepiece_entries.filter(end_time__gt=date,
+                                                end_time__lte=end_date)
+        data = {}
+        data['total'] = entries.aggregate(s=Sum('hours'))['s']
+        billable = entries.exclude(project__in=projects.values())
+        billable = billable.values('billable').annotate(s=Sum('hours'))
+        for row in billable:
+            if row['billable']:
+                data['billable'] = row['s']
+            else:
+                data['non_billable'] = row['s']
+        vacation = entries.filter(project=projects['vacation'])
+        data['vacation'] = vacation.aggregate(s=Sum('hours'))['s']
+        sick = entries.filter(project=projects['sick'])
+        data['sick'] = sick.aggregate(s=Sum('hours'))['s']
+        return data
+
     def list_total_hours(self, N = 2):
         bw = BillingWindow.objects.filter(period=self.repeat_period).order_by('-date')[:N]
         result = []

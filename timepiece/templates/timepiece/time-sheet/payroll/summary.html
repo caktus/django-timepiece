@@ -1,0 +1,91 @@
+{% extends 'timepiece/time-sheet/base.html' %}
+{% load timepiece_tags %}
+
+{% block title %}Payroll Summary{% endblock %}
+
+{% block content %}
+<h2>Payroll Report</h2>
+
+{% date_filters "months" %}
+
+<form method="get" action="" id="date-filter" accept-charset="utf-8">
+    <ul id='ledger-date-fieldlist'>
+        {{ form.as_ul }}
+        <li>
+            <input type='submit' name='submit' value='Update' id='id_date_form_submit_btn'/>
+        </li>
+        <li>
+            <input type='button' name='clear' value='Clear' id='id_date_form_clear_btn'/>
+        </li>
+    </ul>
+</form>
+
+<div style='float: right;'>
+{% for cal in cals %}
+{{ cal|safe }}
+{% endfor %}
+</div>
+
+<h3>Weekly Summary</h3>
+
+<table>
+    <tr>
+        <th>&nbsp;</th>
+        {% for week, monday in all_weeks.iteritems %}
+            <th>Week {{ week }} ({{ monday|date:"N j" }})</th>
+        {% endfor %}
+    </tr>
+    {% for contact in contacts %}
+        <tr{% if contact.overtime > 40.00 %} class='overtime'{% endif %}>
+            <th>{{ contact }}</th>
+            {% for week, hours in contact.weeks %}
+                <td>{% if hours %}{{ hours }}{% endif %}</td>
+            {% endfor %}
+        </tr>
+    {% endfor %}
+</table>
+
+<h3>Hourly Summary</h3>
+
+<table>
+    <tr>
+        <th>&nbsp;</th>
+        <th>Vacation</th>
+        <th>Sick</th>
+        <th>Billable</th>
+        <th>Total</th>
+    </tr>
+    {% for contact in contacts %}
+        <tr>
+            <th>{{ contact }}</th>
+            {% if contact.summary %}
+                <td>{{ contact.summary.vacation|default_if_none:'' }}</td>
+                <td>{{ contact.summary.sick|default_if_none:'' }}</td>
+                <td>{{ contact.summary.billable|default_if_none:'' }}{% if contact.summary.non_billable %} ({{ contact.summary.non_billable }}){% endif %}</td>
+                <td>{{ contact.summary.total|default_if_none:'' }}</td>
+            {% else %}
+                <td colspan='5'>&nbsp;</td>
+            {% endif %}
+        </tr>
+    {% endfor %}
+</table>
+
+<h3>Project Summary</h3>
+
+<table>
+    <tr>
+        <th>&nbsp;</th>
+        <th>Non-Billable</th>
+        <th>Billable</th>
+    </tr>
+    {% for project, hours in projects.iteritems %}
+        <tr>
+            <th>{{ project }}</th>
+            <td>{{ hours.non_billable|default_if_none:'' }}</td>
+            <td>{{ hours.billable|default_if_none:'' }}</td>
+        </tr>
+    {% endfor %}
+</table>
+
+{% endblock %}
+

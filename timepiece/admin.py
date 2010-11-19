@@ -17,10 +17,12 @@ class EntryAdmin(admin.ModelAdmin):
                     'end_time',
                     'hours',
                     'is_closed',
-                    'is_paused')
+                    'is_paused',
+                    'billable')
     list_filter = ['user', 'project']
     search_fields = ['user', 'project', 'activity', 'comments']
     date_hierarchy = 'start_time'
+    ordering = ('-start_time',)
 admin.site.register(timepiece.Entry, EntryAdmin)
 
 
