@@ -80,6 +80,24 @@ class TimepieceDataTestCase(CrmDataTestCase):
             defaults['location'] = self.create_location()
         return timepiece.Entry.objects.create(**defaults)
     
+    def create_repeat_period(self, data={}):
+        defaults = {
+            'count': 1,
+            'interval': 'month',
+            'active': True,
+        }
+        defaults.update(data)
+        return timepiece.RepeatPeriod.objects.create(**defaults)
+    
+    def create_person_repeat_period(self, data={}):
+        defaults = {}
+        defaults.update(data)
+        if 'contact' not in defaults:
+            defaults['contact'] = self.create_person()
+        if 'repeat_period' not in defaults:
+            defaults['repeat_period'] = self.create_repeat_period()
+        return timepiece.PersonRepeatPeriod.objects.create(**defaults)
+    
     def setUp(self):
         self.user = User.objects.create_user('user', 'u@abc.com', 'abc')
         self.user2 = User.objects.create_user('user2', 'u2@abc.com', 'abc')

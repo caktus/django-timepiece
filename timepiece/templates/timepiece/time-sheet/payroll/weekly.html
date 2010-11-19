@@ -26,27 +26,6 @@
 {% endfor %}
 </div>
 
-<h3>Hourly Summary</h3>
-
-<table>
-    <tr>
-        <th>&nbsp;</th>
-        <th>Vacation</th>
-        <th>Sick</th>
-        <th>Billable</th>
-        <th>Non-Billable</th>
-        <th>Total</th>
-    </tr>
-    {% for contact in contacts %}
-        <tr>
-            <th>{{ contact }}</th>
-            {% for total in contact.totals %}
-                <td>{% if total %}{{ total }}{% endif %}</td>
-            {% endfor %}
-        </tr>
-    {% endfor %}
-</table>
-
 <h3>Weekly Summary</h3>
 
 <table>
@@ -66,21 +45,47 @@
     {% endfor %}
 </table>
 
-{% for contact in contacts %}
-    <h3>{{ ts.contact }}</h3>
-    <table>
+<h3>Hourly Summary</h3>
+
+<table>
+    <tr>
+        <th>&nbsp;</th>
+        <th>Vacation</th>
+        <th>Sick</th>
+        <th>Billable</th>
+        <th>Total</th>
+    </tr>
+    {% for contact in contacts %}
         <tr>
-            {% for week in ts.weeks.keys %}
-                <td>Week {{ week }}</td>
-            {% endfor %}
+            <th>{{ contact }}</th>
+            {% if contact.summary %}
+                <td>{{ contact.summary.vacation|default_if_none:'' }}</td>
+                <td>{{ contact.summary.sick|default_if_none:'' }}</td>
+                <td>{{ contact.summary.billable|default_if_none:'' }}{% if contact.summary.non_billable %} ({{ contact.summary.non_billable }}){% endif %}</td>
+                <td>{{ contact.summary.total|default_if_none:'' }}</td>
+            {% else %}
+                <td colspan='5'>&nbsp;</td>
+            {% endif %}
         </tr>
+    {% endfor %}
+</table>
+
+<h3>Project Summary</h3>
+
+<table>
+    <tr>
+        <th>&nbsp;</th>
+        <th>Non-Billable</th>
+        <th>Billable</th>
+    </tr>
+    {% for project, hours in projects.iteritems %}
         <tr>
-            {% for total in ts.weeks.values %}
-                <td>{{ total }}</td>
-            {% endfor %}
+            <th>{{ project }}</th>
+            <td>{{ hours.non_billable|default_if_none:'' }}</td>
+            <td>{{ hours.billable|default_if_none:'' }}</td>
         </tr>
-    </table>
-{% endfor %}
+    {% endfor %}
+</table>
 
 {% endblock %}
 

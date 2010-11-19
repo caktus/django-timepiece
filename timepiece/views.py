@@ -651,15 +651,23 @@ def payroll_weekly_summary(request):
         today = datetime.date.today()
         from_date = today.replace(day=1)
         to_date = from_date + relativedelta(months=1)
-    time_sheets = timepiece.PersonRepeatPeriod.objects.select_related(
-        'contact',
-        'repeat_period',
-    ).filter(
-        repeat_period__active=True,
-    ).order_by(
-        'contact__sort_name',
-    )
-    
+
+    project_totals = timepiece.Entry.objects.filter(
+        end_time__lte=to_date,
+        end_time__gt=from_date,
+    ).values('project__name', 'billable').annotate(s=Sum('hours')).order_by('project__name')
+    projects = SortedDict()
+    for row in project_totals:
+        name = row['project__name']
+        billable = row['billable']
+        hours = row['s']
+        if name not in projects:
+            projects[name] = {}
+        if billable:
+            projects[name]['billable'] = hours
+        else:
+            projects[name]['non_billable'] = hours
+
     # get list of expected week indexes for specified month
     cal = calendar.Calendar()
     days = cal.itermonthdates(from_date.year, from_date.month)
@@ -672,25 +680,23 @@ def payroll_weekly_summary(request):
                                                               flat=True)
     contacts = crm.Contact.objects.filter(user__in=user_ids).order_by('sort_name')
     for contact in contacts:
-        entries = contact.user.timepiece_entries.filter(
-            end_time__lte=to_date,
-            end_time__gt=from_date,
-        )
-        total = entries.aggregate(total=Sum('hours'))['total']
-        vacation = entries.filter(project__name='Vacation/Holiday Time',
-                                  project__business=94).aggregate(total=Sum('hours'))['total']
-        sick = entries.filter(project__name='Sick Time',
-                              project__business=94).aggregate(total=Sum('hours'))['total']
-        work = entries.exclude(project__name__in=('Vacation/Holiday Time', 'Sick Time'))
-        billable = work.values('billable').annotate(Sum('hours'))
-        print billable
-        non_billable = work.filter(billable=False).aggregate(total=Sum('hours'))['total']
-        contact.totals = (vacation, sick, billable, non_billable, total)
+        try:
+            rp = timepiece.PersonRepeatPeriod.objects.select_related(
+                'contact',
+                'repeat_period',
+            ).filter(
+                repeat_period__active=True,
+            ).order_by(
+                'contact__sort_name',
+            ).get(contact=contact)
+        except timepiece.PersonRepeatPeriod.DoesNotExist:
+            rp = None
+        if rp:
+            contact.summary = rp.summary(from_date, to_date)
         entries = contact.user.timepiece_entries.filter(
             end_time__lte=to_date,
             end_time__gt=from_date - datetime.timedelta(days=from_date.weekday())
         )
-        
         weeks = {}
         for entry in entries:
             year, week, weekday = entry.start_time.isocalendar()
@@ -714,5 +720,6 @@ def payroll_weekly_summary(request):
         'all_weeks': all_weeks,
         'contacts': contacts,
         'cals': cals,
+        'projects': projects,
     }
 
