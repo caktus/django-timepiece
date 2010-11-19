@@ -20,7 +20,7 @@ tr.overlapping {
             <li><a href="{% url timepiece-summary %}">General Ledger</a></li>
         {% endif %}
         {% if perms.timepiece.view_payroll_summary %}
-            <li><a href="{% url payroll_weekly_summary %}">Weekly Report</a></li>
+            <li><a href="{% url payroll_summary %}">Payroll Report</a></li>
         {% endif %}
         {% my_ledger %}
     </ul>

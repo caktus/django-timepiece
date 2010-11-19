@@ -639,9 +639,9 @@ def create_edit_person_time_sheet(request, person_id=None):
     }
 
 
-@permission_required('timepiece.view_payroll_weekly_summary')
-@render_with('timepiece/time-sheet/payroll/weekly.html')
-def payroll_weekly_summary(request):
+@permission_required('timepiece.view_payroll_summary')
+@render_with('timepiece/time-sheet/payroll/summary.html')
+def payroll_summary(request):
     if request.GET:
         form = timepiece_forms.DateForm(request.GET)
         if form.is_valid():
