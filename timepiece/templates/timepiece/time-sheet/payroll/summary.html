@@ -34,6 +34,7 @@
         {% for week, monday in all_weeks.iteritems %}
             <th>Week {{ week }} ({{ monday|date:"N j" }})</th>
         {% endfor %}
+        <th>Overtime</th>
     </tr>
     {% for contact in contacts %}
         <tr{% if contact.overtime > 40.00 %} class='overtime'{% endif %}>
@@ -41,6 +42,7 @@
             {% for week, hours in contact.weeks %}
                 <td>{% if hours %}{{ hours }}{% endif %}</td>
             {% endfor %}
+            <td>{% if contact.overtime > 40.00 %}{{ contact.overtime }}{% endif %}</td>
         </tr>
     {% endfor %}
 </table>
