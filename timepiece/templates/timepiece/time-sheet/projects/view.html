@@ -71,7 +71,7 @@
 
 {% if activity_entries %}
     <table id='activity-summary'>
-        <caption>Activity Summary</caption>
+        <caption>Billable Summary</caption>
     {% for row in activity_entries %}
         <tr>
             <td>{% if row.billable %}Billable{% else %}Non-billable{% endif %}</td>

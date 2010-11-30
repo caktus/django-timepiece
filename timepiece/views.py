@@ -46,7 +46,7 @@ def view_entries(request):
         'project__name',
     ).annotate(sum=Sum('hours')).order_by('-sum')
     activity_entries = entries.values(
-        'activity__name',
+        'billable',
     ).annotate(sum=Sum('hours')).order_by('-sum')
     logged_in_entries = timepiece.Entry.objects.filter(
         end_time__isnull=True,
