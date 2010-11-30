@@ -325,7 +325,7 @@ def project_time_sheet(request, project, window_id=None):
         'user__last_name',
     ).annotate(sum=Sum('hours')).order_by('-sum')
     activity_entries = entries.order_by().values(
-        'activity__name',
+        'billable',
     ).annotate(sum=Sum('hours')).order_by('-sum')
     context = {
         'project': project,
@@ -399,8 +399,9 @@ def view_person_time_sheet(request, person_id, period_id, window_id=None):
         'project__name',
     ).annotate(sum=Sum('hours')).order_by('-sum')
     activity_entries = entries.order_by().values(
-        'activity__name',
+        'billable',
     ).annotate(sum=Sum('hours')).order_by('-sum')
+    print activity_entries
     is_editable = window.end_date +\
         datetime.timedelta(days=settings.TIMEPIECE_TIMESHEET_EDITABLE_DAYS) >=\
         datetime.date.today()
