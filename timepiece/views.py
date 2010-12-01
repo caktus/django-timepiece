@@ -401,7 +401,6 @@ def view_person_time_sheet(request, person_id, period_id, window_id=None):
     activity_entries = entries.order_by().values(
         'billable',
     ).annotate(sum=Sum('hours')).order_by('-sum')
-    print activity_entries
     is_editable = window.end_date +\
         datetime.timedelta(days=settings.TIMEPIECE_TIMESHEET_EDITABLE_DAYS) >=\
         datetime.date.today()
