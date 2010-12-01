@@ -7,7 +7,7 @@ from django.conf import settings
 from timepiece.models import Project, Entry
 from timepiece.fields import PendulumDateTimeField
 from timepiece.widgets import PendulumDateTimeWidget, SecondsToHoursWidget
-from datetime import datetime
+from datetime import datetime, timedelta
 
 from timepiece import models as timepiece
 from crm import models as crm
@@ -164,10 +164,11 @@ class DateForm(forms.Form):
     to_date = forms.DateField(label="To", required=False)
     
     def save(self):
-        return (
-            self.cleaned_data.get('from_date', ''),
-            self.cleaned_data.get('to_date', ''),
-        )
+        from_date = self.cleaned_data.get('from_date', '')
+        to_date = self.cleaned_data.get('to_date', '')
+        if to_date:
+            to_date += timedelta(days=1)
+        return (from_date, to_date)
 
 
 class ProjectForm(forms.ModelForm):
