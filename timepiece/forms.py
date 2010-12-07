@@ -31,7 +31,8 @@ class ClockInForm(forms.ModelForm):
             except timepiece.Location.DoesNotExist:
                 loc = None
             if loc:
-                kwargs['initial'] = {'location': loc.pk}
+                initial = kwargs.get('initial', {})
+                initial['location'] = loc.pk
         super(ClockInForm, self).__init__(*args, **kwargs)
         self.fields['start_time'].required = False
         self.fields['start_time'].initial = datetime.now()
