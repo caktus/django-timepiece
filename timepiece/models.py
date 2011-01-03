@@ -494,12 +494,20 @@ class PersonRepeatPeriod(models.Model):
 
 
 class ProjectContract(models.Model):
+    CONTRACT_STATUS = (
+        ('upcoming', 'Upcoming'),
+        ('current', 'Current'),
+        ('complete', 'Complete'),
+    )
+
     project = models.ForeignKey(Project, related_name='contracts')
     start_date = models.DateField()
     end_date = models.DateField()
     num_hours = models.DecimalField(max_digits=8, decimal_places=2,
                                     default=0)
-    
+    status = models.CharField(choices=CONTRACT_STATUS, default='upcomming',
+                              max_length=32)
+
     def hours_worked(self):
         # TODO put this in a .extra w/a subselect
         if not hasattr(self, '_hours_worked'):

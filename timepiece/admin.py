@@ -40,10 +40,12 @@ class ContractAssignmentInline(admin.TabularInline):
 
 class ProjectContractAdmin(admin.ModelAdmin):
     model = timepiece.ProjectContract
-    list_display = ('project', 'start_date', 'end_date', 'num_hours',
-                    'hours_assigned', 'hours_unassigned', 'hours_worked')
-    ordering = ('end_date',)
+    list_display = ('project', 'start_date', 'end_date', 'status', 
+                    'num_hours', 'hours_assigned', 'hours_unassigned',
+                    'hours_worked')
+    ordering = ('-end_date',)
     inlines = (ContractAssignmentInline,)
+    list_filter = ('status',)
     
     def hours_unassigned(self, obj):
         return obj.num_hours - obj.hours_assigned
@@ -68,7 +70,11 @@ class ContractAssignmentAdmin(admin.ModelAdmin):
                     'end_date', 'num_hours', 'worked', 'remaining')
     list_filter = ('contract',)
     ordering = ('-start_date',)
-    
+
+    def queryset(self, request):
+        qs = super(ContractAssignmentAdmin, self).queryset(request)
+        return qs.exclude(contract__status='complete')
+
     def worked(self, obj):
         hours_worked = float(obj.hours_worked)
         percent = hours_worked * 100.0 / float(obj.num_hours)
