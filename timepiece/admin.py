@@ -115,3 +115,8 @@ class LocationAdmin(admin.ModelAdmin):
     list_display = ('id', 'name')
 admin.site.register(timepiece.Location, LocationAdmin)
 
+
+class BlockAdmin(admin.ModelAdmin):
+    list_display = ('assignment', 'date', 'hours')
+    list_filter = ('assignment',)
+admin.site.register(timepiece.ContractBlock, BlockAdmin)

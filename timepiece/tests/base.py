@@ -1,3 +1,6 @@
+import datetime
+import random
+
 from django.test import TestCase
 from django.core.urlresolvers import reverse
 from django.contrib.auth.models import User, Permission
@@ -97,6 +100,29 @@ class TimepieceDataTestCase(CrmDataTestCase):
         if 'repeat_period' not in defaults:
             defaults['repeat_period'] = self.create_repeat_period()
         return timepiece.PersonRepeatPeriod.objects.create(**defaults)
+    
+    def create_project_contract(self, data={}):
+        defaults = {
+            'start_date': datetime.date.today(),
+            'end_date': datetime.date.today() + datetime.timedelta(weeks=2),
+            'num_hours': random.randint(10, 400),
+            'status': 'current',
+        }
+        defaults.update(data)
+        if 'project' not in defaults:
+            defaults['project'] = self.create_project()
+        return timepiece.ProjectContract.objects.create(**defaults)
+    
+    def create_contract_assignment(self, data={}):
+        defaults = {}
+        defaults.update(data)
+        if 'contact' not in defaults:
+            defaults['contact'] = self.create_person()
+        if 'contract' not in defaults:
+            defaults['contract'] = self.create_project()
+        defaults['start_date'] = defaults['contract'].start_date
+        defaults['end_date'] = defaults['contract'].end_date
+        return timepiece.ContractAssignment.objects.create(**defaults)
     
     def setUp(self):
         self.user = User.objects.create_user('user', 'u@abc.com', 'abc')

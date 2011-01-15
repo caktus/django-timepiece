@@ -525,6 +525,10 @@ class ProjectContract(models.Model):
             self._hours_assigned =\
               self.assignments.aggregate(sum=Sum('num_hours'))['sum']
         return self._hours_assigned or 0
+    
+    @property
+    def hours_remaining(self):
+        return self.num_hours - self.hours_worked()
 
     def __unicode__(self):
         return unicode(self.project)
@@ -563,6 +567,12 @@ class ContractAssignment(models.Model):
 
     def __unicode__(self):
         return u'%s / %s' % (self.contact, self.contract.project)
+
+
+class ContractBlock(models.Model):
+    assignment = models.ForeignKey(ContractAssignment, related_name='blocks')
+    date = models.DateField()
+    hours = models.DecimalField(max_digits=8, decimal_places=2, default=0)
 
 
 class PersonSchedule(models.Model):
