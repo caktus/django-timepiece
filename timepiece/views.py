@@ -750,8 +750,6 @@ def budgeting_summary(request):
             all_weeks[week] = date
         date += relativedelta(days=1)
 
-    print all_weeks
-
     today = datetime.date.today()
     contracts = timepiece.ProjectContract.objects.filter(status='current')
     contracts = contracts.exclude(project__in=settings.TIMEPIECE_PROJECTS.values())
