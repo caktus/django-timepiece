@@ -1,0 +1,48 @@
+{% extends 'timepiece/time-sheet/base.html' %}
+{% load timepiece_tags %}
+
+{% block title %}Budgeting Summary{% endblock %}
+
+{% block content %}
+<h2>Budgeting Report</h2>
+
+{% date_filters "months" %}
+
+<form method="get" action="" id="date-filter" accept-charset="utf-8">
+    <ul id='ledger-date-fieldlist'>
+        {{ form.as_ul }}
+        <li>
+            <input type='submit' name='submit' value='Update' id='id_date_form_submit_btn'/>
+        </li>
+        <li>
+            <input type='button' name='clear' value='Clear' id='id_date_form_clear_btn'/>
+        </li>
+    </ul>
+</form>
+
+<h3>Weekly Summary</h3>
+
+<table>
+    <tr>
+        <th>&nbsp;</th>
+        {% for week, monday in all_weeks.iteritems %}
+            <th>Week {{ week }} ({{ monday|date:"m/j" }})</th>
+        {% endfor %}
+    </tr>
+    {% for contract in contracts %}
+        <tr>
+            <th>{{ contract }}</th>
+        </tr>
+        {% for assignment in contract.hour_assignments %}
+        <tr>
+            <td>{{ assignment.contact }}</td>
+            {% for week, hours in assignment.weeks %}
+              <td>{% if hours %}{{ hours }}{% endif %}</td>
+            {% endfor %}
+        </tr>
+        {% endfor %}
+    {% endfor %}
+</table>
+
+{% endblock %}
+

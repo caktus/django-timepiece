@@ -79,4 +79,11 @@ urlpatterns = patterns('',
         views.payroll_summary,
         name='payroll_summary',
     ),
+    
+    url(
+        r'^budgeting/$',
+        views.budgeting_summary,
+        name='budgeting_summary',
+    ),
 )
+

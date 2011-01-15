@@ -1,8 +1,10 @@
 import csv
 import datetime
 import calendar
+import math
 from decimal import Decimal
 from dateutil.relativedelta import relativedelta
+from dateutil import rrule
 
 from django.template import RequestContext
 from django.shortcuts import render_to_response, get_object_or_404
@@ -724,5 +726,58 @@ def payroll_summary(request):
         'contacts': contacts,
         'cals': cals,
         'projects': projects,
+    }
+
+
+@permission_required('timepiece.view_budgeting_summary')
+@render_with('timepiece/time-sheet/budgeting/budgeting.html')
+def budgeting_summary(request):
+    if request.GET:
+        form = timepiece_forms.DateForm(request.GET)
+        if form.is_valid():
+            from_date, to_date = form.save()
+    else:
+        form = timepiece_forms.DateForm()
+        today = datetime.date.today()
+        from_date = today.replace(day=1)
+        to_date = from_date + relativedelta(months=3)
+
+    all_weeks = SortedDict()
+    date = from_date
+    while date < to_date:
+        year, week, weekday = date.isocalendar()
+        if week not in all_weeks:
+            all_weeks[week] = date
+        date += relativedelta(days=1)
+
+    print all_weeks
+
+    today = datetime.date.today()
+    contracts = timepiece.ProjectContract.objects.filter(status='current')
+    contracts = contracts.exclude(project__in=settings.TIMEPIECE_PROJECTS.values())
+    contracts = list(contracts.order_by('-end_date'))
+    for contract in contracts:
+        hours_left = contract.num_hours - contract.hours_worked()
+        contract.hour_assignments = list(contract.assignments.all())
+        diff = contract.end_date - today
+        total_weeks = diff.days/7
+        if total_weeks <= 0:
+            continue
+        weeks = rrule.rrule(rrule.WEEKLY, count=total_weeks, dtstart=today,
+                            byweekday=0)
+        for assignment in contract.hour_assignments:
+            assignment.weeks = []
+            hours = assignment.hours_remaining/total_weeks
+            assignment_weeks = {}
+            for week in weeks:
+                _, week_num, _ = week.isocalendar()
+                assignment_weeks[week_num] = hours
+            for week in all_weeks.keys():
+                assignment.weeks.append((week, assignment_weeks.get(week, None)))
+    
+    return {
+        'form': form,
+        'all_weeks': all_weeks,
+        'contracts': contracts,
     }
 
