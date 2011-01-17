@@ -9,6 +9,7 @@ from django.contrib.auth.models import User
 from timepiece import utils
 
 from dateutil.relativedelta import relativedelta
+from dateutil import rrule
 
 from datetime import timedelta
 
@@ -530,6 +531,12 @@ class ProjectContract(models.Model):
     def hours_remaining(self):
         return self.num_hours - self.hours_worked()
 
+    @property
+    def weeks_remaining(self):
+        until = self.end_date - datetime.timedelta(days=1)
+        return rrule.rrule(rrule.WEEKLY, dtstart=self.start_date,
+                           until=until, byweekday=6)
+
     def __unicode__(self):
         return unicode(self.project)
 
@@ -561,6 +568,10 @@ class ContractAssignment(models.Model):
     @property
     def hours_remaining(self):
         return self.num_hours - self.hours_worked
+
+    @property
+    def weekly_commitment(self):
+        return self.hours_remaining/self.contract.weeks_remaining.count()
 
     class Meta:
         unique_together = (('contract', 'contact'),)

@@ -1,6 +1,8 @@
 from django.contrib import admin
 from timepiece import models as timepiece
 
+from timepiece.projection import run_projection
+
 class ActivityAdmin(admin.ModelAdmin):
     model = timepiece.Activity
     list_display = ('code', 'name')
@@ -49,6 +51,10 @@ class ProjectContractAdmin(admin.ModelAdmin):
     
     def hours_unassigned(self, obj):
         return obj.num_hours - obj.hours_assigned
+
+    def save_model(self, request, obj, form, change):
+        run_projection()
+
 admin.site.register(timepiece.ProjectContract, ProjectContractAdmin)
 
 
