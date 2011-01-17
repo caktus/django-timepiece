@@ -580,7 +580,7 @@ class ContractAssignment(models.Model):
         return u'%s / %s' % (self.contact, self.contract.project)
 
 
-class ContractBlock(models.Model):
+class AssignmentAllocation(models.Model):
     assignment = models.ForeignKey(ContractAssignment, related_name='blocks')
     date = models.DateField()
     hours = models.DecimalField(max_digits=8, decimal_places=2, default=0)

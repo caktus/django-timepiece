@@ -8,20 +8,20 @@ class Migration(SchemaMigration):
 
     def forwards(self, orm):
         
-        # Adding model 'ContractBlock'
-        db.create_table('timepiece_contractblock', (
+        # Adding model 'AssignmentAllocation'
+        db.create_table('timepiece_assignmentallocation', (
             ('id', self.gf('django.db.models.fields.AutoField')(primary_key=True)),
             ('assignment', self.gf('django.db.models.fields.related.ForeignKey')(related_name='blocks', to=orm['timepiece.ContractAssignment'])),
             ('date', self.gf('django.db.models.fields.DateField')()),
             ('hours', self.gf('django.db.models.fields.DecimalField')(default=0, max_digits=8, decimal_places=2)),
         ))
-        db.send_create_signal('timepiece', ['ContractBlock'])
+        db.send_create_signal('timepiece', ['AssignmentAllocation'])
 
 
     def backwards(self, orm):
         
-        # Deleting model 'ContractBlock'
-        db.delete_table('timepiece_contractblock')
+        # Deleting model 'AssignmentAllocation'
+        db.delete_table('timepiece_assignmentallocation')
 
 
     models = {
@@ -138,6 +138,13 @@ class Migration(SchemaMigration):
             'id': ('django.db.models.fields.AutoField', [], {'primary_key': 'True'}),
             'name': ('django.db.models.fields.CharField', [], {'max_length': '50'})
         },
+        'timepiece.assignmentallocation': {
+            'Meta': {'object_name': 'AssignmentAllocation'},
+            'assignment': ('django.db.models.fields.related.ForeignKey', [], {'related_name': "'blocks'", 'to': "orm['timepiece.ContractAssignment']"}),
+            'date': ('django.db.models.fields.DateField', [], {}),
+            'hours': ('django.db.models.fields.DecimalField', [], {'default': '0', 'max_digits': '8', 'decimal_places': '2'}),
+            'id': ('django.db.models.fields.AutoField', [], {'primary_key': 'True'})
+        },
         'timepiece.attribute': {
             'Meta': {'ordering': "('sort_order',)", 'unique_together': "(('type', 'label'),)", 'object_name': 'Attribute'},
             'enable_timetracking': ('django.db.models.fields.BooleanField', [], {'default': 'False'}),
@@ -161,13 +168,6 @@ class Migration(SchemaMigration):
             'id': ('django.db.models.fields.AutoField', [], {'primary_key': 'True'}),
             'num_hours': ('django.db.models.fields.DecimalField', [], {'default': '0', 'max_digits': '8', 'decimal_places': '2'}),
             'start_date': ('django.db.models.fields.DateField', [], {})
-        },
-        'timepiece.contractblock': {
-            'Meta': {'object_name': 'ContractBlock'},
-            'assignment': ('django.db.models.fields.related.ForeignKey', [], {'related_name': "'blocks'", 'to': "orm['timepiece.ContractAssignment']"}),
-            'date': ('django.db.models.fields.DateField', [], {}),
-            'hours': ('django.db.models.fields.DecimalField', [], {'default': '0', 'max_digits': '8', 'decimal_places': '2'}),
-            'id': ('django.db.models.fields.AutoField', [], {'primary_key': 'True'})
         },
         'timepiece.entry': {
             'Meta': {'object_name': 'Entry'},

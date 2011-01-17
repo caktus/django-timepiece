@@ -53,6 +53,7 @@ class ProjectContractAdmin(admin.ModelAdmin):
         return obj.num_hours - obj.hours_assigned
 
     def save_model(self, request, obj, form, change):
+        obj.save()
         run_projection()
 
 admin.site.register(timepiece.ProjectContract, ProjectContractAdmin)
@@ -88,6 +89,11 @@ class ContractAssignmentAdmin(admin.ModelAdmin):
 
     def remaining(self, obj):
         return "%.2f" % (obj.hours_remaining,)
+
+    def save_model(self, request, obj, form, change):
+        obj.save()
+        run_projection()
+
 admin.site.register(timepiece.ContractAssignment, ContractAssignmentAdmin)
 
 
@@ -103,6 +109,11 @@ class PersonScheduleAdmin(admin.ModelAdmin):
   
     def unscheduled(self, obj):
         return "%.2f" % (obj.hours_available - float(obj.hours_scheduled),)
+
+    def save_model(self, request, obj, form, change):
+        obj.save()
+        run_projection()
+
 admin.site.register(timepiece.PersonSchedule, PersonScheduleAdmin)
 
 
@@ -121,10 +132,4 @@ admin.site.register(timepiece.BillingWindow, BillingWindowAdmin)
 class LocationAdmin(admin.ModelAdmin):
     list_display = ('id', 'name')
 admin.site.register(timepiece.Location, LocationAdmin)
-
-
-class BlockAdmin(admin.ModelAdmin):
-    list_display = ('assignment', 'date', 'hours')
-    list_filter = ('assignment',)
-admin.site.register(timepiece.ContractBlock, BlockAdmin)
 

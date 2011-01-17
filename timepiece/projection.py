@@ -34,7 +34,7 @@ def contact_weekly_assignments():
 
 def run_projection():
     logger.info('calculating projection')
-    timepiece.ContractBlock.objects.all().delete()
+    timepiece.AssignmentAllocation.objects.all().delete()
     for schedule, week, assignments in contact_weekly_assignments():
         hours_left = schedule.hours_per_week
         for assignment in assignments:

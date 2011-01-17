@@ -5,7 +5,7 @@ from django.db.models import Sum
 
 from dateutil.relativedelta import relativedelta
 
-from timepiece.models import PersonRepeatPeriod, ContractBlock
+from timepiece.models import PersonRepeatPeriod, AssignmentAllocation
 
 
 register = template.Library()
@@ -98,8 +98,8 @@ def hours_for_assignment(assignment, date):
 @register.simple_tag
 def hours_for_week(contact, date):
     end = date + relativedelta(days=5)
-    blocks = ContractBlock.objects.filter(assignment__contact=contact,
-                                          date__gte=date, date__lte=end)
+    blocks = AssignmentAllocation.objects.filter(assignment__contact=contact,
+                                                 date__gte=date, date__lte=end)
     hours = blocks.aggregate(hours=Sum('hours'))['hours']
     if not hours:
         hours = ''
