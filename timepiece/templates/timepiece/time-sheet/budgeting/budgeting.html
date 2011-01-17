@@ -26,12 +26,12 @@
     <tr>
         <th>&nbsp;</th>
         {% for week in weeks %}
-            <th>{{ week|date:"m/j" }}</th>
+            <th>{{ week|date:"n/j" }}</th>
         {% endfor %}
     </tr>
     {% for contract in contracts %}
         <tr>
-            <th>{{ contract }}</th>
+            <th colspan="{{ weeks.count }}">{{ contract }} (Due {{ contract.end_date|date:"n/j" }})</th>
         </tr>
         {% for assignment in contract.assignments.all %}
         <tr>
@@ -43,7 +43,11 @@
         {% endfor %}
     {% endfor %}
     <tr>
-        <th>Totals</th>
+        <th>&nbsp;</th>
+        <th colspan="{{ weeks.count }}">&nbsp;</th>
+    </tr>
+    <tr>
+        <th>&nbsp;</th>
         {% for week in weeks %}
             <th>{{ week|date:"m/j" }}</th>
         {% endfor %}

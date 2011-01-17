@@ -740,13 +740,13 @@ def budgeting_summary(request):
         form = timepiece_forms.DateForm()
         today = datetime.date.today()
         from_date = today.replace(day=1)
-        to_date = from_date + relativedelta(months=4)
+        to_date = from_date + relativedelta(months=3)
 
     weeks = rrule.rrule(rrule.WEEKLY, dtstart=from_date, until=to_date, 
-                        byweekday=0)
+                        byweekday=6)
     contracts = timepiece.ProjectContract.objects.exclude(status='complete')
     contracts = contracts.exclude(project__in=settings.TIMEPIECE_PROJECTS.values())
-    contracts = contracts.order_by('-end_date')
+    contracts = contracts.order_by('end_date')
     
     contacts = crm.Contact.objects.filter(assignments__contract__in=contracts).distinct()
     return {

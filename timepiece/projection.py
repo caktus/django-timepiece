@@ -11,11 +11,14 @@ def run_projection():
     timepiece.ContractBlock.objects.all().delete()
     contracts = timepiece.ProjectContract.objects.exclude(status='complete')
     for contract in contracts:
-        weekdays = rrule.rrule(rrule.DAILY, dtstart=contract.start_date,
-                               until=contract.end_date - datetime.timedelta(days=1), byweekday=range(0, 5))
-        assignments = contract.assignments.exclude(contract__project__in=settings.TIMEPIECE_PROJECTS.values())
+        until = contract.end_date - datetime.timedelta(days=1)
+        weeks = rrule.rrule(rrule.WEEKLY, dtstart=contract.start_date,
+                            until=until, byweekday=6)
+        
+        exclude = {'contract__project__in': settings.TIMEPIECE_PROJECTS.values()}
+        assignments = contract.assignments.exclude(**exclude)
         for assignment in assignments:
-            hours = assignment.hours_remaining/weekdays.count()
-            for weekday in weekdays:
-                assignment.blocks.create(date=weekday, hours=hours) 
+            hours = assignment.hours_remaining/weeks.count()
+            for week in weeks:
+                assignment.blocks.create(date=week, hours=hours) 
 

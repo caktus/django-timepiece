@@ -111,6 +111,7 @@ class BillingWindowAdmin(admin.ModelAdmin):
     list_filter = ('period',)
 admin.site.register(timepiece.BillingWindow, BillingWindowAdmin)
 
+
 class LocationAdmin(admin.ModelAdmin):
     list_display = ('id', 'name')
 admin.site.register(timepiece.Location, LocationAdmin)
@@ -120,3 +121,4 @@ class BlockAdmin(admin.ModelAdmin):
     list_display = ('assignment', 'date', 'hours')
     list_filter = ('assignment',)
 admin.site.register(timepiece.ContractBlock, BlockAdmin)
+
