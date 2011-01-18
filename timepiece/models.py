@@ -530,11 +530,19 @@ class ProjectContract(models.Model):
     @property
     def hours_remaining(self):
         return self.num_hours - self.hours_worked()
+    
+    def _week_start(self):
+        today = datetime.date.today()
+        if today.isoweekday() != 7:
+            week_start = today - datetime.timedelta(days=today.isoweekday())
+        else:
+            week_start = today
+        return week_start
 
     @property
     def weeks_remaining(self):
         until = self.end_date - datetime.timedelta(days=1)
-        return rrule.rrule(rrule.WEEKLY, dtstart=self.start_date,
+        return rrule.rrule(rrule.WEEKLY, dtstart=self._week_start(),
                            until=until, byweekday=6)
 
     def __unicode__(self):
@@ -553,16 +561,19 @@ class ContractAssignment(models.Model):
     num_hours = models.DecimalField(max_digits=8, decimal_places=2,
                                     default=0)
 
+    def _filtered_hours_worked(self, end_date):
+        return Entry.objects.filter(
+            user=self.contact.user,
+            project=self.contract.project,
+            start_time__gte=self.start_date,
+            end_time__lt=end_date,
+        ).aggregate(sum=Sum('hours'))['sum'] or 0
+
     @property
     def hours_worked(self):
-        # TODO (maybe) put this in a .extra w/a subselect
         if not hasattr(self, '_hours_worked'):
-            self._hours_worked = Entry.objects.filter(
-                user=self.contact.user,
-                project=self.contract.project,
-                start_time__gte=self.start_date,
-                end_time__lt=self.end_date + datetime.timedelta(days=1),
-            ).aggregate(sum=Sum('hours'))['sum']
+            date = self.end_date + datetime.timedelta(days=1)
+            self._hours_worked = self._filtered_hours_worked(date)
         return self._hours_worked or 0
 
     @property
@@ -571,7 +582,9 @@ class ContractAssignment(models.Model):
 
     @property
     def weekly_commitment(self):
-        return self.hours_remaining/self.contract.weeks_remaining.count()
+        remaining = self.num_hours - \
+            self._filtered_hours_worked(self.contract._week_start())
+        return remaining/self.contract.weeks_remaining.count()
 
     class Meta:
         unique_together = (('contract', 'contact'),)

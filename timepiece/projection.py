@@ -15,10 +15,14 @@ logger = logging.getLogger('timepiece.projection')
 
 def contact_weekly_assignments():
     today = datetime.datetime.today()
+    if today.isoweekday() != 7:
+        week_start = today - datetime.timedelta(days=today.isoweekday())
+    else:
+        week_start = today
     schedules = timepiece.PersonSchedule.objects.all()
     for schedule in schedules:
         until = schedule.end_date - datetime.timedelta(days=1)
-        weeks = rrule.rrule(rrule.WEEKLY, dtstart=today,
+        weeks = rrule.rrule(rrule.WEEKLY, dtstart=week_start,
                             until=until, byweekday=6)
         for week in weeks:
             next_week = week + relativedelta.relativedelta(weeks=1)
