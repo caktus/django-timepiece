@@ -1,3 +1,6 @@
+from dateutil import rrule
+
+
 from django.contrib.sites.models import Site
 from datetime import date, datetime, timedelta, time as time_obj
 import time
@@ -170,3 +173,19 @@ def get_total_time(seconds):
     seconds %= 60
 
     return u'%02i:%02i:%02i' % (hours, minutes, seconds)
+
+
+def get_week_start(day=None):
+    if not day:
+        day = date.today()
+    if day.isoweekday() != 7:
+        week_start = day - timedelta(days=day.isoweekday())
+    else:
+        week_start = day
+    return week_start
+
+
+def generate_weeks(end, start=None):
+    start = get_week_start(start)
+    return rrule.rrule(rrule.WEEKLY, dtstart=start, until=end, byweekday=6)
+

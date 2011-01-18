@@ -526,24 +526,14 @@ class ProjectContract(models.Model):
             self._hours_assigned =\
               self.assignments.aggregate(sum=Sum('num_hours'))['sum']
         return self._hours_assigned or 0
-    
+
     @property
     def hours_remaining(self):
         return self.num_hours - self.hours_worked()
-    
-    def _week_start(self):
-        today = datetime.date.today()
-        if today.isoweekday() != 7:
-            week_start = today - datetime.timedelta(days=today.isoweekday())
-        else:
-            week_start = today
-        return week_start
 
     @property
     def weeks_remaining(self):
-        until = self.end_date - datetime.timedelta(days=1)
-        return rrule.rrule(rrule.WEEKLY, dtstart=self._week_start(),
-                           until=until, byweekday=6)
+        return utils.generate_weeks(end=self.end_date)
 
     def __unicode__(self):
         return unicode(self.project)
@@ -582,8 +572,8 @@ class ContractAssignment(models.Model):
 
     @property
     def weekly_commitment(self):
-        remaining = self.num_hours - \
-            self._filtered_hours_worked(self.contract._week_start())
+        week_start = utils.get_week_start()
+        remaining = self.num_hours - self._filtered_hours_worked(week_start)
         return remaining/self.contract.weeks_remaining.count()
 
     class Meta:
@@ -626,3 +616,4 @@ class PersonSchedule(models.Model):
 
     def __unicode__(self):
         return unicode(self.contact)
+

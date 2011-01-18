@@ -8,29 +8,24 @@ from dateutil import rrule
 from dateutil import relativedelta
 
 from timepiece import models as timepiece
+from timepiece.utils import get_week_start, generate_weeks
 
 
 logger = logging.getLogger('timepiece.projection')
 
 
 def contact_weekly_assignments():
-    today = datetime.datetime.today()
-    if today.isoweekday() != 7:
-        week_start = today - datetime.timedelta(days=today.isoweekday())
-    else:
-        week_start = today
     schedules = timepiece.PersonSchedule.objects.all()
     for schedule in schedules:
-        until = schedule.end_date - datetime.timedelta(days=1)
-        weeks = rrule.rrule(rrule.WEEKLY, dtstart=week_start,
-                            until=until, byweekday=6)
-        for week in weeks:
+        last_end_date = schedule.contact.assignments.order_by('-end_date')
+        last_end_date = last_end_date.exclude(contract__status='complete')
+        last_end_date = last_end_date.values('end_date')[0]['end_date']
+        for week in generate_weeks(end=last_end_date):
             next_week = week + relativedelta.relativedelta(weeks=1)
             assignments = schedule.contact.assignments
             q = Q(contract__end_date__gt=next_week)
             q |= Q(contract__end_date__gte=week,
                    contract__end_date__lt=next_week)
-            q &= Q(contract__start_date__lte=week)
             q &= ~Q(contract__project__in=settings.TIMEPIECE_PROJECTS.values())
             assignments = assignments.filter(q)
             yield schedule, week, assignments.order_by('end_date')
