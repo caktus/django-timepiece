@@ -38,8 +38,8 @@ def run_projection():
     for schedule, week, assignments in contact_weekly_assignments():
         hours_left = schedule.hours_per_week
         for assignment in assignments:
-            logger.debug('{0} {1}'.format(week, assignment))
             commitment = assignment.weekly_commitment
+            logger.debug('{0} | Remaining Hours: {1:<6.2f} | Commitment: {2:<6.2f} | {3}'.format(week, hours_left, commitment, assignment))
             if commitment > hours_left:
                 commitment = hours_left
             hours_left -= commitment
