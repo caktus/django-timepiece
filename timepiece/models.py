@@ -558,6 +558,7 @@ class ContractAssignment(models.Model):
     end_date = models.DateField()
     num_hours = models.DecimalField(max_digits=8, decimal_places=2,
                                     default=0)
+    min_hours_per_week = models.IntegerField(default=0)
 
     objects = AssignmentManager()
 
@@ -584,7 +585,10 @@ class ContractAssignment(models.Model):
     def weekly_commitment(self):
         week_start = utils.get_week_start()
         remaining = self.num_hours - self._filtered_hours_worked(week_start)
-        return remaining/self.contract.weeks_remaining.count()
+        commitment = remaining/self.contract.weeks_remaining.count()
+        if commitment < self.min_hours_per_week:
+            commitment = self.min_hours_per_week
+        return commitment
 
     class Meta:
         unique_together = (('contract', 'contact'),)

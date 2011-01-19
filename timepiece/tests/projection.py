@@ -146,10 +146,38 @@ class ProjectionTest(TimepieceDataTestCase):
         assignments = assignments.active_during_week(week, next_week)
         self.assertTrue(assignments.filter(pk=ca.pk).exists())
 
-    def testSingleAssignmentProjection(self):
+    def test_single_assignment_projection(self):
         start = datetime.datetime.today() - datetime.timedelta(weeks=1)
         end = start + datetime.timedelta(weeks=2)
         ca = self._assign(start, end, hours=60)
         run_projection()
         self.assertEqual(60, ca.blocks.aggregate(s=Sum('hours'))['s'])
+
+    def test_min_hours_per_week(self):
+        """ Test commitment attempts to fulfill assignment's min hours/week """
+        start = utils.get_week_start()
+        end = start + datetime.timedelta(weeks=1)
+        ca1 = self._assign(start, end, hours=40)
+        ca2 = self._assign(start, end, hours=40)
+        ca1.min_hours_per_week = 30
+        ca1.save()
+        self.assertEqual(30, ca1.weekly_commitment)
+
+    def test_min_hours_per_week_weighted(self):
+        """
+        Test minimum hours/week with weighting based on assignment end date
+        """
+        start = utils.get_week_start()
+        end = start + datetime.timedelta(weeks=1)
+        ca1 = self._assign(start, end, hours=40)
+        ca2 = self._assign(start, end + datetime.timedelta(days=1), hours=40)
+        ca1.min_hours_per_week = 30
+        ca1.save()
+        ca2.min_hours_per_week = 30
+        ca2.save()
+        run_projection()
+        projection = ca1.blocks.filter(date=start).aggregate(s=Sum('hours'))
+        self.assertEqual(30, projection['s'])
+        projection = ca2.blocks.filter(date=start).aggregate(s=Sum('hours'))
+        self.assertEqual(10, projection['s'])
 
