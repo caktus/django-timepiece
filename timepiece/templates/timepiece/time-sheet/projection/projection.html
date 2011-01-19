@@ -1,10 +1,10 @@
 {% extends 'timepiece/time-sheet/base.html' %}
 {% load timepiece_tags %}
 
-{% block title %}Budgeting Summary{% endblock %}
+{% block title %}Projection Summary{% endblock %}
 
 {% block content %}
-<h2>Budgeting Report</h2>
+<h2>Projection Summary</h2>
 
 {% date_filters "months" %}
 
@@ -19,8 +19,6 @@
         </li>
     </ul>
 </form>
-
-<h3>Weekly Summary</h3>
 
 <table>
     <tr>

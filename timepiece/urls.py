@@ -81,9 +81,9 @@ urlpatterns = patterns('',
     ),
     
     url(
-        r'^budgeting/$',
-        views.budgeting_summary,
-        name='budgeting_summary',
+        r'^projection/$',
+        views.projection_summary,
+        name='projection_summary',
     ),
 )
 

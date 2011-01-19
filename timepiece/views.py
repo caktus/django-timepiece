@@ -729,9 +729,9 @@ def payroll_summary(request):
     }
 
 
-@permission_required('timepiece.view_budgeting_summary')
-@render_with('timepiece/time-sheet/budgeting/budgeting.html')
-def budgeting_summary(request):
+@permission_required('timepiece.view_projection_summary')
+@render_with('timepiece/time-sheet/projection/projection.html')
+def projection_summary(request):
     if request.GET:
         form = timepiece_forms.DateForm(request.GET)
         if form.is_valid():
@@ -747,7 +747,6 @@ def budgeting_summary(request):
     contracts = timepiece.ProjectContract.objects.exclude(status='complete')
     contracts = contracts.exclude(project__in=settings.TIMEPIECE_PROJECTS.values())
     contracts = contracts.order_by('end_date')
-    
     contacts = crm.Contact.objects.filter(assignments__contract__in=contracts).distinct()
     return {
         'form': form,
