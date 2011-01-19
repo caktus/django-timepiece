@@ -9,6 +9,7 @@ from django.contrib.auth.models import User
 from timepiece import utils
 
 from dateutil.relativedelta import relativedelta
+from dateutil import rrule
 
 from datetime import timedelta
 
@@ -526,8 +527,24 @@ class ProjectContract(models.Model):
               self.assignments.aggregate(sum=Sum('num_hours'))['sum']
         return self._hours_assigned or 0
 
+    @property
+    def hours_remaining(self):
+        return self.num_hours - self.hours_worked()
+
+    @property
+    def weeks_remaining(self):
+        return utils.generate_weeks(end=self.end_date)
+
     def __unicode__(self):
         return unicode(self.project)
+
+
+class AssignmentManager(models.Manager):
+    def active_during_week(self, week, next_week):
+        q = Q(contract__end_date__gte=week, contract__end_date__lt=next_week)
+        q |= Q(contract__start_date__gte=week, contract__start_date__lt=next_week)
+        q |= Q(contract__start_date__lt=week, contract__end_date__gt=next_week)
+        return self.get_query_set().filter(q)
 
 
 class ContractAssignment(models.Model):
@@ -542,27 +559,44 @@ class ContractAssignment(models.Model):
     num_hours = models.DecimalField(max_digits=8, decimal_places=2,
                                     default=0)
 
+    objects = AssignmentManager()
+
+    def _filtered_hours_worked(self, end_date):
+        return Entry.objects.filter(
+            user=self.contact.user,
+            project=self.contract.project,
+            start_time__gte=self.start_date,
+            end_time__lt=end_date,
+        ).aggregate(sum=Sum('hours'))['sum'] or 0
+
     @property
     def hours_worked(self):
-        # TODO (maybe) put this in a .extra w/a subselect
         if not hasattr(self, '_hours_worked'):
-            self._hours_worked = Entry.objects.filter(
-                user=self.contact.user,
-                project=self.contract.project,
-                start_time__gte=self.start_date,
-                end_time__lt=self.end_date + datetime.timedelta(days=1),
-            ).aggregate(sum=Sum('hours'))['sum']
+            date = self.end_date + datetime.timedelta(days=1)
+            self._hours_worked = self._filtered_hours_worked(date)
         return self._hours_worked or 0
 
     @property
     def hours_remaining(self):
         return self.num_hours - self.hours_worked
 
+    @property
+    def weekly_commitment(self):
+        week_start = utils.get_week_start()
+        remaining = self.num_hours - self._filtered_hours_worked(week_start)
+        return remaining/self.contract.weeks_remaining.count()
+
     class Meta:
         unique_together = (('contract', 'contact'),)
 
     def __unicode__(self):
         return u'%s / %s' % (self.contact, self.contract.project)
+
+
+class AssignmentAllocation(models.Model):
+    assignment = models.ForeignKey(ContractAssignment, related_name='blocks')
+    date = models.DateField()
+    hours = models.DecimalField(max_digits=8, decimal_places=2, default=0)
 
 
 class PersonSchedule(models.Model):
@@ -574,6 +608,16 @@ class PersonSchedule(models.Model):
     hours_per_week = models.DecimalField(max_digits=8, decimal_places=2,
                                          default=0)
     end_date = models.DateField()
+
+    @property
+    def furthest_end_date(self):
+        assignments = self.contact.assignments.order_by('-end_date')
+        assignments = assignments.exclude(contract__status='complete')
+        try:
+            end_date = assignments.values('end_date')[0]['end_date']
+        except IndexError:
+            end_date = self.end_date
+        return end_date
 
     @property
     def hours_available(self):
@@ -592,3 +636,4 @@ class PersonSchedule(models.Model):
 
     def __unicode__(self):
         return unicode(self.contact)
+

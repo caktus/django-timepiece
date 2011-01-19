@@ -1,6 +1,8 @@
 from django.contrib import admin
 from timepiece import models as timepiece
 
+from timepiece.projection import run_projection
+
 class ActivityAdmin(admin.ModelAdmin):
     model = timepiece.Activity
     list_display = ('code', 'name')
@@ -49,6 +51,15 @@ class ProjectContractAdmin(admin.ModelAdmin):
     
     def hours_unassigned(self, obj):
         return obj.num_hours - obj.hours_assigned
+
+    def save_model(self, request, obj, form, change):
+        obj.save()
+        run_projection()
+
+    def delete_model(self, request, obj):
+        obj.delete()
+        run_projection()
+
 admin.site.register(timepiece.ProjectContract, ProjectContractAdmin)
 
 
@@ -82,6 +93,15 @@ class ContractAssignmentAdmin(admin.ModelAdmin):
 
     def remaining(self, obj):
         return "%.2f" % (obj.hours_remaining,)
+
+    def save_model(self, request, obj, form, change):
+        obj.save()
+        run_projection()
+
+    def delete_model(self, request, obj):
+        obj.delete()
+        run_projection()
+
 admin.site.register(timepiece.ContractAssignment, ContractAssignmentAdmin)
 
 
@@ -97,6 +117,15 @@ class PersonScheduleAdmin(admin.ModelAdmin):
   
     def unscheduled(self, obj):
         return "%.2f" % (obj.hours_available - float(obj.hours_scheduled),)
+
+    def save_model(self, request, obj, form, change):
+        obj.save()
+        run_projection()
+
+    def delete_model(self, request, obj):
+        obj.delete()
+        run_projection()
+
 admin.site.register(timepiece.PersonSchedule, PersonScheduleAdmin)
 
 
@@ -110,6 +139,7 @@ class BillingWindowAdmin(admin.ModelAdmin):
     list_display = ('id', 'period', 'date', 'end_date')
     list_filter = ('period',)
 admin.site.register(timepiece.BillingWindow, BillingWindowAdmin)
+
 
 class LocationAdmin(admin.ModelAdmin):
     list_display = ('id', 'name')

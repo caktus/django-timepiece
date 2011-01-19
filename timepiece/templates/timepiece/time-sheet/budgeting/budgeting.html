@@ -25,22 +25,40 @@
 <table>
     <tr>
         <th>&nbsp;</th>
-        {% for week, monday in all_weeks.iteritems %}
-            <th>Week {{ week }} ({{ monday|date:"m/j" }})</th>
+        {% for week in weeks %}
+            <th>{{ week|date:"n/j" }}</th>
         {% endfor %}
     </tr>
     {% for contract in contracts %}
         <tr>
-            <th>{{ contract }}</th>
+            <th colspan="{{ weeks.count }}">{{ contract }} (Due {{ contract.end_date|date:"n/j" }})</th>
         </tr>
-        {% for assignment in contract.hour_assignments %}
+        {% for assignment in contract.assignments.all %}
         <tr>
             <td>{{ assignment.contact }}</td>
-            {% for week, hours in assignment.weeks %}
-              <td>{% if hours %}{{ hours }}{% endif %}</td>
+            {% for week in weeks %}
+              <td>{% hours_for_assignment assignment week %}</td>
             {% endfor %}
         </tr>
         {% endfor %}
+    {% endfor %}
+    <tr>
+        <th>&nbsp;</th>
+        <th colspan="{{ weeks.count }}">&nbsp;</th>
+    </tr>
+    <tr>
+        <th>&nbsp;</th>
+        {% for week in weeks %}
+            <th>{{ week|date:"m/j" }}</th>
+        {% endfor %}
+    <tr/>
+    {% for contact in contacts %}
+        <tr>
+            <th>{{ contact }}</th>
+            {% for week in weeks %}
+              <td>{% hours_for_week contact week %}</td>
+            {% endfor %}
+         </tr>
     {% endfor %}
 </table>
 

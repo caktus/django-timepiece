@@ -742,40 +742,17 @@ def budgeting_summary(request):
         from_date = today.replace(day=1)
         to_date = from_date + relativedelta(months=3)
 
-    all_weeks = SortedDict()
-    date = from_date
-    while date < to_date:
-        year, week, weekday = date.isocalendar()
-        if week not in all_weeks:
-            all_weeks[week] = date
-        date += relativedelta(days=1)
-
-    today = datetime.date.today()
-    contracts = timepiece.ProjectContract.objects.filter(status='current')
+    weeks = rrule.rrule(rrule.WEEKLY, dtstart=from_date, until=to_date, 
+                        byweekday=6)
+    contracts = timepiece.ProjectContract.objects.exclude(status='complete')
     contracts = contracts.exclude(project__in=settings.TIMEPIECE_PROJECTS.values())
-    contracts = list(contracts.order_by('-end_date'))
-    for contract in contracts:
-        hours_left = contract.num_hours - contract.hours_worked()
-        contract.hour_assignments = list(contract.assignments.all())
-        diff = contract.end_date - today
-        total_weeks = diff.days/7
-        if total_weeks <= 0:
-            continue
-        weeks = rrule.rrule(rrule.WEEKLY, count=total_weeks, dtstart=today,
-                            byweekday=0)
-        for assignment in contract.hour_assignments:
-            assignment.weeks = []
-            hours = assignment.hours_remaining/total_weeks
-            assignment_weeks = {}
-            for week in weeks:
-                _, week_num, _ = week.isocalendar()
-                assignment_weeks[week_num] = hours
-            for week in all_weeks.keys():
-                assignment.weeks.append((week, assignment_weeks.get(week, None)))
+    contracts = contracts.order_by('end_date')
     
+    contacts = crm.Contact.objects.filter(assignments__contract__in=contracts).distinct()
     return {
         'form': form,
-        'all_weeks': all_weeks,
+        'weeks': weeks,
         'contracts': contracts,
+        'contacts': contacts,
     }
 

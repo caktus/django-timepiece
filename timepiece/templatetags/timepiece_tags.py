@@ -1,10 +1,11 @@
 import datetime
 
 from django import template
+from django.db.models import Sum
 
 from dateutil.relativedelta import relativedelta
 
-from timepiece.models import PersonRepeatPeriod
+from timepiece.models import PersonRepeatPeriod, AssignmentAllocation
 
 
 register = template.Library()
@@ -82,4 +83,25 @@ def date_filters(context, options):
             )
 
     return {'filters': filters}
+
+
+@register.simple_tag
+def hours_for_assignment(assignment, date):
+    end = date + relativedelta(days=5)
+    blocks = assignment.blocks.filter(date__gte=date, date__lte=end)
+    hours = blocks.aggregate(hours=Sum('hours'))['hours']
+    if not hours:
+        hours = ''
+    return hours
+
+
+@register.simple_tag
+def hours_for_week(contact, date):
+    end = date + relativedelta(days=5)
+    blocks = AssignmentAllocation.objects.filter(assignment__contact=contact,
+                                                 date__gte=date, date__lte=end)
+    hours = blocks.aggregate(hours=Sum('hours'))['hours']
+    if not hours:
+        hours = ''
+    return hours
 
