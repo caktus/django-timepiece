@@ -113,19 +113,38 @@ class ProjectionTest(TimepieceDataTestCase):
                                               'num_hours': hours})
         return ca
 
-    def test_contact_weekly_assignment_left_bound(self):
-        start = datetime.datetime.today() - datetime.timedelta(weeks=1)
-        end = start + datetime.timedelta(weeks=2)
+    def test_assignment_active_ends_mid_week(self):
+        """ Test manager returns assignments that end before end of window """
+        start = utils.get_week_start() - datetime.timedelta(days=2)
+        end = start + datetime.timedelta(weeks=1)
         ca = self._assign(start, end)
-        for schedule, week, assignments in contact_weekly_assignments():
-            self.assertTrue(assignments.filter(pk=ca.pk).exists())
+        week = utils.get_week_start()
+        next_week = week + datetime.timedelta(weeks=1)
+        assignments = timepiece.ContractAssignment.objects
+        assignments = assignments.active_during_week(week, next_week)
+        self.assertTrue(assignments.filter(pk=ca.pk).exists())
 
-    def test_contact_weekly_assignment_right_bound(self):
-        start = datetime.datetime.today() + datetime.timedelta(weeks=1)
+    def test_assignment_active_starts_mid_week(self):
+        """ Test manager returns assignments that start before window """
+        start = utils.get_week_start() + datetime.timedelta(days=2)
         end = start + datetime.timedelta(weeks=2)
         ca = self._assign(start, end)
-        for schedule, week, assignments in contact_weekly_assignments():
-            self.assertTrue(assignments.filter(pk=ca.pk).exists())
+        week = utils.get_week_start()
+        next_week = week + datetime.timedelta(weeks=1)
+        assignments = timepiece.ContractAssignment.objects
+        assignments = assignments.active_during_week(week, next_week)
+        self.assertTrue(assignments.filter(pk=ca.pk).exists())
+
+    def test_assignment_active_within_week(self):
+        """ Test manager returns assignments that contain entire week """
+        start = utils.get_week_start() - datetime.timedelta(weeks=1)
+        end = start + datetime.timedelta(weeks=3)
+        ca = self._assign(start, end)
+        week = utils.get_week_start()
+        next_week = week + datetime.timedelta(weeks=1)
+        assignments = timepiece.ContractAssignment.objects
+        assignments = assignments.active_during_week(week, next_week)
+        self.assertTrue(assignments.filter(pk=ca.pk).exists())
 
     def testSingleAssignmentProjection(self):
         start = datetime.datetime.today() - datetime.timedelta(weeks=1)

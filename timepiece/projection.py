@@ -15,19 +15,15 @@ logger = logging.getLogger('timepiece.projection')
 
 
 def contact_weekly_assignments():
-    schedules = timepiece.PersonSchedule.objects.all()
+    schedules = timepiece.PersonSchedule.objects.select_related()
     for schedule in schedules:
-        last_end_date = schedule.contact.assignments.order_by('-end_date')
-        last_end_date = last_end_date.exclude(contract__status='complete')
-        last_end_date = last_end_date.values('end_date')[0]['end_date']
-        for week in generate_weeks(end=last_end_date):
+        for week in generate_weeks(end=schedule.furthest_end_date):
             next_week = week + relativedelta.relativedelta(weeks=1)
-            assignments = schedule.contact.assignments
-            q = Q(contract__end_date__gt=next_week)
-            q |= Q(contract__end_date__gte=week,
-                   contract__end_date__lt=next_week)
+            assignments = timepiece.ContractAssignment.objects
+            assignments = assignments.active_during_week(week, next_week)
+            q = Q(contact=schedule.contact)
             q &= ~Q(contract__project__in=settings.TIMEPIECE_PROJECTS.values())
-            assignments = assignments.filter(q)
+            assignments = assignments.filter(q).select_related()
             yield schedule, week, assignments.order_by('end_date')
 
 

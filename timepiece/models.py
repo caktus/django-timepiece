@@ -539,6 +539,14 @@ class ProjectContract(models.Model):
         return unicode(self.project)
 
 
+class AssignmentManager(models.Manager):
+    def active_during_week(self, week, next_week):
+        q = Q(contract__end_date__gte=week, contract__end_date__lt=next_week)
+        q |= Q(contract__start_date__gte=week, contract__start_date__lt=next_week)
+        q |= Q(contract__start_date__lt=week, contract__end_date__gt=next_week)
+        return self.get_query_set().filter(q)
+
+
 class ContractAssignment(models.Model):
     contract = models.ForeignKey(ProjectContract, related_name='assignments')
     contact = models.ForeignKey(
@@ -550,6 +558,8 @@ class ContractAssignment(models.Model):
     end_date = models.DateField()
     num_hours = models.DecimalField(max_digits=8, decimal_places=2,
                                     default=0)
+
+    objects = AssignmentManager()
 
     def _filtered_hours_worked(self, end_date):
         return Entry.objects.filter(
@@ -598,6 +608,16 @@ class PersonSchedule(models.Model):
     hours_per_week = models.DecimalField(max_digits=8, decimal_places=2,
                                          default=0)
     end_date = models.DateField()
+
+    @property
+    def furthest_end_date(self):
+        assignments = self.contact.assignments.order_by('-end_date')
+        assignments = assignments.exclude(contract__status='complete')
+        try:
+            end_date = assignments.values('end_date')[0]['end_date']
+        except IndexError:
+            end_date = self.end_date
+        return end_date
 
     @property
     def hours_available(self):
