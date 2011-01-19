@@ -78,7 +78,8 @@ admin.site.register(timepiece.Project, ProjectAdmin)
 
 class ContractAssignmentAdmin(admin.ModelAdmin):
     list_display = ('id', 'contract', 'contact', 'start_date',
-                    'end_date', 'num_hours', 'worked', 'remaining')
+                    'end_date', 'min_hours_per_week', 'num_hours', 'worked',
+                    'remaining')
     list_filter = ('contract',)
     ordering = ('-start_date',)
 
