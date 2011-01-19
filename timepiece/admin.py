@@ -56,6 +56,10 @@ class ProjectContractAdmin(admin.ModelAdmin):
         obj.save()
         run_projection()
 
+    def delete_model(self, request, obj):
+        obj.delete()
+        run_projection()
+
 admin.site.register(timepiece.ProjectContract, ProjectContractAdmin)
 
 
@@ -94,6 +98,10 @@ class ContractAssignmentAdmin(admin.ModelAdmin):
         obj.save()
         run_projection()
 
+    def delete_model(self, request, obj):
+        obj.delete()
+        run_projection()
+
 admin.site.register(timepiece.ContractAssignment, ContractAssignmentAdmin)
 
 
@@ -112,6 +120,10 @@ class PersonScheduleAdmin(admin.ModelAdmin):
 
     def save_model(self, request, obj, form, change):
         obj.save()
+        run_projection()
+
+    def delete_model(self, request, obj):
+        obj.delete()
         run_projection()
 
 admin.site.register(timepiece.PersonSchedule, PersonScheduleAdmin)
