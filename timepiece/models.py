@@ -561,6 +561,11 @@ class ProjectContract(models.Model):
         return self._hours_assigned or 0
 
     @property
+    def hours_allocated(self):
+        allocations = AssignmentAllocation.objects.filter(assignment__contract=self)
+        return allocations.aggregate(sum=Sum('hours'))['sum']
+
+    @property
     def hours_remaining(self):
         return self.num_hours - self.hours_worked()
 

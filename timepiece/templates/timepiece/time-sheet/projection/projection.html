@@ -29,7 +29,7 @@
     </tr>
     {% for contract in contracts %}
         <tr>
-            <th colspan="{{ weeks.count }}">{{ contract }} (Due {{ contract.end_date|date:"n/j" }})</th>
+            <th colspan="{{ weeks.count }}">{{ contract }} (Due {{ contract.end_date|date:"n/j" }}) - Remaining: {{ contract.hours_remaining }}, Allocated: {{ contract.hours_allocated }}</th>
         </tr>
         {% for assignment in contract.assignments.all %}
         <tr>
