@@ -34,10 +34,10 @@ def run_projection():
         hours_left = schedule.hours_per_week
         for assignment in assignments:
             commitment = assignment.weekly_commitment
-            logger.debug('{0} | Remaining Hours: {1:<6.2f} | Commitment: {2:<6.2f} | {3}'.format(week, hours_left, commitment, assignment))
             if commitment > hours_left:
                 commitment = hours_left
             hours_left -= commitment
+            logger.debug('{0} | Remaining Hours: {1:<6.2f} | Commitment: {2:<6.2f} | {3}'.format(week, hours_left, commitment, assignment))
             assignment.blocks.create(date=week, hours=commitment)
             if hours_left <= 0:
                 break

@@ -105,3 +105,19 @@ def hours_for_week(contact, date):
         hours = ''
     return hours
 
+
+@register.simple_tag
+def weekly_hours_worked(rp, date):
+    hours = rp.hours_in_week(date)
+    if not hours:
+        hours = ''
+    return hours
+
+
+@register.simple_tag
+def monthly_overtime(rp, date):
+    hours = rp.total_monthly_overtime(date)
+    if not hours:
+        hours = ''
+    return hours
+

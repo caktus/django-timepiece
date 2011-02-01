@@ -189,3 +189,11 @@ def generate_weeks(end, start=None):
     start = get_week_start(start)
     return rrule.rrule(rrule.WEEKLY, dtstart=start, until=end, byweekday=6)
 
+
+def get_week_window(day):
+    start = get_week_start(day)
+    end = start + timedelta(weeks=1)
+    weeks = generate_weeks(start=start, end=end)
+    return list(weeks)
+
+

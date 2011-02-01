@@ -31,19 +31,21 @@
 <table>
     <tr>
         <th>&nbsp;</th>
-        {% for week, monday in all_weeks.iteritems %}
-            <th>Week {{ week }} ({{ monday|date:"N j" }})</th>
+        {% for week in all_weeks %}
+            <th>{{ week|date:"n/j" }}</th>
         {% endfor %}
         <th>Overtime</th>
     </tr>
-    {% for contact in contacts %}
-        <tr{% if contact.overtime > 40.00 %} class='overtime'{% endif %}>
-            <th>{{ contact }}</th>
-            {% for week, hours in contact.weeks %}
-                <td>{% if hours %}{{ hours }}{% endif %}</td>
-            {% endfor %}
-            <td>{% if contact.overtime > 40.00 %}{{ contact.overtime }}{% endif %}</td>
-        </tr>
+    {% for period in periods %}
+        {% with period.contact as contact %}
+            <tr{% if contact.overtime > 40.00 %} class='overtime'{% endif %}>
+                <th>{{ contact }}</th>
+                {% for week in all_weeks %}
+                    <td>{% weekly_hours_worked period week %}</td>
+                {% endfor %}
+                <td>{% monthly_overtime period from_date %}
+            </tr>
+        {% endwith %}
     {% endfor %}
 </table>
 
@@ -57,18 +59,20 @@
         <th>Billable</th>
         <th>Total</th>
     </tr>
-    {% for contact in contacts %}
-        <tr>
-            <th>{{ contact }}</th>
-            {% if contact.summary %}
-                <td>{{ contact.summary.vacation|default_if_none:'' }}</td>
-                <td>{{ contact.summary.sick|default_if_none:'' }}</td>
-                <td>{{ contact.summary.billable|default_if_none:'' }}{% if contact.summary.non_billable %} ({{ contact.summary.non_billable }}){% endif %}</td>
-                <td>{{ contact.summary.total|default_if_none:'' }}</td>
-            {% else %}
-                <td colspan='5'>&nbsp;</td>
-            {% endif %}
-        </tr>
+    {% for period in periods %}
+        {% with period.contact as contact %}
+            <tr>
+                <th>{{ contact }}</th>
+                {% if contact.summary %}
+                    <td>{{ contact.summary.vacation|default_if_none:'' }}</td>
+                    <td>{{ contact.summary.sick|default_if_none:'' }}</td>
+                    <td>{{ contact.summary.billable|default_if_none:'' }}{% if contact.summary.non_billable %} ({{ contact.summary.non_billable }}){% endif %}</td>
+                    <td>{{ contact.summary.total|default_if_none:'' }}</td>
+                {% else %}
+                    <td colspan='5'>&nbsp;</td>
+                {% endif %}
+            </tr>
+        {% endwith %}
     {% endfor %}
 </table>
 

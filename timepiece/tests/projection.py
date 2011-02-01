@@ -69,6 +69,15 @@ class ProjectionTest(TimepieceDataTestCase):
         weeks = utils.generate_weeks(start=start, end=end)
         self.assertEqual(num, weeks.count())
 
+    def test_week_window(self):
+        """ Test generation of weekly window with given date """
+        day = datetime.date(2011, 2, 1) # tue
+        expected_start = datetime.date(2011, 1, 30)
+        expected_end = datetime.date(2011, 2, 6)
+        start, end = utils.get_week_window(day)
+        self.assertEqual(start.toordinal(), expected_start.toordinal())
+        self.assertEqual(end.toordinal(), expected_end.toordinal())
+
     def test_project_contract_remaining_weeks(self):
         """ Test calculation of contract remaining weeks """
         num = random.randint(5, 20)

@@ -15,6 +15,8 @@ from datetime import timedelta
 
 from crm import models as crm
 
+from timepiece import utils
+
 try:
     settings.TIMEPIECE_TIMESHEET_EDITABLE_DAYS
 except AttributeError:
@@ -154,6 +156,13 @@ class Location(models.Model):
         return self.name
 
 
+class EntryWorkedManager(models.Manager):
+    def get_query_set(self):
+        qs = super(EntryWorkedManager, self).get_query_set()
+        projects = getattr(settings, 'TIMEPIECE_PROJECTS', {})
+        return qs.exclude(project__in=projects.values())
+
+
 class Entry(models.Model):
     """
     This class is where all of the time logs are taken care of
@@ -179,6 +188,9 @@ class Entry(models.Model):
     date_updated = models.DateTimeField(auto_now=True)
     hours = models.DecimalField(max_digits=8, decimal_places=2, default=0)
     billable = models.BooleanField(default=True)
+
+    objects = models.Manager()
+    worked = EntryWorkedManager()
 
     def is_overlapping(self):
         if self.start_time and self.end_time:
@@ -462,7 +474,28 @@ class PersonRepeatPeriod(models.Model):
         RepeatPeriod,
         unique=True,
     )
-    
+
+    def hours_in_week(self, date):
+        left, right = utils.get_week_window(date)
+        entries = Entry.worked.filter(user=self.contact.user)
+        entries = entries.filter(end_time__gt=left, end_time__lt=right)
+        return entries.aggregate(s=Sum('hours'))['s']
+
+    def overtime_hours_in_week(self, date):
+        hours = self.hours_in_week(date)
+        if hours > 40:
+            return hours - 40
+        return 0
+
+    def total_monthly_overtime(self, day):
+        start = day.replace(day=1)
+        end = start + relativedelta(months=1)
+        weeks = utils.generate_weeks(start=start, end=end)
+        overtime = Decimal('0.0')
+        for week in weeks:
+            overtime += self.overtime_hours_in_week(week)
+        return overtime
+
     def summary(self, date, end_date):
         projects = getattr(settings, 'TIMEPIECE_PROJECTS', {})
         user = self.contact.user
@@ -585,9 +618,13 @@ class ContractAssignment(models.Model):
     def weekly_commitment(self):
         week_start = utils.get_week_start()
         remaining = self.num_hours - self._filtered_hours_worked(week_start)
+        # print 'remaining', remaining
+        # print list(self.contract.weeks_remaining)
         commitment = remaining/self.contract.weeks_remaining.count()
+        # print 'commitment 1', commitment
         if commitment < self.min_hours_per_week:
             commitment = self.min_hours_per_week
+            # print 'commitment 2', commitment
         return commitment
 
     class Meta:

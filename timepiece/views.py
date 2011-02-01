@@ -21,7 +21,7 @@ from crm import forms as crm_forms
 from crm import models as crm
 
 from timepiece import models as timepiece 
-from timepiece.utils import determine_period
+from timepiece import utils
 from timepiece import forms as timepiece_forms
 from timepiece.templatetags.timepiece_tags import seconds_to_hours
 
@@ -672,47 +672,17 @@ def payroll_summary(request):
             projects[name]['billable'] = hours
         else:
             projects[name]['non_billable'] = hours
-
-    # get list of expected week indexes for specified month
-    cal = calendar.Calendar()
-    days = cal.itermonthdates(from_date.year, from_date.month)
-    all_weeks = SortedDict()
-    for day in days:
-        year, week, weekday = day.isocalendar()
-        if week not in all_weeks:
-            all_weeks[week] = day
-    user_ids = timepiece.Entry.objects.distinct().values_list('user_id',
-                                                              flat=True)
-    contacts = crm.Contact.objects.filter(user__in=user_ids).order_by('sort_name')
-    for contact in contacts:
-        try:
-            rp = timepiece.PersonRepeatPeriod.objects.select_related(
-                'contact',
-                'repeat_period',
-            ).filter(
-                repeat_period__active=True,
-            ).order_by(
-                'contact__sort_name',
-            ).get(contact=contact)
-        except timepiece.PersonRepeatPeriod.DoesNotExist:
-            rp = None
-        if rp:
-            contact.summary = rp.summary(from_date, to_date)
-        entries = contact.user.timepiece_entries.filter(
-            end_time__lte=to_date,
-            end_time__gt=from_date - datetime.timedelta(days=from_date.weekday())
-        )
-        weeks = {}
-        for entry in entries:
-            year, week, weekday = entry.start_time.isocalendar()
-            if week not in weeks:
-                weeks[week] = Decimal('0.0')
-            weeks[week] += entry.hours
-        contact.weeks = []
-        for week in all_weeks.keys():
-            contact.weeks.append((week, weeks.get(week, None)))
-        contact.overtime = sum([v-40 for k,v in weeks.iteritems() if v > 40])
     
+    all_weeks = utils.generate_weeks(start=from_date, end=to_date)
+    rps = timepiece.PersonRepeatPeriod.objects.select_related(
+        'contact__user',
+        'repeat_period',
+    ).filter(
+        repeat_period__active=True,
+    ).order_by('contact__sort_name')
+    for rp in rps:
+        rp.contact.summary = rp.summary(from_date, to_date)
+
     cals = []
     date = from_date - relativedelta(months=1)
     end_date = from_date + relativedelta(months=1)
@@ -720,12 +690,15 @@ def payroll_summary(request):
     while date < end_date:
         cals.append(html_cal.formatmonth(date.year, date.month))
         date += relativedelta(months=1)
+
     return {
         'form': form,
         'all_weeks': all_weeks,
-        'contacts': contacts,
         'cals': cals,
         'projects': projects,
+        'periods': rps,
+        'to_date': to_date,
+        'from_date': from_date,
     }
 
 
@@ -742,8 +715,7 @@ def projection_summary(request):
         from_date = today.replace(day=1)
         to_date = from_date + relativedelta(months=3)
 
-    weeks = rrule.rrule(rrule.WEEKLY, dtstart=from_date, until=to_date, 
-                        byweekday=6)
+    weeks = utils.generate_weeks(start=from_date, end=to_date)
     contracts = timepiece.ProjectContract.objects.exclude(status='complete')
     contracts = contracts.exclude(project__in=settings.TIMEPIECE_PROJECTS.values())
     contracts = contracts.order_by('end_date')
