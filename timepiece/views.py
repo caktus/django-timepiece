@@ -705,21 +705,23 @@ def payroll_summary(request):
 @permission_required('timepiece.view_projection_summary')
 @render_with('timepiece/time-sheet/projection/projection.html')
 def projection_summary(request):
+    contracts = timepiece.ProjectContract.objects.exclude(status='complete')
+    contracts = contracts.exclude(project__in=settings.TIMEPIECE_PROJECTS.values())
+    contracts = contracts.order_by('end_date')
+    contacts = crm.Contact.objects.filter(assignments__contract__in=contracts).distinct()
+
     if request.GET:
         form = timepiece_forms.DateForm(request.GET)
         if form.is_valid():
             from_date, to_date = form.save()
     else:
         form = timepiece_forms.DateForm()
-        today = datetime.date.today()
-        from_date = today.replace(day=1)
+        from_date = datetime.date.today()
+        #from_date = today.replace(day=1)
         to_date = from_date + relativedelta(months=3)
 
     weeks = utils.generate_weeks(start=from_date, end=to_date)
-    contracts = timepiece.ProjectContract.objects.exclude(status='complete')
-    contracts = contracts.exclude(project__in=settings.TIMEPIECE_PROJECTS.values())
-    contracts = contracts.order_by('end_date')
-    contacts = crm.Contact.objects.filter(assignments__contract__in=contracts).distinct()
+
     return {
         'form': form,
         'weeks': weeks,

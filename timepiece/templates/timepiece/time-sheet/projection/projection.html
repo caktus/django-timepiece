@@ -20,23 +20,29 @@
     </ul>
 </form>
 
-<table>
-    <tr>
-        <th>&nbsp;</th>
-        {% for week in weeks %}
-            <th>{{ week|date:"n/j" }}</th>
-        {% endfor %}
-    </tr>
+<table id='projection'>
     {% for contract in contracts %}
         <tr>
-            <th colspan="{{ weeks.count }}">{{ contract }} (Due {{ contract.end_date|date:"n/j" }}) - Remaining: {{ contract.hours_remaining }}, Allocated: {{ contract.hours_allocated }}</th>
+            <th colspan="{{ weeks.count }}" class='contract'>{{ contract }} (Due {{ contract.end_date|date:"n/j" }}) - Remaining: {{ contract.hours_remaining }}, Allocated: {{ contract.hours_allocated }}</th>
+        </tr>
+        <tr>
+            <th>&nbsp;</th>
+            <th class='assigned'>Assigned</th>
+            <th class='worked'>Worked</th>
+            {% for week in weeks %}
+                <th>{{ week|date:"n/j" }}</th>
+            {% endfor %}
+            <th>Allocated</th>
         </tr>
         {% for assignment in contract.assignments.all %}
         <tr>
             <td>{{ assignment.contact }}</td>
+            <td class='assigned'>{{ assignment.num_hours }}{% if assignment.min_hours_per_week %}({{ assignment.min_hours_per_week }}){% endif %}</td>
+            <td class='worked'>{{ assignment.hours_worked }}</td>
             {% for week in weeks %}
               <td>{% hours_for_assignment assignment week %}</td>
             {% endfor %}
+            <td class='allocated'>{% total_allocated assignment %}</td>
         </tr>
         {% endfor %}
     {% endfor %}
@@ -46,6 +52,8 @@
     </tr>
     <tr>
         <th>&nbsp;</th>
+          <th>&nbsp;</th>
+          <th>&nbsp;</th>
         {% for week in weeks %}
             <th>{{ week|date:"m/j" }}</th>
         {% endfor %}
@@ -53,6 +61,8 @@
     {% for contact in contacts %}
         <tr>
             <th>{{ contact }}</th>
+            <th>&nbsp;</th>
+            <th>&nbsp;</th>
             {% for week in weeks %}
               <td>{% hours_for_week contact week %}</td>
             {% endfor %}

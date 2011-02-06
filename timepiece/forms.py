@@ -172,6 +172,16 @@ class DateForm(forms.Form):
         return (from_date, to_date)
 
 
+class ProjectionForm(DateForm):
+    contact = forms.ModelChoiceField(queryset=None)
+    
+    def __init__(self, *args, **kwargs):
+        contacts = kwargs.pop('contacts')
+        super(ProjectionForm, self).__init__(*args, **kwargs)
+        self.fields['contact'].queryset = contacts
+    
+
+
 class ProjectForm(forms.ModelForm):
     class Meta:
         model = timepiece.Project

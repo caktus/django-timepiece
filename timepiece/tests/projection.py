@@ -33,7 +33,7 @@ class ProjectionTest(TimepieceDataTestCase):
         if not start:
             start = datetime.datetime.now()
         elif not isinstance(start, datetime.datetime):
-            raise Exception('start must be a datetime object')
+            start = datetime.datetime.combine(start, datetime.time())
         end = start + datetime.timedelta(hours=hours, minutes=minutes)
         data = {'user': assignment.contact.user,
                 'start_time': start,
@@ -89,29 +89,56 @@ class ProjectionTest(TimepieceDataTestCase):
 
     def test_weekly_commmitment(self):
         """ Test calculation of contract assignment's weekly commitment """
-        hours = 30
-        pc = self.create_project_contract({'num_hours': hours})
-        ca = self.create_contract_assignment({'contract': pc,
-                                              'contact': self.ps.contact,
-                                              'num_hours': hours})
-        hours_per_week = hours/pc.weeks_remaining.count()
-        self.assertEqual(hours_per_week, ca.weekly_commitment)
+        start = utils.get_week_start()
+        end = start + datetime.timedelta(weeks=2) - datetime.timedelta(days=1)
+        ca = self._assign(start, end, hours=40)
+        self.assertEqual(ca.weekly_commitment(start), 40)
+
+    def test_weekly_commmitment_with_earlier_allocation(self):
+        """ Test calculation of contract assignment's weekly commitment """
+        # 1 week assignment, 20 hours
+        start = utils.get_week_start()
+        end = start + datetime.timedelta(weeks=1) - datetime.timedelta(days=1)
+        ca1 = self._assign(start, end, hours=20)
+        # allocate 20 hours to this assignment
+        ca1.blocks.create(date=start, hours=20)
+        # 1 week assignment, 20 hours
+        ca2 = self._assign(start, end, hours=20)
+        # only 20 hours left this week
+        self.assertEqual(ca2.weekly_commitment(start), 20)
+
+    def test_weekly_commmitment_with_look_ahead(self):
+        """ Test later assignment's min hours factor into weekly commitment """
+        # 1 week assignment, 40 hours
+        start = utils.get_week_start()
+        end = start + datetime.timedelta(weeks=1) - datetime.timedelta(days=1)
+        ca1 = self._assign(start, end, hours=40)
+        # 2 week assignment, 40 hours
+        end = start + datetime.timedelta(weeks=1) - datetime.timedelta(days=1)
+        ca2 = self._assign(start, end, hours=40)
+        ca2.min_hours_per_week = 5
+        ca2.save()
+        self.assertEqual(ca1.weekly_commitment(start), 35)
+        ca1.blocks.create(date=start, hours=35)
+        self.assertEqual(ca2.weekly_commitment(start), 5)
 
     def test_weekly_commmitment_with_hours_worked(self):
         """ Test weekly commitment with previously logged hours """
-        hours = 30
-        start = datetime.datetime.today() - datetime.timedelta(weeks=1)
-        end = start + datetime.timedelta(weeks=2)
-        pc = self.create_project_contract({'num_hours': hours,
-                                           'start_date': start,
-                                           'end_date': end})
-        ca = self.create_contract_assignment({'contract': pc,
-                                              'contact': self.ps.contact,
-                                              'num_hours': hours})
+        start = utils.get_week_start()
+        end = start + datetime.timedelta(weeks=2) - datetime.timedelta(days=1)
+        ca = self._assign(start, end, hours=30)
         self.log_time(ca, start=start, delta=(10, 0))
-        self.assertEqual(10, ca.hours_worked)
-        self.assertEqual(20, ca.hours_remaining)
-        self.assertEqual(10, ca.weekly_commitment)
+        self.assertEqual(ca.hours_worked, 10)
+        self.assertEqual(ca.hours_remaining, 20)
+        self.assertEqual(ca.weekly_commitment(start), 30)
+    
+    def test_weekly_commitment_over_remaining(self):
+        # 1 week assignment, 20 hours
+        start = utils.get_week_start()
+        end = start + datetime.timedelta(weeks=1) - datetime.timedelta(days=1)
+        ca = self._assign(start, end, hours=20)
+        # only 20 hours left on assignment
+        self.assertEqual(ca.weekly_commitment(start), 20)
 
     def _assign(self, start=None, end=None, hours=30):
         pc = self.create_project_contract({'num_hours': hours,
@@ -155,22 +182,26 @@ class ProjectionTest(TimepieceDataTestCase):
         assignments = assignments.active_during_week(week, next_week)
         self.assertTrue(assignments.filter(pk=ca.pk).exists())
 
+    def test_no_remaining_hours(self):
+        """ Gurantee no overcommittment """
+        # 1 week, 40 hours
+        start = utils.get_week_start()
+        end = start + datetime.timedelta(weeks=1) - datetime.timedelta(days=1)
+        ca1 = self._assign(start, end, hours=40)
+        ca1.blocks.create(date=start, hours=40)
+        self.assertEqual(ca1.weekly_commitment(start), 0)
+        # 2 weeks, 40 hours
+        end = start + datetime.timedelta(weeks=2) - datetime.timedelta(days=1)
+        ca2 = self._assign(start, end, hours=40)
+        self.assertEqual(ca2.weekly_commitment(start), 0)
+
     def test_single_assignment_projection(self):
-        start = datetime.datetime.today() - datetime.timedelta(weeks=1)
-        end = start + datetime.timedelta(weeks=2)
+        # 2 weeks, 60 hours
+        start = utils.get_week_start()
+        end = start + datetime.timedelta(weeks=2) - datetime.timedelta(days=1)
         ca = self._assign(start, end, hours=60)
         run_projection()
         self.assertEqual(60, ca.blocks.aggregate(s=Sum('hours'))['s'])
-
-    def test_min_hours_per_week(self):
-        """ Test commitment attempts to fulfill assignment's min hours/week """
-        start = utils.get_week_start()
-        end = start + datetime.timedelta(weeks=1)
-        ca1 = self._assign(start, end, hours=40)
-        ca2 = self._assign(start, end, hours=40)
-        ca1.min_hours_per_week = 30
-        ca1.save()
-        self.assertEqual(30, ca1.weekly_commitment)
 
     def test_min_hours_per_week_weighted(self):
         """
@@ -189,4 +220,15 @@ class ProjectionTest(TimepieceDataTestCase):
         self.assertEqual(30, projection['s'])
         projection = ca2.blocks.filter(date=start).aggregate(s=Sum('hours'))
         self.assertEqual(10, projection['s'])
+
+    def test_unallocated_hours(self):
+        """ Test unallocated hours calculation """
+        start = utils.get_week_start()
+        end = start + datetime.timedelta(weeks=2) - datetime.timedelta(days=1)
+        ca = self._assign(start, end, hours=40)
+        unallocated_hours = ca.unallocated_hours_for_week(start)
+        self.assertEqual(unallocated_hours, 40)
+        ca.blocks.create(date=start, hours=5)
+        unallocated_hours = ca.unallocated_hours_for_week(start)
+        self.assertEqual(unallocated_hours, 35)
 

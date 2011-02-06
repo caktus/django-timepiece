@@ -93,6 +93,14 @@ def hours_for_assignment(assignment, date):
     if not hours:
         hours = ''
     return hours
+    
+    
+@register.simple_tag
+def total_allocated(assignment):
+    hours = assignment.blocks.aggregate(hours=Sum('hours'))['hours']
+    if not hours:
+        hours = ''
+    return hours
 
 
 @register.simple_tag

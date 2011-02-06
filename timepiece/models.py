@@ -1,4 +1,5 @@
 import datetime
+import logging
 from decimal import Decimal
 
 from django.conf import settings
@@ -585,6 +586,10 @@ class AssignmentManager(models.Manager):
         return self.get_query_set().filter(q)
 
 
+# contract assignment logger
+logger = logging.getLogger('timepiece.ca')
+
+
 class ContractAssignment(models.Model):
     contract = models.ForeignKey(ProjectContract, related_name='assignments')
     contact = models.ForeignKey(
@@ -599,6 +604,9 @@ class ContractAssignment(models.Model):
     min_hours_per_week = models.IntegerField(default=0)
 
     objects = AssignmentManager()
+
+    def _log(self, msg):
+        logger.debug('{0} - {1}'.format(self, msg))
 
     def _filtered_hours_worked(self, end_date):
         return Entry.objects.filter(
@@ -619,18 +627,71 @@ class ContractAssignment(models.Model):
     def hours_remaining(self):
         return self.num_hours - self.hours_worked
 
-    @property
-    def weekly_commitment(self):
+    def get_average_weekly_committment(self):
         week_start = utils.get_week_start()
+        # calculate hours left on contract (subtract worked hours this week)
         remaining = self.num_hours - self._filtered_hours_worked(week_start)
-        # print 'remaining', remaining
-        # print list(self.contract.weeks_remaining)
         commitment = remaining/self.contract.weeks_remaining.count()
-        # print 'commitment 1', commitment
-        if commitment < self.min_hours_per_week:
-            commitment = self.min_hours_per_week
-            # print 'commitment 2', commitment
         return commitment
+
+    def weekly_commitment(self, day=None):
+        self._log("Commitment for {0}".format(day))
+        # earlier assignments may have already allocated time for this week
+        unallocated = self.unallocated_hours_for_week(day)
+        self._log('Unallocated hours {0}'.format(unallocated))
+        # start with unallocated hours
+        commitment = unallocated
+        # reserve required hours on later assignments (min_hours_per_week)
+        commitment -= self.remaining_min_hours()
+        self._log('Commitment after reservation {0}'.format(commitment))
+        # if we're under the needed minimum hours and we have available
+        # time, then raise our commitment to the desired level
+        if commitment < self.min_hours_per_week and unallocated >= self.min_hours_per_week:
+            commitment = self.min_hours_per_week
+        self._log('Commitment after minimum weekly hours {0}'.format(commitment))
+        # calculate hours left on contract (subtract worked hours this week)
+        week_start = utils.get_week_start(day)
+        remaining = self.num_hours - self._filtered_hours_worked(week_start)
+        total_allocated = self.blocks.aggregate(s=Sum('hours'))['s'] or 0
+        remaining -= total_allocated
+        if remaining < 0:
+            remaining = 0
+        self._log('Remaining {0}'.format(remaining))
+        # reduce commitment to remaining hours
+        if commitment > remaining:
+            commitment = remaining
+        self._log('Final commitment {0}'.format(commitment))
+        return commitment
+
+    def allocated_hours_for_week(self, day):
+        week, next_week = utils.get_week_window(day)
+        allocs = AssignmentAllocation.objects
+        allocs = allocs.filter(assignment__contact=self.contact)
+        allocs = allocs.filter(date__gte=week, date__lt=next_week)
+        hours = allocs.aggregate(s=Sum('hours'))['s']
+        return hours or 0
+    
+    def unallocated_hours_for_week(self, day):
+        """ Calculate number of hours left to work for a week """
+        allocated = self.allocated_hours_for_week(day)
+        self._log('Allocated hours {0}'.format(allocated))
+        try:
+            schedule = PersonSchedule.objects.filter(contact=self.contact)[0]
+        except IndexError:
+            schedule = None
+        if schedule:
+            unallocated = schedule.hours_per_week - allocated
+        else:
+            unallocated = 40 - allocated
+        return unallocated
+
+    def remaining_contracts(self):
+        assignments = ContractAssignment.objects.filter(end_date__gte=self.end_date)
+        assignments = assignments.exclude(pk=self.pk)
+        return assignments.order_by('-end_date')
+
+    def remaining_min_hours(self):
+        return self.remaining_contracts().aggregate(s=Sum('min_hours_per_week'))['s'] or 0
 
     class Meta:
         unique_together = (('contract', 'contact'),)
