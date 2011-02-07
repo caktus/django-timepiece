@@ -639,6 +639,8 @@ class ContractAssignment(models.Model):
         # earlier assignments may have already allocated time for this week
         unallocated = self.unallocated_hours_for_week(day)
         self._log('Unallocated hours {0}'.format(unallocated))
+        reserved = self.remaining_min_hours()
+        self._log('Reserved hours {0}'.format(reserved))
         # start with unallocated hours
         commitment = unallocated
         # reserve required hours on later assignments (min_hours_per_week)
@@ -686,8 +688,9 @@ class ContractAssignment(models.Model):
         return unallocated
 
     def remaining_contracts(self):
-        assignments = ContractAssignment.objects.filter(end_date__gte=self.end_date)
-        assignments = assignments.exclude(pk=self.pk)
+        assignments = ContractAssignment.objects.exclude(pk=self.pk)
+        assignments = assignments.filter(end_date__gte=self.end_date,
+                                         contact=self.contact)
         return assignments.order_by('-end_date')
 
     def remaining_min_hours(self):
