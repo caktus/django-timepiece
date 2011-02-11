@@ -52,8 +52,9 @@ class ProjectContractAdmin(admin.ModelAdmin):
     def hours_unassigned(self, obj):
         return obj.num_hours - obj.hours_assigned
 
-    def save_model(self, request, obj, form, change):
-        obj.save()
+    def save_formset(self, request, form, formset, change):
+        instances = formset.save()
+        form.save_m2m()
         run_projection()
 
     def delete_model(self, request, obj):
