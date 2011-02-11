@@ -268,12 +268,14 @@ def summary(request, username=None):
         dates &= Q(start_time__gte=from_date)
     if to_date:
         dates &= Q(end_time__lte=to_date)
-    project_totals = entries.filter(dates).annotate(hours=Sum('hours'))
+    project_totals = entries.filter(dates).annotate(total_hours=Sum('hours'))
     total_hours = timepiece.Entry.objects.filter(dates).aggregate(
         hours=Sum('hours')
     )['hours']
-    people_totals = timepiece.Entry.objects.values('user','user__first_name','user__last_name').order_by('user').\
-        filter(dates).annotate(hours=Sum('hours'))
+    people_totals = timepiece.Entry.objects.values('user', 'user__first_name',
+                                                   'user__last_name')
+    people_totals = people_totals.order_by('user').filter(dates)
+    people_totals = people_totals.annotate(total_hours=Sum('hours'))
     context = {
         'form': form,
         'project_totals': project_totals,
@@ -571,7 +573,7 @@ def tracked_projects(request):
         'project__id',
         'project__business__id',
     ).annotate(
-        hours=Sum('hours'),
+        total_hours=Sum('hours'),
     ).order_by('project__name')
     return {
         'time_sheets': time_sheets,
