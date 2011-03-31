@@ -40,11 +40,11 @@ def view_entries(request):
         user=request.user,
         start_time__gte=two_weeks_ago,
     )
-    tomorrow = datetime.date.today() + datetime.timedelta(days=1)
+    today = datetime.date.today()
     assignments = timepiece.ContractAssignment.objects.filter(
         contact__user=request.user,
         contact__project_relationships__project=F('contract__project'),
-        end_date__gte=tomorrow,
+        end_date__gte=today,
         contract__status='current',
     ).order_by('contract__project__type', 'end_date')
     project_entries = entries.values(
