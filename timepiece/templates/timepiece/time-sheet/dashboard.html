@@ -78,7 +78,7 @@
 <br style='clear: both;' />
 
 <h3>
-    {% with entries.count as num_entries %}
+    {% with this_weeks_entries.count as num_entries %}
         Time Detail This Week ({{ num_entries }} entr{{ num_entries|pluralize:"y,ies" }})
     {% endwith %}
 </h3>
