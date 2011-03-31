@@ -305,7 +305,7 @@ def get_entries(period, window_id=None, project=None, user=None):
             period=period,
         ).order_by('-date')[0]
     entries = timepiece.Entry.objects.filter(
-        start_time__gte=window.date,
+        end_time__gte=window.date,
         end_time__lt=window.end_date,
     ).select_related(
         'user',
@@ -660,8 +660,8 @@ def payroll_summary(request):
         to_date = from_date + relativedelta(months=1)
 
     project_totals = timepiece.Entry.objects.filter(
-        end_time__lte=to_date,
-        end_time__gt=from_date,
+        end_time__lt=to_date,
+        end_time__gte=from_date,
     ).values('project__name', 'billable').annotate(s=Sum('hours')).order_by('project__name')
     projects = SortedDict()
     for row in project_totals:
