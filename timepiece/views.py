@@ -33,12 +33,12 @@ except AttributeError:
 @login_required
 @render_with('timepiece/time-sheet/dashboard.html')
 def view_entries(request):
-    two_weeks_ago = datetime.date.today() - datetime.timedelta(days=14)
+    week_start = utils.get_week_start()
     entries = timepiece.Entry.objects.select_related(
         'project__business',
     ).filter(
         user=request.user,
-        start_time__gte=two_weeks_ago,
+        start_time__gte=week_start,
     )
     today = datetime.date.today()
     assignments = timepiece.ContractAssignment.objects.filter(

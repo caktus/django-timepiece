@@ -34,9 +34,42 @@
 	{% endfor %}
 </table>
 
+{% if project_entries %}
+    <table id='project-summary' class='timepiece-summary'>
+        <caption>My work this week:</caption>
+    {% for entry in project_entries %}
+        <tr>
+            <td>{{ entry.project__name }} </td>
+            <td>{{ entry.sum }}</td>
+        </tr>
+    {% endfor %}
+    {% for row in activity_entries %}
+        <tr>
+            <th>Total {% if row.billable %}billable{% else %}non-billable{% endif %} time:</th>
+            <td>{{ row.sum }}</td>
+        </tr>
+    {% endfor %}    
+    </table>
+{% endif %}
+
+{% if logged_in_entries %}
+    <table id='active-entries' class='timepiece-summary'>
+        <caption>Others are working on:</caption>
+    {% for entry in logged_in_entries %}
+        <tr class='{% if entry.is_paused %}paused{% endif %}'>
+            <td>{{ entry.user.first_name }} {{ entry.user.last_name }}</td>
+            <td>{{ entry.project.name }}</td>
+            <td>{{ entry.start_time|date:"P" }}</td>
+        </tr>
+    {% endfor %}        
+    </table>
+{% endif %}
+
+<br style='clear: both;' />
+
 <h3>
     {% with entries.count as num_entries %}
-        Past 2 Weeks ({{ num_entries }} entr{{ num_entries|pluralize:"y,ies" }})
+        Time Detail This Week ({{ num_entries }} entr{{ num_entries|pluralize:"y,ies" }})
     {% endwith %}
 </h3>
 
@@ -88,43 +121,5 @@
     {% endfor %}
 </table>
 
-{% if project_entries %}
-    <table id='project-summary' class='timepiece-summary'>
-        <caption>Project Summary</caption>
-    {% for entry in project_entries %}
-        <tr>
-            <td>{{ entry.project__name }} </td>
-            <td>{{ entry.sum }}</td>
-        </tr>
-    {% endfor %}        
-    </table>
-{% endif %}
-
-{% if activity_entries %}
-    <table id='activity-summary' class='timepiece-summary'>
-        <caption>Billable Summary</caption>
-    {% for row in activity_entries %}
-        <tr>
-            <td>{% if row.billable %}Billable{% else %}Non-billable{% endif %}</td>
-            <td>{{ row.sum }}</td>
-        </tr>
-    {% endfor %}     
-    </table>
-{% endif %}
-
-{% if logged_in_entries %}
-    <table id='active-entries' class='timepiece-summary'>
-        <caption>Active Entries</caption>
-    {% for entry in logged_in_entries %}
-        <tr class='{% if entry.is_paused %}paused{% endif %}'>
-            <td>{{ entry.user.first_name }} {{ entry.user.last_name }}</td>
-            <td>{{ entry.project.name }}</td>
-            <td>{{ entry.start_time|date:"P" }}</td>
-        </tr>
-    {% endfor %}        
-    </table>
-{% endif %}
-
-<br style='clear: both;' />
 
 {% endblock %}
