@@ -38,7 +38,7 @@ def view_entries(request):
         'project__business',
     ).filter(
         user=request.user,
-        start_time__gte=week_start,
+        end_time__gte=week_start,
     )
     today = datetime.date.today()
     assignments = timepiece.ContractAssignment.objects.filter(
@@ -53,15 +53,24 @@ def view_entries(request):
     activity_entries = entries.values(
         'billable',
     ).annotate(sum=Sum('hours')).order_by('-sum')
-    logged_in_entries = timepiece.Entry.objects.filter(
+    others_active_entries = timepiece.Entry.objects.filter(
+        end_time__isnull=True,
+    ).exclude(
+        user=request.user,
+    )
+    my_active_entries = timepiece.Entry.objects.select_related(
+        'project__business',
+    ).filter(
+        user=request.user,
         end_time__isnull=True,
     )
     context = {
-        'entries': entries.order_by('-start_time'),
+        'this_weeks_entries': entries.order_by('-start_time'),
         'assignments': assignments,
         'project_entries': project_entries,
         'activity_entries': activity_entries,
-        'logged_in_entries': logged_in_entries,
+        'others_active_entries': others_active_entries,
+        'my_active_entries': my_active_entries,
     }
     return context
 

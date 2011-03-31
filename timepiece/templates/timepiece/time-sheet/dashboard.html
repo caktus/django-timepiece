@@ -34,6 +34,16 @@
 	{% endfor %}
 </table>
 
+<h3>
+    {% with entries.count as num_entries %}
+        My Active Entries
+    {% endwith %}
+</h3>
+
+{% with my_active_entries as entries %}
+{% include 'timepiece/time-sheet/_entry_list.html' %}
+{% endwith %}
+
 {% if project_entries %}
     <table id='project-summary' class='timepiece-summary'>
         <caption>My work this week:</caption>
@@ -52,10 +62,10 @@
     </table>
 {% endif %}
 
-{% if logged_in_entries %}
+{% if others_active_entries %}
     <table id='active-entries' class='timepiece-summary'>
         <caption>Others are working on:</caption>
-    {% for entry in logged_in_entries %}
+    {% for entry in others_active_entries %}
         <tr class='{% if entry.is_paused %}paused{% endif %}'>
             <td>{{ entry.user.first_name }} {{ entry.user.last_name }}</td>
             <td>{{ entry.project.name }}</td>
@@ -73,53 +83,8 @@
     {% endwith %}
 </h3>
 
-<table>
-    <tr>
-        <th>Date</th>
-        <th>Project</th>
-        <th>Clock In</th>
-        <th>Clock Out</th>
-        <th>Breaks</th>
-        <th>Hours</th>
-        <th>Location</th>
-    </tr>
-    {% for entry in entries %}
-    <tr{% if entry.comments %} title='{{ entry.comments }}'{% endif %} class='{% if entry.is_paused %}paused{% endif %}{% if not entry.end_time %} active{% endif %} {% if entry.is_overlapping%}overlapping{% endif %}{% if not entry.billable %} non-billable{% endif %}'>
-        <td>{{ entry.start_time|date:"m/d/Y (D)" }}</td>
-        <td><a href='{% url view_project business_id=entry.project.business.id,project_id=entry.project.id %}'>{{ entry.project }}</a></td>
-        <td>{{ entry.start_time|date:"P" }}</td>
-        <td>
-            {% if entry.end_time %}
-                {{ entry.end_time|date:"P" }}
-            {% else %}
-                <a href="{% url timepiece-clock-out entry.id %}">Clock Out</a>
-            {% endif %}
-        </td>
-        <td>
-            {{ entry.seconds_paused|seconds_to_hours|floatformat:2 }}
-            {% if not entry.end_time %}
-                {% if entry.is_paused %}
-                    <a href="{% url timepiece-toggle-paused entry.id %}">(Resume)</a>
-                {% else %}
-                    <a href="{% url timepiece-toggle-paused entry.id %}">(Pause)</a>
-                {% endif %}
-            {% endif %}
-        </td>
-        <td>{{ entry.hours }}</td>
-        <td>{{ entry.location }}</td>
-        <td>
-            <ul class='actions'>
-                <li><a href="{% url timepiece-update entry.id %}">Change</a></li>
-                <li><a href="{% url timepiece-delete entry.id %}">Remove</a></li>
-            </ul>
-        </td>
-    </tr>
-    {% empty %}
-    <tr>
-        <td colspan='6'>You have no time logged for this period.</td>
-    </tr>
-    {% endfor %}
-</table>
-
+{% with this_weeks_entries as entries %}
+{% include 'timepiece/time-sheet/_entry_list.html' %}
+{% endwith %}
 
 {% endblock %}
