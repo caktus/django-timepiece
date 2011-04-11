@@ -5,9 +5,12 @@
 
 {% block css %}{{ block.super }}
     <link charset='UTF-8' rel="stylesheet" type="text/css" media="screen" href="{{ MEDIA_URL }}css/bar-graph.css" />
+    <link charset='UTF-8' rel="stylesheet" type="text/css" media="screen" href="{{ MEDIA_URL }}jqplot/jquery.jqplot.min.css" />
 {% endblock %}
 
 {% block javascript %}{{ block.super }}
+    <script type="text/javascript" src="{{ MEDIA_URL }}jqplot/jquery.jqplot.min.js"></script>
+    <script type="text/javascript" src="{{ MEDIA_URL }}jqplot/plugins/jqplot.pieRenderer.min.js"></script>
     <script type="text/javascript">
         ;(function($) {
             $.fn.textfill = function(options) {
@@ -29,9 +32,20 @@
             }
         })(jQuery);
 
-        jQuery(function() {
-            jQuery('div.bar-graph-start').textfill({ maxFontPixels: 20 });
-            jQuery('div.bar-graph-end').textfill({ maxFontPixels: 20 });
+        jQuery(document).ready(function($) {
+            $('div.bar-graph-start').textfill({ maxFontPixels: 20 });
+            $('div.bar-graph-end').textfill({ maxFontPixels: 20 });
+            $.jqplot.config.enablePlugins = true; // on the page before plot creation.
+            week_totals = [
+                {% for assignment in allocations %}
+                    ["{{ assignment.assignment.contract.project }}", {{ assignment.hours }}],
+                {% endfor %}
+            ];
+            plot1 = $.jqplot('my-weekly-hours-chart', [week_totals], {
+                title: 'This Week\'s Assignment Chart',
+                seriesDefaults:{renderer:$.jqplot.PieRenderer, rendererOptions:{sliceMargin:2}},
+                legend:{show:true}
+            });
         });
     </script>
 {% endblock %}
@@ -42,7 +56,7 @@
     <li><a href="{% url timepiece-clock-in %}">Clock In</a></li>
     <li><a href="{% url timepiece-add %}">Add Entry</a></li>
 </ul>
-
+<div style="height: 380px; width: 480px; position: relative;" id="my-weekly-hours-chart"></div>
 <h3>My Projects</h3>
 <table class='my-projects'>
 	<tr><th>Project</th><th>My Hours</th><th>Hours Worked</th><th>Hours Remaining</th><th>Due Date</th><th></th></tr>
@@ -87,10 +101,10 @@
           <td class='hours'>
               <div class="bar-graph">
                   {%if assignment.hours_worked < 0 %}
-                      <div class="error">Somehow you've logged {{ assignment.hours_worked }} negative hours for {{ assignment.assignment.contract.project }} this week.</div>
+                      <div class="error">Somehow you've logged {{ assignment.hours_worked|escape|slice:"1:" }} negative hours for {{ assignment.assignment.contract.project }} this week.</div>
                   {% else %}
                       {% if assignment.hours_left < 0 %}
-                          <div class="error">You have {{ assignment.hours_left }}hrs for {{ assignment.assignment.contract.project }} this week.</div>
+                          <div class="error">You are {{ assignment.hours_left|escape|slice:"1:" }}hrs over for {{ assignment.assignment.contract.project }} this week.</div>
                       {% else %}
                           {% ifnotequal assignment.hours_worked 0 %}
                               <div title="{{ assignment.hours_worked }}hrs" class="bar-graph-start"
