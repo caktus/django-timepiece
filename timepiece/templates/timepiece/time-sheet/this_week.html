@@ -52,12 +52,12 @@
                         <div class="error">You've worked more hours than assigned this week for {{ assignment.assignment.contract.project }}.</div>
                     {% else %}
                         {% ifnotequal assignment.hours_worked 0 %}
-                            <div title="{{ assignment.hours_worked }}hrs" class="bar-graph-start" style="height:20px;width:{% widthratio assignment.hours_worked assignment.hours 400 %}px" >
+                            <div title="{{ assignment.hours_worked }}hrs" class="bar-graph-start" style="width:{% widthratio assignment.hours_worked assignment.hours 400 %}px" >
                                 <span>{{ assignment.hours_worked }}hrs</span>
                             </div>
                         {% endifnotequal %}
                         {% ifnotequal assignment.hours_left 0 %}
-                            <div title="{{ assignment.hours_left }}hrs"class="bar-graph-end" style="height:20px;width:{% widthratio assignment.hours_left assignment.hours 400 %}px" >
+                            <div title="{{ assignment.hours_left }}hrs"class="bar-graph-end" style="width:{% widthratio assignment.hours_left assignment.hours 400 %}px" >
                                 <span>{{ assignment.hours_left }}hrs</span>
                             </div>
                         {% endifnotequal %}
