@@ -32,19 +32,19 @@ class Attribute(models.Model):
     type = models.CharField(max_length=32, choices=ATTRIBUTE_TYPES)
     label = models.CharField(max_length=255)
     sort_order = models.SmallIntegerField(
-        null=True, 
-        blank=True, 
+        null=True,
+        blank=True,
         choices=SORT_ORDER_CHOICES,
     )
     enable_timetracking = models.BooleanField('Enables time tracking '
         'functionality for projects with this type or status.',
         default=False,
     )
-    
+
     class Meta:
         unique_together = ('type', 'label')
         ordering = ('sort_order',)
-    
+
     def __unicode__(self):
         return self.label
 
@@ -53,8 +53,8 @@ class Project(models.Model):
     name = models.CharField(max_length = 255)
     trac_environment = models.CharField(max_length=255, blank=True, null=True)
     business = models.ForeignKey(
-        crm.Contact, 
-        related_name='business_projects', 
+        crm.Contact,
+        related_name='business_projects',
         limit_choices_to={'type': 'business'},
     )
     point_person = models.ForeignKey(User, limit_choices_to={'is_staff': True})
@@ -64,26 +64,26 @@ class Project(models.Model):
         through='ProjectRelationship',
     )
     type = models.ForeignKey(
-        Attribute, 
+        Attribute,
         limit_choices_to={'type': 'project-type'},
         related_name='projects_with_type',
     )
     status = models.ForeignKey(
-        Attribute, 
+        Attribute,
         limit_choices_to={'type': 'project-status'},
         related_name='projects_with_status',
     )
     description = models.TextField()
-    
+
     interactions = models.ManyToManyField(crm.Interaction, blank=True)
-    
+
     billing_period = models.ForeignKey(
         'RepeatPeriod',
         null=True,
         blank=True,
         related_name='projects',
     )
-    
+
     class Meta:
         ordering = ('name', 'status', 'type',)
         permissions = (
@@ -152,7 +152,7 @@ class Activity(models.Model):
 class Location(models.Model):
     name = models.CharField(max_length=255, unique=True)
     slug = models.CharField(max_length=255, unique=True)
-    
+
     def __unicode__(self):
         return self.name
 
@@ -212,11 +212,11 @@ class Entry(models.Model):
                 return False
         else:
             return None
-    
+
     def save(self, **kwargs):
         self.hours = Decimal('%.2f' % round(self.total_hours, 2))
         super(Entry, self).save(**kwargs)
-    
+
     def get_seconds(self):
         """
         Determines the difference between the starting and ending time.  The
@@ -238,21 +238,21 @@ class Entry(models.Model):
         """
         return self.get_seconds() / 3600.0
     total_hours = property(__total_hours)
-    
+
     def __is_paused(self):
         """
         Determine whether or not this entry is paused
         """
         return bool(self.pause_time)
     is_paused = property(__is_paused)
-    
+
     def pause(self):
         """
         If this entry is not paused, pause it.
         """
         if not self.is_paused:
             self.pause_time = datetime.datetime.now()
-    
+
     def pause_all(self):
         """
         Pause all open entries
@@ -262,7 +262,7 @@ class Entry(models.Model):
         for entry in entries:
             entry.pause()
             entry.save()
-    
+
     def unpause(self, date=None):
         if self.is_paused:
             self.pause_all()
@@ -271,7 +271,7 @@ class Entry(models.Model):
             delta = date - self.pause_time
             self.seconds_paused += delta.seconds
             self.pause_time = None
-    
+
     def toggle_paused(self):
         """
         Toggle the paused state of this entry.  If the entry is already paused,
@@ -288,7 +288,7 @@ class Entry(models.Model):
         """
         return bool(self.end_time)
     is_closed = property(__is_closed)
-    
+
     def clock_in(self, user, project):
         """
         Set this entry up for saving the first time, as an open entry.
@@ -299,14 +299,14 @@ class Entry(models.Model):
             self.pause_all()
             if not self.start_time:
                 self.start_time = datetime.datetime.now()
-    
+
     def __billing_window(self):
         return BillingWindow.objects.get(
             period__contacts__user=self.user,
             date__lte = self.end_time,
             end_date__gt = self.end_time)
     billing_window = property(__billing_window)
-    
+
     def __is_editable(self):
         if self.end_time:
             try:
@@ -318,7 +318,7 @@ class Entry(models.Model):
         else:
             return True
     is_editable = property(__is_editable)
-        
+
     def __delete_key(self):
         """
         Make it a little more interesting for deleting logs
@@ -382,22 +382,22 @@ class RepeatPeriod(models.Model):
         choices=INTERVAL_CHOICES,
     )
     active = models.BooleanField(default=False)
-    
+
     contacts = models.ManyToManyField(
         crm.Contact,
         blank=True,
         through='PersonRepeatPeriod',
         related_name='repeat_periods',
     )
-    
+
     objects = RepeatPeriodManager()
-    
+
     def __unicode__(self):
         return "%d %s" % (self.count, self.get_interval_display())
-    
+
     def delta(self):
         return relativedelta(**{str(self.interval + 's'): self.count})
-    
+
     def update_billing_windows(self, date_boundary=None):
         if not date_boundary:
             date_boundary = datetime.date.today()
@@ -428,13 +428,13 @@ class BillingWindow(models.Model):
     period = models.ForeignKey(RepeatPeriod, related_name='billing_windows')
     date = models.DateField()
     end_date = models.DateField()
-    
+
     class Meta:
         get_latest_by = 'date'
-    
+
     def __unicode__(self):
         return "%s through %s" % (self.date, self.end_date)
-    
+
     def next(self):
         if not hasattr(self, '_next'):
             try:
@@ -446,7 +446,7 @@ class BillingWindow(models.Model):
                 window = None
             self._next = window
         return self._next
-    
+
     def previous(self):
         if not hasattr(self, '_previous'):
             try:
@@ -464,7 +464,7 @@ class BillingWindow(models.Model):
                 end_time__lte = self.end_date,
                 end_time__gt = self.date)
     entries = property(__entries)
-    
+
 class PersonRepeatPeriod(models.Model):
     contact = models.ForeignKey(
         crm.Contact,
@@ -585,6 +585,9 @@ class AssignmentManager(models.Manager):
         q |= Q(contract__start_date__lt=week, contract__end_date__gt=next_week)
         return self.get_query_set().filter(q)
 
+    def sort_by_priority(self):
+        return sorted(self.get_query_set().all(), key=lambda contract: contract.this_weeks_priority_number)
+
 
 # contract assignment logger
 logger = logging.getLogger('timepiece.ca')
@@ -616,6 +619,14 @@ class ContractAssignment(models.Model):
             end_time__lt=end_date,
         ).aggregate(sum=Sum('hours'))['sum'] or 0
 
+    def filtered_hours_worked_with_in_window(self, start_date, end_date):
+        return Entry.objects.filter(
+            user=self.contact.user,
+            project=self.contract.project,
+            start_time__gte=start_date,
+            end_time__lt=end_date,
+        ).aggregate(sum=Sum('hours'))['sum'] or 0
+
     @property
     def hours_worked(self):
         if not hasattr(self, '_hours_worked'):
@@ -626,6 +637,27 @@ class ContractAssignment(models.Model):
     @property
     def hours_remaining(self):
         return self.num_hours - self.hours_worked
+
+    @property
+    def this_weeks_priority_number(self):
+        """
+        Only works if already filtered to the current week. Otherwise groups
+        outside the range will be listed as ongoing instead of befor or after.
+        """
+        if not hasattr(self, '_priority_type'):
+            weeks = utils.get_week_window(datetime.datetime.now())
+            if self.end_date < weeks[1].date() and self.end_date >= weeks[0].date():
+                self._priority_type = 0
+            elif self.start_date < weeks[1].date() and self.start_date >= weeks[0].date():
+                self._priority_type = 1
+            else:
+                self._priority_type = 2
+        return self._priority_type
+
+    @property
+    def this_weeks_priority_type(self):
+        type_list = ['ending', 'starting', 'ongoing',]
+        return type_list[self.this_weeks_priority_number]
 
     def get_average_weekly_committment(self):
         week_start = utils.get_week_start()
@@ -672,7 +704,7 @@ class ContractAssignment(models.Model):
         allocs = allocs.filter(date__gte=week, date__lt=next_week)
         hours = allocs.aggregate(s=Sum('hours'))['s']
         return hours or 0
-    
+
     def unallocated_hours_for_week(self, day):
         """ Calculate number of hours left to work for a week """
         allocated = self.allocated_hours_for_week(day)
@@ -703,10 +735,32 @@ class ContractAssignment(models.Model):
         return u'%s / %s' % (self.contact, self.contract.project)
 
 
+class AllocationManager(models.Manager):
+    def during_this_week(self, day=None):
+        week = utils.get_week_start(day=day)
+        return self.get_query_set().filter(date=week)
+
+
 class AssignmentAllocation(models.Model):
     assignment = models.ForeignKey(ContractAssignment, related_name='blocks')
     date = models.DateField()
     hours = models.DecimalField(max_digits=8, decimal_places=2, default=0)
+
+    @property
+    def hours_worked(self):
+        if not hasattr(self, '_hours_worked'):
+            end_date = self.date + datetime.timedelta(weeks=1)
+            self._hours_worked = self.assignment.\
+                    filtered_hours_worked_with_in_window(self.date, end_date)
+        return self._hours_worked or 0
+
+    @property
+    def hours_left(self):
+        if not hasattr(self, '_hours_left'):
+            self._hours_left = self.hours - self.hours_worked
+        return self._hours_left or 0
+
+    objects = AllocationManager()
 
 
 class PersonSchedule(models.Model):

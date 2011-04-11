@@ -23,7 +23,7 @@
        <td class='hours'>{{ assignment.hours_worked|floatformat:2 }} ({% widthratio assignment.hours_worked assignment.num_hours 100 %}%)</td>
        <td class='hours'>{{ assignment.hours_remaining|floatformat:2 }}</td>
        <td>{{ assignment.end_date }}</td>
-       <td> 
+       <td>
 			<ul class='actions'>
 			    <li><a href="{% url timepiece-clock-in %}?project={{ assignment.contract.project.pk }}">Clock In</a></li>
 			    <li><a href="{% url timepiece-add %}?project={{ assignment.contract.project.pk }}">Add Entry</a></li>
@@ -58,7 +58,7 @@
             <th>Total {% if row.billable %}billable{% else %}non-billable{% endif %} time:</th>
             <td>{{ row.sum }}</td>
         </tr>
-    {% endfor %}    
+    {% endfor %}
     </table>
 {% endif %}
 
@@ -71,7 +71,7 @@
             <td>{{ entry.project.name }}</td>
             <td>{{ entry.start_time|date:"P" }}</td>
         </tr>
-    {% endfor %}        
+    {% endfor %}
     </table>
 {% endif %}
 
@@ -88,3 +88,4 @@
 {% endwith %}
 
 {% endblock %}
+

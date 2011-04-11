@@ -1,0 +1,40 @@
+{% extends 'timepiece/time-sheet/base.html' %}
+{% load timepiece_tags %}
+
+{% block title %}Timepiece Weekly Assignments{% endblock %}
+
+{% block css %}{{ block.super }}
+    <link charset='UTF-8' rel="stylesheet" type="text/css" media="screen" href="{{ MEDIA_URL }}css/bar-graph.css" />
+{% endblock %}
+
+{% block content %}
+<h2>My Weekly Assignments</h2>
+<table class='my-week'>
+	<tr><th>Project</th><th>Bar Graph</th></tr>
+    {% for assignment in allocations %}
+        <tr>
+        <td>{{ assignment.assignment.contract.project }}</td>
+        <td class='hours'>
+            <div class="bar-graph">
+                {%if assignment.hours_worked < 0 %}
+                    <div class="error">Somehow you've logged negative hours for {{ assignment.assignment.contract.project }}.</div>
+                {% else %}
+                    {% if assignment.hours_left < 0 %}
+                        <div class="error">You've worked more hours than assigned this week for {{ assignment.assignment.contract.project }}.</div>
+                    {% else %}
+                        {% ifnotequal assignment.hours_worked 0 %}
+                            <div class="bar-graph-start" style="width:{% widthratio assignment.hours_worked assignment.hours 400 %}px" >
+                            {{ assignment.hours_worked }}hrs</div>
+                        {% endifnotequal %}
+                        <div class="bar-graph bar-graph-end" style="width:{% widthratio assignment.hours_left assignment.hours 400 %}px" >
+                            {{ assignment.hours_left }}hrs
+                        </div>
+                    {% endif %}
+                {% endif %}
+            </div>
+        </td>
+	  </tr>
+	{% endfor %}
+</table>
+{% endblock %}
+

@@ -13,7 +13,7 @@ urlpatterns = patterns('',
     url(r'^delete/(?P<entry_id>\d+)/$', views.delete_entry, name='timepiece-delete'),
     url(r'^summary/', views.summary, name='timepiece-summary'),
 
-    
+
     url(r'^project/list/$', views.list_projects, name='list_projects'),
     url(
         r'^business/(?P<business_id>\d+)/project/(?P<project_id>\d+)/$',
@@ -35,7 +35,7 @@ urlpatterns = patterns('',
         views.edit_project_relationship,
         name='edit_project_relationship',
     ),
-    
+
     ### time sheets ###
     url(
         r'^time-sheet/projects/$',
@@ -47,7 +47,7 @@ urlpatterns = patterns('',
         views.tracked_people,
         name='tracked_people',
     ),
-    
+
     url(
         r'^time-sheet/people/create/$',
         views.create_edit_person_time_sheet,
@@ -73,17 +73,23 @@ urlpatterns = patterns('',
         views.export_project_time_sheet,
         name='export_project_time_sheet',
     ),
-    
+
     url(
         r'^payroll/summary/$',
         views.payroll_summary,
         name='payroll_summary',
     ),
-    
+
     url(
         r'^projection/$',
         views.projection_summary,
         name='projection_summary',
+    ),
+
+        url(
+        r'^my_weekly_projection/$',
+        views.this_week,
+        name='this_week',
     ),
 )
 

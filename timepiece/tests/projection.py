@@ -131,7 +131,7 @@ class ProjectionTest(TimepieceDataTestCase):
         self.assertEqual(ca.hours_worked, 10)
         self.assertEqual(ca.hours_remaining, 20)
         self.assertEqual(ca.weekly_commitment(start), 30)
-    
+
     def test_weekly_commitment_over_remaining(self):
         # 1 week assignment, 20 hours
         start = utils.get_week_start()
@@ -231,4 +231,50 @@ class ProjectionTest(TimepieceDataTestCase):
         ca.blocks.create(date=start, hours=5)
         unallocated_hours = ca.unallocated_hours_for_week(start)
         self.assertEqual(unallocated_hours, 35)
+
+    def test_this_weeks_priority_type(self):
+        """ Test categories for this week. """
+        start = utils.get_week_start(datetime.date.today())
+        end = start + datetime.timedelta(weeks=1)
+        ca_starting = self._assign(start, end, hours=40)
+        self.assertEqual('starting', ca_starting.this_weeks_priority_type)
+        end = utils.get_week_start()
+        start = end - datetime.timedelta(days=2)
+        ca_ending = self._assign(start, end, hours=40)
+        self.assertEqual('ending', ca_ending.this_weeks_priority_type)
+        start = utils.get_week_start()
+        end = start + datetime.timedelta(days=6)
+        ca_starting_ending = self._assign(start, end, hours=40)
+        self.assertEqual('ending', ca_starting_ending.this_weeks_priority_type)
+        start = utils.get_week_start() - datetime.timedelta(days=1)
+        end = start + datetime.timedelta(days=9)
+        ca_ongoing = self._assign(start, end, hours=40)
+        self.assertEqual('ongoing', ca_ongoing.this_weeks_priority_type)
+        ## Need to test order goes ending, starting, ongoing.
+        assignments = timepiece.ContractAssignment.objects.sort_by_priority()
+
+    def test_this_weeks_allocations(self):
+        # 2 weeks, 60 hours
+        start = utils.get_week_start()
+        end = start + datetime.timedelta(weeks=2) - datetime.timedelta(days=1)
+        ca = self._assign(start, end, hours=60)
+        run_projection()
+        assignments = timepiece.AssignmentAllocation.objects.during_this_week()
+        self.assertEquals(assignments.count(), 1)
+        ca_2 = self._assign(start, end, hours=30)
+        run_projection()
+        assignments = timepiece.AssignmentAllocation.objects.during_this_week()
+        self.assertEquals(assignments.count(), 2)
+
+    def test_this_weeks_hours(self):
+        start = utils.get_week_start()
+        end = start + datetime.timedelta(weeks=2) - datetime.timedelta(days=1)
+        ca = self._assign(start, end, hours=60)
+        run_projection()
+        self.log_time(ca, start=start, delta=(10, 0))
+        assignments = timepiece.AssignmentAllocation.objects.during_this_week()
+        self.assertEquals(assignments.count(), 1)
+        assignment = assignments[0]
+        self.assertEquals(assignment.hours_worked, 10)
+        self.assertEquals(assignment.hours_left, assignment.hours - 10)
 

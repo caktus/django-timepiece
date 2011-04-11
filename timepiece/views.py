@@ -20,7 +20,7 @@ from crm.decorators import render_with
 from crm import forms as crm_forms
 from crm import models as crm
 
-from timepiece import models as timepiece 
+from timepiece import models as timepiece
 from timepiece import utils
 from timepiece import forms as timepiece_forms
 from timepiece.templatetags.timepiece_tags import seconds_to_hours
@@ -72,6 +72,15 @@ def view_entries(request):
         'others_active_entries': others_active_entries,
         'my_active_entries': my_active_entries,
     }
+    return context
+
+
+@login_required
+@render_with('timepiece/time-sheet/this_week.html')
+def this_week(request):
+    week_start = utils.get_week_start()
+    allocations = timepiece.AssignmentAllocation.objects.during_this_week()
+    context = { 'allocations': allocations,}
     return context
 
 
@@ -152,7 +161,7 @@ def toggle_paused(request, entry_id):
             action = 'paused'
         else:
             action = 'resumed'
-        
+
         delta = datetime.datetime.now() - entry.start_time
         seconds = delta.seconds - entry.seconds_paused
         seconds += delta.days * 86400
@@ -162,12 +171,12 @@ def toggle_paused(request, entry_id):
         else:
             seconds /= 3600.0
             duration = "You've clocked %.2f hours." % seconds
-        
+
         message = 'The log entry has been %s. %s' % (action, duration)
-        
+
         # create a message that can be displayed to the user
         request.user.message_set.create(message=message)
-    
+
     # redirect to the log entry list
     return HttpResponseRedirect(reverse('timepiece-entries'))
 
@@ -183,12 +192,12 @@ def create_edit_entry(request, entry_id=None):
             )
             if not entry.is_editable:
                 raise Http404
-                    
+
         except timepiece.Entry.DoesNotExist:
             raise Http404
     else:
         entry = None
-    
+
     if request.POST:
         form = timepiece_forms.AddUpdateEntryForm(
             request.POST,
@@ -214,7 +223,7 @@ def create_edit_entry(request, entry_id=None):
             user=request.user,
             initial=initial,
         )
-    
+
     return {
         'form': form,
         'entry': entry,
@@ -296,7 +305,7 @@ def summary(request, username=None):
 
 def get_entries(period, window_id=None, project=None, user=None):
     """
-    Returns a tuple of the billing window, corresponding entries, and total 
+    Returns a tuple of the billing window, corresponding entries, and total
     hours for the given project and window_id, if specified.
     """
     if not project and not user:
@@ -420,8 +429,8 @@ def view_person_time_sheet(request, person_id, period_id, window_id=None):
     is_editable = window.end_date +\
         datetime.timedelta(days=settings.TIMEPIECE_TIMESHEET_EDITABLE_DAYS) >=\
         datetime.date.today()
-        
-        
+
+
     context = {
         'is_editable': is_editable,
         'person': time_sheet.contact,
@@ -548,19 +557,19 @@ def create_edit_project(request, business, project=None):
             )
     else:
         project_form = timepiece_forms.ProjectForm(
-            business=business, 
+            business=business,
             instance=project
         )
         repeat_period_form = timepiece_forms.RepeatPeriodForm(
             instance=billing_period,
             prefix='repeat',
         )
-    
+
     if billing_period:
         latest_window = project.billing_period.billing_windows.latest()
     else:
         latest_window = None
-    
+
     context = {
         'business': business,
         'project': project,
@@ -625,7 +634,7 @@ def create_edit_person_time_sheet(request, person_id=None):
         time_sheet = None
         repeat_period = None
         latest_window = None
-    
+
     if request.POST:
         form = timepiece_forms.PersonTimeSheet(
             request.POST,
@@ -646,7 +655,7 @@ def create_edit_person_time_sheet(request, person_id=None):
         repeat_period_form = timepiece_forms.RepeatPeriodForm(
             instance=repeat_period,
         )
-    
+
     return {
         'form': form,
         'person': person,
@@ -683,7 +692,7 @@ def payroll_summary(request):
             projects[name]['billable'] = hours
         else:
             projects[name]['non_billable'] = hours
-    
+
     all_weeks = utils.generate_weeks(start=from_date, end=to_date)
     rps = timepiece.PersonRepeatPeriod.objects.select_related(
         'contact__user',
