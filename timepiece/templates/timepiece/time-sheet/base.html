@@ -25,9 +25,6 @@ tr.overlapping {
         {% if perms.timepiece.view_projection_summary %}
             <li><a href="{% url projection_summary %}">Projection</a></li>
         {% endif %}
-        {% if perms.timepiece.view_projection_summary %}
-            <li><a href="{% url this_week %}">My Weekly Projection</a></li>
-        {% endif %}
         {% my_ledger %}
     </ul>
 {% endblock %}

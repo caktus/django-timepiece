@@ -64,23 +64,15 @@ def view_entries(request):
         user=request.user,
         end_time__isnull=True,
     )
+    allocations = timepiece.AssignmentAllocation.objects.during_this_week()
     context = {
         'this_weeks_entries': entries.order_by('-start_time'),
         'assignments': assignments,
-        'project_entries': project_entries,
+        'allocations': allocations,
         'activity_entries': activity_entries,
         'others_active_entries': others_active_entries,
         'my_active_entries': my_active_entries,
     }
-    return context
-
-
-@login_required
-@render_with('timepiece/time-sheet/this_week.html')
-def this_week(request):
-    week_start = utils.get_week_start()
-    allocations = timepiece.AssignmentAllocation.objects.during_this_week()
-    context = { 'allocations': allocations,}
     return context
 
 

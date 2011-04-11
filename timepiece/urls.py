@@ -85,11 +85,5 @@ urlpatterns = patterns('',
         views.projection_summary,
         name='projection_summary',
     ),
-
-        url(
-        r'^my_weekly_projection/$',
-        views.this_week,
-        name='this_week',
-    ),
 )
 
