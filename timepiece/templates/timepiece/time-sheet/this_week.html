@@ -7,6 +7,35 @@
     <link charset='UTF-8' rel="stylesheet" type="text/css" media="screen" href="{{ MEDIA_URL }}css/bar-graph.css" />
 {% endblock %}
 
+{% block javascript %}{{ block.super }}
+    <script type="text/javascript">
+        ;(function($) {
+            $.fn.textfill = function(options) {
+                var fontSize = options.maxFontPixels;
+                $(this).each(function() {
+                    var ourText = $('span:visible:first', this);
+                    var maxHeight = $(this).height();
+                    var maxWidth = $(this).width();
+                    var textHeight;
+                    var textWidth;
+                    do {
+                        ourText.css('font-size', fontSize);
+                        textHeight = ourText.height();
+                        textWidth = ourText.width();
+                        fontSize = fontSize - 1;
+                    } while ((textHeight > maxHeight || textWidth > maxWidth) && fontSize > 3);
+                    return this;
+                });
+            }
+        })(jQuery);
+
+        jQuery(function() {
+            jQuery('div.bar-graph-start').textfill({ maxFontPixels: 20 });
+            jQuery('div.bar-graph-end').textfill({ maxFontPixels: 20 });
+        });
+    </script>
+{% endblock %}
+
 {% block content %}
 <h2>My Weekly Assignments</h2>
 <table class='my-week'>
@@ -23,12 +52,15 @@
                         <div class="error">You've worked more hours than assigned this week for {{ assignment.assignment.contract.project }}.</div>
                     {% else %}
                         {% ifnotequal assignment.hours_worked 0 %}
-                            <div class="bar-graph-start" style="width:{% widthratio assignment.hours_worked assignment.hours 400 %}px" >
-                            {{ assignment.hours_worked }}hrs</div>
+                            <div title="{{ assignment.hours_worked }}hrs" class="bar-graph-start" style="height:20px;width:{% widthratio assignment.hours_worked assignment.hours 400 %}px" >
+                                <span>{{ assignment.hours_worked }}hrs</span>
+                            </div>
                         {% endifnotequal %}
-                        <div class="bar-graph bar-graph-end" style="width:{% widthratio assignment.hours_left assignment.hours 400 %}px" >
-                            {{ assignment.hours_left }}hrs
-                        </div>
+                        {% ifnotequal assignment.hours_left 0 %}
+                            <div title="{{ assignment.hours_left }}hrs"class="bar-graph-end" style="height:20px;width:{% widthratio assignment.hours_left assignment.hours 400 %}px" >
+                                <span>{{ assignment.hours_left }}hrs</span>
+                            </div>
+                        {% endifnotequal %}
                     {% endif %}
                 {% endif %}
             </div>
