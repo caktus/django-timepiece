@@ -736,9 +736,9 @@ class ContractAssignment(models.Model):
 
 
 class AllocationManager(models.Manager):
-    def during_this_week(self, day=None):
+    def during_this_week(self, user, day=None):
         week = utils.get_week_start(day=day)
-        return self.get_query_set().filter(date=week)
+        return self.get_query_set().filter(date=week, assignment__contact__user=user)
 
 
 class AssignmentAllocation(models.Model):
