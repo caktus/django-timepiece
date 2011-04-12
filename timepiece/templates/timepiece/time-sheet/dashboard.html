@@ -1,5 +1,5 @@
 {% extends 'timepiece/time-sheet/base.html' %}
-{% load timepiece_tags %}
+{% load timepiece_tags math_tags %}
 
 {% block title %}Timepiece Entries{% endblock %}
 
@@ -101,10 +101,10 @@
           <td class='hours'>
               <div class="bar-graph">
                   {%if assignment.hours_worked < 0 %}
-                      <div class="error">Somehow you've logged {{ assignment.hours_worked|escape|slice:"1:" }} negative hours for {{ assignment.assignment.contract.project }} this week.</div>
+                      <div class="error">Somehow you've logged {{ assignment.hours_worked|abs }} negative hours for {{ assignment.assignment.contract.project }} this week.</div>
                   {% else %}
                       {% if assignment.hours_left < 0 %}
-                          <div class="error">You are {{ assignment.hours_left|escape|slice:"1:" }}hrs over for {{ assignment.assignment.contract.project }} this week.</div>
+                          <div class="error">You are {{ assignment.hours_left|abs }}hrs over for {{ assignment.assignment.contract.project }} this week.</div>
                       {% else %}
                           {% ifnotequal assignment.hours_worked 0 %}
                               <div title="{{ assignment.hours_worked }}hrs" class="bar-graph-start"
