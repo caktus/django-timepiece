@@ -65,10 +65,17 @@ def view_entries(request):
         end_time__isnull=True,
     )
     allocations = timepiece.AssignmentAllocation.objects.during_this_week()
+    allocated_projects = allocations.values_list('assignment__contract__project',)
+    project_entries = entries.exclude(
+        project__in=allocated_projects,
+    ).values(
+        'project__name',
+    ).annotate(sum=Sum('hours')).order_by('-sum')
     context = {
         'this_weeks_entries': entries.order_by('-start_time'),
         'assignments': assignments,
         'allocations': allocations,
+        'project_entries': project_entries,
         'activity_entries': activity_entries,
         'others_active_entries': others_active_entries,
         'my_active_entries': my_active_entries,

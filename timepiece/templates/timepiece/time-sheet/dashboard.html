@@ -91,10 +91,10 @@
 {% include 'timepiece/time-sheet/_entry_list.html' %}
 {% endwith %}
 
-{% if allocations %}
+{% if allocations or project_entries %}
   <h3>My Weekly Assignments:</h3>
   <table class='my-week'>
-	  <tr><th>Project</th><th>Bar Graph</th></tr>
+	  <tr><th>Project</th><th>Hours</th></tr>
       {% for assignment in allocations %}
           <tr>
           <td>{{ assignment.assignment.contract.project }}</td>
@@ -123,12 +123,26 @@
               </div>
           </td>
 	    </tr>
-	  {% endfor %}
+      {% endfor %}
+
+	  {% for entry in project_entries %}
+        <tr>
+            <td>{{ entry.project__name }} </td>
+            <td>{{ entry.sum }}hrs worked</td>
+        </tr>
+      {% endfor %}
+
+      {% for row in activity_entries %}
+        <tr>
+            <th>Total {% if row.billable %}billable{% else %}non-billable{% endif %} time:</th>
+            <td>{{ row.sum }}hrs</td>
+        </tr>
+      {% endfor %}
   </table>
   <div style="height: 320px; width: 320px;" id="my-weekly-hours-chart"></div>
 {% endif %}
-{% if others_active_entries %}
     <table id='active-entries' class='timepiece-summary'>
+{% if others_active_entries %}
         <caption>Others are working on:</caption>
     {% for entry in others_active_entries %}
         <tr class='{% if entry.is_paused %}paused{% endif %}'>
