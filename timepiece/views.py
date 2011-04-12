@@ -64,7 +64,9 @@ def view_entries(request):
         user=request.user,
         end_time__isnull=True,
     )
-    allocations = timepiece.AssignmentAllocation.objects.during_this_week(request.user)
+    allocations = timepiece.AssignmentAllocation.objects.during_this_week(
+        request.user
+        ).order_by('assignment__contract__project__name')
     allocated_projects = allocations.values_list('assignment__contract__project',)
     project_entries = entries.exclude(
         project__in=allocated_projects,
