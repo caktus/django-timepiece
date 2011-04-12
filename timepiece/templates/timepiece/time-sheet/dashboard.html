@@ -99,7 +99,11 @@
 	  <tr><th>Project</th><th>Hours</th></tr>
       {% for assignment in allocations %}
           <tr>
-          <td>{{ assignment.assignment.contract.project }}</td>
+          <td>
+            <a href="{% url timepiece-clock-in %}?project={{ assignment.asssignment.contract.project.pk }}">
+                {{ assignment.assignment.contract.project }}
+            </a>
+          </td>
           <td class='hours'>
               <div class="bar-graph">
                   {%if assignment.hours_worked < 0 %}
@@ -126,10 +130,13 @@
           </td>
 	    </tr>
       {% endfor %}
-
 	  {% for entry in project_entries %}
         <tr>
-            <td>{{ entry.project__name }} </td>
+            <td>
+                <a href="{% url timepiece-clock-in %}?project={{ entry.project.pk }}">
+                    {{ entry.project__name }}
+                </a>
+            </td>
             <td>{{ entry.sum }}hrs worked</td>
         </tr>
       {% endfor %}
