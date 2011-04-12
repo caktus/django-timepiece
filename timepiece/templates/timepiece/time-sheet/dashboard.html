@@ -14,8 +14,8 @@
     <script type="text/javascript">
         ;(function($) {
             $.fn.textfill = function(options) {
-                var fontSize = options.maxFontPixels;
                 $(this).each(function() {
+                    var fontSize = options.maxFontPixels;
                     var ourText = $('span:visible:first', this);
                     var maxHeight = $(this).height();
                     var maxWidth = $(this).width();
