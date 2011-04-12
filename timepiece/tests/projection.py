@@ -257,7 +257,7 @@ class ProjectionTest(TimepieceDataTestCase):
         # 2 weeks, 60 hours
         start = utils.get_week_start()
         end = start + datetime.timedelta(weeks=2) - datetime.timedelta(days=1)
-        ca = self._assign(start, end, hours=60)
+        ca = self._assign(start, end, hours=20)
         user = User.objects.create_user('test2', 'a@b.com', 'abc')
         person = self.create_person({'user': user})
         ps = self.create_person_schedule(data={'contact': person})
