@@ -42,9 +42,10 @@
                 {% endfor %}
             ];
             plot1 = $.jqplot('my-weekly-hours-chart', [week_totals], {
-                title: 'This Week\'s Assignment Chart',
+                title: '',
                 seriesDefaults:{renderer:$.jqplot.PieRenderer, rendererOptions:{sliceMargin:2}},
-                legend:{show:true}
+                legend:{show:true},
+                grid:{shadow:false, borderWidth:0.0}
             });
         });
     </script>
@@ -56,7 +57,6 @@
     <li><a href="{% url timepiece-clock-in %}">Clock In</a></li>
     <li><a href="{% url timepiece-add %}">Add Entry</a></li>
 </ul>
-<div style="height: 380px; width: 480px; position: relative;" id="my-weekly-hours-chart"></div>
 <h3>My Projects</h3>
 <table class='my-projects'>
 	<tr><th>Project</th><th>My Hours</th><th>Hours Worked</th><th>Hours Remaining</th><th>Due Date</th><th></th></tr>
@@ -125,6 +125,7 @@
 	    </tr>
 	  {% endfor %}
   </table>
+  <div style="height: 320px; width: 320px;" id="my-weekly-hours-chart"></div>
 {% endif %}
 {% if others_active_entries %}
     <table id='active-entries' class='timepiece-summary'>
