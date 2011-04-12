@@ -144,7 +144,24 @@
       {% for row in activity_entries %}
         <tr>
             <th>Total {% if row.billable %}billable{% else %}non-billable{% endif %} time:</th>
-            <td>{{ row.sum }}</td>
+            <td>
+                <div class="bar-graph">
+                  {% ifnotequal assignment.hours_worked 0 %}
+                      <div title="{{ row.sum }}" class="bar-graph-start"
+                        style="width:{% widthratio row.sum schedule.hours_per_week 400 %}px" >
+                          <span>{{ row.sum }}</span>
+                      </div>
+                  {% endifnotequal %}
+                  {% with schedule.hours_per_week|sub:row.sum as hours_left %}
+                      {% ifnotequal assignment.hours_worked 0 %}
+                          <div title="{{ hours_left }}" class="bar-graph-end"
+                            style="width:{% widthratio hours_left schedule.hours_per_week 400 %}px" >
+                              <span>{{ hours_left }}</span>
+                          </div>
+                      {% endifnotequal %}
+                  {% endwith %}
+                </div>
+            </td>
         </tr>
       {% endfor %}
   </table>

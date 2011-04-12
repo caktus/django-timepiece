@@ -73,10 +73,13 @@ def view_entries(request):
     ).values(
         'project__name',
     ).annotate(sum=Sum('hours')).order_by('-sum')
+    schedule = timepiece.PersonSchedule.objects.get(
+                                    contact=request.user.contacts.all()[0])
     context = {
         'this_weeks_entries': entries.order_by('-start_time'),
         'assignments': assignments,
         'allocations': allocations,
+        'schedule': schedule,
         'project_entries': project_entries,
         'activity_entries': activity_entries,
         'others_active_entries': others_active_entries,

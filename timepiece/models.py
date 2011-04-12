@@ -769,7 +769,7 @@ class PersonSchedule(models.Model):
     contact = models.ForeignKey(
         crm.Contact,
         unique=True,
-        limit_choices_to={'type': 'individual'}
+        limit_choices_to={'type': 'individual'},
     )
     hours_per_week = models.DecimalField(max_digits=8, decimal_places=2,
                                          default=0)

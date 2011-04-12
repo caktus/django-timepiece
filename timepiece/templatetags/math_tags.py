@@ -12,3 +12,8 @@ def _abs(num):
 
 register.filter('abs', _abs)
 
+@register.filter
+def sub(num, arg):
+    num = float(num)
+    arg = float(arg)
+    return num-arg
