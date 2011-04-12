@@ -41,12 +41,14 @@
                     ["{{ assignment.assignment.contract.project }}", {{ assignment.hours }}],
                 {% endfor %}
             ];
-            plot1 = $.jqplot('my-weekly-hours-chart', [week_totals], {
-                title: '',
-                seriesDefaults:{renderer:$.jqplot.PieRenderer, rendererOptions:{sliceMargin:2}},
-                legend:{show:true},
-                grid:{shadow:false, borderWidth:0.0}
-            });
+            if ($('my-weekly-hours-chart')) {
+                plot1 = $.jqplot('my-weekly-hours-chart', [week_totals], {
+                    title: '',
+                    seriesDefaults:{renderer:$.jqplot.PieRenderer, rendererOptions:{sliceMargin:2}},
+                    legend:{show:true},
+                    grid:{shadow:false, borderWidth:0.0}
+                });
+            }
         });
     </script>
 {% endblock %}
@@ -139,8 +141,11 @@
         </tr>
       {% endfor %}
   </table>
+{% endif %}
+{% if allocations %}
   <div style="height: 320px; width: 320px;" id="my-weekly-hours-chart"></div>
 {% endif %}
+
     <table id='active-entries' class='timepiece-summary'>
 {% if others_active_entries %}
         <caption>Others are working on:</caption>
