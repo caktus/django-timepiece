@@ -67,14 +67,13 @@
 	<tr><th colspan='6'>{{ type.grouper }}s</th></tr>
 	{% for assignment in type.list %}
 	<tr>
-	   <td>{{ assignment.contract.project }}</td>
+	   <td><a href="{% url timepiece-clock-in %}?project={{ assignment.contract.project.pk }}">{{ assignment.contract.project }}</a></td>
        <td class='hours'>{{ assignment.num_hours }}</td>
        <td class='hours'>{{ assignment.hours_worked|floatformat:2 }} ({% widthratio assignment.hours_worked assignment.num_hours 100 %}%)</td>
        <td class='hours'>{{ assignment.hours_remaining|floatformat:2 }}</td>
        <td>{{ assignment.end_date }}</td>
        <td>
 			<ul class='actions'>
-			    <li><a href="{% url timepiece-clock-in %}?project={{ assignment.contract.project.pk }}">Clock In</a></li>
 			    <li><a href="{% url timepiece-add %}?project={{ assignment.contract.project.pk }}">Add Entry</a></li>
 			</ul>
        </td>
