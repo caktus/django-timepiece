@@ -73,8 +73,8 @@ def view_entries(request):
     ).values(
         'project__name',
     ).annotate(sum=Sum('hours')).order_by('-sum')
-    schedule = timepiece.PersonSchedule.objects.get(
-                                    contact=request.user.contacts.all()[0])
+    schedule = timepiece.PersonSchedule.objects.filter(
+                                    contact__in=request.user.contacts.all())
     context = {
         'this_weeks_entries': entries.order_by('-start_time'),
         'assignments': assignments,
