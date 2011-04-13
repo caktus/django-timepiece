@@ -71,7 +71,7 @@ def view_entries(request):
     project_entries = entries.exclude(
         project__in=allocated_projects,
     ).values(
-        'project__name',
+        'project__name', 'project__pk'
     ).annotate(sum=Sum('hours')).order_by('project__name')
     schedule = timepiece.PersonSchedule.objects.filter(
                                     contact__in=request.user.contacts.all())

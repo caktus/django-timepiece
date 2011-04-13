@@ -100,7 +100,7 @@
       {% for assignment in allocations %}
           <tr>
           <td>
-            <a href="{% url timepiece-clock-in %}?project={{ assignment.asssignment.contract.project.pk }}">
+            <a href="{% url timepiece-clock-in %}?project={{ assignment.assignment.contract.project.pk }}">
                 {{ assignment.assignment.contract.project }}
             </a>
           </td>
@@ -112,7 +112,7 @@
 	  {% for entry in project_entries %}
         <tr>
             <td>
-                <a href="{% url timepiece-clock-in %}?project={{ entry.project.pk }}">
+                <a href="{% url timepiece-clock-in %}?project={{ entry.project__pk }}">
                     {{ entry.project__name }}
                 </a>
             </td>
