@@ -1,10 +1,46 @@
 from dateutil import rrule
 
+from django.http import HttpResponse, HttpResponseRedirect
+from django.shortcuts import render_to_response
+from django.template import RequestContext
 
 from django.contrib.sites.models import Site
 from datetime import date, datetime, timedelta, time as time_obj
 import time
 import calendar
+
+
+def render_with(template_name):
+    """
+    Renders the view wrapped by this decorator with the given template.  The
+    view should return the context to be used in the template, or an
+    HttpResponse.
+    
+    If the view returns an HttpResponseRedirect, the decorator will redirect
+    to the given URL, or to request.REQUEST['next'] (if it exists).
+    """
+    def render_with_decorator(view_func):
+        def wrapper(*args, **kwargs):
+            request = args[0]
+            response = view_func(*args, **kwargs)
+            
+            if isinstance(response, HttpResponse):
+                if isinstance(response, HttpResponseRedirect) and \
+                  'next' in request.REQUEST:
+                    return HttpResponseRedirect(request.REQUEST['next'])
+                else:
+                    return response
+            else:
+                # assume response is a context dictionary
+                context = response
+                return render_to_response(
+                    template_name, 
+                    context, 
+                    context_instance=RequestContext(request),
+                )
+        return wrapper
+    return render_with_decorator
+
 
 def determine_period(the_date=date.today(), delta=0):
     """

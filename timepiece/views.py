@@ -16,7 +16,7 @@ from django.db import transaction
 from django.conf import settings
 from django.utils.datastructures import SortedDict
 
-from crm.decorators import render_with
+from timepiece.utils import render_with
 from crm import forms as crm_forms
 from crm import models as crm
 
