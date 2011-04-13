@@ -124,7 +124,11 @@
         <tr>
             <th>Total {% if row.billable %}billable{% else %}non-billable{% endif %} time:</th>
             <td>
-                {% bar_graph '' row.sum schedule.0.hours_per_week %}
+                {% if row.billable %}
+                    {% bar_graph '' row.sum schedule.0.hours_per_week %}
+                {% else %}
+                    {{ row.sum }}
+                {% endif %}
             </td>
         </tr>
       {% endfor %}
