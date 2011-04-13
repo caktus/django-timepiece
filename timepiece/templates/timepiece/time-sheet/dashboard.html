@@ -105,28 +105,7 @@
             </a>
           </td>
           <td class='hours'>
-              <div class="bar-graph">
-                  {%if assignment.hours_worked < 0 %}
-                      <div class="error">Somehow you've logged {{ assignment.hours_worked|abs }} negative hours for {{ assignment.assignment.contract.project }} this week.</div>
-                  {% else %}
-                      {% if assignment.hours_left < 0 %}
-                          <div class="error">You are {{ assignment.hours_left|abs }} hours over for {{ assignment.assignment.contract.project }} this week.</div>
-                      {% else %}
-                          {% ifnotequal assignment.hours_worked 0 %}
-                              <div title="{{ assignment.hours_worked }}" class="bar-graph-start"
-                                style="width:{% widthratio assignment.hours_worked assignment.hours 400 %}px" >
-                                  <span>{{ assignment.hours_worked }}</span>
-                              </div>
-                          {% endifnotequal %}
-                          {% ifnotequal assignment.hours_left 0 %}
-                              <div title="{{ assignment.hours_left }}"class="bar-graph-end"
-                                style="width:{% widthratio assignment.hours_left assignment.hours 400 %}px" >
-                                  <span>{{ assignment.hours_left }}</span>
-                              </div>
-                          {% endifnotequal %}
-                      {% endif %}
-                  {% endif %}
-              </div>
+              {% bar_graph assignment.assignment.contract.project assignment.hours_worked assignment.hours %}
           </td>
 	    </tr>
       {% endfor %}
@@ -145,22 +124,7 @@
         <tr>
             <th>Total {% if row.billable %}billable{% else %}non-billable{% endif %} time:</th>
             <td>
-                <div class="bar-graph">
-                  {% ifnotequal assignment.hours_worked 0 %}
-                      <div title="{{ row.sum }}" class="bar-graph-start"
-                        style="width:{% widthratio row.sum schedule.hours_per_week 400 %}px" >
-                          <span>{{ row.sum }}</span>
-                      </div>
-                  {% endifnotequal %}
-                  {% with schedule.hours_per_week|sub:row.sum as hours_left %}
-                      {% ifnotequal assignment.hours_worked 0 %}
-                          <div title="{{ hours_left }}" class="bar-graph-end"
-                            style="width:{% widthratio hours_left schedule.hours_per_week 400 %}px" >
-                              <span>{{ hours_left }}</span>
-                          </div>
-                      {% endifnotequal %}
-                  {% endwith %}
-                </div>
+                {% bar_graph '' row.sum schedule.hours_per_week %}
             </td>
         </tr>
       {% endfor %}

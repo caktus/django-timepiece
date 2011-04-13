@@ -16,6 +16,26 @@ def seconds_to_hours(seconds):
     return round(seconds/3600.0, 2)
 
 
+@register.inclusion_tag('timepiece/time-sheet/bar_graph.html',
+                        takes_context=True)
+def bar_graph(context, name, worked, total, width=None, suffix=None):
+    if not width:
+        width = 400
+        suffix = 'px'
+    left = total - worked
+    over = 0
+    over_total = 0
+    if left < 0:
+        over = abs(left)
+        worked = total
+        left = 0
+    return { 
+        'name': name, 'worked': worked, 
+        'total': total, 'left':left,
+        'over': over, 'width': width, 'suffix': suffix,
+        }
+
+
 @register.inclusion_tag('timepiece/time-sheet/my_ledger.html',
                         takes_context=True)
 def my_ledger(context):
