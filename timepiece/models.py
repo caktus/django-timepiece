@@ -739,7 +739,7 @@ class AllocationManager(models.Manager):
     def during_this_week(self, user, day=None):
         week = utils.get_week_start(day=day)
         return self.get_query_set().filter(
-            date=week, assignment__contact__user=user
+            date=week, assignment__contact__user=user, assignment__contract__status='current'
             ).exclude(hours=0)
 
 
