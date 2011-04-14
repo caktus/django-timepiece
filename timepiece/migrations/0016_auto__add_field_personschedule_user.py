@@ -16,6 +16,7 @@ class Migration(SchemaMigration):
         
         # Deleting field 'PersonSchedule.user'
         db.delete_column('timepiece_personschedule', 'user_id')
+        db.alter_column('timepiece_personschedule', 'contact_id', models.ForeignKey(orm['crm.Contact'], null=False, blank=True))
 
 
     models = {

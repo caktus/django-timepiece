@@ -15,7 +15,7 @@ class Migration(DataMigration):
     def backwards(self, orm):
         "Write your backwards methods here."
         for project in orm.PersonRepeatPeriod.objects.all():
-            project.contact = project.user.contact
+            project.contact = project.user.contacts.all()[0]
             project.save()
 
 

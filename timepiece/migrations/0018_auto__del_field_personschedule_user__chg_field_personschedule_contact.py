@@ -9,10 +9,13 @@ class Migration(SchemaMigration):
     def forwards(self, orm):
         db.delete_column('timepiece_personschedule', 'contact_id')
         db.rename_column('timepiece_personschedule', 'user_id', 'contact_id')
+        db.alter_column('timepiece_personschedule', 'contact_id', models.ForeignKey(orm['auth.User'], null=False, blank=True))
 
     def backwards(self, orm):
         db.rename_column('timepiece_personschedule', 'contact_id', 'user_id')
-        db.add_column('timepiece_personschedule', 'contact_id')
+        db.add_column('timepiece_personschedule', 'contact', 
+            self.gf('django.db.models.fields.related.ForeignKey')(related_name='project_relationships', 
+            null=True, to=orm['crm.Contact']), keep_default=False)
         
     models = {
         'auth.group': {

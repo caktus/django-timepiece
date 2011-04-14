@@ -12,7 +12,9 @@ class Migration(SchemaMigration):
 
     def backwards(self, orm):
         db.rename_column('timepiece_personrepeatperiod', 'contact_id', 'user_id',)
-        db.add_column('timepiece_personrepeatperiod', 'contact_id')
+        db.add_column('timepiece_personrepeatperiod', 'contact', 
+            self.gf('django.db.models.fields.related.ForeignKey')(related_name='project_relationships', 
+            null=True, to=orm['crm.Contact']), keep_default=False)
 
 
 
