@@ -4,6 +4,8 @@ from django import forms
 from django.db.models import Q
 from django.conf import settings
 
+from django.contrib.auth import models as auth_models
+
 from timepiece.models import Project, Entry
 from timepiece.fields import PendulumDateTimeField
 from timepiece.widgets import PendulumDateTimeWidget, SecondsToHoursWidget
@@ -296,7 +298,4 @@ class PersonTimeSheet(forms.ModelForm):
     
     def __init__(self, *args, **kwargs):
         super(PersonTimeSheet, self).__init__(*args, **kwargs)
-        self.fields['contact'].queryset = crm.Contact.objects.filter(
-            type='individual',
-            user__isnull=False,
-        ).order_by('sort_name')
+        self.fields['contact'].queryset = auth_models.User.objects.all().order_by('last_name')

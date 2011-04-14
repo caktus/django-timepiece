@@ -611,7 +611,7 @@ def tracked_people(request):
     ).filter(
         repeat_period__active=True,
     ).order_by(
-        'contact__sort_name',
+        'contact__last_name',
     )
     return {
         'time_sheets': time_sheets,
