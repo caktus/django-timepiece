@@ -33,8 +33,9 @@
         })(jQuery);
 
         jQuery(document).ready(function($) {
-            $('div.bar-graph-start').textfill({ maxFontPixels: 20 });
-            $('div.bar-graph-end').textfill({ maxFontPixels: 20 });
+            $('div.bar-graph-start').textfill({ maxFontPixels: 13 });
+            $('div.bar-graph-end').textfill({ maxFontPixels: 13 });
+            $('div.bar-graph-over').textfill({ maxFontPixels: 13 });
             $.jqplot.config.enablePlugins = true; // on the page before plot creation.
             week_totals = [
                 {% for assignment in allocations %}
