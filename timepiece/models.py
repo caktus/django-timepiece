@@ -59,7 +59,7 @@ class Project(models.Model):
     )
     point_person = models.ForeignKey(User, limit_choices_to={'is_staff': True})
     contacts = models.ManyToManyField(
-        crm.Contact,
+        User,
         related_name='contact_projects',
         through='ProjectRelationship',
     )
@@ -107,8 +107,7 @@ class ProjectRelationship(models.Model):
         blank=True,
     )
     contact = models.ForeignKey(
-        crm.Contact,
-        limit_choices_to={'type': 'individual'},
+        User,
         related_name='project_relationships',
     )
     project = models.ForeignKey(
@@ -302,7 +301,7 @@ class Entry(models.Model):
 
     def __billing_window(self):
         return BillingWindow.objects.get(
-            period__contacts__user=self.user,
+            period__contacts=self.user,
             date__lte = self.end_time,
             end_date__gt = self.end_time)
     billing_window = property(__billing_window)
@@ -384,7 +383,7 @@ class RepeatPeriod(models.Model):
     active = models.BooleanField(default=False)
 
     contacts = models.ManyToManyField(
-        crm.Contact,
+        User,
         blank=True,
         through='PersonRepeatPeriod',
         related_name='repeat_periods',
@@ -467,9 +466,9 @@ class BillingWindow(models.Model):
 
 class PersonRepeatPeriod(models.Model):
     contact = models.ForeignKey(
-        crm.Contact,
+        User,
         unique=True,
-        limit_choices_to={'type': 'individual'}
+        null=True,
     )
     repeat_period = models.ForeignKey(
         RepeatPeriod,
@@ -478,7 +477,7 @@ class PersonRepeatPeriod(models.Model):
 
     def hours_in_week(self, date):
         left, right = utils.get_week_window(date)
-        entries = Entry.worked.filter(user=self.contact.user)
+        entries = Entry.worked.filter(user=self.contact)
         entries = entries.filter(end_time__gt=left, end_time__lt=right)
         return entries.aggregate(s=Sum('hours'))['s']
 
@@ -499,7 +498,7 @@ class PersonRepeatPeriod(models.Model):
 
     def summary(self, date, end_date):
         projects = getattr(settings, 'TIMEPIECE_PROJECTS', {})
-        user = self.contact.user
+        user = self.contact
         entries = user.timepiece_entries.filter(end_time__gt=date,
                                                 end_time__lte=end_date)
         data = {}
@@ -521,7 +520,7 @@ class PersonRepeatPeriod(models.Model):
         bw = BillingWindow.objects.filter(period=self.repeat_period).order_by('-date')[:N]
         result = []
         for b in bw:
-            result.append(self.contact.user.timepiece_entries.filter(
+            result.append(self.contact.timepiece_entries.filter(
                 end_time__lte = b.end_date,
                 end_time__gt = b.date
             ).aggregate(total=Sum('hours')))
@@ -596,8 +595,7 @@ logger = logging.getLogger('timepiece.ca')
 class ContractAssignment(models.Model):
     contract = models.ForeignKey(ProjectContract, related_name='assignments')
     contact = models.ForeignKey(
-        crm.Contact,
-        limit_choices_to={'type': 'individual'},
+        User,
         related_name='assignments',
     )
     start_date = models.DateField()
@@ -613,7 +611,7 @@ class ContractAssignment(models.Model):
 
     def _filtered_hours_worked(self, end_date):
         return Entry.objects.filter(
-            user=self.contact.user,
+            user=self.contact,
             project=self.contract.project,
             start_time__gte=self.start_date,
             end_time__lt=end_date,
@@ -621,7 +619,7 @@ class ContractAssignment(models.Model):
 
     def filtered_hours_worked_with_in_window(self, start_date, end_date):
         return Entry.objects.filter(
-            user=self.contact.user,
+            user=self.contact,
             project=self.contract.project,
             start_time__gte=start_date,
             end_time__lt=end_date,
@@ -739,7 +737,7 @@ class AllocationManager(models.Manager):
     def during_this_week(self, user, day=None):
         week = utils.get_week_start(day=day)
         return self.get_query_set().filter(
-            date=week, assignment__contact__user=user, assignment__contract__status='current'
+            date=week, assignment__contact=user, assignment__contract__status='current'
             ).exclude(hours=0)
 
 
@@ -767,9 +765,9 @@ class AssignmentAllocation(models.Model):
 
 class PersonSchedule(models.Model):
     contact = models.ForeignKey(
-        crm.Contact,
+        User,
         unique=True,
-        limit_choices_to={'type': 'individual'},
+        null=True,
     )
     hours_per_week = models.DecimalField(max_digits=8, decimal_places=2,
                                          default=0)

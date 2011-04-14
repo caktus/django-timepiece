@@ -42,7 +42,7 @@ def view_entries(request):
     )
     today = datetime.date.today()
     assignments = timepiece.ContractAssignment.objects.filter(
-        contact__user=request.user,
+        contact=request.user,
         contact__project_relationships__project=F('contract__project'),
         end_date__gte=today,
         contract__status='current',
@@ -417,12 +417,12 @@ def view_person_time_sheet(request, person_id, period_id, window_id=None):
     except timepiece.PersonRepeatPeriod.DoesNotExist:
         raise Http404
     if not (request.user.has_perm('timepiece.view_person_time_sheet') or \
-    time_sheet.contact.user.pk == request.user.id):
+    time_sheet.contact.pk == request.user.pk):
         return HttpResponseForbidden('Forbidden')
     window, entries, total = get_entries(
         time_sheet.repeat_period,
         window_id=window_id,
-        user=time_sheet.contact.user,
+        user=time_sheet.contact,
     )
     project_entries = entries.order_by().values(
         'project__name',
@@ -699,11 +699,11 @@ def payroll_summary(request):
 
     all_weeks = utils.generate_weeks(start=from_date, end=to_date)
     rps = timepiece.PersonRepeatPeriod.objects.select_related(
-        'contact__user',
+        'contact',
         'repeat_period',
     ).filter(
         repeat_period__active=True,
-    ).order_by('contact__sort_name')
+    ).order_by('contact__last_name')
     for rp in rps:
         rp.contact.summary = rp.summary(from_date, to_date)
 

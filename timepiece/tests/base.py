@@ -11,8 +11,12 @@ from timepiece import models as timepiece
 from crm import models as crm
 from crm.tests import CrmDataTestCase
 
-
 class TimepieceDataTestCase(CrmDataTestCase):
+    
+    def create_person(self, data={}):
+        contact = super(TimepieceDataTestCase, self).create_person(data)
+        return contact.user
+        
     def create_project_type(self, data={}):
         defaults = {
             'label': self.random_string(30, extra_chars=' '),
@@ -151,6 +155,8 @@ class TimepieceDataTestCase(CrmDataTestCase):
             user=self.user,
             description='',
         )
+        #fix after complete conversion
+        self.contact = self.contact.user
         self.activity = timepiece.Activity.objects.create(
             code="WRK",
             name="Work",

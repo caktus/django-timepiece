@@ -35,7 +35,7 @@ class ProjectionTest(TimepieceDataTestCase):
         elif not isinstance(start, datetime.datetime):
             start = datetime.datetime.combine(start, datetime.time())
         end = start + datetime.timedelta(hours=hours, minutes=minutes)
-        data = {'user': assignment.contact.user,
+        data = {'user': assignment.contact,
                 'start_time': start,
                 'end_time': end,
                 'project': assignment.contract.project}
@@ -262,13 +262,13 @@ class ProjectionTest(TimepieceDataTestCase):
         person = self.create_person({'user': user})
         ps = self.create_person_schedule(data={'contact': person})
         run_projection()
-        assignments = timepiece.AssignmentAllocation.objects.during_this_week(self.ps.contact.user)
+        assignments = timepiece.AssignmentAllocation.objects.during_this_week(self.ps.contact)
         self.assertEquals(assignments.count(), 1)
         assignments = timepiece.AssignmentAllocation.objects.during_this_week(user)
         self.assertEquals(assignments.count(), 0)
         ca_2 = self._assign(start, end, hours=30)
         run_projection()
-        assignments = timepiece.AssignmentAllocation.objects.during_this_week(self.ps.contact.user)
+        assignments = timepiece.AssignmentAllocation.objects.during_this_week(self.ps.contact)
         self.assertEquals(assignments.count(), 2)
 
     def test_this_weeks_hours(self):
@@ -277,7 +277,7 @@ class ProjectionTest(TimepieceDataTestCase):
         ca = self._assign(start, end, hours=60)
         run_projection()
         self.log_time(ca, start=start, delta=(10, 0))
-        assignments = timepiece.AssignmentAllocation.objects.during_this_week(self.ps.contact.user)
+        assignments = timepiece.AssignmentAllocation.objects.during_this_week(self.ps.contact)
         self.assertEquals(assignments.count(), 1)
         assignment = assignments[0]
         self.assertEquals(assignment.hours_worked, 10)

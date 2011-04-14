@@ -22,7 +22,7 @@ class PayrollTest(TimepieceDataTestCase):
         if not start:
             start = datetime.datetime.now()
         end = start + datetime.timedelta(hours=hours, minutes=minutes)
-        data = {'user': self.contact.user,
+        data = {'user': self.contact,
                 'start_time': start,
                 'end_time': end,
                 'billable': billable}

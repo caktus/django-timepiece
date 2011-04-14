@@ -41,7 +41,7 @@ class ClockInForm(forms.ModelForm):
             date_format='%m/%d/%Y',
         )
         self.fields['project'].queryset = timepiece.Project.objects.filter(
-            contacts__user=self.user,
+            contacts=self.user,
         ).filter(
             Q(status__enable_timetracking=True) |
             Q(type__enable_timetracking=True)
@@ -108,7 +108,7 @@ class AddUpdateEntryForm(forms.ModelForm):
         self.user = kwargs.pop('user')
         super(AddUpdateEntryForm, self).__init__(*args, **kwargs)
         self.fields['project'].queryset = timepiece.Project.objects.filter(
-            contacts__user=self.user,
+            contacts=self.user,
         )
         if not self.instance.end_time:
             del self.fields['end_time']
