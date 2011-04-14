@@ -20,8 +20,7 @@ from timepiece import utils
 class ProjectionTest(TimepieceDataTestCase):
 
     def setUp(self):
-        user = User.objects.create_user('test', 'a@b.com', 'abc')
-        person = self.create_person({'user': user})
+        person = User.objects.create_user('test', 'a@b.com', 'abc')
         self.ps = self.create_person_schedule(data={'contact': person})
 
     def log_time(self, assignment, delta=None, start=None):
@@ -258,13 +257,12 @@ class ProjectionTest(TimepieceDataTestCase):
         start = utils.get_week_start()
         end = start + datetime.timedelta(weeks=2) - datetime.timedelta(days=1)
         ca = self._assign(start, end, hours=20)
-        user = User.objects.create_user('test2', 'a@b.com', 'abc')
-        person = self.create_person({'user': user})
+        person = User.objects.create_user('test2', 'a@b.com', 'abc')
         ps = self.create_person_schedule(data={'contact': person})
         run_projection()
         assignments = timepiece.AssignmentAllocation.objects.during_this_week(self.ps.contact)
         self.assertEquals(assignments.count(), 1)
-        assignments = timepiece.AssignmentAllocation.objects.during_this_week(user)
+        assignments = timepiece.AssignmentAllocation.objects.during_this_week(person)
         self.assertEquals(assignments.count(), 0)
         ca_2 = self._assign(start, end, hours=30)
         run_projection()

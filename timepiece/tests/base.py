@@ -1,22 +1,51 @@
 import datetime
 import random
+import string
 
 from django.test import TestCase
 from django.core.urlresolvers import reverse
+from django.template.defaultfilters import slugify
 from django.contrib.auth.models import User, Permission
 from django.contrib.contenttypes.models import ContentType
 from django.db.models import Q
 
 from timepiece import models as timepiece
 from crm import models as crm
-from crm.tests import CrmDataTestCase
 
-class TimepieceDataTestCase(CrmDataTestCase):
+class TimepieceDataTestCase(TestCase):
+    """
+    Between these comments are functions from the CRM testcase.  These are included
+    till businesses and types are migrated
+    """
+    def create_business(self, data={}):
+        name = self.random_string(30, extra_chars=' ')
+        defaults = {
+            'type': 'business',
+            'name': name,
+            'sort_name': name,
+            'slug': slugify(name),
+        }
+        defaults.update(data)
+        return crm.Contact.objects.create(**defaults)
+    
+    """
+    end crm functions
+    """
+    
+    def random_string(self, length=255, extra_chars=''):
+        chars = string.letters + extra_chars
+        return ''.join([random.choice(chars) for i in range(length)])
     
     def create_person(self, data={}):
-        contact = super(TimepieceDataTestCase, self).create_person(data)
-        return contact.user
-        
+        first_name = self.random_string(20)
+        last_name = self.random_string(20)
+        defaults = {
+            'first_name': first_name,
+            'last_name': last_name,
+        }
+        defaults.update(data)
+        return User.objects.create(**defaults)
+    
     def create_project_type(self, data={}):
         defaults = {
             'label': self.random_string(30, extra_chars=' '),
