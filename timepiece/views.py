@@ -538,6 +538,7 @@ def remove_contact_from_project(request, business, project, contact_id):
     else:
         return HttpResponseRedirect(reverse('view_project', business, project,))
 
+
 @permission_required('timepiece.change_project')
 @transaction.commit_on_success
 @render_with('timepiece/project/relationship.html')
