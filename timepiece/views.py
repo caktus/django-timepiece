@@ -19,7 +19,6 @@ from django.utils.datastructures import SortedDict
 from django.views.decorators.csrf import csrf_exempt
 
 from timepiece.utils import render_with
-from crm import forms as crm_forms
 from crm import models as crm
 
 from timepiece import models as timepiece
@@ -453,7 +452,7 @@ def view_person_time_sheet(request, person_id, period_id, window_id=None):
 @permission_required('timepiece.view_project')
 @render_with('timepiece/project/list.html')
 def list_projects(request):
-    form = crm_forms.SearchForm(request.GET)
+    form = timepiece_forms.SearchForm(request.GET)
     if form.is_valid() and 'search' in request.GET:
         search = form.cleaned_data['search']
         projects = timepiece.Project.objects.filter(

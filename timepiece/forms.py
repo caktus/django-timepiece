@@ -18,6 +18,9 @@ from ajax_select.fields import AutoCompleteSelectMultipleField, \
                                AutoCompleteSelectWidget
 
 
+class SearchForm(forms.Form):
+    search = forms.CharField(required=False)
+
 
 class AddContactToProjectForm(forms.Form):
     contact = AutoCompleteSelectField('user')
