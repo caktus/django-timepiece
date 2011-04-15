@@ -19,7 +19,6 @@ from django.utils.datastructures import SortedDict
 from django.views.decorators.csrf import csrf_exempt
 
 from timepiece.utils import render_with
-from crm import models as crm
 
 from timepiece import models as timepiece
 from timepiece import utils
@@ -515,7 +514,7 @@ def add_contact_to_project(request, project):
     if 'next' in request.REQUEST and request.REQUEST['next']:
         return HttpResponseRedirect(request.REQUEST['next'])
     else:
-        return HttpResponseRedirect(reverse('view_project', project,))
+        return HttpResponseRedirect(reverse('view_project', args=(project.pk,)))
 
 
 @csrf_exempt
@@ -534,7 +533,7 @@ def remove_contact_from_project(request, project, contact_id):
     if 'next' in request.REQUEST and request.REQUEST['next']:
         return HttpResponseRedirect(request.REQUEST['next'])
     else:
-        return HttpResponseRedirect(reverse('view_project', project,))
+        return HttpResponseRedirect(reverse('view_project', args=(project.pk,)))
 
 
 @permission_required('timepiece.change_project')

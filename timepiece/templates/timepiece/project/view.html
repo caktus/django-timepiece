@@ -1,5 +1,5 @@
 {% extends "base.html" %}
-{% load crm_tags markup %}
+{% load timepiece_tags markup %}
 
 {% block title %}{{ project }}{% endblock %}
 
@@ -23,11 +23,7 @@
     {% ifnotequal project.contacts.count 0 %}
     {% for contact in project.contacts.select_related.all %}
         <li>
-            {% if perms.crm.view_contact %}
-                <a href='{% url view_person person_id=contact.id %}'>{{ contact.get_full_name }}</a>
-            {% else %}
-                {{ contact.get_full_name }}
-            {% endif %}
+            {{ contact.get_full_name }}
             {% if perms.timepiece.change_projectrelationship %}
                 <a title="Edit {{ contact.get_full_name }}'s relationship to {{ project }}" href='{% url edit_project_relationship project_id=project.id,user_id=contact.id %}?next={% url view_project project_id=project.id %}'><img alt="Edit {{ contact.get_full_name }}'s relationship to {{ project }}" src='{{ FAMFAMFAM_URL }}pencil.png' /></a>
             {% endif %}

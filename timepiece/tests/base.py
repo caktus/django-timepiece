@@ -176,16 +176,8 @@ class TimepieceDataTestCase(TestCase):
         )
         self.user.user_permissions = permissions
         self.user2.user_permissions = permissions
-        self.contact = crm.Contact.objects.create(
-            first_name='John',
-            last_name='Doe',
-            sort_name='doe-john',
-            type='individual',
-            user=self.user,
-            description='',
-        )
-        #fix after complete conversion
-        self.contact = self.contact.user
+
+        self.contact = self.user
         self.activity = timepiece.Activity.objects.create(
             code="WRK",
             name="Work",
