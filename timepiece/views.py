@@ -481,7 +481,7 @@ def list_projects(request):
 @permission_required('timepiece.view_project')
 @transaction.commit_on_success
 @render_with('timepiece/project/view.html')
-def view_project(request, business, project):
+def view_project(request, project):
     add_contact_form = timepiece_forms.AddContactToProjectForm()
     context = {
         'project': project,
@@ -491,7 +491,6 @@ def view_project(request, business, project):
     try:
         from ledger.models import Exchange
         context['exchanges'] = Exchange.objects.filter(
-            business=business,
             transactions__project=project,
         ).distinct().select_related().order_by('type', '-date', '-id',)
         context['show_delivered_column'] = \
@@ -505,7 +504,7 @@ def view_project(request, business, project):
 @csrf_exempt
 @permission_required('timepiece.change_project')
 @transaction.commit_on_success
-def add_contact_to_project(request, business, project):
+def add_contact_to_project(request, project):
     if request.POST:
         form = timepiece_forms.AddContactToProjectForm(request.POST)
         if form.is_valid():
@@ -517,13 +516,13 @@ def add_contact_to_project(request, business, project):
     if 'next' in request.REQUEST and request.REQUEST['next']:
         return HttpResponseRedirect(request.REQUEST['next'])
     else:
-        return HttpResponseRedirect(reverse('view_project', business, project,))
+        return HttpResponseRedirect(reverse('view_project', project,))
 
 
 @csrf_exempt
 @permission_required('timepiece.change_project')
 @transaction.commit_on_success
-def remove_contact_from_project(request, business, project, contact_id):        
+def remove_contact_from_project(request, project, contact_id):        
     try:
         rel = timepiece.ProjectRelationship.objects.get(
             contact=contact_id,
@@ -536,13 +535,13 @@ def remove_contact_from_project(request, business, project, contact_id):
     if 'next' in request.REQUEST and request.REQUEST['next']:
         return HttpResponseRedirect(request.REQUEST['next'])
     else:
-        return HttpResponseRedirect(reverse('view_project', business, project,))
+        return HttpResponseRedirect(reverse('view_project', project,))
 
 
 @permission_required('timepiece.change_project')
 @transaction.commit_on_success
 @render_with('timepiece/project/relationship.html')
-def edit_project_relationship(request, business, project, user_id):
+def edit_project_relationship(request, project, user_id):
     try:
         rel = project.project_relationships.get(contact__pk=user_id)
     except timepiece.ProjectRelationship.DoesNotExist:
@@ -574,7 +573,7 @@ def edit_project_relationship(request, business, project, user_id):
 @permission_required('timepiece.add_project')
 @permission_required('timepiece.change_project')
 @render_with('timepiece/project/create_edit.html')
-def create_edit_project(request, business, project=None):
+def create_edit_project(request, project=None):
     if project:
         billing_period = project.billing_period
     else:
@@ -582,7 +581,6 @@ def create_edit_project(request, business, project=None):
     if request.POST:
         project_form = timepiece_forms.ProjectForm(
             request.POST,
-            business=business,
             instance=project,
         )
         repeat_period_form = timepiece_forms.RepeatPeriodForm(
@@ -596,11 +594,10 @@ def create_edit_project(request, business, project=None):
             project.billing_period = period
             project.save()
             return HttpResponseRedirect(
-                reverse('view_project', args=(business.id, project.id))
+                reverse('view_project', args=(project.id,))
             )
     else:
         project_form = timepiece_forms.ProjectForm(
-            business=business,
             instance=project
         )
         repeat_period_form = timepiece_forms.RepeatPeriodForm(
@@ -614,7 +611,6 @@ def create_edit_project(request, business, project=None):
         latest_window = None
 
     context = {
-        'business': business,
         'project': project,
         'project_form': project_form,
         'repeat_period_form': repeat_period_form,

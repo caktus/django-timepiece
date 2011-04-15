@@ -31,7 +31,7 @@
 	</tr>
 	{% for project in projects %}
 	<tr>
-		<td><a href='{% url view_project business_id=project.business.id,project_id=project.id %}'>{{ project.name }}</a></td>
+		<td><a href='{% url view_project project_id=project.id %}'>{{ project.name }}</a></td>
 		<td>{{ project.business }}</td>
 		<td>{{ project.description|truncatewords:8 }}</td>
 	</tr>

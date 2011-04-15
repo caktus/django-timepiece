@@ -19,7 +19,7 @@
 <table>
     {% for entry in project_totals %}
     <tr>
-        <td><a href='{% url view_project entry.project__business__id,entry.project__id %}'>{{ entry.project__name }}</a></td>
+        <td><a href='{% url view_project entry.project__id %}'>{{ entry.project__name }}</a></td>
         <td>{{ entry.total_hours|floatformat:2 }}</td>
     </tr>
     {% endfor %}

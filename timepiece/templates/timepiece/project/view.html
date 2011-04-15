@@ -7,7 +7,7 @@
 <h2>{{ project }}</h2>
 <ul class='header-actions-left'>
 {% if perms.timepiece.change_project %}
-	<li><a href='{% url edit_project business_id=project.business.id,project_id=project.id %}'>Edit project</a></li>
+	<li><a href='{% url edit_project project_id=project.id %}'>Edit project</a></li>
 {% endif %}
 {% if perms.crm.view_businesses %}
     <li><a href='{% url view_business business_id=project.business.id %}'>Return to {{ project.business.name }}</a></li>
@@ -29,17 +29,17 @@
                 {{ contact.get_full_name }}
             {% endif %}
             {% if perms.timepiece.change_projectrelationship %}
-                <a title="Edit {{ contact.get_full_name }}'s relationship to {{ project }}" href='{% url edit_project_relationship business_id=project.business.id,project_id=project.id,user_id=contact.id %}?next={% url view_project business_id=project.business.id,project_id=project.id %}'><img alt="Edit {{ contact.get_full_name }}'s relationship to {{ project }}" src='{{ FAMFAMFAM_URL }}pencil.png' /></a>
+                <a title="Edit {{ contact.get_full_name }}'s relationship to {{ project }}" href='{% url edit_project_relationship project_id=project.id,user_id=contact.id %}?next={% url view_project project_id=project.id %}'><img alt="Edit {{ contact.get_full_name }}'s relationship to {{ project }}" src='{{ FAMFAMFAM_URL }}pencil.png' /></a>
             {% endif %}
             {% if perms.timepiece.delete_projectrelationship %}
-                <a title='Remove {{ contact.get_full_name }}' href='{% url remove_contact_from_project business_id=project.business.id,project_id=project.id,contact_id=contact.id %}?next={% url view_project business_id=project.business.id,project_id=project.id %}'><img alt='Remove {{ contact.get_full_name }}' src='{{ FAMFAMFAM_URL }}/delete.png' /></a>
+                <a title='Remove {{ contact.get_full_name }}' href='{% url remove_contact_from_project project_id=project.id,contact_id=contact.id %}?next={% url view_project project_id=project.id %}'><img alt='Remove {{ contact.get_full_name }}' src='{{ FAMFAMFAM_URL }}/delete.png' /></a>
             {% endif %}
         </li>
     {% endfor %}
     {% endifnotequal %}
     </ul>
     {% if perms.timepiece.add_projectrelationship %}
-    <form id="add-contact" action='{% url add_contact_to_project business_id=project.business.id,project_id=project.id %}?next={% url view_project business_id=project.business.id,project_id=project.id %}' method="post" accept-charset="utf-8">
+    <form id="add-contact" action='{% url add_contact_to_project project_id=project.id %}?next={% url view_project project_id=project.id %}' method="post" accept-charset="utf-8">
         {% csrf_token %}
         <div class="field-wrapper">
             {{ add_contact_form }}

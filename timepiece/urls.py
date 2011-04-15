@@ -16,32 +16,32 @@ urlpatterns = patterns('',
 
     url(r'^project/list/$', views.list_projects, name='list_projects'),
     url(
-        r'^business/(?P<business_id>\d+)/project/(?P<project_id>\d+)/$',
+        r'^project/(?P<project_id>\d+)/$',
         views.view_project,
         name='view_project',
     ),
     url(
-        r'^(?:business/(?P<business_id>\d+)/)?project/create/$',
+        r'^project/create/$',
         views.create_edit_project,
         name='create_project',
     ),
     url(
-        r'^business/(?P<business_id>\d+)/project/(?P<project_id>\d+)/edit/$',
+        r'^project/(?P<project_id>\d+)/edit/$',
         views.create_edit_project,
         name='edit_project',
     ),
     url(
-        r'^business/(?P<business_id>\d+)/project/(?P<project_id>\d+)/add_contact/$',
+        r'^project/(?P<project_id>\d+)/contact/add/$',
         views.add_contact_to_project,
         name='add_contact_to_project',
     ),
     url(
-        r'^business/(?P<business_id>\d+)/project/(?P<project_id>\d+)/remove_contact/(?P<contact_id>\d+)/$',
+        r'^project/(?P<project_id>\d+)/contact/(?P<contact_id>\d+)/remove/$',
         views.remove_contact_from_project,
         name='remove_contact_from_project',
     ),
     url(
-        r'^business/(?P<business_id>\d+)/project/(?P<project_id>\d+)/contact/(?P<user_id>\d+)/edit/$',
+        r'^project/(?P<project_id>\d+)/contact/(?P<user_id>\d+)/edit/$',
         views.edit_project_relationship,
         name='edit_project_relationship',
     ),

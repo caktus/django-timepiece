@@ -209,21 +209,14 @@ class ProjectForm(forms.ModelForm):
         )
 
     def __init__(self, *args, **kwargs):
-        self.business = kwargs.pop('business')
         super(ProjectForm, self).__init__(*args, **kwargs)
-
-        if self.business:
-            self.fields.pop('business')
-        else:
-            self.fields['business'].queryset = crm.Contact.objects.filter(
-                type='business',
-                business_types__name='client',
-            )
+        self.fields['business'].queryset = crm.Contact.objects.filter(
+            type='business',
+            business_types__name='client',
+        )
 
     def save(self):
         instance = super(ProjectForm, self).save(commit=False)
-        if self.business:
-            instance.business = self.business
         instance.save()
         return instance
 
