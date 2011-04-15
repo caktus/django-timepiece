@@ -31,6 +31,16 @@ urlpatterns = patterns('',
         name='edit_project',
     ),
     url(
+        r'^business/(?P<business_id>\d+)/project/(?P<project_id>\d+)/add_contact/$',
+        views.add_contact_to_project,
+        name='add_contact_to_project',
+    ),
+    url(
+        r'^business/(?P<business_id>\d+)/project/(?P<project_id>\d+)/remove_contact/(?P<contact_id>\d+)/$',
+        views.remove_contact_from_project,
+        name='remove_contact_from_project',
+    ),
+    url(
         r'^business/(?P<business_id>\d+)/project/(?P<project_id>\d+)/contact/(?P<user_id>\d+)/edit/$',
         views.edit_project_relationship,
         name='edit_project_relationship',

@@ -11,10 +11,12 @@ from django.shortcuts import render_to_response, get_object_or_404
 from django.core.urlresolvers import reverse
 from django.http import HttpResponse, HttpResponseRedirect, Http404, HttpResponseForbidden
 from django.contrib.auth.decorators import login_required, permission_required
+from django.contrib.auth.models import User
 from django.db.models import Sum, Q, F
 from django.db import transaction
 from django.conf import settings
 from django.utils.datastructures import SortedDict
+from django.views.decorators.csrf import csrf_exempt
 
 from timepiece.utils import render_with
 from crm import forms as crm_forms
@@ -480,7 +482,7 @@ def list_projects(request):
 @transaction.commit_on_success
 @render_with('timepiece/project/view.html')
 def view_project(request, business, project):
-    add_contact_form = crm_forms.AssociateContactForm()
+    add_contact_form = timepiece_forms.AddContactToProjectForm()
     context = {
         'project': project,
         'add_contact_form': add_contact_form,
@@ -499,6 +501,42 @@ def view_project(request, business, project):
 
     return context
 
+
+@csrf_exempt
+@permission_required('timepiece.change_project')
+@transaction.commit_on_success
+def add_contact_to_project(request, business, project):
+    if request.POST:
+        form = timepiece_forms.AddContactToProjectForm(request.POST)
+        if form.is_valid():
+            contact = form.save()
+            timepiece.ProjectRelationship.objects.get_or_create(
+                contact=contact,
+                project=project,
+            )
+    if 'next' in request.REQUEST and request.REQUEST['next']:
+        return HttpResponseRedirect(request.REQUEST['next'])
+    else:
+        return HttpResponseRedirect(reverse('view_project', business, project,))
+
+
+@csrf_exempt
+@permission_required('timepiece.change_project')
+@transaction.commit_on_success
+def remove_contact_from_project(request, business, project, contact_id):        
+    try:
+        rel = timepiece.ProjectRelationship.objects.get(
+            contact=contact_id,
+            project=project,
+        )
+    except timepiece.ProjectRelationship.DoesNotExist:
+        pass
+    else:
+        rel.delete()
+    if 'next' in request.REQUEST and request.REQUEST['next']:
+        return HttpResponseRedirect(request.REQUEST['next'])
+    else:
+        return HttpResponseRedirect(reverse('view_project', business, project,))
 
 @permission_required('timepiece.change_project')
 @transaction.commit_on_success
@@ -732,7 +770,7 @@ def projection_summary(request):
     contracts = timepiece.ProjectContract.objects.exclude(status='complete')
     contracts = contracts.exclude(project__in=settings.TIMEPIECE_PROJECTS.values())
     contracts = contracts.order_by('end_date')
-    contacts = crm.Contact.objects.filter(assignments__contract__in=contracts).distinct()
+    contacts = User.objects.filter(assignments__contract__in=contracts).distinct()
 
     if request.GET:
         form = timepiece_forms.DateForm(request.GET)

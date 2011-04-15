@@ -13,6 +13,17 @@ from datetime import datetime, timedelta
 
 from timepiece import models as timepiece
 from crm import models as crm
+from ajax_select.fields import AutoCompleteSelectMultipleField, \
+                               AutoCompleteSelectField, \
+                               AutoCompleteSelectWidget
+
+
+
+class AddContactToProjectForm(forms.Form):
+    contact = AutoCompleteSelectField('user')
+    
+    def save(self):
+        return self.cleaned_data['contact']
 
 
 class ClockInForm(forms.ModelForm):

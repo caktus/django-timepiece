@@ -1,5 +1,5 @@
 {% extends "base.html" %}
-{% load crm_tags %}
+{% load crm_tags markup %}
 
 {% block title %}{{ project }}{% endblock %}
 
@@ -32,14 +32,14 @@
                 <a title="Edit {{ contact.get_full_name }}'s relationship to {{ project }}" href='{% url edit_project_relationship business_id=project.business.id,project_id=project.id,user_id=contact.id %}?next={% url view_project business_id=project.business.id,project_id=project.id %}'><img alt="Edit {{ contact.get_full_name }}'s relationship to {{ project }}" src='{{ FAMFAMFAM_URL }}pencil.png' /></a>
             {% endif %}
             {% if perms.timepiece.delete_projectrelationship %}
-                <a title='Remove {{ contact.get_full_name }}' href='{% url associate_contact business_id=project.business.id,project_id=project.id,user_id=contact.id,action="remove" %}?next={% url view_project business_id=project.business.id,project_id=project.id %}'><img alt='Remove {{ contact.get_full_name }}' src='{{ FAMFAMFAM_URL }}/delete.png' /></a>
+                <a title='Remove {{ contact.get_full_name }}' href='{% url remove_contact_from_project business_id=project.business.id,project_id=project.id,contact_id=contact.id %}?next={% url view_project business_id=project.business.id,project_id=project.id %}'><img alt='Remove {{ contact.get_full_name }}' src='{{ FAMFAMFAM_URL }}/delete.png' /></a>
             {% endif %}
         </li>
     {% endfor %}
     {% endifnotequal %}
     </ul>
     {% if perms.timepiece.add_projectrelationship %}
-    <form id="add-contact" action='{% url associate_contact business_id=project.business.id,project_id=project.id,action="add" %}?next={% url view_project business_id=project.business.id,project_id=project.id %}' method="post" accept-charset="utf-8">
+    <form id="add-contact" action='{% url add_contact_to_project business_id=project.business.id,project_id=project.id %}?next={% url view_project business_id=project.business.id,project_id=project.id %}' method="post" accept-charset="utf-8">
         {% csrf_token %}
         <div class="field-wrapper">
             {{ add_contact_form }}
