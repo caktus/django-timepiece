@@ -9,6 +9,11 @@ class ActivityAdmin(admin.ModelAdmin):
 admin.site.register(timepiece.Activity, ActivityAdmin)
 
 
+class RelationshipTypeAdmin(admin.ModelAdmin):
+    pass
+admin.site.register(timepiece.RelationshipType, RelationshipTypeAdmin)
+
+
 class EntryAdmin(admin.ModelAdmin):
     model = timepiece.Entry
     list_display = ('user',

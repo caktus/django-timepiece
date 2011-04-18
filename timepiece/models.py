@@ -23,6 +23,7 @@ try:
 except AttributeError:
     settings.TIMEPIECE_TIMESHEET_EDITABLE_DAYS = 3
 
+
 class Attribute(models.Model):
     ATTRIBUTE_TYPES = (
         ('project-type', 'Project Type'),
@@ -100,9 +101,24 @@ class Project(models.Model):
         return settings.TRAC_URL % self.trac_environment
 
 
-class ProjectRelationship(models.Model):
+class RelationshipType(models.Model):
+    name = models.CharField(max_length=255, unique=True)
+    slug = models.CharField(max_length=255, unique=True, editable=False)
+    
+    def save(self):
+        queryset = RelationshipType.objects.all()
+        if self.id:
+            queryset = queryset.exclude(id__exact=self.id)
+        self.slug = utils.slugify_uniquely(self.name, queryset, 'slug')
+        super(RelationshipType, self).save()
+    
+    def __unicode__(self):
+        return self.name
+
+
+class ProjectRelationship(models.Model): 
     types = models.ManyToManyField(
-        crm.RelationshipType,
+        RelationshipType,
         related_name='project_relationships',
         blank=True,
     )
