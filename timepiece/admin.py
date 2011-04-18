@@ -9,6 +9,11 @@ class ActivityAdmin(admin.ModelAdmin):
 admin.site.register(timepiece.Activity, ActivityAdmin)
 
 
+class RelationshipTypeAdmin(admin.ModelAdmin):
+    pass
+admin.site.register(timepiece.RelationshipType, RelationshipTypeAdmin)
+
+
 class EntryAdmin(admin.ModelAdmin):
     model = timepiece.Entry
     list_display = ('user',
@@ -70,7 +75,7 @@ class ProjectContractInline(admin.TabularInline):
 
 class ProjectAdmin(admin.ModelAdmin):
     model = timepiece.Project
-    raw_id_fields = ('interactions', 'business')
+    raw_id_fields = ('business',)
     list_display = ('name', 'business', 'point_person', 'status', 'type',)
     list_filter = ('type', 'status')
     inlines = (ProjectContractInline,)
