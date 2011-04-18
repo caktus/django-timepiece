@@ -9,8 +9,9 @@ class Migration(DataMigration):
     def forwards(self, orm):
         "Write your forwards methods here."
         types = orm['crm.relationshiptype'].objects.all()
+        orm['timepiece.relationshiptype'].objects.all().delete()
         for typ in types:
-            new_typ = orm.RelationshipType(
+            new_typ = orm['timepiece.relationshiptype'](
                 name=typ.name,
                 slug=typ.slug,
                 )

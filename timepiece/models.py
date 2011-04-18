@@ -75,7 +75,6 @@ class Project(models.Model):
         related_name='projects_with_status',
     )
     description = models.TextField()
-
     billing_period = models.ForeignKey(
         'RepeatPeriod',
         null=True,

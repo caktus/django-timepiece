@@ -8,19 +8,19 @@ class Migration(SchemaMigration):
 
     def forwards(self, orm):
         
-        # Removing M2M table for field interactions on 'Project'
-        db.delete_table('timepiece_project_interactions')
+        # Removing M2M table for field types_old on 'ProjectRelationship'
+        db.delete_table('timepiece_projectrelationship_types_old')
 
 
     def backwards(self, orm):
         
-        # Adding M2M table for field interactions on 'Project'
-        db.create_table('timepiece_project_interactions', (
+        # Adding M2M table for field types_old on 'ProjectRelationship'
+        db.create_table('timepiece_projectrelationship_types_old', (
             ('id', models.AutoField(verbose_name='ID', primary_key=True, auto_created=True)),
-            ('project', models.ForeignKey(orm['timepiece.project'], null=False)),
-            ('interaction', models.ForeignKey(orm['crm.interaction'], null=False))
+            ('projectrelationship', models.ForeignKey(orm['timepiece.projectrelationship'], null=False)),
+            ('relationshiptype', models.ForeignKey(orm['crm.relationshiptype'], null=False))
         ))
-        db.create_unique('timepiece_project_interactions', ['project_id', 'interaction_id'])
+        db.create_unique('timepiece_projectrelationship_types_old', ['projectrelationship_id', 'relationshiptype_id'])
 
 
     models = {
@@ -115,6 +115,16 @@ class Migration(SchemaMigration):
             'to_contact': ('django.db.models.fields.related.ForeignKey', [], {'related_name': "'to_contacts'", 'to': "orm['crm.Contact']"}),
             'types': ('django.db.models.fields.related.ManyToManyField', [], {'symmetrical': 'False', 'related_name': "'contact_relationships'", 'blank': 'True', 'to': "orm['crm.RelationshipType']"})
         },
+        'crm.interaction': {
+            'Meta': {'ordering': "['-date']", 'object_name': 'Interaction'},
+            'cdr_id': ('django.db.models.fields.TextField', [], {'null': 'True'}),
+            'completed': ('django.db.models.fields.BooleanField', [], {'default': 'False'}),
+            'contacts': ('django.db.models.fields.related.ManyToManyField', [], {'related_name': "'interactions'", 'symmetrical': 'False', 'to': "orm['crm.Contact']"}),
+            'date': ('django.db.models.fields.DateTimeField', [], {}),
+            'id': ('django.db.models.fields.AutoField', [], {'primary_key': 'True'}),
+            'memo': ('django.db.models.fields.TextField', [], {'blank': 'True'}),
+            'type': ('django.db.models.fields.CharField', [], {'max_length': '15'})
+        },
         'crm.relationshiptype': {
             'Meta': {'object_name': 'RelationshipType'},
             'id': ('django.db.models.fields.AutoField', [], {'primary_key': 'True'}),
@@ -201,6 +211,7 @@ class Migration(SchemaMigration):
             'contacts': ('django.db.models.fields.related.ManyToManyField', [], {'related_name': "'contact_projects'", 'symmetrical': 'False', 'through': "orm['timepiece.ProjectRelationship']", 'to': "orm['auth.User']"}),
             'description': ('django.db.models.fields.TextField', [], {}),
             'id': ('django.db.models.fields.AutoField', [], {'primary_key': 'True'}),
+            'interactions': ('django.db.models.fields.related.ManyToManyField', [], {'to': "orm['crm.Interaction']", 'symmetrical': 'False', 'blank': 'True'}),
             'name': ('django.db.models.fields.CharField', [], {'max_length': '255'}),
             'point_person': ('django.db.models.fields.related.ForeignKey', [], {'to': "orm['auth.User']"}),
             'status': ('django.db.models.fields.related.ForeignKey', [], {'related_name': "'projects_with_status'", 'to': "orm['timepiece.Attribute']"}),

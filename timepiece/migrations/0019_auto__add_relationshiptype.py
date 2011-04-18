@@ -15,19 +15,11 @@ class Migration(SchemaMigration):
             ('slug', self.gf('django.db.models.fields.CharField')(unique=True, max_length=255)),
         ))
         db.send_create_signal('timepiece', ['RelationshipType'])
-        db.delete_unique('timepiece_projectrelationship_types', ['projectrelationship_id', 'relationshiptype_id'])
-        db.rename_table('timepiece_projectrelationship_types','timepiece_projectrelationship_types_old',)
-        db.rename_table('timepiece_projectrelationship_types_relationshiptype_id', 'timepiece_projectrelationship_types_old_relationshiptype_id')
-        db.rename_table('timepiece_projectrelationship_types_projectrelationship_id','timepiece_projectrelationship_types_old_projectrelationship_id',)
 
     def backwards(self, orm):
         
         # Deleting model 'RelationshipType'
         db.delete_table('timepiece_relationshiptype')
-        db.rename_table('timepiece_projectrelationship_types_old','timepiece_projectrelationship_types',)
-        db.rename_table('timepiece_projectrelationship_types_old_projectrelationship_id','timepiece_projectrelationship_types_projectrelationship_id',)
-        db.rename_table('timepiece_projectrelationship_types_old_relationshiptype_id', 'timepiece_projectrelationship_types_relationshiptype_id')
-        db.create_unique('timepiece_projectrelationship_types', ['projectrelationship_id', 'relationshiptype_id'])
 
     models = {
         'auth.group': {
