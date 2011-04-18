@@ -76,8 +76,6 @@ class Project(models.Model):
     )
     description = models.TextField()
 
-    interactions = models.ManyToManyField(crm.Interaction, blank=True)
-
     billing_period = models.ForeignKey(
         'RepeatPeriod',
         null=True,
