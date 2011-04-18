@@ -15,7 +15,8 @@ class Migration(DataMigration):
     def backwards(self, orm):
         "Write your backwards methods here."
         for project in orm.ContractAssignment.objects.all():
-            project.contact = project.user.contact
+            contact = orm['crm.Contact'].objects.get(user=project.user)
+            project.contact = contact
             project.save()
 
     models = {
