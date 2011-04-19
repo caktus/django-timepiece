@@ -50,13 +50,32 @@ class Attribute(models.Model):
         return self.label
 
 
+class Business(models.Model):
+    name = models.CharField(max_length=255, blank=True)
+    slug = models.SlugField(max_length=255, unique=True, blank=True)
+    email = models.EmailField(blank=True)
+    description = models.TextField(blank=True)
+    notes = models.TextField(blank=True)
+    external_id = models.CharField(max_length=32, blank=True)
+
+    def save(self):
+        queryset = Business.objects.all()
+        if not self.slug:
+            if self.id:
+                queryset = queryset.exclude(id__exact=self.id)
+            self.slug = utils.slugify_uniquely(self.name, queryset, 'slug')
+        super(Business, self).save()
+
+    def __unicode__(self):
+        return self.name
+
+
 class Project(models.Model):
     name = models.CharField(max_length = 255)
     trac_environment = models.CharField(max_length=255, blank=True, null=True)
     business = models.ForeignKey(
-        crm.Contact,
-        related_name='business_projects',
-        limit_choices_to={'type': 'business'},
+        Business,
+        related_name='new_business_projects',
     )
     point_person = models.ForeignKey(User, limit_choices_to={'is_staff': True})
     contacts = models.ManyToManyField(

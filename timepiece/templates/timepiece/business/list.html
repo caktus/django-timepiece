@@ -1,0 +1,40 @@
+{% extends "base.html" %}
+
+{% block title %}Businesses{% endblock %}
+
+{% block content %}
+<h2>Businesses</h2>
+<ul class='header-actions-left'>
+{% if perms.timepiece.add_business %}
+	<li><a href='{% url create_business %}'>Create Business</a></li>
+{% endif %}
+</ul>
+
+<form class='search' accept-charset='UTF-8' method='get' action=''>
+	<ul>
+		{{ form.as_ul }}
+		<li class='form-buttons'>
+			<input class='large-button' type='submit' name='submit' value='Search &rarr;' />
+		</li>
+	</ul>
+</form>
+
+{% load pagination_tags %}
+{% autopaginate businesses %}
+
+{% paginate %}
+<table class='projects'>
+	<tr>
+		<th>Name</th>
+		<th>Description</th>
+	</tr>
+	{% for business in businesses %}
+	<tr>
+		<td><a href='{% url view_business business.pk %}'>{{ business.name }}</a></td>
+		<td>{{ business.description|truncatewords:8 }}</td>
+	</tr>
+	{% endfor %}
+</table>
+{% paginate %}
+
+{% endblock %}

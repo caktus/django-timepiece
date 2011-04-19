@@ -13,7 +13,23 @@ urlpatterns = patterns('',
     url(r'^delete/(?P<entry_id>\d+)/$', views.delete_entry, name='timepiece-delete'),
     url(r'^summary/', views.summary, name='timepiece-summary'),
 
-
+    url(r'^business/list/$', views.list_businesses, name='list_businesses'),
+    url(
+        r'^business/create/$',
+        views.create_edit_business,
+        name='create_business',
+    ),
+    url(
+        r'^business/(?P<business>\d+)/$',
+        views.view_business,
+        name='view_business',
+    ),
+    url(
+        r'^business/(?P<business>\d+)/edit/$',
+        views.create_edit_business,
+        name='edit_business',
+    ),
+    
     url(r'^project/list/$', views.list_projects, name='list_projects'),
     url(
         r'^project/(?P<project_id>\d+)/$',

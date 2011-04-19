@@ -195,8 +195,12 @@ class ProjectionForm(DateForm):
         contacts = kwargs.pop('contacts')
         super(ProjectionForm, self).__init__(*args, **kwargs)
         self.fields['contact'].queryset = contacts
-    
 
+
+class BusinessForm(forms.ModelForm):
+    class Meta:
+        model = timepiece.Business
+        fields = ('name', 'email', 'description', 'notes',)
 
 class ProjectForm(forms.ModelForm):
     class Meta:
@@ -213,10 +217,6 @@ class ProjectForm(forms.ModelForm):
 
     def __init__(self, *args, **kwargs):
         super(ProjectForm, self).__init__(*args, **kwargs)
-        self.fields['business'].queryset = crm.Contact.objects.filter(
-            type='business',
-            business_types__name='client',
-        )
 
     def save(self):
         instance = super(ProjectForm, self).save(commit=False)

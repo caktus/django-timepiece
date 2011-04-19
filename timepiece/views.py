@@ -448,6 +448,69 @@ def view_person_time_sheet(request, person_id, period_id, window_id=None):
     return context
 
 
+@permission_required('timepiece.view_business')
+@render_with('timepiece/business/list.html')
+def list_businesses(request):
+    form = timepiece_forms.SearchForm(request.GET)
+    if form.is_valid() and 'search' in request.GET:
+        search = form.cleaned_data['search']
+        businesses = timepiece.Business.objects.filter(
+            Q(name__icontains=search) |
+            Q(description__icontains=search)
+        )
+        if businesses.count() == 1:
+            url_kwargs = {
+                'business_id': business[0].pk,
+            }
+            return HttpResponseRedirect(
+                reverse('view_business', kwargs=url_kwargs)
+            )
+    else:
+        businesses = timepiece.Business.objects.all()
+
+    context = {
+        'form': form,
+        'businesses': businesses,
+    }
+    return context
+
+
+@permission_required('timepiece.view_business')
+@render_with('timepiece/business/view.html')
+def view_business(request, business):
+    business = get_object_or_404(timepiece.Business, pk=business)
+    context = {
+        'business': business,
+    }
+    return context
+
+
+
+@render_with('timepiece/business/create_edit.html')
+def create_edit_business(request, business=None):
+    if business:
+        business = get_object_or_404(timepiece.Business, pk=business)
+    if request.POST:
+        business_form = timepiece_forms.BusinessForm(
+            request.POST,
+            instance=business,
+        )
+        if business_form.is_valid():
+            business = business_form.save()
+            return HttpResponseRedirect(
+                reverse('view_business', args=(business.pk,))
+            )
+    else:
+        business_form = timepiece_forms.BusinessForm(
+            instance=business
+        )
+    context = {
+        'business': business,
+        'business_form': business_form,
+    }
+    return context
+
+
 @permission_required('timepiece.view_project')
 @render_with('timepiece/project/list.html')
 def list_projects(request):
