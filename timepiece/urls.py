@@ -14,6 +14,22 @@ urlpatterns = patterns('',
     url(r'^summary/', views.summary, name='timepiece-summary'),
     url(r'^search/$', views.quick_search, name='quick_search'),
     
+    url(r'^person/list/$', views.list_people, name='list_people'),
+    url(
+        r'^person/(?P<person_id>\d+)/$',
+        views.view_person,
+        name='view_person',
+    ),
+    url(
+        r'^person/create/$',
+        views.create_edit_person,
+        name='create_person',
+    ),
+    url(
+        r'^person/(?P<person_id>\d+)/edit/$',
+        views.create_edit_person,
+        name='edit_person',
+    ),
     url(r'^business/list/$', views.list_businesses, name='list_businesses'),
     url(
         r'^business/create/$',

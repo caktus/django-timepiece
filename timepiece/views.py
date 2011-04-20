@@ -12,6 +12,7 @@ from django.core.urlresolvers import reverse
 from django.http import HttpResponse, HttpResponseRedirect, Http404, HttpResponseForbidden
 from django.contrib.auth.decorators import login_required, permission_required
 from django.contrib.auth.models import User
+from django.contrib.auth import models as auth_models
 from django.db.models import Sum, Q, F
 from django.db import transaction
 from django.conf import settings
@@ -523,6 +524,85 @@ def create_edit_business(request, business=None):
     return context
 
 
+@permission_required('auth.view_user')
+@render_with('timepiece/person/list.html')
+def list_people(request):
+    form = timepiece_forms.SearchForm(request.GET)
+    if form.is_valid() and 'search' in request.GET:
+        search = form.cleaned_data['search']
+        people = auth_models.User.objects.filter(
+            Q(first_name__icontains=search) |
+            Q(last_name__icontains=search)
+        )
+        if people.count() == 1:
+            url_kwargs = {
+                'person_id': persons[0].id,
+            }
+            return HttpResponseRedirect(
+                reverse('view_person', kwargs=url_kwargs)
+            )
+    else:
+        people = auth_models.User.objects.all()
+
+    context = {
+        'form': form,
+        'people': people.select_related(),
+    }
+    return context
+
+
+@permission_required('auth.view_user')
+@transaction.commit_on_success
+@render_with('timepiece/person/view.html')
+def view_person(request, person_id):
+    person = get_object_or_404(auth_models.User, pk=person_id)
+    add_contact_form = timepiece_forms.AddContactToProjectForm()
+    context = {
+        'person': person,
+    }
+    try:
+        from ledger.models import Exchange
+        context['exchanges'] = Exchange.objects.filter(
+            transactions__project=project,
+        ).distinct().select_related().order_by('type', '-date', '-id',)
+        context['show_delivered_column'] = \
+            context['exchanges'].filter(type__deliverable=True).count() > 0
+    except ImportError:
+        pass
+
+    return context
+
+
+@permission_required('auth.add_user')
+@permission_required('auth.change_user')
+@render_with('timepiece/person/create_edit.html')
+def create_edit_person(request, person_id=None):
+    if person_id:
+        person = get_object_or_404(auth_models.User, pk=person_id)
+    else:
+        person = None
+    if request.POST:
+        person_form = timepiece_forms.PersonForm(
+            request.POST,
+            instance=person,
+        )
+        if person_form.is_valid():
+            person  = person_form.save()
+            return HttpResponseRedirect(
+                reverse('view_person', args=(person.id,))
+            )
+    else:
+        person_form = timepiece_forms.ProjectForm(
+            instance=person,
+        )
+        
+    context = {
+        'person': person,
+        'person_form': person_form,
+    }
+    return context
+
+
 @permission_required('timepiece.view_project')
 @render_with('timepiece/project/list.html')
 def list_projects(request):
@@ -554,7 +634,7 @@ def list_projects(request):
 @transaction.commit_on_success
 @render_with('timepiece/project/view.html')
 def view_project(request, project_id):
-    project = get_object_or_404(timepiece_forms.Project, pk=project_id)
+    project = get_object_or_404(timepiece.Project, pk=project_id)
     add_contact_form = timepiece_forms.AddContactToProjectForm()
     context = {
         'project': project,
@@ -578,7 +658,7 @@ def view_project(request, project_id):
 @permission_required('timepiece.change_project')
 @transaction.commit_on_success
 def add_contact_to_project(request, project_id):
-    project = get_object_or_404(timepiece_forms.Project, pk=project_id)
+    project = get_object_or_404(timepiece.Project, pk=project_id)
     if request.POST:
         form = timepiece_forms.AddContactToProjectForm(request.POST)
         if form.is_valid():
@@ -597,7 +677,7 @@ def add_contact_to_project(request, project_id):
 @permission_required('timepiece.change_project')
 @transaction.commit_on_success
 def remove_contact_from_project(request, project_id, contact_id):        
-    project = get_object_or_404(timepiece_forms.Project, pk=project_id)
+    project = get_object_or_404(timepiece.Project, pk=project_id)
     try:
         rel = timepiece.ProjectRelationship.objects.get(
             contact=contact_id,
@@ -617,7 +697,7 @@ def remove_contact_from_project(request, project_id, contact_id):
 @transaction.commit_on_success
 @render_with('timepiece/project/relationship.html')
 def edit_project_relationship(request, project_id, user_id):
-    project = get_object_or_404(timepiece_forms.Project, pk=project_id)
+    project = get_object_or_404(timepiece.Project, pk=project_id)
     try:
         rel = project.project_relationships.get(contact__pk=user_id)
     except timepiece.ProjectRelationship.DoesNotExist:
@@ -650,7 +730,7 @@ def edit_project_relationship(request, project_id, user_id):
 @permission_required('timepiece.change_project')
 @render_with('timepiece/project/create_edit.html')
 def create_edit_project(request, project_id=None):
-    project = get_object_or_404(timepiece_forms.Project, pk=project_id)
+    project = get_object_or_404(timepiece.Project, pk=project_id)
     if project:
         billing_period = project.billing_period
     else:
