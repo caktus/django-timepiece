@@ -14,8 +14,6 @@ from dateutil import rrule
 
 from datetime import timedelta
 
-from crm import models as crm
-
 from timepiece import utils
 
 try:
@@ -58,13 +56,13 @@ class Business(models.Model):
     notes = models.TextField(blank=True)
     external_id = models.CharField(max_length=32, blank=True)
 
-    def save(self):
+    def save(self, *args, **kwargs):
         queryset = Business.objects.all()
         if not self.slug:
             if self.id:
                 queryset = queryset.exclude(id__exact=self.id)
             self.slug = utils.slugify_uniquely(self.name, queryset, 'slug')
-        super(Business, self).save()
+        super(Business, self).save(*args, **kwargs)
 
     def __unicode__(self):
         return self.name

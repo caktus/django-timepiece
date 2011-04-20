@@ -30,6 +30,16 @@ try:
 except AttributeError:
     settings.TIMEPIECE_TIMESHEET_EDITABLE_DAYS = 3
 
+
+@login_required
+def quick_search(request):
+    if request.GET:
+        form = timepiece_forms.QuickSearchForm(request.GET)
+        if form.is_valid():
+            return HttpResponseRedirect(form.save())
+    raise Http404
+
+
 @login_required
 @render_with('timepiece/time-sheet/dashboard.html')
 def view_entries(request):
@@ -74,7 +84,7 @@ def view_entries(request):
         'project__name', 'project__pk'
     ).annotate(sum=Sum('hours')).order_by('project__name')
     schedule = timepiece.PersonSchedule.objects.filter(
-                                    contact__in=request.user.contacts.all())
+                                    contact=request.user)
     context = {
         'this_weeks_entries': entries.order_by('-start_time'),
         'assignments': assignments,
@@ -342,7 +352,8 @@ def get_entries(period, window_id=None, project=None, user=None):
 
 @permission_required('timepiece.view_project_time_sheet')
 @render_with('timepiece/time-sheet/projects/view.html')
-def project_time_sheet(request, project, window_id=None):
+def project_time_sheet(request, project_id, window_id=None):
+    project = get_object_or_404(timepiece_forms.Project, pk=project_id)
     window, entries, total = get_entries(
         project.billing_period,
         window_id=window_id,
@@ -369,7 +380,8 @@ def project_time_sheet(request, project, window_id=None):
 
 
 @permission_required('timepiece.export_project_time_sheet')
-def export_project_time_sheet(request, project, window_id=None):
+def export_project_time_sheet(request, project_id, window_id=None):
+    project = get_object_or_404(timepiece_forms.Project, pk=project_id)
     window, entries, total = get_entries(
         project.billing_period,
         window_id=window_id,
@@ -523,7 +535,6 @@ def list_projects(request):
         )
         if projects.count() == 1:
             url_kwargs = {
-                'business_id': projects[0].business.id,
                 'project_id': projects[0].id,
             }
             return HttpResponseRedirect(
@@ -542,7 +553,8 @@ def list_projects(request):
 @permission_required('timepiece.view_project')
 @transaction.commit_on_success
 @render_with('timepiece/project/view.html')
-def view_project(request, project):
+def view_project(request, project_id):
+    project = get_object_or_404(timepiece_forms.Project, pk=project_id)
     add_contact_form = timepiece_forms.AddContactToProjectForm()
     context = {
         'project': project,
@@ -565,7 +577,8 @@ def view_project(request, project):
 @csrf_exempt
 @permission_required('timepiece.change_project')
 @transaction.commit_on_success
-def add_contact_to_project(request, project):
+def add_contact_to_project(request, project_id):
+    project = get_object_or_404(timepiece_forms.Project, pk=project_id)
     if request.POST:
         form = timepiece_forms.AddContactToProjectForm(request.POST)
         if form.is_valid():
@@ -583,7 +596,8 @@ def add_contact_to_project(request, project):
 @csrf_exempt
 @permission_required('timepiece.change_project')
 @transaction.commit_on_success
-def remove_contact_from_project(request, project, contact_id):        
+def remove_contact_from_project(request, project_id, contact_id):        
+    project = get_object_or_404(timepiece_forms.Project, pk=project_id)
     try:
         rel = timepiece.ProjectRelationship.objects.get(
             contact=contact_id,
@@ -602,7 +616,8 @@ def remove_contact_from_project(request, project, contact_id):
 @permission_required('timepiece.change_project')
 @transaction.commit_on_success
 @render_with('timepiece/project/relationship.html')
-def edit_project_relationship(request, project, user_id):
+def edit_project_relationship(request, project_id, user_id):
+    project = get_object_or_404(timepiece_forms.Project, pk=project_id)
     try:
         rel = project.project_relationships.get(contact__pk=user_id)
     except timepiece.ProjectRelationship.DoesNotExist:
@@ -634,7 +649,8 @@ def edit_project_relationship(request, project, user_id):
 @permission_required('timepiece.add_project')
 @permission_required('timepiece.change_project')
 @render_with('timepiece/project/create_edit.html')
-def create_edit_project(request, project=None):
+def create_edit_project(request, project_id=None):
+    project = get_object_or_404(timepiece_forms.Project, pk=project_id)
     if project:
         billing_period = project.billing_period
     else:

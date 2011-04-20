@@ -10,27 +10,15 @@ from django.contrib.contenttypes.models import ContentType
 from django.db.models import Q
 
 from timepiece import models as timepiece
-from crm import models as crm
 
 class TimepieceDataTestCase(TestCase):
-    """
-    Between these comments are functions from the CRM testcase.  These are included
-    till businesses and types are migrated
-    """
     def create_business(self, data={}):
         name = self.random_string(30, extra_chars=' ')
         defaults = {
-            'type': 'business',
             'name': name,
-            'sort_name': name,
-            'slug': slugify(name),
         }
         defaults.update(data)
-        return crm.Contact.objects.create(**defaults)
-    
-    """
-    end crm functions
-    """
+        return timepiece.Business.objects.create(**defaults)
     
     def random_string(self, length=255, extra_chars=''):
         chars = string.letters + extra_chars
@@ -182,11 +170,8 @@ class TimepieceDataTestCase(TestCase):
             code="WRK",
             name="Work",
         )
-        self.business = crm.Contact.objects.create(
+        self.business = timepiece.Business.objects.create(
             name='Example Business',
-            slug='example-business',
-            sort_name='example-business',
-            type='business',
             description='',
         )
         status = timepiece.Attribute.objects.create(

@@ -5,6 +5,7 @@ from django.db.models import Q
 from django.conf import settings
 
 from django.contrib.auth import models as auth_models
+from django.core.urlresolvers import reverse
 
 from timepiece.models import Project, Entry
 from timepiece.fields import PendulumDateTimeField
@@ -12,10 +13,37 @@ from timepiece.widgets import PendulumDateTimeWidget, SecondsToHoursWidget
 from datetime import datetime, timedelta
 
 from timepiece import models as timepiece
-from crm import models as crm
+
 from ajax_select.fields import AutoCompleteSelectMultipleField, \
                                AutoCompleteSelectField, \
                                AutoCompleteSelectWidget
+                               
+
+class CharAutoCompleteSelectWidget(AutoCompleteSelectWidget):
+    def value_from_datadict(self, data, files, name):
+        return data.get(name, None)
+
+
+class QuickSearchForm(forms.Form):
+    quick_search = AutoCompleteSelectField(
+        'quick_search',
+        widget=CharAutoCompleteSelectWidget('quick_search'),
+    )
+    
+    def clean_quick_search(self):
+        item = self.cleaned_data['quick_search']
+        if isinstance(item, timepiece.Project):
+            return reverse('view_project', kwargs={
+                'project_id': item.id,
+            })
+        elif isinstance(item, timepiece.Business,):
+            return reverse('view_business', kwargs={
+                'business': item.id,
+            })
+        raise forms.ValidationError('Must be a Contact or Project')
+    
+    def save(self):
+        return self.cleaned_data['quick_search']
 
 
 class SearchForm(forms.Form):

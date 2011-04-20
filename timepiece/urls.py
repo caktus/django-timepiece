@@ -12,7 +12,8 @@ urlpatterns = patterns('',
     url(r'^update/(?P<entry_id>\d+)/$', views.create_edit_entry, name='timepiece-update'),
     url(r'^delete/(?P<entry_id>\d+)/$', views.delete_entry, name='timepiece-delete'),
     url(r'^summary/', views.summary, name='timepiece-summary'),
-
+    url(r'^search/$', views.quick_search, name='quick_search'),
+    
     url(r'^business/list/$', views.list_businesses, name='list_businesses'),
     url(
         r'^business/create/$',
