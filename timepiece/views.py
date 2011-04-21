@@ -543,7 +543,7 @@ def list_people(request):
                 reverse('view_person', kwargs=url_kwargs)
             )
     else:
-        people = auth_models.User.objects.all()
+        people = auth_models.User.objects.all().order_by('last_name')
 
     context = {
         'form': form,
