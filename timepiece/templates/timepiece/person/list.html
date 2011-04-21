@@ -25,12 +25,16 @@
 {% paginate %}
 <table class='projects'>
 	<tr>
-		<th>Name</th>
+		<th>Username</th>
+		<th>First Name</th>
+		<th>Second Name</th>
 		<th>Email</th>
 	</tr>
 	{% for person in people %}
 	<tr>
-		<td><a href='{% url view_person person.pk %}'>{{ person.first_name }} {{ person.last_name }}</a></td>
+		<td><a href='{% url view_person person.pk %}'>{{ person.username }}</a></td>
+		<td>{{ person.first_name }}</td>
+		<td>{{ person.last_name }}</td>
 		<td>{{ person.email }}</td>
 	</tr>
 	{% endfor %}

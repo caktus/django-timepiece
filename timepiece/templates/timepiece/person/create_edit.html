@@ -1,14 +1,14 @@
 {% extends "base.html" %}
-{% block title %}{% if not project %}Create Project{% else %}Edit {{ project }}{% endif %}{% endblock %}
+{% block title %}{% if not person %}Create Person{% else %}Edit {{ person }}{% endif %}{% endblock %}
 
 {% block content %}
 
-<h2>{% if not project %}Create Business{% else %}Edit {{ business.name }}{% endif %}</h2>
+<h2>{% if not person %}Create Person{% else %}Edit {{ person.name }}{% endif %}</h2>
 
-<form id="create-edit-business" action="" method="post" accept-charset="utf-8">
+<form id="create-edit-person" action="" method="post" accept-charset="utf-8">
     {% csrf_token %}
     <table class='vertical'>
-    {{ business_form }}
+    {{ person_form }}
     <tr><td><input type="submit" value="Save"/></td></tr>
     </table>
 </form>

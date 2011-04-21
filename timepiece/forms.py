@@ -5,6 +5,7 @@ from django.db.models import Q
 from django.conf import settings
 
 from django.contrib.auth import models as auth_models
+from django.contrib.auth import forms as auth_forms
 from django.core.urlresolvers import reverse
 
 from timepiece.models import Project, Entry
@@ -18,6 +19,17 @@ from ajax_select.fields import AutoCompleteSelectMultipleField, \
                                AutoCompleteSelectField, \
                                AutoCompleteSelectWidget
                                
+class CreatePersonForm(auth_forms.UserCreationForm):
+    class Meta:
+        model = auth_models.User
+        fields = ("username", "first_name", "last_name", "email", "is_active", "is_staff")
+
+
+class EditPersonForm(auth_forms.UserChangeForm):
+    class Meta:
+        model = auth_models.User
+        fields = ("username", "first_name", "last_name", "email", "is_active", "is_staff")
+                        
 
 class CharAutoCompleteSelectWidget(AutoCompleteSelectWidget):
     def value_from_datadict(self, data, files, name):
@@ -39,6 +51,10 @@ class QuickSearchForm(forms.Form):
         elif isinstance(item, timepiece.Business,):
             return reverse('view_business', kwargs={
                 'business': item.id,
+            })
+        elif isinstance(item, auth_models.User,):
+            return reverse('view_person', kwargs={
+                'person_id': item.id,
             })
         raise forms.ValidationError('Must be a Contact or Project')
     

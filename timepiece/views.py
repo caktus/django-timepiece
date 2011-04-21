@@ -473,7 +473,7 @@ def list_businesses(request):
         )
         if businesses.count() == 1:
             url_kwargs = {
-                'business_id': business[0].pk,
+                'business': businesses[0].pk,
             }
             return HttpResponseRedirect(
                 reverse('view_business', kwargs=url_kwargs)
@@ -532,11 +532,12 @@ def list_people(request):
         search = form.cleaned_data['search']
         people = auth_models.User.objects.filter(
             Q(first_name__icontains=search) |
-            Q(last_name__icontains=search)
+            Q(last_name__icontains=search) |
+            Q(email__icontains=search)
         )
         if people.count() == 1:
             url_kwargs = {
-                'person_id': persons[0].id,
+                'person_id': people[0].id,
             }
             return HttpResponseRedirect(
                 reverse('view_person', kwargs=url_kwargs)
@@ -582,20 +583,26 @@ def create_edit_person(request, person_id=None):
     else:
         person = None
     if request.POST:
-        person_form = timepiece_forms.PersonForm(
-            request.POST,
-            instance=person,
-        )
+        if person:
+            person_form = timepiece_forms.EditPersonForm(
+                request.POST,
+                instance=person,
+            )
+        else:
+            person_form = timepiece_forms.CreatePersonForm(request.POST,)
         if person_form.is_valid():
             person  = person_form.save()
             return HttpResponseRedirect(
                 reverse('view_person', args=(person.id,))
             )
     else:
-        person_form = timepiece_forms.ProjectForm(
-            instance=person,
-        )
-        
+        if person:
+            person_form = timepiece_forms.EditPersonForm(
+                instance=person,
+            )
+        else:
+            person_form = timepiece_forms.CreatePersonForm()
+
     context = {
         'person': person,
         'person_form': person_form,
@@ -730,11 +737,12 @@ def edit_project_relationship(request, project_id, user_id):
 @permission_required('timepiece.change_project')
 @render_with('timepiece/project/create_edit.html')
 def create_edit_project(request, project_id=None):
-    project = get_object_or_404(timepiece.Project, pk=project_id)
-    if project:
+    if project_id:
+        project = get_object_or_404(timepiece.Project, pk=project_id)
         billing_period = project.billing_period
     else:
         billing_period = None
+        project = None
     if request.POST:
         project_form = timepiece_forms.ProjectForm(
             request.POST,

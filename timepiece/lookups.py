@@ -47,7 +47,6 @@ class QuickLookup(object):
         return a query set (or a fake one).  you also have access to request.user if needed 
         """
         results = []
-        """
         contacts = auth_models.User.objects.filter(
             Q(first_name__icontains=q) | 
             Q(last_name__icontains=q) |
@@ -56,9 +55,8 @@ class QuickLookup(object):
         for contact in contacts:
             name = '%s %s' % (contact.first_name, contact.last_name)
             results.append(
-                SearchResult(contact.pk, 'contact', name)
+                SearchResult(contact.pk, 'individual', name)
             )
-        """
         for project in timepiece.Project.objects.filter(
                 name__icontains=q,
             ).select_related():
@@ -80,6 +78,7 @@ class QuickLookup(object):
 
     def format_result(self, item):
         """ a more verbose display, used in the search results display.  may contain html and multi-lines """
+        print item.type
         return u"<span class='%s'>%s</span>" % (item.type, item.name)
 
     def get_objects(self, ids):
@@ -93,4 +92,7 @@ class QuickLookup(object):
                 results.append(timepiece.Project.objects.get(pk=pk))
             elif type == 'business':
                 results.append(timepiece.Business.objects.get(pk=pk))
+            elif type == 'individual':
+                results.append(auth_models.User.objects.get(pk=pk))
+
         return results

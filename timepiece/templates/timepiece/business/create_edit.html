@@ -1,9 +1,9 @@
 {% extends "base.html" %}
-{% block title %}{% if not project %}Create Project{% else %}Edit {{ project }}{% endif %}{% endblock %}
+{% block title %}{% if not business %}Create Business{% else %}Edit {{ business }}{% endif %}{% endblock %}
 
 {% block content %}
 
-<h2>{% if not project %}Create Business{% else %}Edit {{ business.name }}{% endif %}</h2>
+<h2>{% if not business %}Create Business{% else %}Edit {{ business.name }}{% endif %}</h2>
 
 <form id="create-edit-business" action="" method="post" accept-charset="utf-8">
     {% csrf_token %}
