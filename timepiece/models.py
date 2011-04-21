@@ -67,7 +67,9 @@ class Business(models.Model):
     def __unicode__(self):
         return self.name
 
-
+    class Meta:
+        ordering = ('name',)    
+    
 class Project(models.Model):
     name = models.CharField(max_length = 255)
     trac_environment = models.CharField(max_length=255, blank=True, null=True)
