@@ -1,0 +1,16 @@
+{% extends "base.html" %}
+{% block title %}{% if not person %}Create Person{% else %}Edit {{ person }}{% endif %}{% endblock %}
+
+{% block content %}
+
+<h2>{% if not person %}Create Person{% else %}Edit {{ person.name }}{% endif %}</h2>
+
+<form id="create-edit-person" action="" method="post" accept-charset="utf-8">
+    {% csrf_token %}
+    <table class='vertical'>
+    {{ person_form }}
+    <tr><td><input type="submit" value="Save"/></td></tr>
+    </table>
+</form>
+
+{% endblock %}

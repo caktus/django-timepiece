@@ -9,8 +9,8 @@
 {% if perms.timepiece.change_project %}
 	<li><a href='{% url edit_project project_id=project.id %}'>Edit project</a></li>
 {% endif %}
-{% if perms.crm.view_businesses %}
-    <li><a href='{% url view_business business_id=project.business.id %}'>Return to {{ project.business.name }}</a></li>
+{% if perms.timepiece.view_businesses %}
+    <li><a href='{% url view_business business=project.business.id %}'>Return to {{ project.business.name }}</a></li>
 {% endif %}
 {% if repeat_period and perms.timepiece.view_project_time_sheet %}
     <li><a href='{% url project_time_sheet project.id %}'>Project Time Sheet</a></li>

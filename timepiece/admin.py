@@ -14,6 +14,11 @@ class RelationshipTypeAdmin(admin.ModelAdmin):
 admin.site.register(timepiece.RelationshipType, RelationshipTypeAdmin)
 
 
+class BusinessAdmin(admin.ModelAdmin):
+    pass
+admin.site.register(timepiece.Business, BusinessAdmin)
+
+
 class EntryAdmin(admin.ModelAdmin):
     model = timepiece.Entry
     list_display = ('user',

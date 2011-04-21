@@ -5,6 +5,8 @@ from django.db.models import Q
 from django.conf import settings
 
 from django.contrib.auth import models as auth_models
+from django.contrib.auth import forms as auth_forms
+from django.core.urlresolvers import reverse
 
 from timepiece.models import Project, Entry
 from timepiece.fields import PendulumDateTimeField
@@ -12,10 +14,52 @@ from timepiece.widgets import PendulumDateTimeWidget, SecondsToHoursWidget
 from datetime import datetime, timedelta
 
 from timepiece import models as timepiece
-from crm import models as crm
+
 from ajax_select.fields import AutoCompleteSelectMultipleField, \
                                AutoCompleteSelectField, \
                                AutoCompleteSelectWidget
+                               
+class CreatePersonForm(auth_forms.UserCreationForm):
+    class Meta:
+        model = auth_models.User
+        fields = ("username", "first_name", "last_name", "email", "is_active", "is_staff")
+
+
+class EditPersonForm(auth_forms.UserChangeForm):
+    class Meta:
+        model = auth_models.User
+        fields = ("username", "first_name", "last_name", "email", "is_active", "is_staff")
+                        
+
+class CharAutoCompleteSelectWidget(AutoCompleteSelectWidget):
+    def value_from_datadict(self, data, files, name):
+        return data.get(name, None)
+
+
+class QuickSearchForm(forms.Form):
+    quick_search = AutoCompleteSelectField(
+        'quick_search',
+        widget=CharAutoCompleteSelectWidget('quick_search'),
+    )
+    
+    def clean_quick_search(self):
+        item = self.cleaned_data['quick_search']
+        if isinstance(item, timepiece.Project):
+            return reverse('view_project', kwargs={
+                'project_id': item.id,
+            })
+        elif isinstance(item, timepiece.Business,):
+            return reverse('view_business', kwargs={
+                'business': item.id,
+            })
+        elif isinstance(item, auth_models.User,):
+            return reverse('view_person', kwargs={
+                'person_id': item.id,
+            })
+        raise forms.ValidationError('Must be a Contact or Project')
+    
+    def save(self):
+        return self.cleaned_data['quick_search']
 
 
 class SearchForm(forms.Form):
@@ -195,8 +239,12 @@ class ProjectionForm(DateForm):
         contacts = kwargs.pop('contacts')
         super(ProjectionForm, self).__init__(*args, **kwargs)
         self.fields['contact'].queryset = contacts
-    
 
+
+class BusinessForm(forms.ModelForm):
+    class Meta:
+        model = timepiece.Business
+        fields = ('name', 'email', 'description', 'notes',)
 
 class ProjectForm(forms.ModelForm):
     class Meta:
@@ -213,10 +261,6 @@ class ProjectForm(forms.ModelForm):
 
     def __init__(self, *args, **kwargs):
         super(ProjectForm, self).__init__(*args, **kwargs)
-        self.fields['business'].queryset = crm.Contact.objects.filter(
-            type='business',
-            business_types__name='client',
-        )
 
     def save(self):
         instance = super(ProjectForm, self).save(commit=False)

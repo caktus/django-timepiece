@@ -28,3 +28,71 @@ class UserLookup(object):
             this is for displaying the currently selected items (in the case of a ManyToMany field)
         """
         return auth_models.User.objects.filter(pk__in=ids)
+
+
+class SearchResult(object):
+    """
+    Fake search result for concatenating search queries.
+    """
+    def __init__(self, pk, type, name):
+        self.pk = "%s-%d" % (type, pk)
+        self.type = type
+        self.name = name
+        
+
+class QuickLookup(object):
+
+    def get_query(self,q,request):
+        """ 
+        return a query set (or a fake one).  you also have access to request.user if needed 
+        """
+        results = []
+        contacts = auth_models.User.objects.filter(
+            Q(first_name__icontains=q) | 
+            Q(last_name__icontains=q) |
+            Q(email__icontains=q)
+        ).select_related().order_by('last_name')[:10]
+        for contact in contacts:
+            name = '%s %s' % (contact.first_name, contact.last_name)
+            results.append(
+                SearchResult(contact.pk, 'individual', name)
+            )
+        for project in timepiece.Project.objects.filter(
+                name__icontains=q,
+            ).select_related():
+            results.append(
+                SearchResult(project.pk, 'project', project.name)
+            )
+        for business in timepiece.Business.objects.filter(
+                name__icontains=q,
+            ).select_related():
+            results.append(
+                SearchResult(business.pk, 'business', business.name)
+            )
+        results.sort(lambda a,b: cmp(a.name, b.name))
+        return results
+        
+    def format_item(self, item):
+        """ simple display of an object when it is displayed in the list of selected objects """
+        return item.name
+
+    def format_result(self, item):
+        """ a more verbose display, used in the search results display.  may contain html and multi-lines """
+        print item.type
+        return u"<span class='%s'>%s</span>" % (item.type, item.name)
+
+    def get_objects(self, ids):
+        """ given a list of ids, return the objects ordered as you would like them on the admin page.
+            this is for displaying the currently selected items (in the case of a ManyToMany field)
+        """
+        results = []
+        for id in ids:
+            type, pk = id.split('-')
+            if type == 'project':
+                results.append(timepiece.Project.objects.get(pk=pk))
+            elif type == 'business':
+                results.append(timepiece.Business.objects.get(pk=pk))
+            elif type == 'individual':
+                results.append(auth_models.User.objects.get(pk=pk))
+
+        return results
