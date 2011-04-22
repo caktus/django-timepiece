@@ -54,7 +54,6 @@ class EditPersonForm(auth_forms.UserChangeForm):
         instance = super(EditPersonForm, self).save(*args, **kwargs)
         password_one = self.cleaned_data.get('password_one', None)
         if password_one:
-            print 'tests'
             instance.set_password(password_one)
         if commit:
             instance.save()
