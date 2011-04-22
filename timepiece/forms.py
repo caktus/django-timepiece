@@ -23,7 +23,9 @@ from ajax_select.fields import AutoCompleteSelectMultipleField, \
 class CreatePersonForm(auth_forms.UserCreationForm):
     class Meta:
         model = auth_models.User
-        fields = ("username", "first_name", "last_name", "email", "is_active", "is_staff")
+        fields = (
+            "username", "first_name", "last_name", 
+            "email", "is_active", "is_staff")
 
 
 class EditPersonForm(auth_forms.UserChangeForm):
