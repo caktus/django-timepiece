@@ -7,6 +7,7 @@ from django.conf import settings
 from django.contrib.auth import models as auth_models
 from django.contrib.auth import forms as auth_forms
 from django.core.urlresolvers import reverse
+from django.utils.translation import ugettext_lazy as _
 
 from timepiece.models import Project, Entry
 from timepiece.fields import PendulumDateTimeField
@@ -26,11 +27,37 @@ class CreatePersonForm(auth_forms.UserCreationForm):
 
 
 class EditPersonForm(auth_forms.UserChangeForm):
+    password_one = forms.CharField(required=False, max_length=36, label=_(u'Password'),
+                                widget=forms.PasswordInput(render_value=False))
+    password_two = forms.CharField(required=False, max_length=36, label=_(u'Repeat Password'),
+                                widget=forms.PasswordInput(render_value=False))
     class Meta:
         model = auth_models.User
-        fields = ("username", "first_name", "last_name", "email", "is_active", "is_staff")
+        fields = (
+            "username", "first_name", "last_name", 
+            "email", "is_active", "is_staff"
+        )
                         
-
+    def clean(self):
+        super(EditPersonForm, self).clean()
+        password_one = self.cleaned_data.get('password_one', None)
+        password_two = self.cleaned_data.get('password_two', None)
+        if password_one and password_one != password_two:
+            raise forms.ValidationError(_('Passwords Must Match.'))
+        return self.cleaned_data
+    
+    def save(self, *args, **kwargs):
+        commit = kwargs.get('commit', True)
+        kwargs['commit'] = False
+        instance = super(EditPersonForm, self).save(*args, **kwargs)
+        password_one = self.cleaned_data.get('password_one', None)
+        if password_one:
+            print 'tests'
+            instance.set_password(password_one)
+        if commit:
+            instance.save()
+        return instance
+        
 class CharAutoCompleteSelectWidget(AutoCompleteSelectWidget):
     def value_from_datadict(self, data, files, name):
         return data.get(name, None)
