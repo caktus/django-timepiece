@@ -42,7 +42,7 @@
                     ["{{ assignment.assignment.contract.project }}", {{ assignment.hours }}],
                 {% endfor %}
             ];
-            if ($('my-weekly-hours-chart')) {
+            if (week_totals.length > 0) {
                 plot1 = $.jqplot('my-weekly-hours-chart', [week_totals], {
                     title: '',
                     seriesDefaults:{renderer:$.jqplot.PieRenderer, rendererOptions:{sliceMargin:2}},
