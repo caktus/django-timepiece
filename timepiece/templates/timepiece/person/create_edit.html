@@ -9,7 +9,11 @@
     {% csrf_token %}
     <table class='vertical'>
     {{ person_form }}
-    <tr><td><input type="submit" value="Save"/></td></tr>
+    <td>&nbsp;</td>
+    <td class="submit">
+    <input type="button" onclick="history.go(-1)" value="Cancel">
+    <input type="submit" value="Save →" name="submit">
+    </td>
     </table>
 </form>
 
