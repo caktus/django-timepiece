@@ -4,13 +4,13 @@
 {% block title %}Timepiece Entries{% endblock %}
 
 {% block css %}{{ block.super }}
-    <link charset='UTF-8' rel="stylesheet" type="text/css" media="screen" href="{{ MEDIA_URL }}css/bar-graph.css" />
-    <link charset='UTF-8' rel="stylesheet" type="text/css" media="screen" href="{{ MEDIA_URL }}jqplot/jquery.jqplot.min.css" />
+    <link charset='UTF-8' rel="stylesheet" type="text/css" media="screen" href="{{ STATIC_URL }}css/bar-graph.css" />
+    <link charset='UTF-8' rel="stylesheet" type="text/css" media="screen" href="{{ STATIC_URL }}jqplot/jquery.jqplot.min.css" />
 {% endblock %}
 
 {% block javascript %}{{ block.super }}
-    <script type="text/javascript" src="{{ MEDIA_URL }}jqplot/jquery.jqplot.min.js"></script>
-    <script type="text/javascript" src="{{ MEDIA_URL }}jqplot/plugins/jqplot.pieRenderer.min.js"></script>
+    <script type="text/javascript" src="{{ STATIC_URL }}jqplot/jquery.jqplot.min.js"></script>
+    <script type="text/javascript" src="{{ STATIC_URL }}jqplot/plugins/jqplot.pieRenderer.min.js"></script>
     <script type="text/javascript">
         ;(function($) {
             $.fn.textfill = function(options) {

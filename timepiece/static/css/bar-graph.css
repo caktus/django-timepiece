@@ -1,0 +1,46 @@
+div.bar-graph {
+    width: 100%;
+    display: inline-block;
+    text-align: center;
+    font-weight: 200;
+    color: #FFF;
+    margin: 0px;
+    padding-top: 0.5em;
+    padding-bottom: 0.3em;
+}
+div.error {
+    color: #993333;
+}
+div.bar-graph div {
+    float: left;
+    height: 20px;
+    padding: 0.5em 0px;
+}
+div.bar-graph div span{
+    vertical-align: middle;
+}
+div.bar-graph-start {
+    background-color: #339900;
+}
+div.bar-graph-end {
+    background-color: #CCC;
+    color: #000;
+}
+div.bar-graph-over {
+    background-color: #993333;
+}
+table.my-week {
+    float: left;
+    padding: 0px;
+    margin: 0px;
+}
+table.my-week tr td {
+    height: 48px;
+    padding: 0px;
+    margin: 0px;
+    padding: 0px 0.5em;
+}
+div#my-weekly-hours-chart {
+    float: left;
+}
+
