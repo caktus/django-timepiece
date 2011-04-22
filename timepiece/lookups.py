@@ -78,7 +78,6 @@ class QuickLookup(object):
 
     def format_result(self, item):
         """ a more verbose display, used in the search results display.  may contain html and multi-lines """
-        print item.type
         return u"<span class='%s'>%s</span>" % (item.type, item.name)
 
     def get_objects(self, ids):
