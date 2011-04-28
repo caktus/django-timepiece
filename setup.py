@@ -13,5 +13,5 @@ setup(
     url='',
     license='LICENSE.txt',
     description='django-timepiece',
-    long_description=open('README').read(),
+    long_description=open('README.rst').read(),
 )

@@ -1,0 +1,44 @@
+{% extends "base.html" %}
+
+{% block title %}People{% endblock %}
+
+{% block content %}
+<h2>People</h2>
+<ul class='header-actions-left'>
+{% if perms.auth.add_user %}
+	<li><a href='{% url create_person %}'>Create Person</a></li>
+{% endif %}
+</ul>
+
+<form class='search' accept-charset='UTF-8' method='get' action=''>
+	<ul>
+		{{ form.as_ul }}
+		<li class='form-buttons'>
+			<input class='large-button' type='submit' name='submit' value='Search &rarr;' />
+		</li>
+	</ul>
+</form>
+
+{% load pagination_tags %}
+{% autopaginate people %}
+
+{% paginate %}
+<table class='projects'>
+	<tr>
+		<th>Username</th>
+		<th>First Name</th>
+		<th>Last Name</th>
+		<th>Email</th>
+	</tr>
+	{% for person in people %}
+	<tr>
+		<td><a href='{% url view_person person.pk %}'>{{ person.username }}</a></td>
+		<td>{{ person.first_name }}</td>
+		<td>{{ person.last_name }}</td>
+		<td>{{ person.email }}</td>
+	</tr>
+	{% endfor %}
+</table>
+{% paginate %}
+
+{% endblock %}

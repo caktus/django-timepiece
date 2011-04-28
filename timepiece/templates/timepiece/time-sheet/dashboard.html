@@ -1,7 +1,58 @@
 {% extends 'timepiece/time-sheet/base.html' %}
-{% load timepiece_tags %}
+{% load timepiece_tags math_tags %}
 
 {% block title %}Timepiece Entries{% endblock %}
+
+{% block css %}{{ block.super }}
+    <link charset='UTF-8' rel="stylesheet" type="text/css" media="screen" href="{{ STATIC_URL }}css/bar-graph.css" />
+    <link charset='UTF-8' rel="stylesheet" type="text/css" media="screen" href="{{ STATIC_URL }}jqplot/jquery.jqplot.min.css" />
+{% endblock %}
+
+{% block javascript %}{{ block.super }}
+    <script type="text/javascript" src="{{ STATIC_URL }}jqplot/jquery.jqplot.min.js"></script>
+    <script type="text/javascript" src="{{ STATIC_URL }}jqplot/plugins/jqplot.pieRenderer.min.js"></script>
+    <script type="text/javascript">
+        ;(function($) {
+            $.fn.textfill = function(options) {
+                $(this).each(function() {
+                    var fontSize = options.maxFontPixels;
+                    var ourText = $('span:visible:first', this);
+                    var maxHeight = $(this).height();
+                    var maxWidth = $(this).width();
+                    var textHeight;
+                    var textWidth;
+                    do {
+                        ourText.css('font-size', fontSize);
+                        textHeight = ourText.height();
+                        textWidth = ourText.width();
+                        fontSize = fontSize - 1;
+                    } while ((textHeight > maxHeight || textWidth > maxWidth) && fontSize > 3);
+                    return this;
+                });
+            }
+        })(jQuery);
+
+        jQuery(document).ready(function($) {
+            $('div.bar-graph-start').textfill({ maxFontPixels: 13 });
+            $('div.bar-graph-end').textfill({ maxFontPixels: 13 });
+            $('div.bar-graph-over').textfill({ maxFontPixels: 13 });
+            $.jqplot.config.enablePlugins = true; // on the page before plot creation.
+            week_totals = [
+                {% for assignment in allocations %}
+                    ["{{ assignment.assignment.contract.project }}", {{ assignment.hours }}],
+                {% endfor %}
+            ];
+            if (week_totals.length > 0) {
+                plot1 = $.jqplot('my-weekly-hours-chart', [week_totals], {
+                    title: '',
+                    seriesDefaults:{renderer:$.jqplot.PieRenderer, rendererOptions:{sliceMargin:2}},
+                    legend:{show:true},
+                    grid:{shadow:false, borderWidth:0.0}
+                });
+            }
+        });
+    </script>
+{% endblock %}
 
 {% block content %}
 <h2>My Time Sheet</h2>
@@ -9,100 +60,108 @@
     <li><a href="{% url timepiece-clock-in %}">Clock In</a></li>
     <li><a href="{% url timepiece-add %}">Add Entry</a></li>
 </ul>
+<h3>My Projects</h3>
+<table class='my-projects'>
+	<tr><th>Project</th><th>My Hours</th><th>Hours Worked</th><th>Hours Remaining</th><th>Due Date</th><th></th></tr>
+	{% regroup assignments by contract.project.type as type_list %}
+	{% for type in type_list %}
+	<tr><th colspan='6'>{{ type.grouper }}s</th></tr>
+	{% for assignment in type.list %}
+	<tr>
+	   <td><a href="{% url timepiece-clock-in %}?project={{ assignment.contract.project.pk }}">{{ assignment.contract.project }}</a></td>
+       <td class='hours'>{{ assignment.num_hours }}</td>
+       <td class='hours'>{{ assignment.hours_worked|floatformat:2 }} ({% widthratio assignment.hours_worked assignment.num_hours 100 %}%)</td>
+       <td class='hours'>{{ assignment.hours_remaining|floatformat:2 }}</td>
+       <td>{{ assignment.end_date }}</td>
+       <td>
+			<ul class='actions'>
+			    <li><a href="{% url timepiece-add %}?project={{ assignment.contract.project.pk }}">Add Entry</a></li>
+			</ul>
+       </td>
+	</tr>
+	{% endfor %}
+	{% endfor %}
+</table>
 
 <h3>
     {% with entries.count as num_entries %}
-        Past 2 Weeks ({{ num_entries }} entr{{ num_entries|pluralize:"y,ies" }})
+        My Active Entries
     {% endwith %}
 </h3>
 
-<table>
-    <tr>
-        <th>Date</th>
-        <th>Project</th>
-        <th>Clock In</th>
-        <th>Clock Out</th>
-        <th>Breaks</th>
-        <th>Hours</th>
-        <th>Activity</th>
-        <th>Location</th>
-    </tr>
-    {% for entry in entries %}
-    <tr{% if entry.comments %} title='{{ entry.comments }}'{% endif %} class='{% if entry.is_paused %}paused{% endif %}{% if not entry.end_time %} active{% endif %} {% if entry.is_overlapping%}overlapping{% endif %}'>
-        <td>{{ entry.start_time|date:"m/d/Y (D)" }}</td>
-        <td><a href='{% url view_project business_id=entry.project.business.id,project_id=entry.project.id %}'>{{ entry.project }}</a></td>
-        <td>{{ entry.start_time|date:"P" }}</td>
-        <td>
-            {% if entry.end_time %}
-                {{ entry.end_time|date:"P" }}
-            {% else %}
-                <a href="{% url timepiece-clock-out entry.id %}">Clock Out</a>
-            {% endif %}
-        </td>
-        <td>
-            {{ entry.seconds_paused|seconds_to_hours|floatformat:2 }}
-            {% if not entry.end_time %}
-                {% if entry.is_paused %}
-                    <a href="{% url timepiece-toggle-paused entry.id %}">(Resume)</a>
+{% with my_active_entries as entries %}
+{% include 'timepiece/time-sheet/_entry_list.html' %}
+{% endwith %}
+
+{% if allocations or project_entries %}
+  <h3>My Work This Week</h3>
+  <table class='my-week'>
+	  <tr><th>Project</th><th>Hours Worked</th></tr>
+      {% for assignment in allocations %}
+          <tr>
+          <td>
+            <a href="{% url timepiece-clock-in %}?project={{ assignment.assignment.contract.project.pk }}">
+                {{ assignment.assignment.contract.project }}
+            </a>
+          </td>
+          <td class='hours'>
+              {% bar_graph assignment.assignment.contract.project assignment.hours_worked assignment.hours %}
+          </td>
+	    </tr>
+      {% endfor %}
+	  {% for entry in project_entries %}
+        <tr>
+            <td>
+                <a href="{% url timepiece-clock-in %}?project={{ entry.project__pk }}">
+                    {{ entry.project__name }}
+                </a>
+            </td>
+            <td>{{ entry.sum }}</td>
+        </tr>
+      {% endfor %}
+      {% ifnotequal schedule.count 0 %}
+      {% for row in activity_entries %}
+        <tr>
+            <th>Total {% if row.billable %}billable{% else %}non-billable{% endif %} time:</th>
+            <td>
+                {% if row.billable %}
+                    {% bar_graph '' row.sum schedule.0.hours_per_week %}
                 {% else %}
-                    <a href="{% url timepiece-toggle-paused entry.id %}">(Pause)</a>
+                    {{ row.sum }}
                 {% endif %}
-            {% endif %}
-        </td>
-        <td>{{ entry.hours }}</td>
-        <td>{{ entry.activity }}</td>
-        <td>{{ entry.location }}</td>
-        <td>
-            <ul class='actions'>
-                <li><a href="{% url timepiece-update entry.id %}">Change</a></li>
-                <li><a href="{% url timepiece-delete entry.id %}">Remove</a></li>
-            </ul>
-        </td>
-    </tr>
-    {% empty %}
-    <tr>
-        <td colspan='7'>You have no time logged for this period.</td>
-    </tr>
-    {% endfor %}
-</table>
-
-{% if project_entries %}
-    <table id='project-summary' class='timepiece-summary'>
-        <caption>Project Summary</caption>
-    {% for entry in project_entries %}
-        <tr>
-            <td>{{ entry.project__name }} </td>
-            <td>{{ entry.sum }}</td>
+            </td>
         </tr>
-    {% endfor %}        
-    </table>
+      {% endfor %}
+      {% endifnotequal %}
+  </table>
+{% endif %}
+{% if allocations %}
+  <div style="height: 320px; width: 320px;" id="my-weekly-hours-chart"></div>
 {% endif %}
 
-{% if activity_entries %}
-    <table id='activity-summary' class='timepiece-summary'>
-        <caption>Activity Summary</caption>
-    {% for entry in activity_entries %}
-        <tr>
-            <td>{{ entry.activity__name }} </td>
-            <td>{{ entry.sum }}</td>
-        </tr>
-    {% endfor %}        
-    </table>
-{% endif %}
-
-{% if logged_in_entries %}
     <table id='active-entries' class='timepiece-summary'>
-        <caption>Active Entries</caption>
-    {% for entry in logged_in_entries %}
+{% if others_active_entries %}
+        <caption>Others are working on:</caption>
+    {% for entry in others_active_entries %}
         <tr class='{% if entry.is_paused %}paused{% endif %}'>
             <td>{{ entry.user.first_name }} {{ entry.user.last_name }}</td>
             <td>{{ entry.project.name }}</td>
             <td>{{ entry.start_time|date:"P" }}</td>
         </tr>
-    {% endfor %}        
+    {% endfor %}
     </table>
 {% endif %}
 
 <br style='clear: both;' />
+
+<h3>
+    {% with this_weeks_entries.count as num_entries %}
+        Time Detail This Week ({{ num_entries }} entr{{ num_entries|pluralize:"y,ies" }})
+    {% endwith %}
+</h3>
+
+{% with this_weeks_entries as entries %}
+{% include 'timepiece/time-sheet/_entry_list.html' %}
+{% endwith %}
 
 {% endblock %}

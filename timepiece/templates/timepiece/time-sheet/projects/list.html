@@ -19,7 +19,7 @@
     <tr>
         <td><a href='{% url project_time_sheet sheet.project__id %}'>{{ sheet.project__name }}</a></td>
         <td>{{ sheet.project__business__name }}</td>
-        <td>{{ sheet.hours }}</td>
+        <td>{{ sheet.total_hours }}</td>
     </tr>
     {% empty %}
     <tr>

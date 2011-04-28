@@ -1,15 +1,39 @@
+import datetime
+import random
+import string
+
 from django.test import TestCase
 from django.core.urlresolvers import reverse
+from django.template.defaultfilters import slugify
 from django.contrib.auth.models import User, Permission
 from django.contrib.contenttypes.models import ContentType
 from django.db.models import Q
 
 from timepiece import models as timepiece
-from crm import models as crm
-from crm.tests import CrmDataTestCase
 
-
-class TimepieceDataTestCase(CrmDataTestCase):
+class TimepieceDataTestCase(TestCase):
+    def create_business(self, data={}):
+        name = self.random_string(30, extra_chars=' ')
+        defaults = {
+            'name': name,
+        }
+        defaults.update(data)
+        return timepiece.Business.objects.create(**defaults)
+    
+    def random_string(self, length=255, extra_chars=''):
+        chars = string.letters + extra_chars
+        return ''.join([random.choice(chars) for i in range(length)])
+    
+    def create_person(self, data={}):
+        first_name = self.random_string(20)
+        last_name = self.random_string(20)
+        defaults = {
+            'first_name': first_name,
+            'last_name': last_name,
+        }
+        defaults.update(data)
+        return User.objects.create(**defaults)
+    
     def create_project_type(self, data={}):
         defaults = {
             'label': self.random_string(30, extra_chars=' '),
@@ -80,6 +104,57 @@ class TimepieceDataTestCase(CrmDataTestCase):
             defaults['location'] = self.create_location()
         return timepiece.Entry.objects.create(**defaults)
     
+    def create_repeat_period(self, data={}):
+        defaults = {
+            'count': 1,
+            'interval': 'month',
+            'active': True,
+        }
+        defaults.update(data)
+        return timepiece.RepeatPeriod.objects.create(**defaults)
+
+    def create_person_repeat_period(self, data={}):
+        defaults = {}
+        defaults.update(data)
+        if 'contact' not in defaults:
+            defaults['contact'] = self.create_person()
+        if 'repeat_period' not in defaults:
+            defaults['repeat_period'] = self.create_repeat_period()
+        return timepiece.PersonRepeatPeriod.objects.create(**defaults)
+    
+    def create_project_contract(self, data={}):
+        defaults = {
+            'start_date': datetime.date.today(),
+            'end_date': datetime.date.today() + datetime.timedelta(weeks=2),
+            'num_hours': random.randint(10, 400),
+            'status': 'current',
+        }
+        defaults.update(data)
+        if 'project' not in defaults:
+            defaults['project'] = self.create_project()
+        return timepiece.ProjectContract.objects.create(**defaults)
+    
+    def create_contract_assignment(self, data={}):
+        defaults = {}
+        defaults.update(data)
+        if 'contact' not in defaults:
+            contact = self.create_person()
+        if 'contract' not in defaults:
+            defaults['contract'] = self.create_project()
+        defaults['start_date'] = defaults['contract'].start_date
+        defaults['end_date'] = defaults['contract'].end_date
+        return timepiece.ContractAssignment.objects.create(**defaults)
+    
+    def create_person_schedule(self, data={}):
+        defaults = {
+            'hours_per_week': 40,
+            'end_date': datetime.date.today() + datetime.timedelta(weeks=2),
+        }
+        defaults.update(data)
+        if 'contact' not in defaults:
+            defaults['contact'] = self.create_person()
+        return timepiece.PersonSchedule.objects.create(**defaults)
+
     def setUp(self):
         self.user = User.objects.create_user('user', 'u@abc.com', 'abc')
         self.user2 = User.objects.create_user('user2', 'u2@abc.com', 'abc')
@@ -89,23 +164,14 @@ class TimepieceDataTestCase(CrmDataTestCase):
         )
         self.user.user_permissions = permissions
         self.user2.user_permissions = permissions
-        self.contact = crm.Contact.objects.create(
-            first_name='John',
-            last_name='Doe',
-            sort_name='doe-john',
-            type='individual',
-            user=self.user,
-            description='',
-        )
+
+        self.contact = self.user
         self.activity = timepiece.Activity.objects.create(
             code="WRK",
             name="Work",
         )
-        self.business = crm.Contact.objects.create(
+        self.business = timepiece.Business.objects.create(
             name='Example Business',
-            slug='example-business',
-            sort_name='example-business',
-            type='business',
             description='',
         )
         status = timepiece.Attribute.objects.create(

@@ -1,0 +1,30 @@
+/**
+ * jqPlot
+ * Pure JavaScript plotting plugin using jQuery
+ *
+ * Version: 1.0.0a_r701
+ *
+ * Copyright (c) 2009-2011 Chris Leonello
+ * jqPlot is currently available for use in all personal or commercial projects 
+ * under both the MIT (http://www.opensource.org/licenses/mit-license.php) and GPL 
+ * version 2.0 (http://www.gnu.org/licenses/gpl-2.0.html) licenses. This means that you can 
+ * choose the license that best suits your project and use it accordingly. 
+ *
+ * Although not required, the author would appreciate an email letting him 
+ * know of any substantial use of jqPlot.  You can reach the author at: 
+ * chris at jqplot dot com or see http://www.jqplot.com/info.php .
+ *
+ * If you are feeling kind and generous, consider supporting the project by
+ * making a donation at: http://www.jqplot.com/donate.php .
+ *
+ * sprintf functions contained in jqplot.sprintf.js by Ash Searle:
+ *
+ *     version 2007.04.27
+ *     author Ash Searle
+ *     http://hexmen.com/blog/2007/03/printf-sprintf/
+ *     http://hexmen.com/js/sprintf.js
+ *     The author (Ash Searle) has placed this code in the public domain:
+ *     "This code is unrestricted: you are free to use it however you like."
+ * 
+ */
+(function(a){a.jqplot.DateAxisRenderer=function(){a.jqplot.LinearAxisRenderer.call(this);this.date=new a.jsDate()};a.jqplot.DateAxisRenderer.prototype=new a.jqplot.LinearAxisRenderer();a.jqplot.DateAxisRenderer.prototype.constructor=a.jqplot.DateAxisRenderer;a.jqplot.DateTickFormatter=function(b,c){if(!b){b="%Y/%m/%d"}return a.jsDate.strftime(c,b)};a.jqplot.DateAxisRenderer.prototype.init=function(q){this.tickOptions.formatter=a.jqplot.DateTickFormatter;this.daTickInterval=null;this._daTickInterval=null;a.extend(true,this,q);var o=this._dataBounds,f,g,p,h,l,k,b;for(var e=0;e<this._series.length;e++){f={intervals:[],frequencies:{},sortedIntervals:[],min:null,max:null,mean:null};g=0;p=this._series[e];h=p.data;l=p._plotData;k=p._stackData;b=0;for(var c=0;c<h.length;c++){if(this.name=="xaxis"||this.name=="x2axis"){h[c][0]=new a.jsDate(h[c][0]).getTime();l[c][0]=new a.jsDate(h[c][0]).getTime();k[c][0]=new a.jsDate(h[c][0]).getTime();if((h[c][0]!=null&&h[c][0]<o.min)||o.min==null){o.min=h[c][0]}if((h[c][0]!=null&&h[c][0]>o.max)||o.max==null){o.max=h[c][0]}if(c>0){b=Math.abs(h[c][0]-h[c-1][0]);f.intervals.push(b);if(f.frequencies.hasOwnProperty(b)){f.frequencies[b]+=1}else{f.frequencies[b]=1}}g+=b}else{h[c][1]=new a.jsDate(h[c][1]).getTime();l[c][1]=new a.jsDate(h[c][1]).getTime();k[c][1]=new a.jsDate(h[c][1]).getTime();if((h[c][1]!=null&&h[c][1]<o.min)||o.min==null){o.min=h[c][1]}if((h[c][1]!=null&&h[c][1]>o.max)||o.max==null){o.max=h[c][1]}if(c>0){b=Math.abs(h[c][1]-h[c-1][1]);f.intervals.push(b);if(f.frequencies.hasOwnProperty(b)){f.frequencies[b]+=1}else{f.frequencies[b]=1}}}g+=b}var m=tempn=0;for(n in f.frequencies){f.sortedIntervals.push({interval:n,frequency:f.frequencies[n]})}f.sortedIntervals.sort(function(i,d){return d.frequency-i.frequency});f.min=a.jqplot.arrayMin(f.intervals);f.max=a.jqplot.arrayMax(f.intervals);f.mean=g/h.length;this._intervalStats.push(f);f=g=p=h=l=k=null}o=null};a.jqplot.DateAxisRenderer.prototype.reset=function(){this.min=this._min;this.max=this._max;this.tickInterval=this._tickInterval;this.numberTicks=this._numberTicks;this.daTickInterval=this._daTickInterval};a.jqplot.DateAxisRenderer.prototype.createTicks=function(){var y=this._ticks;var v=this.ticks;var z=this.name;var x=this._dataBounds;var e=this._intervalStats;var q,w;var o,r;var d,c;var b,s;if(v.length){for(s=0;s<v.length;s++){var g=v[s];var j=new this.tickRenderer(this.tickOptions);if(g.constructor==Array){j.value=new a.jsDate(g[0]).getTime();j.label=g[1];if(!this.showTicks){j.showLabel=false;j.showMark=false}else{if(!this.showTickMarks){j.showMark=false}}j.setTick(j.value,this.name);this._ticks.push(j)}else{j.value=new a.jsDate(g).getTime();if(!this.showTicks){j.showLabel=false;j.showMark=false}else{if(!this.showTickMarks){j.showMark=false}}j.setTick(j.value,this.name);this._ticks.push(j)}}this.numberTicks=v.length;this.min=this._ticks[0].value;this.max=this._ticks[this.numberTicks-1].value;this.daTickInterval=[(this.max-this.min)/(this.numberTicks-1)/1000,"seconds"]}else{if(z=="xaxis"||z=="x2axis"){q=this._plotDimensions.width}else{q=this._plotDimensions.height}if(this.min!=null&&this.max!=null&&this.numberTicks!=null){this.tickInterval=null}if(this.tickInterval!=null){if(Number(this.tickInterval)){this.daTickInterval=[Number(this.tickInterval),"seconds"]}else{if(typeof this.tickInterval=="string"){var l=this.tickInterval.split(" ");if(l.length==1){this.daTickInterval=[1,l[0]]}else{if(l.length==2){this.daTickInterval=[l[0],l[1]]}}}}}o=((this.min!=null)?new a.jsDate(this.min).getTime():x.min);r=((this.max!=null)?new a.jsDate(this.max).getTime():x.max);if(o==r){var h=24*60*60*500;o-=h;r+=h}var k=r-o;var u=2+parseInt(Math.max(0,q-100)/100,10);var m,p;m=(this.min!=null)?new a.jsDate(this.min).getTime():o-k/2*(this.padMin-1);p=(this.max!=null)?new a.jsDate(this.max).getTime():r+k/2*(this.padMax-1);this.min=m;this.max=p;k=this.max-this.min;if(this.numberTicks==null){if(this.daTickInterval!=null){var f=new a.jsDate(this.max).diff(this.min,this.daTickInterval[1],true);this.numberTicks=Math.ceil(f/this.daTickInterval[0])+1;this.max=new a.jsDate(this.min).add((this.numberTicks-1)*this.daTickInterval[0],this.daTickInterval[1]).getTime()}else{if(q>200){this.numberTicks=parseInt(3+(q-200)/100,10)}else{this.numberTicks=2}}}if(this.daTickInterval==null){this.daTickInterval=[k/(this.numberTicks-1)/1000,"seconds"]}for(var s=0;s<this.numberTicks;s++){var o=new a.jsDate(this.min);b=o.add(s*this.daTickInterval[0],this.daTickInterval[1]).getTime();var j=new this.tickRenderer(this.tickOptions);if(!this.showTicks){j.showLabel=false;j.showMark=false}else{if(!this.showTickMarks){j.showMark=false}}j.setTick(b,this.name);this._ticks.push(j)}}if(this._daTickInterval==null){this._daTickInterval=this.daTickInterval}}})(jQuery);

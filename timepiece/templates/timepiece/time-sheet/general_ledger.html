@@ -19,8 +19,8 @@
 <table>
     {% for entry in project_totals %}
     <tr>
-        <td><a href='{% url view_project entry.project__business__id,entry.project__id %}'>{{ entry.project__name }}</a></td>
-        <td>{{ entry.hours|floatformat:2 }}</td>
+        <td><a href='{% url view_project entry.project__id %}'>{{ entry.project__name }}</a></td>
+        <td>{{ entry.total_hours|floatformat:2 }}</td>
     </tr>
     {% endfor %}
     <tr>
@@ -39,7 +39,7 @@
     {% for entry in people_totals %}
     <tr>
         <td>{{ entry.user__first_name}} {{ entry.user__last_name }}</td>
-        <td>{{ entry.hours|floatformat:2 }}</td>
+        <td>{{ entry.total_hours|floatformat:2 }}</td>
     </tr>
     {% endfor %}
     <tr>

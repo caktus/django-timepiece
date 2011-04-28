@@ -1,0 +1,74 @@
+{% extends 'timepiece/time-sheet/base.html' %}
+{% load timepiece_tags %}
+
+{% block title %}Projection Summary{% endblock %}
+
+{% block content %}
+<h2>Projection Summary</h2>
+
+{% date_filters "months" %}
+
+<form method="get" action="" id="date-filter" accept-charset="utf-8">
+    <ul id='ledger-date-fieldlist'>
+        {{ form.as_ul }}
+        <li>
+            <input type='submit' name='submit' value='Update' id='id_date_form_submit_btn'/>
+        </li>
+        <li>
+            <input type='button' name='clear' value='Clear' id='id_date_form_clear_btn'/>
+        </li>
+    </ul>
+</form>
+
+<table id='projection'>
+    {% for contract in contracts %}
+        <tr>
+            <th colspan="{{ weeks.count }}" class='contract'>{{ contract }} (Due {{ contract.end_date|date:"n/j" }}) - Remaining: {{ contract.hours_remaining }}, Allocated: {{ contract.hours_allocated }}</th>
+        </tr>
+        <tr>
+            <th>&nbsp;</th>
+            <th class='assigned'>Assigned</th>
+            <th class='worked'>Worked</th>
+            {% for week in weeks %}
+                <th>{{ week|date:"n/j" }}</th>
+            {% endfor %}
+            <th>Allocated</th>
+        </tr>
+        {% for assignment in contract.assignments.all %}
+        <tr>
+            <td>{{ assignment.contact }}</td>
+            <td class='assigned'>{{ assignment.num_hours }}{% if assignment.min_hours_per_week %}({{ assignment.min_hours_per_week }}){% endif %}</td>
+            <td class='worked'>{{ assignment.hours_worked }}</td>
+            {% for week in weeks %}
+              <td>{% hours_for_assignment assignment week %}</td>
+            {% endfor %}
+            <td class='allocated'>{% total_allocated assignment %}</td>
+        </tr>
+        {% endfor %}
+    {% endfor %}
+    <tr>
+        <th>&nbsp;</th>
+        <th colspan="{{ weeks.count }}">&nbsp;</th>
+    </tr>
+    <tr>
+        <th>&nbsp;</th>
+          <th>&nbsp;</th>
+          <th>&nbsp;</th>
+        {% for week in weeks %}
+            <th>{{ week|date:"m/j" }}</th>
+        {% endfor %}
+    <tr/>
+    {% for contact in contacts %}
+        <tr>
+            <th>{{ contact }}</th>
+            <th>&nbsp;</th>
+            <th>&nbsp;</th>
+            {% for week in weeks %}
+              <td>{% hours_for_week contact week %}</td>
+            {% endfor %}
+         </tr>
+    {% endfor %}
+</table>
+
+{% endblock %}
+
