@@ -39,7 +39,7 @@
     {% for period in periods %}
         {% with period.user as user %}
             <tr{% if user.overtime > 40.00 %} class='overtime'{% endif %}>
-                <th>{{ user }}</th>
+                <th>{{ user.first_name }} {{ user.last_name }}</th>
                 {% for week in all_weeks %}
                     <td>{% weekly_hours_worked period week %}</td>
                 {% endfor %}
@@ -62,7 +62,7 @@
     {% for period in periods %}
         {% with period.user as user %}
             <tr>
-                <th>{{ user }}</th>
+                <th>{{ user.first_name }} {{ user.last_name }}</th>
                 {% if user.summary %}
                     <td>{{ user.summary.vacation|default_if_none:'' }}</td>
                     <td>{{ user.summary.sick|default_if_none:'' }}</td>
