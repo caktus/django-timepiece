@@ -22,7 +22,7 @@ class EditableTest(TimepieceDataTestCase):
             active = True,
         )
         self.timesheet = timepiece.PersonRepeatPeriod.objects.create(
-            contact = self.contact,
+            user = self.user,
             repeat_period = self.day_period
         )
         self.billing_window = timepiece.BillingWindow.objects.create(
@@ -61,7 +61,7 @@ class MyLedgerTest(TimepieceDataTestCase):
             active = True,
         )
         self.timesheet = timepiece.PersonRepeatPeriod.objects.create(
-            contact = self.contact,
+            user = self.user,
             repeat_period = self.month_period
         )
         self.billing_window = timepiece.BillingWindow.objects.create(
@@ -70,7 +70,7 @@ class MyLedgerTest(TimepieceDataTestCase):
             end_date = datetime.datetime.now() + self.month_period.delta()
         )
         self.url = reverse('view_person_time_sheet', kwargs={
-            'person_id': self.contact.pk,
+            'person_id': self.user.pk,
             'period_id': self.timesheet.repeat_period.pk,
         })
 

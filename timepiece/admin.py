@@ -88,7 +88,7 @@ admin.site.register(timepiece.Project, ProjectAdmin)
 
 
 class ContractAssignmentAdmin(admin.ModelAdmin):
-    list_display = ('id', 'contract', 'contact', 'start_date',
+    list_display = ('id', 'contract', 'user', 'start_date',
                     'end_date', 'min_hours_per_week', 'num_hours', 'worked',
                     'remaining')
     list_filter = ('contract',)
@@ -118,7 +118,7 @@ admin.site.register(timepiece.ContractAssignment, ContractAssignmentAdmin)
 
 
 class PersonScheduleAdmin(admin.ModelAdmin):
-    list_display = ('contact', 'hours_per_week', 'end_date', 'total_available',
+    list_display = ('user', 'hours_per_week', 'end_date', 'total_available',
                     'scheduled', 'unscheduled')
 
     def total_available(self, obj):

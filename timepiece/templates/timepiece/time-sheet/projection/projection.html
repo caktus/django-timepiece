@@ -36,7 +36,7 @@
         </tr>
         {% for assignment in contract.assignments.all %}
         <tr>
-            <td>{{ assignment.contact }}</td>
+            <td>{{ assignment.user }}</td>
             <td class='assigned'>{{ assignment.num_hours }}{% if assignment.min_hours_per_week %}({{ assignment.min_hours_per_week }}){% endif %}</td>
             <td class='worked'>{{ assignment.hours_worked }}</td>
             {% for week in weeks %}
@@ -58,13 +58,13 @@
             <th>{{ week|date:"m/j" }}</th>
         {% endfor %}
     <tr/>
-    {% for contact in contacts %}
+    {% for user in users %}
         <tr>
-            <th>{{ contact }}</th>
+            <th>{{ user }}</th>
             <th>&nbsp;</th>
             <th>&nbsp;</th>
             {% for week in weeks %}
-              <td>{% hours_for_week contact week %}</td>
+              <td>{% hours_for_week user week %}</td>
             {% endfor %}
          </tr>
     {% endfor %}

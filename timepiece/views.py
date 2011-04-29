@@ -53,8 +53,8 @@ def view_entries(request):
     )
     today = datetime.date.today()
     assignments = timepiece.ContractAssignment.objects.filter(
-        contact=request.user,
-        contact__project_relationships__project=F('contract__project'),
+        user=request.user,
+        user__project_relationships__project=F('contract__project'),
         end_date__gte=today,
         contract__status='current',
     ).order_by('contract__project__type', 'end_date')
@@ -85,7 +85,7 @@ def view_entries(request):
         'project__name', 'project__pk'
     ).annotate(sum=Sum('hours')).order_by('project__name')
     schedule = timepiece.PersonSchedule.objects.filter(
-                                    contact=request.user)
+                                    user=request.user)
     context = {
         'this_weeks_entries': entries.order_by('-start_time'),
         'assignments': assignments,
@@ -421,21 +421,21 @@ def export_project_time_sheet(request, project_id, window_id=None):
 def view_person_time_sheet(request, person_id, period_id, window_id=None):
     try:
         time_sheet = timepiece.PersonRepeatPeriod.objects.select_related(
-            'contact',
+            'user',
             'repeat_period',
         ).get(
-            contact__id=person_id,
+            user__id=person_id,
             repeat_period__id=period_id,
         )
     except timepiece.PersonRepeatPeriod.DoesNotExist:
         raise Http404
     if not (request.user.has_perm('timepiece.view_person_time_sheet') or \
-    time_sheet.contact.pk == request.user.pk):
+    time_sheet.user.pk == request.user.pk):
         return HttpResponseForbidden('Forbidden')
     window, entries, total = get_entries(
         time_sheet.repeat_period,
         window_id=window_id,
-        user=time_sheet.contact,
+        user=time_sheet.user,
     )
     project_entries = entries.order_by().values(
         'project__name',
@@ -450,7 +450,7 @@ def view_person_time_sheet(request, person_id, period_id, window_id=None):
 
     context = {
         'is_editable': is_editable,
-        'person': time_sheet.contact,
+        'person': time_sheet.user,
         'period': window.period,
         'window': window,
         'entries': entries,
@@ -557,7 +557,7 @@ def list_people(request):
 @render_with('timepiece/person/view.html')
 def view_person(request, person_id):
     person = get_object_or_404(auth_models.User, pk=person_id)
-    add_contact_form = timepiece_forms.AddContactToProjectForm()
+    add_user_form = timepiece_forms.AddUserToProjectForm()
     context = {
         'person': person,
     }
@@ -642,10 +642,10 @@ def list_projects(request):
 @render_with('timepiece/project/view.html')
 def view_project(request, project_id):
     project = get_object_or_404(timepiece.Project, pk=project_id)
-    add_contact_form = timepiece_forms.AddContactToProjectForm()
+    add_user_form = timepiece_forms.AddUserToProjectForm()
     context = {
         'project': project,
-        'add_contact_form': add_contact_form,
+        'add_user_form': add_user_form,
         'repeat_period': project.billing_period,
     }
     try:
@@ -664,14 +664,14 @@ def view_project(request, project_id):
 @csrf_exempt
 @permission_required('timepiece.change_project')
 @transaction.commit_on_success
-def add_contact_to_project(request, project_id):
+def add_user_to_project(request, project_id):
     project = get_object_or_404(timepiece.Project, pk=project_id)
     if request.POST:
-        form = timepiece_forms.AddContactToProjectForm(request.POST)
+        form = timepiece_forms.AddUserToProjectForm(request.POST)
         if form.is_valid():
-            contact = form.save()
+            user = form.save()
             timepiece.ProjectRelationship.objects.get_or_create(
-                contact=contact,
+                user=user,
                 project=project,
             )
     if 'next' in request.REQUEST and request.REQUEST['next']:
@@ -683,11 +683,11 @@ def add_contact_to_project(request, project_id):
 @csrf_exempt
 @permission_required('timepiece.change_project')
 @transaction.commit_on_success
-def remove_contact_from_project(request, project_id, contact_id):        
+def remove_user_from_project(request, project_id, user_id):        
     project = get_object_or_404(timepiece.Project, pk=project_id)
     try:
         rel = timepiece.ProjectRelationship.objects.get(
-            contact=contact_id,
+            user=user_id,
             project=project,
         )
     except timepiece.ProjectRelationship.DoesNotExist:
@@ -706,12 +706,12 @@ def remove_contact_from_project(request, project_id, contact_id):
 def edit_project_relationship(request, project_id, user_id):
     project = get_object_or_404(timepiece.Project, pk=project_id)
     try:
-        rel = project.project_relationships.get(contact__pk=user_id)
+        rel = project.project_relationships.get(user__pk=user_id)
     except timepiece.ProjectRelationship.DoesNotExist:
         raise Http404
     rel = timepiece.ProjectRelationship.objects.get(
         project=project,
-        contact=rel.contact,
+        user=rel.user,
     )
     if request.POST:
         relationship_form = timepiece_forms.ProjectRelationshipForm(
@@ -726,7 +726,7 @@ def edit_project_relationship(request, project_id, user_id):
             timepiece_forms.ProjectRelationshipForm(instance=rel)
 
     context = {
-        'user': rel.contact,
+        'user': rel.user,
         'project': project,
         'relationship_form': relationship_form,
     }
@@ -806,12 +806,12 @@ def tracked_projects(request):
 @render_with('timepiece/time-sheet/people/list.html')
 def tracked_people(request):
     time_sheets = timepiece.PersonRepeatPeriod.objects.select_related(
-        'contact',
+        'user',
         'repeat_period',
     ).filter(
         repeat_period__active=True,
     ).order_by(
-        'contact__last_name',
+        'user__last_name',
     )
     return {
         'time_sheets': time_sheets,
@@ -825,12 +825,12 @@ def create_edit_person_time_sheet(request, person_id=None):
     if person_id:
         try:
             time_sheet = timepiece.PersonRepeatPeriod.objects.select_related(
-                'contact',
+                'user',
                 'repeat_period',
-            ).get(contact__id=person_id)
+            ).get(user__id=person_id)
         except timepiece.PersonRepeatPeriod.DoesNotExist:
             raise Http404
-        person = time_sheet.contact
+        person = time_sheet.user
         repeat_period = time_sheet.repeat_period
         latest_window = repeat_period.billing_windows.latest()
     else:
@@ -899,13 +899,13 @@ def payroll_summary(request):
 
     all_weeks = utils.generate_weeks(start=from_date, end=to_date)
     rps = timepiece.PersonRepeatPeriod.objects.select_related(
-        'contact',
+        'user',
         'repeat_period',
     ).filter(
         repeat_period__active=True,
-    ).order_by('contact__last_name')
+    ).order_by('user__last_name')
     for rp in rps:
-        rp.contact.summary = rp.summary(from_date, to_date)
+        rp.user.summary = rp.summary(from_date, to_date)
 
     cals = []
     date = from_date - relativedelta(months=1)
@@ -932,7 +932,7 @@ def projection_summary(request):
     contracts = timepiece.ProjectContract.objects.exclude(status='complete')
     contracts = contracts.exclude(project__in=settings.TIMEPIECE_PROJECTS.values())
     contracts = contracts.order_by('end_date')
-    contacts = User.objects.filter(assignments__contract__in=contracts).distinct()
+    users = User.objects.filter(assignments__contract__in=contracts).distinct()
 
     if request.GET:
         form = timepiece_forms.DateForm(request.GET)
@@ -950,6 +950,6 @@ def projection_summary(request):
         'form': form,
         'weeks': weeks,
         'contracts': contracts,
-        'contacts': contacts,
+        'users': users,
     }
 

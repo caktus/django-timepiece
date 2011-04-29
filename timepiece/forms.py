@@ -84,7 +84,7 @@ class QuickSearchForm(forms.Form):
             return reverse('view_person', kwargs={
                 'person_id': item.id,
             })
-        raise forms.ValidationError('Must be a Contact or Project')
+        raise forms.ValidationError('Must be a User or Project')
     
     def save(self):
         return self.cleaned_data['quick_search']
@@ -94,11 +94,11 @@ class SearchForm(forms.Form):
     search = forms.CharField(required=False)
 
 
-class AddContactToProjectForm(forms.Form):
-    contact = AutoCompleteSelectField('user')
+class AddUserToProjectForm(forms.Form):
+    user = AutoCompleteSelectField('user')
     
     def save(self):
-        return self.cleaned_data['contact']
+        return self.cleaned_data['user']
 
 
 class ClockInForm(forms.ModelForm):
@@ -129,7 +129,7 @@ class ClockInForm(forms.ModelForm):
             date_format='%m/%d/%Y',
         )
         self.fields['project'].queryset = timepiece.Project.objects.filter(
-            contacts=self.user,
+            users=self.user,
         ).filter(
             Q(status__enable_timetracking=True) |
             Q(type__enable_timetracking=True)
@@ -196,7 +196,7 @@ class AddUpdateEntryForm(forms.ModelForm):
         self.user = kwargs.pop('user')
         super(AddUpdateEntryForm, self).__init__(*args, **kwargs)
         self.fields['project'].queryset = timepiece.Project.objects.filter(
-            contacts=self.user,
+            users=self.user,
         )
         if not self.instance.end_time:
             del self.fields['end_time']
@@ -261,12 +261,12 @@ class DateForm(forms.Form):
 
 
 class ProjectionForm(DateForm):
-    contact = forms.ModelChoiceField(queryset=None)
+    user = forms.ModelChoiceField(queryset=None)
     
     def __init__(self, *args, **kwargs):
-        contacts = kwargs.pop('contacts')
+        users = kwargs.pop('users')
         super(ProjectionForm, self).__init__(*args, **kwargs)
-        self.fields['contact'].queryset = contacts
+        self.fields['user'].queryset = users
 
 
 class BusinessForm(forms.ModelForm):
@@ -373,8 +373,8 @@ class RepeatPeriodForm(forms.ModelForm):
 class PersonTimeSheet(forms.ModelForm):
     class Meta:
         model = timepiece.PersonRepeatPeriod
-        fields = ('contact',)
+        fields = ('user',)
     
     def __init__(self, *args, **kwargs):
         super(PersonTimeSheet, self).__init__(*args, **kwargs)
-        self.fields['contact'].queryset = auth_models.User.objects.all().order_by('last_name')
+        self.fields['user'].queryset = auth_models.User.objects.all().order_by('last_name')

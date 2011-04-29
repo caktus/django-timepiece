@@ -37,9 +37,9 @@
         <th>Overtime</th>
     </tr>
     {% for period in periods %}
-        {% with period.contact as contact %}
-            <tr{% if contact.overtime > 40.00 %} class='overtime'{% endif %}>
-                <th>{{ contact }}</th>
+        {% with period.user as user %}
+            <tr{% if user.overtime > 40.00 %} class='overtime'{% endif %}>
+                <th>{{ user }}</th>
                 {% for week in all_weeks %}
                     <td>{% weekly_hours_worked period week %}</td>
                 {% endfor %}
@@ -60,14 +60,14 @@
         <th>Total</th>
     </tr>
     {% for period in periods %}
-        {% with period.contact as contact %}
+        {% with period.user as user %}
             <tr>
-                <th>{{ contact }}</th>
-                {% if contact.summary %}
-                    <td>{{ contact.summary.vacation|default_if_none:'' }}</td>
-                    <td>{{ contact.summary.sick|default_if_none:'' }}</td>
-                    <td>{{ contact.summary.billable|default_if_none:'' }}{% if contact.summary.non_billable %} ({{ contact.summary.non_billable }}){% endif %}</td>
-                    <td>{{ contact.summary.total|default_if_none:'' }}</td>
+                <th>{{ user }}</th>
+                {% if user.summary %}
+                    <td>{{ user.summary.vacation|default_if_none:'' }}</td>
+                    <td>{{ user.summary.sick|default_if_none:'' }}</td>
+                    <td>{{ user.summary.billable|default_if_none:'' }}{% if user.summary.non_billable %} ({{ user.summary.non_billable }}){% endif %}</td>
+                    <td>{{ user.summary.total|default_if_none:'' }}</td>
                 {% else %}
                     <td colspan='5'>&nbsp;</td>
                 {% endif %}

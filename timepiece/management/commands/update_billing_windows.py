@@ -39,7 +39,7 @@ class Command(NoArgsCommand):
         prps = timepiece.PersonRepeatPeriod.objects.filter(
             repeat_period__active=True,
         ).select_related(    
-            'contact',
+            'user',
             'repeat_period',
         )
         for prp in prps:
@@ -48,11 +48,11 @@ class Command(NoArgsCommand):
             for window in windows:
                 url = reverse(
                     'view_person_time_sheet',
-                    args=(prp.contact.id, prp.repeat_period.id, window.id),
+                    args=(prp.user.id, prp.repeat_period.id, window.id),
                 )
                 urls.append(settings.APP_URL_BASE+url)
             if urls:
-                output.append((prp.contact.get_full_name(), urls))
+                output.append((prp.user.get_full_name(), urls))
         
         if output:
             print '\nPerson Time Sheets:\n'

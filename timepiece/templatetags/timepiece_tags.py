@@ -45,7 +45,7 @@ def bar_graph(context, name, worked, total, width=None, suffix=None):
                         takes_context=True)
 def my_ledger(context):
     try:
-        period = PersonRepeatPeriod.objects.get(contact = context['request'].user)
+        period = PersonRepeatPeriod.objects.get(user = context['request'].user)
     except PersonRepeatPeriod.DoesNotExist:
         return { 'period': False }
     return { 'period': period }
@@ -129,9 +129,9 @@ def total_allocated(assignment):
 
 
 @register.simple_tag
-def hours_for_week(contact, date):
+def hours_for_week(user, date):
     end = date + relativedelta(days=5)
-    blocks = AssignmentAllocation.objects.filter(assignment__contact=contact,
+    blocks = AssignmentAllocation.objects.filter(assignment__user=user,
                                                  date__gte=date, date__lte=end)
     hours = blocks.aggregate(hours=Sum('hours'))['hours']
     if not hours:

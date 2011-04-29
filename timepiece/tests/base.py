@@ -71,8 +71,8 @@ class TimepieceDataTestCase(TestCase):
     def create_project_relationship(self, data={}):
         defaults = {}
         defaults.update(data)
-        if 'contact' not in defaults:
-            defaults['contact'] = self.create_person()
+        if 'user' not in defaults:
+            defaults['user'] = self.create_person()
         if 'project' not in defaults:
             defaults['project'] = self.create_project()
         return timepiece.ProjectRelationship.objects.create(**defaults)
@@ -116,8 +116,8 @@ class TimepieceDataTestCase(TestCase):
     def create_person_repeat_period(self, data={}):
         defaults = {}
         defaults.update(data)
-        if 'contact' not in defaults:
-            defaults['contact'] = self.create_person()
+        if 'user' not in defaults:
+            defaults['user'] = self.create_person()
         if 'repeat_period' not in defaults:
             defaults['repeat_period'] = self.create_repeat_period()
         return timepiece.PersonRepeatPeriod.objects.create(**defaults)
@@ -137,8 +137,8 @@ class TimepieceDataTestCase(TestCase):
     def create_contract_assignment(self, data={}):
         defaults = {}
         defaults.update(data)
-        if 'contact' not in defaults:
-            contact = self.create_person()
+        if 'user' not in defaults:
+            user = self.create_person()
         if 'contract' not in defaults:
             defaults['contract'] = self.create_project()
         defaults['start_date'] = defaults['contract'].start_date
@@ -151,8 +151,8 @@ class TimepieceDataTestCase(TestCase):
             'end_date': datetime.date.today() + datetime.timedelta(weeks=2),
         }
         defaults.update(data)
-        if 'contact' not in defaults:
-            defaults['contact'] = self.create_person()
+        if 'user' not in defaults:
+            defaults['user'] = self.create_person()
         return timepiece.PersonSchedule.objects.create(**defaults)
 
     def setUp(self):
@@ -165,7 +165,7 @@ class TimepieceDataTestCase(TestCase):
         self.user.user_permissions = permissions
         self.user2.user_permissions = permissions
 
-        self.contact = self.user
+        self.user = self.user
         self.activity = timepiece.Activity.objects.create(
             code="WRK",
             name="Work",
@@ -198,7 +198,7 @@ class TimepieceDataTestCase(TestCase):
             point_person=self.user2,
         )
         timepiece.ProjectRelationship.objects.create(
-            contact=self.contact,
+            user=self.user,
             project=self.project,
         )
         self.location = self.create_location()
