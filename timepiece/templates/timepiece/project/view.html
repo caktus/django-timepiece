@@ -20,25 +20,25 @@
 <div id='sidebar'>
     <h3>Contacts</h3>
     <ul class='people'>
-    {% ifnotequal project.contacts.count 0 %}
-    {% for contact in project.contacts.select_related.all %}
+    {% ifnotequal project.users.count 0 %}
+    {% for user in project.users.select_related.all %}
         <li>
-            {{ contact.get_full_name }}
+            {{ user.get_full_name }}
             {% if perms.timepiece.change_projectrelationship %}
-                <a title="Edit {{ contact.get_full_name }}'s relationship to {{ project }}" href='{% url edit_project_relationship project_id=project.id,user_id=contact.id %}?next={% url view_project project_id=project.id %}'><img alt="Edit {{ contact.get_full_name }}'s relationship to {{ project }}" src='{{ FAMFAMFAM_URL }}pencil.png' /></a>
+                <a title="Edit {{ user.get_full_name }}'s relationship to {{ project }}" href='{% url edit_project_relationship project_id=project.id,user_id=user.id %}?next={% url view_project project_id=project.id %}'><img alt="Edit {{ user.get_full_name }}'s relationship to {{ project }}" src='{{ FAMFAMFAM_URL }}pencil.png' /></a>
             {% endif %}
             {% if perms.timepiece.delete_projectrelationship %}
-                <a title='Remove {{ contact.get_full_name }}' href='{% url remove_contact_from_project project_id=project.id,contact_id=contact.id %}?next={% url view_project project_id=project.id %}'><img alt='Remove {{ contact.get_full_name }}' src='{{ FAMFAMFAM_URL }}/delete.png' /></a>
+                <a title='Remove {{ user.get_full_name }}' href='{% url remove_user_from_project project_id=project.id,user_id=user.id %}?next={% url view_project project_id=project.id %}'><img alt='Remove {{ user.get_full_name }}' src='{{ FAMFAMFAM_URL }}/delete.png' /></a>
             {% endif %}
         </li>
     {% endfor %}
     {% endifnotequal %}
     </ul>
     {% if perms.timepiece.add_projectrelationship %}
-    <form id="add-contact" action='{% url add_contact_to_project project_id=project.id %}?next={% url view_project project_id=project.id %}' method="post" accept-charset="utf-8">
+    <form id="add-user" action='{% url add_user_to_project project_id=project.id %}?next={% url view_project project_id=project.id %}' method="post" accept-charset="utf-8">
         {% csrf_token %}
         <div class="field-wrapper">
-            {{ add_contact_form }}
+            {{ add_user_form }}
             <input type="submit" name="submit" value="Add" id="submit" />
         </div>
     </form>

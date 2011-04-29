@@ -22,7 +22,7 @@ class PayrollTest(TimepieceDataTestCase):
         if not start:
             start = datetime.datetime.now()
         end = start + datetime.timedelta(hours=hours, minutes=minutes)
-        data = {'user': self.contact,
+        data = {'user': self.user,
                 'start_time': start,
                 'end_time': end,
                 'billable': billable}
@@ -34,7 +34,7 @@ class PayrollTest(TimepieceDataTestCase):
         sick = self.create_project()
         vacation = self.create_project()
         settings.TIMEPIECE_PROJECTS = {'sick': sick.pk, 'vacation': vacation.pk}
-        rp = self.create_person_repeat_period({'contact': self.contact})
+        rp = self.create_person_repeat_period({'user': self.user})
         start = datetime.date.today().replace(day=1)
         end = start + relativedelta.relativedelta(months=1)
         billable = self.log_time(delta=(3, 30))
@@ -50,7 +50,7 @@ class PayrollTest(TimepieceDataTestCase):
 
     def testWeeklyHours(self):
         """ Test basic functionality of hours worked per week """
-        rp = self.create_person_repeat_period({'contact': self.contact})
+        rp = self.create_person_repeat_period({'user': self.user})
         p1 = self.create_project()
         start = datetime.datetime(2011, 1, 3)
         self.log_time(project=p1, start=start, delta=(8, 0))
@@ -60,7 +60,7 @@ class PayrollTest(TimepieceDataTestCase):
 
     def testWeeklyHoursBounds(self):
         """ Make sure hours worked on Sunday's don't overlap weekly hours """
-        rp = self.create_person_repeat_period({'contact': self.contact})
+        rp = self.create_person_repeat_period({'user': self.user})
         p1 = self.create_project()
         start1 = datetime.datetime(2011, 1, 2)
         self.log_time(project=p1, start=start1, delta=(8, 0))
@@ -71,7 +71,7 @@ class PayrollTest(TimepieceDataTestCase):
 
     def testWeeklyOvertimeHours(self):
         """ Test weekly overtime calculation """
-        rp = self.create_person_repeat_period({'contact': self.contact})
+        rp = self.create_person_repeat_period({'user': self.user})
         p1 = self.create_project()
         start1 = datetime.datetime(2011, 1, 2)
         self.log_time(project=p1, start=start1, delta=(44, 0))
@@ -79,7 +79,7 @@ class PayrollTest(TimepieceDataTestCase):
 
     def testWeeklyNonOvertimeHours(self):
         """ Test weekly overtime calculation """
-        rp = self.create_person_repeat_period({'contact': self.contact})
+        rp = self.create_person_repeat_period({'user': self.user})
         p1 = self.create_project()
         start1 = datetime.datetime(2011, 1, 2)
         self.log_time(project=p1, start=start1, delta=(40, 0))
@@ -87,7 +87,7 @@ class PayrollTest(TimepieceDataTestCase):
 
     def testMonthlyOvertimeHours(self):
         """ Test monthly overtime calculation """
-        rp = self.create_person_repeat_period({'contact': self.contact})
+        rp = self.create_person_repeat_period({'user': self.user})
         p1 = self.create_project()
         start1 = datetime.datetime(2011, 1, 2)
         self.log_time(project=p1, start=start1, delta=(44, 0))

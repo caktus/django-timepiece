@@ -13,7 +13,7 @@ from timepiece.tests.base import TimepieceDataTestCase
 
 from dateutil import relativedelta
 
-from timepiece.projection import run_projection, contact_weekly_assignments
+from timepiece.projection import run_projection, user_weekly_assignments
 from timepiece import utils
 
 
@@ -21,7 +21,7 @@ class ProjectionTest(TimepieceDataTestCase):
 
     def setUp(self):
         person = User.objects.create_user('test', 'a@b.com', 'abc')
-        self.ps = self.create_person_schedule(data={'contact': person})
+        self.ps = self.create_person_schedule(data={'user': person})
 
     def log_time(self, assignment, delta=None, start=None):
         if delta:
@@ -34,7 +34,7 @@ class ProjectionTest(TimepieceDataTestCase):
         elif not isinstance(start, datetime.datetime):
             start = datetime.datetime.combine(start, datetime.time())
         end = start + datetime.timedelta(hours=hours, minutes=minutes)
-        data = {'user': assignment.contact,
+        data = {'user': assignment.user,
                 'start_time': start,
                 'end_time': end,
                 'project': assignment.contract.project}
@@ -144,7 +144,7 @@ class ProjectionTest(TimepieceDataTestCase):
                                            'start_date': start,
                                            'end_date': end})
         ca = self.create_contract_assignment({'contract': pc,
-                                              'contact': self.ps.contact,
+                                              'user': self.ps.user,
                                               'num_hours': hours})
         return ca
 
@@ -258,15 +258,15 @@ class ProjectionTest(TimepieceDataTestCase):
         end = start + datetime.timedelta(weeks=2) - datetime.timedelta(days=1)
         ca = self._assign(start, end, hours=20)
         person = User.objects.create_user('test2', 'a@b.com', 'abc')
-        ps = self.create_person_schedule(data={'contact': person})
+        ps = self.create_person_schedule(data={'user': person})
         run_projection()
-        assignments = timepiece.AssignmentAllocation.objects.during_this_week(self.ps.contact)
+        assignments = timepiece.AssignmentAllocation.objects.during_this_week(self.ps.user)
         self.assertEquals(assignments.count(), 1)
         assignments = timepiece.AssignmentAllocation.objects.during_this_week(person)
         self.assertEquals(assignments.count(), 0)
         ca_2 = self._assign(start, end, hours=30)
         run_projection()
-        assignments = timepiece.AssignmentAllocation.objects.during_this_week(self.ps.contact)
+        assignments = timepiece.AssignmentAllocation.objects.during_this_week(self.ps.user)
         self.assertEquals(assignments.count(), 2)
 
     def test_this_weeks_hours(self):
@@ -275,7 +275,7 @@ class ProjectionTest(TimepieceDataTestCase):
         ca = self._assign(start, end, hours=60)
         run_projection()
         self.log_time(ca, start=start, delta=(10, 0))
-        assignments = timepiece.AssignmentAllocation.objects.during_this_week(self.ps.contact)
+        assignments = timepiece.AssignmentAllocation.objects.during_this_week(self.ps.user)
         self.assertEquals(assignments.count(), 1)
         assignment = assignments[0]
         self.assertEquals(assignment.hours_worked, 10)

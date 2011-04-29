@@ -15,13 +15,13 @@ class UserLookup(object):
             Q(email__icontains=q)
         ).select_related().order_by('last_name')[:10]
         
-    def format_item(self,contact):
+    def format_item(self,user):
         """ simple display of an object when it is displayed in the list of selected objects """
-        return unicode(contact)
+        return unicode(user)
 
-    def format_result(self,contact):
+    def format_result(self,user):
         """ a more verbose display, used in the search results display.  may contain html and multi-lines """
-        return u"<span class='individual'>%s %s</span>" % (contact.first_name, contact.last_name)
+        return u"<span class='individual'>%s %s</span>" % (user.first_name, user.last_name)
 
     def get_objects(self,ids):
         """ given a list of ids, return the objects ordered as you would like them on the admin page.
@@ -47,15 +47,15 @@ class QuickLookup(object):
         return a query set (or a fake one).  you also have access to request.user if needed 
         """
         results = []
-        contacts = auth_models.User.objects.filter(
+        users = auth_models.User.objects.filter(
             Q(first_name__icontains=q) | 
             Q(last_name__icontains=q) |
             Q(email__icontains=q)
         ).select_related().order_by('last_name')[:10]
-        for contact in contacts:
-            name = '%s %s' % (contact.first_name, contact.last_name)
+        for user in users:
+            name = '%s %s' % (user.first_name, user.last_name)
             results.append(
-                SearchResult(contact.pk, 'individual', name)
+                SearchResult(user.pk, 'individual', name)
             )
         for project in timepiece.Project.objects.filter(
                 name__icontains=q,

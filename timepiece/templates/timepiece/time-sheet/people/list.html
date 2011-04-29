@@ -20,12 +20,12 @@
     </tr>
     {% for sheet in time_sheets %}
     <tr>
-        <td><a href='{% url view_person_time_sheet sheet.contact.pk,sheet.repeat_period.pk %}'>{{ sheet.contact.first_name }} {{ sheet.contact.last_name }}</a></td>
+        <td><a href='{% url view_person_time_sheet sheet.user.pk,sheet.repeat_period.pk %}'>{{ sheet.user.first_name }} {{ sheet.user.last_name }}</a></td>
         <td>{{ sheet.repeat_period.billing_windows.latest }}</td>
         {% for aggs in sheet.list_total_hours %}
             <td>{{ aggs.total }}</td>
         {% endfor %}
-        <td><a href='{% url edit_person_time_sheet sheet.contact.pk %}'>Change</a></td>
+        <td><a href='{% url edit_person_time_sheet sheet.user.pk %}'>Change</a></td>
     </tr>
     {% empty %}
     <tr>

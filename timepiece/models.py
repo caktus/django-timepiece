@@ -78,9 +78,9 @@ class Project(models.Model):
         related_name='new_business_projects',
     )
     point_person = models.ForeignKey(User, limit_choices_to={'is_staff': True})
-    contacts = models.ManyToManyField(
+    users = models.ManyToManyField(
         User,
-        related_name='contact_projects',
+        related_name='user_projects',
         through='ProjectRelationship',
     )
     type = models.ForeignKey(
@@ -138,7 +138,7 @@ class ProjectRelationship(models.Model):
         related_name='project_relationships',
         blank=True,
     )
-    contact = models.ForeignKey(
+    user = models.ForeignKey(
         User,
         related_name='project_relationships',
     )
@@ -148,12 +148,12 @@ class ProjectRelationship(models.Model):
     )
 
     class Meta:
-        unique_together = ('contact', 'project')
+        unique_together = ('user', 'project')
 
     def __unicode__(self):
         return "%s's relationship to %s" % (
             self.project.name,
-            self.contact.get_full_name(),
+            self.user.get_full_name(),
         )
 
 
@@ -333,7 +333,7 @@ class Entry(models.Model):
 
     def __billing_window(self):
         return BillingWindow.objects.get(
-            period__contacts=self.user,
+            period__users=self.user,
             date__lte = self.end_time,
             end_date__gt = self.end_time)
     billing_window = property(__billing_window)
@@ -414,7 +414,7 @@ class RepeatPeriod(models.Model):
     )
     active = models.BooleanField(default=False)
 
-    contacts = models.ManyToManyField(
+    users = models.ManyToManyField(
         User,
         blank=True,
         through='PersonRepeatPeriod',
@@ -497,7 +497,7 @@ class BillingWindow(models.Model):
     entries = property(__entries)
 
 class PersonRepeatPeriod(models.Model):
-    contact = models.ForeignKey(
+    user = models.ForeignKey(
         User,
         unique=True,
         null=True,
@@ -509,7 +509,7 @@ class PersonRepeatPeriod(models.Model):
 
     def hours_in_week(self, date):
         left, right = utils.get_week_window(date)
-        entries = Entry.worked.filter(user=self.contact)
+        entries = Entry.worked.filter(user=self.user)
         entries = entries.filter(end_time__gt=left, end_time__lt=right)
         return entries.aggregate(s=Sum('hours'))['s']
 
@@ -530,7 +530,7 @@ class PersonRepeatPeriod(models.Model):
 
     def summary(self, date, end_date):
         projects = getattr(settings, 'TIMEPIECE_PROJECTS', {})
-        user = self.contact
+        user = self.user
         entries = user.timepiece_entries.filter(end_time__gt=date,
                                                 end_time__lte=end_date)
         data = {}
@@ -552,7 +552,7 @@ class PersonRepeatPeriod(models.Model):
         bw = BillingWindow.objects.filter(period=self.repeat_period).order_by('-date')[:N]
         result = []
         for b in bw:
-            result.append(self.contact.timepiece_entries.filter(
+            result.append(self.user.timepiece_entries.filter(
                 end_time__lte = b.end_date,
                 end_time__gt = b.date
             ).aggregate(total=Sum('hours')))
@@ -626,7 +626,7 @@ logger = logging.getLogger('timepiece.ca')
 
 class ContractAssignment(models.Model):
     contract = models.ForeignKey(ProjectContract, related_name='assignments')
-    contact = models.ForeignKey(
+    user = models.ForeignKey(
         User,
         related_name='assignments',
     )
@@ -643,7 +643,7 @@ class ContractAssignment(models.Model):
 
     def _filtered_hours_worked(self, end_date):
         return Entry.objects.filter(
-            user=self.contact,
+            user=self.user,
             project=self.contract.project,
             start_time__gte=self.start_date,
             end_time__lt=end_date,
@@ -651,7 +651,7 @@ class ContractAssignment(models.Model):
 
     def filtered_hours_worked_with_in_window(self, start_date, end_date):
         return Entry.objects.filter(
-            user=self.contact,
+            user=self.user,
             project=self.contract.project,
             start_time__gte=start_date,
             end_time__lt=end_date,
@@ -730,7 +730,7 @@ class ContractAssignment(models.Model):
     def allocated_hours_for_week(self, day):
         week, next_week = utils.get_week_window(day)
         allocs = AssignmentAllocation.objects
-        allocs = allocs.filter(assignment__contact=self.contact)
+        allocs = allocs.filter(assignment__user=self.user)
         allocs = allocs.filter(date__gte=week, date__lt=next_week)
         hours = allocs.aggregate(s=Sum('hours'))['s']
         return hours or 0
@@ -740,7 +740,7 @@ class ContractAssignment(models.Model):
         allocated = self.allocated_hours_for_week(day)
         self._log('Allocated hours {0}'.format(allocated))
         try:
-            schedule = PersonSchedule.objects.filter(contact=self.contact)[0]
+            schedule = PersonSchedule.objects.filter(user=self.user)[0]
         except IndexError:
             schedule = None
         if schedule:
@@ -752,24 +752,24 @@ class ContractAssignment(models.Model):
     def remaining_contracts(self):
         assignments = ContractAssignment.objects.exclude(pk=self.pk)
         assignments = assignments.filter(end_date__gte=self.end_date,
-                                         contact=self.contact)
+                                         user=self.user)
         return assignments.order_by('-end_date')
 
     def remaining_min_hours(self):
         return self.remaining_contracts().aggregate(s=Sum('min_hours_per_week'))['s'] or 0
 
     class Meta:
-        unique_together = (('contract', 'contact'),)
+        unique_together = (('contract', 'user'),)
 
     def __unicode__(self):
-        return u'%s / %s' % (self.contact, self.contract.project)
+        return u'%s / %s' % (self.user, self.contract.project)
 
 
 class AllocationManager(models.Manager):
     def during_this_week(self, user, day=None):
         week = utils.get_week_start(day=day)
         return self.get_query_set().filter(
-            date=week, assignment__contact=user, assignment__contract__status='current'
+            date=week, assignment__user=user, assignment__contract__status='current'
             ).exclude(hours=0)
 
 
@@ -796,7 +796,7 @@ class AssignmentAllocation(models.Model):
 
 
 class PersonSchedule(models.Model):
-    contact = models.ForeignKey(
+    user = models.ForeignKey(
         User,
         unique=True,
         null=True,
@@ -807,7 +807,7 @@ class PersonSchedule(models.Model):
 
     @property
     def furthest_end_date(self):
-        assignments = self.contact.assignments.order_by('-end_date')
+        assignments = self.user.assignments.order_by('-end_date')
         assignments = assignments.exclude(contract__status='complete')
         try:
             end_date = assignments.values('end_date')[0]['end_date']
@@ -826,10 +826,10 @@ class PersonSchedule(models.Model):
         if not hasattr(self, '_hours_scheduled'):
             self._hours_scheduled = 0
             now = datetime.datetime.now()
-            for assignment in self.contact.assignments.filter(end_date__gte=now):
+            for assignment in self.user.assignments.filter(end_date__gte=now):
                 self._hours_scheduled += assignment.hours_remaining
         return self._hours_scheduled
 
     def __unicode__(self):
-        return unicode(self.contact)
+        return unicode(self.user)
 
