@@ -8,6 +8,8 @@ class Migration(DataMigration):
 
     def forwards(self, orm):
         "Write your forwards methods here."
+        null_contacts = orm.ProjectRelationship.objects.filter(contact__user__isnull=True)
+        null_contacts.delete()
         for project in orm.ProjectRelationship.objects.all():
             project.user = project.contact.user
             project.save()
