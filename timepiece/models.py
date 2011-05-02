@@ -77,6 +77,7 @@ class Project(models.Model):
         Business,
         related_name='new_business_projects',
     )
+    billable = models.BooleanField(default=True)
     point_person = models.ForeignKey(User, limit_choices_to={'is_staff': True})
     users = models.ManyToManyField(
         User,
@@ -171,7 +172,8 @@ class Activity(models.Model):
         max_length=50,
         help_text="""Now enter a more meaningful name for the activity.""",
     )
-
+    billable = models.BooleanField(default=True)
+    
     def __unicode__(self):
         return self.name
 
@@ -218,11 +220,18 @@ class Entry(models.Model):
     pause_time = models.DateTimeField(blank=True, null=True)
     comments = models.TextField(blank=True)
     date_updated = models.DateTimeField(auto_now=True)
+   
     hours = models.DecimalField(max_digits=8, decimal_places=2, default=0)
-    billable = models.BooleanField(default=True)
 
     objects = models.Manager()
     worked = EntryWorkedManager()
+
+    @property
+    def billable(self):
+        if self.activity:
+            return self.activity.billable
+        else:
+            return self.project.billable
 
     def is_overlapping(self):
         if self.start_time and self.end_time:
@@ -536,9 +545,9 @@ class PersonRepeatPeriod(models.Model):
         data = {}
         data['total'] = entries.aggregate(s=Sum('hours'))['s']
         billable = entries.exclude(project__in=projects.values())
-        billable = billable.values('billable').annotate(s=Sum('hours'))
+        billable = billable.values('activity__billable').annotate(s=Sum('hours'))
         for row in billable:
-            if row['billable']:
+            if row['activity__billable']:
                 data['billable'] = row['s']
             else:
                 data['non_billable'] = row['s']

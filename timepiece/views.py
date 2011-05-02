@@ -62,7 +62,7 @@ def view_entries(request):
         'project__name',
     ).annotate(sum=Sum('hours')).order_by('-sum')
     activity_entries = entries.values(
-        'billable',
+        'activity__billable',
     ).annotate(sum=Sum('hours')).order_by('-sum')
     others_active_entries = timepiece.Entry.objects.filter(
         end_time__isnull=True,
@@ -366,7 +366,7 @@ def project_time_sheet(request, project_id, window_id=None):
         'user__last_name',
     ).annotate(sum=Sum('hours')).order_by('-sum')
     activity_entries = entries.order_by().values(
-        'billable',
+        'activity__billable',
     ).annotate(sum=Sum('hours')).order_by('-sum')
     context = {
         'project': project,
@@ -884,11 +884,11 @@ def payroll_summary(request):
     project_totals = timepiece.Entry.objects.filter(
         end_time__lt=to_date,
         end_time__gte=from_date,
-    ).values('project__name', 'billable').annotate(s=Sum('hours')).order_by('project__name')
+    ).values('project__name', 'activity__billable').annotate(s=Sum('hours')).order_by('project__name')
     projects = SortedDict()
     for row in project_totals:
         name = row['project__name']
-        billable = row['billable']
+        billable = row['activity__billable']
         hours = row['s']
         if name not in projects:
             projects[name] = {}

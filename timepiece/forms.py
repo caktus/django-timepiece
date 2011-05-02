@@ -104,7 +104,7 @@ class AddUserToProjectForm(forms.Form):
 class ClockInForm(forms.ModelForm):
     class Meta:
         model = timepiece.Entry
-        fields = ('location', 'project', 'start_time', 'billable')
+        fields = ('location', 'project', 'activity', 'start_time',)
 
     def __init__(self, *args, **kwargs):
         self.user = kwargs.pop('user')
@@ -190,7 +190,7 @@ class AddUpdateEntryForm(forms.ModelForm):
     
     class Meta:
         model = Entry
-        exclude = ('user', 'pause_time', 'site', 'hours', 'activity')
+        exclude = ('user', 'pause_time', 'site', 'hours',)
 
     def __init__(self, *args, **kwargs):
         self.user = kwargs.pop('user')
@@ -283,6 +283,7 @@ class ProjectForm(forms.ModelForm):
             'trac_environment',
             'point_person',
             'type',
+            'billable',
             'status',
             'description',
         )
