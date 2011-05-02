@@ -283,7 +283,6 @@ class ProjectForm(forms.ModelForm):
             'trac_environment',
             'point_person',
             'type',
-            'billable',
             'status',
             'description',
         )
