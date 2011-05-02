@@ -447,9 +447,11 @@ def view_person_time_sheet(request, person_id, period_id, window_id=None):
     is_editable = window.end_date +\
         datetime.timedelta(days=settings.TIMEPIECE_TIMESHEET_EDITABLE_DAYS) >=\
         datetime.date.today()
-
-
+    
+    unverified = entries.filter(status='unverified').count()
+        
     context = {
+        'show_verify': bool(unverified != 0),
         'is_editable': is_editable,
         'person': time_sheet.user,
         'period': window.period,
@@ -458,6 +460,40 @@ def view_person_time_sheet(request, person_id, period_id, window_id=None):
         'total': total,
         'project_entries': project_entries,
         'activity_entries': activity_entries,
+    }
+    return context
+
+
+@login_required
+@render_with('timepiece/time-sheet/verify_time_sheet.html')
+def verify_time_sheet(request, person_id, period_id, window_id=None):
+    try:
+        time_sheet = timepiece.PersonRepeatPeriod.objects.select_related(
+            'user',
+            'repeat_period',
+        ).get(
+            user__id=person_id,
+            repeat_period__id=period_id,
+        )
+    except timepiece.PersonRepeatPeriod.DoesNotExist:
+        raise Http404
+    if not (request.user.has_perm('timepiece.view_person_time_sheet') or \
+    time_sheet.user.pk == request.user.pk):
+        return HttpResponseForbidden('Forbidden')
+    window, entries, total = get_entries(
+        time_sheet.repeat_period,
+        window_id=window_id,
+        user=time_sheet.user,
+    )
+    verified = False
+    if request.GET and 'verify' in request.GET:
+        if request.GET['verify'] == 'Yes':
+            unverified_entries = entries.filter(status='unverified')
+            unverified_entries.update(status='verified')
+            verified=True        
+    context = {
+        'verified': verified,
+        'hours': entries.all().aggregate(s=Sum('hours'))['s'],
     }
     return context
 
@@ -481,7 +517,7 @@ def list_businesses(request):
             )
     else:
         businesses = timepiece.Business.objects.all()
-
+    
     context = {
         'form': form,
         'businesses': businesses,

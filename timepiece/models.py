@@ -201,10 +201,10 @@ class EntryWorkedManager(models.Manager):
 
 
 ENTRY_STATUS = (
-('unverified', 'Unverified',),
-('verified', 'Verified',),
-('approved', 'Approved',),
-('invoiced', 'Invoiced',),
+    ('unverified', 'Unverified',),
+    ('verified', 'Verified',),
+    ('approved', 'Approved',),
+    ('invoiced', 'Invoiced',),
 )
 
 class Entry(models.Model):
