@@ -75,7 +75,7 @@
         <caption>Billable Summary</caption>
     {% for row in activity_entries %}
         <tr>
-            <td>{% if row.billable %}Billable{% else %}Non-billable{% endif %}</td>
+            <td>{% if row.activity__billable %}Billable{% else %}Non-billable{% endif %}</td>
             <td>{{ row.sum }}</td>
         </tr>
     {% endfor %}        
