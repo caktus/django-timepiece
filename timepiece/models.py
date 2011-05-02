@@ -200,6 +200,13 @@ class EntryWorkedManager(models.Manager):
         return qs.exclude(project__in=projects.values())
 
 
+ENTRY_STATUS = (
+('unverified', 'Unverified',),
+('verified', 'Verified',),
+('approved', 'Approved',),
+('invoiced', 'Invoiced',),
+)
+
 class Entry(models.Model):
     """
     This class is where all of the time logs are taken care of
@@ -216,6 +223,13 @@ class Entry(models.Model):
     location = models.ForeignKey(
         Location,
         related_name='entries',
+    )
+    status = models.CharField(
+        max_length=24,
+        blank=False,
+        null=False,
+        choices=ENTRY_STATUS,
+        default='unverified',
     )
     start_time = models.DateTimeField()
     end_time = models.DateTimeField(blank=True, null=True)
