@@ -226,13 +226,6 @@ class Entry(models.Model):
     objects = models.Manager()
     worked = EntryWorkedManager()
 
-    @property
-    def billable(self):
-        if self.activity:
-            return self.activity.billable
-        else:
-            return self.project.billable
-
     def is_overlapping(self):
         if self.start_time and self.end_time:
             entries = self.user.timepiece_entries.filter(

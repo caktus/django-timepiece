@@ -441,7 +441,7 @@ def view_person_time_sheet(request, person_id, period_id, window_id=None):
         'project__name',
     ).annotate(sum=Sum('hours')).order_by('-sum')
     activity_entries = entries.order_by().values(
-        'billable',
+        'activity__billable',
     ).annotate(sum=Sum('hours')).order_by('-sum')
     is_editable = window.end_date +\
         datetime.timedelta(days=settings.TIMEPIECE_TIMESHEET_EDITABLE_DAYS) >=\
@@ -949,7 +949,7 @@ def projection_summary(request):
     return {
         'form': form,
         'weeks': weeks,
-        'contracts': contracts,
+        'contracts': contracts.select_related(),
         'users': users,
     }
 

@@ -113,7 +113,7 @@ def date_filters(context, options):
 @register.simple_tag
 def hours_for_assignment(assignment, date):
     end = date + relativedelta(days=5)
-    blocks = assignment.blocks.filter(date__gte=date, date__lte=end)
+    blocks = assignment.blocks.filter(date__gte=date, date__lte=end).select_related()
     hours = blocks.aggregate(hours=Sum('hours'))['hours']
     if not hours:
         hours = ''

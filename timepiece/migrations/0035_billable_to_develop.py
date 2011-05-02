@@ -8,23 +8,37 @@ class Migration(DataMigration):
 
     def forwards(self, orm):
         dev, created = orm.Activity.objects.get_or_create(
-            code='devl',
-            name='development',
-            billable=True,
+            code='dev',
+            defaults= {
+                'name': 'Web Development',
+            }
         )
+        dev.billable=True
         dev.save()
-        billable = orm.Entry.objects.filter(billable=True)
-        for bill in billable:
-            bill.activity = dev
-            bill.save()
+        non_dev, created = orm.Activity.objects.get_or_create(
+            code='nobil',
+            defaults= {
+                'name': 'Non-billable',
+            }
+        )
+        non_dev.billable = False
+        non_dev.save()
+        
+        entries = orm.Entry.objects.all()
+        for entry in entries:
+            if entry.billable:
+                entry.activity = dev
+            else:
+                entry.activity = non_dev
+            entry.save()
         
 
     def backwards(self, orm):
-        dev = orm.Activity.objects.filter(code='devl')
-        billable = orm.Entry.objects.exclude(activity=dev)
-        for bill in billable:
-            bill.billable = False
-            bill.save()
+        entries = orm.Entry.objects.all()
+        for entry in entries:
+            entry.billable = entry.activity.billable
+            entry.save()
+
 
     models = {
         'auth.group': {
