@@ -137,6 +137,7 @@ class ClockInTest(TimepieceDataTestCase):
             'start_time_0': now.strftime('%m/%d/%Y'),
             'start_time_1': now.strftime('%H:%M:00'),
             'location': self.location.pk,
+            'activity': self.devl_activity.pk,
         }
         response = self.client.post(self.url, data)
         e_id = timepiece.Entry.objects.filter(project=self.project.id)[0]
@@ -198,6 +199,7 @@ class ClockInTest(TimepieceDataTestCase):
             'start_time_0': [u'11/02/2009'],
             'start_time_1': [u'11:09:21'],
             'location': self.location.pk,
+            'activity': self.devl_activity.pk,
         }
         response = self.client.post(self.url, data)
         self.assertEqual(response.status_code, 302)
