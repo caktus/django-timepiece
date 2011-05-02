@@ -35,8 +35,10 @@
         <td>{{ entry.location }}</td>
         <td>
             <ul class='actions'>
+                {% ifequal entry.status 'unverified' %}
                 <li><a href="{% url timepiece-update entry.id %}">Change</a></li>
                 <li><a href="{% url timepiece-delete entry.id %}">Remove</a></li>
+                {% endifequal %}
             </ul>
         </td>
     </tr>
