@@ -7,6 +7,7 @@ from django.db import models
 class Migration(DataMigration):
 
     def forwards(self, orm):
+        orm.Activity.objects.update(billable=False)
         dev, created = orm.Activity.objects.get_or_create(
             code='dev',
             defaults= {

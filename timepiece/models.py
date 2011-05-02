@@ -175,7 +175,11 @@ class Activity(models.Model):
     billable = models.BooleanField(default=True)
     
     def __unicode__(self):
-        return self.name
+        if self.billable:
+            billable = 'billable'
+        else:
+            billable = 'non-billable'    
+        return '%s (%s)' % (self.name, billable)
 
     class Meta:
         ordering = ('name',)
@@ -206,8 +210,8 @@ class Entry(models.Model):
     project = models.ForeignKey(Project, related_name='entries')
     activity = models.ForeignKey(
         Activity,
-        blank=True,
-        null=True,
+        blank=False,
+        null=False,
         related_name='entries',
     )
     location = models.ForeignKey(
