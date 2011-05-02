@@ -30,7 +30,7 @@ class EntryAdmin(admin.ModelAdmin):
                     'hours',
                     'is_closed',
                     'is_paused',
-                    'billable')
+                    )
     list_filter = ['user', 'project']
     search_fields = ['user', 'project', 'activity', 'comments']
     date_hierarchy = 'start_time'

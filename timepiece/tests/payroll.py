@@ -25,7 +25,9 @@ class PayrollTest(TimepieceDataTestCase):
         data = {'user': self.user,
                 'start_time': start,
                 'end_time': end,
-                'billable': billable}
+                }
+        if billable:
+            data['activity'] = self.devl_activity
         if project:
             data['project'] = project
         return self.create_entry(data)

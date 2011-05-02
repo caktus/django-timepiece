@@ -81,6 +81,7 @@ class TimepieceDataTestCase(TestCase):
         defaults = {
             'code': self.random_string(5, extra_chars=' '),
             'name': self.random_string(50, extra_chars=' '),
+            'billable': False
         }
         defaults.update(data)
         return timepiece.Activity.objects.create(**defaults)
@@ -169,6 +170,11 @@ class TimepieceDataTestCase(TestCase):
         self.activity = timepiece.Activity.objects.create(
             code="WRK",
             name="Work",
+        )
+        self.devl_activity = timepiece.Activity.objects.create(
+            code="devl",
+            name="development",
+            billable=True,
         )
         self.business = timepiece.Business.objects.create(
             name='Example Business',

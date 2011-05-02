@@ -34,7 +34,7 @@
             {% endfor %}
             <th>Allocated</th>
         </tr>
-        {% for assignment in contract.assignments.all %}
+        {% for assignment in contract.assignments.select_related %}
         <tr>
             <td>{{ assignment.user }}</td>
             <td class='assigned'>{{ assignment.num_hours }}{% if assignment.min_hours_per_week %}({{ assignment.min_hours_per_week }}){% endif %}</td>
