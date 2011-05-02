@@ -77,7 +77,6 @@ class Project(models.Model):
         Business,
         related_name='new_business_projects',
     )
-    billable = models.BooleanField(default=True)
     point_person = models.ForeignKey(User, limit_choices_to={'is_staff': True})
     users = models.ManyToManyField(
         User,
