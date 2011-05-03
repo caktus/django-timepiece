@@ -576,7 +576,11 @@ class PersonRepeatPeriod(models.Model):
                 end_time__gt = b.date
             ).aggregate(total=Sum('hours')))
         return result
-
+    class Meta:
+        permissions = (
+            ('view_person_time_sheet', 'Can view person\'s timesheet.'),
+            ('edit_person_time_sheet', 'Can edit person\'s timesheet.'),
+        )
 
 class ProjectContract(models.Model):
     CONTRACT_STATUS = (

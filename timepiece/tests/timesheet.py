@@ -310,13 +310,14 @@ class StatusTest(TimepieceDataTestCase):
         self.assertNotContains(response, self.verify_url)
 
     def testApproveButton(self):
-        """
         edit_time_sheet = Permission.objects.get(
             codename=('edit_person_time_sheet')
         )
         self.user2.user_permissions.add(edit_time_sheet)
-        """
-        self.user2.is_superuser = True
+        view_time_sheet = Permission.objects.get(
+            codename=('view_person_time_sheet')
+        )
+        self.user2.user_permissions.add(view_time_sheet)
         self.user2.save()
         self.client.login(username='user2', password='abc')
         response = self.client.get(self.sheet_url)        
@@ -332,3 +333,49 @@ class StatusTest(TimepieceDataTestCase):
         entry.save()
         response = self.client.get(self.sheet_url)
         self.assertContains(response, self.approve_url)
+        entry.status = 'approved'
+        entry.save()
+        response = self.client.get(self.sheet_url)
+        self.assertNotContains(response, self.approve_url)
+        
+    def testVerifyPage(self):
+        entry = self.create_entry(data={
+            'user': self.user, 
+            'start_time': datetime.datetime.now() - datetime.timedelta(hours=1),
+            'end_time':  datetime.datetime.now(),
+        })
+        response = self.client.get(self.verify_url)        
+        entries = self.user.timepiece_entries.all()
+        self.assertEquals(entries[0].status, 'unverified')
+        response = self.client.get(self.verify_url, {'verify': 'Yes'})
+        self.assertEquals(entries[0].status, 'verified')
+        
+    def testApprovePage(self):
+        edit_time_sheet = Permission.objects.get(
+            codename=('edit_person_time_sheet')
+        )
+        self.user2.user_permissions.add(edit_time_sheet)
+        view_time_sheet = Permission.objects.get(
+            codename=('view_person_time_sheet')
+        )
+        self.user2.user_permissions.add(view_time_sheet)
+        self.user2.save()
+        self.client.login(username='user2', password='abc')
+        
+        entry = self.create_entry(data={
+            'user': self.user, 
+            'start_time': datetime.datetime.now() - datetime.timedelta(hours=1),
+            'end_time':  datetime.datetime.now(),
+        })
+        response = self.client.get(self.approve_url, {'approve': 'Yes'})
+        entries = self.user.timepiece_entries.all()
+        self.assertEquals(entries[0].status, 'unverified')
+        entry.status = 'verified'
+        entry.save()
+
+        response = self.client.get(self.approve_url,)
+        entries = self.user.timepiece_entries.all()
+        self.assertEquals(entries[0].status, 'verified')
+        
+        response = self.client.get(self.approve_url, {'approve': 'Yes'})
+        self.assertEquals(entries[0].status, 'approved')
