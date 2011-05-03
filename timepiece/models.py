@@ -174,11 +174,7 @@ class Activity(models.Model):
     billable = models.BooleanField(default=True)
     
     def __unicode__(self):
-        if self.billable:
-            billable = 'billable'
-        else:
-            billable = 'non-billable'    
-        return '%s (%s)' % (self.name, billable)
+        return self.name
 
     class Meta:
         ordering = ('name',)
