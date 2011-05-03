@@ -25,6 +25,7 @@
     {# <li><a href='{% url export_project_time_sheet project.id,window.id %}'>Export as CSV</a></li> #}
     {% endif %}
     {% if show_verify %}<li><a href='{% url verify_time_sheet person.id,period.id %}'>Verify Time Sheet</a></li>{% endif %}
+    {% if show_approve %}<li><a href='{% url approve_time_sheet person.id,period.id %}'>Approve Time Sheet</a></li>{% endif %}
 </ul>
 
 {% if entries %}

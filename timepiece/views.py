@@ -13,7 +13,7 @@ from django.http import HttpResponse, HttpResponseRedirect, Http404, HttpRespons
 from django.contrib.auth.decorators import login_required, permission_required
 from django.contrib.auth.models import User
 from django.contrib.auth import models as auth_models
-from django.db.models import Sum, Q, F
+from django.db.models import Sum, Count, Q, F
 from django.db import transaction
 from django.conf import settings
 from django.utils.datastructures import SortedDict
@@ -448,10 +448,23 @@ def view_person_time_sheet(request, person_id, period_id, window_id=None):
         datetime.timedelta(days=settings.TIMEPIECE_TIMESHEET_EDITABLE_DAYS) >=\
         datetime.date.today()
     
-    unverified = entries.filter(status='unverified').count()
-        
+    show_approval = show_verify = False
+    if request.user.has_perm('timepiece.edit_person_time_sheet') or \
+        time_sheet.user.pk == request.user.pk:
+        statuses = list(entries.values_list('status', flat=True))
+        total = len(statuses)
+        unverified_count = statuses.count('unverified')
+        verified_count = statuses.count('verified')
+    
+    if time_sheet.user.pk == request.user.pk:
+        show_verify = bool(unverified_count != 0)
+
+    if request.user.has_perm('timepiece.edit_person_time_sheet'):
+        show_approve = bool(verified_count == total)
+    
     context = {
-        'show_verify': bool(unverified != 0),
+        'show_verify': show_verify,
+        'show_approve': show_approve,
         'is_editable': is_editable,
         'person': time_sheet.user,
         'period': window.period,
@@ -466,7 +479,7 @@ def view_person_time_sheet(request, person_id, period_id, window_id=None):
 
 @login_required
 @render_with('timepiece/time-sheet/verify_time_sheet.html')
-def verify_time_sheet(request, person_id, period_id, window_id=None):
+def verify_time_sheet(request, person_id, period_id,):
     try:
         time_sheet = timepiece.PersonRepeatPeriod.objects.select_related(
             'user',
@@ -477,14 +490,15 @@ def verify_time_sheet(request, person_id, period_id, window_id=None):
         )
     except timepiece.PersonRepeatPeriod.DoesNotExist:
         raise Http404
-    if not (request.user.has_perm('timepiece.view_person_time_sheet') or \
+    if not (request.user.has_perm('timepiece.edit_person_time_sheet') or \
     time_sheet.user.pk == request.user.pk):
         return HttpResponseForbidden('Forbidden')
     window, entries, total = get_entries(
         time_sheet.repeat_period,
-        window_id=window_id,
         user=time_sheet.user,
     )
+    return_url = reverse('view_person_time_sheet', 
+                kwargs={'person_id': person_id, 'period_id': period_id,})
     verified = False
     if request.GET and 'verify' in request.GET:
         if request.GET['verify'] == 'Yes':
@@ -492,7 +506,46 @@ def verify_time_sheet(request, person_id, period_id, window_id=None):
             unverified_entries.update(status='verified')
             verified=True        
     context = {
+        'return_url': return_url,
         'verified': verified,
+        'hours': entries.all().aggregate(s=Sum('hours'))['s'],
+    }
+    return context
+
+
+@login_required
+@render_with('timepiece/time-sheet/approve_time_sheet.html')
+def approve_time_sheet(request, person_id, period_id,):
+    try:
+        time_sheet = timepiece.PersonRepeatPeriod.objects.select_related(
+            'user',
+            'repeat_period',
+        ).get(
+            user__id=person_id,
+            repeat_period__id=period_id,
+        )
+    except timepiece.PersonRepeatPeriod.DoesNotExist:
+        raise Http404
+    person = User.objects.get(pk=person_id)
+    if not (request.user.has_perm('timepiece.edit_person_time_sheet') or \
+    time_sheet.user.pk == request.user.pk):
+        return HttpResponseForbidden('Forbidden')
+    window, entries, total = get_entries(
+        time_sheet.repeat_period,
+        user=time_sheet.user,
+    )
+    return_url = reverse('view_person_time_sheet', 
+            kwargs={'person_id': person_id, 'period_id': period_id,})
+    approved = False
+    if request.GET and 'approve' in request.GET:
+        if request.GET['approve'] == 'Yes':
+            verified_entries = entries.filter(status='verified')
+            verified_entries.update(status='approved')
+            approved=True        
+    context = {
+        'return_url': return_url,
+        'person': person,
+        'approved': approved,
         'hours': entries.all().aggregate(s=Sum('hours'))['s'],
     }
     return context

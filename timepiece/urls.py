@@ -107,9 +107,14 @@ urlpatterns = patterns('',
         name='view_person_time_sheet',
     ),
     url(
-        r'^time-sheet/verify_time_sheet/(?P<person_id>\d+)/period/(?P<period_id>\d+)/(?:(?P<window_id>\d+)/)?$',
+        r'^time-sheet/verify/(?P<person_id>\d+)/period/(?P<period_id>\d+)/$',
         views.verify_time_sheet,
         name='verify_time_sheet',
+    ),
+    url(
+        r'^time-sheet/approve/(?P<person_id>\d+)/period/(?P<period_id>\d+)/$',
+        views.approve_time_sheet,
+        name='approve_time_sheet',
     ),
     url(
         r'^time-sheet/project/(?P<project_id>\d+)/(?:(?P<window_id>\d+)/)?$',

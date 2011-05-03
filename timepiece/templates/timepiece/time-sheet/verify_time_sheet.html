@@ -6,11 +6,12 @@
 {% block content %}
 <h2>Verify Hours for Time Sheet</h2>
 {% if verified %}
-  <h3><p>Your entries with a total of {{ hours }} hours have been verified. Go back to the <a href="{% url timepiece-entries %}">Dashboard</a>.</p></h3>
+  <h3><p>Your entries with a total of {{ hours }} hours have been verified. 
+  Go back to the <a href="{{ return_url }}">Time Sheet</a>.</p></h3>
 {% else %}
   <h3><p>Are you sure you want to verify all entries in this timesheet, which includes a total of {{ hours }} hours? 
   <p>After entries are verified and approved, they cannot be changed.</p></h3>
   <a href="?verify=Yes"><input type="button" value="Yes"/></a>
-  <input type="button" onclick="history.go(-1)" value="No"/>
+  <a href="{{ return_url }}"><input type="button" value="No"/></a>
 {% endif %}
 {% endblock %}
