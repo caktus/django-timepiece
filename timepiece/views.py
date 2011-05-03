@@ -448,7 +448,7 @@ def view_person_time_sheet(request, person_id, period_id, window_id=None):
         datetime.timedelta(days=settings.TIMEPIECE_TIMESHEET_EDITABLE_DAYS) >=\
         datetime.date.today()
     
-    show_approval = show_verify = False
+    show_approve = show_verify = False
     if request.user.has_perm('timepiece.edit_person_time_sheet') or \
         time_sheet.user.pk == request.user.pk:
         statuses = list(entries.values_list('status', flat=True))
@@ -460,7 +460,7 @@ def view_person_time_sheet(request, person_id, period_id, window_id=None):
         show_verify = bool(unverified_count != 0)
 
     if request.user.has_perm('timepiece.edit_person_time_sheet'):
-        show_approve = bool(verified_count == total)
+        show_approve = bool(verified_count == total and total != 0)
     
     context = {
         'show_verify': show_verify,

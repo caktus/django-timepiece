@@ -5,6 +5,8 @@ import itertools
 
 from django.core.urlresolvers import reverse
 
+from django.contrib.auth.models import User, Permission
+
 from timepiece.tests.base import TimepieceDataTestCase
 
 from timepiece import models as timepiece
@@ -275,3 +277,58 @@ class CreateEditEntry(TimepieceDataTestCase):
         projects = list(response.context['form'].fields['project'].queryset)
         self.assertTrue(self.project in projects)
         self.assertFalse(self.project2 in projects)
+        
+        
+class StatusTest(TimepieceDataTestCase):
+    def setUp(self):
+        super(StatusTest, self).setUp()
+        self.create_person_repeat_period(data={'user': self.user})
+        period = timepiece.PersonRepeatPeriod.objects.get(user=self.user)
+        self.billing_window = timepiece.BillingWindow.objects.create(
+            period = period.repeat_period,
+            date = datetime.datetime.now(),
+            end_date = datetime.datetime.now() + period.repeat_period.delta()
+        )
+        self.client.login(username='user', password='abc')
+        self.sheet_url = reverse('view_person_time_sheet', args=[period.user.pk, period.repeat_period.pk])
+        self.verify_url = reverse('verify_time_sheet', args=[period.user.pk, period.repeat_period.pk])
+        self.approve_url = reverse('approve_time_sheet', args=[period.user.pk, period.repeat_period.pk])
+    
+    def testVerifyButton(self):
+        response = self.client.get(self.sheet_url)        
+        self.assertNotContains(response, self.verify_url)
+        entry = self.create_entry(data={
+            'user': self.user, 
+            'start_time': datetime.datetime.now() - datetime.timedelta(hours=1),
+            'end_time':  datetime.datetime.now(),
+        })
+        response = self.client.get(self.sheet_url)
+        self.assertContains(response, self.verify_url)
+        entry.status = 'verified'
+        entry.save()
+        response = self.client.get(self.sheet_url)
+        self.assertNotContains(response, self.verify_url)
+
+    def testApproveButton(self):
+        """
+        edit_time_sheet = Permission.objects.get(
+            codename=('edit_person_time_sheet')
+        )
+        self.user2.user_permissions.add(edit_time_sheet)
+        """
+        self.user2.is_superuser = True
+        self.user2.save()
+        self.client.login(username='user2', password='abc')
+        response = self.client.get(self.sheet_url)        
+        self.assertNotContains(response, self.approve_url)
+        entry = self.create_entry(data={
+            'user': self.user, 
+            'start_time': datetime.datetime.now() - datetime.timedelta(hours=1),
+            'end_time':  datetime.datetime.now(),
+        })
+        response = self.client.get(self.sheet_url)
+        self.assertNotContains(response, self.approve_url)
+        entry.status = 'verified'
+        entry.save()
+        response = self.client.get(self.sheet_url)
+        self.assertContains(response, self.approve_url)
