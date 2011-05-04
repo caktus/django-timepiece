@@ -380,6 +380,11 @@ class StatusTest(TimepieceDataTestCase):
         response = self.client.post(self.approve_url, {'do_action': 'Yes'})
         self.assertEquals(entries[0].status, 'approved')
 
-    def testNotAllowedTAprroveTimesheet(self):
+    def testNotAllowedToAproveTimesheet(self):
+        response = self.client.get(self.approve_url,)
+        self.assertTrue(response.status_code, 403)
+        
+    def testNotAllowedToVerifyTimesheet(self):
+        self.client.login(username='user2', password='abc')
         response = self.client.get(self.approve_url,)
         self.assertTrue(response.status_code, 403)
