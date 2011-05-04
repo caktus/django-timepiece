@@ -291,8 +291,8 @@ class StatusTest(TimepieceDataTestCase):
         )
         self.client.login(username='user', password='abc')
         self.sheet_url = reverse('view_person_time_sheet', args=[period.user.pk, period.repeat_period.pk])
-        self.verify_url = reverse('verify_time_sheet', args=[period.user.pk, period.repeat_period.pk])
-        self.approve_url = reverse('approve_time_sheet', args=[period.user.pk, period.repeat_period.pk])
+        self.verify_url = reverse('time_sheet_change_status', args=['verify', period.user.pk, period.repeat_period.pk])
+        self.approve_url = reverse('time_sheet_change_status', args=['approve', period.user.pk, period.repeat_period.pk])
     
     def testVerifyButton(self):
         response = self.client.get(self.sheet_url)        
@@ -347,7 +347,7 @@ class StatusTest(TimepieceDataTestCase):
         response = self.client.get(self.verify_url)        
         entries = self.user.timepiece_entries.all()
         self.assertEquals(entries[0].status, 'unverified')
-        response = self.client.get(self.verify_url, {'verify': 'Yes'})
+        response = self.client.post(self.verify_url, {'do_action': 'Yes'})
         self.assertEquals(entries[0].status, 'verified')
         
     def testApprovePage(self):
@@ -367,7 +367,7 @@ class StatusTest(TimepieceDataTestCase):
             'start_time': datetime.datetime.now() - datetime.timedelta(hours=1),
             'end_time':  datetime.datetime.now(),
         })
-        response = self.client.get(self.approve_url, {'approve': 'Yes'})
+        response = self.client.post(self.approve_url, {'do_action': 'Yes'})
         entries = self.user.timepiece_entries.all()
         self.assertEquals(entries[0].status, 'unverified')
         entry.status = 'verified'
@@ -377,5 +377,5 @@ class StatusTest(TimepieceDataTestCase):
         entries = self.user.timepiece_entries.all()
         self.assertEquals(entries[0].status, 'verified')
         
-        response = self.client.get(self.approve_url, {'approve': 'Yes'})
+        response = self.client.post(self.approve_url, {'do_action': 'Yes'})
         self.assertEquals(entries[0].status, 'approved')

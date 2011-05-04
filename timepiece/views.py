@@ -6,8 +6,9 @@ from decimal import Decimal
 from dateutil.relativedelta import relativedelta
 from dateutil import rrule
 
+from django.contrib import messages
 from django.template import RequestContext
-from django.shortcuts import render_to_response, get_object_or_404
+from django.shortcuts import render_to_response, get_object_or_404, redirect
 from django.core.urlresolvers import reverse
 from django.http import HttpResponse, HttpResponseRedirect, Http404, HttpResponseForbidden
 from django.contrib.auth.decorators import login_required, permission_required
@@ -476,10 +477,8 @@ def view_person_time_sheet(request, person_id, period_id, window_id=None):
     }
     return context
 
-
 @login_required
-@render_with('timepiece/time-sheet/verify_time_sheet.html')
-def verify_time_sheet(request, person_id, period_id,):
+def time_sheet_change_status(request, action, person_id, period_id,):
     try:
         time_sheet = timepiece.PersonRepeatPeriod.objects.select_related(
             'user',
@@ -490,8 +489,10 @@ def verify_time_sheet(request, person_id, period_id,):
         )
     except timepiece.PersonRepeatPeriod.DoesNotExist:
         raise Http404
-    if not (request.user.has_perm('timepiece.edit_person_time_sheet') or \
-    time_sheet.user.pk == request.user.pk):
+    person = User.objects.get(pk=person_id)
+    verify_allowed = not (request.user.has_perm('timepiece.edit_person_time_sheet') or \
+                    (time_sheet.user.pk == request.user.pk and action == 'verify'))
+    if verify_allowed:
         return HttpResponseForbidden('Forbidden')
     window, entries, total = get_entries(
         time_sheet.repeat_period,
@@ -499,19 +500,22 @@ def verify_time_sheet(request, person_id, period_id,):
     )
     return_url = reverse('view_person_time_sheet', 
                 kwargs={'person_id': person_id, 'period_id': period_id,})
-    verified = False
-    if request.GET and 'verify' in request.GET:
-        if request.GET['verify'] == 'Yes':
-            unverified_entries = entries.filter(status='unverified')
-            unverified_entries.update(status='verified')
-            verified=True        
+
+    if request.POST and 'do_action' in request.POST and request.POST['do_action'] == 'Yes':
+        filter_status = {'verify': 'unverified', 'approve': 'verified'}
+        update_status = {'verify': 'verified', 'approve': 'approved'}
+        old_entries = entries.filter(status=filter_status[action])
+        old_entries.update(status=update_status[action])
+        messages.info(request, 'Your entries have been %s' % update_status[action])
+        return redirect(return_url)
+        
     context = {
+        'person': person,
         'return_url': return_url,
-        'verified': verified,
         'hours': entries.all().aggregate(s=Sum('hours'))['s'],
     }
-    return context
-
+    template = 'timepiece/time-sheet/%s_time_sheet.html' % action
+    return render_to_response(template, context, context_instance=RequestContext(request))
 
 @login_required
 @render_with('timepiece/time-sheet/approve_time_sheet.html')
@@ -527,8 +531,7 @@ def approve_time_sheet(request, person_id, period_id,):
     except timepiece.PersonRepeatPeriod.DoesNotExist:
         raise Http404
     person = User.objects.get(pk=person_id)
-    if not (request.user.has_perm('timepiece.edit_person_time_sheet') or \
-    time_sheet.user.pk == request.user.pk):
+    if not request.user.has_perm('timepiece.edit_person_time_sheet'):
         return HttpResponseForbidden('Forbidden')
     window, entries, total = get_entries(
         time_sheet.repeat_period,
@@ -544,7 +547,7 @@ def approve_time_sheet(request, person_id, period_id,):
             approved=True        
     context = {
         'return_url': return_url,
-        'person': person,
+
         'approved': approved,
         'hours': entries.all().aggregate(s=Sum('hours'))['s'],
     }

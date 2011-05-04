@@ -212,8 +212,6 @@ class Entry(models.Model):
     project = models.ForeignKey(Project, related_name='entries')
     activity = models.ForeignKey(
         Activity,
-        blank=False,
-        null=False,
         related_name='entries',
     )
     location = models.ForeignKey(
@@ -222,8 +220,6 @@ class Entry(models.Model):
     )
     status = models.CharField(
         max_length=24,
-        blank=False,
-        null=False,
         choices=ENTRY_STATUS,
         default='unverified',
     )
