@@ -458,10 +458,10 @@ def view_person_time_sheet(request, person_id, period_id, window_id=None):
         verified_count = statuses.count('verified')
     
     if time_sheet.user.pk == request.user.pk:
-        show_verify = bool(unverified_count != 0)
+        show_verify = unverified_count != 0
 
     if request.user.has_perm('timepiece.edit_person_time_sheet'):
-        show_approve = bool(verified_count == total and total != 0)
+        show_approve = verified_count == total and total != 0
     
     context = {
         'show_verify': show_verify,
