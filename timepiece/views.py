@@ -339,7 +339,11 @@ def get_entries(period, window_id=None, project=None, user=None):
         window = window.filter(
             period__active=True,
             period=period,
-        ).order_by('-date')[0]
+        ).order_by('-date')
+        try:
+            window = window[0]
+        except IndexError:
+            return None, [], 0
     entries = timepiece.Entry.objects.filter(
         end_time__gte=window.date,
         end_time__lt=window.end_date,
@@ -385,14 +389,19 @@ def project_time_sheet(request, project_id, window_id=None):
 
 @permission_required('timepiece.export_project_time_sheet')
 @utils.date_filter
-def export_project_time_sheet(request, form, from_date, to_date, status, activity, project_id, window_id=None):
+def export_project_time_sheet(request, form, from_date, to_date, status, 
+    activity, project_id, window_id=None):
     project = get_object_or_404(timepiece_forms.Project, pk=project_id)
-    
     if request.GET and form.is_valid():
-        entries = timepiece.Entry.objects.filter(
-            end_time__lt=to_date,
-            end_time__gte=from_date,
-        ).filter(project=project)
+        entries = timepiece.Entry.objects.filter(project=project)
+        if to_date:
+            entries = entries.filter(
+                end_time__lt=to_date,
+            )
+        if from_date:
+            entries = entries.filter(
+                end_time__gte=from_date,
+            )
         if status:
             entries = entries.filter(status=status)
         if activity:
@@ -411,7 +420,11 @@ def export_project_time_sheet(request, form, from_date, to_date, status, activit
     if window:
         disposition = (project.name, window.end_date.strftime('%Y-%m-%d'))
     else:
-        disposition = (project.name, to_date.strftime('%Y-%m-%d'))
+        if to_date:
+            to_date_str = to_date.strftime('%Y-%m-%d')
+        else:
+            to_date_str = 'all'
+        disposition = (project.name, to_date_str)
     response['Content-Disposition'] = 'attachment; filename="%s Timesheet %s.csv"' % disposition
     writer = csv.writer(response)
     writer.writerow((
@@ -534,10 +547,15 @@ def time_sheet_change_status(request, form, from_date, to_date, status,
             user=time_sheet.user,
         )
     else:
-        entries = timepiece.Entry.objects.filter(
-            end_time__lt=to_date,
-            end_time__gte=from_date,
-        )
+        entries = timepiece.Entry.objects.all()
+        if to_date:
+            entries = entries.filter(
+                end_time__lt=to_date,
+            )
+        if from_date:
+            entries = entries.filter(
+                end_time__gte=from_date,
+            )
         if activity:
             entries = entries.filter(activity=activity)
         if request.GET and form.cleaned_data.get('project'):
@@ -546,8 +564,8 @@ def time_sheet_change_status(request, form, from_date, to_date, status,
     if action == 'invoice':
         return_url = reverse('invoice_projects',)
         get_str = urllib.urlencode({
-            'from_date': from_date,
-            'to_date': to_date,
+            'from_date': from_date or '',
+            'to_date': to_date or '',
         })
         return_url += '?%s' % get_str
     else:
@@ -575,24 +593,30 @@ def time_sheet_change_status(request, form, from_date, to_date, status,
 @permission_required('timepiece.timepiece.edit_person_time_sheet')
 @utils.date_filter
 def invoice_projects(request, form, from_date, to_date, status, activity):
-    projects = timepiece.Entry.objects.filter(
-        end_time__lt=to_date,
-        end_time__gte=from_date,
-    )
+    entries = timepiece.Entry.objects.all()
+    if to_date:
+        entries = entries.filter(
+            end_time__lt=to_date,
+        )
+    if from_date:
+        entries = entries.filter(
+            end_time__gte=from_date,
+        )
     #Am no longer including invoiced entries, therefor all projects have uninvoiced
     #hours and it returns only one line for them.
     #project_totals = projects.filter(status__in=['approved', 'invoiced']).values(
-    project_totals = projects.filter(status='approved').values(
+    project_totals = entries.filter(status='approved').values(
         'activity__name', 'activity__pk', 'project__name', 'project__pk', 'status',
     ).annotate(s=Sum('hours')).order_by('activity__name', 'project__name', 'status',)
     
     cals = []
-    date = from_date - relativedelta(months=1)
-    end_date = from_date + relativedelta(months=1)
-    html_cal = calendar.HTMLCalendar(calendar.SUNDAY)
-    while date < end_date:
-        cals.append(html_cal.formatmonth(date.year, date.month))
-        date += relativedelta(months=1)
+    if from_date:
+        date = from_date - relativedelta(months=1)
+        end_date = from_date + relativedelta(months=1)
+        html_cal = calendar.HTMLCalendar(calendar.SUNDAY)
+        while date < end_date:
+            cals.append(html_cal.formatmonth(date.year, date.month))
+            date += relativedelta(months=1)
 
     return render_to_response('timepiece/time-sheet/invoice_projects.html',{
         'form': form,
@@ -1014,10 +1038,22 @@ def create_edit_person_time_sheet(request, person_id=None):
 @render_with('timepiece/time-sheet/payroll/summary.html')
 @utils.date_filter
 def payroll_summary(request, form, from_date, to_date, status, activity):
-    project_totals = timepiece.Entry.objects.filter(
-        end_time__lt=to_date,
-        end_time__gte=from_date,
-    ).values('project__name', 'activity__billable').annotate(s=Sum('hours')).order_by('project__name')
+    project_totals = timepiece.Entry.objects.all()
+    if not (from_date and to_date):
+        today = datetime.date.today()
+        from_date = today.replace(day=1)
+        to_date = from_date + relativedelta(months=1)
+    if to_date:
+        project_totals = project_totals.filter(
+            end_time__lt=to_date,
+        )
+    if from_date:
+        project_totals = project_totals.filter(
+            end_time__gte=from_date,
+        )
+    project_totals = project_totals.values(
+        'project__name', 'activity__billable'
+    ).annotate(s=Sum('hours')).order_by('project__name')
     projects = SortedDict()
     for row in project_totals:
         name = row['project__name']
@@ -1063,6 +1099,10 @@ def payroll_summary(request, form, from_date, to_date, status, activity):
 @render_with('timepiece/time-sheet/projection/projection.html')
 @utils.date_filter
 def projection_summary(request, form, from_date, to_date, status, activity):
+    if not (from_date and to_date):
+        today = datetime.date.today()
+        from_date = today.replace(day=1)
+        to_date = from_date + relativedelta(months=1)
     contracts = timepiece.ProjectContract.objects.exclude(status='complete')
     contracts = contracts.exclude(project__in=settings.TIMEPIECE_PROJECTS.values())
     contracts = contracts.order_by('end_date')

@@ -170,17 +170,22 @@ def build_invoice_row(entries, to_date, from_date):
             uninvoiced_hours += entry['s']
     row = '<td>%s</td>' % uninvoiced_hours
     url = reverse('export_project_time_sheet', args=[project,])
+    to_date_str = from_date_str = ''
+    if to_date:
+        to_date_str = to_date.strftime('%m/%d/%Y')
+    if from_date:
+        from_date_str = from_date.strftime('%m/%d/%Y')
     get_str = urllib.urlencode({
-        'to_date': to_date.strftime('%m/%d/%Y'), 
-        'from_date': from_date.strftime('%m/%d/%Y'),
+        'to_date': to_date_str, 
+        'from_date': from_date_str,
         'status': 'approved',
         'activity': activity,
     })
     row += '<td><a href="#"><ul class="actions"><li><a href="%s?%s">CSV Timesheet</a></li>' % (url, get_str)
     url = reverse('time_sheet_change_status', args=['invoice',])
     get_str = urllib.urlencode({
-        'to_date': to_date.strftime('%m/%d/%Y'), 
-        'from_date': from_date.strftime('%m/%d/%Y'),
+        'to_date': to_date_str, 
+        'from_date': from_date_str,
         'activity': activity,
         'project': project,
     })
