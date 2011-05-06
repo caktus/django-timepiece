@@ -1,0 +1,48 @@
+{% extends 'timepiece/time-sheet/base.html' %}
+{% load timepiece_tags %}
+
+{% block title %}Project Invoice Summary{% endblock %}
+
+{% block content %}
+<h2>Project Invoice Summary</h2>
+
+{% date_filters "months" %}
+
+<form method="get" action="" id="date-filter" accept-charset="utf-8">
+    <ul id='ledger-date-fieldlist'>
+        {{ form.as_ul }}
+        <li>
+            <input type='submit' name='submit' value='Update' id='id_date_form_submit_btn'/>
+        </li>
+        <li>
+            <input type='button' name='clear' value='Clear' id='id_date_form_clear_btn'/>
+        </li>
+    </ul>
+</form>
+
+<div style='float: right;'>
+{% for cal in cals %}
+{{ cal|safe }}
+{% endfor %}
+</div>
+
+{% regroup project_totals by activity__name as activity_list %}
+{% for activity in activity_list %}
+    <h3>Summary of {{ activity.grouper }} Entries</h3>
+    <table>
+        <tr>
+            <th>Project name</th>
+            <th>Uninvoiced Hours</th>
+            <th></th>
+        </tr>
+        {% regroup activity.list by project__name as project_list %}
+        {% for project in project_list %}  
+            <tr>
+                <th>{{ project.grouper }}</th>
+                {% build_invoice_row project.list to_date from_date %}
+            </tr>
+        {% endfor %}
+    </table>
+{% endfor %}
+{% endblock %}
+

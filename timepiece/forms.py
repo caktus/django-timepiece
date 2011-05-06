@@ -246,12 +246,17 @@ class AddUpdateEntryForm(forms.ModelForm):
         instance.save()
         return instance
         
-
+STATUS_CHOICES = [('','---------'),]
+STATUS_CHOICES.extend(timepiece.ENTRY_STATUS)
 
 class DateForm(forms.Form):
     from_date = forms.DateField(label="From", required=False)
     to_date = forms.DateField(label="To", required=False)
-    
+    status = forms.ChoiceField(choices=STATUS_CHOICES, widget=forms.HiddenInput(), required=False)
+    activity = forms.ModelChoiceField(
+        queryset=timepiece.Activity.objects.all(), 
+        widget=forms.HiddenInput(), required=False,
+    )
     def save(self):
         from_date = self.cleaned_data.get('from_date', '')
         to_date = self.cleaned_data.get('to_date', '')
