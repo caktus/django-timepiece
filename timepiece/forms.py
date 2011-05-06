@@ -257,6 +257,10 @@ class DateForm(forms.Form):
         queryset=timepiece.Activity.objects.all(), 
         widget=forms.HiddenInput(), required=False,
     )
+    project = forms.ModelChoiceField(
+        queryset=timepiece.Project.objects.all(), 
+        widget=forms.HiddenInput(), required=False,
+    )
     def save(self):
         from_date = self.cleaned_data.get('from_date', '')
         to_date = self.cleaned_data.get('to_date', '')

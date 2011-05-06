@@ -1,3 +1,4 @@
+import urllib
 import csv
 import datetime
 import calendar
@@ -518,6 +519,7 @@ def time_sheet_change_status(request, form, from_date, to_date, status,
     else:
         if action == 'invoice':
             time_sheet = None
+            person = None
         else:
             raise Http404
         verify_allowed = request.user.has_perm('timepiece.edit_person_time_sheet')
@@ -525,19 +527,36 @@ def time_sheet_change_status(request, form, from_date, to_date, status,
     
     if not verify_allowed:
         return HttpResponseForbidden('Forbidden')
+        
     if time_sheet:
         window, entries, total = get_entries(
             time_sheet.repeat_period,
             user=time_sheet.user,
         )
     else:
-        window = None
-    return_url = reverse('view_person_time_sheet', 
-                kwargs={'person_id': person_id, 'period_id': period_id,})
+        entries = timepiece.Entry.objects.filter(
+            end_time__lt=to_date,
+            end_time__gte=from_date,
+        )
+        if activity:
+            entries = entries.filter(activity=activity)
+        if form.cleaned_data.get('project'):
+            entries = entries.filter(project=form.cleaned_data.get('project'))
+        
+    if action == 'invoice':
+        return_url = reverse('invoice_projects',)
+        get_str = urllib.urlencode({
+            'from_date': from_date,
+            'to_date': to_date,
+        })
+        return_url += '?%s' % get_str
+    else:
+        return_url = reverse('view_person_time_sheet', 
+                    kwargs={'person_id': person_id, 'period_id': period_id,})
 
     if request.POST and 'do_action' in request.POST and request.POST['do_action'] == 'Yes':
-        filter_status = {'verify': 'unverified', 'approve': 'verified'}
-        update_status = {'verify': 'verified', 'approve': 'approved'}
+        filter_status = {'verify': 'unverified', 'approve': 'verified', 'invoice': 'approved',}
+        update_status = {'verify': 'verified', 'approve': 'approved', 'invoice': 'invoiced',}
         old_entries = entries.filter(status=filter_status[action])
         old_entries.update(status=update_status[action])
         messages.info(request, 'Your entries have been %s' % update_status[action])
