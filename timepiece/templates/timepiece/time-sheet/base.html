@@ -1,11 +1,14 @@
 {% extends "timepiece/base.html" %}
 {% load timepiece_tags %}
+{% block javascript %}{{ block.super }}
+	<script src="{{ STATIC_URL }}timepiece/js/clear_form.js" type="text/javascript"></script>
+{% endblock %}
 {% block css %}{{ block.super }}
-<style>
-tr.overlapping {
-    background-color: #ff0000;
-}
-</style>
+  <style>
+  tr.overlapping {
+      background-color: #ff0000;
+  }
+  </style>
 {% endblock %}
 {% block sub_navigation %}
     <ul class='header-actions-left'>
