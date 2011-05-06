@@ -157,6 +157,7 @@ def monthly_overtime(rp, date):
         hours = ''
     return hours
 
+
 @register.simple_tag
 def build_invoice_row(entries, to_date, from_date):
     uninvoiced_hours = invoiced_hours = 0
@@ -176,17 +177,19 @@ def build_invoice_row(entries, to_date, from_date):
         'activity': activity,
     })
     row += '<td><a href="#"><ul class="actions"><li><a href="%s?%s">CSV Timesheet</a></li>' % (url, get_str)
-    if uninvoiced_hours > 0:
-        url = reverse('time_sheet_change_status', args=['invoice',])
-        get_str = urllib.urlencode({
-            'to_date': to_date.strftime('%m/%d/%Y'), 
-            'from_date': from_date.strftime('%m/%d/%Y'),
-            'activity': activity,
-            'project': project,
-        })
-        row += '<li><a href="%s?%s">Mark as Invoiced</a></li>' % (url, get_str)
+    url = reverse('time_sheet_change_status', args=['invoice',])
+    get_str = urllib.urlencode({
+        'to_date': to_date.strftime('%m/%d/%Y'), 
+        'from_date': from_date.strftime('%m/%d/%Y'),
+        'activity': activity,
+        'project': project,
+    })
+    row += '<li><a href="%s?%s">Mark as Invoiced</a></li>' % (url, get_str)
+    """
     if invoiced_hours > 0:
         row += '<li><a href="#">(Un)Mark as Invoiced</a></li>'
+    Not including invocied hours currently.
+    """
     row += '</ul></td>'
     return row
 build_invoice_row.is_safe = True

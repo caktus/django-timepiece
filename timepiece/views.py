@@ -517,7 +517,7 @@ def time_sheet_change_status(request, form, from_date, to_date, status,
         verify_allowed = request.user.has_perm('timepiece.edit_person_time_sheet') or \
                     (time_sheet.user.pk == request.user.pk and action == 'verify')
     else:
-        if action == 'invoice':
+        if action == 'invoice' and form.is_valid():
             time_sheet = None
             person = None
         else:
@@ -540,7 +540,7 @@ def time_sheet_change_status(request, form, from_date, to_date, status,
         )
         if activity:
             entries = entries.filter(activity=activity)
-        if form.cleaned_data.get('project'):
+        if request.GET and form.cleaned_data.get('project'):
             entries = entries.filter(project=form.cleaned_data.get('project'))
         
     if action == 'invoice':
@@ -554,11 +554,12 @@ def time_sheet_change_status(request, form, from_date, to_date, status,
         return_url = reverse('view_person_time_sheet', 
                     kwargs={'person_id': person_id, 'period_id': period_id,})
 
+    filter_status = {'verify': 'unverified', 'approve': 'verified', 'invoice': 'approved',}
+    entries = entries.filter(status=filter_status[action])
+    
     if request.POST and 'do_action' in request.POST and request.POST['do_action'] == 'Yes':
-        filter_status = {'verify': 'unverified', 'approve': 'verified', 'invoice': 'approved',}
         update_status = {'verify': 'verified', 'approve': 'approved', 'invoice': 'invoiced',}
-        old_entries = entries.filter(status=filter_status[action])
-        old_entries.update(status=update_status[action])
+        entries.update(status=update_status[action])
         messages.info(request, 'Your entries have been %s' % update_status[action])
         return redirect(return_url)
         
