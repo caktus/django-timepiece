@@ -6,6 +6,9 @@
 
 <h2>Project Timesheets ({{ time_sheets.count }} total)</h2>
 <ul class='header-actions-left'>
+{% if perms.timepiece.edit_person_time_sheet %}
+    <li><a href="{% url invoice_projects %}">Invoice Projects</a></li>
+{% endif %}
 </ul>
 
 <table class='projects'>
