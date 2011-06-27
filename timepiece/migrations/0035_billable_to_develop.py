@@ -9,17 +9,17 @@ class Migration(DataMigration):
     def forwards(self, orm):
         orm.Activity.objects.update(billable=False)
         dev, created = orm.Activity.objects.get_or_create(
-            code='dev',
-            defaults= {
+            code = 'dev',
+            defaults = {
                 'name': 'Web Development',
             }
         )
         dev.billable=True
         dev.save()
         non_dev, created = orm.Activity.objects.get_or_create(
-            code='nobil',
-            defaults= {
-                'name': 'Non-billable',
+            code = 'admin',
+            defaults = {
+                'name': 'Administration',
             }
         )
         non_dev.billable = False
