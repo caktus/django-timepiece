@@ -14,12 +14,12 @@ class Migration(DataMigration):
                 'name': 'Web Development',
             }
         )
-        dev.billable = True
+        dev.billable=True
         dev.save()
         non_dev, created = orm.Activity.objects.get_or_create(
-            code='admin',
+            code='nobil',
             defaults= {
-                'name': 'Administration',
+                'name': 'Non-billable',
             }
         )
         non_dev.billable = False
