@@ -38,7 +38,7 @@
             <th>Hours</th>
         </tr>
         {% for entry in entries %}
-        <tr{% if entry.comments %} title='{{ entry.comments }}'{% endif %}{% if not entry.billable %} class='non-billable'{% endif %}>
+        <tr{% if entry.comments %} title='{{ entry.comments }}'{% endif %}>
             <td>{{ entry.start_time|date:"m/d/Y (D)" }}</td>
             <td>{{ entry.user.get_full_name }}</td>
             <td>{{ entry.location }}</td>

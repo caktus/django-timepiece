@@ -174,11 +174,7 @@ class Activity(models.Model):
     billable = models.BooleanField(default=True)
     
     def __unicode__(self):
-        if self.billable:
-            billable = 'billable'
-        else:
-            billable = 'non-billable'    
-        return '%s (%s)' % (self.name, billable)
+        return self.name
 
     class Meta:
         ordering = ('name',)
@@ -200,6 +196,13 @@ class EntryWorkedManager(models.Manager):
         return qs.exclude(project__in=projects.values())
 
 
+ENTRY_STATUS = (
+    ('unverified', 'Unverified',),
+    ('verified', 'Verified',),
+    ('approved', 'Approved',),
+    ('invoiced', 'Invoiced',),
+)
+
 class Entry(models.Model):
     """
     This class is where all of the time logs are taken care of
@@ -209,13 +212,16 @@ class Entry(models.Model):
     project = models.ForeignKey(Project, related_name='entries')
     activity = models.ForeignKey(
         Activity,
-        blank=False,
-        null=False,
         related_name='entries',
     )
     location = models.ForeignKey(
         Location,
         related_name='entries',
+    )
+    status = models.CharField(
+        max_length=24,
+        choices=ENTRY_STATUS,
+        default='unverified',
     )
     start_time = models.DateTimeField()
     end_time = models.DateTimeField(blank=True, null=True)
@@ -562,7 +568,11 @@ class PersonRepeatPeriod(models.Model):
                 end_time__gt = b.date
             ).aggregate(total=Sum('hours')))
         return result
-
+    class Meta:
+        permissions = (
+            ('view_person_time_sheet', 'Can view person\'s timesheet.'),
+            ('edit_person_time_sheet', 'Can edit person\'s timesheet.'),
+        )
 
 class ProjectContract(models.Model):
     CONTRACT_STATUS = (

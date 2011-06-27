@@ -1,6 +1,7 @@
 from dateutil import rrule
+from dateutil.relativedelta import relativedelta
 
-from django.http import HttpResponse, HttpResponseRedirect
+from django.http import HttpResponse, HttpResponseRedirect, Http404
 from django.shortcuts import render_to_response
 from django.template import RequestContext
 from django.template.defaultfilters import slugify
@@ -254,3 +255,22 @@ def get_week_window(day):
     return list(weeks)
 
 
+def date_filter(func):
+    def inner_decorator(request, *args, **kwargs):
+        from timepiece import forms as timepiece_forms
+        if request.GET:
+            form = timepiece_forms.DateForm(request.GET)
+            if form.is_valid():
+                from_date, to_date = form.save()
+                status = form.cleaned_data.get('status')
+                activity = form.cleaned_data.get('activity')
+            else:
+                raise Http404
+        else:
+            form = timepiece_forms.DateForm()
+            today = date.today()
+            from_date = today.replace(day=1)
+            to_date = from_date + relativedelta(months=1)
+            status = activity = None
+        return func(request, form, from_date, to_date, status, activity, *args, **kwargs)
+    return inner_decorator

@@ -1,0 +1,18 @@
+{% extends 'timepiece/time-sheet/base.html' %}
+{% load timepiece_tags %}
+
+{% block title %}Approve Hours for Time Sheet{% endblock %}
+
+{% block content %}
+  <h2>Approve Hours for Time Sheet</h2>
+  <h3><p>Are you sure you want to approve all entries in 
+  {% if person.last_name %}
+    {{ person.first_name }} {{ person.last_name }}
+  {% else %}
+  User #{{ person.pk }}{% endif %}'s timesheet, which includes a total of {{ hours }} hours? 
+  <p>After entries have been approved they are ready to be submitted for payroll.</p></h3>
+  <form method="post">{% csrf_token %}
+      <input type="submit" name="do_action" value="Yes"/>
+      <a href="{{ return_url }}"><input type="button" value="No"/></a>
+  </form>
+{% endblock %}

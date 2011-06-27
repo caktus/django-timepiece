@@ -24,6 +24,8 @@
     {% if perms.timepiece.export_project_time_sheet %}
     {# <li><a href='{% url export_project_time_sheet project.id,window.id %}'>Export as CSV</a></li> #}
     {% endif %}
+    {% if show_verify %}<li><a href='{% url time_sheet_change_status 'verify',person.id,period.id %}'>Verify Time Sheet</a></li>{% endif %}
+    {% if show_approve %}<li><a href='{% url time_sheet_change_status 'approve',person.id,period.id %}'>Approve Time Sheet</a></li>{% endif %}
 </ul>
 
 {% if entries %}
@@ -38,7 +40,7 @@
             <th>Hours</th>
         </tr>
         {% for entry in entries %}
-        <tr class="{% if entry.is_overlapping%}overlapping{% endif %}{% if not entry.activity.billable %} non-billable{% endif %}">
+        <tr class="{% if entry.is_overlapping%}overlapping{% endif %}">
             <td>{{ entry.start_time|date:"m/d/Y (D)" }}</td>
             <td>{{ entry.project.name }}</td>
             <td>{{ entry.location }}</td>
@@ -46,7 +48,7 @@
             <td>{{ entry.end_time|date:"P" }}</td>
             <td>{{ entry.seconds_paused|seconds_to_hours }}</td>
             <td>{{ entry.hours }}</td>
-            {% if is_editable %}<td><a href="{% url timepiece-update entry.id %}">Edit</a></td>{% endif %}
+            {% if is_editable %}<td>{% ifequal entry.status 'unverified' %}<a href="{% url timepiece-update entry.id %}">Edit</a>{% endifequal %}</td>{% endif %}
         </tr>
         {% endfor %}
         <tr>

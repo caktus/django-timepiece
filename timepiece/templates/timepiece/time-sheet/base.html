@@ -1,11 +1,14 @@
 {% extends "timepiece/base.html" %}
 {% load timepiece_tags %}
+{% block javascript %}{{ block.super }}
+	<script src="{{ STATIC_URL }}timepiece/js/clear_form.js" type="text/javascript"></script>
+{% endblock %}
 {% block css %}{{ block.super }}
-<style>
-tr.overlapping {
-    background-color: #ff0000;
-}
-</style>
+  <style>
+  tr.overlapping {
+      background-color: #ff0000;
+  }
+  </style>
 {% endblock %}
 {% block sub_navigation %}
     <ul class='header-actions-left'>
@@ -21,6 +24,9 @@ tr.overlapping {
         {% endif %}
         {% if perms.timepiece.view_payroll_summary %}
             <li><a href="{% url payroll_summary %}">Payroll Report</a></li>
+        {% endif %}
+        {% if perms.timepiece.edit_person_time_sheet %}
+            <li><a href="{% url invoice_projects %}">Invoice Projects</a></li>
         {% endif %}
         {% if perms.timepiece.view_projection_summary %}
             <li><a href="{% url projection_summary %}">Projection</a></li>
