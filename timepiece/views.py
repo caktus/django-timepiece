@@ -60,9 +60,6 @@ def view_entries(request):
         end_date__gte=today,
         contract__status='current',
     ).order_by('contract__project__type', 'end_date')
-    project_entries = entries.values(
-        'project__name',
-    ).annotate(sum=Sum('hours')).order_by('-sum')
     activity_entries = entries.values(
         'activity__billable',
     ).annotate(sum=Sum('hours')).order_by('-sum')
