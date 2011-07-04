@@ -13,8 +13,14 @@
     {% for entry in entries %}
     <tr{% if entry.comments %} title='{{ entry.comments }}'{% endif %} class='{% if entry.is_paused %}paused{% endif %}{% if not entry.end_time %} active{% endif %} {% if entry.is_overlapping%}overlapping{% endif %}'>
         <td>{{ entry.start_time|date:"m/d/Y (D)" }}</td>
-        <td><a href='{% url view_project project_id=entry.project.id %}'>{{ entry.project }}</a></td>
-        <td><a href='{% url view_project project_id=entry.project.id %}'>{{ entry.activity }}</a></td>
+        <td>
+        {% if perms.timepiece.view_project %}
+        <a href='{% url view_project project_id=entry.project.id %}'>{{ entry.project }}</a>
+        {% else %}
+        {{ entry.project }}
+        {% endif %}
+        </td>
+        <td>{{ entry.activity }}</td>
         <td>{{ entry.start_time|date:"P" }}</td>
         <td>
             {% if entry.end_time %}
