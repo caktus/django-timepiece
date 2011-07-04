@@ -30,6 +30,8 @@ class PayrollTest(TimepieceDataTestCase):
             data['activity'] = self.devl_activity
         if project:
             data['project'] = project
+        else:
+            data['project'] = self.create_project(billable=billable)
         return self.create_entry(data)
 
     def testPersonSummary(self):
@@ -46,8 +48,8 @@ class PayrollTest(TimepieceDataTestCase):
         summary = rp.summary(start, end)
         self.assertEqual(summary['billable'], Decimal('3.50'))
         self.assertEqual(summary['non_billable'], Decimal('2.00'))
-        self.assertEqual(summary['sick'], Decimal('8.00'))
-        self.assertEqual(summary['vacation'], Decimal('4.00'))
+        self.assertEqual(summary['paid_leave']['sick'], Decimal('8.00'))
+        self.assertEqual(summary['paid_leave']['vacation'], Decimal('4.00'))
         self.assertEqual(summary['total'], Decimal('17.50'))
 
     def testWeeklyHours(self):
