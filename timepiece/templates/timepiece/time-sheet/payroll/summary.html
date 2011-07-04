@@ -67,7 +67,7 @@
                 {% if user.summary %}
                     <td>{% if user.summary.billable %}{{ user.summary.billable }} ({% widthratio user.summary.billable user.summary.total_worked 100 %}%){% endif %}</td>
                     <td>{% if user.summary.non_billable %}{{ user.summary.non_billable }} ({% widthratio user.summary.non_billable user.summary.total_worked 100 %}%){% endif %}</td>
-                    <td>{{ user.summary.total_worked|default_if_none:'' }}</td>
+                    <td>{% if user.summary.total_worked %}{{ user.summary.total_worked }}{% endif %}</td>
                     <td>
                     {% for leave_type, leave_hours in user.summary.paid_leave.iteritems %}
                         {% if leave_hours %}

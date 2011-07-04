@@ -61,7 +61,7 @@ def view_entries(request):
         contract__status='current',
     ).order_by('contract__project__type', 'end_date')
     activity_entries = entries.values(
-        'activity__billable',
+        'billable',
     ).annotate(sum=Sum('hours')).order_by('-sum')
     others_active_entries = timepiece.Entry.objects.filter(
         end_time__isnull=True,
@@ -374,7 +374,7 @@ def project_time_sheet(request, project_id, window_id=None):
         'user__last_name',
     ).annotate(sum=Sum('hours')).order_by('-sum')
     activity_entries = entries.order_by().values(
-        'activity__billable',
+        'billable',
     ).annotate(sum=Sum('hours')).order_by('-sum')
     context = {
         'project': project,
@@ -478,7 +478,7 @@ def view_person_time_sheet(request, person_id, period_id, window_id=None):
         'project__name',
     ).annotate(sum=Sum('hours')).order_by('-sum')
     activity_entries = entries.order_by().values(
-        'activity__billable',
+        'billable',
     ).annotate(sum=Sum('hours')).order_by('-sum')
     is_editable = window.end_date +\
         datetime.timedelta(days=settings.TIMEPIECE_TIMESHEET_EDITABLE_DAYS) >=\
@@ -1055,14 +1055,13 @@ def payroll_summary(request, form, from_date, to_date, status, activity):
     project_totals = project_totals.values(
         'project__name',
         'project__type__label',
-        'project__type__billable',
-        'activity__billable',
+        'billable',
     ).annotate(s=Sum('hours')).order_by('project__name')
     projects = {}
     for row in project_totals:
         name = row['project__name']
         type = row['project__type__label']
-        billable = row['activity__billable'] and row['project__type__billable']
+        billable = row['billable']
         hours = row['s']
         if name not in projects:
             projects[name] = {'billable': Decimal('0'),

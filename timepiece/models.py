@@ -190,6 +190,19 @@ class Location(models.Model):
         return self.name
 
 
+class EntryManager(models.Manager):
+    def get_query_set(self):
+        qs = super(EntryManager, self).get_query_set()
+        qs = qs.select_related('activity', 'project__type')
+        # ensure our select_related are added.  Without this line later calls
+        # to select_related will void ours (not sure why - probably a bug
+        # in Django)
+        foo = str(qs.query)
+        qs = qs.extra({'billable': 'timepiece_activity.billable AND '
+                                   'timepiece_attribute.billable'})
+        return qs
+
+
 class EntryWorkedManager(models.Manager):
     def get_query_set(self):
         qs = super(EntryWorkedManager, self).get_query_set()
@@ -233,7 +246,7 @@ class Entry(models.Model):
    
     hours = models.DecimalField(max_digits=8, decimal_places=2, default=0)
 
-    objects = models.Manager()
+    objects = EntryManager()
     worked = EntryWorkedManager()
 
     def is_overlapping(self):
@@ -556,11 +569,10 @@ class PersonRepeatPeriod(models.Model):
         data['total'] = entries.aggregate(s=Sum('hours'))['s']
         billable = entries.exclude(project__in=projects.values())
         billable = billable.values(
-            'activity__billable',
-            'project__type__billable',
+            'billable',
         ).annotate(s=Sum('hours'))
         for row in billable:
-            if row['activity__billable'] and row['project__type__billable']:
+            if row['billable']:
                 data['billable'] += row['s']
             else:
                 data['non_billable'] += row['s']

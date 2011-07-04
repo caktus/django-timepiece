@@ -122,9 +122,9 @@
       {% ifnotequal schedule.count 0 %}
       {% for row in activity_entries %}
         <tr>
-            <th>Total {% if row.activity__billable %}billable{% else %}non-billable{% endif %} time:</th>
+            <th>Total {% if row.billable %}billable{% else %}non-billable{% endif %} time:</th>
             <td>
-                {% if row.activity__billable %}
+                {% if row.billable %}
                     {% bar_graph '' row.sum schedule.0.hours_per_week %}
                 {% else %}
                     {{ row.sum }}
