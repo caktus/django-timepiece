@@ -119,20 +119,23 @@
             <td>{{ entry.sum }}</td>
         </tr>
       {% endfor %}
-      {% ifnotequal schedule.count 0 %}
+      
       {% for row in activity_entries %}
         <tr>
             <th>Total {% if row.billable %}billable{% else %}non-billable{% endif %} time:</th>
             <td>
                 {% if row.billable %}
-                    {% bar_graph '' row.sum schedule.0.hours_per_week %}
+                    {% ifnotequal schedule.count 0 %}
+                        {% bar_graph '' row.sum schedule.0.hours_per_week %}
+                    {% else %}
+                        {{ row.sum }}
+                    {% endifnotequal %}
                 {% else %}
                     {{ row.sum }}
                 {% endif %}
             </td>
         </tr>
       {% endfor %}
-      {% endifnotequal %}
   </table>
 {% endif %}
 {% if allocations %}
