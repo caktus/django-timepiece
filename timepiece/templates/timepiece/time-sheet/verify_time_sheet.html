@@ -1,0 +1,14 @@
+{% extends 'timepiece/time-sheet/base.html' %}
+{% load timepiece_tags %}
+
+{% block title %}Verify Hours for Time Sheet{% endblock %}
+
+{% block content %}
+  <h2>Verify Hours for Time Sheet</h2>
+  <h3><p>Are you sure you want to verify all entries in this timesheet, which includes a total of {{ hours }} hours? 
+  <p>After entries are verified and approved, they cannot be changed.</p></h3>
+  <form method="post">{% csrf_token %}
+      <input type="submit" name="do_action" value="Yes"/>
+      <a href="{{ return_url }}"><input type="button" value="No"/></a>
+  </form>
+{% endblock %}

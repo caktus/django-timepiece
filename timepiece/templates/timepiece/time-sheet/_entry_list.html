@@ -3,6 +3,7 @@
     <tr>
         <th>Date</th>
         <th>Project</th>
+        <th>Activity</th>
         <th>Clock In</th>
         <th>Clock Out</th>
         <th>Breaks</th>
@@ -10,9 +11,10 @@
         <th>Location</th>
     </tr>
     {% for entry in entries %}
-    <tr{% if entry.comments %} title='{{ entry.comments }}'{% endif %} class='{% if entry.is_paused %}paused{% endif %}{% if not entry.end_time %} active{% endif %} {% if entry.is_overlapping%}overlapping{% endif %}{% if not entry.billable %} non-billable{% endif %}'>
+    <tr{% if entry.comments %} title='{{ entry.comments }}'{% endif %} class='{% if entry.is_paused %}paused{% endif %}{% if not entry.end_time %} active{% endif %} {% if entry.is_overlapping%}overlapping{% endif %}'>
         <td>{{ entry.start_time|date:"m/d/Y (D)" }}</td>
-        <td><a href='{% url view_project business_id=entry.project.business.id,project_id=entry.project.id %}'>{{ entry.project }}</a></td>
+        <td><a href='{% url view_project project_id=entry.project.id %}'>{{ entry.project }}</a></td>
+        <td><a href='{% url view_project project_id=entry.project.id %}'>{{ entry.activity }}</a></td>
         <td>{{ entry.start_time|date:"P" }}</td>
         <td>
             {% if entry.end_time %}
@@ -35,8 +37,10 @@
         <td>{{ entry.location }}</td>
         <td>
             <ul class='actions'>
+                {% ifequal entry.status 'unverified' %}
                 <li><a href="{% url timepiece-update entry.id %}">Change</a></li>
                 <li><a href="{% url timepiece-delete entry.id %}">Remove</a></li>
+                {% endifequal %}
             </ul>
         </td>
     </tr>

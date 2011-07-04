@@ -1,5 +1,5 @@
 {% extends "base.html" %}
-{% load crm_tags %}
+{% load timepiece_tags markup %}
 
 {% block title %}{{ project }}{% endblock %}
 
@@ -7,10 +7,10 @@
 <h2>{{ project }}</h2>
 <ul class='header-actions-left'>
 {% if perms.timepiece.change_project %}
-	<li><a href='{% url edit_project business_id=project.business.id,project_id=project.id %}'>Edit project</a></li>
+	<li><a href='{% url edit_project project_id=project.id %}'>Edit project</a></li>
 {% endif %}
-{% if perms.crm.view_businesses %}
-    <li><a href='{% url view_business business_id=project.business.id %}'>Return to {{ project.business.name }}</a></li>
+{% if perms.timepiece.view_businesses %}
+    <li><a href='{% url view_business business=project.business.id %}'>Return to {{ project.business.name }}</a></li>
 {% endif %}
 {% if repeat_period and perms.timepiece.view_project_time_sheet %}
     <li><a href='{% url project_time_sheet project.id %}'>Project Time Sheet</a></li>
@@ -20,29 +20,25 @@
 <div id='sidebar'>
     <h3>Contacts</h3>
     <ul class='people'>
-    {% ifnotequal project.contacts.count 0 %}
-    {% for contact in project.contacts.select_related.all %}
+    {% ifnotequal project.users.count 0 %}
+    {% for user in project.users.select_related.all %}
         <li>
-            {% if perms.crm.view_contact %}
-                <a href='{% url view_person person_id=contact.id %}'>{{ contact.get_full_name }}</a>
-            {% else %}
-                {{ contact.get_full_name }}
-            {% endif %}
+            {{ user.get_full_name }}
             {% if perms.timepiece.change_projectrelationship %}
-                <a title="Edit {{ contact.get_full_name }}'s relationship to {{ project }}" href='{% url edit_project_relationship business_id=project.business.id,project_id=project.id,user_id=contact.id %}?next={% url view_project business_id=project.business.id,project_id=project.id %}'><img alt="Edit {{ contact.get_full_name }}'s relationship to {{ project }}" src='{{ FAMFAMFAM_URL }}pencil.png' /></a>
+                <a title="Edit {{ user.get_full_name }}'s relationship to {{ project }}" href='{% url edit_project_relationship project_id=project.id,user_id=user.id %}?next={% url view_project project_id=project.id %}'><img alt="Edit {{ user.get_full_name }}'s relationship to {{ project }}" src='{{ FAMFAMFAM_URL }}pencil.png' /></a>
             {% endif %}
             {% if perms.timepiece.delete_projectrelationship %}
-                <a title='Remove {{ contact.get_full_name }}' href='{% url associate_contact business_id=project.business.id,project_id=project.id,user_id=contact.id,action="remove" %}?next={% url view_project business_id=project.business.id,project_id=project.id %}'><img alt='Remove {{ contact.get_full_name }}' src='{{ FAMFAMFAM_URL }}/delete.png' /></a>
+                <a title='Remove {{ user.get_full_name }}' href='{% url remove_user_from_project project_id=project.id,user_id=user.id %}?next={% url view_project project_id=project.id %}'><img alt='Remove {{ user.get_full_name }}' src='{{ FAMFAMFAM_URL }}/delete.png' /></a>
             {% endif %}
         </li>
     {% endfor %}
     {% endifnotequal %}
     </ul>
     {% if perms.timepiece.add_projectrelationship %}
-    <form id="add-contact" action='{% url associate_contact business_id=project.business.id,project_id=project.id,action="add" %}?next={% url view_project business_id=project.business.id,project_id=project.id %}' method="post" accept-charset="utf-8">
+    <form id="add-user" action='{% url add_user_to_project project_id=project.id %}?next={% url view_project project_id=project.id %}' method="post" accept-charset="utf-8">
         {% csrf_token %}
         <div class="field-wrapper">
-            {{ add_contact_form }}
+            {{ add_user_form }}
             <input type="submit" name="submit" value="Add" id="submit" />
         </div>
     </form>
@@ -57,6 +53,10 @@
     <tr>
         <th>Status:</th>
         <td>{{ project.status }}</td>
+    </tr>
+    <tr>
+        <th>Billable:</th>
+        <td>{{ project.billable }}</td>
     </tr>
     <tr>
         <th>Point Person:</th>

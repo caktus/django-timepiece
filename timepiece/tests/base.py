@@ -1,18 +1,39 @@
 import datetime
 import random
+import string
 
 from django.test import TestCase
 from django.core.urlresolvers import reverse
+from django.template.defaultfilters import slugify
 from django.contrib.auth.models import User, Permission
 from django.contrib.contenttypes.models import ContentType
 from django.db.models import Q
 
 from timepiece import models as timepiece
-from crm import models as crm
-from crm.tests import CrmDataTestCase
 
-
-class TimepieceDataTestCase(CrmDataTestCase):
+class TimepieceDataTestCase(TestCase):
+    def create_business(self, data={}):
+        name = self.random_string(30, extra_chars=' ')
+        defaults = {
+            'name': name,
+        }
+        defaults.update(data)
+        return timepiece.Business.objects.create(**defaults)
+    
+    def random_string(self, length=255, extra_chars=''):
+        chars = string.letters + extra_chars
+        return ''.join([random.choice(chars) for i in range(length)])
+    
+    def create_person(self, data={}):
+        first_name = self.random_string(20)
+        last_name = self.random_string(20)
+        defaults = {
+            'first_name': first_name,
+            'last_name': last_name,
+        }
+        defaults.update(data)
+        return User.objects.create(**defaults)
+    
     def create_project_type(self, data={}):
         defaults = {
             'label': self.random_string(30, extra_chars=' '),
@@ -29,11 +50,11 @@ class TimepieceDataTestCase(CrmDataTestCase):
         defaults.update(data)
         return timepiece.Attribute.objects.create(**defaults)
     
-    def create_project(self, data={}):
+    def create_project(self, billable=False, data={}):
         name = self.random_string(30, extra_chars=' ')
         defaults = {
             'name': name,
-            'type': self.create_project_type(),
+            'type': self.create_project_type(data={'billable': billable}),
             'status': self.create_project_status(),
         }
         defaults.update(data)
@@ -50,8 +71,8 @@ class TimepieceDataTestCase(CrmDataTestCase):
     def create_project_relationship(self, data={}):
         defaults = {}
         defaults.update(data)
-        if 'contact' not in defaults:
-            defaults['contact'] = self.create_person()
+        if 'user' not in defaults:
+            defaults['user'] = self.create_person()
         if 'project' not in defaults:
             defaults['project'] = self.create_project()
         return timepiece.ProjectRelationship.objects.create(**defaults)
@@ -60,6 +81,7 @@ class TimepieceDataTestCase(CrmDataTestCase):
         defaults = {
             'code': self.random_string(5, extra_chars=' '),
             'name': self.random_string(50, extra_chars=' '),
+            'billable': False
         }
         defaults.update(data)
         return timepiece.Activity.objects.create(**defaults)
@@ -95,8 +117,8 @@ class TimepieceDataTestCase(CrmDataTestCase):
     def create_person_repeat_period(self, data={}):
         defaults = {}
         defaults.update(data)
-        if 'contact' not in defaults:
-            defaults['contact'] = self.create_person()
+        if 'user' not in defaults:
+            defaults['user'] = self.create_person()
         if 'repeat_period' not in defaults:
             defaults['repeat_period'] = self.create_repeat_period()
         return timepiece.PersonRepeatPeriod.objects.create(**defaults)
@@ -116,8 +138,8 @@ class TimepieceDataTestCase(CrmDataTestCase):
     def create_contract_assignment(self, data={}):
         defaults = {}
         defaults.update(data)
-        if 'contact' not in defaults:
-            contact = self.create_person()
+        if 'user' not in defaults:
+            user = self.create_person()
         if 'contract' not in defaults:
             defaults['contract'] = self.create_project()
         defaults['start_date'] = defaults['contract'].start_date
@@ -130,8 +152,8 @@ class TimepieceDataTestCase(CrmDataTestCase):
             'end_date': datetime.date.today() + datetime.timedelta(weeks=2),
         }
         defaults.update(data)
-        if 'contact' not in defaults:
-            defaults['contact'] = self.create_person()
+        if 'user' not in defaults:
+            defaults['user'] = self.create_person()
         return timepiece.PersonSchedule.objects.create(**defaults)
 
     def setUp(self):
@@ -143,23 +165,19 @@ class TimepieceDataTestCase(CrmDataTestCase):
         )
         self.user.user_permissions = permissions
         self.user2.user_permissions = permissions
-        self.contact = crm.Contact.objects.create(
-            first_name='John',
-            last_name='Doe',
-            sort_name='doe-john',
-            type='individual',
-            user=self.user,
-            description='',
-        )
+
+        self.user = self.user
         self.activity = timepiece.Activity.objects.create(
             code="WRK",
             name="Work",
         )
-        self.business = crm.Contact.objects.create(
+        self.devl_activity = timepiece.Activity.objects.create(
+            code="devl",
+            name="development",
+            billable=True,
+        )
+        self.business = timepiece.Business.objects.create(
             name='Example Business',
-            slug='example-business',
-            sort_name='example-business',
-            type='business',
             description='',
         )
         status = timepiece.Attribute.objects.create(
@@ -186,7 +204,7 @@ class TimepieceDataTestCase(CrmDataTestCase):
             point_person=self.user2,
         )
         timepiece.ProjectRelationship.objects.create(
-            contact=self.contact,
+            user=self.user,
             project=self.project,
         )
         self.location = self.create_location()

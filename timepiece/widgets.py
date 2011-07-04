@@ -9,22 +9,8 @@ from django.utils.safestring import mark_safe
 
 re_id = re.compile('id="([^"]+)"')
 
-# see if the user has overridden the media
-if hasattr(settings, 'PENDULUM_DATE_MEDIA'):
-    PENDULUM_DATE_MEDIA = settings.PENDULUM_DATE_MEDIA
-else:
-    PENDULUM_DATE_MEDIA = {
-        'js': (settings.MEDIA_URL + 'timepiece/js/jquery.js',
-               settings.MEDIA_URL + 'timepiece/js/jquery.ui.js'),
-        'css': {
-            'all': (settings.MEDIA_URL + 'timepiece/css/jquery-ui.css',)
-        }
-    }
 
 class DateWidget(forms.TextInput):
-    class Media:
-        js = PENDULUM_DATE_MEDIA['js']
-        css = PENDULUM_DATE_MEDIA['css']
 
     def __init__(self, attrs={}):
         super(DateWidget, self).__init__(attrs={'class': 'vDateField', 'size': '10'})

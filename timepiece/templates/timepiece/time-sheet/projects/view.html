@@ -6,7 +6,7 @@
 {% block content %}
 <h2>{{ project }} Time Sheet ({{ window.date|date:"N j" }} &mdash; {{ window.end_date|date:"N j" }})</h2>
 <ul class='header-actions-left'>
-    <li><a href='{% url view_project project.business.id,project.id %}'>Project Information</a></li>
+    <li><a href='{% url view_project project.id %}'>Project Information</a></li>
     <li>
         {% if window.previous %}
             <a href='{% url project_time_sheet project.id,window.previous.id %}'>Previous Time Sheet</a>
@@ -38,7 +38,7 @@
             <th>Hours</th>
         </tr>
         {% for entry in entries %}
-        <tr{% if entry.comments %} title='{{ entry.comments }}'{% endif %}{% if not entry.billable %} class='non-billable'{% endif %}>
+        <tr{% if entry.comments %} title='{{ entry.comments }}'{% endif %}>
             <td>{{ entry.start_time|date:"m/d/Y (D)" }}</td>
             <td>{{ entry.user.get_full_name }}</td>
             <td>{{ entry.location }}</td>

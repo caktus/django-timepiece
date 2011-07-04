@@ -12,30 +12,73 @@ urlpatterns = patterns('',
     url(r'^update/(?P<entry_id>\d+)/$', views.create_edit_entry, name='timepiece-update'),
     url(r'^delete/(?P<entry_id>\d+)/$', views.delete_entry, name='timepiece-delete'),
     url(r'^summary/', views.summary, name='timepiece-summary'),
-
+    url(r'^search/$', views.quick_search, name='quick_search'),
+    
+    url(r'^person/list/$', views.list_people, name='list_people'),
+    url(
+        r'^person/(?P<person_id>\d+)/$',
+        views.view_person,
+        name='view_person',
+    ),
+    url(
+        r'^person/create/$',
+        views.create_edit_person,
+        name='create_person',
+    ),
+    url(
+        r'^person/(?P<person_id>\d+)/edit/$',
+        views.create_edit_person,
+        name='edit_person',
+    ),
+    url(r'^business/list/$', views.list_businesses, name='list_businesses'),
+    url(
+        r'^business/create/$',
+        views.create_edit_business,
+        name='create_business',
+    ),
+    url(
+        r'^business/(?P<business>\d+)/$',
+        views.view_business,
+        name='view_business',
+    ),
+    url(
+        r'^business/(?P<business>\d+)/edit/$',
+        views.create_edit_business,
+        name='edit_business',
+    ),
     
     url(r'^project/list/$', views.list_projects, name='list_projects'),
     url(
-        r'^business/(?P<business_id>\d+)/project/(?P<project_id>\d+)/$',
+        r'^project/(?P<project_id>\d+)/$',
         views.view_project,
         name='view_project',
     ),
     url(
-        r'^(?:business/(?P<business_id>\d+)/)?project/create/$',
+        r'^project/create/$',
         views.create_edit_project,
         name='create_project',
     ),
     url(
-        r'^business/(?P<business_id>\d+)/project/(?P<project_id>\d+)/edit/$',
+        r'^project/(?P<project_id>\d+)/edit/$',
         views.create_edit_project,
         name='edit_project',
     ),
     url(
-        r'^business/(?P<business_id>\d+)/project/(?P<project_id>\d+)/contact/(?P<user_id>\d+)/edit/$',
+        r'^project/(?P<project_id>\d+)/user/add/$',
+        views.add_user_to_project,
+        name='add_user_to_project',
+    ),
+    url(
+        r'^project/(?P<project_id>\d+)/user/(?P<user_id>\d+)/remove/$',
+        views.remove_user_from_project,
+        name='remove_user_from_project',
+    ),
+    url(
+        r'^project/(?P<project_id>\d+)/user/(?P<user_id>\d+)/edit/$',
         views.edit_project_relationship,
         name='edit_project_relationship',
     ),
-    
+
     ### time sheets ###
     url(
         r'^time-sheet/projects/$',
@@ -47,7 +90,7 @@ urlpatterns = patterns('',
         views.tracked_people,
         name='tracked_people',
     ),
-    
+
     url(
         r'^time-sheet/people/create/$',
         views.create_edit_person_time_sheet,
@@ -64,6 +107,11 @@ urlpatterns = patterns('',
         name='view_person_time_sheet',
     ),
     url(
+        r'^time-sheet/(?P<action>verify|approve|invoice)/(?:(?P<person_id>\d+)/)?(?:(?P<period_id>\d+)/)?$',
+        views.time_sheet_change_status,
+        name='time_sheet_change_status',
+    ),
+    url(
         r'^time-sheet/project/(?P<project_id>\d+)/(?:(?P<window_id>\d+)/)?$',
         views.project_time_sheet,
         name='project_time_sheet',
@@ -73,13 +121,19 @@ urlpatterns = patterns('',
         views.export_project_time_sheet,
         name='export_project_time_sheet',
     ),
-    
+
+    url(
+        r'^time-sheet/project/invoices/$',
+        views.invoice_projects,
+        name='invoice_projects',
+    ),
+
     url(
         r'^payroll/summary/$',
         views.payroll_summary,
         name='payroll_summary',
     ),
-    
+
     url(
         r'^projection/$',
         views.projection_summary,

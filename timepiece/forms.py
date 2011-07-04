@@ -4,19 +4,107 @@ from django import forms
 from django.db.models import Q
 from django.conf import settings
 
+from django.contrib.auth import models as auth_models
+from django.contrib.auth import forms as auth_forms
+from django.core.urlresolvers import reverse
+from django.utils.translation import ugettext_lazy as _
+
 from timepiece.models import Project, Entry
 from timepiece.fields import PendulumDateTimeField
 from timepiece.widgets import PendulumDateTimeWidget, SecondsToHoursWidget
 from datetime import datetime, timedelta
 
 from timepiece import models as timepiece
-from crm import models as crm
+
+from ajax_select.fields import AutoCompleteSelectMultipleField, \
+                               AutoCompleteSelectField, \
+                               AutoCompleteSelectWidget
+                               
+class CreatePersonForm(auth_forms.UserCreationForm):
+    class Meta:
+        model = auth_models.User
+        fields = (
+            "username", "first_name", "last_name", 
+            "email", "is_active", "is_staff")
+
+
+class EditPersonForm(auth_forms.UserChangeForm):
+    password_one = forms.CharField(required=False, max_length=36, label=_(u'Password'),
+                                widget=forms.PasswordInput(render_value=False))
+    password_two = forms.CharField(required=False, max_length=36, label=_(u'Repeat Password'),
+                                widget=forms.PasswordInput(render_value=False))
+    class Meta:
+        model = auth_models.User
+        fields = (
+            "username", "first_name", "last_name", 
+            "email", "is_active", "is_staff"
+        )
+                        
+    def clean(self):
+        super(EditPersonForm, self).clean()
+        password_one = self.cleaned_data.get('password_one', None)
+        password_two = self.cleaned_data.get('password_two', None)
+        if password_one and password_one != password_two:
+            raise forms.ValidationError(_('Passwords Must Match.'))
+        return self.cleaned_data
+    
+    def save(self, *args, **kwargs):
+        commit = kwargs.get('commit', True)
+        kwargs['commit'] = False
+        instance = super(EditPersonForm, self).save(*args, **kwargs)
+        password_one = self.cleaned_data.get('password_one', None)
+        if password_one:
+            instance.set_password(password_one)
+        if commit:
+            instance.save()
+        return instance
+        
+class CharAutoCompleteSelectWidget(AutoCompleteSelectWidget):
+    def value_from_datadict(self, data, files, name):
+        return data.get(name, None)
+
+
+class QuickSearchForm(forms.Form):
+    quick_search = AutoCompleteSelectField(
+        'quick_search',
+        widget=CharAutoCompleteSelectWidget('quick_search'),
+    )
+    
+    def clean_quick_search(self):
+        item = self.cleaned_data['quick_search']
+        if isinstance(item, timepiece.Project):
+            return reverse('view_project', kwargs={
+                'project_id': item.id,
+            })
+        elif isinstance(item, timepiece.Business,):
+            return reverse('view_business', kwargs={
+                'business': item.id,
+            })
+        elif isinstance(item, auth_models.User,):
+            return reverse('view_person', kwargs={
+                'person_id': item.id,
+            })
+        raise forms.ValidationError('Must be a User or Project')
+    
+    def save(self):
+        return self.cleaned_data['quick_search']
+
+
+class SearchForm(forms.Form):
+    search = forms.CharField(required=False)
+
+
+class AddUserToProjectForm(forms.Form):
+    user = AutoCompleteSelectField('user')
+    
+    def save(self):
+        return self.cleaned_data['user']
 
 
 class ClockInForm(forms.ModelForm):
     class Meta:
         model = timepiece.Entry
-        fields = ('location', 'project', 'start_time', 'billable')
+        fields = ('location', 'project', 'activity', 'start_time',)
 
     def __init__(self, *args, **kwargs):
         self.user = kwargs.pop('user')
@@ -41,7 +129,7 @@ class ClockInForm(forms.ModelForm):
             date_format='%m/%d/%Y',
         )
         self.fields['project'].queryset = timepiece.Project.objects.filter(
-            contacts__user=self.user,
+            users=self.user,
         ).filter(
             Q(status__enable_timetracking=True) |
             Q(type__enable_timetracking=True)
@@ -102,13 +190,13 @@ class AddUpdateEntryForm(forms.ModelForm):
     
     class Meta:
         model = Entry
-        exclude = ('user', 'pause_time', 'site', 'hours', 'activity')
+        exclude = ('user', 'pause_time', 'site', 'hours', 'status',)
 
     def __init__(self, *args, **kwargs):
         self.user = kwargs.pop('user')
         super(AddUpdateEntryForm, self).__init__(*args, **kwargs)
         self.fields['project'].queryset = timepiece.Project.objects.filter(
-            contacts__user=self.user,
+            users=self.user,
         )
         if not self.instance.end_time:
             del self.fields['end_time']
@@ -158,12 +246,21 @@ class AddUpdateEntryForm(forms.ModelForm):
         instance.save()
         return instance
         
-
+STATUS_CHOICES = [('','---------'),]
+STATUS_CHOICES.extend(timepiece.ENTRY_STATUS)
 
 class DateForm(forms.Form):
     from_date = forms.DateField(label="From", required=False)
     to_date = forms.DateField(label="To", required=False)
-    
+    status = forms.ChoiceField(choices=STATUS_CHOICES, widget=forms.HiddenInput(), required=False)
+    activity = forms.ModelChoiceField(
+        queryset=timepiece.Activity.objects.all(), 
+        widget=forms.HiddenInput(), required=False,
+    )
+    project = forms.ModelChoiceField(
+        queryset=timepiece.Project.objects.all(), 
+        widget=forms.HiddenInput(), required=False,
+    )
     def save(self):
         from_date = self.cleaned_data.get('from_date', '')
         to_date = self.cleaned_data.get('to_date', '')
@@ -173,14 +270,18 @@ class DateForm(forms.Form):
 
 
 class ProjectionForm(DateForm):
-    contact = forms.ModelChoiceField(queryset=None)
+    user = forms.ModelChoiceField(queryset=None)
     
     def __init__(self, *args, **kwargs):
-        contacts = kwargs.pop('contacts')
+        users = kwargs.pop('users')
         super(ProjectionForm, self).__init__(*args, **kwargs)
-        self.fields['contact'].queryset = contacts
-    
+        self.fields['user'].queryset = users
 
+
+class BusinessForm(forms.ModelForm):
+    class Meta:
+        model = timepiece.Business
+        fields = ('name', 'email', 'description', 'notes',)
 
 class ProjectForm(forms.ModelForm):
     class Meta:
@@ -196,21 +297,10 @@ class ProjectForm(forms.ModelForm):
         )
 
     def __init__(self, *args, **kwargs):
-        self.business = kwargs.pop('business')
         super(ProjectForm, self).__init__(*args, **kwargs)
-
-        if self.business:
-            self.fields.pop('business')
-        else:
-            self.fields['business'].queryset = crm.Contact.objects.filter(
-                type='business',
-                business_types__name='client',
-            )
 
     def save(self):
         instance = super(ProjectForm, self).save(commit=False)
-        if self.business:
-            instance.business = self.business
         instance.save()
         return instance
 
@@ -292,11 +382,8 @@ class RepeatPeriodForm(forms.ModelForm):
 class PersonTimeSheet(forms.ModelForm):
     class Meta:
         model = timepiece.PersonRepeatPeriod
-        fields = ('contact',)
+        fields = ('user',)
     
     def __init__(self, *args, **kwargs):
         super(PersonTimeSheet, self).__init__(*args, **kwargs)
-        self.fields['contact'].queryset = crm.Contact.objects.filter(
-            type='individual',
-            user__isnull=False,
-        ).order_by('sort_name')
+        self.fields['user'].queryset = auth_models.User.objects.all().order_by('last_name')

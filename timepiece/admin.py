@@ -5,8 +5,19 @@ from timepiece.projection import run_projection
 
 class ActivityAdmin(admin.ModelAdmin):
     model = timepiece.Activity
-    list_display = ('code', 'name')
+    list_display = ('code', 'name', 'billable')
+    list_filter = ('billable',)
 admin.site.register(timepiece.Activity, ActivityAdmin)
+
+
+class RelationshipTypeAdmin(admin.ModelAdmin):
+    pass
+admin.site.register(timepiece.RelationshipType, RelationshipTypeAdmin)
+
+
+class BusinessAdmin(admin.ModelAdmin):
+    pass
+admin.site.register(timepiece.Business, BusinessAdmin)
 
 
 class EntryAdmin(admin.ModelAdmin):
@@ -14,24 +25,28 @@ class EntryAdmin(admin.ModelAdmin):
     list_display = ('user',
                     'project',
                     'location',
+                    'project_type',
                     'activity',
                     'start_time',
                     'end_time',
                     'hours',
                     'is_closed',
                     'is_paused',
-                    'billable')
-    list_filter = ['user', 'project']
+                    )
+    list_filter = ['activity', 'project__type', 'user', 'project']
     search_fields = ['user', 'project', 'activity', 'comments']
     date_hierarchy = 'start_time'
     ordering = ('-start_time',)
+    
+    def project_type(self, entry):
+        return entry.project.type
 admin.site.register(timepiece.Entry, EntryAdmin)
 
 
 class AttributeAdmin(admin.ModelAdmin):
     search_fields = ('label', 'type')
-    list_display = ('label', 'type')
-    list_filter = ('type',)
+    list_display = ('label', 'type', 'enable_timetracking', 'billable')
+    list_filter = ('type', 'enable_timetracking', 'billable')
     ordering = ('type', 'sort_order',) # Django honors only first field
 admin.site.register(timepiece.Attribute, AttributeAdmin)
 
@@ -70,7 +85,7 @@ class ProjectContractInline(admin.TabularInline):
 
 class ProjectAdmin(admin.ModelAdmin):
     model = timepiece.Project
-    raw_id_fields = ('interactions', 'business')
+    raw_id_fields = ('business',)
     list_display = ('name', 'business', 'point_person', 'status', 'type',)
     list_filter = ('type', 'status')
     inlines = (ProjectContractInline,)
@@ -78,7 +93,7 @@ admin.site.register(timepiece.Project, ProjectAdmin)
 
 
 class ContractAssignmentAdmin(admin.ModelAdmin):
-    list_display = ('id', 'contract', 'contact', 'start_date',
+    list_display = ('id', 'contract', 'user', 'start_date',
                     'end_date', 'min_hours_per_week', 'num_hours', 'worked',
                     'remaining')
     list_filter = ('contract',)
@@ -108,7 +123,7 @@ admin.site.register(timepiece.ContractAssignment, ContractAssignmentAdmin)
 
 
 class PersonScheduleAdmin(admin.ModelAdmin):
-    list_display = ('contact', 'hours_per_week', 'end_date', 'total_available',
+    list_display = ('user', 'hours_per_week', 'end_date', 'total_available',
                     'scheduled', 'unscheduled')
 
     def total_available(self, obj):
@@ -147,3 +162,7 @@ class LocationAdmin(admin.ModelAdmin):
     list_display = ('id', 'name')
 admin.site.register(timepiece.Location, LocationAdmin)
 
+
+class AllocationAdmin(admin.ModelAdmin):
+    list_display = ('date','hours', 'hours_worked', 'hours_left',)
+admin.site.register(timepiece.AssignmentAllocation, AllocationAdmin)

@@ -1,10 +1,68 @@
 from dateutil import rrule
+from dateutil.relativedelta import relativedelta
 
+from django.http import HttpResponse, HttpResponseRedirect, Http404
+from django.shortcuts import render_to_response
+from django.template import RequestContext
+from django.template.defaultfilters import slugify
 
 from django.contrib.sites.models import Site
 from datetime import date, datetime, timedelta, time as time_obj
 import time
 import calendar
+
+
+def slugify_uniquely(s, queryset=None, field='slug'):
+    """
+    Returns a slug based on 's' that is unique for all instances of the given
+    field in the given queryset.
+    
+    If no string is given or the given string contains no slugify-able
+    characters, default to the given field name + N where N is the number of
+    default slugs already in the database.
+    """
+    new_slug = new_slug_base = slugify(s)
+    if queryset:
+        queryset = queryset.filter(**{'%s__startswith' % field: new_slug_base})
+        similar_slugs = [value[0] for value in queryset.values_list(field)]
+        i = 1
+        while new_slug in similar_slugs:
+            new_slug = "%s%d" % (new_slug_base, i)
+            i += 1
+    return new_slug
+
+
+def render_with(template_name):
+    """
+    Renders the view wrapped by this decorator with the given template.  The
+    view should return the context to be used in the template, or an
+    HttpResponse.
+    
+    If the view returns an HttpResponseRedirect, the decorator will redirect
+    to the given URL, or to request.REQUEST['next'] (if it exists).
+    """
+    def render_with_decorator(view_func):
+        def wrapper(*args, **kwargs):
+            request = args[0]
+            response = view_func(*args, **kwargs)
+            
+            if isinstance(response, HttpResponse):
+                if isinstance(response, HttpResponseRedirect) and \
+                  'next' in request.REQUEST:
+                    return HttpResponseRedirect(request.REQUEST['next'])
+                else:
+                    return response
+            else:
+                # assume response is a context dictionary
+                context = response
+                return render_to_response(
+                    template_name, 
+                    context, 
+                    context_instance=RequestContext(request),
+                )
+        return wrapper
+    return render_with_decorator
+
 
 def determine_period(the_date=date.today(), delta=0):
     """
@@ -197,3 +255,22 @@ def get_week_window(day):
     return list(weeks)
 
 
+def date_filter(func):
+    def inner_decorator(request, *args, **kwargs):
+        from timepiece import forms as timepiece_forms
+        if request.GET:
+            form = timepiece_forms.DateForm(request.GET)
+            if form.is_valid():
+                from_date, to_date = form.save()
+                status = form.cleaned_data.get('status')
+                activity = form.cleaned_data.get('activity')
+            else:
+                raise Http404
+        else:
+            form = timepiece_forms.DateForm()
+            today = date.today()
+            from_date = today.replace(day=1)
+            to_date = from_date + relativedelta(months=1)
+            status = activity = None
+        return func(request, form, from_date, to_date, status, activity, *args, **kwargs)
+    return inner_decorator

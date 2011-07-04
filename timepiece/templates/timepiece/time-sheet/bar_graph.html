@@ -1,0 +1,26 @@
+{% load math_tags %}
+
+<div class="bar-graph">
+{%if error %}
+    <div class="error">{{ error|safe }}</div>
+{% else %}
+    {% ifnotequal worked 0 %}
+    <div title="{{ worked }}" class="bar-graph-start"
+      style="width:{% widthratio worked total width %}{{ suffix }}" >
+        <span>{{ worked }}</span>
+    </div>
+    {% endifnotequal %}
+    {% ifnotequal left 0 %}
+    <div title="{{ left }}"class="bar-graph-end"
+      style="width:{% widthratio left total width %}{{ suffix }}" >
+        <span>{{ left }}</span>
+    </div>
+    {% endifnotequal %}
+    {% ifnotequal over 0 %}
+    <div title="{{ over }}"class="bar-graph-over"
+      style="width:{% widthratio over total width %}{{ suffix }}" >
+        <span>{{ over }}</span>
+    </div>
+    {% endifnotequal %}
+{% endif %}
+</div>

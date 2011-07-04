@@ -1,0 +1,23 @@
+{% extends "base.html" %}
+{% block title %}Edit Project Relationship{% endblock %}
+
+{% block content %}
+
+<h2>Edit {{ user.get_full_name }}'s {{ project }} Relationship</h2>
+
+<form id="edit-project-relationship" action="" method="post" accept-charset="utf-8">
+	{% csrf_token %}
+	<table class='vertical'>
+		{{ relationship_form }}
+		<tr>
+			<td>&nbsp;</td>
+			<td class='submit'>
+				<input type='button' value='Cancel' onclick='history.go(-1)' />
+				&nbsp;
+				<input type='submit' name='submit' value='Save &rarr;' />
+			</td>
+		</tr>
+	</table>
+</form>
+
+{% endblock %}
