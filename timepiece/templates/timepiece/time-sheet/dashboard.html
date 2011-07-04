@@ -145,10 +145,17 @@
     <table id='active-entries' class='timepiece-summary'>
 {% if others_active_entries %}
         <caption>Others are working on:</caption>
+        <tr>
+            <th>Name</th>
+            <th>Project</th>
+            <th>Activity</th>
+            <th>Since</th>
+        </tr>
     {% for entry in others_active_entries %}
         <tr class='{% if entry.is_paused %}paused{% endif %}'>
             <td>{{ entry.user.first_name }} {{ entry.user.last_name }}</td>
             <td>{{ entry.project.name }}</td>
+            <td>{{ entry.activity.name }}</td>
             <td>{{ entry.start_time|date:"P" }}</td>
         </tr>
     {% endfor %}
