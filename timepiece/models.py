@@ -35,10 +35,11 @@ class Attribute(models.Model):
         blank=True,
         choices=SORT_ORDER_CHOICES,
     )
-    enable_timetracking = models.BooleanField('Enables time tracking '
-        'functionality for projects with this type or status.',
-        default=False,
+    enable_timetracking = models.BooleanField(default=False, 
+        help_text='Enable time tracking functionality for projects with this '
+                  'type or status.',
     )
+    billable = models.BooleanField(default=False)
 
     class Meta:
         unique_together = ('type', 'label')
@@ -540,23 +541,34 @@ class PersonRepeatPeriod(models.Model):
         return overtime
 
     def summary(self, date, end_date):
+        """
+        Returns a summary of hours worked in the given time frame, for this
+        user.  The setting TIMEPIECE_PROJECTS can be used to separate out hours
+        for paid leave that should not be included in the total worked (e.g.,
+        sick time, vacation time, etc.).  Those hours will be added to the
+        summary separately using the dictionary key set in TIMEPIECE_PROJECTS.
+        """
         projects = getattr(settings, 'TIMEPIECE_PROJECTS', {})
         user = self.user
         entries = user.timepiece_entries.filter(end_time__gt=date,
                                                 end_time__lte=end_date)
-        data = {}
+        data = {'billable': Decimal('0'), 'non_billable': Decimal('0')}
         data['total'] = entries.aggregate(s=Sum('hours'))['s']
         billable = entries.exclude(project__in=projects.values())
-        billable = billable.values('activity__billable').annotate(s=Sum('hours'))
+        billable = billable.values(
+            'activity__billable',
+            'project__type__billable',
+        ).annotate(s=Sum('hours'))
         for row in billable:
-            if row['activity__billable']:
-                data['billable'] = row['s']
+            if row['activity__billable'] and row['project__type__billable']:
+                data['billable'] += row['s']
             else:
-                data['non_billable'] = row['s']
-        vacation = entries.filter(project=projects['vacation'])
-        data['vacation'] = vacation.aggregate(s=Sum('hours'))['s']
-        sick = entries.filter(project=projects['sick'])
-        data['sick'] = sick.aggregate(s=Sum('hours'))['s']
+                data['non_billable'] += row['s']
+        data['total_worked'] = data['billable'] + data['non_billable']
+        data['paid_leave'] = {}
+        for name, pk in projects.iteritems():
+            qs = entries.filter(project=projects[name])
+            data['paid_leave'][name] = qs.aggregate(s=Sum('hours'))['s']
         return data
 
     def list_total_hours(self, N = 2):

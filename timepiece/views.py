@@ -1053,20 +1053,29 @@ def payroll_summary(request, form, from_date, to_date, status, activity):
             end_time__gte=from_date,
         )
     project_totals = project_totals.values(
-        'project__name', 'activity__billable'
+        'project__name',
+        'project__type__label',
+        'project__type__billable',
+        'activity__billable',
     ).annotate(s=Sum('hours')).order_by('project__name')
-    projects = SortedDict()
+    projects = {}
     for row in project_totals:
         name = row['project__name']
-        billable = row['activity__billable']
+        type = row['project__type__label']
+        billable = row['activity__billable'] and row['project__type__billable']
         hours = row['s']
         if name not in projects:
-            projects[name] = {}
+            projects[name] = {'billable': Decimal('0'),
+                              'non_billable': Decimal('0'),
+                              'type': type,}
         if billable:
-            projects[name]['billable'] = hours
+            projects[name]['billable'] += hours
         else:
-            projects[name]['non_billable'] = hours
-
+            projects[name]['non_billable'] += hours
+    projects = [{'name': k, 'type': v['type'], 'billable': v['billable'],
+                 'non_billable': v['non_billable']}
+                for k, v in projects.iteritems()]
+    projects.sort(key=lambda p: (p['type'], p['name']))
     all_weeks = utils.generate_weeks(start=from_date, end=to_date)
     rps = timepiece.PersonRepeatPeriod.objects.select_related(
         'user',

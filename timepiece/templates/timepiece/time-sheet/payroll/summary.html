@@ -54,19 +54,27 @@
 <table>
     <tr>
         <th>&nbsp;</th>
-        <th>Vacation</th>
-        <th>Sick</th>
         <th>Billable</th>
-        <th>Total</th>
+        <th>Non-Billable</th>
+        <th>Total Worked</th>
+        <th>Paid Leave</th>
+        <th>Grand Total</th>
     </tr>
     {% for period in periods %}
         {% with period.user as user %}
             <tr>
                 <th>{{ user.first_name }} {{ user.last_name }}</th>
                 {% if user.summary %}
-                    <td>{{ user.summary.vacation|default_if_none:'' }}</td>
-                    <td>{{ user.summary.sick|default_if_none:'' }}</td>
-                    <td>{{ user.summary.billable|default_if_none:'' }}{% if user.summary.non_billable %} ({{ user.summary.non_billable }}){% endif %}</td>
+                    <td>{% if user.summary.billable %}{{ user.summary.billable }} ({% widthratio user.summary.billable user.summary.total_worked 100 %}%){% endif %}</td>
+                    <td>{% if user.summary.non_billable %}{{ user.summary.non_billable }} ({% widthratio user.summary.non_billable user.summary.total_worked 100 %}%){% endif %}</td>
+                    <td>{{ user.summary.total_worked|default_if_none:'' }}</td>
+                    <td>
+                    {% for leave_type, leave_hours in user.summary.paid_leave.iteritems %}
+                        {% if leave_hours %}
+                        {{ leave_type|capfirst }}: {{ leave_hours }}<br/>
+                        {% endif %}
+                    {% endfor %}
+                    </td>
                     <td>{{ user.summary.total|default_if_none:'' }}</td>
                 {% else %}
                     <td colspan='5'>&nbsp;</td>
@@ -81,15 +89,21 @@
 <table>
     <tr>
         <th>&nbsp;</th>
-        <th>Non-Billable</th>
         <th>Billable</th>
+        <th>Non-Billable</th>
     </tr>
-    {% for project, hours in projects.iteritems %}
+    {% regroup projects by type as type_list %}
+    {% for type in type_list %}
+    <tr>
+        <td colspan="3">{{ type.grouper }}</td>
+    </tr>
+	    {% for project in type.list %}
         <tr>
-            <th>{{ project }}</th>
-            <td>{{ hours.non_billable|default_if_none:'' }}</td>
-            <td>{{ hours.billable|default_if_none:'' }}</td>
+            <th>{{ project.name }}</th>
+            <td>{% if project.billable %}{{ project.billable }}{% endif %}</td>
+            <td>{% if project.non_billable %}{{ project.non_billable }}{% endif %}</td>
         </tr>
+	    {% endfor %}
     {% endfor %}
 </table>
 

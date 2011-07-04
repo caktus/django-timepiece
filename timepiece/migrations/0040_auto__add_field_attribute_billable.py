@@ -1,57 +1,21 @@
 # encoding: utf-8
 import datetime
 from south.db import db
-from south.v2 import DataMigration
+from south.v2 import SchemaMigration
 from django.db import models
 
-class Migration(DataMigration):
+class Migration(SchemaMigration):
 
     def forwards(self, orm):
-        orm.Activity.objects.update(billable=False)
-        dev_activity, created = orm.Activity.objects.get_or_create(
-            code = 'dev',
-            defaults = {
-                'name': 'Web Development',
-            }
-        )
-        dev_activity.billable = True
-        dev_activity.save()
-        admin_activity, created = orm.Activity.objects.get_or_create(
-            code = 'admin',
-            defaults = {
-                'name': 'Administration',
-            }
-        )
-        admin_activity.billable = False
-        admin_activity.save()
         
-        all = orm.Entry.objects.all()
-        billable = all.filter(billable=True)
-        dev = billable.exclude(project__type__label__iexact='Internal Admin')
-        admin = billable.filter(project__type__label__iexact='Internal Admin')
-        nonbillable = orm.Entry.objects.filter(billable=False)
-        
-        # optional, custom navigation to assign activity types based on
-        # user
-        pm_activity, created = orm.Activity.objects.get_or_create(
-            code = 'pm',
-            defaults = {
-                'name': 'Project Management',
-            }
-        )
-        pm_activity.billable = True
-        pm_activity.save()
-        project_managers = [162] # user_ids
-        dev.update(activity=dev_activity)
-        admin.update(activity=admin_activity)
-        nonbillable.update(activity=admin_activity)
-        all.filter(user__in=project_managers).update(activity=pm_activity)
+        # Adding field 'Attribute.billable'
+        db.add_column('timepiece_attribute', 'billable', self.gf('django.db.models.fields.BooleanField')(default=False), keep_default=False)
+
 
     def backwards(self, orm):
-        entries = orm.Entry.objects.all()
-        for entry in entries:
-            entry.billable = entry.activity.billable
-            entry.save()
+        
+        # Deleting field 'Attribute.billable'
+        db.delete_column('timepiece_attribute', 'billable')
 
 
     models = {
@@ -107,6 +71,7 @@ class Migration(DataMigration):
         },
         'timepiece.attribute': {
             'Meta': {'ordering': "('sort_order',)", 'unique_together': "(('type', 'label'),)", 'object_name': 'Attribute'},
+            'billable': ('django.db.models.fields.BooleanField', [], {'default': 'False'}),
             'enable_timetracking': ('django.db.models.fields.BooleanField', [], {'default': 'False'}),
             'id': ('django.db.models.fields.AutoField', [], {'primary_key': 'True'}),
             'label': ('django.db.models.fields.CharField', [], {'max_length': '255'}),
@@ -142,8 +107,7 @@ class Migration(DataMigration):
         },
         'timepiece.entry': {
             'Meta': {'object_name': 'Entry'},
-            'activity': ('django.db.models.fields.related.ForeignKey', [], {'blank': 'True', 'related_name': "'entries'", 'null': 'True', 'to': "orm['timepiece.Activity']"}),
-            'billable': ('django.db.models.fields.BooleanField', [], {'default': 'True'}),
+            'activity': ('django.db.models.fields.related.ForeignKey', [], {'related_name': "'entries'", 'to': "orm['timepiece.Activity']"}),
             'comments': ('django.db.models.fields.TextField', [], {'blank': 'True'}),
             'date_updated': ('django.db.models.fields.DateTimeField', [], {'auto_now': 'True', 'blank': 'True'}),
             'end_time': ('django.db.models.fields.DateTimeField', [], {'null': 'True', 'blank': 'True'}),
@@ -154,6 +118,7 @@ class Migration(DataMigration):
             'project': ('django.db.models.fields.related.ForeignKey', [], {'related_name': "'entries'", 'to': "orm['timepiece.Project']"}),
             'seconds_paused': ('django.db.models.fields.PositiveIntegerField', [], {'default': '0'}),
             'start_time': ('django.db.models.fields.DateTimeField', [], {}),
+            'status': ('django.db.models.fields.CharField', [], {'default': "'unverified'", 'max_length': '24'}),
             'user': ('django.db.models.fields.related.ForeignKey', [], {'related_name': "'timepiece_entries'", 'to': "orm['auth.User']"})
         },
         'timepiece.location': {
@@ -177,7 +142,6 @@ class Migration(DataMigration):
         },
         'timepiece.project': {
             'Meta': {'ordering': "('name', 'status', 'type')", 'object_name': 'Project'},
-            'billable': ('django.db.models.fields.BooleanField', [], {'default': 'True'}),
             'billing_period': ('django.db.models.fields.related.ForeignKey', [], {'blank': 'True', 'related_name': "'projects'", 'null': 'True', 'to': "orm['timepiece.RepeatPeriod']"}),
             'business': ('django.db.models.fields.related.ForeignKey', [], {'related_name': "'new_business_projects'", 'to': "orm['timepiece.Business']"}),
             'description': ('django.db.models.fields.TextField', [], {}),

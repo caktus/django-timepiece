@@ -5,7 +5,8 @@ from timepiece.projection import run_projection
 
 class ActivityAdmin(admin.ModelAdmin):
     model = timepiece.Activity
-    list_display = ('code', 'name')
+    list_display = ('code', 'name', 'billable')
+    list_filter = ('billable',)
 admin.site.register(timepiece.Activity, ActivityAdmin)
 
 
@@ -24,6 +25,7 @@ class EntryAdmin(admin.ModelAdmin):
     list_display = ('user',
                     'project',
                     'location',
+                    'project_type',
                     'activity',
                     'start_time',
                     'end_time',
@@ -31,17 +33,20 @@ class EntryAdmin(admin.ModelAdmin):
                     'is_closed',
                     'is_paused',
                     )
-    list_filter = ['user', 'project']
+    list_filter = ['activity', 'project__type', 'user', 'project']
     search_fields = ['user', 'project', 'activity', 'comments']
     date_hierarchy = 'start_time'
     ordering = ('-start_time',)
+    
+    def project_type(self, entry):
+        return entry.project.type
 admin.site.register(timepiece.Entry, EntryAdmin)
 
 
 class AttributeAdmin(admin.ModelAdmin):
     search_fields = ('label', 'type')
-    list_display = ('label', 'type')
-    list_filter = ('type',)
+    list_display = ('label', 'type', 'enable_timetracking', 'billable')
+    list_filter = ('type', 'enable_timetracking', 'billable')
     ordering = ('type', 'sort_order',) # Django honors only first field
 admin.site.register(timepiece.Attribute, AttributeAdmin)
 
