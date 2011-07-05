@@ -470,7 +470,7 @@ def view_person_time_sheet(request, person_id, period_id, window_id=None):
     if not (request.user.has_perm('timepiece.view_person_time_sheet') or \
     time_sheet.user.pk == request.user.pk):
         return HttpResponseForbidden('Forbidden')
-    window, entries, total = get_entries(
+    window, entries, total_hours = get_entries(
         time_sheet.repeat_period,
         window_id=window_id,
         user=time_sheet.user,
@@ -489,7 +489,7 @@ def view_person_time_sheet(request, person_id, period_id, window_id=None):
     if request.user.has_perm('timepiece.edit_person_time_sheet') or \
         time_sheet.user.pk == request.user.pk:
         statuses = list(entries.values_list('status', flat=True))
-        total = len(statuses)
+        total_statuses = len(statuses)
         unverified_count = statuses.count('unverified')
         verified_count = statuses.count('verified')
     
@@ -497,7 +497,7 @@ def view_person_time_sheet(request, person_id, period_id, window_id=None):
         show_verify = unverified_count != 0
 
     if request.user.has_perm('timepiece.edit_person_time_sheet'):
-        show_approve = verified_count == total and total != 0
+        show_approve = verified_count == total_statuses and total_statuses != 0
     
     context = {
         'show_verify': show_verify,
@@ -507,7 +507,7 @@ def view_person_time_sheet(request, person_id, period_id, window_id=None):
         'period': window.period,
         'window': window,
         'entries': entries,
-        'total': total,
+        'total': total_hours,
         'project_entries': project_entries,
         'activity_entries': activity_entries,
     }
