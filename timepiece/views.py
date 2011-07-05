@@ -1136,13 +1136,13 @@ def edit_settings(request):
         except Http404:
             next_url = None        
     if not next_url:
-        netx_url  = reverse('timepiece-entries')
+        next_url  = reverse('timepiece-entries')
     if request.POST:
         form = timepiece_forms.UserProfileForm(request.POST, instance=request.user)
         if form.is_valid():
             form.save()
             messages.info(request, 'Your settings have been updated')
-            return HttpResponseRedirect(request.REQUEST['next'])
+            return HttpResponseRedirect(next_url)
     else:    
         form = timepiece_forms.UserProfileForm(instance=request.user)
     return { 'profile_form': form, }
