@@ -558,8 +558,6 @@ def time_sheet_change_status(request, form, from_date, to_date, status,
             entries = entries.filter(
                 end_time__gte=from_date,
             )
-        if activity:
-            entries = entries.filter(activity=activity)
         if request.GET and form.cleaned_data.get('project'):
             entries = entries.filter(project=form.cleaned_data.get('project'))
         
@@ -617,8 +615,10 @@ def invoice_projects(request, form, from_date, to_date, status, activity):
     #hours and it returns only one line for them.
     #project_totals = projects.filter(status__in=['approved', 'invoiced']).values(
     project_totals = entries.filter(status='approved').values(
-        'activity__name', 'activity__pk', 'project__name', 'project__pk', 'status',
-    ).annotate(s=Sum('hours')).order_by('activity__name', 'project__name', 'status',)
+        'project__type__pk', 'project__type__label', 'project__name',
+        'project__pk', 'status',
+    ).annotate(s=Sum('hours')).order_by('project__type__label',
+                                        'project__name', 'status')
     
     cals = []
     if from_date:
