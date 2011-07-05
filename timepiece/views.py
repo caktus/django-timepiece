@@ -1137,12 +1137,16 @@ def edit_settings(request):
             next_url = None        
     if not next_url:
         next_url  = reverse('timepiece-entries')
+    profile, created = timepiece.UserProfile.objects.get_or_create(user=request.user)
     if request.POST:
-        form = timepiece_forms.UserProfileForm(request.POST, instance=request.user)
-        if form.is_valid():
-            form.save()
+        user_form = timepiece_forms.UserForm(request.POST, instance=request.user)
+        profile_form = timepiece_forms.UserProfileForm(request.POST, instance=profile)
+        if user_form.is_valid() and profile_form.is_valid():
+            user_form.save()
+            profile_form.save()
             messages.info(request, 'Your settings have been updated')
             return HttpResponseRedirect(next_url)
     else:    
-        form = timepiece_forms.UserProfileForm(instance=request.user)
-    return { 'profile_form': form, }
+        profile_form = timepiece_forms.UserProfileForm(instance=profile)
+        user_form = timepiece_forms.UserForm(instance=request.user)
+    return { 'profile_form': profile_form, 'user_form': user_form }
