@@ -134,6 +134,13 @@ class ClockInForm(forms.ModelForm):
             Q(status__enable_timetracking=True) |
             Q(type__enable_timetracking=True)
         )
+        try:
+            profile = self.user.profile
+        except timepiece.UserProfile.DoesNotExist:
+            pass
+        else:
+            if profile.default_activity:
+                self.fields['activity'].initial = profile.default_activity
     
     def save(self, commit=True):
         entry = super(ClockInForm, self).save(commit=False)
@@ -200,6 +207,14 @@ class AddUpdateEntryForm(forms.ModelForm):
         )
         if not self.instance.end_time:
             del self.fields['end_time']
+            
+        try:
+            profile = self.user.profile
+        except timepiece.UserProfile.DoesNotExist:
+            pass
+        else:
+            if profile.default_activity:
+                self.fields['activity'].initial = profile.default_activity
 
     def clean_start_time(self):
         """
