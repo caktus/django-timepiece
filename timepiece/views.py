@@ -1129,6 +1129,7 @@ def projection_summary(request, form, from_date, to_date, status, activity):
 @login_required
 @render_with('timepiece/person/settings.html')
 def edit_settings(request):
+    next_url = None
     if request.GET and 'next' in request.GET:
         next_url = request.GET['next']
         try:
