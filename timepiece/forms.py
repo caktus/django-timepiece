@@ -9,7 +9,7 @@ from django.contrib.auth import forms as auth_forms
 from django.core.urlresolvers import reverse
 from django.utils.translation import ugettext_lazy as _
 
-from timepiece.models import Project, Entry
+from timepiece.models import Project, Entry, Activity, UserProfile
 from timepiece.fields import PendulumDateTimeField
 from timepiece.widgets import PendulumDateTimeWidget, SecondsToHoursWidget
 from datetime import datetime, timedelta
@@ -387,3 +387,41 @@ class PersonTimeSheet(forms.ModelForm):
     def __init__(self, *args, **kwargs):
         super(PersonTimeSheet, self).__init__(*args, **kwargs)
         self.fields['user'].queryset = auth_models.User.objects.all().order_by('last_name')
+        
+        
+class UserProfileForm(forms.ModelForm):
+    default_activity = forms.ModelChoiceField(
+        queryset=Activity.objects.all(), empty_label="(None)", required=False,
+    )
+    
+    class Meta:
+        model = auth_models.User
+        fields = ('first_name', 'last_name', 'email')
+        
+    def __init__(self, *args, **kwargs):
+        super(UserProfileForm, self).__init__(*args, **kwargs)
+        for name in self.fields:
+            self.fields[name].required = name != 'default_activity'
+        try:
+            self.profile = self.instance.profile
+        except UserProfile.DoesNotExist:
+            self.profile = None
+        else:
+            self.fields['default_activity'].initial = self.profile.default_activity
+            
+    def save(self, *args, **kwargs):
+        commit = kwargs.get('commit', True)
+        super(UserProfileForm, self).save(*args, **kwargs)
+        if 'default_activity' in self.cleaned_data:
+            up_defaults = {
+                'default_activity': self.cleaned_data['default_activity']
+            }
+            if self.profile:
+                for k, v in up_defaults.iteritems():
+                    setattr(self.profile, k, v)
+            else:
+                up_defaults['user'] = self.instance
+                self.profile = UserProfile.objects.create(**up_defaults)
+            if commit:
+                self.profile.save()
+        return self.instance, self.profile

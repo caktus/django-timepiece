@@ -10,7 +10,7 @@ from dateutil import rrule
 from django.contrib import messages
 from django.template import RequestContext
 from django.shortcuts import render_to_response, get_object_or_404, redirect
-from django.core.urlresolvers import reverse
+from django.core.urlresolvers import reverse, resolve
 from django.http import HttpResponse, HttpResponseRedirect, Http404, HttpResponseForbidden
 from django.contrib.auth.decorators import login_required, permission_required
 from django.contrib.auth.models import User
@@ -453,6 +453,7 @@ def export_project_time_sheet(request, form, from_date, to_date, status,
     writer.writerow(('', '', '', '', '', '', 'Total:', total))
     return response
 
+
 @login_required
 @render_with('timepiece/time-sheet/people/view.html')
 def view_person_time_sheet(request, person_id, period_id, window_id=None):
@@ -663,7 +664,6 @@ def view_business(request, business):
         'business': business,
     }
     return context
-
 
 
 @render_with('timepiece/business/create_edit.html')
@@ -1125,3 +1125,24 @@ def projection_summary(request, form, from_date, to_date, status, activity):
         'users': users,
     }
 
+
+@login_required
+@render_with('timepiece/person/settings.html')
+def edit_settings(request):
+    if request.GET and 'next' in request.GET:
+        next_url = request.GET['next']
+        try:
+            view_info = resolve(next_url)
+        except Http404:
+            next_url = None        
+    if not next_url:
+        netx_url  = reverse('timepiece-entries')
+    if request.POST:
+        form = timepiece_forms.UserProfileForm(request.POST, instance=request.user)
+        if form.is_valid():
+            form.save()
+            messages.info(request, 'Your settings have been updated')
+            return HttpResponseRedirect(request.REQUEST['next'])
+    else:    
+        form = timepiece_forms.UserProfileForm(instance=request.user)
+    return { 'profile_form': form, }

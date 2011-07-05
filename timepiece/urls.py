@@ -139,5 +139,10 @@ urlpatterns = patterns('',
         views.projection_summary,
         name='projection_summary',
     ),
+    url(
+        r'^edit-settings/$',
+        views.edit_settings,
+        name='edit_settings',
+    ),
 )
 
