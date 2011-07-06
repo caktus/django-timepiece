@@ -28,11 +28,6 @@ from timepiece import utils
 from timepiece import forms as timepiece_forms
 from timepiece.templatetags.timepiece_tags import seconds_to_hours
 
-try:
-    settings.TIMEPIECE_TIMESHEET_EDITABLE_DAYS
-except AttributeError:
-    settings.TIMEPIECE_TIMESHEET_EDITABLE_DAYS = 3
-
 
 @login_required
 def quick_search(request):
@@ -208,7 +203,7 @@ def create_edit_entry(request, entry_id=None):
                 pk=entry_id,
                 user=request.user,
             )
-            if not entry.is_editable or entry.status != 'unverified':
+            if not entry.is_editable:
                 raise Http404
 
         except timepiece.Entry.DoesNotExist:
@@ -481,9 +476,6 @@ def view_person_time_sheet(request, person_id, period_id, window_id=None):
     activity_entries = entries.order_by().values(
         'billable',
     ).annotate(sum=Sum('hours')).order_by('-sum')
-    is_editable = window.end_date +\
-        datetime.timedelta(days=settings.TIMEPIECE_TIMESHEET_EDITABLE_DAYS) >=\
-        datetime.date.today()
     
     show_approve = show_verify = False
     if request.user.has_perm('timepiece.edit_person_time_sheet') or \
@@ -502,7 +494,6 @@ def view_person_time_sheet(request, person_id, period_id, window_id=None):
     context = {
         'show_verify': show_verify,
         'show_approve': show_approve,
-        'is_editable': is_editable,
         'person': time_sheet.user,
         'period': window.period,
         'window': window,

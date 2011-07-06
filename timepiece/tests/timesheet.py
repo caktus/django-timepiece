@@ -38,6 +38,7 @@ class EditableTest(TimepieceDataTestCase):
             'start_time': datetime.datetime.now() - datetime.timedelta(days=6),
             'end_time':  datetime.datetime.now() - datetime.timedelta(days=6),
             'seconds_paused': 0,
+            'status': 'verified',
         })
         self.entry2 = self.create_entry({
             'user': self.user,
@@ -45,6 +46,7 @@ class EditableTest(TimepieceDataTestCase):
             'start_time': datetime.datetime.now() - datetime.timedelta(days=2),
             'end_time':  datetime.datetime.now() - datetime.timedelta(days=2),
             'seconds_paused': 0,
+            'status': 'unverified',
         })
         timepiece.RepeatPeriod.objects.update_billing_windows()
         

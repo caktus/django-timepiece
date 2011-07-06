@@ -48,7 +48,7 @@
             <td>{{ entry.end_time|date:"P" }}</td>
             <td>{{ entry.seconds_paused|seconds_to_hours }}</td>
             <td>{{ entry.hours }}</td>
-            {% if is_editable %}<td>{% ifequal entry.status 'unverified' %}<a href="{% url timepiece-update entry.id %}">Edit</a>{% endifequal %}</td>{% endif %}
+            {% if entry.is_editable %}<td><a href="{% url timepiece-update entry.id %}">Edit</a></td>{% endif %}
         </tr>
         {% endfor %}
         <tr>
