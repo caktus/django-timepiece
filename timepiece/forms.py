@@ -413,7 +413,7 @@ class UserForm(forms.ModelForm):
     def __init__(self, *args, **kwargs):
         super(UserForm, self).__init__(*args, **kwargs)
         for name in self.fields:
-            self.fields[name].required = name != 'default_activity'
+            self.fields[name].required = True
     
         
 class UserProfileForm(forms.ModelForm):
