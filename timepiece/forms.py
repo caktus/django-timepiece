@@ -12,9 +12,11 @@ from django.utils.translation import ugettext_lazy as _
 from timepiece.models import Project, Entry, Activity, UserProfile
 from timepiece.fields import PendulumDateTimeField
 from timepiece.widgets import PendulumDateTimeWidget, SecondsToHoursWidget
-from datetime import datetime, timedelta
-
 from timepiece import models as timepiece
+
+from datetime import datetime, timedelta
+from dateutil.relativedelta import relativedelta
+
 
 from ajax_select.fields import AutoCompleteSelectMultipleField, \
                                AutoCompleteSelectField, \
@@ -162,8 +164,9 @@ class ClockOutForm(forms.ModelForm):
     
     def save(self, commit=True):
         entry = super(ClockOutForm, self).save(commit=False)
-        entry.end_time = self.cleaned_data['end_time']
-        entry.unpause(date=self.cleaned_data['end_time'])
+        now = self.cleaned_data['end_time'] - relativedelta(seconds =+ 2)
+        entry.end_time = now 
+        entry.unpause(date = now)
         if commit:
             entry.save()
         return entry

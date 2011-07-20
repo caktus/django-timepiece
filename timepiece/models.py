@@ -14,7 +14,6 @@ from dateutil import rrule
 
 from datetime import timedelta
 
-from timepiece import utils
 
 
 class Attribute(models.Model):
@@ -250,8 +249,10 @@ class Entry(models.Model):
             Q(end_time__range=(self.start_time,self.end_time))|\
             Q(start_time__range=(self.start_time,self.end_time))|\
             Q(start_time__lte=self.start_time, end_time__gte=self.end_time))
+            
             totals = entries.aggregate(
             max=Max('end_time'),min=Min('start_time'))
+            
             totals['total'] = 0
             for entry in entries:
                 totals['total'] = totals['total'] + entry.get_seconds()
