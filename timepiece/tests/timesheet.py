@@ -11,6 +11,7 @@ from timepiece.tests.base import TimepieceDataTestCase
 
 from timepiece import models as timepiece
 from timepiece import forms as timepiece_forms
+from timepiece import utils
 
 from dateutil import relativedelta
 
@@ -118,8 +119,8 @@ class ClockInTest(TimepieceDataTestCase):
             'start_time_1': now,
         }        
         response = self.client.post(self.url, data)
-        for entry in timepiece.Entry.objects.all():
-            now = datetime.datetime.now()
+        for sec_bump, entry in enumerate(timepiece.Entry.objects.all()):
+            now = utils.get_now_bump_back(sec_bump)
             data = {
                 'end_time_0': now.strftime('%m/%d/%Y'),
                 'end_time_1': now.strftime('%H:%M:00'),
@@ -154,8 +155,8 @@ class ClockInTest(TimepieceDataTestCase):
         }        
         response = self.client.post(self.url, data)
         e_id.unpause()
-        for entry in timepiece.Entry.objects.all():
-            now = datetime.datetime.now()+datetime.timedelta(hours=1)
+        for sec_bump, entry in enumerate(timepiece.Entry.objects.all()):
+            now = utils.get_now_bump_back(sec_bump)
             data = {
                 'end_time_0': now.strftime('%m/%d/%Y'),
                 'end_time_1': now.strftime('%H:%M:00'),

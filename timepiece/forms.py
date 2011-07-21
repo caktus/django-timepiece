@@ -13,6 +13,7 @@ from timepiece.models import Project, Entry, Activity, UserProfile
 from timepiece.fields import PendulumDateTimeField
 from timepiece.widgets import PendulumDateTimeWidget, SecondsToHoursWidget
 from timepiece import models as timepiece
+from timepiece import utils
 
 from datetime import datetime, timedelta
 from dateutil.relativedelta import relativedelta
@@ -164,7 +165,7 @@ class ClockOutForm(forms.ModelForm):
     
     def save(self, commit=True):
         entry = super(ClockOutForm, self).save(commit=False)
-        now = self.cleaned_data['end_time'] - relativedelta(seconds =+ 2)
+        now = self.cleaned_data['end_time']
         entry.end_time = now 
         entry.unpause(date = now)
         if commit:

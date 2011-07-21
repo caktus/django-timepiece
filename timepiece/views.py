@@ -103,7 +103,7 @@ def clock_in(request):
     """For clocking the user into a project    
     """    
    
-    #check that the user is not currently logged in to another project.
+    #check that the user is not currently logged into another project.
     #if so, clock them out of all others.
     my_active_entries = timepiece.Entry.objects.select_related(
         'project__business',
@@ -111,10 +111,10 @@ def clock_in(request):
         user=request.user,
         end_time__isnull=True,
     )   
-      
-    for active_entry in my_active_entries:        
+    #clock_out every open project one second before the last to avoid overlap  
+    for sec_bump, active_entry in enumerate(my_active_entries):        
         active_entry.unpause()
-        active_entry.end_time = datetime.datetime.now() - relativedelta(seconds = +2)
+        active_entry.end_time = utils.get_now_bump_back(sec_bump)
         active_entry.save()
         
     if request.POST:
@@ -129,6 +129,7 @@ def clock_in(request):
     else:
         initial = dict([(k, request.GET[k]) for k in request.GET.keys()])
         form = timepiece_forms.ClockInForm(user=request.user, initial=initial)
+        
     return render_to_response(
         'timepiece/time-sheet/entry/clock_in.html',
         {'form': form},
