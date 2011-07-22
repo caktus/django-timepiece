@@ -275,4 +275,4 @@ def date_filter(func):
             to_date = from_date + relativedelta(months=1)
             status = activity = None
         return func(request, form, from_date, to_date, status, activity, *args, **kwargs)
-    return inner_decorator
+    return inner_decorator    

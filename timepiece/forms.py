@@ -8,6 +8,7 @@ from django.contrib.auth import models as auth_models
 from django.contrib.auth import forms as auth_forms
 from django.core.urlresolvers import reverse
 from django.utils.translation import ugettext_lazy as _
+from django.core.exceptions import ValidationError, NON_FIELD_ERRORS
 
 from timepiece.models import Project, Entry, Activity, UserProfile
 from timepiece.fields import PendulumDateTimeField
@@ -137,6 +138,8 @@ class ClockInForm(forms.ModelForm):
             Q(status__enable_timetracking=True) |
             Q(type__enable_timetracking=True)
         )
+        #self.instance.user = self.user       
+        
     
     def save(self, commit=True):
         entry = super(ClockInForm, self).save(commit=False)
@@ -150,29 +153,27 @@ class ClockInForm(forms.ModelForm):
 class ClockOutForm(forms.ModelForm):
     class Meta:
         model = timepiece.Entry
-        fields = ('location', 'comments')
+        fields = ('location', 'comments', 'start_time', 'end_time')
         
     def __init__(self, *args, **kwargs):
+        kwargs['initial'] = {'end_time': datetime.now()}  
         super(ClockOutForm, self).__init__(*args, **kwargs)
+        self.fields['start_time'] = forms.DateTimeField(
+            widget=forms.SplitDateTimeWidget(
+                attrs={'class': 'timepiece-time'},
+                date_format='%m/%d/%Y',
+            )
+
+        )
         self.fields['end_time'] = forms.DateTimeField(
             widget=forms.SplitDateTimeWidget(
                 attrs={'class': 'timepiece-time'},
                 date_format='%m/%d/%Y',
             ),
-            initial=datetime.now(),
         )
-        self.fields.keyOrder = ('location', 'end_time', 'comments')
-    
-    def save(self, commit=True):
-        entry = super(ClockOutForm, self).save(commit=False)
-        now = self.cleaned_data['end_time']
-        entry.end_time = now 
-        entry.unpause(date = now)
-        if commit:
-            entry.save()
-        return entry
 
-
+        self.fields.keyOrder = ('location', 'start_time', 'end_time', 'comments')
+        
 class AddUpdateEntryForm(forms.ModelForm):
     """
     This form will provide a way for users to add missed log entries and to

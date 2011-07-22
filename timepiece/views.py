@@ -116,11 +116,14 @@ def clock_in(request):
         active_entry.unpause()
         active_entry.end_time = utils.get_now_bump_back(sec_bump)
         active_entry.save()
+    
+    entry = timepiece.Entry(user=request.user)
         
     if request.POST:
-        form = timepiece_forms.ClockInForm(request.POST, user=request.user)
+        form = timepiece_forms.ClockInForm(request.POST, instance=entry, user=request.user)
         if form.is_valid():
             # if the user chose to pause any open entries, pause them
+            
             entry = form.save()
             request.user.message_set.create(message='You have clocked into %s' % entry.project)
             return HttpResponseRedirect(reverse('timepiece-entries'))
@@ -148,9 +151,11 @@ def clock_out(request, entry_id):
     if request.POST:
         form = timepiece_forms.ClockOutForm(request.POST, instance=entry)
         if form.is_valid():
-            entry = form.save()
-            request.user.message_set.create(message="You've been clocked out.")
+            entry = form.save()           
+            request.user.message_set.create(message="You've been clocked out.")            
             return HttpResponseRedirect(reverse('timepiece-entries'))
+        else:
+            request.user.message_set.create(message='Please correct the errors below.')
     else:
         form = timepiece_forms.ClockOutForm(instance=entry)
     context = {
