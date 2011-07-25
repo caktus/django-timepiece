@@ -213,14 +213,17 @@ class ClockInTest(TimepieceDataTestCase):
 
 class ClockOutTest(TimepieceDataTestCase):
     def testBasicClockOut(self):
+        now = datetime.datetime.now()
+        backthen = now - datetime.timedelta(hours=5)
         entry = self.create_entry({
             'user': self.user,
             'project': self.project,
-            'start_time': datetime.datetime.now() - datetime.timedelta(hours=5),
+            'start_time': backthen,
         })
-        self.client.login(username='user', password='abc')
-        now = datetime.datetime.now()
+        self.client.login(username='user', password='abc')        
         data = {
+            'start_time_0': backthen.strftime('%m/%d/%Y'),
+            'start_time_1': backthen.strftime('%H:%M:00'),
             'end_time_0': now.strftime('%m/%d/%Y'),
             'end_time_1': now.strftime('%H:%M:00'),
             'location': self.location.pk,
@@ -235,16 +238,18 @@ class ClockOutTest(TimepieceDataTestCase):
     
     def testClockOutWithSecondsPaused(self):
         now = datetime.datetime.now()
+        backthen = now - datetime.timedelta(hours=4)
         entry = self.create_entry({
             'user': self.user,
             'project': self.project,
-            'start_time': now - datetime.timedelta(hours=5),
+            'start_time': backthen,
             'seconds_paused': 3600, # 1 hour
         })
-        end_time = now - datetime.timedelta(hours=1)
         data = {
-            'end_time_0': end_time.strftime('%m/%d/%Y'),
-            'end_time_1': end_time.strftime('%H:%M:%S'),
+            'start_time_0': backthen.strftime('%m/%d/%Y'),
+            'start_time_1': backthen.strftime('%H:%M:%S'),
+            'end_time_0': now.strftime('%m/%d/%Y'),
+            'end_time_1': now.strftime('%H:%M:%S'),
             'location': self.location.pk,
         }
         form = timepiece_forms.ClockOutForm(data, instance=entry)
@@ -254,22 +259,25 @@ class ClockOutTest(TimepieceDataTestCase):
     
     def testClockOutWhilePaused(self):
         now = datetime.datetime.now()
+        backthen = now - datetime.timedelta(hours=3)
         entry = self.create_entry({
             'user': self.user,
             'project': self.project,
-            'start_time': now - datetime.timedelta(hours=5),
-            'pause_time': now - datetime.timedelta(hours=4),
+            'start_time': backthen,
+            'pause_time': now - datetime.timedelta(hours=1),
         })
-        end_time = now - datetime.timedelta(hours=1)
+
         data = {
-            'end_time_0': end_time.strftime('%m/%d/%Y'),
-            'end_time_1': end_time.strftime('%H:%M:%S'),
+            'start_time_0': backthen.strftime('%m/%d/%Y'),
+            'start_time_1': backthen.strftime('%H:%M:%S'),
+            'end_time_0': now.strftime('%m/%d/%Y'),
+            'end_time_1': now.strftime('%H:%M:%S'),
             'location': self.location.pk,
         }
         form = timepiece_forms.ClockOutForm(data, instance=entry)
         self.assertTrue(form.is_valid())
         saved = form.save()
-        self.assertAlmostEqual(saved.hours, 1)
+        self.assertAlmostEqual(saved.hours, 2)
 
 
 class CreateEditEntry(TimepieceDataTestCase):

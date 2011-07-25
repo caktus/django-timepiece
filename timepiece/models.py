@@ -272,30 +272,26 @@ class Entry(models.Model):
     def clean(self):
         if not self.user_id: return True
         
+        #in case there is no start time, especially during tests
+        if not self.start_time: self.start_time = datetime.datetime.now()
+                
         start = self.start_time
-        
+        #in case the entry is not complete (no end_time) as in just clocked in
         if self.end_time:        
             end = self.end_time
         else:           
-            end = start + relativedelta(seconds =+ 1)  
-            
-        print start, end
-
+            end = start + relativedelta(seconds =+ 1)              
+        
         entries = self.user.timepiece_entries.filter(
         Q(end_time__range=(start, end))|\
         Q(start_time__range=(start, end))|\
         Q(start_time__lte=start, end_time__gte=end))      
-
-        if self.id: entries = entries.exclude(pk = self.id)
-                
-        for entry in entries:
-            print entry
         
-        print len(entries)
+        if self.id: entries = entries.exclude(pk = self.id)                
             
         if len(entries):           
             raise ValidationError('Times overlap with previous entries ')
-        print "Made it through"
+            
         return True
         
            
