@@ -6,6 +6,7 @@ import itertools
 from django.core.urlresolvers import reverse
 
 from django.contrib.auth.models import User, Permission
+from django.core.exceptions import ValidationError
 
 from timepiece.tests.base import TimepieceDataTestCase
 
@@ -278,7 +279,7 @@ class ClockOutTest(TimepieceDataTestCase):
         self.assertTrue(form.is_valid())
         saved = form.save()
         self.assertAlmostEqual(saved.hours, 2)
-
+        
 
 class CreateEditEntry(TimepieceDataTestCase):
     def testProjectList(self):
