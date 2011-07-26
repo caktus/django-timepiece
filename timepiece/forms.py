@@ -138,7 +138,7 @@ class ClockInForm(forms.ModelForm):
             Q(status__enable_timetracking=True) |
             Q(type__enable_timetracking=True) &
             #exclude projects with closed status
-            Q(status=4)
+            Q(status=4) | Q(status=3)
         )
         
         self.instance.user = self.user       
