@@ -16,7 +16,6 @@ from dateutil import rrule
 from datetime import timedelta
 
 
-
 class Attribute(models.Model):
     ATTRIBUTE_TYPES = (
         ('project-type', 'Project Type'),
@@ -276,7 +275,7 @@ class Entry(models.Model):
         if not self.start_time: self.start_time = datetime.datetime.now()
                 
         start = self.start_time
-        #in case the entry is not complete (no end_time) as in just clocked in
+        #in case there is no end_time -when clocked in
         if self.end_time:        
             end = self.end_time
         else:           
@@ -291,6 +290,9 @@ class Entry(models.Model):
             
         if len(entries):           
             raise ValidationError('Times overlap with previous entries ')
+            
+        if end <= start:
+            raise ValidationError('Ending time must exceed the starting time')
             
         return True
         
