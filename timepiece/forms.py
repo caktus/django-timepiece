@@ -135,10 +135,8 @@ class ClockInForm(forms.ModelForm):
         self.fields['project'].queryset = timepiece.Project.objects.filter(
             users=self.user,
         ).filter(
-            Q(status__enable_timetracking=True) |
-            Q(type__enable_timetracking=True) &
-            #exclude projects with closed status
-            Q(status=4) | Q(status=3)
+            Q(status__enable_timetracking=True) &
+            Q(type__enable_timetracking=True)
         )
         
         self.instance.user = self.user       
