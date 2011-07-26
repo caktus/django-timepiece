@@ -49,6 +49,12 @@ class Command(BaseCommand):
             default = False,
             help = 'Show entries from this year only'),
         ) +(
+        make_option('-a', '--all', '--forever',
+            action='store_true',
+            dest = 'all',
+            default= False,
+            help = 'Show entries from all recorded history'),
+        )+(
         make_option('-d', '--days',
             dest = 'days',
             type = 'int',
@@ -78,9 +84,12 @@ class Command(BaseCommand):
             start = datetime.datetime.now() - relativedelta(day = 1, month = 1)
         if self.options.days:
             start = datetime.datetime.now() - datetime.timedelta(days = self.options.days)
-        self.stdout.write('\n' + "Checking overlap starting at: " + str(start) + '\n')
+            
+        if self.options.all:
+            self.stdout.write('\n' + "Checking overlaps from the beginning of time\n")
+        else:    
+            self.stdout.write('\n' + "Checking overlap starting at: " + str(start) + '\n')
         
-        overlap_names = []
         for arg in args:
             #use id's otherwise search for the name
             try:
@@ -92,22 +101,24 @@ class Command(BaseCommand):
                     Q(last_name__icontains=arg)
                     )
 
-            if not len(people):
+            if not len(people) and not all_flag:
                 self.stdout.write("No user found with that name or id \n")
 
 
             for person in people:
                             
-                entries = timepiece.Entry.objects.filter(user=person, start_time__gte=start)
-                
+                if self.options.all:
+                    entries = timepiece.Entry.objects.filter(user=person).order_by('start_time')
+                else:
+                    entries = timepiece.Entry.objects.filter(user=person, start_time__gte=start).order_by('start_time')
+                               
                 if len(entries) or not all_flag: 
                     self.stdout.write("Checking " + person.first_name + ' ' + person.last_name + '...\n')
                 
                 for entry in entries:                   
                    if entry.is_overlapping(): 
-                       output = str(person.first_name) + ' ' + str(person.last_name) + " with entry ID: " + str(entry.id) + ' from ' + str(entry.start_time) + ' to ' + str(entry.end_time) + ' on ' + str(entry.project) + '\n'
+                       output = "Overlap for " + str(person.first_name) + ' ' + str(person.last_name) + " with entry ID: " + str(entry.id) + ' from ' + str(entry.start_time) + ' to ' + str(entry.end_time) + ' on ' + str(entry.project) + '\n'
                        self.stdout.write(output)
                        
-               
            
                  
