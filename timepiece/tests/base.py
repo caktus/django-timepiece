@@ -188,6 +188,7 @@ class TimepieceDataTestCase(TestCase):
         type_ = timepiece.Attribute.objects.create(
             type='project-type',
             label='Web Sites',
+            enable_timetracking=True,
         )
         self.project = timepiece.Project.objects.create(
             name='Example Project 1',
