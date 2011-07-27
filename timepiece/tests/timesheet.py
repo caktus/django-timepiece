@@ -12,7 +12,6 @@ from timepiece.tests.base import TimepieceDataTestCase
 
 from timepiece import models as timepiece
 from timepiece import forms as timepiece_forms
-from timepiece import utils
 
 from dateutil import relativedelta
 
@@ -104,7 +103,7 @@ class ClockInTest(TimepieceDataTestCase):
         super(ClockInTest, self).setUp()
         self.url = reverse('timepiece-clock-in')
     
-    def testClockInPause(self):
+    def testClockIn(self):
         self.client.login(username='user', password='abc')
         now = datetime.datetime.now()- datetime.timedelta(minutes=20)
         data = {
@@ -113,31 +112,21 @@ class ClockInTest(TimepieceDataTestCase):
             'start_time_1': now.strftime('%H:%M:00'),
         }
         response = self.client.post(self.url, data)
-        now = datetime.datetime.now()+ datetime.timedelta(seconds=1)
+        now = datetime.datetime.now() - datetime.timedelta(seconds=1)
         data = {
             'project': self.project2.id,
             'start_time_0': now,
             'start_time_1': now,
         }        
         response = self.client.post(self.url, data)
-        for sec_bump, entry in enumerate(timepiece.Entry.objects.all()):
-            now = utils.get_now_bump_back(sec_bump)
-            data = {
-                'end_time_0': now.strftime('%m/%d/%Y'),
-                'end_time_1': now.strftime('%H:%M:00'),
-            }
-            response = self.client.post(
-                reverse('timepiece-clock-out', args=[entry.pk]),
-                data,
-                follow=True,
-            )
+        #clock out calls removed from tests. Clock in view clocks out active entries automatically
         for entry in timepiece.Entry.objects.all():
             if entry.is_overlapping() != False:
                 self.fail('Overlapping Times')
-    
-    def testPausePause(self):
+                
+    def testClockInPause(self):
         self.client.login(username='user', password='abc')
-        now = datetime.datetime.now()- datetime.timedelta(minutes=20)
+        now = datetime.datetime.now()- datetime.timedelta(minutes=10)
         data = {
             'project': self.project.id,
             'start_time_0': now.strftime('%m/%d/%Y'),
@@ -147,30 +136,61 @@ class ClockInTest(TimepieceDataTestCase):
         }
         response = self.client.post(self.url, data)
         e_id = timepiece.Entry.objects.filter(project=self.project.id)[0]
-        now = datetime.datetime.now()+ datetime.timedelta(seconds=1)
+        e_id.pause()#check that when the first entry is paused, the second clock in works and clocks out the first
+        now = datetime.datetime.now()
         data = {
             'project': self.project2.id,
-            'start_time_0': now,
-            'start_time_1': now,
+            'start_time_0': now.strftime('%m/%d/%Y'),
+            'start_time_1': now.strftime('%H:%M:00'),
             'location': self.location.pk,
+            'activity': self.devl_activity.pk,
         }        
         response = self.client.post(self.url, data)
-        e_id.unpause()
-        for sec_bump, entry in enumerate(timepiece.Entry.objects.all()):
-            now = utils.get_now_bump_back(sec_bump)
-            data = {
-                'end_time_0': now.strftime('%m/%d/%Y'),
-                'end_time_1': now.strftime('%H:%M:00'),
-                'location': self.location.pk,
-            }
-            response = self.client.post(
-                reverse('timepiece-clock-out', args=[entry.pk]),
-                data,
-                follow=True,
-            )
         for entry in timepiece.Entry.objects.all():
-            if entry.is_overlapping() != False:
-                self.fail('Overlapping Times')
+            if entry.is_overlapping():            
+                self.fail('Overlapping Times') 
+                
+    def testClockInBlock(self):
+        self.client.login(username='user', password='abc')
+        now = datetime.datetime.now()
+        backthen = now - datetime.timedelta(hours=5)
+        entry = self.create_entry({
+            'user': self.user,
+            'project': self.project,
+            'start_time': backthen,
+        })
+        self.client.login(username='user', password='abc')        
+        data = {
+            'start_time_0': backthen.strftime('%m/%d/%Y'),
+            'start_time_1': backthen.strftime('%H:%M:00'),
+            'end_time_0': now.strftime('%m/%d/%Y'),
+            'end_time_1': now.strftime('%H:%M:00'),
+            'location': self.location.pk,
+        }
+        response = self.client.post(
+            reverse('timepiece-clock-out', args=[entry.pk]),
+            data,
+            follow=True,
+        )
+        entry = timepiece.Entry.objects.get(pk=entry.pk)
+        self.assertTrue(entry.is_closed)
+        
+        #This clock in attempt should be blocked by the last entry
+        entry = timepiece.Entry.objects.get(pk=entry.pk)
+        form = timepiece_forms.ClockInForm(data, instance=entry, user=self.user)
+        self.assertIs(form.is_valid(), False)
+
+        #This clock in attempt will also be blocked and generate 403 error
+        backthen = datetime.datetime.now() - datetime.timedelta(hours=3)
+        data = {
+            'project': self.project2.id,
+            'start_time_0': backthen.strftime('%m/%d/%Y'),
+            'start_time_1': backthen.strftime('%H:%M:00'),
+            'location': self.location.pk,
+            'activity': self.devl_activity.pk,
+        }        
+        response2 = self.client.post(self.url, data)                
+        self.assertTrue(response2.status_code, 403)
     
     def testProjectListFiltered(self):
         self.client.login(username='user', password='abc')
@@ -210,6 +230,7 @@ class ClockInTest(TimepieceDataTestCase):
         response = self.client.post(self.url, data)
         self.assertEqual(response.status_code, 302)
         self.assertEqual(timepiece.Entry.objects.count(), 1)
+        
 
 
 class ClockOutTest(TimepieceDataTestCase):
