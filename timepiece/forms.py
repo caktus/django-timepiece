@@ -116,14 +116,14 @@ class ClockInForm(forms.ModelForm):
             settings,
             'TIMEPIECE_DEFAULT_LOCATION_SLUG',
             None,
-        )
-        initial = kwargs.get('initial', {})
+        )        
         if default_loc:
             try:
                 loc = timepiece.Location.objects.get(slug=default_loc)
             except timepiece.Location.DoesNotExist:
                 loc = None
             if loc:                
+                initial = kwargs.get('initial', {})
                 initial['location'] = loc.pk
                 
         super(ClockInForm, self).__init__(*args, **kwargs)
@@ -139,16 +139,9 @@ class ClockInForm(forms.ModelForm):
             Q(status__enable_timetracking=True) &
             Q(type__enable_timetracking=True)
         )
-        
-        if 'project' in initial:
-            entries = timepiece.Entry.objects.filter(user=self.user, project=initial['project'], end_time__isnull=False).order_by('-end_time')      
-            if entries: self.fields['activity'].initial = entries[0].activity
 
-
-        
         self.instance.user = self.user       
-        
-    
+            
     def save(self, commit=True):
         entry = super(ClockInForm, self).save(commit=False)
         entry.hours = 0
