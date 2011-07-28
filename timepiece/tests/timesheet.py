@@ -292,9 +292,9 @@ class StatusTest(TimepieceDataTestCase):
             end_date = datetime.datetime.now() + period.repeat_period.delta()
         )
         self.client.login(username='user', password='abc')
-        self.sheet_url = reverse('view_person_time_sheet', args=[period.user.pk, period.repeat_period.pk])
-        self.verify_url = reverse('time_sheet_change_status', args=['verify', period.user.pk, period.repeat_period.pk])
-        self.approve_url = reverse('time_sheet_change_status', args=['approve', period.user.pk, period.repeat_period.pk])
+        self.sheet_url = reverse('view_person_time_sheet', args=[period.user.pk, period.repeat_period.pk, self.billing_window.pk])
+        self.verify_url = reverse('time_sheet_change_status', args=['verify', period.user.pk, period.repeat_period.pk, self.billing_window.pk])
+        self.approve_url = reverse('time_sheet_change_status', args=['approve', period.user.pk, period.repeat_period.pk, self.billing_window.pk])
     
     def testVerifyButton(self):
         response = self.client.get(self.sheet_url)        

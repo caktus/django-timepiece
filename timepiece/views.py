@@ -507,7 +507,7 @@ def view_person_time_sheet(request, person_id, period_id, window_id=None):
 @login_required
 @utils.date_filter
 def time_sheet_change_status(request, form, from_date, to_date, status, 
-    activity, action, person_id=None, period_id=None,):
+    activity, action, person_id=None, period_id=None, window_id=None):
     if period_id and person_id:
         try:
             time_sheet = timepiece.PersonRepeatPeriod.objects.select_related(
@@ -537,7 +537,7 @@ def time_sheet_change_status(request, form, from_date, to_date, status,
     if time_sheet:
         window, entries, total = get_entries(
             time_sheet.repeat_period,
-            user=time_sheet.user,
+            user=time_sheet.user, window_id=window_id,
         )
     else:
         entries = timepiece.Entry.objects.all()
