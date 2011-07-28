@@ -10,7 +10,7 @@ from dateutil import rrule
 from django.contrib import messages
 from django.template import RequestContext
 from django.shortcuts import render_to_response, get_object_or_404, redirect
-from django.core.urlresolvers import reverse
+from django.core.urlresolvers import reverse, resolve
 from django.http import HttpResponse, HttpResponseRedirect, Http404, HttpResponseForbidden
 from django.contrib.auth.decorators import login_required, permission_required
 from django.contrib.auth.models import User
@@ -27,11 +27,6 @@ from timepiece import models as timepiece
 from timepiece import utils
 from timepiece import forms as timepiece_forms
 from timepiece.templatetags.timepiece_tags import seconds_to_hours
-
-try:
-    settings.TIMEPIECE_TIMESHEET_EDITABLE_DAYS
-except AttributeError:
-    settings.TIMEPIECE_TIMESHEET_EDITABLE_DAYS = 3
 
 
 @login_required
@@ -208,7 +203,7 @@ def create_edit_entry(request, entry_id=None):
                 pk=entry_id,
                 user=request.user,
             )
-            if not entry.is_editable or entry.status != 'unverified':
+            if not entry.is_editable:
                 raise Http404
 
         except timepiece.Entry.DoesNotExist:
@@ -453,6 +448,7 @@ def export_project_time_sheet(request, form, from_date, to_date, status,
     writer.writerow(('', '', '', '', '', '', 'Total:', total))
     return response
 
+
 @login_required
 @render_with('timepiece/time-sheet/people/view.html')
 def view_person_time_sheet(request, person_id, period_id, window_id=None):
@@ -469,7 +465,7 @@ def view_person_time_sheet(request, person_id, period_id, window_id=None):
     if not (request.user.has_perm('timepiece.view_person_time_sheet') or \
     time_sheet.user.pk == request.user.pk):
         return HttpResponseForbidden('Forbidden')
-    window, entries, total = get_entries(
+    window, entries, total_hours = get_entries(
         time_sheet.repeat_period,
         window_id=window_id,
         user=time_sheet.user,
@@ -480,15 +476,12 @@ def view_person_time_sheet(request, person_id, period_id, window_id=None):
     activity_entries = entries.order_by().values(
         'billable',
     ).annotate(sum=Sum('hours')).order_by('-sum')
-    is_editable = window.end_date +\
-        datetime.timedelta(days=settings.TIMEPIECE_TIMESHEET_EDITABLE_DAYS) >=\
-        datetime.date.today()
     
     show_approve = show_verify = False
     if request.user.has_perm('timepiece.edit_person_time_sheet') or \
         time_sheet.user.pk == request.user.pk:
         statuses = list(entries.values_list('status', flat=True))
-        total = len(statuses)
+        total_statuses = len(statuses)
         unverified_count = statuses.count('unverified')
         verified_count = statuses.count('verified')
     
@@ -496,17 +489,16 @@ def view_person_time_sheet(request, person_id, period_id, window_id=None):
         show_verify = unverified_count != 0
 
     if request.user.has_perm('timepiece.edit_person_time_sheet'):
-        show_approve = verified_count == total and total != 0
+        show_approve = verified_count == total_statuses and total_statuses != 0
     
     context = {
         'show_verify': show_verify,
         'show_approve': show_approve,
-        'is_editable': is_editable,
         'person': time_sheet.user,
         'period': window.period,
         'window': window,
         'entries': entries,
-        'total': total,
+        'total': total_hours,
         'project_entries': project_entries,
         'activity_entries': activity_entries,
     }
@@ -515,7 +507,7 @@ def view_person_time_sheet(request, person_id, period_id, window_id=None):
 @login_required
 @utils.date_filter
 def time_sheet_change_status(request, form, from_date, to_date, status, 
-    activity, action, person_id=None, period_id=None,):
+    activity, action, person_id=None, period_id=None, window_id=None):
     if period_id and person_id:
         try:
             time_sheet = timepiece.PersonRepeatPeriod.objects.select_related(
@@ -545,7 +537,7 @@ def time_sheet_change_status(request, form, from_date, to_date, status,
     if time_sheet:
         window, entries, total = get_entries(
             time_sheet.repeat_period,
-            user=time_sheet.user,
+            user=time_sheet.user, window_id=window_id,
         )
     else:
         entries = timepiece.Entry.objects.all()
@@ -557,8 +549,6 @@ def time_sheet_change_status(request, form, from_date, to_date, status,
             entries = entries.filter(
                 end_time__gte=from_date,
             )
-        if activity:
-            entries = entries.filter(activity=activity)
         if request.GET and form.cleaned_data.get('project'):
             entries = entries.filter(project=form.cleaned_data.get('project'))
         
@@ -603,12 +593,23 @@ def invoice_projects(request, form, from_date, to_date, status, activity):
         entries = entries.filter(
             end_time__gte=from_date,
         )
+    unverified = entries.filter(status='unverified').values_list(
+        'user__pk', 
+        'user__first_name',
+        'user__last_name').distinct()
+    unapproved = entries.filter(status='verified').values_list(
+        'user__pk', 
+        'user__first_name',
+        'user__last_name').distinct()
+    
     #Am no longer including invoiced entries, therefor all projects have uninvoiced
     #hours and it returns only one line for them.
     #project_totals = projects.filter(status__in=['approved', 'invoiced']).values(
     project_totals = entries.filter(status='approved').values(
-        'activity__name', 'activity__pk', 'project__name', 'project__pk', 'status',
-    ).annotate(s=Sum('hours')).order_by('activity__name', 'project__name', 'status',)
+        'project__type__pk', 'project__type__label', 'project__name',
+        'project__pk', 'status',
+    ).annotate(s=Sum('hours')).order_by('project__type__label',
+                                        'project__name', 'status')
     
     cals = []
     if from_date:
@@ -625,6 +626,8 @@ def invoice_projects(request, form, from_date, to_date, status, activity):
         'project_totals': project_totals,
         'to_date': to_date,
         'from_date': from_date,
+        'unverified': unverified,
+        'unapproved': unapproved,
     }, context_instance=RequestContext(request))
 
 
@@ -663,7 +666,6 @@ def view_business(request, business):
         'business': business,
     }
     return context
-
 
 
 @render_with('timepiece/business/create_edit.html')
@@ -1125,3 +1127,29 @@ def projection_summary(request, form, from_date, to_date, status, activity):
         'users': users,
     }
 
+
+@login_required
+@render_with('timepiece/person/settings.html')
+def edit_settings(request):
+    next_url = None
+    if request.GET and 'next' in request.GET:
+        next_url = request.GET['next']
+        try:
+            view_info = resolve(next_url)
+        except Http404:
+            next_url = None        
+    if not next_url:
+        next_url  = reverse('timepiece-entries')
+    profile, created = timepiece.UserProfile.objects.get_or_create(user=request.user)
+    if request.POST:
+        user_form = timepiece_forms.UserForm(request.POST, instance=request.user)
+        profile_form = timepiece_forms.UserProfileForm(request.POST, instance=profile)
+        if user_form.is_valid() and profile_form.is_valid():
+            user_form.save()
+            profile_form.save()
+            messages.info(request, 'Your settings have been updated')
+            return HttpResponseRedirect(next_url)
+    else:    
+        profile_form = timepiece_forms.UserProfileForm(instance=profile)
+        user_form = timepiece_forms.UserForm(instance=request.user)
+    return { 'profile_form': profile_form, 'user_form': user_form }

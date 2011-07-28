@@ -1,0 +1,21 @@
+{% extends "base.html" %}
+{% block title %}My Settings{% endblock %}
+
+{% block content %}
+
+<h2>My Settings</h2>
+
+<form id="create-edit-person" action="" method="post" accept-charset="utf-8">
+    {% csrf_token %}
+    <table class='vertical'>
+    {{ user_form }}
+    {{ profile_form }}
+    <td>&nbsp;</td>
+    <td class="submit">
+    <input type="button" onclick="history.go(-1)" value="Cancel">
+    <input type="submit" value="Save →" name="submit">
+    </td>
+    </table>
+</form>
+
+{% endblock %}

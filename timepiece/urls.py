@@ -107,7 +107,7 @@ urlpatterns = patterns('',
         name='view_person_time_sheet',
     ),
     url(
-        r'^time-sheet/(?P<action>verify|approve|invoice)/(?:(?P<person_id>\d+)/)?(?:(?P<period_id>\d+)/)?$',
+        r'^time-sheet/(?P<action>verify|approve|invoice)/(?:(?P<person_id>\d+)/)?(?:(?P<period_id>\d+)/)?(?:(?P<window_id>\d+)/)?$',
         views.time_sheet_change_status,
         name='time_sheet_change_status',
     ),
@@ -138,6 +138,11 @@ urlpatterns = patterns('',
         r'^projection/$',
         views.projection_summary,
         name='projection_summary',
+    ),
+    url(
+        r'^edit-settings/$',
+        views.edit_settings,
+        name='edit_settings',
     ),
 )
 

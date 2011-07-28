@@ -9,7 +9,7 @@ from django.contrib.auth import forms as auth_forms
 from django.core.urlresolvers import reverse
 from django.utils.translation import ugettext_lazy as _
 
-from timepiece.models import Project, Entry
+from timepiece.models import Project, Entry, Activity, UserProfile
 from timepiece.fields import PendulumDateTimeField
 from timepiece.widgets import PendulumDateTimeWidget, SecondsToHoursWidget
 from datetime import datetime, timedelta
@@ -134,6 +134,13 @@ class ClockInForm(forms.ModelForm):
             Q(status__enable_timetracking=True) |
             Q(type__enable_timetracking=True)
         )
+        try:
+            profile = self.user.profile
+        except timepiece.UserProfile.DoesNotExist:
+            pass
+        else:
+            if profile.default_activity:
+                self.fields['activity'].initial = profile.default_activity
     
     def save(self, commit=True):
         entry = super(ClockInForm, self).save(commit=False)
@@ -200,6 +207,14 @@ class AddUpdateEntryForm(forms.ModelForm):
         )
         if not self.instance.end_time:
             del self.fields['end_time']
+            
+        try:
+            profile = self.user.profile
+        except timepiece.UserProfile.DoesNotExist:
+            pass
+        else:
+            if profile.default_activity:
+                self.fields['activity'].initial = profile.default_activity
 
     def clean_start_time(self):
         """
@@ -387,3 +402,22 @@ class PersonTimeSheet(forms.ModelForm):
     def __init__(self, *args, **kwargs):
         super(PersonTimeSheet, self).__init__(*args, **kwargs)
         self.fields['user'].queryset = auth_models.User.objects.all().order_by('last_name')
+
+
+class UserForm(forms.ModelForm):
+    
+    class Meta:
+        model = auth_models.User
+        fields = ('first_name', 'last_name', 'email')
+    
+    def __init__(self, *args, **kwargs):
+        super(UserForm, self).__init__(*args, **kwargs)
+        for name in self.fields:
+            self.fields[name].required = True
+    
+        
+class UserProfileForm(forms.ModelForm):
+
+    class Meta:
+        model = timepiece.UserProfile
+        fields = ('default_activity',)

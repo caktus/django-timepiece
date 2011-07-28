@@ -26,16 +26,34 @@
 {% endfor %}
 </div>
 
-{% regroup project_totals by activity__name as activity_list %}
-{% for activity in activity_list %}
-    <h3>Summary of {{ activity.grouper }} Entries</h3>
+{% if unverified %}
+<p><strong>Warning:</strong> The following users have <strong>unverified</strong> time during this period:</p>
+<ul>
+{% for pk, first, last in unverified %}
+<li>{{ first }} {{ last }}</li>
+{% endfor %}
+</ul>
+{% endif %}
+
+{% if unapproved %}
+<p><strong>Warning:</strong> The following users have <strong>unapproved</strong> time during this period:</p>
+<ul>
+{% for pk, first, last in unapproved %}
+<li>{{ first }} {{ last }}</li>
+{% endfor %}
+</ul>
+{% endif %}
+
+{% regroup project_totals by project__type__label as type_list %}
+{% for type in type_list %}
+    <h3>Summary of {{ type.grouper }} Entries</h3>
     <table>
         <tr>
             <th>Project name</th>
             <th>Uninvoiced Hours</th>
             <th></th>
         </tr>
-        {% regroup activity.list by project__name as project_list %}
+        {% regroup type.list by project__name as project_list %}
         {% for project in project_list %}  
             <tr>
                 <th>{{ project.grouper }}</th>

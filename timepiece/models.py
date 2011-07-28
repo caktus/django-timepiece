@@ -16,11 +16,6 @@ from datetime import timedelta
 
 from timepiece import utils
 
-try:
-    settings.TIMEPIECE_TIMESHEET_EDITABLE_DAYS
-except AttributeError:
-    settings.TIMEPIECE_TIMESHEET_EDITABLE_DAYS = 3
-
 
 class Attribute(models.Model):
     ATTRIBUTE_TYPES = (
@@ -364,15 +359,7 @@ class Entry(models.Model):
     billing_window = property(__billing_window)
 
     def __is_editable(self):
-        if self.end_time:
-            try:
-                end_date =self.billing_window.end_date+\
-                    timedelta(days=settings.TIMEPIECE_TIMESHEET_EDITABLE_DAYS)
-                return end_date >= datetime.date.today()
-            except:
-                return True
-        else:
-            return True
+        return self.status == 'unverified'
     is_editable = property(__is_editable)
 
     def __delete_key(self):
@@ -872,3 +859,10 @@ class PersonSchedule(models.Model):
     def __unicode__(self):
         return unicode(self.user)
 
+
+class UserProfile(models.Model):
+    user = models.OneToOneField(User, unique=True, related_name='profile')
+    default_activity = models.ForeignKey(Activity, blank=True, null=True)
+    
+    def __unicode__(self):
+        return unicode(self.user)
