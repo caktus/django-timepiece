@@ -24,8 +24,7 @@ class Command(BaseCommand):
         To check all users:
         ./manage.py check_entries [OPTIONS]
         or
-        ./manage.py check_entries <arg1> <arg2>...<argn> [OPTIONS]
-            where argn is = first name, last name or user.id
+        ./manage.py check_entries <first or last name1> <name2>...<name n> [OPTIONS]
         
         For options type:
         ./manage.py check_entries --help
@@ -65,60 +64,59 @@ class Command(BaseCommand):
     (options, args) = parser.parse_args()  
 
     def handle(self, *args, **options):
-        #If no args given, check every user
-        if not args: 
-            all_flag = True
-            last = auth_models.User.objects.latest('pk')
-            args = range(0, last.pk + 1)
-        else:
-            all_flag = False
             
         #If no flags, set to 3 months ago
-        start = datetime.datetime.now() - datetime.timedelta(weeks = 8)
+        start = datetime.datetime.now() - datetime.timedelta(weeks=8)
         #Set the start date based on arguments provided through options
         if self.options.week:
             start = utils.get_week_start()
         if self.options.month:
-            start = datetime.datetime.now() - relativedelta(day = 1)
+            start = datetime.datetime.now() - relativedelta(day=1)
         if self.options.year:
-            start = datetime.datetime.now() - relativedelta(day = 1, month = 1)
+            start = datetime.datetime.now() - relativedelta(day=1, month=1)
         if self.options.days:
-            start = datetime.datetime.now() - datetime.timedelta(days = self.options.days)
+            start = datetime.datetime.now() - datetime.timedelta(days=self.options.days)
             
         if self.options.all:
-            self.stdout.write('\n' + "Checking overlaps from the beginning of time\n")
+            print("Checking overlaps from the beginning of time")
         else:    
-            self.stdout.write('\n' + "Checking overlap starting at: " + str(start) + '\n')
+            print("Checking overlap starting at: " + str(start))     
         
-        for arg in args:
-            #use id's otherwise search for the name
-            try:
-                people = auth_models.User.objects.filter(pk=arg)
-                
-            except:                
-                people = auth_models.User.objects.filter(
-                    Q(first_name__icontains=arg) |
-                    Q(last_name__icontains=arg)
-                    )
+        #If no args given, check every user
+        if args: 
+            all_flag = False
+            names = reduce(lambda query, arg: query | (Q(first_name__icontains=arg) | Q(last_name__icontains=arg)), args, Q())                        
+            people = auth_models.User.objects.filter(names)
+        else:
+            all_flag = True
+            people = auth_models.User.objects.all()            
+            
+        if not people.count() and not all_flag:
+            print("No user found with that name")
+            quit()
 
-            if not len(people) and not all_flag:
-                self.stdout.write("No user found with that name or id \n")
+        for person in people:                        
+            if self.options.all:
+                entries = timepiece.Entry.objects.filter(user=person).order_by('start_time')
+            else:
+                entries = timepiece.Entry.objects.filter(user=person, start_time__gte=start).order_by('start_time')
+                           
+            if not entries.count() or not all_flag: 
+                print('Checking %s %s...') % (person.first_name, person.last_name)
+            
+            for entry in entries:                   
+                if entry.is_overlapping():
+                    data = {
+                        'first_name':person.first_name, 'last_name':person.last_name, 
+                        'entry':entry.id, 
+                        'start_time':entry.start_time, 'end_time':entry.end_time,
+                        'project':entry.project
+                    }
+                    print(output(data))
 
 
-            for person in people:
-                            
-                if self.options.all:
-                    entries = timepiece.Entry.objects.filter(user=person).order_by('start_time')
-                else:
-                    entries = timepiece.Entry.objects.filter(user=person, start_time__gte=start).order_by('start_time')
-                               
-                if len(entries) or not all_flag: 
-                    self.stdout.write("Checking " + person.first_name + ' ' + person.last_name + '...\n')
-                
-                for entry in entries:                   
-                   if entry.is_overlapping(): 
-                       output = "Overlap for " + str(person.first_name) + ' ' + str(person.last_name) + " with entry ID: " + str(entry.id) + ' from ' + str(entry.start_time) + ' to ' + str(entry.end_time) + ' on ' + str(entry.project) + '\n'
-                       self.stdout.write(output)
+def output(data):
+    return "Entry %(entry)d for %(first_name)s %(last_name)s %(entry)d from %(start_time)s to %(end_time)s on %(project)s overlaps another entry" % data
                        
            
                  

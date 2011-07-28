@@ -132,7 +132,7 @@ def clock_in(request):
     else:
         initial = dict([(k, request.GET[k]) for k in request.GET.keys()])
         form = timepiece_forms.ClockInForm(user=request.user, initial=initial)
-                
+
     return render_to_response(
         'timepiece/time-sheet/entry/clock_in.html',
         {'form': form},
