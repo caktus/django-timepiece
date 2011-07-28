@@ -863,3 +863,6 @@ class PersonSchedule(models.Model):
 class UserProfile(models.Model):
     user = models.OneToOneField(User, unique=True, related_name='profile')
     default_activity = models.ForeignKey(Activity, blank=True, null=True)
+    
+    def __unicode__(self):
+        return unicode(self.user)

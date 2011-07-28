@@ -1131,6 +1131,7 @@ def projection_summary(request, form, from_date, to_date, status, activity):
 @login_required
 @render_with('timepiece/person/settings.html')
 def edit_settings(request):
+    next_url = None
     if request.GET and 'next' in request.GET:
         next_url = request.GET['next']
         try:
@@ -1138,13 +1139,17 @@ def edit_settings(request):
         except Http404:
             next_url = None        
     if not next_url:
-        netx_url  = reverse('timepiece-entries')
+        next_url  = reverse('timepiece-entries')
+    profile, created = timepiece.UserProfile.objects.get_or_create(user=request.user)
     if request.POST:
-        form = timepiece_forms.UserProfileForm(request.POST, instance=request.user)
-        if form.is_valid():
-            form.save()
+        user_form = timepiece_forms.UserForm(request.POST, instance=request.user)
+        profile_form = timepiece_forms.UserProfileForm(request.POST, instance=profile)
+        if user_form.is_valid() and profile_form.is_valid():
+            user_form.save()
+            profile_form.save()
             messages.info(request, 'Your settings have been updated')
-            return HttpResponseRedirect(request.REQUEST['next'])
+            return HttpResponseRedirect(next_url)
     else:    
-        form = timepiece_forms.UserProfileForm(instance=request.user)
-    return { 'profile_form': form, }
+        profile_form = timepiece_forms.UserProfileForm(instance=profile)
+        user_form = timepiece_forms.UserForm(instance=request.user)
+    return { 'profile_form': profile_form, 'user_form': user_form }

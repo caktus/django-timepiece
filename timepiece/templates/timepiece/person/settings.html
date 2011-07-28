@@ -8,6 +8,7 @@
 <form id="create-edit-person" action="" method="post" accept-charset="utf-8">
     {% csrf_token %}
     <table class='vertical'>
+    {{ user_form }}
     {{ profile_form }}
     <td>&nbsp;</td>
     <td class="submit">

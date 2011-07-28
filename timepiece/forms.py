@@ -134,6 +134,13 @@ class ClockInForm(forms.ModelForm):
             Q(status__enable_timetracking=True) |
             Q(type__enable_timetracking=True)
         )
+        try:
+            profile = self.user.profile
+        except timepiece.UserProfile.DoesNotExist:
+            pass
+        else:
+            if profile.default_activity:
+                self.fields['activity'].initial = profile.default_activity
     
     def save(self, commit=True):
         entry = super(ClockInForm, self).save(commit=False)
@@ -200,6 +207,14 @@ class AddUpdateEntryForm(forms.ModelForm):
         )
         if not self.instance.end_time:
             del self.fields['end_time']
+            
+        try:
+            profile = self.user.profile
+        except timepiece.UserProfile.DoesNotExist:
+            pass
+        else:
+            if profile.default_activity:
+                self.fields['activity'].initial = profile.default_activity
 
     def clean_start_time(self):
         """
@@ -387,41 +402,22 @@ class PersonTimeSheet(forms.ModelForm):
     def __init__(self, *args, **kwargs):
         super(PersonTimeSheet, self).__init__(*args, **kwargs)
         self.fields['user'].queryset = auth_models.User.objects.all().order_by('last_name')
-        
-        
-class UserProfileForm(forms.ModelForm):
-    default_activity = forms.ModelChoiceField(
-        queryset=Activity.objects.all(), empty_label="(None)", required=False,
-    )
+
+
+class UserForm(forms.ModelForm):
     
     class Meta:
         model = auth_models.User
         fields = ('first_name', 'last_name', 'email')
-        
+    
     def __init__(self, *args, **kwargs):
-        super(UserProfileForm, self).__init__(*args, **kwargs)
+        super(UserForm, self).__init__(*args, **kwargs)
         for name in self.fields:
-            self.fields[name].required = name != 'default_activity'
-        try:
-            self.profile = self.instance.profile
-        except UserProfile.DoesNotExist:
-            self.profile = None
-        else:
-            self.fields['default_activity'].initial = self.profile.default_activity
-            
-    def save(self, *args, **kwargs):
-        commit = kwargs.get('commit', True)
-        super(UserProfileForm, self).save(*args, **kwargs)
-        if 'default_activity' in self.cleaned_data:
-            up_defaults = {
-                'default_activity': self.cleaned_data['default_activity']
-            }
-            if self.profile:
-                for k, v in up_defaults.iteritems():
-                    setattr(self.profile, k, v)
-            else:
-                up_defaults['user'] = self.instance
-                self.profile = UserProfile.objects.create(**up_defaults)
-            if commit:
-                self.profile.save()
-        return self.instance, self.profile
+            self.fields[name].required = True
+    
+        
+class UserProfileForm(forms.ModelForm):
+
+    class Meta:
+        model = timepiece.UserProfile
+        fields = ('default_activity',)
