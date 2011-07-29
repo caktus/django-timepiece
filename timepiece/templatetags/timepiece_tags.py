@@ -77,6 +77,17 @@ def date_filters(context, options):
         return url
 
     filters = {}
+    if 'months_no_range' in options:
+        filters['Past 12 Months'] = []
+        single_month = relativedelta(months=1)
+        from_date = datetime.date.today().replace(day=1) + relativedelta(months=1)
+        for x in range(12):
+            to_date = from_date
+            use_range = False
+            from_date = to_date - single_month
+            url = construct_url(from_date,to_date - relativedelta(days=1))
+            filters['Past 12 Months'].append((from_date.strftime("%b '%y"), url))
+        filters['Past 12 Months'].reverse()        
     
     if 'months' in options:
         filters['Past 12 Months'] = []
