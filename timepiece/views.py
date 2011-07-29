@@ -100,11 +100,31 @@ def view_entries(request):
 @permission_required('timepiece.can_clock_in')
 @transaction.commit_on_success
 def clock_in(request):
+    """For clocking the user into a project    
+    """        
+    entry = timepiece.Entry(user=request.user)
+        
     if request.POST:
-        form = timepiece_forms.ClockInForm(request.POST, user=request.user)
-        if form.is_valid():
-            # if the user chose to pause any open entries, pause them
+        form = timepiece_forms.ClockInForm(request.POST, instance=entry, user=request.user)
+        if form.is_valid():            
             entry = form.save()
+            
+            #check that the user is not currently logged into another project.
+            #if so, clock them out of all others.
+            my_active_entries = timepiece.Entry.objects.select_related(
+                'project__business',
+            ).filter(
+                user=request.user,
+                end_time__isnull=True,                
+            ).exclude(
+                id = entry.id
+            )
+            #clock_out every open project one second before the last to avoid overlap  
+            for sec_bump, active_entry in enumerate(my_active_entries):        
+                active_entry.unpause()
+                active_entry.end_time = entry.start_time - datetime.timedelta(seconds = sec_bump + 1)
+                active_entry.save()                
+            
             request.user.message_set.create(message='You have clocked into %s' % entry.project)
             return HttpResponseRedirect(reverse('timepiece-entries'))
         else:
@@ -112,6 +132,7 @@ def clock_in(request):
     else:
         initial = dict([(k, request.GET[k]) for k in request.GET.keys()])
         form = timepiece_forms.ClockInForm(user=request.user, initial=initial)
+
     return render_to_response(
         'timepiece/time-sheet/entry/clock_in.html',
         {'form': form},
@@ -130,9 +151,11 @@ def clock_out(request, entry_id):
     if request.POST:
         form = timepiece_forms.ClockOutForm(request.POST, instance=entry)
         if form.is_valid():
-            entry = form.save()
-            request.user.message_set.create(message="You've been clocked out.")
+            entry = form.save()           
+            request.user.message_set.create(message="You've been clocked out.")            
             return HttpResponseRedirect(reverse('timepiece-entries'))
+        else:
+            request.user.message_set.create(message='Please correct the errors below.')
     else:
         form = timepiece_forms.ClockOutForm(instance=entry)
     context = {
@@ -178,6 +201,7 @@ def toggle_paused(request, entry_id):
         delta = datetime.datetime.now() - entry.start_time
         seconds = delta.seconds - entry.seconds_paused
         seconds += delta.days * 86400
+        
         if seconds < 3600:
             seconds /= 60.0
             duration = "You've clocked %d minutes." % seconds
@@ -274,7 +298,6 @@ def delete_entry(request, entry_id):
     return render_to_response('timepiece/time-sheet/entry/delete_entry.html',
                               {'entry': entry},
                               context_instance=RequestContext(request))
-
 
 @permission_required('timepiece.view_entry_summary')
 @render_with('timepiece/time-sheet/general_ledger.html')

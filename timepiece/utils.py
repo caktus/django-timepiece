@@ -254,6 +254,8 @@ def get_week_window(day):
     weeks = generate_weeks(start=start, end=end)
     return list(weeks)
 
+def get_now_bump_back(sec_bump):   
+    return datetime.now() - relativedelta(seconds =+ sec_bump + 1)
 
 def date_filter(func):
     def inner_decorator(request, *args, **kwargs):
@@ -273,4 +275,4 @@ def date_filter(func):
             to_date = from_date + relativedelta(months=1)
             status = activity = None
         return func(request, form, from_date, to_date, status, activity, *args, **kwargs)
-    return inner_decorator
+    return inner_decorator    

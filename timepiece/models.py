@@ -6,6 +6,7 @@ from django.conf import settings
 from django.db import models
 from django.db.models import Q, Avg, Sum, Max, Min
 from django.contrib.auth.models import User
+from django.core.exceptions import ValidationError, NON_FIELD_ERRORS
 
 from timepiece import utils
 
@@ -13,8 +14,6 @@ from dateutil.relativedelta import relativedelta
 from dateutil import rrule
 
 from datetime import timedelta
-
-from timepiece import utils
 
 
 class Attribute(models.Model):
@@ -244,30 +243,64 @@ class Entry(models.Model):
     objects = EntryManager()
     worked = EntryWorkedManager()
 
-    def is_overlapping(self):
+    def is_overlapping(self):            
+
         if self.start_time and self.end_time:
             entries = self.user.timepiece_entries.filter(
             Q(end_time__range=(self.start_time,self.end_time))|\
             Q(start_time__range=(self.start_time,self.end_time))|\
             Q(start_time__lte=self.start_time, end_time__gte=self.end_time))
+                        
             totals = entries.aggregate(
             max=Max('end_time'),min=Min('start_time'))
+            
             totals['total'] = 0
             for entry in entries:
                 totals['total'] = totals['total'] + entry.get_seconds()
+            
             totals['diff'] = totals['max']-totals['min']
             totals['diff'] = totals['diff'].seconds + totals['diff'].days*86400
+            
             if totals['total'] > totals['diff']:
                 return True
             else:
                 return False
         else:
-            return None
-
+            return None    
+        
+    def clean(self):
+        if not self.user_id: return True
+        
+        #in case there is no start time, especially during tests
+        if not self.start_time: self.start_time = datetime.datetime.now()
+                
+        start = self.start_time
+        #in case there is no end_time -when clocked in
+        if self.end_time:        
+            end = self.end_time
+        else:           
+            end = start + relativedelta(seconds =+ 1)              
+        
+        entries = self.user.timepiece_entries.filter(
+        Q(end_time__range=(start, end))|\
+        Q(start_time__range=(start, end))|\
+        Q(start_time__lte=start, end_time__gte=end))      
+        
+        if self.id: entries = entries.exclude(pk = self.id)                
+            
+        if len(entries):           
+            raise ValidationError('Times overlap with previous entries ')
+            
+        if end <= start:
+            raise ValidationError('Ending time must exceed the starting time')
+            
+        return True
+        
+           
     def save(self, **kwargs):
-        self.hours = Decimal('%.2f' % round(self.total_hours, 2))
-        super(Entry, self).save(**kwargs)
-
+        self.hours = Decimal('%.2f' % round(self.total_hours, 2))    
+        super(Entry, self).save(**kwargs)        
+        
     def get_seconds(self):
         """
         Determines the difference between the starting and ending time.  The
@@ -349,7 +382,7 @@ class Entry(models.Model):
             self.project = project
             self.pause_all()
             if not self.start_time:
-                self.start_time = datetime.datetime.now()
+                self.start_time = datetime.datetime.now()                
 
     def __billing_window(self):
         return BillingWindow.objects.get(
