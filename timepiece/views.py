@@ -628,12 +628,11 @@ def invoice_projects(request, form, from_date, to_date, status, activity):
     #Am no longer including invoiced entries, therefor all projects have uninvoiced
     #hours and it returns only one line for them.
     #project_totals = projects.filter(status__in=['approved', 'invoiced']).values(
-    project_totals = entries.filter(status='approved').values(
+    project_totals = entries.filter(status='approved', project__billing_period__id__isnull=False).values(
         'project__type__pk', 'project__type__label', 'project__name',
         'project__pk', 'status',
     ).annotate(s=Sum('hours')).order_by('project__type__label',
                                         'project__name', 'status')
-    
     cals = []
     if from_date:
         date = from_date - relativedelta(months=1)
