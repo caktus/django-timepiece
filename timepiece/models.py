@@ -276,20 +276,35 @@ class Entry(models.Model):
                 
         start = self.start_time
         #in case there is no end_time -when clocked in
-        if self.end_time:        
+        if self.end_time:
             end = self.end_time
-        else:           
+        else:
             end = start + relativedelta(seconds =+ 1)              
         
         entries = self.user.timepiece_entries.filter(
         Q(end_time__range=(start, end))|\
         Q(start_time__range=(start, end))|\
-        Q(start_time__lte=start, end_time__gte=end))      
+        Q(start_time__lte=start, end_time__gte=end))
         
-        if self.id: entries = entries.exclude(pk = self.id)                
+        if self.id: entries = entries.exclude(pk = self.id)
+
+        if len(entries):  
+            entry = entries[0]
+            entry_data = {
+                'project': entry.project,
+                'activity' : entry.activity,
+                'start_time' : entry.start_time,
+                'end_time' : entry.end_time
+            }
+            #If it's the same day, only show the time rather than DateTime
+            if entry.start_time.date() == start.date() and entry.end_time.date() == end.date():
+                entry_data['start_time'] = entry.start_time.strftime('%H:%M:%S')
+                entry_data['end_time'] = entry.end_time.strftime('%H:%M:%S')
             
-        if len(entries):           
-            raise ValidationError('Times overlap with previous entries ')
+            output = 'Start time overlaps with: %(project)s - %(activity)s' \
+                     ' - from %(start_time)s to %(end_time)s' % entry_data
+
+            raise ValidationError(output)
             
         if end <= start:
             raise ValidationError('Ending time must exceed the starting time')
