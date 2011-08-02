@@ -33,6 +33,7 @@
         <tr>
             <th>Date</th>
             <th>Project</th>
+            <th>Activity</th>
             <th>Location</th>
             <th>Time In</th>
             <th>Time Out</th>
@@ -43,6 +44,7 @@
         <tr>
             <td>{{ entry.start_time|date:"m/d/Y (D)" }}</td>
             <td>{{ entry.project.name }}</td>
+            <td>{{ entry.activity.name }}</td>
             <td>{{ entry.location }}</td>
             <td>{{ entry.start_time|date:"P" }}</td>
             <td>{{ entry.end_time|date:"P" }}</td>
