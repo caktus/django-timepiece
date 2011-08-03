@@ -171,87 +171,11 @@ def monthly_overtime(rp, date):
         hours = ''
     return hours
 
-@register.simple_tag
-def build_ledger_row(entries, from_date, to_date):
-    rows = ''
-    footer = ''
-    rrule_weeks = generate_weeks(start=from_date, end=to_date)
-    weeks = []
-    for week in rrule_weeks:
-        weeks.append(week)
-        
-    weekheader = 0
-    dayofweek = 6
-    
-        #not certain if include_in_payroll should be used here as well
-    
-    for entry in entries:
-        
-        thisday = entry.start_time.weekday()        
-        
-        if thisday < dayofweek:
-            #Weekly hours summary
-            if footer:
-                rows += footer
-                
-            start = weeks[weekheader]
-            end = start + relativedelta(days=7) - relativedelta(seconds=1) 
 
-            weekly_totals = entries.filter(
-                end_time__gte=start, end_time__lt=end
-            )
- 
-            weekly_totals = weekly_totals.values(
-                'billable',
-            ).annotate(s=Sum('hours')).order_by('-billable')
-            footer = '<tr><th>Billable</th><th>Non-Billable</th><th>Total worked this week</th></tr>'
-            
-            total_hours = 0
-            footer += '<tr>'
-            for total in weekly_totals:
-                footer += '<td>%.2f</td>' % total.get('s')
-                total_hours += total.get('s')
-                
-            if weekly_totals.count() < 2:
-                footer += '<td> 0 </td>'
-            
-            footer += '<td>%s</td></tr>' % total_hours
-            
-            #Week of <date> header
-            rows += "<tr><th colspan=\"8\" class=\"contract\">&nbsp;&nbsp;&nbsp;&nbsp;Week of %s</th></tr>" % weeks[weekheader].strftime('%m/%d/%Y')
-            weekheader += 1
-            
-        
-        #Rows for each time entry            
-        rows += "<tr>"\
-            "<td>%(day)s</td>"\
-            "<td>%(project)s</td>"\
-            "<td>%(activity)s</td>"\
-            "<td>%(location)s</td>"\
-            "<td>%(start_time)s</td>"\
-            "<td>%(end_time)s</td>"\
-            "<td>%(seconds_paused)s</td>"\
-            "<td>%(hours).2f</td>" % {'day': entry.start_time.strftime('%m/%d/%Y (%a)'),
-            'project': entry.project.name,
-            'location': entry.location,
-            'activity': entry.activity,
-            'start_time': entry.start_time.strftime('%I:%M %P'),
-            'end_time': entry.end_time.strftime('%I:%M %P'),
-            'seconds_paused': get_total_time(entry.seconds_paused),
-            'hours': entry.hours,
-            }
-        
-        if entry.is_editable:
-            rows += "<td><a href=\"{%% url timepiece-update %d %%}\">Edit</a></td>" % (entry.id)          
-               
-        rows += "</tr>"    
-        dayofweek = thisday    
-        
-    rows += footer + '<tr></tr>'
-    return rows   
-build_ledger_row.is_safe = True
-        
-     
+@register.simple_tag
+def week_start(date):
+    return get_week_start(date).strftime('%m/%d/%Y')  
+    
 
 @register.simple_tag
 def build_invoice_row(entries, to_date, from_date):
