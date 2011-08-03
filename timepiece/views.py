@@ -617,18 +617,18 @@ def invoice_projects(request, form, from_date, to_date, status, activity):
             end_time__gte=from_date,
         )
     unverified = entries.filter(status='unverified').values_list(
-        'user__pk', 
+        'user__pk',
         'user__first_name',
         'user__last_name').distinct()
     unapproved = entries.filter(status='verified').values_list(
-        'user__pk', 
+        'user__pk',
         'user__first_name',
         'user__last_name').distinct()
-    
+        
     #Am no longer including invoiced entries, therefor all projects have uninvoiced
     #hours and it returns only one line for them.
     #project_totals = projects.filter(status__in=['approved', 'invoiced']).values(
-    project_totals = entries.filter(status='approved', 
+    project_totals = entries.filter(status='approved',
         project__type__billable=True, project__status__billable=True).values(
         'project__type__pk', 'project__type__label', 'project__name',
         'project__pk', 'status',
