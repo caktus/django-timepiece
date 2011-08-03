@@ -150,47 +150,30 @@ class ClockInTest(TimepieceDataTestCase):
             if entry.is_overlapping():            
                 self.fail('Overlapping Times') 
                 
-    def testClockInBlock(self):
-        self.client.login(username='user', password='abc')
+    def testClockInBlock(self):        
+        """
+        Guarantee that the user cannot clock in to a time that is already logged        
+        """        
         now = datetime.datetime.now()
-        backthen = now - datetime.timedelta(hours=5)
         entry = self.create_entry({
             'user': self.user,
             'project': self.project,
-            'start_time': backthen,
+            'start_time': now - datetime.timedelta(hours=5),
+            'end_time': now,
         })
-        self.client.login(username='user', password='abc')        
+        conflicting_start_time = entry.start_time + datetime.timedelta(hours=2)
         data = {
-            'start_time_0': backthen.strftime('%m/%d/%Y'),
-            'start_time_1': backthen.strftime('%H:%M:00'),
-            'end_time_0': now.strftime('%m/%d/%Y'),
-            'end_time_1': now.strftime('%H:%M:00'),
-            'location': self.location.pk,
+            'start_time_0': conflicting_start_time.strftime('%m/%d/%Y'),
+            'start_time_1': conflicting_start_time.strftime('%H:%M:00'),
+            'location': entry.location.pk,
+            'project': entry.project.pk,
+            'activity': entry.activity.pk,
         }
-        response = self.client.post(
-            reverse('timepiece-clock-out', args=[entry.pk]),
-            data,
-            follow=True,
-        )
-        entry = timepiece.Entry.objects.get(pk=entry.pk)
-        self.assertTrue(entry.is_closed)
         
         #This clock in attempt should be blocked by the last entry
-        entry = timepiece.Entry.objects.get(pk=entry.pk)
+        entry = timepiece.Entry(user=self.user)
         form = timepiece_forms.ClockInForm(data, instance=entry, user=self.user)
         self.assertIs(form.is_valid(), False)
-
-        #This clock in attempt will also be blocked and generate 403 error
-        backthen = datetime.datetime.now() - datetime.timedelta(hours=3)
-        data = {
-            'project': self.project2.id,
-            'start_time_0': backthen.strftime('%m/%d/%Y'),
-            'start_time_1': backthen.strftime('%H:%M:00'),
-            'location': self.location.pk,
-            'activity': self.devl_activity.pk,
-        }        
-        response2 = self.client.post(self.url, data)                
-        self.assertTrue(response2.status_code, 403)
     
     def testProjectListFiltered(self):
         self.client.login(username='user', password='abc')
@@ -301,6 +284,29 @@ class ClockOutTest(TimepieceDataTestCase):
         saved = form.save()
         self.assertAlmostEqual(saved.hours, 2)
         
+    def testClockOutReverse(self):
+        """Test that the user can't clock out at a time prior to the starting 
+        time
+        """
+        now = datetime.datetime.now()
+        backthen = now - datetime.timedelta(hours=3)        
+        backward_entry = self.create_entry({
+            'user': self.user,
+            'project': self.project,
+            'start_time': now,
+        })        
+        data = {
+            'start_time_0': now.strftime('%m/%d/%Y'),
+            'start_time_1': now.strftime('%H:%M:%S'),
+            'end_time_0': backthen.strftime('%m/%d/%Y'),
+            'end_time_1': backthen.strftime('%H:%M:%S'),
+            'location': self.location.pk,
+        }
+        form = timepiece_forms.ClockOutForm(data, instance=backward_entry)
+        self.assertFalse(form.is_valid())
+    
+    def testClockOutOverlap(self):
+        pass
 
 class CreateEditEntry(TimepieceDataTestCase):
     def testProjectList(self):

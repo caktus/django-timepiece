@@ -148,8 +148,6 @@ class ClockInForm(forms.ModelForm):
             if profile.default_activity:
                 self.fields['activity'].initial = profile.default_activity    
 
-        self.instance.user = self.user       
-            
             
     def save(self, commit=True):
         entry = super(ClockInForm, self).save(commit=False)

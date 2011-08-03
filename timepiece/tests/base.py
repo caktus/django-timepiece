@@ -55,7 +55,7 @@ class TimepieceDataTestCase(TestCase):
         defaults = {
             'name': name,
             'type': self.create_project_type(data={'billable': billable}),
-            'status': self.create_project_status(),
+            'status': self.create_project_status(data={'billable': billable}),
         }
         defaults.update(data)
         if 'business' not in defaults:
@@ -96,7 +96,7 @@ class TimepieceDataTestCase(TestCase):
     
     def create_entry(self, data={}):
         defaults = {}
-        defaults.update(data)
+        defaults.update(data)                
         if 'activity' not in defaults:
             defaults['activity'] = self.create_activity()
         if 'project' not in defaults:
