@@ -624,14 +624,14 @@ def invoice_projects(request, form, from_date, to_date, status, activity):
         'user__pk', 
         'user__first_name',
         'user__last_name').distinct()
-
+    
     #Am no longer including invoiced entries, therefor all projects have uninvoiced
     #hours and it returns only one line for them.
     #project_totals = projects.filter(status__in=['approved', 'invoiced']).values(
     project_totals = entries.filter(status='approved', 
         project__type__billable=True, project__status__billable=True).values(
         'project__type__pk', 'project__type__label', 'project__name',
-        'project__pk', 'status'
+        'project__pk', 'status',
     ).annotate(s=Sum('hours')).order_by('project__type__label',
                                         'project__name', 'status')
     cals = []
@@ -1064,10 +1064,7 @@ def create_edit_person_time_sheet(request, person_id=None):
 @render_with('timepiece/time-sheet/payroll/summary.html')
 @utils.date_filter
 def payroll_summary(request, form, from_date, to_date, status, activity):
-    project_totals = timepiece.Entry.objects.filter(
-                project__status__include_in_payroll=True,
-                project__type__include_in_payroll=True)   
-
+    project_totals = timepiece.Entry.objects.all()
     if not (from_date and to_date):
         today = datetime.date.today()
         from_date = today.replace(day=1)
@@ -1079,7 +1076,7 @@ def payroll_summary(request, form, from_date, to_date, status, activity):
     if from_date:
         project_totals = project_totals.filter(
             end_time__gte=from_date,
-        )        
+        )
     project_totals = project_totals.values(
         'project__name',
         'project__type__label',
