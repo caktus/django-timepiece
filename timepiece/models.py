@@ -34,8 +34,7 @@ class Attribute(models.Model):
                   'type or status.',
     )
     billable = models.BooleanField(default=False)
-    include_in_payroll = models.BooleanField(default=True)
-    
+
     class Meta:
         unique_together = ('type', 'label')
         ordering = ('sort_order',)
@@ -89,7 +88,6 @@ class Project(models.Model):
         limit_choices_to={'type': 'project-status'},
         related_name='projects_with_status',
     )
-    
     description = models.TextField()
     billing_period = models.ForeignKey(
         'RepeatPeriod',
@@ -572,9 +570,7 @@ class PersonRepeatPeriod(models.Model):
     def hours_in_week(self, date):
         left, right = utils.get_week_window(date)
         entries = Entry.worked.filter(user=self.user)
-        entries = entries.filter(end_time__gt=left, end_time__lt=right,
-                                project__status__include_in_payroll=True,
-                                project__type__include_in_payroll=True)
+        entries = entries.filter(end_time__gt=left, end_time__lt=right)
         return entries.aggregate(s=Sum('hours'))['s']
 
     def overtime_hours_in_week(self, date):
@@ -603,10 +599,7 @@ class PersonRepeatPeriod(models.Model):
         projects = getattr(settings, 'TIMEPIECE_PROJECTS', {})
         user = self.user
         entries = user.timepiece_entries.filter(end_time__gt=date,
-                                                end_time__lte=end_date,
-                                                project__status__include_in_payroll=True,
-                                                project__type__include_in_payroll=True)
-                                                
+                                                end_time__lte=end_date)
         data = {'billable': Decimal('0'), 'non_billable': Decimal('0')}
         data['total'] = entries.aggregate(s=Sum('hours'))['s']
         billable = entries.exclude(project__in=projects.values())

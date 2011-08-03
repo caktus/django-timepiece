@@ -45,8 +45,8 @@ admin.site.register(timepiece.Entry, EntryAdmin)
 
 class AttributeAdmin(admin.ModelAdmin):
     search_fields = ('label', 'type')
-    list_display = ('label', 'type', 'enable_timetracking', 'billable', 'include_in_payroll')
-    list_filter = ('type', 'enable_timetracking', 'billable', 'include_in_payroll')
+    list_display = ('label', 'type', 'enable_timetracking', 'billable')
+    list_filter = ('type', 'enable_timetracking', 'billable')
     ordering = ('type', 'sort_order',) # Django honors only first field
 admin.site.register(timepiece.Attribute, AttributeAdmin)
 
