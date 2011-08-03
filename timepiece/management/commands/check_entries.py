@@ -116,7 +116,7 @@ class Command(BaseCommand):
 
 
 def output(data):
-    return "Entry %(entry)d for %(first_name)s %(last_name)s %(entry)d from %(start_time)s to %(end_time)s on %(project)s overlaps another entry" % data
+    return "Entry %(entry)d for %(first_name)s %(last_name)s from %(start_time)s to %(end_time)s on %(project)s overlaps another entry" % data
                        
            
                  

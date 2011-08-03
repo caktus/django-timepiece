@@ -9,6 +9,9 @@ from django.core.urlresolvers import reverse
 from dateutil.relativedelta import relativedelta
 
 from timepiece.models import PersonRepeatPeriod, AssignmentAllocation
+import timepiece.models as timepiece
+from timepiece.utils import generate_weeks, get_total_time
+
 
 
 register = template.Library()
@@ -168,6 +171,11 @@ def monthly_overtime(rp, date):
         hours = ''
     return hours
 
+
+@register.simple_tag
+def week_start(date):
+    return get_week_start(date).strftime('%m/%d/%Y')  
+    
 
 @register.simple_tag
 def build_invoice_row(entries, to_date, from_date):

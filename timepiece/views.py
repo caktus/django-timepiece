@@ -512,7 +512,7 @@ def view_person_time_sheet(request, person_id, period_id, window_id=None):
         show_verify = unverified_count != 0
 
     if request.user.has_perm('timepiece.edit_person_time_sheet'):
-        show_approve = verified_count == total_statuses and total_statuses != 0
+        show_approve = verified_count == total_statuses and total_statuses != 0   
     
     context = {
         'show_verify': show_verify,
@@ -628,7 +628,8 @@ def invoice_projects(request, form, from_date, to_date, status, activity):
     #Am no longer including invoiced entries, therefor all projects have uninvoiced
     #hours and it returns only one line for them.
     #project_totals = projects.filter(status__in=['approved', 'invoiced']).values(
-    project_totals = entries.filter(status='approved', project__billing_period__id__isnull=False).values(
+    project_totals = entries.filter(status='approved', 
+        project__type__billable=True, project__status__billable=True).values(
         'project__type__pk', 'project__type__label', 'project__name',
         'project__pk', 'status'
     ).annotate(s=Sum('hours')).order_by('project__type__label',
