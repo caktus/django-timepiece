@@ -600,7 +600,7 @@ class PersonRepeatPeriod(models.Model):
         user = self.user
         entries = user.timepiece_entries.filter(end_time__gt=date,
                                                 end_time__lte=end_date,
-                                                status='verified')
+                                                status='approved')
         data = {'billable': Decimal('0'), 'non_billable': Decimal('0')}
         data['total'] = entries.aggregate(s=Sum('hours'))['s']
         billable = entries.exclude(project__in=projects.values())
