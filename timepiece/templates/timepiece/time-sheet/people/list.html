@@ -23,7 +23,16 @@
         <td><a href='{% url view_person_time_sheet sheet.user.pk,sheet.repeat_period.pk %}'>{{ sheet.user.first_name }} {{ sheet.user.last_name }}</a></td>
         <td>{{ sheet.repeat_period.billing_windows.latest }}</td>
         {% for aggs in sheet.list_total_hours %}
-            <td>{{ aggs.total }}</td>
+            {% if aggs.total %}
+                <td>{{ aggs.total }}</td>
+            {% else %}
+                <td></td>            
+            {% endif %}
+            {% if sheet.list_total_hours|length < 2 %}
+                <td></td>                
+            {% endif %}
+        {% empty %}
+            <td></td>
         {% endfor %}
         <td><a href='{% url edit_person_time_sheet sheet.user.pk %}'>Change</a></td>
     </tr>
