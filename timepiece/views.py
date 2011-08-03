@@ -1064,7 +1064,7 @@ def create_edit_person_time_sheet(request, person_id=None):
 @render_with('timepiece/time-sheet/payroll/summary.html')
 @utils.date_filter
 def payroll_summary(request, form, from_date, to_date, status, activity):
-    project_totals = timepiece.Entry.objects.filter(status='approved')
+    project_totals = timepiece.Entry.objects.all()
     if not (from_date and to_date):
         today = datetime.date.today()
         from_date = today.replace(day=1)

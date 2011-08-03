@@ -12,7 +12,6 @@ from dateutil import relativedelta
 
 
 class PayrollTest(TimepieceDataTestCase):
-
     def log_time(self, delta=None, billable=True, project=None, start=None):
         if delta:
             hours, minutes = delta
@@ -57,7 +56,7 @@ class PayrollTest(TimepieceDataTestCase):
         rp = self.create_person_repeat_period({'user': self.user})
         p1 = self.create_project()
         start = datetime.datetime(2011, 1, 3)
-        self.log_time(project=p1, start=start, delta=(8, 0))
+        self.log_time(project=p1, start=start, delta=(8, 0))        
         start = datetime.datetime(2011, 1, 8)
         self.log_time(project=p1, start=start, delta=(8, 0))
         self.assertEqual(rp.hours_in_week(start), Decimal('16.00'))
@@ -97,5 +96,6 @@ class PayrollTest(TimepieceDataTestCase):
         self.log_time(project=p1, start=start1, delta=(44, 0))
         start1 = datetime.datetime(2011, 1, 9)
         self.log_time(project=p1, start=start1, delta=(44, 0))
-        self.assertEqual(rp.total_monthly_overtime(start1), Decimal('8.00'))
+        self.assertEqual(rp.total_monthly_overtime(start1), Decimal('8.00'))           
+
 
