@@ -103,6 +103,8 @@ class TimepieceDataTestCase(TestCase):
             defaults['project'] = self.create_project()
         if 'location' not in defaults:
             defaults['location'] = self.create_location()
+        if 'status' not in defaults:
+            defaults['status'] = 'unverified'
         return timepiece.Entry.objects.create(**defaults)
     
     def create_repeat_period(self, data={}):
