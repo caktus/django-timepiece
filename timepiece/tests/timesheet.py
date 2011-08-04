@@ -296,8 +296,8 @@ class ClockOutTest(TimepieceDataTestCase):
             'start_time': now,
         })        
         data = {
-            'start_time_0': now.strftime('%m/%d/%Y'),
-            'start_time_1': now.strftime('%H:%M:%S'),
+            'start_time_0': backward_entry.start_time.strftime('%m/%d/%Y'),
+            'start_time_1': backward_entry.start_time.strftime('%H:%M:%S'),
             'end_time_0': backthen.strftime('%m/%d/%Y'),
             'end_time_1': backthen.strftime('%H:%M:%S'),
             'location': self.location.pk,
@@ -306,7 +306,30 @@ class ClockOutTest(TimepieceDataTestCase):
         self.assertFalse(form.is_valid())
     
     def testClockOutOverlap(self):
-        pass
+        """Test that the user cannot clock out if the times overlap with an
+        existing entry
+        """
+        now = datetime.datetime.now()
+        backthen = now - datetime.timedelta(hours=8)
+        existing_entry = self.create_entry({
+            'user': self.user,
+            'start_time': backthen,
+            'end_time': now,
+        })
+        new_entry_start_time = existing_entry.start_time + datetime.timedelta(hours=1)
+        new_entry_end_time = now - datetime.timedelta(hours=1)
+        data = {
+            'start_time_0': new_entry_start_time.strftime('%m/%d/%Y'),
+            'start_time_1': new_entry_start_time.strftime('%H:%M:%S'),
+            'end_time_0': new_entry_end_time.strftime('%m/%d/%Y'),
+            'end_time_1': new_entry_end_time.strftime('%H:%M:%S'),
+            'location': self.location.pk,        
+        }
+        #With the existing_entry on either side, a form with the information in
+        #data should fail as the times are inside the times of a previous entry
+        existing_entry = timepiece.Entry(user=self.user)
+        form = timepiece_forms.ClockOutForm(data, instance=existing_entry)
+        self.assertFalse(form.is_valid())
 
 class CreateEditEntry(TimepieceDataTestCase):
     def testProjectList(self):
