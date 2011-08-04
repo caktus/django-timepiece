@@ -1,6 +1,6 @@
 import datetime
 from dateutil import relativedelta
-from urllib import urlencode
+import re
 
 from django.core.urlresolvers import reverse
 
@@ -9,6 +9,8 @@ from timepiece.tests.base import TimepieceDataTestCase
 
 
 class ProjectTestCase(TimepieceDataTestCase):
+    invoice_to_date = datetime.datetime.now().date()
+    invoice_from_date = datetime.datetime.now().date()
     
     def test_remove_user(self):
         self.user.is_superuser = True
@@ -67,9 +69,9 @@ class ProjectTestCase(TimepieceDataTestCase):
         self.assertEquals(num_project_totals, 1)
         #verify that the date on the mark as invoiced links are correct
         correct_begin = entry1.start_time + relativedelta.relativedelta(day = 1)
-        correct_end = entry1.end_time + relativedelta.relativedelta(months =+ 1, day = 1)        
-        self.assertEqual(correct_begin.date(), response.context['from_date'])
-        self.assertEqual(correct_end.date(), response.context['to_date'])
+        correct_end = entry1.end_time + relativedelta.relativedelta(months =+ 1, day = 1)
+        self.invoice_from_date = response.context['from_date']
+        self.invoice_to_date = response.context['to_date']
     
     def test_mark_invoice(self):
         """
@@ -89,12 +91,13 @@ class ProjectTestCase(TimepieceDataTestCase):
             'status': 'approved',
         })
         url = reverse('time_sheet_change_status', kwargs = {'action':'invoice'})
-        data = urlencode= ({
+        data = {
             'project': project_billable.pk,
-            'to_date': entry1.start_time.date(),
-            'from_date': entry1.end_time.date(),
-        })
-        data = "?%s" % data
-        response = self.client.get(url + data)
+            'to_date': self.invoice_to_date,
+            'from_date': self.invoice_from_date,
+        }
+        response = self.client.get(url, data)
         self.assertEquals(response.status_code, 200)
-
+        returned_dates = re.findall('=(\d\d\d\d-\d\d-\d\d)&?',response.context['return_url'])
+        self.assertEqual(returned_dates[0], self.invoice_from_date.strftime('%Y-%m-%d'))
+        self.assertEqual(returned_dates[1], self.invoice_to_date.strftime('%Y-%m-%d'))
