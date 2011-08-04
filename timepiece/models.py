@@ -570,7 +570,7 @@ class PersonRepeatPeriod(models.Model):
     def hours_in_week(self, date):
         left, right = utils.get_week_window(date)
         entries = Entry.worked.filter(user=self.user)
-        entries = entries.filter(end_time__gt=left, end_time__lt=right)
+        entries = entries.filter(end_time__gt=left, end_time__lt=right, status='approved')
         return entries.aggregate(s=Sum('hours'))['s']
 
     def overtime_hours_in_week(self, date):

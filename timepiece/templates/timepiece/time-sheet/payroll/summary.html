@@ -83,29 +83,5 @@
         {% endwith %}
     {% endfor %}
 </table>
-
-<h3>Project Summary</h3>
-
-<table>
-    <tr>
-        <th>&nbsp;</th>
-        <th>Billable</th>
-        <th>Non-Billable</th>
-    </tr>
-    {% regroup projects by type as type_list %}
-    {% for type in type_list %}
-    <tr>
-        <td colspan="3">{{ type.grouper }}</td>
-    </tr>
-	    {% for project in type.list %}
-        <tr>
-            <th>{{ project.name }}</th>
-            <td>{% if project.billable %}{{ project.billable }}{% endif %}</td>
-            <td>{% if project.non_billable %}{{ project.non_billable }}{% endif %}</td>
-        </tr>
-	    {% endfor %}
-    {% endfor %}
-</table>
-
 {% endblock %}
 
