@@ -1063,44 +1063,7 @@ def create_edit_person_time_sheet(request, person_id=None):
 @permission_required('timepiece.view_payroll_summary')
 @render_with('timepiece/time-sheet/payroll/summary.html')
 @utils.date_filter
-def payroll_summary(request, form, from_date, to_date, status, activity):
-    project_totals = timepiece.Entry.objects.all()
-    if not (from_date and to_date):
-        today = datetime.date.today()
-        from_date = today.replace(day=1)
-        to_date = from_date + relativedelta(months=1)
-    if to_date:
-        project_totals = project_totals.filter(
-            end_time__lt=to_date,
-        )
-    if from_date:
-        project_totals = project_totals.filter(
-            end_time__gte=from_date,
-        )
-
-    project_totals = project_totals.values(
-        'project__name',
-        'project__type__label',
-        'billable',
-    ).annotate(s=Sum('hours')).order_by('project__name')
-    projects = {}
-    for row in project_totals:
-        name = row['project__name']
-        type = row['project__type__label']
-        billable = row['billable']
-        hours = row['s']
-        if name not in projects:
-            projects[name] = {'billable': Decimal('0'),
-                              'non_billable': Decimal('0'),
-                              'type': type,}
-        if billable:
-            projects[name]['billable'] += hours
-        else:
-            projects[name]['non_billable'] += hours
-    projects = [{'name': k, 'type': v['type'], 'billable': v['billable'],
-                 'non_billable': v['non_billable']}
-                for k, v in projects.iteritems()]
-    projects.sort(key=lambda p: (p['type'], p['name']))
+def payroll_summary(request, form, from_date, to_date, status, activity):   
     all_weeks = utils.generate_weeks(start=from_date, end=to_date)
     rps = timepiece.PersonRepeatPeriod.objects.select_related(
         'user',
@@ -1123,7 +1086,6 @@ def payroll_summary(request, form, from_date, to_date, status, activity):
         'form': form,
         'all_weeks': all_weeks,
         'cals': cals,
-        'projects': projects,
         'periods': rps,
         'to_date': to_date,
         'from_date': from_date,
