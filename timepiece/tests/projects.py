@@ -35,14 +35,12 @@ class ProjectTestCase(TimepieceDataTestCase):
         
     def test_invoice(self):
         self.user.is_superuser = True
-        self.user.save()
-        
+        self.user.save()        
         self.client.login(username=self.user.username, password='abc')
-
         now = datetime.datetime.now() - datetime.timedelta(hours=10)
         backthen = now - datetime.timedelta(hours=20)        
         project_billable = self.create_project(billable=True)
-        project_non_billable = self.create_project()
+        project_non_billable = self.create_project(billable=False)
         entry1 = self.create_entry({
             'user': self.user,
             'project': project_billable,
@@ -53,11 +51,13 @@ class ProjectTestCase(TimepieceDataTestCase):
         entry2 = self.create_entry({
             'user': self.user,
             'project': project_non_billable,
-            'start_time': backthen + datetime.timedelta(hours=11),
-            'end_time': now + datetime.timedelta(hours=15),
-        })        
-        
+            'start_time': entry1.start_time + datetime.timedelta(hours=11),
+            'end_time': entry1.end_time + datetime.timedelta(hours=15),
+            'status': 'approved',
+        })
         url = reverse('invoice_projects')
         response = self.client.get(url)        
-        print response.context['project_totals']
+        #The number of projects should be 1 because entry2 has billable=False
+        num_project_totals = len(response.context['project_totals'])
+        self.assertEquals(num_project_totals, 1)  
 
