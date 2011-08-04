@@ -1,4 +1,5 @@
 import datetime
+from dateutil import relativedelta
 from urllib import urlencode
 
 from django.core.urlresolvers import reverse
@@ -33,7 +34,11 @@ class ProjectTestCase(TimepieceDataTestCase):
         self.assertEquals(response.status_code, 302)
         self.assertEquals(self.project.users.all().count(), 1)
         
-    def test_invoice(self):
+    def test_invoice_list(self):
+        """
+        Verify that only billable projects appear on the invoice list and that
+        the links have accurate date information
+        """
         self.user.is_superuser = True
         self.user.save()        
         self.client.login(username=self.user.username, password='abc')
@@ -59,5 +64,37 @@ class ProjectTestCase(TimepieceDataTestCase):
         response = self.client.get(url)        
         #The number of projects should be 1 because entry2 has billable=False
         num_project_totals = len(response.context['project_totals'])
-        self.assertEquals(num_project_totals, 1)  
+        self.assertEquals(num_project_totals, 1)
+        #verify that the date on the mark as invoiced links are correct
+        correct_begin = entry1.start_time + relativedelta.relativedelta(day = 1)
+        correct_end = entry1.end_time + relativedelta.relativedelta(months =+ 1, day = 1)        
+        self.assertEqual(correct_begin.date(), response.context['from_date'])
+        self.assertEqual(correct_end.date(), response.context['to_date'])
+    
+    def test_mark_invoice(self):
+        """
+        Test that billable entries create a valid link to mark them as invoiced.
+        """
+        self.user.is_superuser = True
+        self.user.save()        
+        self.client.login(username=self.user.username, password='abc')
+        now = datetime.datetime.now() - datetime.timedelta(hours=10)
+        backthen = now - datetime.timedelta(hours=20)        
+        project_billable = self.create_project(billable=True)
+        entry1 = self.create_entry({
+            'user': self.user,
+            'project': project_billable,
+            'start_time': backthen,
+            'end_time': now,
+            'status': 'approved',
+        })
+        url = reverse('time_sheet_change_status', kwargs = {'action':'invoice'})
+        data = urlencode= ({
+            'project': project_billable.pk,
+            'to_date': entry1.start_time.date(),
+            'from_date': entry1.end_time.date(),
+        })
+        data = "?%s" % data
+        response = self.client.get(url + data)
+        self.assertEquals(response.status_code, 200)
 
