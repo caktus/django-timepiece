@@ -474,15 +474,20 @@ def export_project_time_sheet(request, form, from_date, to_date, status,
 
 @login_required
 @render_with('timepiece/time-sheet/people/view.html')
-def view_person_time_sheet(request, person_id, period_id, window_id=None):
-    try:
-        time_sheet = timepiece.PersonRepeatPeriod.objects.select_related(
-            'user',
-            'repeat_period',
-        ).get(
-            user__id=person_id,
-            repeat_period__id=period_id,
-        )
+def view_person_time_sheet(request, person_id, period_id=None, window_id=None):  
+    try:     
+        if not period_id:
+            time_sheet = timepiece.PersonRepeatPeriod.objects.select_related(
+                'user',
+                'repeat_period',
+            ).get(user__id=person_id)
+        else:
+            time_sheet = timepiece.PersonRepeatPeriod.objects.select_related(
+                'user',
+                'repeat_period',
+            ).get(
+                user__id=person_id,
+                repeat_period__id=period_id)
     except timepiece.PersonRepeatPeriod.DoesNotExist:
         raise Http404
     if not (request.user.has_perm('timepiece.view_person_time_sheet') or \
@@ -493,6 +498,7 @@ def view_person_time_sheet(request, person_id, period_id, window_id=None):
         window_id=window_id,
         user=time_sheet.user,
     )
+    
     project_entries = entries.order_by().values(
         'project__name',
     ).annotate(sum=Sum('hours')).order_by('-sum')
@@ -616,7 +622,7 @@ def invoice_projects(request, form, from_date, to_date, status, activity):
         entries = entries.filter(
             end_time__gte=from_date,
         )
-    unverified = entries.filter(status='unverified').values_list(
+    unverified = entries.filter(status='unverified', user__is_active=True).values_list(        
         'user__pk',
         'user__first_name',
         'user__last_name').distinct()
@@ -624,7 +630,7 @@ def invoice_projects(request, form, from_date, to_date, status, activity):
         'user__pk',
         'user__first_name',
         'user__last_name').distinct()
-        
+    
     #Am no longer including invoiced entries, therefor all projects have uninvoiced
     #hours and it returns only one line for them.
     #project_totals = projects.filter(status__in=['approved', 'invoiced']).values(
