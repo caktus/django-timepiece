@@ -498,15 +498,13 @@ def view_person_time_sheet(request, person_id, period_id=None, window_id=None):
         window_id=window_id,
         user=time_sheet.user,
     )
-
+    
     project_entries = entries.order_by().values(
         'project__name',
     ).annotate(sum=Sum('hours')).order_by('-sum')
     activity_entries = entries.order_by().values(
         'billable',
     ).annotate(sum=Sum('hours')).order_by('-sum')
-    
-    weekly_entries = utils.make_ledger_rows(entries)
     
     show_approve = show_verify = False
     if request.user.has_perm('timepiece.edit_person_time_sheet') or \
@@ -528,7 +526,7 @@ def view_person_time_sheet(request, person_id, period_id=None, window_id=None):
         'person': time_sheet.user,
         'period': window.period,
         'window': window,
-        'weekly_entries': weekly_entries,
+        'entries': entries,
         'total': total_hours,
         'project_entries': project_entries,
         'activity_entries': activity_entries,

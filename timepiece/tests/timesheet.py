@@ -96,43 +96,6 @@ class MyLedgerTest(TimepieceDataTestCase):
             response = self.client.get(self.url)
         except Exception, e:
             self.fail(e)
-            
-    def testMyLedgerWeeklyTotals(self):
-        """Check the accuracy of the weekly hours summary
-        """
-        self.user.is_staff = True
-        self.user.save()        
-        self.client.login(username=self.user.username, password='abc')
-        now = datetime.datetime.now() - datetime.timedelta(hours=10)
-        backthen = now - datetime.timedelta(hours=20)        
-        #create a billable and non-billable entry for testing
-        project_billable = self.create_project(billable=True)
-        project_non_billable = self.create_project(billable=False)
-        entry1 = self.create_entry({
-            'user': self.user,
-            'project': project_billable,
-            'start_time': backthen,
-            'end_time': now,
-        })
-        entry2 = self.create_entry({
-            'user': self.user,
-            'project': project_non_billable,
-            'start_time': entry1.start_time + datetime.timedelta(hours=11),
-            'end_time': entry1.end_time + datetime.timedelta(hours=15),
-        })         
-        url = reverse('view_person_time_sheet', kwargs = {
-            'person_id': self.user.pk,
-            'period_id': self.timesheet.repeat_period.pk
-        })
-        response = self.client.get(url)       
-        weekly_entries = response.context['weekly_entries']
-        #Check that the flag for showing "week of dd/mm/yyyy" is set correctly
-        self.assertEqual(weekly_entries[0][1], 1)
-        self.assertEqual(weekly_entries[1][1], 0)
-        #Check that the totals returned are correct and in the correct place
-        self.assertEqual(weekly_entries[1][2][0], 20.00)
-        self.assertEqual(weekly_entries[1][2][1], 24.00)
-        self.assertEqual(weekly_entries[1][2][2], 44.00)                
 
 
 class ClockInTest(TimepieceDataTestCase):
