@@ -10,7 +10,7 @@ from dateutil.relativedelta import relativedelta
 
 from timepiece.models import PersonRepeatPeriod, AssignmentAllocation
 import timepiece.models as timepiece
-from timepiece.utils import generate_weeks, get_total_time
+from timepiece.utils import generate_weeks, get_total_time, get_week_start
 
 
 
@@ -174,7 +174,7 @@ def monthly_overtime(rp, date):
 
 @register.simple_tag
 def week_start(date):
-    return get_week_start(date).strftime('%m/%d/%Y')  
+    return get_week_start(date).strftime('%m/%d/%Y')
     
 
 @register.simple_tag
