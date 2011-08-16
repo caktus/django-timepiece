@@ -2,6 +2,7 @@ import time
 import datetime
 import random
 import itertools
+from urllib import urlencode
 
 from django.core.urlresolvers import reverse
 
@@ -98,7 +99,8 @@ class MyLedgerTest(TimepieceDataTestCase):
             self.fail(e)
             
     def testMyLedgerWeeklyTotals(self):
-        """Check the accuracy of the weekly hours summary
+        """
+        Check the accuracy of the weekly hours summary
         """
         self.user.is_staff = True
         self.user.save()        
@@ -132,7 +134,46 @@ class MyLedgerTest(TimepieceDataTestCase):
         #Check that the totals returned are correct and in the correct place
         self.assertEqual(weekly_entries[1][2][0], 20.00)
         self.assertEqual(weekly_entries[1][2][1], 24.00)
-        self.assertEqual(weekly_entries[1][2][2], 44.00)                
+        self.assertEqual(weekly_entries[1][2][2], 44.00)
+    
+    def testMyLedgerRedirect(self):
+        """
+        Check that editing an entry redirects to "My Ledger" not the dashboard.
+        """
+        self.user.is_staff = True
+        self.user.save()
+        self.client.login(username=self.user.username, password='abc')
+        now = datetime.datetime.now() - datetime.timedelta(hours=10)
+        backthen = now - datetime.timedelta(hours=20)        
+        project_billable = self.create_project(billable=True)
+        entry1 = self.create_entry({
+            'user': self.user,
+            'project': project_billable,
+            'start_time': backthen,
+            'end_time': now,
+        })
+        my_ledger_url = reverse('view_person_time_sheet', kwargs ={
+            'person_id': self.user.pk,
+            'period_id': self.timesheet.repeat_period.pk
+        })
+        edit_entry_url = reverse('timepiece-update', kwargs ={
+            'entry_id': entry1.id,
+        })
+        get_str = '?%s' % urlencode({
+            'next': my_ledger_url,
+        })
+        data = {
+            'project': self.project.id,
+            'activity': self.activity.id,
+            'location': self.location.id,
+            'start_time_0': entry1.start_time.strftime('%m/%d/%Y'),
+            'start_time_1': entry1.start_time.strftime('%H:%M:00'),
+            'end_time_0': entry1.end_time.strftime('%m/%d/%Y'),
+            'end_time_1': entry1.end_time.strftime('%H:%M:00'),
+            'seconds_paused': 0,   
+        }
+        response = self.client.post(edit_entry_url + get_str, data, follow=True)
+        self.assertEqual(response.request['PATH_INFO'], my_ledger_url)
 
 
 class ClockInTest(TimepieceDataTestCase):

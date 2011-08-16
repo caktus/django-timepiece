@@ -393,7 +393,7 @@ def project_time_sheet(request, project_id, window_id=None):
     ).annotate(sum=Sum('hours')).order_by('-sum')
     activity_entries = entries.order_by().values(
         'billable',
-    ).annotate(sum=Sum('hours')).order_by('-sum')
+    ).annotate(sum=Sum('hours')).order_by('-sum')   
     context = {
         'project': project,
         'period': window.period,
@@ -471,7 +471,6 @@ def export_project_time_sheet(request, form, from_date, to_date, status,
     writer.writerow(('', '', '', '', '', '', 'Total:', total))
     return response
 
-
 @login_required
 @render_with('timepiece/time-sheet/people/view.html')
 def view_person_time_sheet(request, person_id, period_id=None, window_id=None):  
@@ -520,8 +519,7 @@ def view_person_time_sheet(request, person_id, period_id=None, window_id=None):
         show_verify = unverified_count != 0
 
     if request.user.has_perm('timepiece.edit_person_time_sheet'):
-        show_approve = verified_count == total_statuses and total_statuses != 0   
-    
+        show_approve = verified_count == total_statuses and total_statuses != 0
     context = {
         'show_verify': show_verify,
         'show_approve': show_approve,
