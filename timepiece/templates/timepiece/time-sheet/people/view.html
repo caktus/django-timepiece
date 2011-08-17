@@ -56,7 +56,7 @@
                 <td>{{ entry.end_time|date:"P" }}</td>
                 <td>{{ entry.seconds_paused|seconds_to_hours }}</td>
                 <td>{{ entry.hours }}</td>
-                {% if entry.is_editable %}<td><a href="{% url timepiece-update entry.id %}?next={{ request.META.PATH_INFO|urlencode }}">Edit</a></td>{% endif %}
+                {% if entry.is_editable %}<td><a href="{% url timepiece-update entry.id %}?next={{ request.path|urlencode }}">Edit</a></td>{% endif %}
             </tr>    
             {% if totals %}
                 <tr>
