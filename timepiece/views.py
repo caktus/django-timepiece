@@ -58,13 +58,15 @@ def view_entries(request):
     activity_entries = entries.values(
         'billable',
     ).annotate(sum=Sum('hours')).order_by('-sum')
-    others_active_entries = timepiece.Entry.objects.filter(
-        end_time__isnull=True,
+    others_active_entries = timepiece.Entry.objects.select_related().filter(
+        end_time__isnull=True,    
     ).exclude(
         user=request.user,
     )
     my_active_entries = timepiece.Entry.objects.select_related(
         'project__business',
+    ).only(
+        'user','project','activity','start_time'
     ).filter(
         user=request.user,
         end_time__isnull=True,
@@ -505,7 +507,7 @@ def view_person_time_sheet(request, person_id, period_id=None, window_id=None):
         'billable',
     ).annotate(sum=Sum('hours')).order_by('-sum')
     
-    weekly_entries = utils.make_ledger_rows(entries)
+    weekly_entries = utils.make_ledger_rows(entries.select_related())
     
     show_approve = show_verify = False
     if request.user.has_perm('timepiece.edit_person_time_sheet') or \
