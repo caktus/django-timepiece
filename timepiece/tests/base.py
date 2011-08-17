@@ -44,7 +44,7 @@ class TimepieceDataTestCase(TestCase):
     
     def create_project_status(self, data={}):
         defaults = {
-            'label': self.random_string(30, extra_chars=' '),
+            'label': self.random_string(24, extra_chars=' '),
             'type': 'project-status', 
         }
         defaults.update(data)
@@ -55,7 +55,7 @@ class TimepieceDataTestCase(TestCase):
         defaults = {
             'name': name,
             'type': self.create_project_type(data={'billable': billable}),
-            'status': self.create_project_status(),
+            'status': self.create_project_status(data={'billable': billable}),
         }
         defaults.update(data)
         if 'business' not in defaults:
@@ -96,13 +96,15 @@ class TimepieceDataTestCase(TestCase):
     
     def create_entry(self, data={}):
         defaults = {}
-        defaults.update(data)
+        defaults.update(data)                
         if 'activity' not in defaults:
             defaults['activity'] = self.create_activity()
         if 'project' not in defaults:
             defaults['project'] = self.create_project()
         if 'location' not in defaults:
             defaults['location'] = self.create_location()
+        if 'status' not in defaults:
+            defaults['status'] = 'unverified'
         return timepiece.Entry.objects.create(**defaults)
     
     def create_repeat_period(self, data={}):
@@ -188,6 +190,7 @@ class TimepieceDataTestCase(TestCase):
         type_ = timepiece.Attribute.objects.create(
             type='project-type',
             label='Web Sites',
+            enable_timetracking=True,
         )
         self.project = timepiece.Project.objects.create(
             name='Example Project 1',

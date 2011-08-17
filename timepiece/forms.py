@@ -8,13 +8,17 @@ from django.contrib.auth import models as auth_models
 from django.contrib.auth import forms as auth_forms
 from django.core.urlresolvers import reverse
 from django.utils.translation import ugettext_lazy as _
+from django.core.exceptions import ValidationError, NON_FIELD_ERRORS
 
 from timepiece.models import Project, Entry, Activity, UserProfile
 from timepiece.fields import PendulumDateTimeField
 from timepiece.widgets import PendulumDateTimeWidget, SecondsToHoursWidget
-from datetime import datetime, timedelta
-
 from timepiece import models as timepiece
+from timepiece import utils
+
+from datetime import datetime, timedelta
+from dateutil.relativedelta import relativedelta
+
 
 from ajax_select.fields import AutoCompleteSelectMultipleField, \
                                AutoCompleteSelectField, \
@@ -112,15 +116,16 @@ class ClockInForm(forms.ModelForm):
             settings,
             'TIMEPIECE_DEFAULT_LOCATION_SLUG',
             None,
-        )
+        )        
         if default_loc:
             try:
                 loc = timepiece.Location.objects.get(slug=default_loc)
             except timepiece.Location.DoesNotExist:
                 loc = None
-            if loc:
+            if loc:                
                 initial = kwargs.get('initial', {})
                 initial['location'] = loc.pk
+                
         super(ClockInForm, self).__init__(*args, **kwargs)
         self.fields['start_time'].required = False
         self.fields['start_time'].initial = datetime.now()
@@ -131,17 +136,19 @@ class ClockInForm(forms.ModelForm):
         self.fields['project'].queryset = timepiece.Project.objects.filter(
             users=self.user,
         ).filter(
-            Q(status__enable_timetracking=True) |
+            Q(status__enable_timetracking=True) &
             Q(type__enable_timetracking=True)
         )
+        
         try:
             profile = self.user.profile
         except timepiece.UserProfile.DoesNotExist:
             pass
         else:
             if profile.default_activity:
-                self.fields['activity'].initial = profile.default_activity
-    
+                self.fields['activity'].initial = profile.default_activity    
+
+            
     def save(self, commit=True):
         entry = super(ClockInForm, self).save(commit=False)
         entry.hours = 0
@@ -154,19 +161,27 @@ class ClockInForm(forms.ModelForm):
 class ClockOutForm(forms.ModelForm):
     class Meta:
         model = timepiece.Entry
-        fields = ('location', 'comments')
+        fields = ('location', 'comments', 'start_time', 'end_time')
         
     def __init__(self, *args, **kwargs):
+        kwargs['initial'] = {'end_time': datetime.now()}  
         super(ClockOutForm, self).__init__(*args, **kwargs)
+        self.fields['start_time'] = forms.DateTimeField(
+            widget=forms.SplitDateTimeWidget(
+                attrs={'class': 'timepiece-time'},
+                date_format='%m/%d/%Y',
+            )
+
+        )
         self.fields['end_time'] = forms.DateTimeField(
             widget=forms.SplitDateTimeWidget(
                 attrs={'class': 'timepiece-time'},
                 date_format='%m/%d/%Y',
             ),
-            initial=datetime.now(),
         )
-        self.fields.keyOrder = ('location', 'end_time', 'comments')
-    
+
+        self.fields.keyOrder = ('location', 'start_time', 'end_time', 'comments')
+        
     def save(self, commit=True):
         entry = super(ClockOutForm, self).save(commit=False)
         entry.end_time = self.cleaned_data['end_time']
@@ -174,8 +189,7 @@ class ClockOutForm(forms.ModelForm):
         if commit:
             entry.save()
         return entry
-
-
+        
 class AddUpdateEntryForm(forms.ModelForm):
     """
     This form will provide a way for users to add missed log entries and to

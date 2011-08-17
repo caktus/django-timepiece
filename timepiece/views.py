@@ -100,11 +100,31 @@ def view_entries(request):
 @permission_required('timepiece.can_clock_in')
 @transaction.commit_on_success
 def clock_in(request):
+    """For clocking the user into a project    
+    """        
+    entry = timepiece.Entry(user=request.user)
+        
     if request.POST:
-        form = timepiece_forms.ClockInForm(request.POST, user=request.user)
-        if form.is_valid():
-            # if the user chose to pause any open entries, pause them
+        form = timepiece_forms.ClockInForm(request.POST, instance=entry, user=request.user)
+        if form.is_valid():            
             entry = form.save()
+            
+            #check that the user is not currently logged into another project.
+            #if so, clock them out of all others.
+            my_active_entries = timepiece.Entry.objects.select_related(
+                'project__business',
+            ).filter(
+                user=request.user,
+                end_time__isnull=True,                
+            ).exclude(
+                id = entry.id
+            )
+            #clock_out every open project one second before the last to avoid overlap  
+            for sec_bump, active_entry in enumerate(my_active_entries):        
+                active_entry.unpause()
+                active_entry.end_time = entry.start_time - datetime.timedelta(seconds = sec_bump + 1)
+                active_entry.save()                
+            
             request.user.message_set.create(message='You have clocked into %s' % entry.project)
             return HttpResponseRedirect(reverse('timepiece-entries'))
         else:
@@ -112,6 +132,7 @@ def clock_in(request):
     else:
         initial = dict([(k, request.GET[k]) for k in request.GET.keys()])
         form = timepiece_forms.ClockInForm(user=request.user, initial=initial)
+
     return render_to_response(
         'timepiece/time-sheet/entry/clock_in.html',
         {'form': form},
@@ -130,9 +151,11 @@ def clock_out(request, entry_id):
     if request.POST:
         form = timepiece_forms.ClockOutForm(request.POST, instance=entry)
         if form.is_valid():
-            entry = form.save()
-            request.user.message_set.create(message="You've been clocked out.")
+            entry = form.save()           
+            request.user.message_set.create(message="You've been clocked out.")            
             return HttpResponseRedirect(reverse('timepiece-entries'))
+        else:
+            request.user.message_set.create(message='Please correct the errors below.')
     else:
         form = timepiece_forms.ClockOutForm(instance=entry)
     context = {
@@ -178,6 +201,7 @@ def toggle_paused(request, entry_id):
         delta = datetime.datetime.now() - entry.start_time
         seconds = delta.seconds - entry.seconds_paused
         seconds += delta.days * 86400
+        
         if seconds < 3600:
             seconds /= 60.0
             duration = "You've clocked %d minutes." % seconds
@@ -274,7 +298,6 @@ def delete_entry(request, entry_id):
     return render_to_response('timepiece/time-sheet/entry/delete_entry.html',
                               {'entry': entry},
                               context_instance=RequestContext(request))
-
 
 @permission_required('timepiece.view_entry_summary')
 @render_with('timepiece/time-sheet/general_ledger.html')
@@ -451,15 +474,20 @@ def export_project_time_sheet(request, form, from_date, to_date, status,
 
 @login_required
 @render_with('timepiece/time-sheet/people/view.html')
-def view_person_time_sheet(request, person_id, period_id, window_id=None):
-    try:
-        time_sheet = timepiece.PersonRepeatPeriod.objects.select_related(
-            'user',
-            'repeat_period',
-        ).get(
-            user__id=person_id,
-            repeat_period__id=period_id,
-        )
+def view_person_time_sheet(request, person_id, period_id=None, window_id=None):  
+    try:     
+        if not period_id:
+            time_sheet = timepiece.PersonRepeatPeriod.objects.select_related(
+                'user',
+                'repeat_period',
+            ).get(user__id=person_id)
+        else:
+            time_sheet = timepiece.PersonRepeatPeriod.objects.select_related(
+                'user',
+                'repeat_period',
+            ).get(
+                user__id=person_id,
+                repeat_period__id=period_id)
     except timepiece.PersonRepeatPeriod.DoesNotExist:
         raise Http404
     if not (request.user.has_perm('timepiece.view_person_time_sheet') or \
@@ -470,6 +498,7 @@ def view_person_time_sheet(request, person_id, period_id, window_id=None):
         window_id=window_id,
         user=time_sheet.user,
     )
+    
     project_entries = entries.order_by().values(
         'project__name',
     ).annotate(sum=Sum('hours')).order_by('-sum')
@@ -489,7 +518,7 @@ def view_person_time_sheet(request, person_id, period_id, window_id=None):
         show_verify = unverified_count != 0
 
     if request.user.has_perm('timepiece.edit_person_time_sheet'):
-        show_approve = verified_count == total_statuses and total_statuses != 0
+        show_approve = verified_count == total_statuses and total_statuses != 0   
     
     context = {
         'show_verify': show_verify,
@@ -593,24 +622,24 @@ def invoice_projects(request, form, from_date, to_date, status, activity):
         entries = entries.filter(
             end_time__gte=from_date,
         )
-    unverified = entries.filter(status='unverified').values_list(
-        'user__pk', 
+    unverified = entries.filter(status='unverified', user__is_active=True).values_list(        
+        'user__pk',
         'user__first_name',
         'user__last_name').distinct()
     unapproved = entries.filter(status='verified').values_list(
-        'user__pk', 
+        'user__pk',
         'user__first_name',
         'user__last_name').distinct()
     
     #Am no longer including invoiced entries, therefor all projects have uninvoiced
     #hours and it returns only one line for them.
     #project_totals = projects.filter(status__in=['approved', 'invoiced']).values(
-    project_totals = entries.filter(status='approved').values(
+    project_totals = entries.filter(status='approved',
+        project__type__billable=True, project__status__billable=True).values(
         'project__type__pk', 'project__type__label', 'project__name',
         'project__pk', 'status',
     ).annotate(s=Sum('hours')).order_by('project__type__label',
                                         'project__name', 'status')
-    
     cals = []
     if from_date:
         date = from_date - relativedelta(months=1)
@@ -1040,43 +1069,7 @@ def create_edit_person_time_sheet(request, person_id=None):
 @permission_required('timepiece.view_payroll_summary')
 @render_with('timepiece/time-sheet/payroll/summary.html')
 @utils.date_filter
-def payroll_summary(request, form, from_date, to_date, status, activity):
-    project_totals = timepiece.Entry.objects.all()
-    if not (from_date and to_date):
-        today = datetime.date.today()
-        from_date = today.replace(day=1)
-        to_date = from_date + relativedelta(months=1)
-    if to_date:
-        project_totals = project_totals.filter(
-            end_time__lt=to_date,
-        )
-    if from_date:
-        project_totals = project_totals.filter(
-            end_time__gte=from_date,
-        )
-    project_totals = project_totals.values(
-        'project__name',
-        'project__type__label',
-        'billable',
-    ).annotate(s=Sum('hours')).order_by('project__name')
-    projects = {}
-    for row in project_totals:
-        name = row['project__name']
-        type = row['project__type__label']
-        billable = row['billable']
-        hours = row['s']
-        if name not in projects:
-            projects[name] = {'billable': Decimal('0'),
-                              'non_billable': Decimal('0'),
-                              'type': type,}
-        if billable:
-            projects[name]['billable'] += hours
-        else:
-            projects[name]['non_billable'] += hours
-    projects = [{'name': k, 'type': v['type'], 'billable': v['billable'],
-                 'non_billable': v['non_billable']}
-                for k, v in projects.iteritems()]
-    projects.sort(key=lambda p: (p['type'], p['name']))
+def payroll_summary(request, form, from_date, to_date, status, activity):   
     all_weeks = utils.generate_weeks(start=from_date, end=to_date)
     rps = timepiece.PersonRepeatPeriod.objects.select_related(
         'user',
@@ -1099,7 +1092,6 @@ def payroll_summary(request, form, from_date, to_date, status, activity):
         'form': form,
         'all_weeks': all_weeks,
         'cals': cals,
-        'projects': projects,
         'periods': rps,
         'to_date': to_date,
         'from_date': from_date,

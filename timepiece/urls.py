@@ -102,7 +102,7 @@ urlpatterns = patterns('',
         name='edit_person_time_sheet',
     ),
     url(
-        r'^time-sheet/people/(?P<person_id>\d+)/period/(?P<period_id>\d+)/(?:(?P<window_id>\d+)/)?$',
+        r'^time-sheet/people/(?P<person_id>\d+)/(period/)?(?:(?P<period_id>\d+)/)?(?:(?P<window_id>\d+)/)?$',
         views.view_person_time_sheet,
         name='view_person_time_sheet',
     ),

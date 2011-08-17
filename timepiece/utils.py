@@ -261,7 +261,9 @@ def date_filter(func):
         if request.GET:
             form = timepiece_forms.DateForm(request.GET)
             if form.is_valid():
-                from_date, to_date = form.save()
+                from_date = form.cleaned_data.get('from_date')
+                to_date = form.cleaned_data.get('to_date')
+                form.save()
                 status = form.cleaned_data.get('status')
                 activity = form.cleaned_data.get('activity')
             else:
@@ -273,4 +275,4 @@ def date_filter(func):
             to_date = from_date + relativedelta(months=1)
             status = activity = None
         return func(request, form, from_date, to_date, status, activity, *args, **kwargs)
-    return inner_decorator
+    return inner_decorator    

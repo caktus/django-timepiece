@@ -4,9 +4,9 @@
 {% block title %}{{ person }} Time Sheet{% endblock %}
 
 {% block content %}
-<h2>{{ person }} Time Sheet ({{ window.date|date:"N j" }} &mdash; {{ window.end_date|date:"N j" }})</h2>
+<h2>{{ person.first_name }} {{ person.last_name}}'s Time Sheet ({{ window.date|date:"N j" }} &mdash; {{ window.end_date|date:"N j" }})</h2>
 <ul class='header-actions-left'>
-    <li><a href='{% url view_person person.pk %}'>user Information</a></li>
+    <li><a href='{% url view_person person.pk %}'>User Information</a></li>
     <li>
         {% if window.previous %}
             <a href='{% url view_person_time_sheet person.pk,window.period.pk,window.previous.pk %}'>Previous Time Sheet</a>
@@ -29,30 +29,33 @@
 </ul>
 
 {% if entries %}
-    <table>
+    <table>    
         <tr>
             <th>Date</th>
             <th>Project</th>
+            <th>Activity</th>
             <th>Location</th>
             <th>Time In</th>
             <th>Time Out</th>
             <th>Breaks</th>
             <th>Hours</th>
-        </tr>
-        {% for entry in entries %}
-        <tr class="{% if entry.is_overlapping%}overlapping{% endif %}">
-            <td>{{ entry.start_time|date:"m/d/Y (D)" }}</td>
-            <td>{{ entry.project.name }}</td>
-            <td>{{ entry.location }}</td>
-            <td>{{ entry.start_time|date:"P" }}</td>
-            <td>{{ entry.end_time|date:"P" }}</td>
-            <td>{{ entry.seconds_paused|seconds_to_hours }}</td>
-            <td>{{ entry.hours }}</td>
-            {% if entry.is_editable %}<td><a href="{% url timepiece-update entry.id %}">Edit</a></td>{% endif %}
-        </tr>
+        </tr>    
+            
+        {% for entry in entries %}            
+            <tr>
+                <td>{{ entry.start_time|date:"m/d/Y (D)" }}</td>
+                <td>{{ entry.project.name }}</td>
+                <td>{{ entry.activity.name }}</td>
+                <td>{{ entry.location }}</td>
+                <td>{{ entry.start_time|date:"P" }}</td>
+                <td>{{ entry.end_time|date:"P" }}</td>
+                <td>{{ entry.seconds_paused|seconds_to_hours }}</td>
+                <td>{{ entry.hours }}</td>
+                {% if entry.is_editable %}<td><a href="{% url timepiece-update entry.id %}">Edit</a></td>{% endif %}
+            </tr>
         {% endfor %}
         <tr>
-            <th colspan='6'>Total:</th>
+            <th colspan='7'>Total:</th>
             <td>{{ total|floatformat:2 }}</td>
         </tr>
     </table>
