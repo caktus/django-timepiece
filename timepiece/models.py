@@ -309,7 +309,8 @@ class Entry(models.Model):
         if end <= start:
             raise ValidationError('Ending time must exceed the starting time')
             
-        return True        
+        return True
+        
            
     def save(self, **kwargs):
         self.hours = Decimal('%.2f' % round(self.total_hours, 2))    
