@@ -106,7 +106,7 @@ def clock_in(request):
         
     if request.POST:
         form = timepiece_forms.ClockInForm(request.POST, instance=entry, user=request.user)
-        if form.is_valid():            
+        if form.is_valid():                 
             entry = form.save()
             
             #check that the user is not currently logged into another project.
