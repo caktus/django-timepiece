@@ -120,10 +120,14 @@ def clock_in(request):
                 id = entry.id
             )
             #clock_out every open project one second before the last to avoid overlap  
-            for sec_bump, active_entry in enumerate(my_active_entries):        
+            for sec_bump, active_entry in enumerate(my_active_entries):
                 active_entry.unpause()
                 active_entry.end_time = entry.start_time - datetime.timedelta(seconds = sec_bump + 1)
-                active_entry.save()                
+                #If the entry is less than one second old, it's times are wrong
+                if active_entry.start_time > active_entry.end_time:
+                    active_entry.delete()
+                else:
+                    active_entry.save()
             
             request.user.message_set.create(message='You have clocked into %s' % entry.project)
             return HttpResponseRedirect(reverse('timepiece-entries'))
