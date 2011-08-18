@@ -270,10 +270,7 @@ class Entry(models.Model):
         
     def clean(self):
         if not self.user_id: return True
-        
-        #in case there is no start time, especially during tests
-        if not self.start_time: self.start_time = datetime.datetime.now()
-                
+          
         start = self.start_time
         #in case there is no end_time -when clocked in
         if self.end_time:
@@ -296,15 +293,14 @@ class Entry(models.Model):
                 'start_time' : entry.start_time,
                 'end_time' : entry.end_time
             }
-            #If it's the same day, only show the time rather than DateTime
-            if entry.start_time.date() == start.date() and entry.end_time.date() == end.date():
-                entry_data['start_time'] = entry.start_time.strftime('%H:%M:%S')
-                entry_data['end_time'] = entry.end_time.strftime('%H:%M:%S')
-            
-            output = 'Start time overlaps with: %(project)s - %(activity)s' \
-                     ' - from %(start_time)s to %(end_time)s' % entry_data
-
-            raise ValidationError(output)
+            #active entries do not have an end time
+            if entry.end_time: 
+                if entry.start_time.date() == start.date() and entry.end_time.date() == end.date():
+                    entry_data['start_time'] = entry.start_time.strftime('%H:%M:%S')
+                    entry_data['end_time'] = entry.end_time.strftime('%H:%M:%S')                
+                output = 'Start time overlaps with: %(project)s - %(activity)s' \
+                         ' - from %(start_time)s to %(end_time)s' % entry_data
+                raise ValidationError(output)
             
         if end <= start:
             raise ValidationError('Ending time must exceed the starting time')
@@ -348,14 +344,14 @@ class Entry(models.Model):
     def pause(self):
         """
         If this entry is not paused, pause it.
-        """
+        """       
         if not self.is_paused:
             self.pause_time = datetime.datetime.now()
 
     def pause_all(self):
         """
         Pause all open entries
-        """
+        """        
         entries = self.user.timepiece_entries.filter(
         end_time__isnull=True).all()
         for entry in entries:
@@ -364,7 +360,6 @@ class Entry(models.Model):
 
     def unpause(self, date=None):
         if self.is_paused:
-            self.pause_all()
             if not date:
                 date = datetime.datetime.now()
             delta = date - self.pause_time
@@ -395,7 +390,6 @@ class Entry(models.Model):
         if not self.is_closed:
             self.user = user
             self.project = project
-            self.pause_all()
             if not self.start_time:
                 self.start_time = datetime.datetime.now()                
 
