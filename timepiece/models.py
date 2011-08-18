@@ -294,22 +294,23 @@ class Entry(models.Model):
                 'end_time' : entry.end_time
             }
             #active entries do not have an end time
-            if entry.end_time: 
+            if entry.end_time:             
                 if entry.start_time.date() == start.date() and entry.end_time.date() == end.date():
                     entry_data['start_time'] = entry.start_time.strftime('%H:%M:%S')
                     entry_data['end_time'] = entry.end_time.strftime('%H:%M:%S')                
-                output = 'Start time overlaps with: %(project)s - %(activity)s' \
-                         ' - from %(start_time)s to %(end_time)s' % entry_data
-                raise ValidationError(output)
+                    output = 'Start time overlaps with: %(project)s - %(activity)s' \
+                     ' - from %(start_time)s to %(end_time)s' % entry_data
+            else:
+                output = 'The start time is the same as the current entry: %s - %s' % \
+                    (entry.project, entry.activity)            
+            raise ValidationError(output)
             
         if end <= start:
-            raise ValidationError('Ending time must exceed the starting time')
-            
-        return True
-        
+            raise ValidationError('Ending time must exceed the starting time')            
+        return True        
            
     def save(self, **kwargs):
-        self.hours = Decimal('%.2f' % round(self.total_hours, 2))    
+        self.hours = Decimal('%.2f' % round(self.total_hours, 2))
         super(Entry, self).save(**kwargs)        
         
     def get_seconds(self):
@@ -331,7 +332,10 @@ class Entry(models.Model):
         """
         Determined the total number of hours worked in this entry
         """
-        return self.get_seconds() / 3600.0
+        total = self.get_seconds() / 3600.0
+        #in case seconds paused are greater than the elapsed time
+        if total < 0: total = 0
+        return total
     total_hours = property(__total_hours)
 
     def __is_paused(self):

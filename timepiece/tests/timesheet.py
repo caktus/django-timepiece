@@ -178,6 +178,29 @@ class ClockInTest(TimepieceDataTestCase):
         #This clock in attempt should be blocked by entry1
         form = timepiece_forms.ClockInForm(data, instance=entry1, user=self.user)
         self.assertIs(form.is_valid(), False)
+        
+    def testClockInSameTime(self):
+        """
+        Test that the user cannot clock in with the same start time as the
+        active entry
+        """
+        now = datetime.datetime.now()
+        entry1 = self.create_entry({
+            'user': self.user,
+            'start_time': now - datetime.timedelta(hours=5),
+            'end_time': now,
+        })
+        entry1.save()
+        data = {
+            'start_time_0': entry1.start_time.strftime('%m/%d/%Y'),
+            'start_time_1': entry1.start_time.strftime('%H:%M:00'),
+            'location': entry1.location.pk,
+            'project': entry1.project.pk,
+            'activity': entry1.activity.pk,
+        }                
+        #This clock in attempt should be blocked by entry1 (same start time)
+        form = timepiece_forms.ClockInForm(data, instance=entry1, user=self.user)
+        self.assertFalse(form.is_valid())
     
     def testProjectListFiltered(self):
         self.client.login(username='user', password='abc')
@@ -347,6 +370,7 @@ class ClockOutTest(TimepieceDataTestCase):
         existing_entry = timepiece.Entry(user=self.user)
         form = timepiece_forms.ClockOutForm(data, instance=existing_entry)
         self.assertFalse(form.is_valid())
+
 
 class CreateEditEntry(TimepieceDataTestCase):
     def testProjectList(self):
