@@ -270,10 +270,7 @@ class Entry(models.Model):
         
     def clean(self):
         if not self.user_id: return True
-        
-        #in case there is no start time, especially during tests
-        if not self.start_time: self.start_time = datetime.datetime.now()
-                
+          
         start = self.start_time
         #in case there is no end_time -when clocked in
         if self.end_time:
@@ -296,15 +293,16 @@ class Entry(models.Model):
                 'start_time' : entry.start_time,
                 'end_time' : entry.end_time
             }
-            #If it's the same day, only show the time rather than DateTime
-            if entry.start_time.date() == start.date() and entry.end_time.date() == end.date():
-                entry_data['start_time'] = entry.start_time.strftime('%H:%M:%S')
-                entry_data['end_time'] = entry.end_time.strftime('%H:%M:%S')
-            
-            output = 'Start time overlaps with: %(project)s - %(activity)s' \
-                     ' - from %(start_time)s to %(end_time)s' % entry_data
+            #active entries do not have an end time
+            if entry.end_time: 
+                if entry.start_time.date() == start.date() and entry.end_time.date() == end.date():
+                    entry_data['start_time'] = entry.start_time.strftime('%H:%M:%S')
+                    entry_data['end_time'] = entry.end_time.strftime('%H:%M:%S')
+                
+                output = 'Start time overlaps with: %(project)s - %(activity)s' \
+                         ' - from %(start_time)s to %(end_time)s' % entry_data
 
-            raise ValidationError(output)
+                raise ValidationError(output)
             
         if end <= start:
             raise ValidationError('Ending time must exceed the starting time')
