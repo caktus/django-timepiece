@@ -107,27 +107,22 @@ def clock_in(request):
     if request.POST:
         form = timepiece_forms.ClockInForm(request.POST, instance=entry, user=request.user)
         if form.is_valid():                 
-            entry = form.save()
-            
+            entry = form.save()            
             #check that the user is not currently logged into another project.
             #if so, clock them out of all others.
             my_active_entries = timepiece.Entry.objects.select_related(
                 'project__business',
             ).filter(
                 user=request.user,
-                end_time__isnull=True,                
+                end_time__isnull=True,
             ).exclude(
                 id = entry.id
             )
-            #clock_out every open project one second before the last to avoid overlap  
+            #clock_out every open project one second before the last to avoid overlap
             for sec_bump, active_entry in enumerate(my_active_entries):
                 active_entry.unpause()
                 active_entry.end_time = entry.start_time - datetime.timedelta(seconds = sec_bump + 1)
-                #If the entry is less than one second old, it's times are wrong
-                if active_entry.start_time > active_entry.end_time:
-                    active_entry.delete()
-                else:
-                    active_entry.save()
+                active_entry.save()
             
             request.user.message_set.create(message='You have clocked into %s' % entry.project)
             return HttpResponseRedirect(reverse('timepiece-entries'))
