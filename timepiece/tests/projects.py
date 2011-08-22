@@ -1,5 +1,6 @@
 import datetime
 from dateutil import relativedelta
+import urllib
 import re
 
 from django.core.urlresolvers import reverse
@@ -96,8 +97,21 @@ class ProjectTestCase(TimepieceDataTestCase):
             'to_date': self.invoice_to_date,
             'from_date': self.invoice_from_date,
         }
+        #Mark as invoiced link links to a page with correct times in the URL 
         response = self.client.get(url, data)
         self.assertEquals(response.status_code, 200)
         returned_dates = re.findall('=(\d\d\d\d-\d\d-\d\d)&?',response.context['return_url'])
         self.assertEqual(returned_dates[0], self.invoice_from_date.strftime('%Y-%m-%d'))
         self.assertEqual(returned_dates[1], self.invoice_to_date.strftime('%Y-%m-%d'))
+        #Test that the "Yes" link on the mark as invoiced page redirects to
+        #invoice projects with the correct date
+        get_str = urllib.urlencode({
+            'from_date': self.invoice_from_date,
+            'to_date': self.invoice_to_date,
+        })
+        return_url = url + '?%s' % get_str
+        data = {'do_action': 'Yes'}        
+        response = self.client.post(return_url,data, follow=True)
+        self.assertEqual(response.context['from_date'], self.invoice_from_date)
+        self.assertEqual(response.context['to_date'], self.invoice_to_date)
+        

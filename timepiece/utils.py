@@ -5,7 +5,6 @@ from django.http import HttpResponse, HttpResponseRedirect, Http404
 from django.shortcuts import render_to_response
 from django.template import RequestContext
 from django.template.defaultfilters import slugify
-from django.db.models import Sum, Count, Q, F
 
 from django.contrib.sites.models import Site
 from datetime import date, datetime, timedelta, time as time_obj
@@ -254,103 +253,6 @@ def get_week_window(day):
     end = start + timedelta(weeks=1)
     weeks = generate_weeks(start=start, end=end)
     return list(weeks)
-
-   
-def get_week_changes(entries):
-    """Returns a list of booleans to coorespond with a list of entries
-    
-    1 indicates that an entry is in a new week, while 0 indicates an entry is in
-    the same week as the previous entry.
-    """
-    entries = entries.values(
-        'start_time',
-    )
-    week_starts = []
-    for entry in entries:
-        week_starts.append(get_week_start(entry['start_time']))
-    new_weeks = []   
-    for index, date in enumerate(week_starts):
-        if not index:
-            new_weeks.append(1)
-        else:
-            if date.date() != week_starts[index-1].date():
-                new_weeks.append(1)
-            else:
-                new_weeks.append(0)
-    return new_weeks
-
-
-def get_time_frames(entries):
-    """Returns a list of two tuples for the first and last entry of each week
-    """
-    new_weeks = get_week_changes(entries)
-    time_frame = ()
-    time_frames = []
-    for index, entry in enumerate(entries):
-        if new_weeks[index]:
-            time_frame = (entry.start_time, 0)
-        try:
-            if new_weeks[index+1]:
-                time_frame = (time_frame[0], entry.end_time)
-        except IndexError: 
-            time_frame = (time_frame[0], entry.end_time)
-        if time_frame[0] and time_frame[1]:
-            time_frames.append(time_frame)
-            time_frame = ()
-    return time_frames
-
-
-def get_weekly_totals(entries):
-    """Given a list of entries, returns a list of three tuples with the 
-    following format:
-    
-    (billable hours, non-billable hours, total hours)
-    """
-    time_frames = get_time_frames(entries)
-    all_totals = []
-    for time_frame in time_frames:
-        this_week_entries = entries.filter(
-            start_time__gte=time_frame[0],
-            end_time__lte=time_frame[1])        
-        weekly_totals = this_week_entries.values(
-            'billable'
-        ).annotate(sum=Sum('hours')).order_by('-sum')        
-        weekly_billable = weekly_totals.filter(
-            project__type__billable=True, project__status__billable=True
-            ).values('sum')            
-        weekly_non_billable = weekly_totals.filter(
-            Q(project__type__billable=False) |
-            Q(project__status__billable=False)
-            ).values('sum')            
-        if weekly_billable[0]['sum']:
-            billable_hours = weekly_billable[0]['sum']
-        else: billable_hours = 0
-        if weekly_non_billable[0]['sum']:    
-            non_billable_hours = weekly_non_billable[0]['sum']
-        else: non_billable_hours = 0        
-        total_hours = billable_hours + non_billable_hours
-        this_week_totals = (
-            billable_hours, non_billable_hours, total_hours
-            )
-        all_totals.append(this_week_totals)
-    return all_totals
-
-def make_ledger_rows(entries):
-    new_weeks = get_week_changes(entries)          
-    weekly_totals = get_weekly_totals(entries)
-    rows = []
-    week_num = 0
-    for index, entry in enumerate(entries):
-        try:
-            if new_weeks[index+1]:
-                row = entry, new_weeks[index], weekly_totals[week_num]
-                week_num += 1
-            else:
-                row = entry, new_weeks[index], 0
-        except IndexError:
-            row = entry, new_weeks[index], weekly_totals[week_num]
-        rows.append(row)
-    return rows
 
 
 def date_filter(func):

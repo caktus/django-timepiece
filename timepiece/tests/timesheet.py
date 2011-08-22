@@ -182,27 +182,49 @@ class ClockInTest(TimepieceDataTestCase):
         self.url = reverse('timepiece-clock-in')
     
     def testClockIn(self):
+        """
+        Test the simplest clock in scenario  
+        """
         self.client.login(username='user', password='abc')
         now = datetime.datetime.now()- datetime.timedelta(minutes=20)
         data = {
-            'project': self.project.id,
+            'project': self.project.pk,
+            'location': self.location.pk,
+            'activity': self.devl_activity.pk,
             'start_time_0': now.strftime('%m/%d/%Y'),
             'start_time_1': now.strftime('%H:%M:00'),
         }
         response = self.client.post(self.url, data)
-        now = datetime.datetime.now() - datetime.timedelta(seconds=1)
+        now = datetime.datetime.now() + datetime.timedelta(minutes=1)
         data = {
-            'project': self.project2.id,
-            'start_time_0': now,
-            'start_time_1': now,
+            'project': self.project.pk,            
+            'location': self.location.pk,
+            'activity': self.devl_activity.pk,
+            'start_time_0': now.strftime('%m/%d/%Y'),
+            'start_time_1': now.strftime('%H:%M:00'),
         }        
         response = self.client.post(self.url, data)
-        #clock out calls removed from tests. Clock in view clocks out active entries automatically
+        #Clock in form submission redirects and creates a 2nd entry
+        self.assertEqual(response.status_code, 302) 
+        self.assertEqual(timepiece.Entry.objects.count(), 2)
+        #These clock in times do not overlap
+        closed_entry, current_entry = 0, 0
         for entry in timepiece.Entry.objects.all():
-            if entry.is_overlapping() != False:
+            if entry.is_overlapping():
                 self.fail('Overlapping Times')
-                
+            if entry.is_closed:
+                closed_entry += 1
+            else:
+                current_entry += 1
+        #The second clock in is active, the first is saved and closed automatically
+        self.assertEqual(closed_entry, 1)
+        self.assertEqual(current_entry, 1)
+        
     def testClockInPause(self):
+        """
+        Test that the user can clock in while the current entry is paused.
+        The current entry will be clocked out.
+        """
         self.client.login(username='user', password='abc')
         now = datetime.datetime.now()- datetime.timedelta(minutes=10)
         data = {
@@ -214,7 +236,7 @@ class ClockInTest(TimepieceDataTestCase):
         }
         response = self.client.post(self.url, data)
         e_id = timepiece.Entry.objects.filter(project=self.project.id)[0]
-        e_id.pause()#check that when the first entry is paused, the second clock in works and clocks out the first
+        e_id.pause()
         now = datetime.datetime.now()
         data = {
             'project': self.project2.id,
@@ -233,25 +255,77 @@ class ClockInTest(TimepieceDataTestCase):
         Guarantee that the user cannot clock in to a time that is already logged        
         """        
         now = datetime.datetime.now()
-        entry = self.create_entry({
+        entry1 = self.create_entry({
             'user': self.user,
             'project': self.project,
             'start_time': now - datetime.timedelta(hours=5),
             'end_time': now,
         })
-        conflicting_start_time = entry.start_time + datetime.timedelta(hours=2)
+        conflicting_start_time = entry1.start_time + datetime.timedelta(hours=2)
+        entry2 = self.create_entry({
+            'user': self.user,
+            'project': self.project,
+            'start_time': conflicting_start_time,
+            'end_time': now,
+        })
         data = {
-            'start_time_0': conflicting_start_time.strftime('%m/%d/%Y'),
-            'start_time_1': conflicting_start_time.strftime('%H:%M:00'),
-            'location': entry.location.pk,
-            'project': entry.project.pk,
-            'activity': entry.activity.pk,
+            'start_time_0': entry2.start_time.strftime('%m/%d/%Y'),
+            'start_time_1': entry2.start_time.strftime('%H:%M:00'),
+            'location': entry2.location.pk,
+            'project': entry2.project.pk,
+            'activity': entry2.activity.pk,
         }
-        
-        #This clock in attempt should be blocked by the last entry
-        entry = timepiece.Entry(user=self.user)
-        form = timepiece_forms.ClockInForm(data, instance=entry, user=self.user)
+        #This clock in attempt should be blocked by entry1
+        form = timepiece_forms.ClockInForm(data, instance=entry1, user=self.user)        
         self.assertIs(form.is_valid(), False)
+        
+    def testClockInSameTime(self):
+        """
+        Test that the user cannot clock in with the same start time as the
+        active entry
+        """
+        now = datetime.datetime.now()
+        entry1 = self.create_entry({
+            'user': self.user,
+            'start_time': now - datetime.timedelta(hours=5),
+        })
+        entry1.save()
+        data = {
+            'start_time_0': entry1.start_time.strftime('%m/%d/%Y'),
+            'start_time_1': entry1.start_time.strftime('%H:%M:00'),
+            'location': entry1.location.pk,
+            'project': entry1.project.pk,
+            'activity': entry1.activity.pk,
+        }
+        #This clock in attempt should be blocked by entry1 (same start time)
+        form = timepiece_forms.ClockInForm(data, instance=entry1, user=self.user)
+        self.assertFalse(form.is_valid())
+        
+    def testClockInBeforeCurrent(self):
+        """
+        Test that the user cannot clock in with a start time before the active
+        entry
+        """
+        now = datetime.datetime.now()
+        entry1 = self.create_entry({
+            'user': self.user,
+            'start_time': now - datetime.timedelta(hours=5),
+        })
+        entry1.save()
+        new_start_time = entry1.start_time - datetime.timedelta(hours=1)
+        data = {
+            'start_time_0': new_start_time.strftime('%m/%d/%Y'),
+            'start_time_1': new_start_time.strftime('%H:%M:00'),
+            'location': entry1.location.pk,
+            'project': entry1.project.pk,
+            'activity': entry1.activity.pk,
+        }
+        #This clock in attempt should be blocked by entry1
+        #(It is before the start time of the current entry)
+        form = timepiece_forms.ClockInForm(data, instance=entry1, user=self.user)
+        self.assertFalse(form.is_valid())
+        response = self.client.post(self.url, data)
+        print response.content
     
     def testProjectListFiltered(self):
         self.client.login(username='user', password='abc')
@@ -278,136 +352,137 @@ class ClockInTest(TimepieceDataTestCase):
         response = self.client.post(self.url, data)
         self.assertEqual(response.status_code, 200)
         self.assertTrue(response.context['form'].errors)
-    
-    def testClockIn(self):
-        self.client.login(username='user', password='abc')
-        data = {
-            'project': self.project.id,
-            'start_time_0': [u'11/02/2009'],
-            'start_time_1': [u'11:09:21'],
-            'location': self.location.pk,
-            'activity': self.devl_activity.pk,
-        }
-        response = self.client.post(self.url, data)
-        self.assertEqual(response.status_code, 302)
-        self.assertEqual(timepiece.Entry.objects.count(), 1)
-        
 
 
 class ClockOutTest(TimepieceDataTestCase):
-    def testBasicClockOut(self):
-        now = datetime.datetime.now()
-        backthen = now - datetime.timedelta(hours=5)
+    def setUp(self):
+        super(ClockOutTest,self).setUp()
+        self.client.login(username='user', password='abc') 
+        #create an open entry via clock in, so clock out tests don't have to
+        self.default_end_time = datetime.datetime.now()
+        back = datetime.datetime.now() - datetime.timedelta(hours=5)
         entry = self.create_entry({
             'user': self.user,
-            'project': self.project,
-            'start_time': backthen,
+            'start_time': back,
         })
-        self.client.login(username='user', password='abc')        
+        clock_in_data = {
+            'project': self.project.id,            
+            'location': self.location.pk,
+            'activity': self.devl_activity.pk,
+            'start_time_0': back.strftime('%m/%d/%Y'),
+            'start_time_1': back.strftime('%H:%M:%S'),
+        }
+        clock_in_url = reverse('timepiece-clock-in')
+        response = self.client.post(clock_in_url, clock_in_data, follow=True)
+        entry.save()
+        #establish entry and url for all tests
+        self.entry = timepiece.Entry.objects.get(pk=entry.pk)
+        self.url = reverse('timepiece-clock-out', args=[entry.pk])
+        
+    def testBasicClockOut(self):
         data = {
-            'start_time_0': backthen.strftime('%m/%d/%Y'),
-            'start_time_1': backthen.strftime('%H:%M:00'),
-            'end_time_0': now.strftime('%m/%d/%Y'),
-            'end_time_1': now.strftime('%H:%M:00'),
+            'start_time_0': self.entry.start_time.strftime('%m/%d/%Y'),
+            'start_time_1': self.entry.start_time.strftime('%H:%M:%S'),
+            'end_time_0': self.default_end_time.strftime('%m/%d/%Y'),
+            'end_time_1': self.default_end_time.strftime('%H:%M:%S'),
+            'location': self.location.pk,
+        }        
+        response = self.client.post(
+            self.url, data,
+            follow=True,
+        )    
+        closed_entry = timepiece.Entry.objects.get(pk=self.entry.pk)
+        self.assertTrue(closed_entry.is_closed)
+    
+    def testClockOutWithSecondsPaused(self):
+        """
+        Test that clocking out of an unpaused entry with previous pause time
+        calculates the correct amount of unpaused time.
+        """
+        entry_with_pause = self.entry
+        entry_with_pause.seconds_paused = 3600 #1 hour
+        data = {
+            'start_time_0': entry_with_pause.start_time.strftime('%m/%d/%Y'),
+            'start_time_1': entry_with_pause.start_time.strftime('%H:%M:%S'),
+            'end_time_0': self.default_end_time.strftime('%m/%d/%Y'),
+            'end_time_1': self.default_end_time.strftime('%H:%M:%S'),
+            'location': self.location.pk,
+        }        
+        response = self.client.post(
+            self.url, data,
+            follow=True,
+        )
+        form = timepiece_forms.ClockOutForm(data, instance=entry_with_pause)
+        self.assertTrue(form.is_valid())
+        saved = form.save()
+        self.assertAlmostEqual(saved.hours, 4)
+    
+    def testClockOutWhilePaused(self): 
+        """
+        Test that clocking out of a paused entry calculates the correct time
+        """
+        paused_entry = self.entry
+        paused_entry.pause_time = self.entry.start_time + datetime.timedelta(hours=1)        
+        data = {
+            'start_time_0': paused_entry.start_time.strftime('%m/%d/%Y'),
+            'start_time_1': paused_entry.start_time.strftime('%H:%M:%S'),
+            'end_time_0': self.default_end_time.strftime('%m/%d/%Y'),
+            'end_time_1': self.default_end_time.strftime('%H:%M:%S'),
             'location': self.location.pk,
         }
         response = self.client.post(
-            reverse('timepiece-clock-out', args=[entry.pk]),
-            data,
+            reverse('timepiece-clock-out', args=[paused_entry.pk]), data,
             follow=True,
         )
-        entry = timepiece.Entry.objects.get(pk=entry.pk)
-        self.assertTrue(entry.is_closed)
-    
-    def testClockOutWithSecondsPaused(self):
-        now = datetime.datetime.now()
-        backthen = now - datetime.timedelta(hours=4)
-        entry = self.create_entry({
-            'user': self.user,
-            'project': self.project,
-            'start_time': backthen,
-            'seconds_paused': 3600, # 1 hour
-        })
-        data = {
-            'start_time_0': backthen.strftime('%m/%d/%Y'),
-            'start_time_1': backthen.strftime('%H:%M:%S'),
-            'end_time_0': now.strftime('%m/%d/%Y'),
-            'end_time_1': now.strftime('%H:%M:%S'),
-            'location': self.location.pk,
-        }
-        form = timepiece_forms.ClockOutForm(data, instance=entry)
+        form = timepiece_forms.ClockOutForm(data, instance=paused_entry)
         self.assertTrue(form.is_valid())
         saved = form.save()
-        self.assertAlmostEqual(saved.hours, 3)
-    
-    def testClockOutWhilePaused(self):
-        now = datetime.datetime.now()
-        backthen = now - datetime.timedelta(hours=3)
-        entry = self.create_entry({
-            'user': self.user,
-            'project': self.project,
-            'start_time': backthen,
-            'pause_time': now - datetime.timedelta(hours=1),
-        })
-
-        data = {
-            'start_time_0': backthen.strftime('%m/%d/%Y'),
-            'start_time_1': backthen.strftime('%H:%M:%S'),
-            'end_time_0': now.strftime('%m/%d/%Y'),
-            'end_time_1': now.strftime('%H:%M:%S'),
-            'location': self.location.pk,
-        }
-        form = timepiece_forms.ClockOutForm(data, instance=entry)
-        self.assertTrue(form.is_valid())
-        saved = form.save()
-        self.assertAlmostEqual(saved.hours, 2)
+        self.assertAlmostEqual(saved.hours, 1)
         
     def testClockOutReverse(self):
-        """Test that the user can't clock out at a time prior to the starting 
-        time
         """
-        now = datetime.datetime.now()
-        backthen = now - datetime.timedelta(hours=3)        
-        backward_entry = self.create_entry({
-            'user': self.user,
-            'project': self.project,
-            'start_time': now,
-        })        
+        Test that the user can't clock out at a time prior to the starting time
+        """        
+        backward_entry = self.entry
+        #reverse the times        
+        backward_entry.end_time = self.entry.start_time
+        backward_entry.start_time = self.default_end_time
         data = {
             'start_time_0': backward_entry.start_time.strftime('%m/%d/%Y'),
             'start_time_1': backward_entry.start_time.strftime('%H:%M:%S'),
-            'end_time_0': backthen.strftime('%m/%d/%Y'),
-            'end_time_1': backthen.strftime('%H:%M:%S'),
+            'end_time_0': backward_entry.end_time.strftime('%m/%d/%Y'),
+            'end_time_1': backward_entry.end_time.strftime('%H:%M:%S'),
             'location': self.location.pk,
         }
         form = timepiece_forms.ClockOutForm(data, instance=backward_entry)
         self.assertFalse(form.is_valid())
     
     def testClockOutOverlap(self):
-        """Test that the user cannot clock out if the times overlap with an
+        """
+        Test that the user cannot clock out if the times overlap with an 
         existing entry
         """
-        now = datetime.datetime.now()
-        backthen = now - datetime.timedelta(hours=8)
-        existing_entry = self.create_entry({
-            'user': self.user,
-            'start_time': backthen,
-            'end_time': now,
-        })
-        new_entry_start_time = existing_entry.start_time + datetime.timedelta(hours=1)
-        new_entry_end_time = now - datetime.timedelta(hours=1)
+        #Create a closed and valid entry
+        entry1 = self.entry
+        end = datetime.datetime.now() + datetime.timedelta(hours=5)
+        entry1.end_time = end
+        entry1.save()
+        #Create a form with times that overlap entry1
+        bad_start = self.entry.start_time + datetime.timedelta(hours=1)
+        bad_end = bad_start + datetime.timedelta(hours=3)
         data = {
-            'start_time_0': new_entry_start_time.strftime('%m/%d/%Y'),
-            'start_time_1': new_entry_start_time.strftime('%H:%M:%S'),
-            'end_time_0': new_entry_end_time.strftime('%m/%d/%Y'),
-            'end_time_1': new_entry_end_time.strftime('%H:%M:%S'),
-            'location': self.location.pk,        
+            'start_time_0': bad_start.strftime('%m/%d/%Y'),
+            'start_time_1': bad_start.strftime('%H:%M:%S'),
+            'end_time_0': bad_end.strftime('%m/%d/%Y'),
+            'end_time_1': bad_end.strftime('%H:%M:%S'),
+            'location': self.location.pk,
         }
-        #With the existing_entry on either side, a form with the information in
-        #data should fail as the times are inside the times of a previous entry
+        #With entry1 on either side, a form with the information in data should
+        #fail because the times in the form are inside the times of another entry
         existing_entry = timepiece.Entry(user=self.user)
         form = timepiece_forms.ClockOutForm(data, instance=existing_entry)
         self.assertFalse(form.is_valid())
+
 
 class CreateEditEntry(TimepieceDataTestCase):
     def testProjectList(self):
