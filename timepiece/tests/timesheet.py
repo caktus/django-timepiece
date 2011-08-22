@@ -175,7 +175,8 @@ class ClockInTest(TimepieceDataTestCase):
     def testClockInBlock(self):        
         """
         Guarantee that the user cannot clock in to a time that is already logged        
-        """        
+        """ 
+        self.client.login(username='user', password='abc')       
         now = datetime.datetime.now()
         entry1 = self.create_entry({
             'user': self.user,
@@ -192,7 +193,7 @@ class ClockInTest(TimepieceDataTestCase):
         })
         data = {
             'start_time_0': entry2.start_time.strftime('%m/%d/%Y'),
-            'start_time_1': entry2.start_time.strftime('%H:%M:00'),
+            'start_time_1': entry2.start_time.strftime('%H:%M:%S'),
             'location': entry2.location.pk,
             'project': entry2.project.pk,
             'activity': entry2.activity.pk,
@@ -206,19 +207,26 @@ class ClockInTest(TimepieceDataTestCase):
         Test that the user cannot clock in with the same start time as the
         active entry
         """
-        now = datetime.datetime.now()
+        self.client.login(username='user', password='abc')
+        now = datetime.datetime.now() - datetime.timedelta(hours=5)
         entry1 = self.create_entry({
             'user': self.user,
-            'start_time': now - datetime.timedelta(hours=5),
+            'project': self.project,
+            'start_time': now,
         })
         entry1.save()
+        entry2 = self.create_entry({
+            'user': self.user,
+            'project': self.project,
+            'start_time': now,
+        })
         data = {
-            'start_time_0': entry1.start_time.strftime('%m/%d/%Y'),
-            'start_time_1': entry1.start_time.strftime('%H:%M:00'),
-            'location': entry1.location.pk,
-            'project': entry1.project.pk,
-            'activity': entry1.activity.pk,
-        }
+            'start_time_0': entry2.start_time.strftime('%m/%d/%Y'),
+            'start_time_1': entry2.start_time.strftime('%H:%M:%S'),
+            'location': entry2.location.pk,
+            'project': entry2.project.pk,
+            'activity': entry2.activity.pk,
+        }        
         #This clock in attempt should be blocked by entry1 (same start time)
         form = timepiece_forms.ClockInForm(data, instance=entry1, user=self.user)
         self.assertFalse(form.is_valid())
@@ -228,16 +236,23 @@ class ClockInTest(TimepieceDataTestCase):
         Test that the user cannot clock in with a start time before the active
         entry
         """
-        now = datetime.datetime.now()
+        self.client.login(username='user', password='abc')
+        now = datetime.datetime.now() - datetime.timedelta(hours=5)
         entry1 = self.create_entry({
             'user': self.user,
-            'start_time': now - datetime.timedelta(hours=5),
+            'project': self.project,
+            'start_time': now,
         })
         entry1.save()
         new_start_time = entry1.start_time - datetime.timedelta(hours=1)
+        entr2 = self.create_entry({
+            'user': self.user,
+            'project': self.project,
+            'start_time': new_start_time,        
+        })
         data = {
             'start_time_0': new_start_time.strftime('%m/%d/%Y'),
-            'start_time_1': new_start_time.strftime('%H:%M:00'),
+            'start_time_1': new_start_time.strftime('%H:%M:%S'),
             'location': entry1.location.pk,
             'project': entry1.project.pk,
             'activity': entry1.activity.pk,
@@ -246,8 +261,6 @@ class ClockInTest(TimepieceDataTestCase):
         #(It is before the start time of the current entry)
         form = timepiece_forms.ClockInForm(data, instance=entry1, user=self.user)
         self.assertFalse(form.is_valid())
-        response = self.client.post(self.url, data)
-        print response.content
     
     def testProjectListFiltered(self):
         self.client.login(username='user', password='abc')

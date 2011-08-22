@@ -335,7 +335,8 @@ class Entry(models.Model):
         """
         total = self.get_seconds() / 3600.0
         #in case seconds paused are greater than the elapsed time
-        if total < 0: total = 0
+        if total < 0: 
+            total = 0
         return total
     total_hours = property(__total_hours)
 
