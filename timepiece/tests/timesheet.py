@@ -104,27 +104,49 @@ class ClockInTest(TimepieceDataTestCase):
         self.url = reverse('timepiece-clock-in')
     
     def testClockIn(self):
+        """
+        Test the simplest clock in scenario  
+        """
         self.client.login(username='user', password='abc')
         now = datetime.datetime.now()- datetime.timedelta(minutes=20)
         data = {
-            'project': self.project.id,
+            'project': self.project.pk,
+            'location': self.location.pk,
+            'activity': self.devl_activity.pk,
             'start_time_0': now.strftime('%m/%d/%Y'),
             'start_time_1': now.strftime('%H:%M:00'),
         }
         response = self.client.post(self.url, data)
-        now = datetime.datetime.now() - datetime.timedelta(seconds=1)
+        now = datetime.datetime.now() + datetime.timedelta(minutes=1)
         data = {
-            'project': self.project2.id,
-            'start_time_0': now,
-            'start_time_1': now,
+            'project': self.project.pk,            
+            'location': self.location.pk,
+            'activity': self.devl_activity.pk,
+            'start_time_0': now.strftime('%m/%d/%Y'),
+            'start_time_1': now.strftime('%H:%M:00'),
         }        
         response = self.client.post(self.url, data)
-        #Clock in view clocks out active entries automatically
+        #Clock in form submission redirects and creates a 2nd entry
+        self.assertEqual(response.status_code, 302) 
+        self.assertEqual(timepiece.Entry.objects.count(), 2)
+        #These clock in times do not overlap
+        closed_entry, current_entry = 0, 0
         for entry in timepiece.Entry.objects.all():
-            if entry.is_overlapping() != False:
+            if entry.is_overlapping():
                 self.fail('Overlapping Times')
-                
+            if entry.is_closed:
+                closed_entry += 1
+            else:
+                current_entry += 1
+        #The second clock in is active, the first is saved and closed automatically
+        self.assertEqual(closed_entry, 1)
+        self.assertEqual(current_entry, 1)
+        
     def testClockInPause(self):
+        """
+        Test that the user can clock in while the current entry is paused.
+        The current entry will be clocked out.
+        """
         self.client.login(username='user', password='abc')
         now = datetime.datetime.now()- datetime.timedelta(minutes=10)
         data = {
@@ -136,7 +158,7 @@ class ClockInTest(TimepieceDataTestCase):
         }
         response = self.client.post(self.url, data)
         e_id = timepiece.Entry.objects.filter(project=self.project.id)[0]
-        e_id.pause()#check that when the first entry is paused, the second clock in works and clocks out the first
+        e_id.pause()
         now = datetime.datetime.now()
         data = {
             'project': self.project2.id,
@@ -174,9 +196,9 @@ class ClockInTest(TimepieceDataTestCase):
             'location': entry2.location.pk,
             'project': entry2.project.pk,
             'activity': entry2.activity.pk,
-        }                
+        }
         #This clock in attempt should be blocked by entry1
-        form = timepiece_forms.ClockInForm(data, instance=entry1, user=self.user)
+        form = timepiece_forms.ClockInForm(data, instance=entry1, user=self.user)        
         self.assertIs(form.is_valid(), False)
         
     def testClockInSameTime(self):
@@ -188,7 +210,6 @@ class ClockInTest(TimepieceDataTestCase):
         entry1 = self.create_entry({
             'user': self.user,
             'start_time': now - datetime.timedelta(hours=5),
-            'end_time': now,
         })
         entry1.save()
         data = {
@@ -197,10 +218,36 @@ class ClockInTest(TimepieceDataTestCase):
             'location': entry1.location.pk,
             'project': entry1.project.pk,
             'activity': entry1.activity.pk,
-        }                
+        }
         #This clock in attempt should be blocked by entry1 (same start time)
         form = timepiece_forms.ClockInForm(data, instance=entry1, user=self.user)
         self.assertFalse(form.is_valid())
+        
+    def testClockInBeforeCurrent(self):
+        """
+        Test that the user cannot clock in with a start time before the active
+        entry
+        """
+        now = datetime.datetime.now()
+        entry1 = self.create_entry({
+            'user': self.user,
+            'start_time': now - datetime.timedelta(hours=5),
+        })
+        entry1.save()
+        new_start_time = entry1.start_time - datetime.timedelta(hours=1)
+        data = {
+            'start_time_0': new_start_time.strftime('%m/%d/%Y'),
+            'start_time_1': new_start_time.strftime('%H:%M:00'),
+            'location': entry1.location.pk,
+            'project': entry1.project.pk,
+            'activity': entry1.activity.pk,
+        }
+        #This clock in attempt should be blocked by entry1
+        #(It is before the start time of the current entry)
+        form = timepiece_forms.ClockInForm(data, instance=entry1, user=self.user)
+        self.assertFalse(form.is_valid())
+        response = self.client.post(self.url, data)
+        print response.content
     
     def testProjectListFiltered(self):
         self.client.login(username='user', password='abc')
@@ -227,19 +274,6 @@ class ClockInTest(TimepieceDataTestCase):
         response = self.client.post(self.url, data)
         self.assertEqual(response.status_code, 200)
         self.assertTrue(response.context['form'].errors)
-    
-    def testClockIn(self):
-        self.client.login(username='user', password='abc')
-        data = {
-            'project': self.project.id,
-            'start_time_0': [u'11/02/2009'],
-            'start_time_1': [u'11:09:21'],
-            'location': self.location.pk,
-            'activity': self.devl_activity.pk,
-        }
-        response = self.client.post(self.url, data)
-        self.assertEqual(response.status_code, 302)
-        self.assertEqual(timepiece.Entry.objects.count(), 1)
 
 
 class ClockOutTest(TimepieceDataTestCase):
