@@ -39,6 +39,7 @@
             <th>Time Out</th>
             <th>Breaks</th>
             <th>Hours</th>
+            <th>Comments</th>
         </tr>
             
         {% for entry, new_week, totals in weekly_entries %}
@@ -55,7 +56,8 @@
                 <td>{{ entry.start_time|date:"P" }}</td>
                 <td>{{ entry.end_time|date:"P" }}</td>
                 <td>{{ entry.seconds_paused|seconds_to_hours }}</td>
-                <td>{{ entry.hours }}</td>
+                <td>{{ entry.hours }}</td>                
+                <td>{{ entry.comments|truncatewords:12 }}</td>
                 {% if entry.is_editable %}<td><a href="{% url timepiece-update entry.id %}?next={{ request.path|urlencode }}">Edit</a></td>{% endif %}
             </tr>    
             {% if totals %}
