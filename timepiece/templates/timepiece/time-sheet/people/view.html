@@ -28,8 +28,8 @@
     {% if show_approve %}<li><a href='{% url time_sheet_change_status 'approve',person.id,period.id,window.id %}'>Approve Time Sheet</a></li>{% endif %}
 </ul>
 
-{% if entries %}
-    <table>    
+{% if weekly_entries %}
+    <table>
         <tr>
             <th>Date</th>
             <th>Project</th>
@@ -39,9 +39,14 @@
             <th>Time Out</th>
             <th>Breaks</th>
             <th>Hours</th>
-        </tr>    
+        </tr>
             
-        {% for entry in entries %}            
+        {% for entry, new_week, totals in weekly_entries %}
+            {% if new_week %}
+                <tr>
+                    <th>Week of {% week_start entry.start_time %}</th>
+                </tr>
+            {% endif %}
             <tr>
                 <td>{{ entry.start_time|date:"m/d/Y (D)" }}</td>
                 <td>{{ entry.project.name }}</td>
@@ -51,6 +56,7 @@
                 <td>{{ entry.end_time|date:"P" }}</td>
                 <td>{{ entry.seconds_paused|seconds_to_hours }}</td>
                 <td>{{ entry.hours }}</td>
+                {% if entry.is_editable %}<td><a href="{% url timepiece-update entry.id %}?next={{ request.path|urlencode }}">Edit</a></td>{% endif %}
             </tr>    
             {% if totals %}
                 <tr>
@@ -64,13 +70,11 @@
                         {% if totals.2 %} {{totals.2}} {% else %} 0 {% endif %}
                     </td>
                 <tr>
-            {% endif %}
-            {% if entry.is_editable %}<td><a href="{% url timepiece-update entry.id %}?next={{ request.path|urlencode }}">Edit</a></td>{% endif %}
-            </tr>
-            
+            {% endif %}                   
         {% endfor %}
+        {{ weekly_totals }}
         <tr>
-            <th colspan='7'>Total:</th>
+            <th colspan='7'>Total for this billing period:</th>
             <td>{{ total|floatformat:2 }}</td>
         </tr>
     </table>

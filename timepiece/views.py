@@ -527,7 +527,7 @@ def view_person_time_sheet(request, person_id, period_id=None, window_id=None):
         'person': time_sheet.user,
         'period': window.period,
         'window': window,
-        'entries': entries,
+        'weekly_entries': weekly_entries,
         'total': total_hours,
         'project_entries': project_entries,
         'activity_entries': activity_entries,

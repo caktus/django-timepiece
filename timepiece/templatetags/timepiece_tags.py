@@ -11,7 +11,7 @@ from dateutil.relativedelta import relativedelta
 
 from timepiece.models import PersonRepeatPeriod, AssignmentAllocation
 import timepiece.models as timepiece
-from timepiece.utils import generate_weeks, get_total_time
+from timepiece.utils import generate_weeks, get_total_time, get_week_start
 
 
 
