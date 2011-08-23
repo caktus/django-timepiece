@@ -167,9 +167,10 @@ class ClockInTest(TimepieceDataTestCase):
             'start_time_1': self.now.strftime('%H:%M:%S'),
         })
         response = self.client.post(self.url, data, follow=True)
-        for entry in timepiece.Entry.objects.all():
-            if entry.is_overlapping():
-                self.fail('Overlapping Times')
+        #obtain entry1 now that it is closed. The hours should be recorded
+        e_id = timepiece.Entry.objects.get(pk=entry1.id)
+        self.assertTrue(e_id.is_closed)
+        self.assertTrue(e_id.hours)
                 
     def testClockInBlock(self):        
         """
