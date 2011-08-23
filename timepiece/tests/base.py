@@ -96,7 +96,9 @@ class TimepieceDataTestCase(TestCase):
     
     def create_entry(self, data={}):
         defaults = {}
-        defaults.update(data)                
+        defaults.update(data)
+        if 'user' not in defaults:
+            defaults['user'] = self.user
         if 'activity' not in defaults:
             defaults['activity'] = self.create_activity()
         if 'project' not in defaults:
