@@ -185,11 +185,12 @@ class ClockInTest(TimepieceDataTestCase):
         data = self.clock_in_form
         data.update({
             'start_time_0': conflicting_start_time.strftime('%m/%d/%Y'),
-            'start_time_1': conflicting_start_time.strftime('%H:%M:%S:%s'),
+            'start_time_1': conflicting_start_time.strftime('%H:%M:%S'),
         })
         #This clock in attempt should be blocked by entry1
-        form = timepiece_forms.ClockInForm(data, instance=timepiece.Entry(self.user), user=self.user)
-        self.assertIs(form.is_valid(), False)
+        response = self.client.post(self.url, data)
+        self.assertFormError(response,'form', None, None, 
+            msg_prefix='Start time overlaps with:')
         
     def testClockInSameTime(self):
         """
@@ -203,11 +204,12 @@ class ClockInTest(TimepieceDataTestCase):
         data = self.clock_in_form
         data.update({
             'start_time_0': entry1.start_time.strftime('%m/%d/%Y'),
-            'start_time_1': entry1.start_time.strftime('%H:%M:%S:%s'),
+            'start_time_1': entry1.start_time.strftime('%H:%M:%S'),
         })        
         #This clock in attempt should be blocked by entry1 (same start time)
-        form = timepiece_forms.ClockInForm(data, instance=timepiece.Entry(self.user), user=self.user)
-        self.assertFalse(form.is_valid())
+        response = self.client.post(self.url, data)
+        self.assertFormError(response,'form', None, None,
+            msg_prefix='The start time is on or before the current entry:')
         
     def testClockInBeforeCurrent(self):
         """
@@ -222,12 +224,13 @@ class ClockInTest(TimepieceDataTestCase):
         data = self.clock_in_form
         data.update({
             'start_time_0': before_entry1.strftime('%m/%d/%Y'),
-            'start_time_1': before_entry1.strftime('%H:%M:%S:%s'),
+            'start_time_1': before_entry1.strftime('%H:%M:%S'),
         })
         #This clock in attempt should be blocked by entry1
         #(It is before the start time of the current entry)
-        form = timepiece_forms.ClockInForm(data, instance=timepiece.Entry(self.user), user=self.user)
-        self.assertFalse(form.is_valid())
+        response = self.client.post(self.url, data)
+        self.assertFormError(response,'form', None, None,
+            msg_prefix='The start time is on or before the current entry:')
     
     def testProjectListFiltered(self):
         self.client.login(username='user', password='abc')
