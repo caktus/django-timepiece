@@ -117,11 +117,12 @@ class ClockInTest(TimepieceDataTestCase):
         """
         self.client.login(username='user', password='abc')
         data = self.clock_in_form
-        response = self.client.post(self.url, data)
-        #Clock in form submission is valid and redirects     
-        form = timepiece_forms.ClockInForm(data, instance=timepiece.Entry(self.user), user=self.user)
-        self.assertTrue(form.is_valid())
-        self.assertEqual(response.status_code, 302) 
+        response = self.client.post(self.url, data, follow=True)
+        #Clock in form submission leads to the dashboard page with one active entry
+        self.assertTemplateUsed(response, 'timepiece/time-sheet/dashboard.html')
+        self.assertContains(response, 'You have clocked into', count=1, status_code=200)
+        self.assertEquals(len(response.context['my_active_entries']), 1)
+
         
     def testClockInAutoOut(self):
         """
