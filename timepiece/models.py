@@ -269,24 +269,23 @@ class Entry(models.Model):
             return None    
         
     def clean(self):
-        if not self.user_id: return True
-        start = self.start_time
+        if not self.user_id: 
+            raise ValidationError('An unexpected error has occured')
+        if not self.start_time: 
+            raise ValidationError('An unexpected error has occured')
+        start = self.start_time        
         if self.end_time:
             end = self.end_time
         #Current entries have no end_time
         else:
-            end = start + datetime.timedelta(seconds=1)    
-        
+            end = start + datetime.timedelta(seconds=1)
         entries = self.user.timepiece_entries.filter(
-        Q(end_time__range=(start, end))|\
-        Q(start_time__range=(start, end))|\
-        Q(start_time__lte=start, end_time__gte=end)|\
-        Q(start_time__gt=start, end_time__isnull=True))#before current entry
-        
+            Q(end_time__range=(start, end))|\
+            Q(start_time__range=(start, end))|\
+            Q(start_time__lte=start, end_time__gte=end))
         #An entry can not conflict with itself so remove it from the list
         if self.id: entries = entries.exclude(pk = self.id)
-        if len(entries):  
-            entry = entries[0]
+        for entry in entries:
             entry_data = {
                 'project': entry.project,
                 'activity' : entry.activity,
@@ -300,11 +299,7 @@ class Entry(models.Model):
                     entry_data['end_time'] = entry.end_time.strftime('%H:%M:%S')                
                     output = 'Start time overlaps with: %(project)s - %(activity)s' \
                      ' - from %(start_time)s to %(end_time)s' % entry_data
-            #Conflicting active entries
-            else:
-                output = 'The start time is on or before the current entry: %s - %s starting at %s' % \
-                    (entry.project, entry.activity, entry.start_time.time())
-            raise ValidationError(output)
+                raise ValidationError(output)                
             
         if end <= start:
             raise ValidationError('Ending time must exceed the starting time')            
