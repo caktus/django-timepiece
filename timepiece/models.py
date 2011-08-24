@@ -272,7 +272,7 @@ class Entry(models.Model):
         if not self.user_id: 
             raise ValidationError('An unexpected error has occured')
         if not self.start_time: 
-            raise ValidationError('An unexpected error has occured')
+            raise ValidationError('Please enter a valid start time')
         start = self.start_time        
         if self.end_time:
             end = self.end_time

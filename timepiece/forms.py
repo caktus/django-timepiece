@@ -157,8 +157,9 @@ class ClockInForm(forms.ModelForm):
         active_entries = self.user.timepiece_entries.filter(
             start_time__gte=start, end_time__isnull=True)
         for entry in active_entries:
-            output = 'The start time conflicts with the current entry: %s - %s starting at %s' % \
-                    (entry.project, entry.activity, entry.start_time.time())
+            output = \
+                'The start time is on or before the current entry: %s - %s starting at %s' % \
+                (entry.project, entry.activity, entry.start_time.time())
             raise forms.ValidationError(output)
         return start
                 
@@ -245,13 +246,16 @@ class AddUpdateEntryForm(forms.ModelForm):
 
     def clean(self):
         """
-        Verify that the entry doesn't conflict with or come after the current 
-        entry
-        """        
+        Verify that the entry doesn't conflict with or come after the current
+        entry, and that the times are valid for model clean
+        """
         cleaned_data = self.cleaned_data
-        start = cleaned_data.get('start_time')
-        end = cleaned_data.get('end_time')        
-        self.instance.clean()
+        start = cleaned_data.get('start_time', None)
+        end = cleaned_data.get('end_time', None)
+        if not start or not end:
+            raise forms.ValidationError('Please enter a valid start and end date/time.')
+        if start >= datetime.now() or end > datetime.now():
+            raise forms.ValidationError('Entries may not be added in the future.')
         entries = self.user.timepiece_entries.filter(
             Q(start_time__lte=end, end_time__isnull=True)|\
             Q(start_time__lte=start, end_time__isnull=True))
@@ -260,30 +264,11 @@ class AddUpdateEntryForm(forms.ModelForm):
                     (entry.project, entry.activity, entry.start_time.time())
             raise forms.ValidationError(output)
         return self.cleaned_data
-
-    def clean_end_time(self):
-        """
-        Make sure no one tries to add entries that end in the future
-        """
-        try:
-            start = self.cleaned_data['start_time']
-        except KeyError:
-            raise forms.ValidationError('Please enter a valid start time.')
-
-        try:
-            end = self.cleaned_data['end_time']
-            if not end: raise Exception
-        except:
-            raise forms.ValidationError('Please enter an end time.')
-
-        if start >= end:
-            raise forms.ValidationError('The entry must start before it ends!')
-
-        return end        
     
     def save(self, commit=True):
         entry = super(AddUpdateEntryForm, self).save(commit=False)
-        entry.user = self.user       
+        entry.user = self.user
+        self.instance.clean()
         if commit:
             entry.save()
         return entry
