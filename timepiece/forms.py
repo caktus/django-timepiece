@@ -161,7 +161,7 @@ class ClockInForm(forms.ModelForm):
         for entry in active_entries:
             output = \
                 'The start time is on or before the current entry: %s - %s starting at %s' % \
-                (entry.project, entry.activity, entry.start_time.time())
+                (entry.project, entry.activity, entry.start_time.strftime('%H:%M:%S'))
             raise forms.ValidationError(output)
         return start
                 
@@ -263,7 +263,7 @@ class AddUpdateEntryForm(forms.ModelForm):
             Q(start_time__lte=start, end_time__isnull=True))
         for entry in entries:
             output = 'The times below conflict with the current entry: %s - %s starting at %s' % \
-                    (entry.project, entry.activity, entry.start_time.time())
+                    (entry.project, entry.activity, entry.start_time.strftime('%H:%M:%S'))
             raise forms.ValidationError(output)
         return self.cleaned_data
     

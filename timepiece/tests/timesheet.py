@@ -123,9 +123,7 @@ class ClockInTest(TimepieceDataTestCase):
         # with one active entry
         self.assertRedirects(response, reverse('timepiece-entries'),
                              status_code=302, target_status_code=200)
-        self.assertTemplateUsed(response, 
-            'timepiece/time-sheet/dashboard.html',
-            msg_prefix='You have clocked into')
+        self.assertContains(response, 'You have clocked into', count=1)
         self.assertEquals(len(response.context['my_active_entries']), 1)
 
     def testClockInAutoOut(self):
@@ -401,20 +399,12 @@ class CreateEditEntry(TimepieceDataTestCase):
         self.now = datetime.datetime.now()
         valid_start = self.now - datetime.timedelta(days=1)
         valid_end = valid_start + datetime.timedelta(hours=1)
-        two_hours_ago = self.now - datetime.timedelta(hours=2)
+        two_hour_ago = self.now - datetime.timedelta(hours=2)
         one_hour_ago = self.now - datetime.timedelta(hours=1)
-        ten_min_ago = self.now - datetime.timedelta(minutes=10)
-        closed_entry = self.create_entry({
-            'user': self.user,
-            'start_time': two_hours_ago,
-            'end_time': one_hour_ago,
-        })
-        current_entry = self.create_entry({
-            'user': self.user,
-            'start_time': ten_min_ago,
-        })
+        ten_min_ago = self.now - datetime.timedelta(minutes=10)        
+        #establish data, entries, urls for all tests
         self.default_data = {
-            'project': self.project.id,
+            'project': self.project.pk,
             'location': self.location.pk,
             'activity': self.devl_activity.pk,
             'seconds_paused': 0,
@@ -423,11 +413,30 @@ class CreateEditEntry(TimepieceDataTestCase):
             'end_time_0': valid_end.strftime('%m/%d/%Y'),
             'end_time_1': valid_end.strftime('%H:%M:%S'),
         }
-        #establish entries and urls for all tests
-        self.current_entry = timepiece.Entry.objects.get(end_time__isnull=True)
-        self.closed_entry = timepiece.Entry.objects.get(end_time__isnull=False)
+        self.closed_entry_data = {
+            'user': self.user,
+            'project': self.project,
+            'activity': self.devl_activity,
+            'start_time': two_hour_ago,
+            'end_time': one_hour_ago,            
+        }
+        self.current_entry_data = {
+            'user': self.user,
+            'project': self.project,
+            'activity': self.devl_activity,
+            'start_time': ten_min_ago,
+        }
+        self.closed_entry = self.create_entry(self.closed_entry_data)
+        self.current_entry = self.create_entry(self.current_entry_data)
+        self.closed_entry_data.update({        
+            'start_time_str': two_hour_ago.strftime('%H:%M:%S'),
+            'end_time_str': one_hour_ago.strftime('%H:%M:%S'),
+        })
+        self.current_entry_data.update({        
+            'start_time_str': ten_min_ago.strftime('%H:%M:%S'),
+        })
         self.create_url = reverse('timepiece-add')
-        self.edit_url = reverse('timepiece-update', args=[closed_entry.pk])
+        self.edit_url = reverse('timepiece-update', args=[self.closed_entry.pk])
         
     def testCreateEntry(self):
         """
@@ -436,10 +445,8 @@ class CreateEditEntry(TimepieceDataTestCase):
         response = self.client.post(self.create_url, self.default_data, follow=True)
         #This post should redirect to the dashboard, with the correct message
         #and 2 entries for this week, the one in setUp and this one.
-        self.assertRedirects(response, 'timepiece/', status_code=302, target_status_code=200)
-        self.assertTemplateUsed(response,
-            'timepiece/time-sheet/dashboard.html',
-            msg_prefix='The entry has been created successfully')
+        self.assertRedirects(response, reverse('timepiece-entries'), status_code=302, target_status_code=200)
+        self.assertContains(response,'The entry has been created successfully', count=1)
         self.assertEquals(len(response.context['this_weeks_entries']), 2)
     
     def testEditEntry(self):
@@ -449,10 +456,8 @@ class CreateEditEntry(TimepieceDataTestCase):
         response = self.client.post(self.edit_url, self.default_data, follow=True)
         #This post should redirect to the dashboard, with the correct message
         #and 1 entry for this week, because we updated the entry in setUp
-        self.assertRedirects(response, 'timepiece/', status_code=302, target_status_code=200)
-        self.assertTemplateUsed(response,
-            'timepiece/time-sheet/dashboard.html',
-            msg_prefix='The entry has been updated successfully')
+        self.assertRedirects(response, reverse('timepiece-entries'), status_code=302, target_status_code=200)
+        self.assertContains(response,'The entry has been updated successfully', count=1)          
         self.assertEquals(len(response.context['this_weeks_entries']), 1)
     
     def testCreateBlockByClosed(self):
@@ -467,8 +472,10 @@ class CreateEditEntry(TimepieceDataTestCase):
             'end_time_1': self.closed_entry.end_time.strftime('%H:%M:%S'),
         })
         response = self.client.post(self.create_url, overlap_entry, follow=True)
-        self.assertFormError(response,'form', None, None, \
-            msg_prefix='Start time overlaps with:')
+        self.assertFormError(response,'form', None, \
+            'Start time overlaps with: ' + \
+            '%(project)s - %(activity)s - from %(start_time_str)s to %(end_time_str)s' % \
+            (self.closed_entry_data))
     
     def testCreateBlockByCurrent(self):
         """
@@ -482,8 +489,10 @@ class CreateEditEntry(TimepieceDataTestCase):
             'end_time_1': self.now.strftime('%H:%M:%S'),
         })
         response = self.client.post(self.create_url, overlap_entry, follow=True)
-        self.assertFormError(response,'form', None, None, \
-            msg_prefix='The times below conflict with the current entry:')
+        self.assertFormError(response,'form', None, \
+            'The times below conflict with the current entry: ' + \
+            '%(project)s - %(activity)s starting at %(start_time_str)s' % \
+            (self.current_entry_data))
     
     def testCreateBlockByFuture(self):
         """
@@ -498,8 +507,7 @@ class CreateEditEntry(TimepieceDataTestCase):
             'end_time_1': five_min_later.strftime('%H:%M:%S'),
         })
         response = self.client.post(self.create_url, future_entry, follow=True)
-        self.assertFormError(response,'form', None, None, \
-            msg_prefix='Entries may not be added in the future')
+        self.assertFormError(response,'form', None, 'Entries may not be added in the future.')
     
     def testProjectList(self):
         """
