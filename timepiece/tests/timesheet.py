@@ -123,8 +123,7 @@ class ClockInTest(TimepieceDataTestCase):
         # with one active entry
         self.assertRedirects(response, reverse('timepiece-entries'),
                              status_code=302, target_status_code=200)
-        self.assertTemplateUsed(response,
-            'timepiece/time-sheet/dashboard.html',
+        self.assertTemplateUsed(response, reverse('timepiece-entries'),
             msg_prefix='You have clocked into')
         self.assertEquals(len(response.context['my_active_entries']), 1)
 
@@ -177,9 +176,9 @@ class ClockInTest(TimepieceDataTestCase):
         self.assertTrue(e_id.is_closed)
         self.assertTrue(e_id.hours)
                 
-    def testClockInBlock(self):        
+    def testClockInBlock(self):
         """
-        Guarantee that the user cannot clock in to a time that is already logged        
+        Guarantee that the user cannot clock in to a time that is already logged
         """ 
         self.client.login(username='user', password='abc')
         entry1 = self.create_entry({
@@ -194,7 +193,7 @@ class ClockInTest(TimepieceDataTestCase):
         })
         #This clock in attempt should be blocked by entry1
         response = self.client.post(self.url, data)
-        self.assertFormError(response,'form', None, None, 
+        self.assertFormError(response,'form', None, None,
             msg_prefix='Start time overlaps with:')
         
     def testClockInSameTime(self):
@@ -210,7 +209,7 @@ class ClockInTest(TimepieceDataTestCase):
         data.update({
             'start_time_0': entry1.start_time.strftime('%m/%d/%Y'),
             'start_time_1': entry1.start_time.strftime('%H:%M:%S'),
-        })        
+        })
         #This clock in attempt should be blocked by entry1 (same start time)
         response = self.client.post(self.url, data)
         self.assertFormError(response,'form', None, None,
@@ -395,8 +394,116 @@ class ClockOutTest(TimepieceDataTestCase):
 
 
 class CreateEditEntry(TimepieceDataTestCase):
-    def testProjectList(self):
+    def setUp(self):
+        super(CreateEditEntry,self).setUp()
         self.client.login(username='user', password='abc')
+        self.now = datetime.datetime.now()
+        valid_start = self.now - datetime.timedelta(days=1)
+        valid_end = valid_start + datetime.timedelta(hours=1)
+        two_hours_ago = self.now - datetime.timedelta(hours=2)
+        one_hour_ago = self.now - datetime.timedelta(hours=1)
+        ten_min_ago = self.now - datetime.timedelta(minutes=10)
+        closed_entry = self.create_entry({
+            'user': self.user,
+            'start_time': two_hours_ago,
+            'end_time': one_hour_ago,
+        })
+        current_entry = self.create_entry({
+            'user': self.user,
+            'start_time': ten_min_ago,
+        })
+        self.default_data = {
+            'project': self.project.id,
+            'location': self.location.pk,
+            'activity': self.devl_activity.pk,
+            'seconds_paused': 0,
+            'start_time_0': valid_start.strftime('%m/%d/%Y'),
+            'start_time_1': valid_start.strftime('%H:%M:%S'),
+            'end_time_0': valid_end.strftime('%m/%d/%Y'),
+            'end_time_1': valid_end.strftime('%H:%M:%S'),
+        }
+        #establish entries and urls for all tests
+        self.current_entry = timepiece.Entry.objects.get(end_time__isnull=True)
+        self.closed_entry = timepiece.Entry.objects.get(end_time__isnull=False)
+        self.create_url = reverse('timepiece-add')
+        self.edit_url = reverse('timepiece-update', args=[closed_entry.pk])
+        
+    def testCreateEntry(self):
+        """
+        Test the ability to create a valid new entry
+        """
+        response = self.client.post(self.create_url, self.default_data, follow=True)
+        #This post should redirect to the dashboard, with the correct message
+        #and 2 entries for this week, the one in setUp and this one.
+        self.assertRedirects(response, 'timepiece/', status_code=302, target_status_code=200)
+        self.assertTemplateUsed(response,
+            'timepiece/time-sheet/dashboard.html',
+            msg_prefix='The entry has been created successfully')
+        self.assertEquals(len(response.context['this_weeks_entries']), 2)
+    
+    def testEditEntry(self):
+        """
+        Test the ability to edit an existing entry, using valid values
+        """
+        response = self.client.post(self.edit_url, self.default_data, follow=True)
+        #This post should redirect to the dashboard, with the correct message
+        #and 1 entry for this week, because we updated the entry in setUp
+        self.assertRedirects(response, 'timepiece/', status_code=302, target_status_code=200)
+        self.assertTemplateUsed(response,
+            'timepiece/time-sheet/dashboard.html',
+            msg_prefix='The entry has been updated successfully')
+        self.assertEquals(len(response.context['this_weeks_entries']), 1)
+    
+    def testCreateBlockByClosed(self):
+        """
+        Test that the entry is blocked by closed entries that overlap
+        """
+        overlap_entry = self.default_data
+        overlap_entry.update({
+            'start_time_0': self.closed_entry.start_time.strftime('%m/%d/%Y'),
+            'start_time_1': self.closed_entry.start_time.strftime('%H:%M:%S'),
+            'end_time_0': self.closed_entry.end_time.strftime('%m/%d/%Y'),
+            'end_time_1': self.closed_entry.end_time.strftime('%H:%M:%S'),
+        })
+        response = self.client.post(self.create_url, overlap_entry, follow=True)
+        self.assertFormError(response,'form', None, None, \
+            msg_prefix='Start time overlaps with:')
+    
+    def testCreateBlockByCurrent(self):
+        """
+        Test that the entry is blocked by the current entry when appropriate
+        """
+        overlap_entry = self.default_data
+        overlap_entry.update({
+            'start_time_0': self.current_entry.start_time.strftime('%m/%d/%Y'),
+            'start_time_1': self.current_entry.start_time.strftime('%H:%M:%S'),
+            'end_time_0': self.now.strftime('%m/%d/%Y'),
+            'end_time_1': self.now.strftime('%H:%M:%S'),
+        })
+        response = self.client.post(self.create_url, overlap_entry, follow=True)
+        self.assertFormError(response,'form', None, None, \
+            msg_prefix='The times below conflict with the current entry:')
+    
+    def testCreateBlockByFuture(self):
+        """
+        Test that add entry is blocked if the end time is in the future
+        """
+        five_min_later = self.now + datetime.timedelta(minutes=5)
+        future_entry = self.default_data
+        future_entry.update({
+            'start_time_0': self.now.strftime('%m/%d/%Y'),
+            'start_time_1': self.now.strftime('%H:%M:%S'),
+            'end_time_0': five_min_later.strftime('%m/%d/%Y'),
+            'end_time_1': five_min_later.strftime('%H:%M:%S'),
+        })
+        response = self.client.post(self.create_url, future_entry, follow=True)
+        self.assertFormError(response,'form', None, None, \
+            msg_prefix='Entries may not be added in the future')
+    
+    def testProjectList(self):
+        """
+        Make sure the list of available projects conforms to user associations
+        """
         response = self.client.get(reverse('timepiece-add'))
         self.assertEqual(response.status_code, 200)
         projects = list(response.context['form'].fields['project'].queryset)

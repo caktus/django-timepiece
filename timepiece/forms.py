@@ -150,7 +150,21 @@ class ClockInForm(forms.ModelForm):
             if profile.default_activity:
                 self.fields['activity'].initial = profile.default_activity    
 
-            
+    def clean_start_time(self):
+        """
+        Make sure that the start time doesn't come before the active entry
+        """
+        start = self.cleaned_data['start_time']
+
+        active_entries = self.user.timepiece_entries.filter(
+            start_time__gte=start, end_time__isnull=True)
+        for entry in active_entries:
+            output = \
+                'The start time is on or before the current entry: %s - %s starting at %s' % \
+                (entry.project, entry.activity, entry.start_time.time())
+            raise forms.ValidationError(output)
+        return start
+                
     def save(self, commit=True):
         entry = super(ClockInForm, self).save(commit=False)
         entry.hours = 0
@@ -217,12 +231,12 @@ class AddUpdateEntryForm(forms.ModelForm):
 
     def __init__(self, *args, **kwargs):
         self.user = kwargs.pop('user')
+        if not kwargs.get('instance', None):
+            kwargs['instance'] = timepiece.Entry(user=self.user)
         super(AddUpdateEntryForm, self).__init__(*args, **kwargs)
         self.fields['project'].queryset = timepiece.Project.objects.filter(
             users=self.user,
-        )
-        if not self.instance.end_time:
-            del self.fields['end_time']
+        )        
             
         try:
             profile = self.user.profile
@@ -230,52 +244,36 @@ class AddUpdateEntryForm(forms.ModelForm):
             pass
         else:
             if profile.default_activity:
-                self.fields['activity'].initial = profile.default_activity
+                self.fields['activity'].initial = profile.default_activity    
 
-    def clean_start_time(self):
+    def clean(self):
         """
-        Make sure that the start time is always before the end time
+        Verify that the entry doesn't conflict with or come after the current
+        entry, and that the times are valid for model clean
         """
-        start = self.cleaned_data['start_time']
-
-        try:
-            end = self.cleaned_data['end_time']
-
-            if start >= end:
-                raise forms.ValidationError('The entry must start before it ends!')
-        except KeyError:
-            pass
-
-        if start > datetime.now():
-            raise forms.ValidationError('You cannot add entries in the future!')
-
-        return start
-
-    def clean_end_time(self):
-        """
-        Make sure no one tries to add entries that end in the future
-        """
-        try:
-            start = self.cleaned_data['start_time']
-        except KeyError:
-            raise forms.ValidationError('Please enter a start time.')
-
-        try:
-            end = self.cleaned_data['end_time']
-            if not end: raise Exception
-        except:
-            raise forms.ValidationError('Please enter an end time.')
-
-        if start >= end:
-            raise forms.ValidationError('The entry must start before it ends!')
-
-        return end
+        cleaned_data = self.cleaned_data
+        start = cleaned_data.get('start_time', None)
+        end = cleaned_data.get('end_time', None)
+        if not start or not end:
+            raise forms.ValidationError('Please enter a valid start and end date/time.')
+        if start >= datetime.now() or end > datetime.now():
+            raise forms.ValidationError('Entries may not be added in the future.')
+        entries = self.user.timepiece_entries.filter(
+            Q(start_time__lte=end, end_time__isnull=True)|\
+            Q(start_time__lte=start, end_time__isnull=True))
+        for entry in entries:
+            output = 'The times below conflict with the current entry: %s - %s starting at %s' % \
+                    (entry.project, entry.activity, entry.start_time.time())
+            raise forms.ValidationError(output)
+        return self.cleaned_data
     
-    def save(self):
-        instance = super(AddUpdateEntryForm, self).save(commit=False)
-        instance.user = self.user
-        instance.save()
-        return instance
+    def save(self, commit=True):
+        entry = super(AddUpdateEntryForm, self).save(commit=False)
+        entry.user = self.user
+        self.instance.clean()
+        if commit:
+            entry.save()
+        return entry
         
 STATUS_CHOICES = [('','---------'),]
 STATUS_CHOICES.extend(timepiece.ENTRY_STATUS)
