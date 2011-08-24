@@ -123,7 +123,7 @@ class ClockInTest(TimepieceDataTestCase):
         # with one active entry
         self.assertRedirects(response, reverse('timepiece-entries'),
                              status_code=302, target_status_code=200)
-        #self.assertContains(response, 'You have clocked into', count=1)
+        self.assertContains(response, 'You have clocked into', count=1)
         self.assertEquals(len(response.context['my_active_entries']), 1)
 
     def testClockInAutoOut(self):
@@ -471,7 +471,7 @@ class CreateEditEntry(TimepieceDataTestCase):
         #This post should redirect to the dashboard, with the correct message
         #and 2 entries for this week, the one in setUp and this one.
         self.assertRedirects(response, reverse('timepiece-entries'), status_code=302, target_status_code=200)
-        #self.assertContains(response,'The entry has been created successfully', count=1)
+        self.assertContains(response,'The entry has been created successfully', count=1)
         self.assertEquals(len(response.context['this_weeks_entries']), 2)
     
     def testEditEntry(self):
@@ -482,7 +482,7 @@ class CreateEditEntry(TimepieceDataTestCase):
         #This post should redirect to the dashboard, with the correct message
         #and 1 entry for this week, because we updated the entry in setUp
         self.assertRedirects(response, reverse('timepiece-entries'), status_code=302, target_status_code=200)
-        #self.assertContains(response,'The entry has been updated successfully', count=1)          
+        self.assertContains(response,'The entry has been updated successfully', count=1)          
         self.assertEquals(len(response.context['this_weeks_entries']), 1)
     
     def testCreateBlockByClosed(self):

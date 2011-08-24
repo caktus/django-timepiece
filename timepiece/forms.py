@@ -112,9 +112,6 @@ class ClockInForm(forms.ModelForm):
 
     def __init__(self, *args, **kwargs):
         self.user = kwargs.pop('user')
-        # model validation requires Entry.user to be set, so let's set it now
-        if not kwargs.get('instance', None):
-            kwargs['instance'] = timepiece.Entry(user=self.user)
         default_loc = getattr(
             settings,
             'TIMEPIECE_DEFAULT_LOCATION_SLUG',
@@ -148,7 +145,9 @@ class ClockInForm(forms.ModelForm):
             pass
         else:
             if profile.default_activity:
-                self.fields['activity'].initial = profile.default_activity    
+                self.fields['activity'].initial = profile.default_activity
+        # model validation requires Entry.user to be set, so let's set it now      
+        self.instance.user = self.user
 
     def clean_start_time(self):
         """

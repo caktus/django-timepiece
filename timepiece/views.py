@@ -101,7 +101,7 @@ def view_entries(request):
 @transaction.commit_on_success
 def clock_in(request):
     """For clocking the user into a project    
-    """        
+    """
     if request.POST:
         form = timepiece_forms.ClockInForm(request.POST, user=request.user)
         if form.is_valid():                 
