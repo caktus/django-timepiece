@@ -123,7 +123,8 @@ class ClockInTest(TimepieceDataTestCase):
         # with one active entry
         self.assertRedirects(response, reverse('timepiece-entries'),
                              status_code=302, target_status_code=200)
-        self.assertTemplateUsed(response, reverse('timepiece-entries'),
+        self.assertTemplateUsed(response, 
+            'timepiece/time-sheet/dashboard.html',
             msg_prefix='You have clocked into')
         self.assertEquals(len(response.context['my_active_entries']), 1)
 
