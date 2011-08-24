@@ -155,13 +155,12 @@ class ClockInForm(forms.ModelForm):
         Make sure that the start time doesn't come before the active entry
         """
         start = self.cleaned_data['start_time']
-
         active_entries = self.user.timepiece_entries.filter(
             start_time__gte=start, end_time__isnull=True)
         for entry in active_entries:
-            output = \
-                'The start time is on or before the current entry: %s - %s starting at %s' % \
-                (entry.project, entry.activity, entry.start_time.strftime('%H:%M:%S'))
+            output = 'The start time is on or before the current entry: ' + \
+            '%s - %s starting at %s' % \
+            (entry.project, entry.activity, entry.start_time.strftime('%H:%M:%S'))
             raise forms.ValidationError(output)
         return start
                 

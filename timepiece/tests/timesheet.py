@@ -180,9 +180,16 @@ class ClockInTest(TimepieceDataTestCase):
         Guarantee that the user cannot clock in to a time that is already logged
         """ 
         self.client.login(username='user', password='abc')
-        entry1 = self.create_entry({
+        entry1_data = {
+            'project': self.project,
+            'activity': self.devl_activity,
             'start_time': self.ten_min_ago,
             'end_time': self.now,
+        }
+        entry1 = self.create_entry(entry1_data)
+        entry1_data.update({
+            'start_time_str': self.ten_min_ago.strftime('%H:%M:%S'),
+            'end_time_str': self.now.strftime('%H:%M:%S'),
         })
         conflicting_start_time = entry1.start_time + datetime.timedelta(minutes=5)
         data = self.clock_in_form
@@ -192,8 +199,10 @@ class ClockInTest(TimepieceDataTestCase):
         })
         #This clock in attempt should be blocked by entry1
         response = self.client.post(self.url, data)
-        self.assertFormError(response,'form', None, None,
-            msg_prefix='Start time overlaps with:')
+        self.assertFormError(response,'form', None, \
+            'Start time overlaps with: ' + \
+            '%(project)s - %(activity)s - from %(start_time_str)s to %(end_time_str)s' % \
+            entry1_data)
         
     def testClockInSameTime(self):
         """
@@ -201,8 +210,14 @@ class ClockInTest(TimepieceDataTestCase):
         active entry
         """
         self.client.login(username='user', password='abc')
-        entry1 = self.create_entry({
-            'start_time': self.now,
+        entry1_data = {
+            'start_time': self.now,            
+            'project': self.project,
+            'activity': self.devl_activity,
+        }
+        entry1 = self.create_entry(entry1_data)
+        entry1_data.update({
+            'start_time_str':self.now.strftime('%H:%M:%S')
         })
         data = self.clock_in_form
         data.update({
@@ -211,8 +226,10 @@ class ClockInTest(TimepieceDataTestCase):
         })
         #This clock in attempt should be blocked by entry1 (same start time)
         response = self.client.post(self.url, data)
-        self.assertFormError(response,'form', None, None,
-            msg_prefix='The start time is on or before the current entry:')
+        self.assertFormError(response,'form', None, 'Please enter a valid start time')     
+        self.assertFormError(response,'form', 'start_time', \
+            'The start time is on or before the current entry: ' + \
+            '%(project)s - %(activity)s starting at %(start_time_str)s' % entry1_data)
         
     def testClockInBeforeCurrent(self):
         """
@@ -220,8 +237,14 @@ class ClockInTest(TimepieceDataTestCase):
         entry
         """
         self.client.login(username='user', password='abc')
-        entry1 = self.create_entry({
+        entry1_data = {
+            'project': self.project,
+            'activity': self.devl_activity,
             'start_time': self.ten_min_ago,
+        }
+        entry1 = self.create_entry(entry1_data)
+        entry1_data.update({
+            'start_time_str': self.ten_min_ago.strftime('%H:%M:%S')
         })
         before_entry1 = entry1.start_time - datetime.timedelta(minutes=5)
         data = self.clock_in_form
@@ -232,8 +255,10 @@ class ClockInTest(TimepieceDataTestCase):
         #This clock in attempt should be blocked by entry1
         #(It is before the start time of the current entry)
         response = self.client.post(self.url, data)
-        self.assertFormError(response,'form', None, None,
-            msg_prefix='The start time is on or before the current entry:')
+        self.assertFormError(response,'form', None, 'Please enter a valid start time')
+        self.assertFormError(response,'form', 'start_time', \
+            'The start time is on or before the current entry: ' + \
+            '%(project)s - %(activity)s starting at %(start_time_str)s' % entry1_data)
     
     def testProjectListFiltered(self):
         self.client.login(username='user', password='abc')
@@ -475,7 +500,7 @@ class CreateEditEntry(TimepieceDataTestCase):
         self.assertFormError(response,'form', None, \
             'Start time overlaps with: ' + \
             '%(project)s - %(activity)s - from %(start_time_str)s to %(end_time_str)s' % \
-            (self.closed_entry_data))
+            self.closed_entry_data)
     
     def testCreateBlockByCurrent(self):
         """
@@ -492,7 +517,7 @@ class CreateEditEntry(TimepieceDataTestCase):
         self.assertFormError(response,'form', None, \
             'The times below conflict with the current entry: ' + \
             '%(project)s - %(activity)s starting at %(start_time_str)s' % \
-            (self.current_entry_data))
+            self.current_entry_data)
     
     def testCreateBlockByFuture(self):
         """
