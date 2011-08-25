@@ -66,6 +66,7 @@ class EditPersonForm(auth_forms.UserChangeForm):
             instance.save()
         return instance
 
+
 class CharAutoCompleteSelectWidget(AutoCompleteSelectWidget):
     def value_from_datadict(self, data, files, name):
         return data.get(name, None)
@@ -197,7 +198,7 @@ class ClockOutForm(forms.ModelForm):
             ),
         )
 
-        self.fields.keyOrder = ('location', 'start_time', 
+        self.fields.keyOrder = ('location', 'start_time',
             'end_time', 'comments')
 
     def save(self, commit=True):
@@ -399,7 +400,7 @@ class RepeatPeriodForm(forms.ModelForm):
                 raise forms.ValidationError(
                     'New start date must be after %s' % latest.end_date)
         return self.cleaned_data
-    
+
     def save(self):
         period = super(RepeatPeriodForm, self).save(commit=False)
         if not self.instance.id and period.active:

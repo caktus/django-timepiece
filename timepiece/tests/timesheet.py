@@ -261,7 +261,7 @@ class ClockInTest(TimepieceDataTestCase):
         response = self.client.post(self.url, data)
         self.assertFormError(response, 'form', None, \
             'Please enter a valid start time')
-        self.assertFormError(response,'form', 'start_time', \
+        self.assertFormError(response, 'form', 'start_time', \
             'The start time is on or before the current entry: ' + \
             '%(project)s - %(activity)s starting at %(start_time_str)s' \
              % entry1_data)
@@ -341,7 +341,8 @@ class ClockOutTest(TimepieceDataTestCase):
         calculates the correct amount of unpaused time.
         """
         entry_with_pause = self.entry
-        entry_with_pause.seconds_paused = 3600  #1 hour
+        #paused for a total of 1 hour
+        entry_with_pause.seconds_paused = 3600
         entry_with_pause.save()
         data = {
             'start_time_0': entry_with_pause.start_time.strftime('%m/%d/%Y'),
@@ -391,11 +392,12 @@ class ClockOutTest(TimepieceDataTestCase):
         }
         response = self.client.post(
             reverse('timepiece-clock-out', args=[backward_entry.pk]), data)
-        self.assertFormError(response, 'form', None, 'Ending time must exceed the starting time')
-    
+        self.assertFormError(response, 'form', None,
+            'Ending time must exceed the starting time')
+
     def testClockOutOverlap(self):
         """
-        Test that the user cannot clock out if the times overlap with an 
+        Test that the user cannot clock out if the times overlap with an
         existing entry
         """
         #Create a closed and valid entry
@@ -416,7 +418,7 @@ class ClockOutTest(TimepieceDataTestCase):
         bad_start = entry1.start_time - datetime.timedelta(hours=1)
         bad_end = entry1.end_time + datetime.timedelta(hours=1)
         bad_entry = self.create_entry({
-            'user':self.user,
+            'user': self.user,
             'start_time': bad_start,
         })
         data = {
@@ -479,29 +481,32 @@ class CreateEditEntry(TimepieceDataTestCase):
             'start_time_str': ten_min_ago.strftime('%H:%M:%S'),
         })
         self.create_url = reverse('timepiece-add')
-        self.edit_url = reverse('timepiece-update', 
+        self.edit_url = reverse('timepiece-update',
             args=[self.closed_entry.pk])
 
     def testCreateEntry(self):
         """
         Test the ability to create a valid new entry
         """
-        response = self.client.post(self.create_url, self.default_data, follow=True)
+        response = self.client.post(self.create_url, self.default_data, 
+            follow=True)
         #This post should redirect to the dashboard, with the correct message
         #and 2 entries for this week, the one in setUp and this one.
-        self.assertRedirects(response, reverse('timepiece-entries'), status_code=302, target_status_code=200)
-        self.assertContains(response,'The entry has been created successfully', count=1)
+        self.assertRedirects(response, reverse('timepiece-entries'), 
+            status_code=302, target_status_code=200)
+        self.assertContains(response,
+            'The entry has been created successfully', count=1)
         self.assertEquals(len(response.context['this_weeks_entries']), 2)
 
     def testEditEntry(self):
         """
         Test the ability to edit an existing entry, using valid values
         """
-        response = self.client.post(self.edit_url, self.default_data, 
+        response = self.client.post(self.edit_url, self.default_data,
             follow=True)
         #This post should redirect to the dashboard, with the correct message
         #and 1 entry for this week, because we updated the entry in setUp
-        self.assertRedirects(response, reverse('timepiece-entries'), 
+        self.assertRedirects(response, reverse('timepiece-entries'),
             status_code=302, target_status_code=200)
         self.assertContains(response,
             'The entry has been updated successfully', count=1)
@@ -518,7 +523,7 @@ class CreateEditEntry(TimepieceDataTestCase):
             'end_time_0': self.closed_entry.end_time.strftime('%m/%d/%Y'),
             'end_time_1': self.closed_entry.end_time.strftime('%H:%M:%S'),
         })
-        response = self.client.post(self.create_url, overlap_entry, 
+        response = self.client.post(self.create_url, overlap_entry,
             follow=True)
         self.assertFormError(response, 'form', None, \
             'Start time overlaps with: ' + \
@@ -536,8 +541,9 @@ class CreateEditEntry(TimepieceDataTestCase):
             'end_time_0': self.now.strftime('%m/%d/%Y'),
             'end_time_1': self.now.strftime('%H:%M:%S'),
         })
-        response = self.client.post(self.create_url, overlap_entry, follow=True)
-        self.assertFormError(response,'form', None, \
+        response = self.client.post(self.create_url, overlap_entry,
+            follow=True)
+        self.assertFormError(response, 'form', None, \
             'The times below conflict with the current entry: ' + \
             '%(project)s - %(activity)s starting at %(start_time_str)s' % \
             self.current_entry_data)
@@ -555,8 +561,9 @@ class CreateEditEntry(TimepieceDataTestCase):
             'end_time_1': five_min_later.strftime('%H:%M:%S'),
         })
         response = self.client.post(self.create_url, future_entry, follow=True)
-        self.assertFormError(response,'form', None, 'Entries may not be added in the future.')
-    
+        self.assertFormError(response,'form', None,
+            'Entries may not be added in the future.')
+
     def testProjectList(self):
         """
         Make sure the list of available projects conforms to user associations
@@ -637,8 +644,9 @@ class StatusTest(TimepieceDataTestCase):
 
     def testVerifyPage(self):
         entry = self.create_entry(data={
-            'user': self.user, 
-            'start_time': datetime.datetime.now() - datetime.timedelta(hours=1),
+            'user': self.user,
+            'start_time': datetime.datetime.now() - \
+                datetime.timedelta(hours=1),
             'end_time':  datetime.datetime.now(),
         })
         response = self.client.get(self.verify_url)
@@ -661,7 +669,8 @@ class StatusTest(TimepieceDataTestCase):
 
         entry = self.create_entry(data={
             'user': self.user,
-            'start_time': datetime.datetime.now() - datetime.timedelta(hours=1),
+            'start_time': datetime.datetime.now() - \
+                datetime.timedelta(hours=1),
             'end_time':  datetime.datetime.now(),
         })
         response = self.client.post(self.approve_url, {'do_action': 'Yes'})

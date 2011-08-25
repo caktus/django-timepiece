@@ -4,16 +4,21 @@ from timepiece import views
 
 urlpatterns = patterns('',
     url(r'^$', views.view_entries, name='timepiece-entries'),
-    url(r'^period/(?P<delta>\d+)/$', views.view_entries, name='timepiece-previous-entries'),
+    url(r'^period/(?P<delta>\d+)/$', views.view_entries,
+        name='timepiece-previous-entries'),
     url(r'^clockin/$', views.clock_in, name='timepiece-clock-in'),
-    url(r'^clockout/(?P<entry_id>\d+)/$', views.clock_out, name='timepiece-clock-out'),
-    url(r'^toggle/(?P<entry_id>\d+)/$', views.toggle_paused, name='timepiece-toggle-paused'),
+    url(r'^clockout/(?P<entry_id>\d+)/$', views.clock_out,
+        name='timepiece-clock-out'),
+    url(r'^toggle/(?P<entry_id>\d+)/$', views.toggle_paused,
+        name='timepiece-toggle-paused'),
     url(r'^add/$', views.create_edit_entry, name='timepiece-add'),
-    url(r'^update/(?P<entry_id>\d+)/$', views.create_edit_entry, name='timepiece-update'),
-    url(r'^delete/(?P<entry_id>\d+)/$', views.delete_entry, name='timepiece-delete'),
+    url(r'^update/(?P<entry_id>\d+)/$', views.create_edit_entry,
+        name='timepiece-update'),
+    url(r'^delete/(?P<entry_id>\d+)/$', views.delete_entry,
+        name='timepiece-delete'),
     url(r'^summary/', views.summary, name='timepiece-summary'),
     url(r'^search/$', views.quick_search, name='quick_search'),
-    
+
     url(r'^person/list/$', views.list_people, name='list_people'),
     url(
         r'^person/(?P<person_id>\d+)/$',
@@ -46,7 +51,7 @@ urlpatterns = patterns('',
         views.create_edit_business,
         name='edit_business',
     ),
-    
+
     url(r'^project/list/$', views.list_projects, name='list_projects'),
     url(
         r'^project/(?P<project_id>\d+)/$',
@@ -102,12 +107,15 @@ urlpatterns = patterns('',
         name='edit_person_time_sheet',
     ),
     url(
-        r'^time-sheet/people/(?P<person_id>\d+)/(period/)?(?:(?P<period_id>\d+)/)?(?:(?P<window_id>\d+)/)?$',
+        r'^time-sheet/people/(?P<person_id>\d+)/(period/)?' +
+        r'(?:(?P<period_id>\d+)/)?(?:(?P<window_id>\d+)/)?$',
         views.view_person_time_sheet,
         name='view_person_time_sheet',
     ),
     url(
-        r'^time-sheet/(?P<action>verify|approve|invoice)/(?:(?P<person_id>\d+)/)?(?:(?P<period_id>\d+)/)?(?:(?P<window_id>\d+)/)?$',
+        r'^time-sheet/(?P<action>verify|approve|invoice)/' +
+        r'(?:(?P<person_id>\d+)/)?(?:(?P<period_id>\d+)/)?' +
+        r'(?:(?P<window_id>\d+)/)?$',
         views.time_sheet_change_status,
         name='time_sheet_change_status',
     ),
@@ -117,7 +125,8 @@ urlpatterns = patterns('',
         name='project_time_sheet',
     ),
     url(
-        r'^time-sheet/project/(?P<project_id>\d+)/(?:(?P<window_id>\d+)/)?export/$',
+        r'^time-sheet/project/(?P<project_id>\d+)/(?:(?P<window_id>\d+)/)' +
+        r'?export/$',
         views.export_project_time_sheet,
         name='export_project_time_sheet',
     ),
@@ -145,4 +154,3 @@ urlpatterns = patterns('',
         name='edit_settings',
     ),
 )
-

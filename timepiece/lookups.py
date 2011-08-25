@@ -6,26 +6,35 @@ from timepiece import models as timepiece
 
 
 class UserLookup(object):
-
-    def get_query(self,q,request):
-        """ return a query set.  you also have access to request.user if needed """
+    def get_query(self, q, request):
+        """
+        return a query set.  you also have access to request.user if needed
+        """
         return auth_models.User.objects.filter(
             Q(first_name__icontains=q) | 
             Q(last_name__icontains=q) |
             Q(email__icontains=q)
         ).select_related().order_by('last_name')[:10]
         
-    def format_item(self,user):
-        """ simple display of an object when it is displayed in the list of selected objects """
+    def format_item(self, user):
+        """
+        simple display of an object when it is displayed in the list of
+        selected objects
+        """
         return unicode(user)
 
-    def format_result(self,user):
-        """ a more verbose display, used in the search results display.  may contain html and multi-lines """
+    def format_result(self, user):
+        """
+        a more verbose display, used in the search results display.
+        may contain html and multi-lines
+        """
         return u"<span class='individual'>%s %s</span>" % (user.first_name, user.last_name)
 
-    def get_objects(self,ids):
-        """ given a list of ids, return the objects ordered as you would like them on the admin page.
-            this is for displaying the currently selected items (in the case of a ManyToMany field)
+    def get_objects(self, ids):
+        """
+        given a list of ids, return the objects ordered as you would like them
+        on the admin page. This is for displaying the currently selected items
+        (in the case of a ManyToMany field)
         """
         return auth_models.User.objects.filter(pk__in=ids)
 
@@ -38,17 +47,17 @@ class SearchResult(object):
         self.pk = "%s-%d" % (type, pk)
         self.type = type
         self.name = name
-        
+
 
 class QuickLookup(object):
-
-    def get_query(self,q,request):
-        """ 
-        return a query set (or a fake one).  you also have access to request.user if needed 
+    def get_query(self, q, request):
+        """
+        return a query set (or a fake one).  you also have access to
+        request.user if needed
         """
         results = []
         users = auth_models.User.objects.filter(
-            Q(first_name__icontains=q) | 
+            Q(first_name__icontains=q) |
             Q(last_name__icontains=q) |
             Q(email__icontains=q)
         ).select_related().order_by('last_name')[:10]
@@ -69,20 +78,28 @@ class QuickLookup(object):
             results.append(
                 SearchResult(business.pk, 'business', business.name)
             )
-        results.sort(lambda a,b: cmp(a.name, b.name))
+        results.sort(lambda a, b: cmp(a.name, b.name))
         return results
-        
+
     def format_item(self, item):
-        """ simple display of an object when it is displayed in the list of selected objects """
+        """
+        simple display of an object when it is displayed in the list of
+        selected objects
+        """
         return item.name
 
     def format_result(self, item):
-        """ a more verbose display, used in the search results display.  may contain html and multi-lines """
+        """
+        a more verbose display, used in the search results display.
+        may contain html and multi-lines
+        """
         return u"<span class='%s'>%s</span>" % (item.type, item.name)
 
     def get_objects(self, ids):
-        """ given a list of ids, return the objects ordered as you would like them on the admin page.
-            this is for displaying the currently selected items (in the case of a ManyToMany field)
+        """
+        given a list of ids, return the objects ordered as you would like them
+        on the admin page. this is for displaying the currently selected items
+        (in the case of a ManyToMany field)
         """
         results = []
         for id in ids:
@@ -93,5 +110,4 @@ class QuickLookup(object):
                 results.append(timepiece.Business.objects.get(pk=pk))
             elif type == 'individual':
                 results.append(auth_models.User.objects.get(pk=pk))
-
         return results

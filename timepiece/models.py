@@ -21,7 +21,7 @@ class Attribute(models.Model):
         ('project-type', 'Project Type'),
         ('project-status', 'Project Status'),
     )
-    SORT_ORDER_CHOICES = [(x, x) for x in xrange(-20,21)]
+    SORT_ORDER_CHOICES = [(x, x) for x in xrange(-20, 21)]
     type = models.CharField(max_length=32, choices=ATTRIBUTE_TYPES)
     label = models.CharField(max_length=255)
     sort_order = models.SmallIntegerField(
@@ -254,7 +254,7 @@ class Entry(models.Model):
             Q(start_time__lte=self.start_time, end_time__gte=self.end_time))
 
             totals = entries.aggregate(
-            max=Max('end_time'),min=Min('start_time'))
+            max=Max('end_time'), min=Min('start_time'))
 
             totals['total'] = 0
             for entry in entries:
@@ -287,7 +287,7 @@ class Entry(models.Model):
             Q(start_time__range=(start, end)) | \
             Q(start_time__lte=start, end_time__gte=end))
         #An entry can not conflict with itself so remove it from the list
-        if self.id: 
+        if self.id:
             entries = entries.exclude(pk=self.id)
         for entry in entries:
             entry_data = {
@@ -457,7 +457,7 @@ class RepeatPeriodManager(models.Manager):
         )
         windows = []
         for period in active_billing_periods:
-            windows += ((period, 
+            windows += ((period,
                 period.update_billing_windows(date_boundary)),)
         return windows
 
@@ -470,7 +470,7 @@ class RepeatPeriod(models.Model):
         ('year', 'Year(s)'),
     )
     count = models.PositiveSmallIntegerField(
-        choices=[(x, x) for x in range(1,32)],
+        choices=[(x, x) for x in range(1, 32)],
     )
     interval = models.CharField(
         max_length=10,
@@ -576,7 +576,7 @@ class PersonRepeatPeriod(models.Model):
     def hours_in_week(self, date):
         left, right = utils.get_week_window(date)
         entries = Entry.worked.filter(user=self.user)
-        entries = entries.filter(end_time__gt=left, 
+        entries = entries.filter(end_time__gt=left,
             end_time__lt=right, status='approved')
         return entries.aggregate(s=Sum('hours'))['s']
 
@@ -698,13 +698,13 @@ class ProjectContract(models.Model):
 class AssignmentManager(models.Manager):
     def active_during_week(self, week, next_week):
         q = Q(contract__end_date__gte=week, contract__end_date__lt=next_week)
-        q |= Q(contract__start_date__gte=week, 
+        q |= Q(contract__start_date__gte=week,
             contract__start_date__lt=next_week)
         q |= Q(contract__start_date__lt=week, contract__end_date__gt=next_week)
         return self.get_query_set().filter(q)
 
     def sort_by_priority(self):
-        return sorted(self.get_query_set().all(), 
+        return sorted(self.get_query_set().all(),
             key=lambda contract: contract.this_weeks_priority_number)
 
 
@@ -862,7 +862,7 @@ class AllocationManager(models.Manager):
     def during_this_week(self, user, day=None):
         week = utils.get_week_start(day=day)
         return self.get_query_set().filter(
-            date=week, assignment__user=user, 
+            date=week, assignment__user=user,
             assignment__contract__status='current'
             ).exclude(hours=0)
 

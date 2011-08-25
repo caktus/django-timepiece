@@ -124,11 +124,12 @@ def clock_in(request):
                     datetime.timedelta(seconds=sec_bump + 1)
                 active_entry.save()
 
-            request.user.message_set.create(message='You have clocked into %s' \
-                % entry.project)
+            request.user.message_set.create(
+                message='You have clocked into %s' % entry.project)
             return HttpResponseRedirect(reverse('timepiece-entries'))
         else:
-            request.user.message_set.create(message='Please correct the errors below.')
+            request.user.message_set.create(
+                message='Please correct the errors below.')
     else:
         initial = dict([(k, request.GET[k]) for k in request.GET.keys()])
         form = timepiece_forms.ClockInForm(user=request.user, initial=initial)
@@ -522,7 +523,7 @@ def view_person_time_sheet(request, person_id, period_id=None, window_id=None):
         show_verify = unverified_count != 0
 
     if request.user.has_perm('timepiece.edit_person_time_sheet'):
-        show_approve = verified_count == total_statuses and total_statuses != 0   
+        show_approve = verified_count == total_statuses and total_statuses != 0
 
     context = {
         'show_verify': show_verify,
@@ -565,11 +566,8 @@ def time_sheet_change_status(request, form, from_date, to_date, status,
             raise Http404
         verify_allowed = \
             request.user.has_perm('timepiece.edit_person_time_sheet')
-
-
     if not verify_allowed:
         return HttpResponseForbidden('Forbidden')
-
     if time_sheet:
         window, entries, total = get_entries(
             time_sheet.repeat_period,
@@ -587,7 +585,6 @@ def time_sheet_change_status(request, form, from_date, to_date, status,
             )
         if request.GET and form.cleaned_data.get('project'):
             entries = entries.filter(project=form.cleaned_data.get('project'))
-
     if action == 'invoice':
         return_url = reverse('invoice_projects',)
         get_str = urllib.urlencode({
@@ -598,23 +595,23 @@ def time_sheet_change_status(request, form, from_date, to_date, status,
     else:
         return_url = reverse('view_person_time_sheet',
                     kwargs={'person_id': person_id, 'period_id': period_id, })
-
     filter_status = {
-        'verify': 'unverified', 
-        'approve': 'verified', 
-        'invoice': 'approved', 
+        'verify': 'unverified',
+        'approve': 'verified',
+        'invoice': 'approved',
     }
     entries = entries.filter(status=filter_status[action])
     
     if request.POST and 'do_action' in request.POST \
     and request.POST['do_action'] == 'Yes':
         update_status = {
-            'verify': 'verified', 
-            'approve': 'approved', 
-            'invoice': 'invoiced', 
+            'verify': 'verified',
+            'approve': 'approved',
+            'invoice': 'invoiced',
         }
         entries.update(status=update_status[action])
-        messages.info(request, 'Your entries have been %s' % update_status[action])
+        messages.info(request,
+            'Your entries have been %s' % update_status[action])
         return redirect(return_url)
         
     context = {
@@ -623,7 +620,8 @@ def time_sheet_change_status(request, form, from_date, to_date, status,
         'hours': entries.all().aggregate(s=Sum('hours'))['s'],
     }
     template = 'timepiece/time-sheet/%s_time_sheet.html' % action
-    return render_to_response(template, context, context_instance=RequestContext(request))
+    return render_to_response(template, context,
+        context_instance=RequestContext(request))
 
 
 @permission_required('timepiece.timepiece.edit_person_time_sheet')
@@ -638,11 +636,13 @@ def invoice_projects(request, form, from_date, to_date, status, activity):
         entries = entries.filter(
             end_time__gte=from_date,
         )
-    unverified = entries.filter(status='unverified', user__is_active=True).values_list(
+    unverified = entries.filter(
+        status='unverified', user__is_active=True).values_list(
         'user__pk',
         'user__first_name',
         'user__last_name').distinct()
-    unapproved = entries.filter(status='verified').values_list(
+    unapproved = entries.filter(
+        status='verified').values_list(
         'user__pk',
         'user__first_name',
         'user__last_name').distinct()
@@ -1151,7 +1151,7 @@ def edit_settings(request):
         except Http404:
             next_url = None
     if not next_url:
-        next_url  = reverse('timepiece-entries')
+        next_url = reverse('timepiece-entries')
     profile, created = timepiece.UserProfile.objects.get_or_create(
         user=request.user)
     if request.POST:
@@ -1167,4 +1167,4 @@ def edit_settings(request):
     else:
         profile_form = timepiece_forms.UserProfileForm(instance=profile)
         user_form = timepiece_forms.UserForm(instance=request.user)
-    return {'profile_form': profile_form, 'user_form': user_form }
+    return {'profile_form': profile_form, 'user_form': user_form}
