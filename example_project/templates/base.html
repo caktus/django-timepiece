@@ -16,16 +16,36 @@
 </head>
 <body>
 
-<h1>django-timepiece</h1>
-<ul>
-    <li><a href='{% url timepiece-entries %}'>Time Tracking</a></li>
-    <li><a href='{% url list_people %}'>People</a></li>
-    <li><a href='{% url list_businesses %}'>Businesses</a></li>
-    <li><a href='{% url list_projects %}'>Projects</a></li>
-</ul>
-
-<div id='content'>
-    {% block content %}{% endblock %}
+<div id="content-wrapper">
+	<div id="content">
+        {% if messages %}
+        <ul class="message_list">
+            {% for message in messages %}
+            <li>{{ message }}</li>
+            {% endfor %}
+        </ul>
+        {% endif %}
+        {% if notifications %}
+            <ul class="message_list">
+                {% for message in notifications %}
+                <li{% if message.tags %} 
+                        class="{{ message.tags }}"
+                    {% endif %}>
+                    {{ message }}
+                </li>
+                {% endfor %}
+            </ul>
+        {% endif %}
+        <h1>django-timepiece</h1>
+        <ul>
+            <li><a href='{% url timepiece-entries %}'>Time Tracking</a></li>
+            <li><a href='{% url list_people %}'>People</a></li>
+            <li><a href='{% url list_businesses %}'>Businesses</a></li>
+            <li><a href='{% url list_projects %}'>Projects</a></li>
+        </ul>
+		{% block content %}{% endblock %}
+		<div class="cleaner"></div>
+	</div>
 </div>
 
 </body>

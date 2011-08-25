@@ -7,6 +7,7 @@ from django.core.urlresolvers import reverse
 
 from django.contrib.auth.models import User, Permission
 from django.core.exceptions import ValidationError
+from django.forms import model_to_dict
 
 from timepiece.tests.base import TimepieceDataTestCase
 
@@ -297,6 +298,8 @@ class ClockOutTest(TimepieceDataTestCase):
         entry = self.create_entry({
             'user': self.user,
             'start_time': back,
+            'project': self.project,
+            'activity': self.devl_activity,
         })
         clock_in_data = {
             'project': self.project.id,            
@@ -319,11 +322,11 @@ class ClockOutTest(TimepieceDataTestCase):
             'end_time_0': self.default_end_time.strftime('%m/%d/%Y'),
             'end_time_1': self.default_end_time.strftime('%H:%M:%S'),
             'location': self.location.pk,
-        }        
+        }
         response = self.client.post(
             self.url, data,
             follow=True,
-        )    
+        )
         closed_entry = timepiece.Entry.objects.get(pk=self.entry.pk)
         self.assertTrue(closed_entry.is_closed)
     
@@ -334,28 +337,26 @@ class ClockOutTest(TimepieceDataTestCase):
         """
         entry_with_pause = self.entry
         entry_with_pause.seconds_paused = 3600 #1 hour
+        entry_with_pause.save()
         data = {
             'start_time_0': entry_with_pause.start_time.strftime('%m/%d/%Y'),
             'start_time_1': entry_with_pause.start_time.strftime('%H:%M:%S'),
             'end_time_0': self.default_end_time.strftime('%m/%d/%Y'),
             'end_time_1': self.default_end_time.strftime('%H:%M:%S'),
             'location': self.location.pk,
-        }        
+        }
         response = self.client.post(
-            self.url, data,
-            follow=True,
-        )
-        form = timepiece_forms.ClockOutForm(data, instance=entry_with_pause)
-        self.assertTrue(form.is_valid())
-        saved = form.save()
-        self.assertAlmostEqual(saved.hours, 4)
+            reverse('timepiece-clock-out', args=[entry_with_pause.pk]), data)
+        entry_with_pause = timepiece.Entry.objects.get(pk=entry_with_pause.pk)
+        self.assertAlmostEqual(entry_with_pause.hours, 4)
     
     def testClockOutWhilePaused(self): 
         """
         Test that clocking out of a paused entry calculates the correct time
         """
         paused_entry = self.entry
-        paused_entry.pause_time = self.entry.start_time + datetime.timedelta(hours=1)        
+        paused_entry.pause_time = self.entry.start_time + datetime.timedelta(hours=1)
+        paused_entry.save()
         data = {
             'start_time_0': paused_entry.start_time.strftime('%m/%d/%Y'),
             'start_time_1': paused_entry.start_time.strftime('%H:%M:%S'),
@@ -364,31 +365,27 @@ class ClockOutTest(TimepieceDataTestCase):
             'location': self.location.pk,
         }
         response = self.client.post(
-            reverse('timepiece-clock-out', args=[paused_entry.pk]), data,
-            follow=True,
-        )
-        form = timepiece_forms.ClockOutForm(data, instance=paused_entry)
-        self.assertTrue(form.is_valid())
-        saved = form.save()
-        self.assertAlmostEqual(saved.hours, 1)
+            reverse('timepiece-clock-out', args=[paused_entry.pk]), data)
+        paused_entry = timepiece.Entry.objects.get(pk=paused_entry.pk)
+        self.assertAlmostEqual(paused_entry.hours, 1)
         
     def testClockOutReverse(self):
         """
         Test that the user can't clock out at a time prior to the starting time
         """        
         backward_entry = self.entry
-        #reverse the times        
-        backward_entry.end_time = self.entry.start_time
-        backward_entry.start_time = self.default_end_time
+        backward_entry.save()
+        #reverse the times
         data = {
-            'start_time_0': backward_entry.start_time.strftime('%m/%d/%Y'),
-            'start_time_1': backward_entry.start_time.strftime('%H:%M:%S'),
-            'end_time_0': backward_entry.end_time.strftime('%m/%d/%Y'),
-            'end_time_1': backward_entry.end_time.strftime('%H:%M:%S'),
+            'start_time_0': self.default_end_time.strftime('%m/%d/%Y'),
+            'start_time_1': self.default_end_time.strftime('%H:%M:%S'),
+            'end_time_0': self.entry.start_time.strftime('%m/%d/%Y'),
+            'end_time_1': self.entry.start_time.strftime('%H:%M:%S'),
             'location': self.location.pk,
         }
-        form = timepiece_forms.ClockOutForm(data, instance=backward_entry)
-        self.assertFalse(form.is_valid())
+        response = self.client.post(
+            reverse('timepiece-clock-out', args=[backward_entry.pk]), data)
+        self.assertFormError(response, 'form', None, 'Ending time must exceed the starting time')
     
     def testClockOutOverlap(self):
         """
@@ -396,13 +393,26 @@ class ClockOutTest(TimepieceDataTestCase):
         existing entry
         """
         #Create a closed and valid entry
-        entry1 = self.entry
-        end = datetime.datetime.now() + datetime.timedelta(hours=5)
-        entry1.end_time = end
-        entry1.save()
-        #Create a form with times that overlap entry1
-        bad_start = self.entry.start_time + datetime.timedelta(hours=1)
-        bad_end = bad_start + datetime.timedelta(hours=3)
+        now = datetime.datetime.now() - datetime.timedelta(hours=5)
+        entry1_data = ({
+            'user':self.user,
+            'project': self.project,
+            'activity': self.devl_activity,
+            'start_time': now,
+            'end_time': self.default_end_time
+        })
+        entry1 = self.create_entry(entry1_data)
+        entry1_data.update({
+            'start_time_str': entry1.start_time.strftime('%H:%M:%S'),
+            'end_time_str': entry1.end_time.strftime('%H:%M:%S'),
+        })
+        #Create a form with times that overlap with entry1
+        bad_start = entry1.start_time - datetime.timedelta(hours=1)
+        bad_end = entry1.end_time + datetime.timedelta(hours=1)
+        bad_entry = self.create_entry({
+            'user':self.user,
+            'start_time':bad_start,
+        })
         data = {
             'start_time_0': bad_start.strftime('%m/%d/%Y'),
             'start_time_1': bad_start.strftime('%H:%M:%S'),
@@ -410,12 +420,13 @@ class ClockOutTest(TimepieceDataTestCase):
             'end_time_1': bad_end.strftime('%H:%M:%S'),
             'location': self.location.pk,
         }
-        #With entry1 on either side, a form with the information in data should
-        #fail because the times in the form are inside the times of another entry
-        existing_entry = timepiece.Entry(user=self.user)
-        form = timepiece_forms.ClockOutForm(data, instance=existing_entry)
-        self.assertFalse(form.is_valid())
-
+        #With entry1 on either side, a post with the bad_entry data should fail
+        response = self.client.post(
+            reverse('timepiece-clock-out', args=[bad_entry.pk]), data)
+        self.assertFormError(response, 'form', None,
+            'Start time overlaps with: ' + \
+            '%(project)s - %(activity)s - from %(start_time_str)s to %(end_time_str)s' %
+            entry1_data)
 
 class CreateEditEntry(TimepieceDataTestCase):
     def setUp(self):
