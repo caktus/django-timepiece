@@ -166,5 +166,5 @@ admin.site.register(timepiece.Location, LocationAdmin)
 
 
 class AllocationAdmin(admin.ModelAdmin):
-    list_display = ('date','hours', 'hours_worked', 'hours_left',)
+    list_display = ('date', 'hours', 'hours_worked', 'hours_left',)
 admin.site.register(timepiece.AssignmentAllocation, AllocationAdmin)

@@ -93,7 +93,7 @@ class ProjectTestCase(TimepieceDataTestCase):
             'status': 'approved',
         })
         url = reverse('time_sheet_change_status',
-            kwargs = {'action': 'invoice'})
+            kwargs={'action': 'invoice'})
         data = {
             'project': project_billable.pk,
             'to_date': self.invoice_to_date,

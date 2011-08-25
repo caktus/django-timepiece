@@ -87,5 +87,3 @@ class ToggleBillableWidget(forms.Select):
         });
         </script>
         """ % json.dumps(self.billable_map)
-        
-

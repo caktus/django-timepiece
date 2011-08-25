@@ -285,4 +285,3 @@ class ProjectionTest(TimepieceDataTestCase):
         assignment = assignments[0]
         self.assertEquals(assignment.hours_worked, 10)
         self.assertEquals(assignment.hours_left, assignment.hours - 10)
-
