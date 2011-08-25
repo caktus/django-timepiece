@@ -46,7 +46,7 @@ class TimepieceDataTestCase(TestCase):
     def create_project_status(self, data={}):
         defaults = {
             'label': self.random_string(24, extra_chars=' '),
-            'type': 'project-status', 
+            'type': 'project-status',
         }
         defaults.update(data)
         return timepiece.Attribute.objects.create(**defaults)

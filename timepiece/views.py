@@ -70,14 +70,16 @@ def view_entries(request):
         user=request.user,
         end_time__isnull=True,
     )
-    # temporarily disabled until the allocations represent accurate goals
-    # -TM 6/27
+#     temporarily disabled until the allocations represent accurate goals
+#     -TM 6/27
     allocations = []
     allocated_projects = timepiece.Project.objects.none()
 #    allocations = timepiece.AssignmentAllocation.objects.during_this_week(
 #        request.user
 #        ).order_by('assignment__contract__project__name')
-#    allocated_projects = allocations.values_list('assignment__contract__project',)
+#    allocated_projects = allocations.values_list(
+#    'assignment__contract__project',)
+
     project_entries = entries.exclude(
         project__in=allocated_projects,
     ).values(
@@ -449,7 +451,8 @@ def export_project_time_sheet(request, form, from_date, to_date, status,
         else:
             to_date_str = 'all'
         disposition = (project.name, to_date_str)
-    response['Content-Disposition'] = 'attachment; filename="%s Timesheet %s.csv"' % disposition
+    response['Content-Disposition'] = \
+        'attachment; filename="%s Timesheet %s.csv"' % disposition
     writer = csv.writer(response)
     writer.writerow((
         'Date',
@@ -601,7 +604,7 @@ def time_sheet_change_status(request, form, from_date, to_date, status,
         'invoice': 'approved',
     }
     entries = entries.filter(status=filter_status[action])
-    
+
     if request.POST and 'do_action' in request.POST \
     and request.POST['do_action'] == 'Yes':
         update_status = {
@@ -613,7 +616,7 @@ def time_sheet_change_status(request, form, from_date, to_date, status,
         messages.info(request,
             'Your entries have been %s' % update_status[action])
         return redirect(return_url)
-        
+
     context = {
         'person': person,
         'return_url': return_url,
@@ -646,8 +649,8 @@ def invoice_projects(request, form, from_date, to_date, status, activity):
         'user__pk',
         'user__first_name',
         'user__last_name').distinct()
-    
-#    Am no longer including invoiced entries, therefor all projects 
+
+#    Am no longer including invoiced entries, therefor all projects
 #    have uninvoiced hours and it returns only one line for them.
 #    project_totals = projects.filter(
 #        status__in=['approved', 'invoiced']).values(

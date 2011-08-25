@@ -70,7 +70,8 @@ class ProjectionTest(TimepieceDataTestCase):
 
     def test_week_window(self):
         """ Test generation of weekly window with given date """
-        day = datetime.date(2011, 2, 1) # tue
+        #Tuesday
+        day = datetime.date(2011, 2, 1)
         expected_start = datetime.date(2011, 1, 30)
         expected_end = datetime.date(2011, 2, 6)
         start, end = utils.get_week_window(day)
@@ -260,13 +261,16 @@ class ProjectionTest(TimepieceDataTestCase):
         person = User.objects.create_user('test2', 'a@b.com', 'abc')
         ps = self.create_person_schedule(data={'user': person})
         run_projection()
-        assignments = timepiece.AssignmentAllocation.objects.during_this_week(self.ps.user)
+        assignments = timepiece.AssignmentAllocation.objects.during_this_week(
+            self.ps.user)
         self.assertEquals(assignments.count(), 1)
-        assignments = timepiece.AssignmentAllocation.objects.during_this_week(person)
+        assignments = timepiece.AssignmentAllocation.objects.during_this_week(
+            person)
         self.assertEquals(assignments.count(), 0)
         ca_2 = self._assign(start, end, hours=30)
         run_projection()
-        assignments = timepiece.AssignmentAllocation.objects.during_this_week(self.ps.user)
+        assignments = timepiece.AssignmentAllocation.objects.during_this_week(
+            self.ps.user)
         self.assertEquals(assignments.count(), 2)
 
     def test_this_weeks_hours(self):
@@ -275,7 +279,8 @@ class ProjectionTest(TimepieceDataTestCase):
         ca = self._assign(start, end, hours=60)
         run_projection()
         self.log_time(ca, start=start, delta=(10, 0))
-        assignments = timepiece.AssignmentAllocation.objects.during_this_week(self.ps.user)
+        assignments = timepiece.AssignmentAllocation.objects.during_this_week(
+            self.ps.user)
         self.assertEquals(assignments.count(), 1)
         assignment = assignments[0]
         self.assertEquals(assignment.hours_worked, 10)

@@ -11,13 +11,18 @@ re_id = re.compile('id="([^"]+)"')
 
 
 class DateWidget(forms.TextInput):
-
     def __init__(self, attrs={}):
-        super(DateWidget, self).__init__(attrs={'class': 'vDateField', 'size': '10'})
+        super(DateWidget, self).__init__(attrs={
+            'class': 'vDateField', 'size': '10'
+        })
+
 
 class TimeWidget(forms.TextInput):
     def __init__(self, attrs={}):
-        super(TimeWidget, self).__init__(attrs={'class': 'vTimeField', 'size': '8'})
+        super(TimeWidget, self).__init__(attrs={
+            'class': 'vTimeField', 'size': '8'
+        })
+
 
 class PendulumDateTimeWidget(forms.MultiWidget):
     def __init__(self, attrs=None):
@@ -57,7 +62,7 @@ class SecondsToHoursWidget(forms.TextInput):
             except ValueError:
                 is_integer = False
             if is_integer:
-                value = round(float(value)/3600.0, 2)
+                value = round(float(value) / 3600.0, 2)
         return super(SecondsToHoursWidget, self).render(name, value, attrs)
 
 

@@ -18,7 +18,7 @@ class ProjectTestCase(TimepieceDataTestCase):
         self.user.save()
         self.client.login(username=self.user.username, password='abc')
         self.assertEquals(self.project.users.all().count(), 1)
-        url = reverse('remove_user_from_project', 
+        url = reverse('remove_user_from_project',
             args=(self.project.pk, self.user.pk,))
         response = self.client.get(url, {'next': '/'})
         self.assertEquals(response.status_code, 302)
@@ -71,10 +71,10 @@ class ProjectTestCase(TimepieceDataTestCase):
         correct_begin = entry1.start_time + \
             relativedelta.relativedelta(day=1)
         correct_end = entry1.end_time + \
-            relativedelta.relativedelta(months=+1,day=1)
+            relativedelta.relativedelta(months=+1, day=1)
         self.invoice_from_date = response.context['from_date']
         self.invoice_to_date = response.context['to_date']
-    
+
     def test_mark_invoice(self):
         """
         Test that billable entries create a valid link to mark them as invoiced
@@ -93,7 +93,7 @@ class ProjectTestCase(TimepieceDataTestCase):
             'status': 'approved',
         })
         url = reverse('time_sheet_change_status',
-            kwargs = {'action':'invoice'})
+            kwargs = {'action': 'invoice'})
         data = {
             'project': project_billable.pk,
             'to_date': self.invoice_to_date,
@@ -102,11 +102,11 @@ class ProjectTestCase(TimepieceDataTestCase):
         #Mark as invoiced link links to a page with correct times in the URL
         response = self.client.get(url, data)
         self.assertEquals(response.status_code, 200)
-        returned_dates = re.findall('=(\d\d\d\d-\d\d-\d\d)&?', 
+        returned_dates = re.findall('=(\d\d\d\d-\d\d-\d\d)&?',
             response.context['return_url'])
-        self.assertEqual(returned_dates[0], 
+        self.assertEqual(returned_dates[0],
             self.invoice_from_date.strftime('%Y-%m-%d'))
-        self.assertEqual(returned_dates[1], 
+        self.assertEqual(returned_dates[1],
             self.invoice_to_date.strftime('%Y-%m-%d'))
         #Test that the "Yes" link on the mark as invoiced page redirects to
         #invoice projects with the correct date
@@ -115,8 +115,7 @@ class ProjectTestCase(TimepieceDataTestCase):
             'to_date': self.invoice_to_date,
         })
         return_url = url + '?%s' % get_str
-        data = {'do_action': 'Yes'}        
-        response = self.client.post(return_url,data, follow=True)
+        data = {'do_action': 'Yes'}
+        response = self.client.post(return_url, data, follow=True)
         self.assertEqual(response.context['from_date'], self.invoice_from_date)
         self.assertEqual(response.context['to_date'], self.invoice_to_date)
-        

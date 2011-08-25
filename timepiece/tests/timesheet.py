@@ -488,11 +488,11 @@ class CreateEditEntry(TimepieceDataTestCase):
         """
         Test the ability to create a valid new entry
         """
-        response = self.client.post(self.create_url, self.default_data, 
+        response = self.client.post(self.create_url, self.default_data,
             follow=True)
         #This post should redirect to the dashboard, with the correct message
         #and 2 entries for this week, the one in setUp and this one.
-        self.assertRedirects(response, reverse('timepiece-entries'), 
+        self.assertRedirects(response, reverse('timepiece-entries'),
             status_code=302, target_status_code=200)
         self.assertContains(response,
             'The entry has been created successfully', count=1)

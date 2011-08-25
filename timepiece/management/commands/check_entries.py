@@ -17,15 +17,15 @@ from timepiece import models as timepiece
 
 class Command(BaseCommand):
     args = '<user\'s first or last name or user.id> <user\'s first...>...'
-    help = """Check the database for entries that overlap. 
+    help = """Check the database for entries that overlap.
     Use --help for options"""
 
     parser = OptionParser()
     parser.usage += """
-        ./manage.py check_entries [<first or last name1> <name2>...<name n>] [OPTIONS]
-        
-        For options type:
-        ./manage.py check_entries --help
+./manage.py check_entries [<first or last name1> <name2>...<name n>] [OPTIONS]
+
+For options type:
+./manage.py check_entries --help
     """
     option_list = BaseCommand.option_list + (
         make_option('--thisweek',
@@ -74,7 +74,7 @@ class Command(BaseCommand):
         if self.options.days:
             start = datetime.datetime.now() - \
             datetime.timedelta(days=self.options.days)
-            
+
         if self.options.all:
             print("Checking overlaps from the beginning of time")
         else:
@@ -83,7 +83,10 @@ class Command(BaseCommand):
         #If no args given, check every user
         if args:
             all_flag = False
-            names = reduce(lambda query, arg: query | (Q(first_name__icontains=arg) | Q(last_name__icontains=arg)), args, Q())
+            names = reduce(
+                lambda query, arg: query |
+                (Q(first_name__icontains=arg) |
+                Q(last_name__icontains=arg)), args, Q())
             people = auth_models.User.objects.filter(names)
         else:
             all_flag = True
@@ -101,16 +104,23 @@ class Command(BaseCommand):
                     user=person, start_time__gte=start).order_by(
                     'start_time')
             if not entries.count() or not all_flag:
-                print('Checking %s %s...') % (person.first_name, person.last_name)
+                print 'Checking %s %s...' % \
+                (person.first_name, person.last_name)
             for entry in entries:
                 if entry.is_overlapping():
                     data = {
-                        'first_name':person.first_name, 'last_name':person.last_name,
-                        'entry':entry.id,
-                        'start_time':entry.start_time, 'end_time':entry.end_time,
-                        'project':entry.project
+                        'first_name': person.first_name,
+                        'last_name': person.last_name,
+                        'entry': entry.id,
+                        'start_time': entry.start_time,
+                        'end_time': entry.end_time,
+                        'project': entry.project
                     }
                     print(output(data))
 
+
 def output(data):
-    return "Entry %(entry)d for %(first_name)s %(last_name)s from %(start_time)s to %(end_time)s on %(project)s overlaps another entry" % data
+    return 'Entry %(entry)d for %(first_name)s %(last_name)s from ' \
+    % data + \
+    '%(start_time)s to %(end_time)s on %(project)s overlaps another entry' % \
+    data

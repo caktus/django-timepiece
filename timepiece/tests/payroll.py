@@ -114,6 +114,4 @@ class PayrollTest(TimepieceDataTestCase):
         start1 = datetime.datetime(2011, 1, 9)
         self.log_time(project=p1, start=start1, delta=(44, 0),
             status='approved')
-        self.assertEqual(rp.total_monthly_overtime(start1), Decimal('8.00'))           
-
-
+        self.assertEqual(rp.total_monthly_overtime(start1), Decimal('8.00'))

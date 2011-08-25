@@ -57,7 +57,7 @@ def my_ledger(context):
     return {'period': period}
 
 
-@register.inclusion_tag('timepiece/time-sheet/_date_filters.html', 
+@register.inclusion_tag('timepiece/time-sheet/_date_filters.html',
     takes_context=True)
 def date_filters(context, options):
     request = context['request']
@@ -104,7 +104,8 @@ def date_filters(context, options):
             to_date = from_date
             from_date = to_date - single_month
             url = construct_url(from_date, to_date - relativedelta(days=1))
-            filters['Past 12 Months'].append((from_date.strftime("%b '%y"), url))
+            filters['Past 12 Months'].append(
+                (from_date.strftime("%b '%y"), url))
         filters['Past 12 Months'].reverse()
 
     if 'years' in options:
