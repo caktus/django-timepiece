@@ -261,33 +261,23 @@ def get_week_window(day):
     weeks = generate_weeks(start=start, end=end)
     return list(weeks)
 
-   
+
 def get_week_changes(entries):
-    """Returns a list of booleans to coorespond with a list of entries
-    
-    1 indicates that an entry is in a new week, while 0 indicates an entry is in
-    the same week as the previous entry.
     """
-    entries = entries.values(
-        'start_time',
-    )
-    week_starts = []
-    for entry in entries:
-        week_starts.append(get_week_start(entry['start_time']))
-    new_weeks = []   
-    for index, date in enumerate(week_starts):
-        if not index:
-            new_weeks.append(1)
-        else:
-            if date.date() != week_starts[index-1].date():
-                new_weeks.append(1)
-            else:
-                new_weeks.append(0)
-    return new_weeks
+    Returns a list of booleans to coorespond with a list of entries
+    
+    1 = entry is in a new week, 0 = entry is not in a week
+    """
+    entries = entries.values('start_time')
+    week_starts = [get_week_start(entry['start_time']) for entry in entries]
+    return [not index or date.date() != week_starts[index-1].date() \
+        for index, date in enumerate(week_starts)]
 
 
 def get_time_frames(entries):
-    """Returns a list of two tuples for the first and last entry of each week
+    """
+    Returns a list of two tuples with the date of the first and last entry of
+    each week
     """
     new_weeks = get_week_changes(entries)
     time_frame = ()
@@ -307,7 +297,8 @@ def get_time_frames(entries):
 
 
 def get_weekly_totals(entries):
-    """Given a list of entries, returns a list of three tuples with the 
+    """
+    Given a list of entries, returns a list of three tuples with the 
     following format:
     
     (billable hours, non-billable hours, total hours)
@@ -317,23 +308,23 @@ def get_weekly_totals(entries):
     for time_frame in time_frames:
         this_week_entries = entries.filter(
             start_time__gte=time_frame[0],
-            end_time__lte=time_frame[1])        
+            end_time__lte=time_frame[1])
         weekly_totals = this_week_entries.values(
             'billable'
-        ).annotate(sum=Sum('hours')).order_by('-sum')        
+        ).annotate(sum=Sum('hours')).order_by('-sum')
         weekly_billable = weekly_totals.filter(
             project__type__billable=True, project__status__billable=True
-            ).values('sum')            
+            ).values('sum')
         weekly_non_billable = weekly_totals.filter(
             Q(project__type__billable=False) |
             Q(project__status__billable=False)
-            ).values('sum')            
+            ).values('sum')
         if weekly_billable[0]['sum']:
             billable_hours = weekly_billable[0]['sum']
         else: billable_hours = 0
-        if weekly_non_billable[0]['sum']:    
+        if weekly_non_billable[0]['sum']:
             non_billable_hours = weekly_non_billable[0]['sum']
-        else: non_billable_hours = 0        
+        else: non_billable_hours = 0
         total_hours = billable_hours + non_billable_hours
         this_week_totals = (
             billable_hours, non_billable_hours, total_hours
@@ -341,8 +332,14 @@ def get_weekly_totals(entries):
         all_totals.append(this_week_totals)
     return all_totals
 
+
 def make_ledger_rows(entries):
-    new_weeks = get_week_changes(entries)          
+    """
+    Creates a list of ledger rows with the following format for each row:
+
+    (entry data, is_new_week 0/1, 0 or (billable, non-billable, total hours))
+    """
+    new_weeks = get_week_changes(entries)
     weekly_totals = get_weekly_totals(entries)
     rows = []
     week_num = 0
