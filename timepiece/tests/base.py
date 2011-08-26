@@ -11,6 +11,7 @@ from django.db.models import Q
 
 from timepiece import models as timepiece
 
+
 class TimepieceDataTestCase(TestCase):
     def create_business(self, data={}):
         name = self.random_string(30, extra_chars=' ')
@@ -19,11 +20,11 @@ class TimepieceDataTestCase(TestCase):
         }
         defaults.update(data)
         return timepiece.Business.objects.create(**defaults)
-    
+
     def random_string(self, length=255, extra_chars=''):
         chars = string.letters + extra_chars
         return ''.join([random.choice(chars) for i in range(length)])
-    
+
     def create_person(self, data={}):
         first_name = self.random_string(20)
         last_name = self.random_string(20)
@@ -33,23 +34,23 @@ class TimepieceDataTestCase(TestCase):
         }
         defaults.update(data)
         return User.objects.create(**defaults)
-    
+
     def create_project_type(self, data={}):
         defaults = {
             'label': self.random_string(30, extra_chars=' '),
-            'type': 'project-type', 
+            'type': 'project-type',
         }
         defaults.update(data)
         return timepiece.Attribute.objects.create(**defaults)
-    
+
     def create_project_status(self, data={}):
         defaults = {
             'label': self.random_string(24, extra_chars=' '),
-            'type': 'project-status', 
+            'type': 'project-status',
         }
         defaults.update(data)
         return timepiece.Attribute.objects.create(**defaults)
-    
+
     def create_project(self, billable=False, data={}):
         name = self.random_string(30, extra_chars=' ')
         defaults = {
@@ -62,12 +63,12 @@ class TimepieceDataTestCase(TestCase):
             defaults['business'] = self.create_business()
         if 'point_person' not in defaults:
             defaults['point_person'] = User.objects.create_user(
-                self.random_string(10), 
-                'test@example.com', 
+                self.random_string(10),
+                'test@example.com',
                 'test',
             )
         return timepiece.Project.objects.create(**defaults)
-    
+
     def create_project_relationship(self, data={}):
         defaults = {}
         defaults.update(data)
@@ -76,7 +77,7 @@ class TimepieceDataTestCase(TestCase):
         if 'project' not in defaults:
             defaults['project'] = self.create_project()
         return timepiece.ProjectRelationship.objects.create(**defaults)
-    
+
     def create_activity(self, data={}):
         defaults = {
             'code': self.random_string(5, extra_chars=' '),
@@ -85,7 +86,7 @@ class TimepieceDataTestCase(TestCase):
         }
         defaults.update(data)
         return timepiece.Activity.objects.create(**defaults)
-    
+
     def create_location(self, data={}):
         defaults = {
             'name': self.random_string(255, extra_chars=' '),
@@ -93,10 +94,12 @@ class TimepieceDataTestCase(TestCase):
         }
         defaults.update(data)
         return timepiece.Location.objects.create(**defaults)
-    
+
     def create_entry(self, data={}):
         defaults = {}
-        defaults.update(data)                
+        defaults.update(data)
+        if 'user' not in defaults:
+            defaults['user'] = self.user
         if 'activity' not in defaults:
             defaults['activity'] = self.create_activity()
         if 'project' not in defaults:
@@ -106,7 +109,7 @@ class TimepieceDataTestCase(TestCase):
         if 'status' not in defaults:
             defaults['status'] = 'unverified'
         return timepiece.Entry.objects.create(**defaults)
-    
+
     def create_repeat_period(self, data={}):
         defaults = {
             'count': 1,
@@ -124,7 +127,7 @@ class TimepieceDataTestCase(TestCase):
         if 'repeat_period' not in defaults:
             defaults['repeat_period'] = self.create_repeat_period()
         return timepiece.PersonRepeatPeriod.objects.create(**defaults)
-    
+
     def create_project_contract(self, data={}):
         defaults = {
             'start_date': datetime.date.today(),
@@ -136,7 +139,7 @@ class TimepieceDataTestCase(TestCase):
         if 'project' not in defaults:
             defaults['project'] = self.create_project()
         return timepiece.ProjectContract.objects.create(**defaults)
-    
+
     def create_contract_assignment(self, data={}):
         defaults = {}
         defaults.update(data)
@@ -147,7 +150,7 @@ class TimepieceDataTestCase(TestCase):
         defaults['start_date'] = defaults['contract'].start_date
         defaults['end_date'] = defaults['contract'].end_date
         return timepiece.ContractAssignment.objects.create(**defaults)
-    
+
     def create_person_schedule(self, data={}):
         defaults = {
             'hours_per_week': 40,
@@ -163,7 +166,8 @@ class TimepieceDataTestCase(TestCase):
         self.user2 = User.objects.create_user('user2', 'u2@abc.com', 'abc')
         permissions = Permission.objects.filter(
             content_type=ContentType.objects.get_for_model(timepiece.Entry),
-            codename__in=('can_clock_in', 'can_clock_out', 'can_pause', 'change_entry')
+            codename__in=('can_clock_in', 'can_clock_out',
+            'can_pause', 'change_entry')
         )
         self.user.user_permissions = permissions
         self.user2.user_permissions = permissions

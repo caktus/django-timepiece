@@ -2,6 +2,7 @@ from django import template
 
 register = template.Library()
 
+
 @register.filter
 def _abs(num):
     try:
@@ -12,8 +13,9 @@ def _abs(num):
 
 register.filter('abs', _abs)
 
+
 @register.filter
 def sub(num, arg):
     num = float(num)
     arg = float(arg)
-    return num-arg
+    return num - arg

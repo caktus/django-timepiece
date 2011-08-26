@@ -10,11 +10,11 @@ from timepiece import models as timepiece
 
 class Command(NoArgsCommand):
     help = "Generate billing windows"
-    
+
     @transaction.commit_on_success
     def handle_noargs(self, **options):
         output = []
-        
+
         projects = timepiece.Project.objects.filter(
             billing_period__active=True
         ).select_related(
@@ -28,17 +28,17 @@ class Command(NoArgsCommand):
                     'project_time_sheet',
                     args=(project.id, window.id),
                 )
-                urls.append(settings.APP_URL_BASE+url)
+                urls.append(settings.APP_URL_BASE + url)
             if urls:
                 output.append((project.name, urls))
         if output:
             print 'Project Billing Windows:\n'
             pprint.pprint(output)
-        
+
         output = []
         prps = timepiece.PersonRepeatPeriod.objects.filter(
             repeat_period__active=True,
-        ).select_related(    
+        ).select_related(
             'user',
             'repeat_period',
         )
@@ -50,10 +50,10 @@ class Command(NoArgsCommand):
                     'view_person_time_sheet',
                     args=(prp.user.id, prp.repeat_period.id, window.id),
                 )
-                urls.append(settings.APP_URL_BASE+url)
+                urls.append(settings.APP_URL_BASE + url)
             if urls:
                 output.append((prp.user.get_full_name(), urls))
-        
+
         if output:
             print '\nPerson Time Sheets:\n'
             pprint.pprint(output)

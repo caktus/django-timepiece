@@ -3,6 +3,7 @@ from timepiece import models as timepiece
 
 from timepiece.projection import run_projection
 
+
 class ActivityAdmin(admin.ModelAdmin):
     model = timepiece.Activity
     list_display = ('code', 'name', 'billable')
@@ -37,7 +38,7 @@ class EntryAdmin(admin.ModelAdmin):
     search_fields = ['user', 'project', 'activity', 'comments']
     date_hierarchy = 'start_time'
     ordering = ('-start_time',)
-    
+
     def project_type(self, entry):
         return entry.project.type
 admin.site.register(timepiece.Entry, EntryAdmin)
@@ -47,7 +48,8 @@ class AttributeAdmin(admin.ModelAdmin):
     search_fields = ('label', 'type')
     list_display = ('label', 'type', 'enable_timetracking', 'billable')
     list_filter = ('type', 'enable_timetracking', 'billable')
-    ordering = ('type', 'sort_order',) # Django honors only first field
+    #Django honors only first field
+    ordering = ('type', 'sort_order')
 admin.site.register(timepiece.Attribute, AttributeAdmin)
 
 
@@ -57,13 +59,13 @@ class ContractAssignmentInline(admin.TabularInline):
 
 class ProjectContractAdmin(admin.ModelAdmin):
     model = timepiece.ProjectContract
-    list_display = ('project', 'start_date', 'end_date', 'status', 
+    list_display = ('project', 'start_date', 'end_date', 'status',
                     'num_hours', 'hours_assigned', 'hours_unassigned',
                     'hours_worked')
     ordering = ('-end_date',)
     inlines = (ContractAssignmentInline,)
     list_filter = ('status',)
-    
+
     def hours_unassigned(self, obj):
         return obj.num_hours - obj.hours_assigned
 
@@ -128,10 +130,10 @@ class PersonScheduleAdmin(admin.ModelAdmin):
 
     def total_available(self, obj):
         return "%.2f" % (obj.hours_available,)
-  
+
     def scheduled(self, obj):
         return "%.2f" % (obj.hours_scheduled,)
-  
+
     def unscheduled(self, obj):
         return "%.2f" % (obj.hours_available - float(obj.hours_scheduled),)
 
@@ -164,5 +166,5 @@ admin.site.register(timepiece.Location, LocationAdmin)
 
 
 class AllocationAdmin(admin.ModelAdmin):
-    list_display = ('date','hours', 'hours_worked', 'hours_left',)
+    list_display = ('date', 'hours', 'hours_worked', 'hours_left',)
 admin.site.register(timepiece.AssignmentAllocation, AllocationAdmin)

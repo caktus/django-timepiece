@@ -34,9 +34,8 @@ def run_projection():
         for assignment in assignments:
             commitment = assignment.weekly_commitment(week)
             assignment.blocks.create(date=week, hours=commitment)
-            logger.debug('{0} | Commitment: {1:<6.2f} | {2}'.format(week, commitment, assignment))
-            
+            logger.debug('{0} | Commitment: {1:<6.2f} | {2}'.format(
+                week, commitment, assignment))
             # if hours_left <= 0:
             #     break
     logger.info('projection complete')
-

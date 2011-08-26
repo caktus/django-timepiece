@@ -17,7 +17,7 @@ def slugify_uniquely(s, queryset=None, field='slug'):
     """
     Returns a slug based on 's' that is unique for all instances of the given
     field in the given queryset.
-    
+
     If no string is given or the given string contains no slugify-able
     characters, default to the given field name + N where N is the number of
     default slugs already in the database.
@@ -38,7 +38,7 @@ def render_with(template_name):
     Renders the view wrapped by this decorator with the given template.  The
     view should return the context to be used in the template, or an
     HttpResponse.
-    
+
     If the view returns an HttpResponseRedirect, the decorator will redirect
     to the given URL, or to request.REQUEST['next'] (if it exists).
     """
@@ -46,7 +46,7 @@ def render_with(template_name):
         def wrapper(*args, **kwargs):
             request = args[0]
             response = view_func(*args, **kwargs)
-            
+
             if isinstance(response, HttpResponse):
                 if isinstance(response, HttpResponseRedirect) and \
                   'next' in request.REQUEST:
@@ -57,8 +57,8 @@ def render_with(template_name):
                 # assume response is a context dictionary
                 context = response
                 return render_to_response(
-                    template_name, 
-                    context, 
+                    template_name,
+                    context,
                     context_instance=RequestContext(request),
                 )
         return wrapper
@@ -80,10 +80,11 @@ def determine_period(the_date=date.today(), delta=0):
     except:
         raise Exception('Please configure Pendulum for %s!' % site)
 
-    if config.is_monthly and (config.month_start >= 1 and config.month_start <= 31):
+    if config.is_monthly and (config.month_start >= 1 \
+    and config.month_start <= 31):
         if config.month_start == 1:
-            # if the periods start on the first of the month, just use the first
-            # and last days of each month for the period
+            #if the periods start on the first of the month, just use the first
+            #and last days of each month for the period
             if delta > 0:
                 diff = the_date.month - delta
                 if diff < 1:
@@ -98,7 +99,8 @@ def determine_period(the_date=date.today(), delta=0):
                         years += 1
 
                     # now set the year and month
-                    year, month = the_date.year - years, the_date.month - months
+                    year = the_date.year - years
+                    month = the_date.month - months
                 else:
                     year, month = the_date.year, diff
             else:
@@ -160,24 +162,25 @@ def determine_period(the_date=date.today(), delta=0):
                 ed = num_days
 
     elif config.install_date and config.period_length:
-        # if we have periods with a set number of days...
-        # find out how many days have passed since the installation date
+        #if we have periods with a set number of days...
+        #find out how many days have passed since the installation date
         diff = the_date - config.install_date
 
-        # find out how many days are left over after dividing the number of days
-        # since installation by the length of the period
+        #find out how many days are left over after dividing the number of days
+        #since installation by the length of the period
         days_into_period = diff.days % config.period_length
 
-        # determine the start date of the period
+        #determine the start date of the period
         start = the_date - timedelta(days=days_into_period)
 
-        # now take into account the delta
+        #now take into account the delta
         if delta > 0:
             start = start - timedelta(days=(delta * config.period_length))
             end = start + timedelta(days=config.period_length - 1)
         else:
-            # determine the end date of the period
-            end = the_date + timedelta(days=(config.period_length - days_into_period - 1))
+            #determine the end date of the period
+            end = the_date + \
+            timedelta(days=(config.period_length - days_into_period - 1))
 
         sy, sm, sd = start.year, start.month, start.day
         ey, em, ed = end.year, end.month, end.day
@@ -200,6 +203,8 @@ DEFAULT_TIME_FORMATS = [
     '%I%p',         # 12pm          => 12:00:00
     '%H',           # 22            => 22:00:00
 ]
+
+
 def parse_time(time_str, input_formats=None):
     """
     This function will take a string with some sort of representation of time
@@ -221,6 +226,7 @@ def parse_time(time_str, input_formats=None):
 
     # return None if there's no matching format
     return None
+
 
 def get_total_time(seconds):
     """
@@ -372,5 +378,6 @@ def date_filter(func):
             from_date = today.replace(day=1)
             to_date = from_date + relativedelta(months=1)
             status = activity = None
-        return func(request, form, from_date, to_date, status, activity, *args, **kwargs)
-    return inner_decorator    
+        return func(request, form, from_date, to_date, status, activity,
+            *args, **kwargs)
+    return inner_decorator

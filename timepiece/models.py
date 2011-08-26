@@ -21,7 +21,7 @@ class Attribute(models.Model):
         ('project-type', 'Project Type'),
         ('project-status', 'Project Status'),
     )
-    SORT_ORDER_CHOICES = [(x,x) for x in xrange(-20,21)]
+    SORT_ORDER_CHOICES = [(x, x) for x in xrange(-20, 21)]
     type = models.CharField(max_length=32, choices=ATTRIBUTE_TYPES)
     label = models.CharField(max_length=255)
     sort_order = models.SmallIntegerField(
@@ -29,7 +29,7 @@ class Attribute(models.Model):
         blank=True,
         choices=SORT_ORDER_CHOICES,
     )
-    enable_timetracking = models.BooleanField(default=False, 
+    enable_timetracking = models.BooleanField(default=False,
         help_text='Enable time tracking functionality for projects with this '
                   'type or status.',
     )
@@ -63,10 +63,11 @@ class Business(models.Model):
         return self.name
 
     class Meta:
-        ordering = ('name',)    
-    
+        ordering = ('name',)
+
+
 class Project(models.Model):
-    name = models.CharField(max_length = 255)
+    name = models.CharField(max_length=255)
     trac_environment = models.CharField(max_length=255, blank=True, null=True)
     business = models.ForeignKey(
         Business,
@@ -115,19 +116,19 @@ class Project(models.Model):
 class RelationshipType(models.Model):
     name = models.CharField(max_length=255, unique=True)
     slug = models.CharField(max_length=255, unique=True, editable=False)
-    
+
     def save(self):
         queryset = RelationshipType.objects.all()
         if self.id:
             queryset = queryset.exclude(id__exact=self.id)
         self.slug = utils.slugify_uniquely(self.name, queryset, 'slug')
         super(RelationshipType, self).save()
-    
+
     def __unicode__(self):
         return self.name
 
 
-class ProjectRelationship(models.Model): 
+class ProjectRelationship(models.Model):
     types = models.ManyToManyField(
         RelationshipType,
         related_name='project_relationships',
@@ -160,14 +161,15 @@ class Activity(models.Model):
     code = models.CharField(
         max_length=5,
         unique=True,
-        help_text="""Enter a short code to describe the type of activity that took place."""
+        help_text='Enter a short code to describe the type of ' + \
+            'activity that took place.'
     )
     name = models.CharField(
         max_length=50,
         help_text="""Now enter a more meaningful name for the activity.""",
     )
     billable = models.BooleanField(default=True)
-    
+
     def __unicode__(self):
         return self.name
 
@@ -211,6 +213,7 @@ ENTRY_STATUS = (
     ('invoiced', 'Invoiced',),
 )
 
+
 class Entry(models.Model):
     """
     This class is where all of the time logs are taken care of
@@ -237,83 +240,81 @@ class Entry(models.Model):
     pause_time = models.DateTimeField(blank=True, null=True)
     comments = models.TextField(blank=True)
     date_updated = models.DateTimeField(auto_now=True)
-   
+
     hours = models.DecimalField(max_digits=8, decimal_places=2, default=0)
 
     objects = EntryManager()
     worked = EntryWorkedManager()
 
-    def is_overlapping(self):            
-
+    def is_overlapping(self):
         if self.start_time and self.end_time:
             entries = self.user.timepiece_entries.filter(
-            Q(end_time__range=(self.start_time,self.end_time))|\
-            Q(start_time__range=(self.start_time,self.end_time))|\
+            Q(end_time__range=(self.start_time, self.end_time)) | \
+            Q(start_time__range=(self.start_time, self.end_time)) | \
             Q(start_time__lte=self.start_time, end_time__gte=self.end_time))
-                        
+
             totals = entries.aggregate(
-            max=Max('end_time'),min=Min('start_time'))
-            
+            max=Max('end_time'), min=Min('start_time'))
+
             totals['total'] = 0
             for entry in entries:
                 totals['total'] = totals['total'] + entry.get_seconds()
-            
-            totals['diff'] = totals['max']-totals['min']
-            totals['diff'] = totals['diff'].seconds + totals['diff'].days*86400
-            
+
+            totals['diff'] = totals['max'] - totals['min']
+            totals['diff'] = totals['diff'].seconds + \
+                totals['diff'].days * 86400
+
             if totals['total'] > totals['diff']:
                 return True
             else:
                 return False
         else:
-            return None    
-        
+            return None
+
     def clean(self):
-        if not self.user_id: return True
+        if not self.user_id:
+            raise ValidationError('An unexpected error has occured')
+        if not self.start_time:
+            raise ValidationError('Please enter a valid start time')
         start = self.start_time
         if self.end_time:
             end = self.end_time
         #Current entries have no end_time
         else:
-            end = start + datetime.timedelta(seconds=1)    
-        
+            end = start + datetime.timedelta(seconds=1)
         entries = self.user.timepiece_entries.filter(
-        Q(end_time__range=(start, end))|\
-        Q(start_time__range=(start, end))|\
-        Q(start_time__lte=start, end_time__gte=end)|\
-        Q(start_time__gt=start, end_time__isnull=True))#before current entry
-        
+            Q(end_time__range=(start, end)) | \
+            Q(start_time__range=(start, end)) | \
+            Q(start_time__lte=start, end_time__gte=end))
         #An entry can not conflict with itself so remove it from the list
-        if self.id: entries = entries.exclude(pk = self.id)
-        if len(entries):  
-            entry = entries[0]
+        if self.id:
+            entries = entries.exclude(pk=self.id)
+        for entry in entries:
             entry_data = {
                 'project': entry.project,
-                'activity' : entry.activity,
-                'start_time' : entry.start_time,
-                'end_time' : entry.end_time
+                'activity': entry.activity,
+                'start_time': entry.start_time,
+                'end_time': entry.end_time
             }
             #Conflicting saved entries
-            if entry.end_time:             
-                if entry.start_time.date() == start.date() and entry.end_time.date() == end.date():
+            if entry.end_time:
+                if entry.start_time.date() == start.date() \
+                and entry.end_time.date() == end.date():
                     entry_data['start_time'] = entry.start_time.strftime('%H:%M:%S')
                     entry_data['end_time'] = entry.end_time.strftime('%H:%M:%S')                
-                    output = 'Start time overlaps with: %(project)s - %(activity)s' \
-                     ' - from %(start_time)s to %(end_time)s' % entry_data
-            #Conflicting active entries
-            else:
-                output = 'The start time is on or before the current entry: %s - %s starting at %s' % \
-                    (entry.project, entry.activity, entry.start_time.time())
-            raise ValidationError(output)
-            
+                    output = 'Start time overlaps with: ' + \
+                    '%(project)s - %(activity)s - from %(start_time)s to %(end_time)s' \
+                    % entry_data
+                raise ValidationError(output)
+
         if end <= start:
-            raise ValidationError('Ending time must exceed the starting time')            
-        return True        
-           
+            raise ValidationError('Ending time must exceed the starting time')
+        return True
+
     def save(self, **kwargs):
         self.hours = Decimal('%.2f' % round(self.total_hours, 2))
-        super(Entry, self).save(**kwargs)        
-        
+        super(Entry, self).save(**kwargs)
+
     def get_seconds(self):
         """
         Determines the difference between the starting and ending time.  The
@@ -335,7 +336,8 @@ class Entry(models.Model):
         """
         total = self.get_seconds() / 3600.0
         #in case seconds paused are greater than the elapsed time
-        if total < 0: total = 0
+        if total < 0:
+            total = 0
         return total
     total_hours = property(__total_hours)
 
@@ -349,14 +351,14 @@ class Entry(models.Model):
     def pause(self):
         """
         If this entry is not paused, pause it.
-        """       
+        """
         if not self.is_paused:
             self.pause_time = datetime.datetime.now()
 
     def pause_all(self):
         """
         Pause all open entries
-        """        
+        """
         entries = self.user.timepiece_entries.filter(
         end_time__isnull=True).all()
         for entry in entries:
@@ -396,13 +398,13 @@ class Entry(models.Model):
             self.user = user
             self.project = project
             if not self.start_time:
-                self.start_time = datetime.datetime.now()                
+                self.start_time = datetime.datetime.now()
 
     def __billing_window(self):
         return BillingWindow.objects.get(
             period__users=self.user,
-            date__lte = self.end_time,
-            end_date__gt = self.end_time)
+            date__lte=self.end_time,
+            end_date__gt=self.end_time)
     billing_window = property(__billing_window)
 
     def __is_editable(self):
@@ -413,7 +415,8 @@ class Entry(models.Model):
         """
         Make it a little more interesting for deleting logs
         """
-        salt = '%i-%i-apple-%s-sauce' % (self.id, self.is_paused, self.is_closed)
+        salt = '%i-%i-apple-%s-sauce' \
+            % (self.id, self.is_paused, self.is_closed)
         try:
             import hashlib
         except ImportError:
@@ -441,7 +444,8 @@ class Entry(models.Model):
 
 # Add a utility method to the User class that will tell whether or not a
 # particular user has any unclosed entries
-User.clocked_in = property(lambda user: user.timepiece_entries.filter(end_time__isnull=True).count() > 0)
+User.clocked_in = property(lambda user: user.timepiece_entries.filter(
+    end_time__isnull=True).count() > 0)
 
 
 class RepeatPeriodManager(models.Manager):
@@ -453,7 +457,8 @@ class RepeatPeriodManager(models.Manager):
         )
         windows = []
         for period in active_billing_periods:
-            windows += ((period, period.update_billing_windows(date_boundary)),)
+            windows += ((period,
+                period.update_billing_windows(date_boundary)),)
         return windows
 
 
@@ -465,7 +470,7 @@ class RepeatPeriod(models.Model):
         ('year', 'Year(s)'),
     )
     count = models.PositiveSmallIntegerField(
-        choices=[(x,x) for x in range(1,32)],
+        choices=[(x, x) for x in range(1, 32)],
     )
     interval = models.CharField(
         max_length=10,
@@ -514,6 +519,7 @@ class RepeatPeriod(models.Model):
         else:
             return []
 
+
 class BillingWindow(models.Model):
     period = models.ForeignKey(RepeatPeriod, related_name='billing_windows')
     date = models.DateField()
@@ -551,9 +557,10 @@ class BillingWindow(models.Model):
 
     def __entries(self):
             return Entry.objects.filter(
-                end_time__lte = self.end_date,
-                end_time__gt = self.date)
+                end_time__lte=self.end_date,
+                end_time__gt=self.date)
     entries = property(__entries)
+
 
 class PersonRepeatPeriod(models.Model):
     user = models.ForeignKey(
@@ -569,7 +576,8 @@ class PersonRepeatPeriod(models.Model):
     def hours_in_week(self, date):
         left, right = utils.get_week_window(date)
         entries = Entry.worked.filter(user=self.user)
-        entries = entries.filter(end_time__gt=left, end_time__lt=right, status='approved')
+        entries = entries.filter(end_time__gt=left,
+            end_time__lt=right, status='approved')
         return entries.aggregate(s=Sum('hours'))['s']
 
     def overtime_hours_in_week(self, date):
@@ -618,20 +626,23 @@ class PersonRepeatPeriod(models.Model):
             data['paid_leave'][name] = qs.aggregate(s=Sum('hours'))['s']
         return data
 
-    def list_total_hours(self, N = 2):
-        bw = BillingWindow.objects.filter(period=self.repeat_period).order_by('-date')[:N]
+    def list_total_hours(self, N=2):
+        bw = BillingWindow.objects.filter(period=self.repeat_period).order_by(
+            '-date')[:N]
         result = []
         for b in bw:
             result.append(self.user.timepiece_entries.filter(
-                end_time__lte = b.end_date,
-                end_time__gt = b.date
+                end_time__lte=b.end_date,
+                end_time__gt=b.date
             ).aggregate(total=Sum('hours')))
         return result
+
     class Meta:
         permissions = (
             ('view_person_time_sheet', 'Can view person\'s timesheet.'),
             ('edit_person_time_sheet', 'Can edit person\'s timesheet.'),
         )
+
 
 class ProjectContract(models.Model):
     CONTRACT_STATUS = (
@@ -668,7 +679,8 @@ class ProjectContract(models.Model):
 
     @property
     def hours_allocated(self):
-        allocations = AssignmentAllocation.objects.filter(assignment__contract=self)
+        allocations = AssignmentAllocation.objects.filter(
+            assignment__contract=self)
         return allocations.aggregate(sum=Sum('hours'))['sum']
 
     @property
@@ -686,12 +698,14 @@ class ProjectContract(models.Model):
 class AssignmentManager(models.Manager):
     def active_during_week(self, week, next_week):
         q = Q(contract__end_date__gte=week, contract__end_date__lt=next_week)
-        q |= Q(contract__start_date__gte=week, contract__start_date__lt=next_week)
+        q |= Q(contract__start_date__gte=week,
+            contract__start_date__lt=next_week)
         q |= Q(contract__start_date__lt=week, contract__end_date__gt=next_week)
         return self.get_query_set().filter(q)
 
     def sort_by_priority(self):
-        return sorted(self.get_query_set().all(), key=lambda contract: contract.this_weeks_priority_number)
+        return sorted(self.get_query_set().all(),
+            key=lambda contract: contract.this_weeks_priority_number)
 
 
 # contract assignment logger
@@ -750,9 +764,11 @@ class ContractAssignment(models.Model):
         """
         if not hasattr(self, '_priority_type'):
             weeks = utils.get_week_window(datetime.datetime.now())
-            if self.end_date < weeks[1].date() and self.end_date >= weeks[0].date():
+            if self.end_date < weeks[1].date() \
+            and self.end_date >= weeks[0].date():
                 self._priority_type = 0
-            elif self.start_date < weeks[1].date() and self.start_date >= weeks[0].date():
+            elif self.start_date < weeks[1].date() \
+            and self.start_date >= weeks[0].date():
                 self._priority_type = 1
             else:
                 self._priority_type = 2
@@ -760,14 +776,14 @@ class ContractAssignment(models.Model):
 
     @property
     def this_weeks_priority_type(self):
-        type_list = ['ending', 'starting', 'ongoing',]
+        type_list = ['ending', 'starting', 'ongoing', ]
         return type_list[self.this_weeks_priority_number]
 
     def get_average_weekly_committment(self):
         week_start = utils.get_week_start()
         # calculate hours left on contract (subtract worked hours this week)
         remaining = self.num_hours - self._filtered_hours_worked(week_start)
-        commitment = remaining/self.contract.weeks_remaining.count()
+        commitment = remaining / self.contract.weeks_remaining.count()
         return commitment
 
     def weekly_commitment(self, day=None):
@@ -784,9 +800,11 @@ class ContractAssignment(models.Model):
         self._log('Commitment after reservation {0}'.format(commitment))
         # if we're under the needed minimum hours and we have available
         # time, then raise our commitment to the desired level
-        if commitment < self.min_hours_per_week and unallocated >= self.min_hours_per_week:
+        if commitment < self.min_hours_per_week \
+        and unallocated >= self.min_hours_per_week:
             commitment = self.min_hours_per_week
-        self._log('Commitment after minimum weekly hours {0}'.format(commitment))
+        self._log('Commitment after minimum weekly hours {0}'\
+            .format(commitment))
         # calculate hours left on contract (subtract worked hours this week)
         week_start = utils.get_week_start(day)
         remaining = self.num_hours - self._filtered_hours_worked(week_start)
@@ -830,7 +848,8 @@ class ContractAssignment(models.Model):
         return assignments.order_by('-end_date')
 
     def remaining_min_hours(self):
-        return self.remaining_contracts().aggregate(s=Sum('min_hours_per_week'))['s'] or 0
+        return self.remaining_contracts().aggregate(
+            s=Sum('min_hours_per_week'))['s'] or 0
 
     class Meta:
         unique_together = (('contract', 'user'),)
@@ -843,7 +862,8 @@ class AllocationManager(models.Manager):
     def during_this_week(self, user, day=None):
         week = utils.get_week_start(day=day)
         return self.get_query_set().filter(
-            date=week, assignment__user=user, assignment__contract__status='current'
+            date=week, assignment__user=user,
+            assignment__contract__status='current'
             ).exclude(hours=0)
 
 
@@ -892,7 +912,7 @@ class PersonSchedule(models.Model):
     @property
     def hours_available(self):
         today = datetime.date.today()
-        weeks_remaining = (self.end_date - today).days/7.0
+        weeks_remaining = (self.end_date - today).days / 7.0
         return float(self.hours_per_week) * weeks_remaining
 
     @property
@@ -911,6 +931,6 @@ class PersonSchedule(models.Model):
 class UserProfile(models.Model):
     user = models.OneToOneField(User, unique=True, related_name='profile')
     default_activity = models.ForeignKey(Activity, blank=True, null=True)
-    
+
     def __unicode__(self):
         return unicode(self.user)
