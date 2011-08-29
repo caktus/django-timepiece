@@ -303,7 +303,7 @@ class Entry(models.Model):
                     entry_data['start_time'] = entry.start_time.strftime(
                         '%H:%M:%S')
                     entry_data['end_time'] = entry.end_time.strftime(
-                        '%H:%M:%S')                
+                        '%H:%M:%S')
                     output = 'Start time overlaps with: ' + \
                     '%(project)s - %(activity)s - ' % entry_data + \
                     'from %(start_time)s to %(end_time)s' % entry_data
