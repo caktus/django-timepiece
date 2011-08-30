@@ -481,8 +481,10 @@ class CreateEditEntry(TimepieceDataTestCase):
             'start_time_str': ten_min_ago.strftime('%H:%M:%S'),
         })
         self.create_url = reverse('timepiece-add')
-        self.edit_url = reverse('timepiece-update',
+        self.edit_closed_url = reverse('timepiece-update',
             args=[self.closed_entry.pk])
+        self.edit_current_url = reverse('timepiece-update',
+            args=[self.current_entry.pk])
 
     def testCreateEntry(self):
         """
@@ -498,11 +500,11 @@ class CreateEditEntry(TimepieceDataTestCase):
             'The entry has been created successfully', count=1)
         self.assertEquals(len(response.context['this_weeks_entries']), 2)
 
-    def testEditEntry(self):
+    def testEditClosed(self):
         """
-        Test the ability to edit an existing entry, using valid values
+        Test the ability to edit a closed entry, using valid values
         """
-        response = self.client.post(self.edit_url, self.default_data,
+        response = self.client.post(self.edit_closed_url, self.default_data,
             follow=True)
         #This post should redirect to the dashboard, with the correct message
         #and 1 entry for this week, because we updated the entry in setUp
@@ -511,6 +513,39 @@ class CreateEditEntry(TimepieceDataTestCase):
         self.assertContains(response,
             'The entry has been updated successfully', count=1)
         self.assertEquals(len(response.context['this_weeks_entries']), 1)
+
+    def testEditCurrent(self):
+        """
+        Test the ability to edit a current entry, using valid values
+        """
+        data = self.default_data
+        data.update({
+            'start_time_0': self.current_entry_data['start_time'].strftime(
+                '%m/%d/%Y'),
+            'start_time_1': self.current_entry_data['start_time'].strftime(
+                '%H:%M:%S'),
+            'end_time_0': (self.current_entry_data['start_time'] +
+                datetime.timedelta(minutes=1)).strftime('%m/%d/%Y'),
+            'end_time_1': (self.current_entry_data['start_time'] +
+                datetime.timedelta(minutes=1)).strftime('%H:%M:%S'),
+        })
+        response = self.client.post(self.edit_current_url, data, follow=True)
+        #This post should redirect to the dashboard, with the correct message
+        #and 1 entry for this week, because we updated the entry in setUp
+
+        #(Make sure test fails the right way)
+#        self.assertFormError(response, 'form', None,
+#            'The times below conflict with the current entry: ' +
+#            '%(project)s - %(activity)s starting at %(start_time_str)s' %
+#            self.current_entry_data)
+
+        #These should pass once fixed:
+        self.assertRedirects(response, reverse('timepiece-entries'),
+            status_code=302, target_status_code=200)
+        self.assertContains(response,
+            'The entry has been updated successfully', count=1)
+        #There is one closed entry already, now there should be 2
+        self.assertEquals(len(response.context['this_weeks_entries']), 2)
 
     def testCreateBlockByClosed(self):
         """

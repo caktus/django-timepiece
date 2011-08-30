@@ -264,9 +264,11 @@ class AddUpdateEntryForm(forms.ModelForm):
         if start >= datetime.now() or end > datetime.now():
             raise forms.ValidationError(
                 'Entries may not be added in the future.')
+        #Obtain all current entries, except the one being edited
         entries = self.user.timepiece_entries.filter(
             Q(start_time__lte=end, end_time__isnull=True) | \
-            Q(start_time__lte=start, end_time__isnull=True))
+            Q(start_time__lte=start, end_time__isnull=True)
+            ).exclude(id=self.instance.id)
         for entry in entries:
             output = 'The times below conflict with the current entry: ' + \
             '%s - %s starting at %s' % \
