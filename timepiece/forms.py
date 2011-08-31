@@ -235,13 +235,14 @@ class AddUpdateEntryForm(forms.ModelForm):
 
     def __init__(self, *args, **kwargs):
         self.user = kwargs.pop('user')
-        if not kwargs.get('instance', None):
-            kwargs['instance'] = timepiece.Entry(user=self.user)
         super(AddUpdateEntryForm, self).__init__(*args, **kwargs)
         self.fields['project'].queryset = timepiece.Project.objects.filter(
             users=self.user,
         )
-
+        #if editing a current entry, remove the end time field
+        if self.instance.start_time and not self.instance.end_time:
+            self.fields.pop('end_time')
+        #Use default activity if possible
         try:
             profile = self.user.profile
         except timepiece.UserProfile.DoesNotExist:
@@ -249,6 +250,7 @@ class AddUpdateEntryForm(forms.ModelForm):
         else:
             if profile.default_activity:
                 self.fields['activity'].initial = profile.default_activity
+        self.instance.user = self.user
 
     def clean(self):
         """
@@ -258,16 +260,17 @@ class AddUpdateEntryForm(forms.ModelForm):
         cleaned_data = self.cleaned_data
         start = cleaned_data.get('start_time', None)
         end = cleaned_data.get('end_time', None)
-        if not start or not end:
+        if not start:
             raise forms.ValidationError(
-                'Please enter a valid start and end date/time.')
-        if start >= datetime.now() or end > datetime.now():
+                'Please enter a valid date/time.')
+        if start >= datetime.now() or end and end > datetime.now():
             raise forms.ValidationError(
                 'Entries may not be added in the future.')
         #Obtain all current entries, except the one being edited
+        times = [start, end] if end else [start]
+        query = reduce(lambda q, time: q | Q(start_time__lte=time), times, Q())
         entries = self.user.timepiece_entries.filter(
-            Q(start_time__lte=end, end_time__isnull=True) | \
-            Q(start_time__lte=start, end_time__isnull=True)
+            query, end_time__isnull=True
             ).exclude(id=self.instance.id)
         for entry in entries:
             output = 'The times below conflict with the current entry: ' + \
@@ -280,7 +283,6 @@ class AddUpdateEntryForm(forms.ModelForm):
     def save(self, commit=True):
         entry = super(AddUpdateEntryForm, self).save(commit=False)
         entry.user = self.user
-        self.instance.clean()
         if commit:
             entry.save()
         return entry

@@ -514,9 +514,9 @@ class CreateEditEntry(TimepieceDataTestCase):
             'The entry has been updated successfully', count=1)
         self.assertEquals(len(response.context['this_weeks_entries']), 1)
 
-    def testEditCurrent(self):
+    def testEditCurrentSameTime(self):
         """
-        Test the ability to edit a current entry, using valid values
+        Test the ability to edit a current entry, not changing the values
         """
         data = self.default_data
         data.update({
@@ -524,28 +524,35 @@ class CreateEditEntry(TimepieceDataTestCase):
                 '%m/%d/%Y'),
             'start_time_1': self.current_entry_data['start_time'].strftime(
                 '%H:%M:%S'),
-            'end_time_0': (self.current_entry_data['start_time'] +
-                datetime.timedelta(minutes=1)).strftime('%m/%d/%Y'),
-            'end_time_1': (self.current_entry_data['start_time'] +
-                datetime.timedelta(minutes=1)).strftime('%H:%M:%S'),
         })
         response = self.client.post(self.edit_current_url, data, follow=True)
         #This post should redirect to the dashboard, with the correct message
-        #and 1 entry for this week, because we updated the entry in setUp
-
-        #(Make sure test fails the right way)
-#        self.assertFormError(response, 'form', None,
-#            'The times below conflict with the current entry: ' +
-#            '%(project)s - %(activity)s starting at %(start_time_str)s' %
-#            self.current_entry_data)
-
-        #These should pass once fixed:
+        #and 1 active entry, because we updated the current entry from setUp
         self.assertRedirects(response, reverse('timepiece-entries'),
             status_code=302, target_status_code=200)
         self.assertContains(response,
             'The entry has been updated successfully', count=1)
-        #There is one closed entry already, now there should be 2
-        self.assertEquals(len(response.context['this_weeks_entries']), 2)
+        self.assertEquals(len(response.context['my_active_entries']), 1)
+
+    def testEditCurrentDiffTime(self):
+        """
+        Test the ability to edit a current entry, using valid new values
+        """
+        data = self.default_data
+        new_start = self.current_entry_data['start_time'] + \
+            datetime.timedelta(minutes=5)
+        data.update({
+            'start_time_0': new_start.strftime('%m/%d/%Y'),
+            'start_time_1': new_start.strftime('%H:%M:%S'),
+        })
+        response = self.client.post(self.edit_current_url, data, follow=True)
+        #This post should redirect to the dashboard, with the correct message
+        #and 1 active entry, because we updated the current entry from setUp
+        self.assertRedirects(response, reverse('timepiece-entries'),
+            status_code=302, target_status_code=200)
+        self.assertContains(response,
+            'The entry has been updated successfully', count=1)
+        self.assertEquals(len(response.context['my_active_entries']), 1)
 
     def testCreateBlockByClosed(self):
         """
