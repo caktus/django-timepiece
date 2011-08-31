@@ -48,11 +48,14 @@ class PayrollTest(TimepieceDataTestCase):
         billable = self.log_time(delta=(3, 30), status='approved')
         non_billable = self.log_time(delta=(2, 0),
             billable=False, status='approved')
-        #summary['total'] does not increase from unverified hours
+        #summary['total'] does not increase from unapproved hours
         unapproved = self.log_time(delta=(5, 0), status='verified')
         sick = self.log_time(delta=(8, 0), project=sick, status='approved')
         vacation = self.log_time(delta=(4, 0), project=vacation,
             status='approved')
+        #if the billing period can't contain these hours, expand it
+        if end < datetime.date.today() + relativedelta.relativedelta(days=2):
+            end += relativedelta.relativedelta(days=1)
         summary = rp.summary(start, end)
         self.assertEqual(summary['billable'], Decimal('3.50'))
         self.assertEqual(summary['non_billable'], Decimal('2.00'))
