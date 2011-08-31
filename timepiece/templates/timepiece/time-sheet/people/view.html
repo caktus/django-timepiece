@@ -6,7 +6,11 @@
 {% block content %}
 <h2>{{ person.first_name }} {{ person.last_name}}'s Time Sheet ({{ window.date|date:"N j" }} &mdash; {{ window.end_date|date:"N j" }})</h2>
 <ul class='header-actions-left'>
-    <li><a href='{% url view_person person.pk %}'>User Information</a></li>
+    <li>
+        {% if perms.timepiece.view_user %}
+            <a href='{% url view_person person.pk %}'>User Information</a>
+        {% endif %}
+    </li>
     <li>
         {% if window.previous %}
             <a href='{% url view_person_time_sheet person.pk,window.period.pk,window.previous.pk %}'>Previous Time Sheet</a>
