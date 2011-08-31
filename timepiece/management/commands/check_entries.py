@@ -16,10 +16,15 @@ from timepiece import models as timepiece
 
 
 class Command(BaseCommand):
+    """
+    Management command to check entries for overlapping times.
+    
+    Use ./manage.py check_entries --help for more details
+    """
+    #boiler plate for console programs using optparse
     args = '<user\'s first or last name or user.id> <user\'s first...>...'
     help = """Check the database for entries that overlap.
     Use --help for options"""
-
     parser = OptionParser()
     parser.usage += """
 ./manage.py check_entries [<first or last name1> <name2>...<name n>] [OPTIONS]
@@ -27,7 +32,12 @@ class Command(BaseCommand):
 For options type:
 ./manage.py check_entries --help
     """
-    option_list = BaseCommand.option_list + (
+
+    def make_options(self, *args, **kwargs):
+        """
+        Define the arguments that can be used with this command
+        """
+        return (
         make_option('--thisweek',
             action='store_true',
             dest='week',
@@ -58,69 +68,117 @@ For options type:
             default=0,
             help='Show entries for the last n days only'),
         )
+
+    option_list = BaseCommand.option_list + make_options(*args)
     parser.add_options(option_list)
     (options, args) = parser.parse_args()
 
-    def handle(self, *args, **options):
-        #If no flags, set to 3 months ago
+    def handle(self, *args, **kwargs):
+        """
+        main()
+        """
+        start = self.find_start(**kwargs)
+        people = self.find_people(*args)
+        self.show_init(start, *args, **kwargs)
+        for person in people:
+            entries = self.find_entries(person, start, *args, **kwargs)
+            for entry in entries:
+                if args and verbosity == 1 or \
+                not entries.count() and verbosity == 2:
+                    self.show_name(person)
+                if entry.is_overlapping():
+                    self.show_overlap(person, entry)
+
+    def find_start(self, **kwargs):
+        """
+        Determine the starting point of the query using CLI keyword arguments
+        """
+        week = kwargs.get('week', False)
+        month = kwargs.get('month', False)
+        year = kwargs.get('year', False)
+        days = kwargs.get('days', 0)
+        #If no flags are True, set to 2 months ago
         start = datetime.datetime.now() - datetime.timedelta(weeks=8)
         #Set the start date based on arguments provided through options
-        if self.options.week:
+        if week:
             start = utils.get_week_start()
-        if self.options.month:
+        if month:
             start = datetime.datetime.now() - relativedelta(day=1)
-        if self.options.year:
+        if year:
             start = datetime.datetime.now() - relativedelta(day=1, month=1)
-        if self.options.days:
+        if days:
             start = datetime.datetime.now() - \
             datetime.timedelta(days=self.options.days)
+        return start
 
-        if self.options.all:
-            print("Checking overlaps from the beginning of time")
-        else:
-            print("Checking overlap starting at: " + str(start))
-
-        #If no args given, check every user
+    def find_people(self, *args):
+        """
+        Returns the users to search given names as args. 
+        Return all users if there are no args provided.
+        """
         if args:
-            all_flag = False
-            names = reduce(
-                lambda query, arg: query |
-                (Q(first_name__icontains=arg) |
-                Q(last_name__icontains=arg)), args, Q())
+            names = reduce(lambda query, arg: query |
+                (Q(first_name__icontains=arg) | Q(last_name__icontains=arg)),
+                args, Q())
             people = auth_models.User.objects.filter(names)
+        #If no args given, check every user
         else:
-            all_flag = True
             people = auth_models.User.objects.all()
-        if not people.count() and not all_flag:
-            print("No user found with that name")
-            quit()
-        for person in people:
-            if self.options.all:
-                entries = timepiece.Entry.objects.filter(
-                    user=person).order_by(
-                    'start_time')
+        #Display errors if no user was found
+        if not people.count() and args:
+            if len(args) == 1:
+                raise CommandError('No user was found with the name %s' \
+                % args[0])
             else:
-                entries = timepiece.Entry.objects.filter(
-                    user=person, start_time__gte=start).order_by(
-                    'start_time')
-            if not entries.count() or not all_flag:
-                print 'Checking %s %s...' % \
-                (person.first_name, person.last_name)
-            for entry in entries:
-                if entry.is_overlapping():
-                    data = {
-                        'first_name': person.first_name,
-                        'last_name': person.last_name,
-                        'entry': entry.id,
-                        'start_time': entry.start_time,
-                        'end_time': entry.end_time,
-                        'project': entry.project
-                    }
-                    print(output(data))
+                arg_list = ', '.join(args)
+                raise CommandError('No users found with the names: %s' \
+                % arg_list)
+        return people
 
+    def find_entries(self, person, start, *args, **kwargs):
+        """
+        Find all entries for a given user, from a given starting point.
+        If no starting point is provided, all entries for the user are returned
+        """
+        forever = kwargs.get('all', False)
+        verbosity = kwargs.get('verbosity', 1)
+        if forever:
+            entries = timepiece.Entry.objects.filter(
+                user=person).order_by(
+                'start_time')
+        else:
+            entries = timepiece.Entry.objects.filter(
+                user=person, start_time__gte=start).order_by(
+                'start_time')
+        return entries
 
-def output(data):
-    return 'Entry %(entry)d for %(first_name)s %(last_name)s from ' \
-    % data + \
-    '%(start_time)s to %(end_time)s on %(project)s overlaps another entry' % \
-    data
+    def show_init(self, start, *args, **kwargs):
+        forever = kwargs.get('all', False)
+        verbosity = kwargs.get('verbosity', 1)
+        if forever:
+            if verbosity >= 1:
+                self.stdout.write('Checking overlaps from the beginning ' + \
+                    'of time\n')
+        else:
+            if verbosity >= 1:
+                self.stdout.write('Checking overlap starting at: ' + \
+                    str(start) + '\n')
+
+    def show_name(self, person):
+        self.stdout.write('Checking %s %s...\n' % \
+        (person.first_name, person.last_name))
+
+    def show_overlap(self, person, entry):
+        data = {
+            'first_name': person.first_name,
+            'last_name': person.last_name,
+            'entry': entry.id,
+            'start_time': entry.start_time,
+            'end_time': entry.end_time,
+            'project': entry.project
+        }
+        output = 'Entry %(entry)d for %(first_name)s %(last_name)s from '\
+        % data + \
+        '%(start_time)s to %(end_time)s on %(project)s overlaps another entry'\
+        % data
+        self.stdout.write(output + '\n')
