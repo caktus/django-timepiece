@@ -77,17 +77,57 @@ For options type:
         """
         main()
         """
+        self.verbosity = kwargs.get('verbosity', 1)
         start = self.find_start(**kwargs)
         people = self.find_people(*args)
         self.show_init(start, *args, **kwargs)
-        for person in people:
-            entries = self.find_entries(person, start, *args, **kwargs)
-            for entry in entries:
-                if args and verbosity == 1 or \
-                not entries.count() and verbosity == 2:
-                    self.show_name(person)
-                if entry.is_overlapping():
-                    self.show_overlap(person, entry)
+        all_entries = self.find_entries(people, start, *args, **kwargs)
+        all_overlaps = self.check_all(all_entries, *args, **kwargs)
+        if self.verbosity >= 1:
+            self.stdout.write('Total overlapping entries: %d\n' % all_overlaps)
+
+    def check_all(self, all_entries, *args, **kwargs):
+        """
+        Go through lists of entries, find overlaps among each, return the total
+        """
+        all_overlaps = 0
+        while True:
+            try:
+                person_entries = all_entries.next()
+            except StopIteration:
+                return all_overlaps
+            else:
+                user_total_overlaps = self.check_entry(
+                    person_entries, *args, **kwargs)
+                all_overlaps += user_total_overlaps
+
+    def check_entry(self, entries, *args, **kwargs):
+        """
+        With a list of entries, check each entry against every other
+        """
+        user_total_overlaps = 0
+        user = ''
+        for index_a, entry_a in enumerate(entries):
+            #Show the name the first time through
+            if index_a == 0:
+                if args and self.verbosity >= 1 or self.verbosity >= 2:
+                    self.show_name(entry_a.user)
+                    user = entry_a.user
+            #Check against entries after this one
+            for index_b in range(index_a, len(entries)):
+                entry_b = entries[index_b]
+                if entry_a.check_overlap(entry_b):
+                    user_total_overlaps += 1
+                    self.show_overlap(entry_a, entry_b)
+        if user_total_overlaps and user and self.verbosity >= 1:
+            overlap_data = {
+                'first': user.first_name,
+                'last': user.last_name,
+                'total': user_total_overlaps,
+            }
+            self.stdout.write('Total overlapping entries for user ' + \
+                '%(first)s %(last)s: %(total)d\n' % overlap_data)
+        return user_total_overlaps
 
     def find_start(self, **kwargs):
         """
@@ -109,6 +149,8 @@ For options type:
         if days:
             start = datetime.datetime.now() - \
             datetime.timedelta(days=self.options.days)
+        start = start - relativedelta(
+            hour=0, minute=0, second=0, microsecond=0)
         return start
 
     def find_people(self, *args):
@@ -135,50 +177,53 @@ For options type:
                 % arg_list)
         return people
 
-    def find_entries(self, person, start, *args, **kwargs):
+    def find_entries(self, people, start, *args, **kwargs):
         """
-        Find all entries for a given user, from a given starting point.
-        If no starting point is provided, all entries for the user are returned
+        Find all entries for all users, from a given starting point.
+        If no starting point is provided, all entries are returned.
         """
         forever = kwargs.get('all', False)
-        verbosity = kwargs.get('verbosity', 1)
-        if forever:
-            entries = timepiece.Entry.objects.filter(
-                user=person).order_by(
-                'start_time')
-        else:
-            entries = timepiece.Entry.objects.filter(
-                user=person, start_time__gte=start).order_by(
-                'start_time')
-        return entries
+        for person in people:
+            if forever:
+                entries = timepiece.Entry.objects.filter(
+                    user=person).order_by(
+                    'start_time')
+            else:
+                entries = timepiece.Entry.objects.filter(
+                    user=person, start_time__gte=start).order_by(
+                    'start_time')
+            yield entries
 
+    #output methods
     def show_init(self, start, *args, **kwargs):
         forever = kwargs.get('all', False)
-        verbosity = kwargs.get('verbosity', 1)
         if forever:
-            if verbosity >= 1:
+            if self.verbosity >= 1:
                 self.stdout.write('Checking overlaps from the beginning ' + \
                     'of time\n')
         else:
-            if verbosity >= 1:
-                self.stdout.write('Checking overlap starting at: ' + \
-                    str(start) + '\n')
+            if self.verbosity >= 1:
+                self.stdout.write('Checking overlap starting on: ' + \
+                    start.strftime('%m/%d/%Y') + '\n')
 
     def show_name(self, person):
         self.stdout.write('Checking %s %s...\n' % \
         (person.first_name, person.last_name))
 
-    def show_overlap(self, person, entry):
-        data = {
-            'first_name': person.first_name,
-            'last_name': person.last_name,
-            'entry': entry.id,
-            'start_time': entry.start_time,
-            'end_time': entry.end_time,
-            'project': entry.project
-        }
-        output = 'Entry %(entry)d for %(first_name)s %(last_name)s from '\
-        % data + \
-        '%(start_time)s to %(end_time)s on %(project)s overlaps another entry'\
-        % data
+    def show_overlap(self, entry_a, entry_b):
+        def make_output_data(entry):
+            return{
+                'first_name': entry.user.first_name,
+                'last_name': entry.user.last_name,
+                'entry': entry.id,
+                'start_time': entry.start_time,
+                'end_time': entry.end_time,
+                'project': entry.project
+            }
+        data_a = make_output_data(entry_a)
+        data_b = make_output_data(entry_b)
+        output = 'Entry %(entry)d for %(first_name)s %(last_name)s from ' \
+        % data_a + '%(start_time)s to %(end_time)s on %(project)s overlaps ' \
+        % data_a + 'entry %(entry)d from %(start_time)s to %(end_time)s on ' \
+        % data_b + '%(project)s.' % data_b
         self.stdout.write(output + '\n')

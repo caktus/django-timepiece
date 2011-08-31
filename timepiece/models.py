@@ -246,6 +246,26 @@ class Entry(models.Model):
     objects = EntryManager()
     worked = EntryWorkedManager()
 
+    def check_overlap(self, entry_b):
+        """
+        Given two entries, return True if they overlap, otherwise return False
+        """
+        entry_a = self
+        #if entries are open, consider them closed right now
+        if not entry_a.end_time:
+            entry_a.end_time = datetime.datetime.now()
+        if not entry_b.end_time:
+            entry_b.end_time = datetime.datetime.now()
+        #Check the two entries against each other
+        if entry_a.start_time > entry_b.start_time \
+        and entry_a.start_time < entry_b.end_time or \
+        entry_a.end_time > entry_b.start_time \
+        and entry_a.end_time < entry_b.end_time or \
+        entry_a.start_time < entry_b.start_time \
+        and entry_a.end_time > entry_b.end_time:
+            return True
+        return False
+
     def is_overlapping(self):
         if self.start_time and self.end_time:
             entries = self.user.timepiece_entries.filter(
