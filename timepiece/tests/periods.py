@@ -28,7 +28,7 @@ class BillingPeriodTest(TimepieceDataTestCase):
                     relativedelta.relativedelta(curr.date, prev.date)
                 self.assertEqual(prev.date + diff, curr.date)
                 self.assertEqual(prev.end_date, curr.date)
-    
+
     def testGeneratedWindows(self):
         delta = relativedelta.relativedelta(days=random.randint(20, 100))
         start_date = datetime.datetime.today() - delta
@@ -49,8 +49,7 @@ class BillingPeriodTest(TimepieceDataTestCase):
                 windows = p.billing_windows.order_by('date')
                 self.assertWindowBoundaries(windows)
                 p.delete()
-    
-    
+
     def testChangedPeriod(self):
         """
         If an existing period is updated with a new delta, check that
@@ -75,7 +74,7 @@ class BillingPeriodTest(TimepieceDataTestCase):
         windows = p.billing_windows.order_by('date')
         self.assertWindowBoundaries(windows)
         self.assertEqual(len(windows), 2)
-    
+
     def testChangedStartDate(self):
         start_date = datetime.date(2009, 9, 4)
         p = timepiece.RepeatPeriod.objects.create(

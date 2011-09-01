@@ -12,7 +12,8 @@ from dateutil import relativedelta
 
 
 class PayrollTest(TimepieceDataTestCase):
-    def log_time(self, delta=None, billable=True, project=None, start=None, status=None):
+    def log_time(self, delta=None, billable=True, project=None,
+        start=None, status=None):
         if delta:
             hours, minutes = delta
         else:
@@ -38,16 +39,23 @@ class PayrollTest(TimepieceDataTestCase):
     def testPersonSummary(self):
         sick = self.create_project()
         vacation = self.create_project()
-        settings.TIMEPIECE_PROJECTS = {'sick': sick.pk, 'vacation': vacation.pk}
+        settings.TIMEPIECE_PROJECTS = {
+            'sick': sick.pk, 'vacation': vacation.pk
+        }
         rp = self.create_person_repeat_period({'user': self.user})
         start = datetime.date.today().replace(day=1)
         end = start + relativedelta.relativedelta(months=1)
         billable = self.log_time(delta=(3, 30), status='approved')
-        non_billable = self.log_time(delta=(2, 0), billable=False, status='approved')
-        #summary['total'] does not increase from unverified hours
+        non_billable = self.log_time(delta=(2, 0),
+            billable=False, status='approved')
+        #summary['total'] does not increase from unapproved hours
         unapproved = self.log_time(delta=(5, 0), status='verified')
         sick = self.log_time(delta=(8, 0), project=sick, status='approved')
-        vacation = self.log_time(delta=(4, 0), project=vacation, status='approved')
+        vacation = self.log_time(delta=(4, 0), project=vacation,
+            status='approved')
+        #if the billing period can't contain these hours, expand it
+        if end < datetime.date.today() + relativedelta.relativedelta(days=2):
+            end += relativedelta.relativedelta(days=1)
         summary = rp.summary(start, end)
         self.assertEqual(summary['billable'], Decimal('3.50'))
         self.assertEqual(summary['non_billable'], Decimal('2.00'))
@@ -60,7 +68,7 @@ class PayrollTest(TimepieceDataTestCase):
         rp = self.create_person_repeat_period({'user': self.user})
         p1 = self.create_project()
         start = datetime.datetime(2011, 1, 3)
-        self.log_time(project=p1, start=start, delta=(8, 0), status='approved')        
+        self.log_time(project=p1, start=start, delta=(8, 0), status='approved')
         start = datetime.datetime(2011, 1, 4)
         self.log_time(project=p1, start=start, delta=(8, 0), status='approved')
         #rp.hours_in_week total does not add the five unapproved hours
@@ -73,9 +81,11 @@ class PayrollTest(TimepieceDataTestCase):
         rp = self.create_person_repeat_period({'user': self.user})
         p1 = self.create_project()
         start1 = datetime.datetime(2011, 1, 2)
-        self.log_time(project=p1, start=start1, delta=(8, 0), status='approved')
+        self.log_time(project=p1, start=start1, delta=(8, 0),
+            status='approved')
         start2 = datetime.datetime(2011, 1, 9)
-        self.log_time(project=p1, start=start2, delta=(8, 0), status='approved')
+        self.log_time(project=p1, start=start2, delta=(8, 0),
+            status='approved')
         self.assertEqual(rp.hours_in_week(start1), Decimal('8.00'))
         self.assertEqual(rp.hours_in_week(start2), Decimal('8.00'))
 
@@ -84,7 +94,8 @@ class PayrollTest(TimepieceDataTestCase):
         rp = self.create_person_repeat_period({'user': self.user})
         p1 = self.create_project()
         start1 = datetime.datetime(2011, 1, 2)
-        self.log_time(project=p1, start=start1, delta=(44, 0), status='approved')
+        self.log_time(project=p1, start=start1, delta=(44, 0),
+            status='approved')
         self.assertEqual(rp.overtime_hours_in_week(start1), Decimal('4.00'))
 
     def testWeeklyNonOvertimeHours(self):
@@ -92,7 +103,8 @@ class PayrollTest(TimepieceDataTestCase):
         rp = self.create_person_repeat_period({'user': self.user})
         p1 = self.create_project()
         start1 = datetime.datetime(2011, 1, 2)
-        self.log_time(project=p1, start=start1, delta=(40, 0), status='approved')
+        self.log_time(project=p1, start=start1, delta=(40, 0),
+            status='approved')
         self.assertEqual(rp.overtime_hours_in_week(start1), Decimal('0.00'))
 
     def testMonthlyOvertimeHours(self):
@@ -100,9 +112,9 @@ class PayrollTest(TimepieceDataTestCase):
         rp = self.create_person_repeat_period({'user': self.user})
         p1 = self.create_project()
         start1 = datetime.datetime(2011, 1, 2)
-        self.log_time(project=p1, start=start1, delta=(44, 0), status='approved')
+        self.log_time(project=p1, start=start1, delta=(44, 0),
+            status='approved')
         start1 = datetime.datetime(2011, 1, 9)
-        self.log_time(project=p1, start=start1, delta=(44, 0), status='approved')
-        self.assertEqual(rp.total_monthly_overtime(start1), Decimal('8.00'))           
-
-
+        self.log_time(project=p1, start=start1, delta=(44, 0),
+            status='approved')
+        self.assertEqual(rp.total_monthly_overtime(start1), Decimal('8.00'))

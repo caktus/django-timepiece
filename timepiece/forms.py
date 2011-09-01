@@ -23,27 +23,30 @@ from dateutil.relativedelta import relativedelta
 from ajax_select.fields import AutoCompleteSelectMultipleField, \
                                AutoCompleteSelectField, \
                                AutoCompleteSelectWidget
-                               
+
+
 class CreatePersonForm(auth_forms.UserCreationForm):
     class Meta:
         model = auth_models.User
         fields = (
-            "username", "first_name", "last_name", 
+            "username", "first_name", "last_name",
             "email", "is_active", "is_staff")
 
 
 class EditPersonForm(auth_forms.UserChangeForm):
-    password_one = forms.CharField(required=False, max_length=36, label=_(u'Password'),
-                                widget=forms.PasswordInput(render_value=False))
-    password_two = forms.CharField(required=False, max_length=36, label=_(u'Repeat Password'),
-                                widget=forms.PasswordInput(render_value=False))
+    password_one = forms.CharField(required=False, max_length=36,
+        label=_(u'Password'), widget=forms.PasswordInput(render_value=False))
+    password_two = forms.CharField(required=False, max_length=36,
+        label=_(u'Repeat Password'),
+        widget=forms.PasswordInput(render_value=False))
+
     class Meta:
         model = auth_models.User
         fields = (
-            "username", "first_name", "last_name", 
+            "username", "first_name", "last_name",
             "email", "is_active", "is_staff"
         )
-                        
+
     def clean(self):
         super(EditPersonForm, self).clean()
         password_one = self.cleaned_data.get('password_one', None)
@@ -51,7 +54,7 @@ class EditPersonForm(auth_forms.UserChangeForm):
         if password_one and password_one != password_two:
             raise forms.ValidationError(_('Passwords Must Match.'))
         return self.cleaned_data
-    
+
     def save(self, *args, **kwargs):
         commit = kwargs.get('commit', True)
         kwargs['commit'] = False
@@ -62,7 +65,8 @@ class EditPersonForm(auth_forms.UserChangeForm):
         if commit:
             instance.save()
         return instance
-        
+
+
 class CharAutoCompleteSelectWidget(AutoCompleteSelectWidget):
     def value_from_datadict(self, data, files, name):
         return data.get(name, None)
@@ -73,7 +77,7 @@ class QuickSearchForm(forms.Form):
         'quick_search',
         widget=CharAutoCompleteSelectWidget('quick_search'),
     )
-    
+
     def clean_quick_search(self):
         item = self.cleaned_data['quick_search']
         if isinstance(item, timepiece.Project):
@@ -89,7 +93,7 @@ class QuickSearchForm(forms.Form):
                 'person_id': item.id,
             })
         raise forms.ValidationError('Must be a User or Project')
-    
+
     def save(self):
         return self.cleaned_data['quick_search']
 
@@ -100,7 +104,7 @@ class SearchForm(forms.Form):
 
 class AddUserToProjectForm(forms.Form):
     user = AutoCompleteSelectField('user')
-    
+
     def save(self):
         return self.cleaned_data['user']
 
@@ -116,16 +120,15 @@ class ClockInForm(forms.ModelForm):
             settings,
             'TIMEPIECE_DEFAULT_LOCATION_SLUG',
             None,
-        )        
+        )
         if default_loc:
             try:
                 loc = timepiece.Location.objects.get(slug=default_loc)
             except timepiece.Location.DoesNotExist:
                 loc = None
-            if loc:                
+            if loc:
                 initial = kwargs.get('initial', {})
                 initial['location'] = loc.pk
-                
         super(ClockInForm, self).__init__(*args, **kwargs)
         self.fields['start_time'].required = False
         self.fields['start_time'].initial = datetime.now()
@@ -139,16 +142,31 @@ class ClockInForm(forms.ModelForm):
             Q(status__enable_timetracking=True) &
             Q(type__enable_timetracking=True)
         )
-        
+
         try:
             profile = self.user.profile
         except timepiece.UserProfile.DoesNotExist:
             pass
         else:
             if profile.default_activity:
-                self.fields['activity'].initial = profile.default_activity    
+                self.fields['activity'].initial = profile.default_activity
+        #model validation requires Entry.user to be set, so let's set it now
+        self.instance.user = self.user
 
-            
+    def clean_start_time(self):
+        """
+        Make sure that the start time doesn't come before the active entry
+        """
+        start = self.cleaned_data['start_time']
+        active_entries = self.user.timepiece_entries.filter(
+            start_time__gte=start, end_time__isnull=True)
+        for entry in active_entries:
+            output = 'The start time is on or before the current entry: ' + \
+            '%s - %s starting at %s' % (entry.project, entry.activity,
+                entry.start_time.strftime('%H:%M:%S'))
+            raise forms.ValidationError(output)
+        return start
+
     def save(self, commit=True):
         entry = super(ClockInForm, self).save(commit=False)
         entry.hours = 0
@@ -162,9 +180,9 @@ class ClockOutForm(forms.ModelForm):
     class Meta:
         model = timepiece.Entry
         fields = ('location', 'comments', 'start_time', 'end_time')
-        
+
     def __init__(self, *args, **kwargs):
-        kwargs['initial'] = {'end_time': datetime.now()}  
+        kwargs['initial'] = {'end_time': datetime.now()}
         super(ClockOutForm, self).__init__(*args, **kwargs)
         self.fields['start_time'] = forms.DateTimeField(
             widget=forms.SplitDateTimeWidget(
@@ -180,8 +198,9 @@ class ClockOutForm(forms.ModelForm):
             ),
         )
 
-        self.fields.keyOrder = ('location', 'start_time', 'end_time', 'comments')
-        
+        self.fields.keyOrder = ('location', 'start_time',
+            'end_time', 'comments')
+
     def save(self, commit=True):
         entry = super(ClockOutForm, self).save(commit=False)
         entry.end_time = self.cleaned_data['end_time']
@@ -189,7 +208,8 @@ class ClockOutForm(forms.ModelForm):
         if commit:
             entry.save()
         return entry
-        
+
+
 class AddUpdateEntryForm(forms.ModelForm):
     """
     This form will provide a way for users to add missed log entries and to
@@ -208,7 +228,7 @@ class AddUpdateEntryForm(forms.ModelForm):
             date_format='%m/%d/%Y',
         )
     )
-    
+
     class Meta:
         model = Entry
         exclude = ('user', 'pause_time', 'site', 'hours', 'status',)
@@ -219,9 +239,10 @@ class AddUpdateEntryForm(forms.ModelForm):
         self.fields['project'].queryset = timepiece.Project.objects.filter(
             users=self.user,
         )
-        if not self.instance.end_time:
-            del self.fields['end_time']
-            
+        #if editing a current entry, remove the end time field
+        if self.instance.start_time and not self.instance.end_time:
+            self.fields.pop('end_time')
+        #Use default activity if possible
         try:
             profile = self.user.profile
         except timepiece.UserProfile.DoesNotExist:
@@ -229,67 +250,62 @@ class AddUpdateEntryForm(forms.ModelForm):
         else:
             if profile.default_activity:
                 self.fields['activity'].initial = profile.default_activity
+        self.instance.user = self.user
 
-    def clean_start_time(self):
+    def clean(self):
         """
-        Make sure that the start time is always before the end time
+        Verify that the entry doesn't conflict with or come after the current
+        entry, and that the times are valid for model clean
         """
-        start = self.cleaned_data['start_time']
+        cleaned_data = self.cleaned_data
+        start = cleaned_data.get('start_time', None)
+        end = cleaned_data.get('end_time', None)
+        if not start:
+            raise forms.ValidationError(
+                'Please enter a valid date/time.')
+        if start >= datetime.now() or end and end > datetime.now():
+            raise forms.ValidationError(
+                'Entries may not be added in the future.')
+        #Obtain all current entries, except the one being edited
+        times = [start, end] if end else [start]
+        query = reduce(lambda q, time: q | Q(start_time__lte=time), times, Q())
+        entries = self.user.timepiece_entries.filter(
+            query, end_time__isnull=True
+            ).exclude(id=self.instance.id)
+        for entry in entries:
+            output = 'The times below conflict with the current entry: ' + \
+            '%s - %s starting at %s' % \
+            (entry.project, entry.activity,
+                entry.start_time.strftime('%H:%M:%S'))
+            raise forms.ValidationError(output)
+        return self.cleaned_data
 
-        try:
-            end = self.cleaned_data['end_time']
+    def save(self, commit=True):
+        entry = super(AddUpdateEntryForm, self).save(commit=False)
+        entry.user = self.user
+        if commit:
+            entry.save()
+        return entry
 
-            if start >= end:
-                raise forms.ValidationError('The entry must start before it ends!')
-        except KeyError:
-            pass
 
-        if start > datetime.now():
-            raise forms.ValidationError('You cannot add entries in the future!')
-
-        return start
-
-    def clean_end_time(self):
-        """
-        Make sure no one tries to add entries that end in the future
-        """
-        try:
-            start = self.cleaned_data['start_time']
-        except KeyError:
-            raise forms.ValidationError('Please enter a start time.')
-
-        try:
-            end = self.cleaned_data['end_time']
-            if not end: raise Exception
-        except:
-            raise forms.ValidationError('Please enter an end time.')
-
-        if start >= end:
-            raise forms.ValidationError('The entry must start before it ends!')
-
-        return end
-    
-    def save(self):
-        instance = super(AddUpdateEntryForm, self).save(commit=False)
-        instance.user = self.user
-        instance.save()
-        return instance
-        
-STATUS_CHOICES = [('','---------'),]
+STATUS_CHOICES = [('', '---------'), ]
 STATUS_CHOICES.extend(timepiece.ENTRY_STATUS)
+
 
 class DateForm(forms.Form):
     from_date = forms.DateField(label="From", required=False)
     to_date = forms.DateField(label="To", required=False)
-    status = forms.ChoiceField(choices=STATUS_CHOICES, widget=forms.HiddenInput(), required=False)
+    status = forms.ChoiceField(choices=STATUS_CHOICES,
+        widget=forms.HiddenInput(), required=False)
     activity = forms.ModelChoiceField(
-        queryset=timepiece.Activity.objects.all(), 
+        queryset=timepiece.Activity.objects.all(),
         widget=forms.HiddenInput(), required=False,
     )
     project = forms.ModelChoiceField(
-        queryset=timepiece.Project.objects.all(), 
+        queryset=timepiece.Project.objects.all(),
         widget=forms.HiddenInput(), required=False,
     )
+
     def save(self):
         from_date = self.cleaned_data.get('from_date', '')
         to_date = self.cleaned_data.get('to_date', '')
@@ -300,7 +316,7 @@ class DateForm(forms.Form):
 
 class ProjectionForm(DateForm):
     user = forms.ModelChoiceField(queryset=None)
-    
+
     def __init__(self, *args, **kwargs):
         users = kwargs.pop('users')
         super(ProjectionForm, self).__init__(*args, **kwargs)
@@ -311,6 +327,7 @@ class BusinessForm(forms.ModelForm):
     class Meta:
         model = timepiece.Business
         fields = ('name', 'email', 'description', 'notes',)
+
 
 class ProjectForm(forms.ModelForm):
     class Meta:
@@ -357,35 +374,37 @@ class RepeatPeriodForm(forms.ModelForm):
         self.fields['count'].required = False
         self.fields['interval'].required = False
         self.fields['date'] = forms.DateField(required=False)
-    
+
     def _clean_optional(self, name):
         active = self.cleaned_data.get('active', False)
         value = self.cleaned_data.get(name, '')
         if active and not value:
             raise forms.ValidationError('This field is required.')
         return self.cleaned_data[name]
-    
+
     def clean_count(self):
         return self._clean_optional('count')
-    
+
     def clean_interval(self):
         return self._clean_optional('interval')
-        
+
     def clean_date(self):
         active = self.cleaned_data.get('active', False)
         date = self.cleaned_data.get('date', '')
         if active and not self.instance.id and not date:
-            raise forms.ValidationError('Start date is required for new billing periods')
+            raise forms.ValidationError(
+                'Start date is required for new billing periods')
         return date
-    
+
     def clean(self):
         date = self.cleaned_data.get('date', '')
         if self.instance.id and date:
             latest = self.instance.billing_windows.latest()
             if self.cleaned_data['active'] and date < latest.end_date:
-                raise forms.ValidationError('New start date must be after %s' % latest.end_date)
+                raise forms.ValidationError(
+                    'New start date must be after %s' % latest.end_date)
         return self.cleaned_data
-    
+
     def save(self):
         period = super(RepeatPeriodForm, self).save(commit=False)
         if not self.instance.id and period.active:
@@ -412,24 +431,25 @@ class PersonTimeSheet(forms.ModelForm):
     class Meta:
         model = timepiece.PersonRepeatPeriod
         fields = ('user',)
-    
+
     def __init__(self, *args, **kwargs):
         super(PersonTimeSheet, self).__init__(*args, **kwargs)
-        self.fields['user'].queryset = auth_models.User.objects.all().order_by('last_name')
+        self.fields['user'].queryset = \
+            auth_models.User.objects.all().order_by('last_name')
 
 
 class UserForm(forms.ModelForm):
-    
+
     class Meta:
         model = auth_models.User
         fields = ('first_name', 'last_name', 'email')
-    
+
     def __init__(self, *args, **kwargs):
         super(UserForm, self).__init__(*args, **kwargs)
         for name in self.fields:
             self.fields[name].required = True
-    
-        
+
+
 class UserProfileForm(forms.ModelForm):
 
     class Meta:

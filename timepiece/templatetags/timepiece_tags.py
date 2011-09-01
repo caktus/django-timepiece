@@ -13,13 +13,12 @@ import timepiece.models as timepiece
 from timepiece.utils import generate_weeks, get_total_time
 
 
-
 register = template.Library()
 
 
 @register.filter
 def seconds_to_hours(seconds):
-    return round(seconds/3600.0, 2)
+    return round(seconds / 3600.0, 2)
 
 
 @register.inclusion_tag('timepiece/time-sheet/bar_graph.html',
@@ -33,16 +32,17 @@ def bar_graph(context, name, worked, total, width=None, suffix=None):
     over_total = 0
     error = ''
     if worked < 0:
-        error = 'Somehow you\'ve logged %s negative hours for %s this week.' % (abs(worked), name)
+        error = 'Somehow you\'ve logged %s negative hours for %s this week.' \
+        % (abs(worked), name)
     if left < 0:
         over = abs(left)
         left = 0
         worked = total
         total = over + total
-    return { 
-        'name': name, 'worked': worked, 
-        'total': total, 'left':left,
-        'over': over, 'width': width, 
+    return {
+        'name': name, 'worked': worked,
+        'total': total, 'left': left,
+        'over': over, 'width': width,
         'suffix': suffix, 'error': error,
         }
 
@@ -51,13 +51,14 @@ def bar_graph(context, name, worked, total, width=None, suffix=None):
                         takes_context=True)
 def my_ledger(context):
     try:
-        period = PersonRepeatPeriod.objects.get(user = context['request'].user)
+        period = PersonRepeatPeriod.objects.get(user=context['request'].user)
     except PersonRepeatPeriod.DoesNotExist:
-        return { 'period': False }
-    return { 'period': period }
+        return {'period': False}
+    return {'period': period}
 
 
-@register.inclusion_tag('timepiece/time-sheet/_date_filters.html', takes_context=True)
+@register.inclusion_tag('timepiece/time-sheet/_date_filters.html',
+    takes_context=True)
 def date_filters(context, options):
     request = context['request']
     from_slug = 'from_date'
@@ -65,7 +66,7 @@ def date_filters(context, options):
     use_range = True
     if not options:
         options = ('months', 'quaters', 'years')
-    
+
     def construct_url(from_date, to_date):
         url = '%s?%s=%s' % (
             request.path,
@@ -83,29 +84,33 @@ def date_filters(context, options):
     if 'months_no_range' in options:
         filters['Past 12 Months'] = []
         single_month = relativedelta(months=1)
-        from_date = datetime.date.today().replace(day=1) + relativedelta(months=1)
+        from_date = datetime.date.today().replace(day=1) + \
+            relativedelta(months=1)
         for x in range(12):
             to_date = from_date
             use_range = False
             from_date = to_date - single_month
-            url = construct_url(from_date,to_date - relativedelta(days=1))
-            filters['Past 12 Months'].append((from_date.strftime("%b '%y"), url))
-        filters['Past 12 Months'].reverse()        
-    
+            url = construct_url(from_date, to_date - relativedelta(days=1))
+            filters['Past 12 Months'].append(
+                (from_date.strftime("%b '%y"), url))
+        filters['Past 12 Months'].reverse()
+
     if 'months' in options:
         filters['Past 12 Months'] = []
         single_month = relativedelta(months=1)
-        from_date = datetime.date.today().replace(day=1) + relativedelta(months=1)
+        from_date = datetime.date.today().replace(day=1) + \
+            relativedelta(months=1)
         for x in range(12):
             to_date = from_date
             from_date = to_date - single_month
             url = construct_url(from_date, to_date - relativedelta(days=1))
-            filters['Past 12 Months'].append((from_date.strftime("%b '%y"), url))
+            filters['Past 12 Months'].append(
+                (from_date.strftime("%b '%y"), url))
         filters['Past 12 Months'].reverse()
-    
+
     if 'years' in options:
         start = datetime.date.today().year - 3
-        
+
         filters['Years'] = []
         for year in range(start, start + 3):
             from_date = datetime.datetime(year, 1, 1)
@@ -130,13 +135,14 @@ def date_filters(context, options):
 @register.simple_tag
 def hours_for_assignment(assignment, date):
     end = date + relativedelta(days=5)
-    blocks = assignment.blocks.filter(date__gte=date, date__lte=end).select_related()
+    blocks = assignment.blocks.filter(
+        date__gte=date, date__lte=end).select_related()
     hours = blocks.aggregate(hours=Sum('hours'))['hours']
     if not hours:
         hours = ''
     return hours
-    
-    
+
+
 @register.simple_tag
 def total_allocated(assignment):
     hours = assignment.blocks.aggregate(hours=Sum('hours'))['hours']
@@ -174,8 +180,8 @@ def monthly_overtime(rp, date):
 
 @register.simple_tag
 def week_start(date):
-    return get_week_start(date).strftime('%m/%d/%Y')  
-    
+    return get_week_start(date).strftime('%m/%d/%Y')
+
 
 @register.simple_tag
 def build_invoice_row(entries, to_date, from_date):
@@ -187,21 +193,22 @@ def build_invoice_row(entries, to_date, from_date):
         else:
             uninvoiced_hours += entry['s']
     row = '<td>%s</td>' % uninvoiced_hours
-    url = reverse('export_project_time_sheet', args=[project,])
+    url = reverse('export_project_time_sheet', args=[project, ])
     to_date_str = from_date_str = ''
     if to_date:
         to_date_str = to_date.strftime('%m/%d/%Y')
     if from_date:
         from_date_str = from_date.strftime('%m/%d/%Y')
     get_str = urllib.urlencode({
-        'to_date': to_date_str, 
+        'to_date': to_date_str,
         'from_date': from_date_str,
         'status': 'approved',
     })
-    row += '<td><a href="#"><ul class="actions"><li><a href="%s?%s">CSV Timesheet</a></li>' % (url, get_str)
-    url = reverse('time_sheet_change_status', args=['invoice',])
+    row += '<td><a href="#"><ul class="actions"><li>' + \
+        '<a href="%s?%s">CSV Timesheet</a></li>' % (url, get_str)
+    url = reverse('time_sheet_change_status', args=['invoice', ])
     get_str = urllib.urlencode({
-        'to_date': to_date_str, 
+        'to_date': to_date_str,
         'from_date': from_date_str,
         'project': project,
     })
