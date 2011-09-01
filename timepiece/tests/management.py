@@ -13,13 +13,6 @@ from timepiece import models as timepiece
 from timepiece import forms as timepiece_forms
 from timepiece.management.commands import check_entries
 
-possible_args = [
-    '--thisweek', 
-    '--thismonth', 
-    '-y', '--thisyear', 
-    '-a', '--all', '--forever',
-    '-d', '--days',
-]
 
 class CheckEntries(TimepieceDataTestCase):
     def setUp(self):
@@ -122,7 +115,9 @@ class CheckEntries(TimepieceDataTestCase):
         self.create_entry(self.default_data)
 #        check_1 = self.check('first1', verbosity=2)
 #        check_2 = self.check('first2', verbosity=2)
-        check_1_2 = self.check('first1', 'first2', verbosity=2)
+        bars = check_1_2 = self.check('first1', 'first2', verbosity=2)
+        self.show_overlap(bars)
         foos = self.get_overlap(check_1_2)
+
 #        print foos[0].get('entry', '')
 #        print check_1_2['out']

@@ -113,12 +113,18 @@ For options type:
                 if args and self.verbosity >= 1 or self.verbosity >= 2:
                     self.show_name(entry_a.user)
                     user = entry_a.user
-            #Check against entries after this one
-            for index_b in range(index_a, len(entries)):
-                entry_b = entries[index_b]
-                if entry_a.check_overlap(entry_b):
-                    user_total_overlaps += 1
-                    self.show_overlap(entry_a, entry_b)
+            if entry_a.is_overlapping():
+                user_total_overlaps += 1
+                self.show_overlap(entry_a)
+                
+#Removed until check_overlap is fixed
+#            for index_b in range(index_a, len(entries)):
+#                entry_b = entries[index_b]
+#                if entry_a.is_overlapping():
+#                if entry_a.check_overlap(entry_b):
+#                    user_total_overlaps += 1            
+#                    self.show_overlap(entry_a, entry_b)
+                    
         if user_total_overlaps and user and self.verbosity >= 1:
             overlap_data = {
                 'first': user.first_name,
@@ -210,7 +216,7 @@ For options type:
         self.stdout.write('Checking %s %s...\n' % \
         (person.first_name, person.last_name))
 
-    def show_overlap(self, entry_a, entry_b):
+    def show_overlap(self, entry_a, entry_b=None):
         def make_output_data(entry):
             return{
                 'first_name': entry.user.first_name,
@@ -221,9 +227,14 @@ For options type:
                 'project': entry.project
             }
         data_a = make_output_data(entry_a)
-        data_b = make_output_data(entry_b)
-        output = 'Entry %(entry)d for %(first_name)s %(last_name)s from ' \
-        % data_a + '%(start_time)s to %(end_time)s on %(project)s overlaps ' \
-        % data_a + 'entry %(entry)d from %(start_time)s to %(end_time)s on ' \
-        % data_b + '%(project)s.' % data_b
+        if entry_b:
+            data_b = make_output_data(entry_b)
+            output = 'Entry %(entry)d for %(first_name)s %(last_name)s from ' \
+            % data_a + '%(start_time)s to %(end_time)s on %(project)s overlaps ' \
+            % data_a + 'entry %(entry)d from %(start_time)s to %(end_time)s on ' \
+            % data_b + '%(project)s.' % data_b
+        else:
+            output = 'Entry %(entry)d for %(first_name)s %(last_name)s from ' \
+            % data_a + '%(start_time)s to %(end_time)s on %(project)s overlaps ' \
+            % data_a + 'with another entry.'
         self.stdout.write(output + '\n')
