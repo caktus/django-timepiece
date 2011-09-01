@@ -1,6 +1,7 @@
 import datetime
 import re
 from StringIO import StringIO
+from dateutil.relativedelta import relativedelta
 
 from django.core.urlresolvers import reverse
 from django.contrib.auth.models import User, Permission
@@ -11,6 +12,7 @@ from timepiece.tests.base import TimepieceDataTestCase
 
 from timepiece import models as timepiece
 from timepiece import forms as timepiece_forms
+from timepiece import utils
 from timepiece.management.commands import check_entries
 
 
@@ -103,6 +105,32 @@ class CheckEntries(TimepieceDataTestCase):
         self.create_entry(data)
 
     #tests
+    def testFindStart(self):
+        #Establish some datetimes
+        now = datetime.datetime.now()
+        today = now - relativedelta(
+            hour=0, minute=0, second=0, microsecond=0)
+        last_billing = today - relativedelta(months=1, day=1)
+        yesterday = today - relativedelta(days=1)
+        ten_days_ago = today - relativedelta(days=10)
+        thisweek = utils.get_week_start(today)
+        thismonth = today - relativedelta(day=1)
+        thisyear = today - relativedelta(month=1, day=1)
+        #Use command flags to obtain datetimes
+        start_default = check_entries.Command().find_start()
+        start_yesterday = check_entries.Command().find_start(days=1)
+        start_ten_days_ago = check_entries.Command().find_start(days=10)
+        start_of_week = check_entries.Command().find_start(week=True)
+        start_of_month = check_entries.Command().find_start(month=True)
+        start_of_year = check_entries.Command().find_start(year=True)
+        #assure the returned datetimes are correct
+        self.assertEqual(start_default, last_billing)
+        self.assertEqual(start_yesterday, yesterday)
+        self.assertEqual(start_ten_days_ago, ten_days_ago)
+        self.assertEqual(start_of_week, thisweek)
+        self.assertEqual(start_of_month, thismonth)
+        self.assertEqual(start_of_year, thisyear)
+
     def testFindPeople(self):
         #Find one person by icontains first or last name, return all if no args
         people1 = check_entries.Command().find_people('firsT1')
@@ -122,7 +150,24 @@ class CheckEntries(TimepieceDataTestCase):
         self.assertEqual(all_1, person1)
         self.assertEqual(all_2, person2)
         self.assertEqual(all_3, self.superuser)
-        
+
+    def testFindEntries(self):
+        start = check_entries.Command().find_start()
+        all_people = check_entries.Command().find_people()
+        entries = check_entries.Command().find_entries(all_people, start)
+        self.make_entry(valid=False)
+        all_overlaps = 0
+        while True:
+            try:
+                person_entries = entries.next()
+            except StopIteration:
+                print all_overlaps
+                return
+            else:
+                user_total_overlaps = check_entries.Command().check_entry(
+                    person_entries, verbosity=2)
+                all_overlaps += user_total_overlaps
+
     def testCheckOverlap(self):
         #define start and end times relative to a valid entry
         a_start_before = self.good_start - datetime.timedelta(minutes=5)
@@ -146,17 +191,13 @@ class CheckEntries(TimepieceDataTestCase):
         for index_a, entry_a in enumerate(entries):
             for index_b in range(index_a, len(entries)):
                 entry_b = entries[index_b]
-                if entry_a.check_overlap(entry_b):
-                    print 'Conflict with %s and %s' % (entry_a, entry_b)
+                if entry_a.check_overlap(entry_b):                    
                     user_total_overlaps += 1
+#                    print 'Conflict with %s and %s' % (entry_a, entry_b)
+
 #                    check_entries.Command().show_overlap(entry_a, entry_b)
 #                    self.show_overlap(entry_a, entry_b)
 
-
-
-#Use:
-#check_entries.Command().method()
-        
         
 #    def testAllEntries(self):
 #        self.default_data.update({
