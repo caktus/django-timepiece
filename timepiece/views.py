@@ -521,6 +521,7 @@ def view_person_time_sheet(request, person_id, period_id=None, window_id=None):
         total_statuses = len(statuses)
         unverified_count = statuses.count('unverified')
         verified_count = statuses.count('verified')
+        approved_count = statuses.count('approved')
 
     if time_sheet.user.pk == request.user.pk:
         show_verify = unverified_count != 0
