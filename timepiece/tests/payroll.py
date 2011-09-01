@@ -20,7 +20,7 @@ class PayrollTest(TimepieceDataTestCase):
             hours = 4
             minutes = 0
         if not start:
-            start = datetime.datetime.now()
+            start = datetime.datetime.now() - relativedelta(hour=0)
             #In case the default would fall off the end of the billing period
             if start.day >= 28:
                 start -= relativedelta(days=1)
@@ -52,8 +52,10 @@ class PayrollTest(TimepieceDataTestCase):
         sick = self.log_time(delta=(8, 0), project=sick, status='approved')
         vacation = self.log_time(delta=(4, 0), project=vacation,
             status='approved')
-        #make an entry on the very last day no matter the current time.
-        end_day = datetime.datetime.now() + relativedelta(months=1, day=1) - \
+        #make an entry on the very last day no matter the current time 
+        #but start in the morning to stay in the billing period.
+        end_day = datetime.datetime.now() + \
+            relativedelta(months=1, day=1, hour=0) - \
             relativedelta(days=1)
         last_day = self.log_time(start=end_day, status='approved', delta=(8,0))
 
