@@ -640,12 +640,22 @@ class PersonRepeatPeriod(models.Model):
         entries = user.timepiece_entries.filter(
             (Q(status='invoiced') | Q(status='approved')),
             end_time__gt=date, end_time__lte=end_date)
-        data = {'billable': Decimal('0'), 'non_billable': Decimal('0')}
-        data['invoiced'] = entries.filter(
+        data = {
+            'billable': Decimal('0'), 'non_billable': Decimal('0'),
+            'invoiced': Decimal('0'), 'uninvoiced': Decimal('0'),
+            'total': Decimal('0')
+            }
+        invoiced = entries.filter(
             status='invoiced').aggregate(i=Sum('hours'))['i']
-        data['total'] = entries.aggregate(s=Sum('hours'))['s']
-        data['uninvoiced'] = entries.exclude(
+        uninvoiced = entries.exclude(
             status='invoiced').aggregate(uninv=Sum('hours'))['uninv']
+        total = entries.aggregate(s=Sum('hours'))['s']
+        if invoiced:
+            data['invoiced'] = invoiced
+        if uninvoiced:
+            data['uninvoiced'] = uninvoiced
+        if total:
+            data['total'] = total
         billable = entries.exclude(project__in=projects.values())
         billable = billable.values(
             'billable',
