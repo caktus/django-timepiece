@@ -262,7 +262,7 @@ class Entry(models.Model):
         end_is_inside = entry_a.end_time > entry_b.start_time \
             and entry_a.end_time < entry_b.end_time        
         b_is_inside = entry_a.start_time < entry_b.start_time \
-            and entry_a.end_time > entry_b.end_time:
+            and entry_a.end_time > entry_b.end_time
         overlap = start_is_inside or end_is_inside or b_is_inside
         return overlap
 
