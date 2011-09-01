@@ -8,7 +8,7 @@ from timepiece import models as timepiece
 from timepiece import forms as timepiece_forms
 from timepiece.tests.base import TimepieceDataTestCase
 
-from dateutil import relativedelta
+from dateutil.relativedelta import relativedelta
 
 
 class PayrollTest(TimepieceDataTestCase):
@@ -21,6 +21,9 @@ class PayrollTest(TimepieceDataTestCase):
             minutes = 0
         if not start:
             start = datetime.datetime.now()
+            #In case the default would fall off the end of the billing period
+            if start.day >= 28:
+                start -= relativedelta(days=1)
         end = start + datetime.timedelta(hours=hours, minutes=minutes)
         data = {'user': self.user,
                 'start_time': start,
@@ -35,16 +38,12 @@ class PayrollTest(TimepieceDataTestCase):
         if status:
             data['status'] = status
         return self.create_entry(data)
-
-    def testPersonSummary(self):
+    def make_logs(self):
         sick = self.create_project()
         vacation = self.create_project()
         settings.TIMEPIECE_PROJECTS = {
             'sick': sick.pk, 'vacation': vacation.pk
         }
-        rp = self.create_person_repeat_period({'user': self.user})
-        start = datetime.date.today().replace(day=1)
-        end = start + relativedelta.relativedelta(months=1)
         billable = self.log_time(delta=(3, 30), status='approved')
         non_billable = self.log_time(delta=(2, 0),
             billable=False, status='approved')
@@ -53,15 +52,42 @@ class PayrollTest(TimepieceDataTestCase):
         sick = self.log_time(delta=(8, 0), project=sick, status='approved')
         vacation = self.log_time(delta=(4, 0), project=vacation,
             status='approved')
-        #if the billing period can't contain these hours, expand it
-        if end < datetime.date.today() + relativedelta.relativedelta(days=2):
-            end += relativedelta.relativedelta(days=1)
+        #make an entry on the very last day no matter the current time.
+        end_day = datetime.datetime.now() + relativedelta(months=1, day=1) - \
+            relativedelta(days=1)
+        last_day = self.log_time(start=end_day, status='approved', delta=(8,0))
+
+    def testPersonSummary(self):
+        self.make_logs()
+        rp = self.create_person_repeat_period({'user': self.user})
+        start = datetime.date.today().replace(day=1)
+        end = start + relativedelta(months=1)
         summary = rp.summary(start, end)
-        self.assertEqual(summary['billable'], Decimal('3.50'))
+        self.check_summary(summary)
+    
+    def testPersonSummaryView(self):
+        from timepiece.templatetags import timepiece_tags as tags
+        self.client.login(username='superuser', password='abc')
+        self.make_logs()
+        rp = self.create_person_repeat_period({'user': self.user})
+        response = self.client.get(reverse('payroll_summary'), follow=True)
+        context = response.context
+        date_filters = tags.date_filters(context, 'months')
+        this_month = date_filters['filters'].values()[0][-1]
+        this_month_url = this_month[1]
+        response = self.client.get(this_month_url, follow=True)
+        start = response.context['from_date']
+        end = response.context['to_date']
+        this_user = response.context['periods'].get(user=self.user.pk)
+        summary = this_user.summary(start, end)
+        self.check_summary(summary)
+
+    def check_summary(self, summary):
+        self.assertEqual(summary['billable'], Decimal('11.50'))
         self.assertEqual(summary['non_billable'], Decimal('2.00'))
         self.assertEqual(summary['paid_leave']['sick'], Decimal('8.00'))
         self.assertEqual(summary['paid_leave']['vacation'], Decimal('4.00'))
-        self.assertEqual(summary['total'], Decimal('17.50'))
+        self.assertEqual(summary['total'], Decimal('25.50'))
 
     def testWeeklyHours(self):
         """ Test basic functionality of hours worked per week """

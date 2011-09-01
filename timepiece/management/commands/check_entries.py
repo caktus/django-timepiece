@@ -84,7 +84,7 @@ For options type:
         all_entries = self.find_entries(people, start, *args, **kwargs)
         all_overlaps = self.check_all(all_entries, *args, **kwargs)
         if self.verbosity >= 1:
-            self.stdout.write('Total overlapping entries: %d\n' % all_overlaps)
+            print 'Total overlapping entries: %d' % all_overlaps
 
     def check_all(self, all_entries, *args, **kwargs):
         """
@@ -131,8 +131,8 @@ For options type:
                 'last': user.last_name,
                 'total': user_total_overlaps,
             }
-            self.stdout.write('Total overlapping entries for user ' + \
-                '%(first)s %(last)s: %(total)d\n' % overlap_data)
+            print 'Total overlapping entries for user ' + \
+                '%(first)s %(last)s: %(total)d' % overlap_data
         return user_total_overlaps
 
     def find_start(self, **kwargs):
@@ -205,16 +205,16 @@ For options type:
         forever = kwargs.get('all', False)
         if forever:
             if self.verbosity >= 1:
-                self.stdout.write('Checking overlaps from the beginning ' + \
-                    'of time\n')
+                print 'Checking overlaps from the beginning ' + \
+                    'of time'
         else:
             if self.verbosity >= 1:
-                self.stdout.write('Checking overlap starting on: ' + \
-                    start.strftime('%m/%d/%Y') + '\n')
+                print 'Checking overlap starting on: ' + \
+                    start.strftime('%m/%d/%Y')
 
     def show_name(self, person):
-        self.stdout.write('Checking %s %s...\n' % \
-        (person.first_name, person.last_name))
+        print 'Checking %s %s...' % \
+        (person.first_name, person.last_name)
 
     def show_overlap(self, entry_a, entry_b=None):
         def make_output_data(entry):
@@ -237,4 +237,4 @@ For options type:
             output = 'Entry %(entry)d for %(first_name)s %(last_name)s from ' \
             % data_a + '%(start_time)s to %(end_time)s on %(project)s overlaps ' \
             % data_a + 'with another entry.'
-        self.stdout.write(output + '\n')
+        print output

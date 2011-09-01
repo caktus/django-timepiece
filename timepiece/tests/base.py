@@ -164,6 +164,7 @@ class TimepieceDataTestCase(TestCase):
     def setUp(self):
         self.user = User.objects.create_user('user', 'u@abc.com', 'abc')
         self.user2 = User.objects.create_user('user2', 'u2@abc.com', 'abc')
+        self.superuser = User.objects.create_user('superuser', 'super@abc.com', 'abc')
         permissions = Permission.objects.filter(
             content_type=ContentType.objects.get_for_model(timepiece.Entry),
             codename__in=('can_clock_in', 'can_clock_out',
@@ -171,7 +172,8 @@ class TimepieceDataTestCase(TestCase):
         )
         self.user.user_permissions = permissions
         self.user2.user_permissions = permissions
-
+        self.superuser.is_superuser = True
+        self.superuser.save()
         self.user = self.user
         self.activity = timepiece.Activity.objects.create(
             code="WRK",

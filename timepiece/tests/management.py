@@ -23,6 +23,10 @@ class CheckEntries(TimepieceDataTestCase):
             'seconds_paused': 0,
             'status': 'verified',
         }
+        self.good_start = datetime.datetime.now() - datetime.timedelta(days=0, hours=8)
+        self.good_end = datetime.datetime.now() - datetime.timedelta(days=0)
+        self.bad_start = datetime.datetime.now() - datetime.timedelta(days=1, hours=8)
+        self.bad_end = datetime.datetime.now() - datetime.timedelta(days=1)
         #Create users for the test
         self.user.first_name = 'first1'
         self.user.last_name = 'last1'
@@ -38,7 +42,8 @@ class CheckEntries(TimepieceDataTestCase):
             self.default_data.update({
                 'user': user,
             })
-            for day in range(0, 80):
+            #Range uses 1 so that good_start/good_end use today as valid times.
+            for day in range(1, 80):
                 self.default_data.update({
                     'start_time': datetime.datetime.now() - datetime.timedelta(days=day, hours=8),
                     'end_time': datetime.datetime.now() - datetime.timedelta(days=day,),
@@ -48,41 +53,19 @@ class CheckEntries(TimepieceDataTestCase):
 
     #helper functions
     buffer_dict = {}
-    overlap_cp = re.compile(
-        '(?P<entry>\d+) for ' + \
-        '(?P<first>\w+) (?P<last>\w+) from ' + \
-        '(?P<start_time_str>\d+-\d+-\d+ \d+:\d+:\d+.\d+) to ' + \
-        '(?P<end_time_str>\d+-\d+-\d+ \d+:\d+:\d+.\d+) on ' + \
-        '(?P<project>\w+)',
-    )
-
-    def overlaps_to_dict(self, tupe_in):
-        dict_out = {
-            'entry': tupe_in[0],
-            'first_name': tupe_in[1],
-            'last_name': tupe_in[2],
-            'start_time_str': tupe_in[3],
-            'end_time_str': tupe_in[4],
-            'project': tupe_in[5],
-        }
-        return dict_out
-
     def check(self, *args, **kwargs):
         output = err = StringIO()
         call_command('check_entries', *args, stdout=output, stderr=err, **kwargs)
         output.seek(0)
         err.seek(0)
         out = output.read()
-        overlap_tupes = self.overlap_cp.findall(out)
-        overlaps = []
-        for tupe in overlap_tupes:
-            overlaps.append(self.overlaps_to_dict(tupe))
+        overlap = re.findall('Entry.*', out)
         out_list = out.split('\n')
         err_list = err.read().split('\n')
         self.buffer_dict = {
             'out': out_list,
             'err': err_list,
-            'overlap': overlaps
+            'overlap': overlap,
         }
         return self.buffer_dict
 
@@ -92,9 +75,6 @@ class CheckEntries(TimepieceDataTestCase):
     def get_err(self, dict_in=buffer_dict):
         return dict_in.get('err', [])
 
-    def get_overlap(self, dict_in=buffer_dict):
-        return dict_in.get('overlap', [])
-
     def show_output(self, dict_in=buffer_dict):
         for string in self.get_output(dict_in):
             print string
@@ -103,21 +83,87 @@ class CheckEntries(TimepieceDataTestCase):
         for string in self.get_err(dict_in):
             print string
 
-    def show_overlap(self, dict_in=buffer_dict):
-        for dict_item in self.get_overlap(dict_in):
-            print dict_item.items()
-
-    def testAllEntries(self):
-        self.default_data.update({
-            'start_time': datetime.datetime.now() - datetime.timedelta(days=0, hours=8),
-            'end_time': datetime.datetime.now() - datetime.timedelta(days=0,),
+    def make_entry(self, **kwargs):
+        valid = kwargs.get('valid', True)
+        if valid:
+            default_start = self.good_start
+            default_end = self.good_end
+        else:
+            default_start = self.bad_start
+            default_end = self.bad_end
+        user = kwargs.get('user', self.user)
+        start = kwargs.get('start_time', default_start)
+        end = kwargs.get('end_time', default_end)
+        data = self.default_data
+        data.update({
+            'user': user,
+            'start_time': start,
+            'end_time': end,
         })
-        self.create_entry(self.default_data)
-#        check_1 = self.check('first1', verbosity=2)
-#        check_2 = self.check('first2', verbosity=2)
-        bars = check_1_2 = self.check('first1', 'first2', verbosity=2)
-        self.show_overlap(bars)
-        foos = self.get_overlap(check_1_2)
+        self.create_entry(data)
 
-#        print foos[0].get('entry', '')
-#        print check_1_2['out']
+    #tests
+    def testFindPeople(self):
+        #Find one person by icontains first or last name, return all if no args
+        people1 = check_entries.Command().find_people('firsT1')
+        people2 = check_entries.Command().find_people('LasT2')
+        all_people = check_entries.Command().find_people()
+        #obtain instances from the querysets
+        person1 = people1.get(pk=self.user.pk)
+        person2 = people2.get(pk=self.user2.pk)
+        all_1 = all_people.get(pk=self.user.pk)
+        all_2 = all_people.get(pk=self.user2.pk)
+        all_3 = all_people.get(pk=self.superuser.pk)
+        self.assertEqual(people1.count(), 1)
+        self.assertEqual(people2.count(), 1)
+        self.assertEqual(all_people.count(), 3)
+        self.assertEqual(person1, self.user)
+        self.assertEqual(person2, self.user2)
+        self.assertEqual(all_1, person1)
+        self.assertEqual(all_2, person2)
+        self.assertEqual(all_3, self.superuser)
+        
+    def testCheckOverlap(self):
+        #define start and end times relative to a valid entry
+        a_start_before = self.good_start - datetime.timedelta(minutes=5)
+        a_start_inside = self.good_start + datetime.timedelta(minutes=5)
+        a_end_inside = self.good_start + datetime.timedelta(minutes=5)
+        a_end_after = self.good_end + datetime.timedelta(minutes=5)
+        #Create a valid entry for today
+        self.make_entry(valid=True)
+
+        #Create a bad entry starting inside the valid one
+        self.make_entry(start_time=a_start_inside, end_time=a_end_after)
+        #Create a bad entry ending inside the valid one
+        self.make_entry(start_time=a_start_before, end_time=a_end_after)
+        #Create a bad entry that starts and ends outside a valid one
+        self.make_entry(start_time=a_start_inside, end_time=a_end_inside)
+        #Create a bad entry that starts and ends inside a valid one
+        self.make_entry(start_time=a_start_before, end_time=a_end_after)
+
+        entries = timepiece.Entry.objects.filter(user=self.user)
+        user_total_overlaps = 0
+        for index_a, entry_a in enumerate(entries):
+            for index_b in range(index_a, len(entries)):
+                entry_b = entries[index_b]
+                if entry_a.check_overlap(entry_b):
+                    print 'Conflict with %s and %s' % (entry_a, entry_b)
+                    user_total_overlaps += 1
+#                    check_entries.Command().show_overlap(entry_a, entry_b)
+#                    self.show_overlap(entry_a, entry_b)
+
+
+
+#Use:
+#check_entries.Command().method()
+        
+        
+#    def testAllEntries(self):
+#        self.default_data.update({
+#            'start_time': datetime.datetime.now() - datetime.timedelta(days=0, hours=8),
+#            'end_time': datetime.datetime.now() - datetime.timedelta(days=0,),
+#        })
+#        self.create_entry(self.default_data)
+#        bars = check_1_2 = self.check('first1', 'first2', verbosity=2)
+#        self.show_output(bars)
+#        print bars['overlap']
