@@ -2,7 +2,7 @@ from setuptools import setup, find_packages
 
 setup(
     name='django-timepiece',
-    version='0.1.0',
+    version='0.2.0',
     author='Caktus Consulting Group',
     author_email='solutions@caktusgroup.com',
     packages=find_packages(),
