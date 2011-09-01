@@ -607,8 +607,9 @@ class PersonRepeatPeriod(models.Model):
     def hours_in_week(self, date):
         left, right = utils.get_week_window(date)
         entries = Entry.worked.filter(user=self.user)
-        entries = entries.filter(end_time__gt=left,
-            end_time__lt=right, status='approved')
+        entries = entries.filter(
+            (Q(status='invoiced') | Q(status='approved')),
+            end_time__gt=left, end_time__lt=right,)
         return entries.aggregate(s=Sum('hours'))['s']
 
     def overtime_hours_in_week(self, date):
@@ -636,11 +637,15 @@ class PersonRepeatPeriod(models.Model):
         """
         projects = getattr(settings, 'TIMEPIECE_PROJECTS', {})
         user = self.user
-        entries = user.timepiece_entries.filter(end_time__gt=date,
-                                                end_time__lte=end_date,
-                                                status='approved')
+        entries = user.timepiece_entries.filter(
+            (Q(status='invoiced') | Q(status='approved')),
+            end_time__gt=date, end_time__lte=end_date)
         data = {'billable': Decimal('0'), 'non_billable': Decimal('0')}
+        data['invoiced'] = entries.filter(
+            status='invoiced').aggregate(i=Sum('hours'))['i']
         data['total'] = entries.aggregate(s=Sum('hours'))['s']
+        data['uninvoiced'] = entries.exclude(
+            status='invoiced').aggregate(uninv=Sum('hours'))['uninv']
         billable = entries.exclude(project__in=projects.values())
         billable = billable.values(
             'billable',

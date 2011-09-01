@@ -510,9 +510,6 @@ def view_person_time_sheet(request, person_id, period_id=None, window_id=None):
     project_entries = entries.order_by().values(
         'project__name',
     ).annotate(sum=Sum('hours')).order_by('-sum')
-    activity_entries = entries.order_by().values(
-        'billable',
-    ).annotate(sum=Sum('hours')).order_by('-sum')
 
     show_approve = show_verify = False
     if request.user.has_perm('timepiece.edit_person_time_sheet') or \
@@ -530,6 +527,8 @@ def view_person_time_sheet(request, person_id, period_id=None, window_id=None):
         show_approve = verified_count + approved_count == total_statuses \
         and verified_count > 0 and total_statuses != 0
 
+    summary = time_sheet.summary(window.date, window.end_date)
+
     context = {
         'show_verify': show_verify,
         'show_approve': show_approve,
@@ -539,7 +538,7 @@ def view_person_time_sheet(request, person_id, period_id=None, window_id=None):
         'entries': entries,
         'total': total_hours,
         'project_entries': project_entries,
-        'activity_entries': activity_entries,
+        'summary': summary,
     }
     return context
 

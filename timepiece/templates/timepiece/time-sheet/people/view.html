@@ -79,17 +79,21 @@
     </table>
 {% endif %}
 
-{% if activity_entries %}
-    <table id='activity-summary'>
-        <caption>Billable Summary</caption>
-    {% for row in activity_entries %}
-        <tr>
-            <td>{% if row.billable %}Billable{% else %}Non-billable{% endif %}</td>
-            <td>{{ row.sum }}</td>
-        </tr>
-    {% endfor %}        
-    </table>
-{% endif %}
+<table id='activity-summary'>
+    <caption>Billable Summary</caption>
+    <tr>
+        <td>Billable</td><td>{{summary.billable}}</td>
+    </tr>
+    <tr>
+        <td>Non-billable</td><td>{{summary.non_billable}}</td>
+    </tr>
+    <tr>
+        <td>Invoiced</td><td>{{summary.invoiced}}</td>
+    </tr>
+    <tr>
+        <td>Uninvoiced</td><td>{{summary.uninvoiced}}</td>
+    </tr>
+</table>
 
 <br style='clear: both' />
 
