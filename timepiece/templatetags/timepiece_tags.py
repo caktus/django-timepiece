@@ -90,7 +90,7 @@ def date_filters(context, options):
             to_date = from_date
             use_range = False
             from_date = to_date - single_month
-            url = construct_url(from_date, to_date - relativedelta(days=1))
+            url = construct_url(from_date, to_date)
             filters['Past 12 Months'].append(
                 (from_date.strftime("%b '%y"), url))
         filters['Past 12 Months'].reverse()
@@ -103,7 +103,7 @@ def date_filters(context, options):
         for x in range(12):
             to_date = from_date
             from_date = to_date - single_month
-            url = construct_url(from_date, to_date - relativedelta(days=1))
+            url = construct_url(from_date, to_date)
             filters['Past 12 Months'].append(
                 (from_date.strftime("%b '%y"), url))
         filters['Past 12 Months'].reverse()
