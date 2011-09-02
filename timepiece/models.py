@@ -246,10 +246,11 @@ class Entry(models.Model):
     objects = EntryManager()
     worked = EntryWorkedManager()
 
-    def check_overlap(self, entry_b):
+    def check_overlap(self, entry_b, **kwargs):
         """
         Given two entries, return True if they overlap, otherwise return False
         """
+        pause = kwargs.get('pause', False)
         entry_a = self
         #if entries are open, consider them to be closed right now
         if not entry_a.end_time:
@@ -257,14 +258,29 @@ class Entry(models.Model):
         if not entry_b.end_time:
             entry_b.end_time = datetime.datetime.now()
         #Check the two entries against each other        
-        start_is_inside = entry_a.start_time > entry_b.start_time \
+        start_inside = entry_a.start_time > entry_b.start_time \
             and entry_a.start_time < entry_b.end_time 
-        end_is_inside = entry_a.end_time > entry_b.start_time \
+        end_inside = entry_a.end_time > entry_b.start_time \
+            and entry_a.end_time < entry_b.end_time
+        a_is_inside = entry_a.start_time > entry_b.start_time \
             and entry_a.end_time < entry_b.end_time        
         b_is_inside = entry_a.start_time < entry_b.start_time \
             and entry_a.end_time > entry_b.end_time
-        overlap = start_is_inside or end_is_inside or b_is_inside
-        return overlap
+        overlap = start_inside or end_inside or a_is_inside or b_is_inside
+        if not pause:
+            return overlap
+        else:
+            if overlap:
+                max_end = max(entry_a.end_time, entry_b.end_time)
+                min_start = min(entry_a.start_time, entry_b.start_time)
+                diff = max_end - min_start
+                diff = diff.seconds + diff.days * 86400
+                total = entry_a.get_seconds() + entry_b.get_seconds()
+    #            paused = entry_a.seconds_paused + entry_b.seconds_paused
+    #            if total > diff or paused < diff - total:
+                if total > diff:
+                    return True
+            return False
 
     def is_overlapping(self):
         if self.start_time and self.end_time:

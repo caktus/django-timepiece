@@ -116,14 +116,13 @@ For options type:
                     user = entry_a.user
             if entry_a.is_overlapping():
                 user_total_overlaps += 1
-                self.show_overlap(entry_a)
-                
+                if verbosity >= 1:
+                    self.show_overlap(entry_a)                
 #Removed until check_overlap is fixed
 #            for index_b in range(index_a, len(entries)):
 #                entry_b = entries[index_b]
-#                if entry_a.is_overlapping():
-#                if entry_a.check_overlap(entry_b):
-#                    user_total_overlaps += 1            
+#                if entry_a.check_overlap_pause(entry_b):
+#                    user_total_overlaps += 1
 #                    self.show_overlap(entry_a, entry_b)
                     
         if user_total_overlaps and user and verbosity >= 1:
