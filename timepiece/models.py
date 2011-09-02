@@ -655,7 +655,7 @@ class PersonRepeatPeriod(models.Model):
         user = self.user
         entries = user.timepiece_entries.filter(
             (Q(status='invoiced') | Q(status='approved')),
-            end_time__gt=date, end_time__lte=end_date)
+            end_time__gt=date, end_time__lt=end_date)
         data = {
             'billable': Decimal('0'), 'non_billable': Decimal('0'),
             'invoiced': Decimal('0'), 'uninvoiced': Decimal('0'),
