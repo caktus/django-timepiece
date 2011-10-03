@@ -375,6 +375,9 @@ def get_entries(period, window_id=None, project=None, user=None):
         end_time__lt=window.end_date,
     ).select_related(
         'user',
+        'project',
+        'activity',
+        'location',
     ).order_by('start_time')
     if project:
         entries = entries.filter(project=project)
