@@ -2,7 +2,7 @@ from setuptools import setup, find_packages
 
 setup(
     name='django-timepiece',
-    version='0.2.0',
+    version=__import__('timepiece').__version__,
     author='Caktus Consulting Group',
     author_email='solutions@caktusgroup.com',
     packages=find_packages(),
@@ -11,7 +11,8 @@ setup(
         '': ['*.sql', '*.pyc',],
     },
     url='',
-    license='LICENSE.txt',
+    license='BSD',
     description='django-timepiece',
     long_description=open('README.rst').read(),
+    zip_safe=False, # because we're including media that Django needs
 )
