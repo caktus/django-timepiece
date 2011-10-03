@@ -331,6 +331,7 @@ def summary(request, username=None):
     if to_date:
         dates &= Q(end_time__lte=to_date)
     project_totals = entries.filter(dates).annotate(total_hours=Sum('hours'))
+    project_totals = project_totals.order_by('project__name')
     total_hours = timepiece.Entry.objects.filter(dates).aggregate(
         hours=Sum('hours')
     )['hours']
