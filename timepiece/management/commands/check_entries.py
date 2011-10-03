@@ -77,14 +77,14 @@ For options type:
         """
         main()
         """
-        self.verbosity = kwargs.get('verbosity', 1)
+        verbosity = kwargs.get('verbosity', 1)
         start = self.find_start(**kwargs)
         people = self.find_people(*args)
         self.show_init(start, *args, **kwargs)
         all_entries = self.find_entries(people, start, *args, **kwargs)
         all_overlaps = self.check_all(all_entries, *args, **kwargs)
-        if self.verbosity >= 1:
-            self.stdout.write('Total overlapping entries: %d\n' % all_overlaps)
+        if verbosity >= 1:
+            print 'Total overlapping entries: %d' % all_overlaps
 
     def check_all(self, all_entries, *args, **kwargs):
         """
@@ -105,34 +105,34 @@ For options type:
         """
         With a list of entries, check each entry against every other
         """
+        verbosity = kwargs.get('verbosity', 1)
         user_total_overlaps = 0
         user = ''
         for index_a, entry_a in enumerate(entries):
             #Show the name the first time through
             if index_a == 0:
-                if args and self.verbosity >= 1 or self.verbosity >= 2:
+                if args and verbosity >= 1 or verbosity >= 2:
                     self.show_name(entry_a.user)
                     user = entry_a.user
             if entry_a.is_overlapping():
                 user_total_overlaps += 1
-                self.show_overlap(entry_a)
-                
+                if verbosity >= 1:
+                    self.show_overlap(entry_a)                
 #Removed until check_overlap is fixed
 #            for index_b in range(index_a, len(entries)):
 #                entry_b = entries[index_b]
-#                if entry_a.is_overlapping():
-#                if entry_a.check_overlap(entry_b):
-#                    user_total_overlaps += 1            
+#                if entry_a.check_overlap_pause(entry_b):
+#                    user_total_overlaps += 1
 #                    self.show_overlap(entry_a, entry_b)
                     
-        if user_total_overlaps and user and self.verbosity >= 1:
+        if user_total_overlaps and user and verbosity >= 1:
             overlap_data = {
                 'first': user.first_name,
                 'last': user.last_name,
                 'total': user_total_overlaps,
             }
-            self.stdout.write('Total overlapping entries for user ' + \
-                '%(first)s %(last)s: %(total)d\n' % overlap_data)
+            print 'Total overlapping entries for user ' + \
+                '%(first)s %(last)s: %(total)d' % overlap_data
         return user_total_overlaps
 
     def find_start(self, **kwargs):
@@ -143,8 +143,9 @@ For options type:
         month = kwargs.get('month', False)
         year = kwargs.get('year', False)
         days = kwargs.get('days', 0)
-        #If no flags are True, set to 2 months ago
-        start = datetime.datetime.now() - datetime.timedelta(weeks=8)
+        #If no flags are True, set to the beginning of last billing window
+        #to assure we catch all recent violates
+        start = datetime.datetime.now() - relativedelta(months=1, day=1)
         #Set the start date based on arguments provided through options
         if week:
             start = utils.get_week_start()
@@ -154,7 +155,7 @@ For options type:
             start = datetime.datetime.now() - relativedelta(day=1, month=1)
         if days:
             start = datetime.datetime.now() - \
-            datetime.timedelta(days=self.options.days)
+            datetime.timedelta(days=days)
         start = start - relativedelta(
             hour=0, minute=0, second=0, microsecond=0)
         return start
@@ -203,18 +204,19 @@ For options type:
     #output methods
     def show_init(self, start, *args, **kwargs):
         forever = kwargs.get('all', False)
+        verbosity = kwargs.get('verbosity', 1)
         if forever:
-            if self.verbosity >= 1:
-                self.stdout.write('Checking overlaps from the beginning ' + \
-                    'of time\n')
+            if verbosity >= 1:
+                print 'Checking overlaps from the beginning ' + \
+                    'of time'
         else:
-            if self.verbosity >= 1:
-                self.stdout.write('Checking overlap starting on: ' + \
-                    start.strftime('%m/%d/%Y') + '\n')
+            if verbosity >= 1:
+                print 'Checking overlap starting on: ' + \
+                    start.strftime('%m/%d/%Y')
 
     def show_name(self, person):
-        self.stdout.write('Checking %s %s...\n' % \
-        (person.first_name, person.last_name))
+        print 'Checking %s %s...' % \
+        (person.first_name, person.last_name)
 
     def show_overlap(self, entry_a, entry_b=None):
         def make_output_data(entry):
@@ -237,4 +239,4 @@ For options type:
             output = 'Entry %(entry)d for %(first_name)s %(last_name)s from ' \
             % data_a + '%(start_time)s to %(end_time)s on %(project)s overlaps ' \
             % data_a + 'with another entry.'
-        self.stdout.write(output + '\n')
+        print output

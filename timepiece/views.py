@@ -331,6 +331,7 @@ def summary(request, username=None):
     if to_date:
         dates &= Q(end_time__lte=to_date)
     project_totals = entries.filter(dates).annotate(total_hours=Sum('hours'))
+    project_totals = project_totals.order_by('project__name')
     total_hours = timepiece.Entry.objects.filter(dates).aggregate(
         hours=Sum('hours')
     )['hours']
@@ -375,6 +376,9 @@ def get_entries(period, window_id=None, project=None, user=None):
         end_time__lt=window.end_date,
     ).select_related(
         'user',
+        'project',
+        'activity',
+        'location',
     ).order_by('start_time')
     if project:
         entries = entries.filter(project=project)
@@ -510,9 +514,6 @@ def view_person_time_sheet(request, person_id, period_id=None, window_id=None):
     project_entries = entries.order_by().values(
         'project__name',
     ).annotate(sum=Sum('hours')).order_by('-sum')
-    activity_entries = entries.order_by().values(
-        'billable',
-    ).annotate(sum=Sum('hours')).order_by('-sum')
 
     show_approve = show_verify = False
     if request.user.has_perm('timepiece.edit_person_time_sheet') or \
@@ -521,13 +522,16 @@ def view_person_time_sheet(request, person_id, period_id=None, window_id=None):
         total_statuses = len(statuses)
         unverified_count = statuses.count('unverified')
         verified_count = statuses.count('verified')
+        approved_count = statuses.count('approved')
 
     if time_sheet.user.pk == request.user.pk:
         show_verify = unverified_count != 0
 
     if request.user.has_perm('timepiece.edit_person_time_sheet'):
-        show_approve = verified_count == total_statuses and total_statuses != 0
+        show_approve = verified_count + approved_count == total_statuses \
+        and verified_count > 0 and total_statuses != 0
 
+    summary = time_sheet.summary(window.date, window.end_date)
     context = {
         'show_verify': show_verify,
         'show_approve': show_approve,
@@ -537,7 +541,7 @@ def view_person_time_sheet(request, person_id, period_id=None, window_id=None):
         'entries': entries,
         'total': total_hours,
         'project_entries': project_entries,
-        'activity_entries': activity_entries,
+        'summary': summary,
     }
     return context
 
@@ -588,11 +592,12 @@ def time_sheet_change_status(request, form, from_date, to_date, status,
             )
         if request.GET and form.cleaned_data.get('project'):
             entries = entries.filter(project=form.cleaned_data.get('project'))
+    to_date -= relativedelta(days=1)
     if action == 'invoice':
         return_url = reverse('invoice_projects',)
         get_str = urllib.urlencode({
             'from_date': from_date or '',
-            'to_date': to_date or '',
+            'to_date': to_date  or '',
         })
         return_url += '?%s' % get_str
     else:
@@ -673,7 +678,7 @@ def invoice_projects(request, form, from_date, to_date, status, activity):
         'form': form,
         'cals': cals,
         'project_totals': project_totals,
-        'to_date': to_date,
+        'to_date': to_date - relativedelta(days=1),
         'from_date': from_date,
         'unverified': unverified,
         'unapproved': unapproved,

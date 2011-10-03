@@ -267,9 +267,7 @@ def date_filter(func):
         if request.GET:
             form = timepiece_forms.DateForm(request.GET)
             if form.is_valid():
-                from_date = form.cleaned_data.get('from_date')
-                to_date = form.cleaned_data.get('to_date')
-                form.save()
+                from_date, to_date = form.save()
                 status = form.cleaned_data.get('status')
                 activity = form.cleaned_data.get('activity')
             else:

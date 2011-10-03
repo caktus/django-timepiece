@@ -246,10 +246,11 @@ class Entry(models.Model):
     objects = EntryManager()
     worked = EntryWorkedManager()
 
-    def check_overlap(self, entry_b):
+    def check_overlap(self, entry_b, **kwargs):
         """
         Given two entries, return True if they overlap, otherwise return False
         """
+        pause = kwargs.get('pause', False)
         entry_a = self
         #if entries are open, consider them to be closed right now
         if not entry_a.end_time:
@@ -257,14 +258,29 @@ class Entry(models.Model):
         if not entry_b.end_time:
             entry_b.end_time = datetime.datetime.now()
         #Check the two entries against each other        
-        start_is_inside = entry_a.start_time > entry_b.start_time \
+        start_inside = entry_a.start_time > entry_b.start_time \
             and entry_a.start_time < entry_b.end_time 
-        end_is_inside = entry_a.end_time > entry_b.start_time \
+        end_inside = entry_a.end_time > entry_b.start_time \
+            and entry_a.end_time < entry_b.end_time
+        a_is_inside = entry_a.start_time > entry_b.start_time \
             and entry_a.end_time < entry_b.end_time        
         b_is_inside = entry_a.start_time < entry_b.start_time \
             and entry_a.end_time > entry_b.end_time
-        overlap = start_is_inside or end_is_inside or b_is_inside
-        return overlap
+        overlap = start_inside or end_inside or a_is_inside or b_is_inside
+        if not pause:
+            return overlap
+        else:
+            if overlap:
+                max_end = max(entry_a.end_time, entry_b.end_time)
+                min_start = min(entry_a.start_time, entry_b.start_time)
+                diff = max_end - min_start
+                diff = diff.seconds + diff.days * 86400
+                total = entry_a.get_seconds() + entry_b.get_seconds()
+    #            paused = entry_a.seconds_paused + entry_b.seconds_paused
+    #            if total > diff or paused < diff - total:
+                if total > diff:
+                    return True
+            return False
 
     def is_overlapping(self):
         if self.start_time and self.end_time:
@@ -607,8 +623,9 @@ class PersonRepeatPeriod(models.Model):
     def hours_in_week(self, date):
         left, right = utils.get_week_window(date)
         entries = Entry.worked.filter(user=self.user)
-        entries = entries.filter(end_time__gt=left,
-            end_time__lt=right, status='approved')
+        entries = entries.filter(
+            (Q(status='invoiced') | Q(status='approved')),
+            end_time__gt=left, end_time__lt=right,)
         return entries.aggregate(s=Sum('hours'))['s']
 
     def overtime_hours_in_week(self, date):
@@ -636,11 +653,25 @@ class PersonRepeatPeriod(models.Model):
         """
         projects = getattr(settings, 'TIMEPIECE_PROJECTS', {})
         user = self.user
-        entries = user.timepiece_entries.filter(end_time__gt=date,
-                                                end_time__lte=end_date,
-                                                status='approved')
-        data = {'billable': Decimal('0'), 'non_billable': Decimal('0')}
-        data['total'] = entries.aggregate(s=Sum('hours'))['s']
+        entries = user.timepiece_entries.filter(
+            (Q(status='invoiced') | Q(status='approved')),
+            end_time__gt=date, end_time__lt=end_date)
+        data = {
+            'billable': Decimal('0'), 'non_billable': Decimal('0'),
+            'invoiced': Decimal('0'), 'uninvoiced': Decimal('0'),
+            'total': Decimal('0')
+            }
+        invoiced = entries.filter(
+            status='invoiced').aggregate(i=Sum('hours'))['i']
+        uninvoiced = entries.exclude(
+            status='invoiced').aggregate(uninv=Sum('hours'))['uninv']
+        total = entries.aggregate(s=Sum('hours'))['s']
+        if invoiced:
+            data['invoiced'] = invoiced
+        if uninvoiced:
+            data['uninvoiced'] = uninvoiced
+        if total:
+            data['total'] = total
         billable = entries.exclude(project__in=projects.values())
         billable = billable.values(
             'billable',
