@@ -6,6 +6,7 @@ from django.core.urlresolvers import reverse
 
 from timepiece import models as timepiece
 from timepiece import forms as timepiece_forms
+from timepiece import utils
 from timepiece.tests.base import TimepieceDataTestCase
 
 from dateutil.relativedelta import relativedelta
@@ -20,10 +21,11 @@ class PayrollTest(TimepieceDataTestCase):
             hours = 4
             minutes = 0
         if not start:
-            start = datetime.datetime.now() - relativedelta(hour=0)
-            #In case the default would fall off the end of the billing period
-            if start.day >= 28:
-                start -= relativedelta(days=1)
+            start = datetime.datetime.now() - relativedelta(day=1, hour=0)
+            #In case the day would fall off the end of the billing period
+            #(Payroll summaries do not include incomplete weeks)
+            if start.day >= 21:
+                start -= relativedelta(days=8)
         end = start + datetime.timedelta(hours=hours, minutes=minutes)
         data = {'user': self.user,
                 'start_time': start,
@@ -116,6 +118,22 @@ class PayrollTest(TimepieceDataTestCase):
             status='approved')
         self.assertEqual(rp.hours_in_week(start1), Decimal('8.00'))
         self.assertEqual(rp.hours_in_week(start2), Decimal('8.00'))
+
+    def testPersonSummaryEndsEarly(self):
+        """Make sure weekly summaries don't include partial weeks because
+        these are included in the first week of the next month
+        """
+        rp = self.create_person_repeat_period({'user': self.user})
+        p1 = self.create_project()
+        from_date = datetime.datetime.now() + relativedelta(day=1)
+        to_date = from_date + relativedelta(months=1)
+        last_week = to_date - relativedelta(days=1)
+        #use the same utility function as the view for repeat period summary
+        last_sat = utils.get_last_sat(to_date)
+        #an entry on the last week of the month
+        self.log_time(project=p1, start=last_week, delta=(8, 0),
+            status='approved')
+        self.assertEqual(rp.summary(from_date, last_sat)['total'], Decimal('0.00'))
 
     def testWeeklyOvertimeHours(self):
         """ Test weekly overtime calculation """

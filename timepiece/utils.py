@@ -249,6 +249,12 @@ def get_week_start(day=None):
     return week_start
 
 
+def get_last_sat(day=None):
+    if not day:
+        day = date.today()
+    return get_week_start(day) - timedelta(days=1)
+
+
 def generate_weeks(end, start=None):
     start = get_week_start(start)
     return rrule.rrule(rrule.WEEKLY, dtstart=start, until=end, byweekday=6)
