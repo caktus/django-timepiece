@@ -59,13 +59,15 @@ def view_entries(request):
     activity_entries = entries.values(
         'billable',
     ).annotate(sum=Sum('hours')).order_by('-sum')
-    others_active_entries = timepiece.Entry.objects.filter(
-        end_time__isnull=True,
+    others_active_entries = timepiece.Entry.objects.select_related().filter(
+        end_time__isnull=True,    
     ).exclude(
         user=request.user,
     )
     my_active_entries = timepiece.Entry.objects.select_related(
         'project__business',
+    ).only(
+        'user','project','activity','start_time'
     ).filter(
         user=request.user,
         end_time__isnull=True,
@@ -404,7 +406,7 @@ def project_time_sheet(request, project_id, window_id=None):
     ).annotate(sum=Sum('hours')).order_by('-sum')
     activity_entries = entries.order_by().values(
         'billable',
-    ).annotate(sum=Sum('hours')).order_by('-sum')
+    ).annotate(sum=Sum('hours')).order_by('-sum')   
     context = {
         'project': project,
         'period': window.period,
@@ -483,7 +485,6 @@ def export_project_time_sheet(request, form, from_date, to_date, status,
     writer.writerow(('', '', '', '', '', '', 'Total:', total))
     return response
 
-
 @login_required
 @render_with('timepiece/time-sheet/people/view.html')
 def view_person_time_sheet(request, person_id, period_id=None, window_id=None):
@@ -515,6 +516,8 @@ def view_person_time_sheet(request, person_id, period_id=None, window_id=None):
         'project__name',
     ).annotate(sum=Sum('hours')).order_by('-sum')
 
+    weekly_entries = utils.make_ledger_rows(entries.select_related())
+
     show_approve = show_verify = False
     if request.user.has_perm('timepiece.edit_person_time_sheet') or \
         time_sheet.user.pk == request.user.pk:
@@ -538,7 +541,7 @@ def view_person_time_sheet(request, person_id, period_id=None, window_id=None):
         'person': time_sheet.user,
         'period': window.period,
         'window': window,
-        'entries': entries,
+        'weekly_entries': weekly_entries,
         'total': total_hours,
         'project_entries': project_entries,
         'summary': summary,

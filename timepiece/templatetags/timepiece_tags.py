@@ -1,5 +1,6 @@
 import urllib
 import datetime
+from decimal import Decimal
 
 from django import template
 from django.db.models import Sum
@@ -10,7 +11,7 @@ from dateutil.relativedelta import relativedelta
 
 from timepiece.models import PersonRepeatPeriod, AssignmentAllocation
 import timepiece.models as timepiece
-from timepiece.utils import generate_weeks, get_total_time
+from timepiece.utils import generate_weeks, get_total_time, get_week_start
 
 
 register = template.Library()
@@ -182,6 +183,13 @@ def monthly_overtime(rp, date):
 def week_start(date):
     return get_week_start(date).strftime('%m/%d/%Y')
 
+@register.simple_tag
+def get_hours(entry):
+    if not entry.is_paused:
+        entry.end_time = datetime.datetime.now()
+    else:
+        entry.end_time = entry.pause_time
+    return Decimal('%.2f' % round(entry.total_hours, 2))
 
 @register.simple_tag
 def build_invoice_row(entries, to_date, from_date):
