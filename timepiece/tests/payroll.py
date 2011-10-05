@@ -21,11 +21,10 @@ class PayrollTest(TimepieceDataTestCase):
             hours = 4
             minutes = 0
         if not start:
-            start = datetime.datetime.now() - relativedelta(day=1, hour=0)
+            start = datetime.datetime.now() - relativedelta(hour=0)
             #In case the day would fall off the end of the billing period
-            #(Payroll summaries do not include incomplete weeks)
-            if start.day >= 21:
-                start -= relativedelta(days=8)
+            if start.day >= 28:
+                start -= relativedelta(days=1)
         end = start + datetime.timedelta(hours=hours, minutes=minutes)
         data = {'user': self.user,
                 'start_time': start,
@@ -119,22 +118,6 @@ class PayrollTest(TimepieceDataTestCase):
         self.assertEqual(rp.hours_in_week(start1), Decimal('8.00'))
         self.assertEqual(rp.hours_in_week(start2), Decimal('8.00'))
 
-    def testPersonSummaryEndsEarly(self):
-        """Make sure weekly summaries don't include partial weeks because
-        these are included in the first week of the next month
-        """
-        rp = self.create_person_repeat_period({'user': self.user})
-        p1 = self.create_project()
-        from_date = datetime.datetime.now() + relativedelta(day=1)
-        to_date = from_date + relativedelta(months=1)
-        last_week = to_date - relativedelta(days=1)
-        #use the same utility function as the view for repeat period summary
-        last_sat = utils.get_last_sat(to_date)
-        #an entry on the last week of the month
-        self.log_time(project=p1, start=last_week, delta=(8, 0),
-            status='approved')
-        self.assertEqual(rp.summary(from_date, last_sat)['total'], Decimal('0.00'))
-
     def testWeeklyOvertimeHours(self):
         """ Test weekly overtime calculation """
         rp = self.create_person_repeat_period({'user': self.user})
@@ -164,3 +147,24 @@ class PayrollTest(TimepieceDataTestCase):
         self.log_time(project=p1, start=start1, delta=(44, 0),
             status='approved')
         self.assertEqual(rp.total_monthly_overtime(start1), Decimal('8.00'))
+
+    def testOvertimeEndsEarly(self):
+        """Do not add hours in an unfinished week to overtime"""
+        rp = self.create_person_repeat_period({'user': self.user})
+        p1 = self.create_project()
+        start1 = datetime.datetime(2011, 1, 1)
+        self.log_time(project=p1, start=start1, delta=(44, 0),
+            status='approved')
+        on_not_done_week = datetime.datetime(2011, 1, 31)
+        self.log_time(project=p1, start=on_not_done_week, delta=(44, 0),
+            status='approved')
+        self.assertEqual(rp.total_monthly_overtime(start1), Decimal('4.00'))
+
+    def testLastSat(self):
+        """Test the get_last_sat utility for validity"""
+        months = range(1, 13)
+        first_days = [datetime.datetime(2011, month, 1) for month in months]
+        last_sats = [utils.get_last_sat(day).day for day in first_days]
+        #Should = the last saturday of every month in 2011
+        self.assertEqual(last_sats,
+            [29, 26, 26, 30, 28, 25, 30, 27, 24, 29, 26, 31])

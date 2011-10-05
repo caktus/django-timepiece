@@ -252,6 +252,7 @@ def get_week_start(day=None):
 def get_last_sat(day=None):
     if not day:
         day = date.today()
+    day += relativedelta(months=1)
     return get_week_start(day) - timedelta(days=1)
 
 
