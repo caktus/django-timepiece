@@ -48,7 +48,7 @@ def view_entries(request):
     ).filter(
         user=request.user,
         end_time__gte=week_start,
-    )
+    ).select_related('project', 'activity', 'location')
     today = datetime.date.today()
     assignments = timepiece.ContractAssignment.objects.filter(
         user=request.user,
@@ -56,6 +56,7 @@ def view_entries(request):
         end_date__gte=today,
         contract__status='current',
     ).order_by('contract__project__type', 'end_date')
+    assignments = assignments.select_related('user', 'contract__project__type')
     activity_entries = entries.values(
         'billable',
     ).annotate(sum=Sum('hours')).order_by('-sum')
@@ -63,7 +64,7 @@ def view_entries(request):
         end_time__isnull=True,
     ).exclude(
         user=request.user,
-    )
+    ).select_related('user', 'project', 'activity')
     my_active_entries = timepiece.Entry.objects.select_related(
         'project__business',
     ).filter(
