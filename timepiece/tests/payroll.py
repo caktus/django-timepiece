@@ -6,6 +6,7 @@ from django.core.urlresolvers import reverse
 
 from timepiece import models as timepiece
 from timepiece import forms as timepiece_forms
+from timepiece import utils
 from timepiece.tests.base import TimepieceDataTestCase
 
 from dateutil.relativedelta import relativedelta
@@ -21,7 +22,7 @@ class PayrollTest(TimepieceDataTestCase):
             minutes = 0
         if not start:
             start = datetime.datetime.now() - relativedelta(hour=0)
-            #In case the default would fall off the end of the billing period
+            #In case the day would fall off the end of the billing period
             if start.day >= 28:
                 start -= relativedelta(days=1)
         end = start + datetime.timedelta(hours=hours, minutes=minutes)
@@ -146,3 +147,24 @@ class PayrollTest(TimepieceDataTestCase):
         self.log_time(project=p1, start=start1, delta=(44, 0),
             status='approved')
         self.assertEqual(rp.total_monthly_overtime(start1), Decimal('8.00'))
+
+    def testOvertimeEndsEarly(self):
+        """Do not add hours in an unfinished week to overtime"""
+        rp = self.create_person_repeat_period({'user': self.user})
+        p1 = self.create_project()
+        start1 = datetime.datetime(2011, 1, 1)
+        self.log_time(project=p1, start=start1, delta=(44, 0),
+            status='approved')
+        on_not_done_week = datetime.datetime(2011, 1, 31)
+        self.log_time(project=p1, start=on_not_done_week, delta=(44, 0),
+            status='approved')
+        self.assertEqual(rp.total_monthly_overtime(start1), Decimal('4.00'))
+
+    def testLastSat(self):
+        """Test the get_last_sat utility for validity"""
+        months = range(1, 13)
+        first_days = [datetime.datetime(2011, month, 1) for month in months]
+        last_sats = [utils.get_last_sat(day).day for day in first_days]
+        #Should = the last saturday of every month in 2011
+        self.assertEqual(last_sats,
+            [29, 26, 26, 30, 28, 25, 30, 27, 24, 29, 26, 31])
