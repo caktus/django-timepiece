@@ -51,8 +51,9 @@ class TimepieceDataTestCase(TestCase):
         defaults.update(data)
         return timepiece.Attribute.objects.create(**defaults)
 
-    def create_project(self, billable=False, data={}):
-        name = self.random_string(30, extra_chars=' ')
+    def create_project(self, billable=False, name=None, data={}):
+        if not name:
+            name = self.random_string(30, extra_chars=' ')
         defaults = {
             'name': name,
             'type': self.create_project_type(data={'billable': billable}),

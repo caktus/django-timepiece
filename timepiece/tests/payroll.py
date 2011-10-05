@@ -6,6 +6,7 @@ from django.core.urlresolvers import reverse
 
 from timepiece import models as timepiece
 from timepiece import forms as timepiece_forms
+from timepiece import utils
 from timepiece.tests.base import TimepieceDataTestCase
 
 from dateutil.relativedelta import relativedelta
@@ -90,6 +91,28 @@ class PayrollTest(TimepieceDataTestCase):
         self.assertEqual(summary['paid_leave']['sick'], Decimal('8.00'))
         self.assertEqual(summary['paid_leave']['vacation'], Decimal('4.00'))
         self.assertEqual(summary['total'], Decimal('25.50'))
+
+    def testDailyHours(self):
+        rp = self.create_person_repeat_period({'user': self.user})
+        #Must name the project so that the order is not random
+        p1 = self.create_project(name='1')
+        p2 = self.create_project(name='2')
+        day_1 = datetime.datetime(2011, 1, 1)
+        day_2 = datetime.datetime(2011, 1, 2)
+        day_3 = datetime.datetime(2011, 1, 3)
+        self.log_time(project=p1, start=day_1, delta=(2, 0), status='approved')
+        self.log_time(project=p1, start=day_1, delta=(2, 0), status='approved')
+        self.log_time(project=p1, start=day_1, delta=(4, 0), status='approved')
+        self.log_time(project=p2, start=day_1, delta=(8, 0), status='approved')
+        self.log_time(project=p2, start=day_2, delta=(4, 0), status='approved')
+        self.log_time(project=p2, start=day_2, delta=(4, 0), status='approved')
+        self.log_time(project=p2, start=day_3, delta=(8, 0), status='approved')
+        #There should be 4 daily totals, each with 8 hours
+        totals = [a[3] for a in utils.daily_totals(timepiece.Entry.objects.all())]
+        self.assertEqual(len(totals), 4)
+        for total in totals:
+            self.assertEqual(total, Decimal('8.00'))
+
 
     def testWeeklyHours(self):
         """ Test basic functionality of hours worked per week """

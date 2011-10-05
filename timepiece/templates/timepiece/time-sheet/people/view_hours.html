@@ -1,0 +1,58 @@
+{% extends 'timepiece/time-sheet/base.html' %}
+{% load timepiece_tags %}
+
+{% block title %}{{ person }} Hourly Summary{% endblock %}
+
+{% block content %}
+<h2>{{ person.first_name }} {{ person.last_name}}'s Hourly Summary ({{ window.date|date:"N j" }} &mdash; {{ window.end_date|date:"N j" }})</h2>
+<ul class='header-actions-left'>
+    <li>
+        {% if perms.timepiece.view_user %}
+            <a href='{% url view_person_time_sheet person.pk, window.period.pk, window.pk %}'>Time Sheet</a>
+        {% endif %}
+    </li>
+    <li>
+        {% if window.previous %}
+            <a href='{% url view_person_time_sheet person.pk,window.period.pk,window.previous.pk, hourly %}'>Previous Time Sheet</a>
+        {% else %}
+            Previous Time Sheet
+        {% endif %}
+    </li>
+    <li>
+        {% if window.next %}
+            <a href='{% url view_person_time_sheet person.pk,window.period.pk,window.next.pk, hourly %}'>Next Time Sheet</a>
+        {% else %}
+            Next Time Sheet
+        {% endif %}
+    </li>
+</ul>
+
+{% if entries %}
+    <table>    
+        <tr>
+            <th>Date</th>
+            <th>Project</th>
+            <th>Activity</th>
+            <th>Hours</th>
+        </tr>    
+            
+        {% for entry in daily_totals %}            
+            <tr>
+                <td>{{ entry.0|date:"m/d/Y (D)" }}</td>
+                <td>{{ entry.1 }}</td>
+                <td>{{ entry.2 }}</td>
+                <td>{{ entry.3 }}</td>
+            </tr>
+        {% endfor %}
+        <tr>
+            <th colspan='3'>Total:</th>
+            <td>{{ total|floatformat:2 }}</td>
+        </tr>
+    </table>
+{% else %}
+    <p>No entries exist for this time sheet.</p>
+{% endif %}
+
+<br style='clear: both' />
+
+{% endblock %}
