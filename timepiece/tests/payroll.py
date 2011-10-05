@@ -39,6 +39,7 @@ class PayrollTest(TimepieceDataTestCase):
         if status:
             data['status'] = status
         return self.create_entry(data)
+
     def make_logs(self):
         sick = self.create_project()
         vacation = self.create_project()
@@ -79,9 +80,9 @@ class PayrollTest(TimepieceDataTestCase):
         this_month = date_filters['filters'].values()[0][-1]
         this_month_url = this_month[1]
         response = self.client.get(this_month_url, follow=True)
-        start = response.context['from_date']
-        end = response.context['to_date']
-        this_user = response.context['periods'].get(user=self.user.pk)
+        start = context['from_date']
+        end = context['to_date']
+        this_user = context['periods'].get(user=self.user.pk)
         summary = this_user.summary(start, end)
         self.check_summary(summary)
 
@@ -91,6 +92,15 @@ class PayrollTest(TimepieceDataTestCase):
         self.assertEqual(summary['paid_leave']['sick'], Decimal('8.00'))
         self.assertEqual(summary['paid_leave']['vacation'], Decimal('4.00'))
         self.assertEqual(summary['total'], Decimal('25.50'))
+
+    def testPersonSummaryDropZeroHours(self):
+        """Test that users with no hours for the period are not listed"""
+        self.client.login(username='superuser', password='abc')
+        self.make_logs()
+        #user 1 has hours logged, but not user2
+        rp = self.create_person_repeat_period({'user': self.user2})
+        response = self.client.get(reverse('payroll_summary'), follow=True)
+        self.assertEqual(len(response.context['periods']), 0)
 
     def testWeeklyHours(self):
         """ Test basic functionality of hours worked per week """

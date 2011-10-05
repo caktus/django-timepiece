@@ -1105,6 +1105,11 @@ def payroll_summary(request, form, from_date, to_date, status, activity):
     ).filter(
         repeat_period__active=True,
     ).order_by('user__last_name')
+    #Only show users with hours or overtime from last month. Generate totals
+    rps_with_hours = [rp.id for rp in rps \
+        if rp.summary(from_date, to_date)['total'] > 0 \
+        or rp.total_monthly_overtime(from_date) > 0]
+    rps = rps.filter(id__in=rps_with_hours)
     for rp in rps:
         rp.user.summary = rp.summary(from_date, to_date)
     cals = []
