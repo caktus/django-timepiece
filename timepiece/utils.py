@@ -1,5 +1,3 @@
-from collections import OrderedDict
-
 from dateutil import rrule
 from dateutil.relativedelta import relativedelta
 
