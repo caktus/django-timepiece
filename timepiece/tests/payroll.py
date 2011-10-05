@@ -102,6 +102,9 @@ class PayrollTest(TimepieceDataTestCase):
         response = self.client.get(reverse('payroll_summary'), follow=True)
         self.assertEqual(len(response.context['periods']), 0)
 
+        #TODO Make a test to verify that overtime shows from last month
+        #even if there are no hours from this month
+
     def testWeeklyHours(self):
         """ Test basic functionality of hours worked per week """
         rp = self.create_person_repeat_period({'user': self.user})
