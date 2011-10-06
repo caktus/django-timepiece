@@ -226,26 +226,6 @@ def parse_time(time_str, input_formats=None):
     # return None if there's no matching format
     return None
 
-def daily_totals(entries):
-    result = {}
-    entry_values = entries.values('start_time', 'project__name', 'activity__name', 'hours')
-    for value in entry_values:
-        common_entry = value['start_time'].date().strftime('%D') + ':' \
-            + str(value['project__name'])
-        if result.has_key(common_entry):
-            old = result[common_entry]
-            result.update({
-                common_entry: (old[0], old[1], old[2],
-                    old[3] + value['hours'])
-            })
-        else:
-            result.update({
-                common_entry: (value['start_time'], value['project__name'],
-                    value['activity__name'], value['hours'])
-            })
-    result = [v for k, v in list(result.items())]
-    result.sort()
-    return result
 
 def get_total_time(seconds):
     """

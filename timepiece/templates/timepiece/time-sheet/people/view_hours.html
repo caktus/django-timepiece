@@ -8,7 +8,17 @@
 <ul class='header-actions-left'>
     <li>
         {% if perms.timepiece.view_user %}
+            <a href='{% url view_person person.pk %}'>User Information</a>
+        {% endif %}
+    </li>
+    <li>
+        {% if perms.timepiece.view_user %}
             <a href='{% url view_person_time_sheet person.pk, window.period.pk, window.pk %}'>Time Sheet</a>
+        {% endif %}
+    </li>
+    <li>
+        {% if perms.timepiece.view_user %}
+            Hourly Summary
         {% endif %}
     </li>
     <li>
@@ -34,16 +44,8 @@
             <th>Project</th>
             <th>Activity</th>
             <th>Hours</th>
-        </tr>    
-            
-        {% for entry in daily_totals %}            
-            <tr>
-                <td>{{ entry.0|date:"m/d/Y (D)" }}</td>
-                <td>{{ entry.1 }}</td>
-                <td>{{ entry.2 }}</td>
-                <td>{{ entry.3 }}</td>
-            </tr>
-        {% endfor %}
+        </tr>
+        {% show_hourly_entries daily_totals %}
         <tr>
             <th colspan='3'>Total:</th>
             <td>{{ total|floatformat:2 }}</td>

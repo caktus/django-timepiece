@@ -2,6 +2,7 @@ import time
 import datetime
 import random
 import itertools
+from decimal import Decimal
 
 from django.core.urlresolvers import reverse
 
@@ -736,3 +737,32 @@ class StatusTest(TimepieceDataTestCase):
         self.client.login(username='user2', password='abc')
         response = self.client.get(self.approve_url,)
         self.assertTrue(response.status_code, 403)
+
+    def testDailyHours(self):
+        self.client.login(username='user', password='abc')
+        #Must name the project so that the order is not random
+        p1 = self.create_project(name='1')
+        p2 = self.create_project(name='2')
+        day_1 = datetime.datetime(2011, 1, 1)
+        day_2 = datetime.datetime(2011, 1, 2)
+        day_3 = datetime.datetime(2011, 1, 3)
+        self.log_time(project=p1, start=day_1, delta=(2, 0), status='approved')
+        self.log_time(project=p1, start=day_1, delta=(2, 0), status='approved')
+        self.log_time(project=p1, start=day_1, delta=(4, 0), status='approved')
+        self.log_time(project=p2, start=day_1, delta=(8, 0), status='approved')
+        self.log_time(project=p2, start=day_2, delta=(4, 0), status='approved')
+        self.log_time(project=p2, start=day_2, delta=(4, 0), status='approved')
+        self.log_time(project=p2, start=day_3, delta=(8, 0), status='approved')
+        #Use the billing window from Jan. 2011
+        period = timepiece.PersonRepeatPeriod.objects.get(user=self.user)
+        billing_window = timepiece.BillingWindow.objects.create(
+            period=period.repeat_period,
+            date=day_1,
+            end_date=datetime.datetime.now() + period.repeat_period.delta()
+        )
+        hourly_url = reverse('view_person_time_sheet',
+            args=[period.user.pk, period.repeat_period.pk,
+            billing_window.pk, 'hourly'])
+        response = self.client.get(hourly_url, follow=True)
+        for entry in response.context['daily_totals']:
+            self.assertEqual(entry['total_hours'], Decimal('8.00'))

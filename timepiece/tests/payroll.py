@@ -13,32 +13,6 @@ from dateutil.relativedelta import relativedelta
 
 
 class PayrollTest(TimepieceDataTestCase):
-    def log_time(self, delta=None, billable=True, project=None,
-        start=None, status=None):
-        if delta:
-            hours, minutes = delta
-        else:
-            hours = 4
-            minutes = 0
-        if not start:
-            start = datetime.datetime.now() - relativedelta(hour=0)
-            #In case the default would fall off the end of the billing period
-            if start.day >= 28:
-                start -= relativedelta(days=1)
-        end = start + datetime.timedelta(hours=hours, minutes=minutes)
-        data = {'user': self.user,
-                'start_time': start,
-                'end_time': end,
-                }
-        if billable:
-            data['activity'] = self.devl_activity
-        if project:
-            data['project'] = project
-        else:
-            data['project'] = self.create_project(billable=billable)
-        if status:
-            data['status'] = status
-        return self.create_entry(data)
     def make_logs(self):
         sick = self.create_project()
         vacation = self.create_project()
@@ -91,28 +65,6 @@ class PayrollTest(TimepieceDataTestCase):
         self.assertEqual(summary['paid_leave']['sick'], Decimal('8.00'))
         self.assertEqual(summary['paid_leave']['vacation'], Decimal('4.00'))
         self.assertEqual(summary['total'], Decimal('25.50'))
-
-    def testDailyHours(self):
-        rp = self.create_person_repeat_period({'user': self.user})
-        #Must name the project so that the order is not random
-        p1 = self.create_project(name='1')
-        p2 = self.create_project(name='2')
-        day_1 = datetime.datetime(2011, 1, 1)
-        day_2 = datetime.datetime(2011, 1, 2)
-        day_3 = datetime.datetime(2011, 1, 3)
-        self.log_time(project=p1, start=day_1, delta=(2, 0), status='approved')
-        self.log_time(project=p1, start=day_1, delta=(2, 0), status='approved')
-        self.log_time(project=p1, start=day_1, delta=(4, 0), status='approved')
-        self.log_time(project=p2, start=day_1, delta=(8, 0), status='approved')
-        self.log_time(project=p2, start=day_2, delta=(4, 0), status='approved')
-        self.log_time(project=p2, start=day_2, delta=(4, 0), status='approved')
-        self.log_time(project=p2, start=day_3, delta=(8, 0), status='approved')
-        #There should be 4 daily totals, each with 8 hours
-        totals = [a[3] for a in utils.daily_totals(timepiece.Entry.objects.all())]
-        self.assertEqual(len(totals), 4)
-        for total in totals:
-            self.assertEqual(total, Decimal('8.00'))
-
 
     def testWeeklyHours(self):
         """ Test basic functionality of hours worked per week """

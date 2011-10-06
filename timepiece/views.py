@@ -520,8 +520,15 @@ def view_person_time_sheet(request, person_id, period_id=None,
     }
     if hourly:
         template = 'timepiece/time-sheet/people/view_hours.html'
+        #Postgres only query required as of 10-6-11.
+        byday_select = {
+            "day": """DATE_TRUNC('day', start_time)"""
+        }
+        daily_totals = entries.extra(select=byday_select).values(
+            'day', 'project__name', 'activity__name').annotate(
+            total_hours=Sum('hours')).order_by('day')
         context.update({
-            'daily_totals': utils.daily_totals(entries)
+            'daily_totals': daily_totals
         })
     else:
         project_entries = entries.order_by().values(

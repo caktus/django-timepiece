@@ -12,7 +12,14 @@
         {% endif %}
     </li>
     <li>
-        <a href='{% url view_person_time_sheet person.pk, period.id, window.id, hourly %}'>Hourly Summary</a>
+        {% if perms.timepiece.view_user %}
+            Time Sheet
+        {% endif %}
+    </li>
+    <li>
+        {% if perms.timepiece.view_user %}
+            <a href='{% url view_person_time_sheet person.pk, period.id, window.id, hourly %}'>Hourly Summary</a>
+        {% endif %}
     </li>
     <li>
         {% if window.previous %}

@@ -2,6 +2,8 @@ import datetime
 import random
 import string
 
+from dateutil.relativedelta import relativedelta
+
 from django.test import TestCase
 from django.core.urlresolvers import reverse
 from django.template.defaultfilters import slugify
@@ -161,6 +163,33 @@ class TimepieceDataTestCase(TestCase):
         if 'user' not in defaults:
             defaults['user'] = self.create_person()
         return timepiece.PersonSchedule.objects.create(**defaults)
+
+    def log_time(self, delta=None, billable=True, project=None,
+        start=None, status=None):
+        if delta:
+            hours, minutes = delta
+        else:
+            hours = 4
+            minutes = 0
+        if not start:
+            start = datetime.datetime.now() - relativedelta(hour=0)
+            #In case the default would fall off the end of the billing period
+            if start.day >= 28:
+                start -= relativedelta(days=1)
+        end = start + datetime.timedelta(hours=hours, minutes=minutes)
+        data = {'user': self.user,
+                'start_time': start,
+                'end_time': end,
+                }
+        if billable:
+            data['activity'] = self.devl_activity
+        if project:
+            data['project'] = project
+        else:
+            data['project'] = self.create_project(billable=billable)
+        if status:
+            data['status'] = status
+        return self.create_entry(data)
 
     def setUp(self):
         self.user = User.objects.create_user('user', 'u@abc.com', 'abc')
