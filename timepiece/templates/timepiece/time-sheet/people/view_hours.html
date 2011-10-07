@@ -45,15 +45,15 @@
             <th>Activity</th>
             <th>Hours</th>
         </tr>
-        {% for entry in entries %}            
+        {% for entry in daily_totals %}            
             <tr>
-                {% ifchanged entry.start_time|date %}
-                    <td>{{ entry.start_time|date:"m/d/Y (D)" }}</td>
+                {% ifchanged entry.day %}
+                    <td>{{ entry.day|date:"m/d/Y (D)" }}</td>
                 {% else %}
                     <td></td>
                 {% endifchanged %}
-                <td>{{ entry.project.name }}</td>
-                <td>{{ entry.activity.name }}</td>
+                <td>{{ entry.project__name }}</td>
+                <td>{{ entry.activity__name }}</td>
                 <td>{{ entry.total_hours|floatformat:2 }}</td>
             </tr>
         {% endfor %}
