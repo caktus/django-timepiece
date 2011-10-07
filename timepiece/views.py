@@ -510,12 +510,14 @@ def view_person_time_sheet(request, person_id, period_id=None,
         window_id=window_id,
         user=time_sheet.user,
     )
+    weekly_totals = utils.get_weekly_totals(entries)
     context = {
             'hourly': 'hourly',
             'person': time_sheet.user,
             'period': window.period,
             'window': window,
             'entries': entries,
+            'weekly_totals': weekly_totals,
             'total': total_hours,
     }
     if hourly:

@@ -131,29 +131,6 @@ def date_filters(context, options):
 
     return {'filters': filters}
 
-@register.simple_tag
-def show_hourly_entries(entries):
-    output = ''
-    for index, entry in enumerate(entries):
-        if index == 0 or index > 0 and entries[index - 1]['day'] != entry['day']:
-            date = entry['day'].strftime('%m/%d/%Y %a')
-        else:
-            date = ''
-        entry_data = {
-            'date': date,
-            'project': entry['project__name'],
-            'activity': entry['activity__name'],
-            'total_hours': entry['total_hours'],
-        }
-        output +="""
-            <tr>
-                <td>%(date)s</td>
-                <td>%(project)s</td>
-                <td>%(activity)s</td>
-                <td>%(total_hours)s</td>
-            </tr>""" % entry_data
-    return output
-show_hourly_entries.is_safe = True
 
 @register.simple_tag
 def hours_for_assignment(assignment, date):

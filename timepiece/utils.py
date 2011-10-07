@@ -5,6 +5,7 @@ from django.http import HttpResponse, HttpResponseRedirect, Http404
 from django.shortcuts import render_to_response
 from django.template import RequestContext
 from django.template.defaultfilters import slugify
+from django.db.models import Sum
 
 from django.contrib.sites.models import Site
 from datetime import date, datetime, timedelta, time as time_obj
@@ -260,6 +261,23 @@ def get_week_window(day):
     weeks = generate_weeks(start=start, end=end)
     return list(weeks)
 
+def get_weekly_totals(entries):
+    """For a timesheet of entries return a list of dicts with weekly totals"""
+    byweek_select = {"week": """DATE_TRUNC('week', start_time)"""}
+    total_worked = [entry \
+        for entry in entries.extra(select=byweek_select).values(
+        'week').annotate(total=Sum('hours')).order_by()]
+    billable = [entry['total'] \
+        for entry in entries.extra(select=byweek_select).values(
+        'week', 'billable').annotate(total=Sum('hours')).order_by()]
+    non_billable = [entry[0]['total'] - entry[1] \
+        for entry in zip(total_worked, billable)]
+    return [{
+        'date': get_week_start(total[0]['week']),
+        'total_worked': total[0]['total'],
+        'billable': total[1],
+        'non_billable': total[2]} \
+        for total in zip(total_worked, billable, non_billable)]
 
 def date_filter(func):
     def inner_decorator(request, *args, **kwargs):

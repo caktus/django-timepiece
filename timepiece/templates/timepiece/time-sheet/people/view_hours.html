@@ -45,7 +45,18 @@
             <th>Activity</th>
             <th>Hours</th>
         </tr>
-        {% show_hourly_entries daily_totals %}
+        {% for entry in entries %}            
+            <tr>
+                {% ifchanged entry.start_time|date %}
+                    <td>{{ entry.start_time|date:"m/d/Y (D)" }}</td>
+                {% else %}
+                    <td></td>
+                {% endifchanged %}
+                <td>{{ entry.project.name }}</td>
+                <td>{{ entry.activity.name }}</td>
+                <td>{{ entry.total_hours|floatformat:2 }}</td>
+            </tr>
+        {% endfor %}
         <tr>
             <th colspan='3'>Total:</th>
             <td>{{ total|floatformat:2 }}</td>
