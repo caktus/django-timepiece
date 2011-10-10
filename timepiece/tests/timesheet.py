@@ -14,6 +14,7 @@ from timepiece.tests.base import TimepieceDataTestCase
 
 from timepiece import models as timepiece
 from timepiece import forms as timepiece_forms
+from timepiece import utils
 
 from dateutil import relativedelta
 
@@ -764,5 +765,35 @@ class StatusTest(TimepieceDataTestCase):
             args=[period.user.pk, period.repeat_period.pk,
             billing_window.pk, 'hourly'])
         response = self.client.get(hourly_url, follow=True)
-        for entry in response.context['daily_totals']:
-            self.assertEqual(entry['total_hours'], Decimal('8.00'))
+        for entry in response.context['entries'][0]:
+            if entry:
+                self.assertEqual(entry['total_hours'], Decimal('8.00'))
+
+    def testWeeklyHours(self):
+        self.client.login(username='user', password='abc')
+        p1 = self.create_project(billable=True, name='1')
+        p2 = self.create_project(billable=False, name='2')
+        day_1 = datetime.datetime(2011, 1, 3)
+        day_2 = datetime.datetime(2011, 1, 4)
+        day_3 = datetime.datetime(2011, 1, 15)
+        day_4 = datetime.datetime(2011, 1, 16)
+        self.log_time(project=p1, start=day_1, delta=(2, 0), status='approved')
+        self.log_time(project=p2, start=day_2, delta=(2, 0), status='approved')
+        self.log_time(project=p1, start=day_3, delta=(2, 0), status='approved')
+        self.log_time(project=p2, start=day_4, delta=(2, 0), status='approved')
+        #Use the billing window from Jan. 2011
+        period = timepiece.PersonRepeatPeriod.objects.get(user=self.user)
+        billing_window = timepiece.BillingWindow.objects.create(
+            period=period.repeat_period,
+            date=day_1,
+            end_date=datetime.datetime.now() + period.repeat_period.delta()
+        )
+        url = reverse('view_person_time_sheet',
+            args=[period.user.pk, period.repeat_period.pk,
+            billing_window.pk])
+        response = self.client.get(url, follow=True)
+        for entry in response.context['entries']:
+            if entry[1]:
+                self.assertEqual(entry[1]['total_worked'], Decimal('4.00'))
+                self.assertEqual(entry[1]['billable'], Decimal('2.00'))
+                self.assertEqual(entry[1]['non_billable'], Decimal('2.00'))

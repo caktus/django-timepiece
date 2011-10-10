@@ -259,7 +259,8 @@ def get_last_entries_per_week(entries):
             if current_weekday < last_weekday:
                 result.append(entries[index - 1].start_time)
     #Add the last day
-    result.append(entries[len(entries)- 1].start_time)
+    if entries:
+        result.append(entries[len(entries)- 1].start_time)
     return result
             
 
@@ -289,7 +290,7 @@ def get_weekly_totals(entries):
     result = []
     index = 0
     for entry in entries:
-        if entry.start_time in last_entries:
+        if entry.start_time in last_entries and index < len(total_worked):
             result.append({
                 'total_worked': total_worked[index],
                 'billable': billable[index],

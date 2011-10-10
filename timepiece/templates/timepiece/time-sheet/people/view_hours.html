@@ -44,7 +44,12 @@
             <th colspan='2'>Project</th>
             <th>Hours</th>
         </tr>
-        {% for entry, week_total in entries %}            
+        {% for entry, week_total in entries %}
+            {% ifchanged entry.day|date:"W" %}
+                <tr>                
+                    <th colspan='8'>Week of {{ entry.day|date:"m/d/Y (D)" }} </th>
+                </tr>
+            {% endifchanged %}
             <tr>
                 {% ifchanged entry.day %}
                     <td>{{ entry.day|date:"m/d/Y (D)" }}</td>
