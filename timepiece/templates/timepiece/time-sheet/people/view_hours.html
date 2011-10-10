@@ -41,24 +41,36 @@
     <table>    
         <tr>
             <th>Date</th>
-            <th>Project</th>
-            <th>Activity</th>
+            <th colspan='2'>Project</th>
             <th>Hours</th>
         </tr>
-        {% for entry in daily_totals %}            
+        {% for entry, week_total in entries %}            
             <tr>
                 {% ifchanged entry.day %}
                     <td>{{ entry.day|date:"m/d/Y (D)" }}</td>
                 {% else %}
                     <td></td>
                 {% endifchanged %}
-                <td>{{ entry.project__name }}</td>
-                <td>{{ entry.activity__name }}</td>
+                <td colspan='2'>{{ entry.project__name }}</td>
                 <td>{{ entry.total_hours|floatformat:2 }}</td>
             </tr>
+            {% if week_total %}
+                <tr>                
+                    <th>Totals for this week:</th>
+                    <th>Billable:</th>
+                    <th>Non-Billable:</th>
+                    <th>Overall:</th>
+                </tr>
+                <tr>                
+                    <th></th>
+                    <td>{{week_total.billable}}</td>
+                    <td>{{week_total.non_billable}}</td>
+                    <td>{{week_total.total_worked}}</td>
+                </tr>
+            {% endif %}
         {% endfor %}
         <tr>
-            <th colspan='3'>Total:</th>
+            <th colspan='3'>Overall total for the period:</th>
             <td>{{ total|floatformat:2 }}</td>
         </tr>
     </table>

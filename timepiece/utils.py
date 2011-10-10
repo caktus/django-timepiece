@@ -249,6 +249,19 @@ def get_week_start(day=None):
         week_start = day
     return week_start
 
+def get_last_entries_per_week(entries):
+    """Make a list with the datetime of the last day of entries for each week"""
+    result = []
+    for index, entry in enumerate(entries):
+        current_weekday = entry.start_time.isoweekday()
+        if index > 0:
+            last_weekday = entries[index - 1].start_time.isoweekday()
+            if current_weekday < last_weekday:
+                result.append(entries[index - 1].start_time)
+    #Add the last day
+    result.append(entries[len(entries)- 1].start_time)
+    return result
+            
 
 def generate_weeks(end, start=None):
     start = get_week_start(start)
@@ -264,20 +277,28 @@ def get_week_window(day):
 def get_weekly_totals(entries):
     """For a timesheet of entries return a list of dicts with weekly totals"""
     byweek_select = {"week": """DATE_TRUNC('week', start_time)"""}
-    total_worked = [entry \
+    total_worked = [entry['total'] \
         for entry in entries.extra(select=byweek_select).values(
-        'week').annotate(total=Sum('hours')).order_by()]
-    billable = [entry['total'] \
+        'week').annotate(total=Sum('hours')).order_by('week')]
+    non_billable = [entry['total'] \
         for entry in entries.extra(select=byweek_select).values(
-        'week', 'billable').annotate(total=Sum('hours')).order_by()]
-    non_billable = [entry[0]['total'] - entry[1] \
-        for entry in zip(total_worked, billable)]
-    return [{
-        'date': get_week_start(total[0]['week']),
-        'total_worked': total[0]['total'],
-        'billable': total[1],
-        'non_billable': total[2]} \
-        for total in zip(total_worked, billable, non_billable)]
+        'week', 'billable').annotate(total=Sum('hours')).order_by('week')]
+    billable = [entry[0] - entry[1] \
+        for entry in zip(total_worked, non_billable)]
+    last_entries = get_last_entries_per_week(entries)
+    result = []
+    index = 0
+    for entry in entries:
+        if entry.start_time in last_entries:
+            result.append({
+                'total_worked': total_worked[index],
+                'billable': billable[index],
+                'non_billable': non_billable[index]
+            })
+            index += 1
+        else:
+            result.append({})
+    return result
 
 def date_filter(func):
     def inner_decorator(request, *args, **kwargs):

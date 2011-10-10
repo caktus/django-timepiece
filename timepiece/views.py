@@ -516,8 +516,6 @@ def view_person_time_sheet(request, person_id, period_id=None,
             'person': time_sheet.user,
             'period': window.period,
             'window': window,
-            'entries': entries,
-            'weekly_totals': weekly_totals,
             'total': total_hours,
     }
     if hourly:
@@ -527,10 +525,10 @@ def view_person_time_sheet(request, person_id, period_id=None,
             "day": """DATE_TRUNC('day', start_time)"""
         }
         daily_totals = entries.extra(select=byday_select).values(
-            'day', 'project__name', 'activity__name').annotate(
+            'day', 'project__name').annotate(
             total_hours=Sum('hours')).order_by('day')
         context.update({
-            'daily_totals': daily_totals
+            'entries': zip(daily_totals, weekly_totals),
         })
     else:
         project_entries = entries.order_by().values(
@@ -560,6 +558,7 @@ def view_person_time_sheet(request, person_id, period_id=None,
             'show_verify': show_verify,
             'show_approve': show_approve,
             'project_entries': project_entries,
+            'entries': zip(entries, weekly_totals),
             'summary': summary,
         })
     return render_to_response(template, context,

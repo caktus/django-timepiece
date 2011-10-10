@@ -55,7 +55,13 @@
             <th>Hours</th>
         </tr>    
             
-        {% for entry in entries %}            
+        {% for entry, week_total in entries %}
+
+            {% ifchanged entry.start_time|date:"W" %}
+                <tr>                
+                    <th colspan='8'>Week of {{ entry.start_time|date:"m/d/Y (D)" }} </th>
+                </tr>
+            {% endifchanged %}
             <tr>
                 {% ifchanged entry.start_time|date %}
                     <td>{{ entry.start_time|date:"m/d/Y (D)" }}</td>
@@ -71,9 +77,23 @@
                 <td>{{ entry.hours }}</td>
                 {% if entry.is_editable %}<td><a href="{% url timepiece-update entry.id %}">Edit</a></td>{% endif %}
             </tr>
+            {% if week_total %}
+                <tr>                
+                    <th colspan='5'>Totals for this week:</th>
+                    <th>Billable:</th>
+                    <th>Non-Billable:</th>
+                    <th>Overall:</th>
+                </tr>
+                <tr>                
+                    <th colspan='5'></th>
+                    <td>{{week_total.billable}}</td>
+                    <td>{{week_total.non_billable}}</td>
+                    <td>{{week_total.total_worked}}</td>
+                </tr>
+            {% endif %}
         {% endfor %}
         <tr>
-            <th colspan='7'>Total:</th>
+            <th colspan='7'>Overall total for the period:</th>
             <td>{{ total|floatformat:2 }}</td>
         </tr>
     </table>
