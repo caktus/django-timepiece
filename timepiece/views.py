@@ -510,7 +510,6 @@ def view_person_time_sheet(request, person_id, period_id=None,
         window_id=window_id,
         user=time_sheet.user,
     )
-    weekly_totals = utils.get_weekly_totals(entries)
     context = {
             'hourly': 'hourly',
             'person': time_sheet.user,
@@ -527,8 +526,11 @@ def view_person_time_sheet(request, person_id, period_id=None,
         daily_totals = entries.extra(select=byday_select).values(
             'day', 'project__name').annotate(
             total_hours=Sum('hours')).order_by('day')
+        row_nums = utils.get_row_nums([entry['day'] for entry in daily_totals])
+        week_rows = utils.build_week_rows(entries, row_nums)
         context.update({
-            'entries': zip(daily_totals, weekly_totals),
+            'entries': daily_totals,
+            'week_rows': week_rows,
         })
     else:
         project_entries = entries.order_by().values(
@@ -543,22 +545,23 @@ def view_person_time_sheet(request, person_id, period_id=None,
             unverified_count = statuses.count('unverified')
             verified_count = statuses.count('verified')
             approved_count = statuses.count('approved')
-
         if time_sheet.user.pk == request.user.pk:
             show_verify = unverified_count != 0
-
         if request.user.has_perm('timepiece.edit_person_time_sheet'):
             show_approve = verified_count + approved_count == total_statuses \
             and verified_count > 0 and total_statuses != 0
 
         summary = time_sheet.summary(window.date, window.end_date)
-        
+        row_nums = utils.get_row_nums([entry.start_time \
+            for entry in entries])
+        week_rows = utils.build_week_rows(entries, row_nums)
         template = 'timepiece/time-sheet/people/view.html'
         context.update({
             'show_verify': show_verify,
             'show_approve': show_approve,
             'project_entries': project_entries,
-            'entries': zip(entries, weekly_totals),
+            'entries': entries,
+            'week_rows': week_rows,
             'summary': summary,
         })
     return render_to_response(template, context,

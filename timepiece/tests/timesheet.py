@@ -739,61 +739,79 @@ class StatusTest(TimepieceDataTestCase):
         response = self.client.get(self.approve_url,)
         self.assertTrue(response.status_code, 403)
 
+
+class TestTotals(TimepieceDataTestCase):
+    def setUp(self):
+        super(TestTotals, self).setUp()
+        self.create_person_repeat_period(data={'user': self.user})
+        self.p1 = self.create_project(billable=True, name='1')
+        self.p2 = self.create_project(billable=False, name='2')
+        period = timepiece.PersonRepeatPeriod.objects.get(user=self.user)
+        self.billing_window = timepiece.BillingWindow.objects.create(
+            period=period.repeat_period,
+            date=datetime.datetime(2010, 12, 1),
+            end_date=datetime.datetime(2011, 12, 1),
+        )
+        self.client.login(username='user', password='abc')
+        self.url = reverse('view_person_time_sheet',
+            args=[period.user.pk, period.repeat_period.pk,
+            self.billing_window.pk])
+        self.hourly_url = reverse('view_person_time_sheet',
+            args=[period.user.pk, period.repeat_period.pk,
+            self.billing_window.pk, 'hourly'])
+
+    def testGetLastEntryInWeek(self):
+        self.client.login(username='user', password='abc')
+        days = [
+            datetime.datetime(2011, 1, 3),
+            datetime.datetime(2011, 1, 4),
+            datetime.datetime(2011, 1, 5),
+            datetime.datetime(2011, 1, 20),
+            datetime.datetime(2011, 1, 21),
+            datetime.datetime(2011, 1, 22),
+            datetime.datetime(2011, 1, 24)
+        ]
+        for day in days:
+            self.log_time(start=day, delta=(2, 0), status='approved')
+
+
+        entries = timepiece.Entry.objects.all().order_by('start_time')
+        last_entries = utils.get_last_entry_in_week([entry.start_time \
+            for entry in entries])
+        self.assertTrue(last_entries, [2, 5, 6])
+
     def testDailyHours(self):
         self.client.login(username='user', password='abc')
-        #Must name the project so that the order is not random
-        p1 = self.create_project(name='1')
-        p2 = self.create_project(name='2')
         day_1 = datetime.datetime(2011, 1, 1)
         day_2 = datetime.datetime(2011, 1, 2)
         day_3 = datetime.datetime(2011, 1, 3)
-        self.log_time(project=p1, start=day_1, delta=(2, 0), status='approved')
-        self.log_time(project=p1, start=day_1, delta=(2, 0), status='approved')
-        self.log_time(project=p1, start=day_1, delta=(4, 0), status='approved')
-        self.log_time(project=p2, start=day_1, delta=(8, 0), status='approved')
-        self.log_time(project=p2, start=day_2, delta=(4, 0), status='approved')
-        self.log_time(project=p2, start=day_2, delta=(4, 0), status='approved')
-        self.log_time(project=p2, start=day_3, delta=(8, 0), status='approved')
-        #Use the billing window from Jan. 2011
-        period = timepiece.PersonRepeatPeriod.objects.get(user=self.user)
-        billing_window = timepiece.BillingWindow.objects.create(
-            period=period.repeat_period,
-            date=day_1,
-            end_date=datetime.datetime.now() + period.repeat_period.delta()
-        )
-        hourly_url = reverse('view_person_time_sheet',
-            args=[period.user.pk, period.repeat_period.pk,
-            billing_window.pk, 'hourly'])
-        response = self.client.get(hourly_url, follow=True)
-        for entry in response.context['entries'][0]:
-            if entry:
-                self.assertEqual(entry['total_hours'], Decimal('8.00'))
+        self.log_time(project=self.p1, start=day_1, delta=(2, 0), status='approved')
+        self.log_time(project=self.p1, start=day_1, delta=(2, 0), status='approved')
+        self.log_time(project=self.p1, start=day_1, delta=(4, 0), status='approved')
+        self.log_time(project=self.p2, start=day_1, delta=(8, 0), status='approved')
+        self.log_time(project=self.p2, start=day_2, delta=(4, 0), status='approved')
+        self.log_time(project=self.p2, start=day_2, delta=(4, 0), status='approved')
+        self.log_time(project=self.p2, start=day_3, delta=(8, 0), status='approved')
+        response = self.client.get(self.hourly_url, follow=True)
+        for daily_total in response.context['entries'][0]:
+            if daily_total:
+                self.assertEqual(daily_total['total_hours'], Decimal('8.00'))
 
     def testWeeklyHours(self):
         self.client.login(username='user', password='abc')
-        p1 = self.create_project(billable=True, name='1')
-        p2 = self.create_project(billable=False, name='2')
         day_1 = datetime.datetime(2011, 1, 3)
         day_2 = datetime.datetime(2011, 1, 4)
         day_3 = datetime.datetime(2011, 1, 15)
         day_4 = datetime.datetime(2011, 1, 16)
-        self.log_time(project=p1, start=day_1, delta=(2, 0), status='approved')
-        self.log_time(project=p2, start=day_2, delta=(2, 0), status='approved')
-        self.log_time(project=p1, start=day_3, delta=(2, 0), status='approved')
-        self.log_time(project=p2, start=day_4, delta=(2, 0), status='approved')
-        #Use the billing window from Jan. 2011
-        period = timepiece.PersonRepeatPeriod.objects.get(user=self.user)
-        billing_window = timepiece.BillingWindow.objects.create(
-            period=period.repeat_period,
-            date=day_1,
-            end_date=datetime.datetime.now() + period.repeat_period.delta()
-        )
-        url = reverse('view_person_time_sheet',
-            args=[period.user.pk, period.repeat_period.pk,
-            billing_window.pk])
-        response = self.client.get(url, follow=True)
+        self.log_time(project=self.p1, start=day_1, delta=(2, 0), status='approved')
+        self.log_time(project=self.p2, start=day_2, delta=(2, 0), status='approved')
+        self.log_time(project=self.p1, start=day_3, delta=(2, 0), status='approved')
+        self.log_time(project=self.p2, start=day_4, delta=(2, 0), status='approved')
+        response = self.client.get(self.url, follow=True)
         for entry in response.context['entries']:
             if entry[1]:
-                self.assertEqual(entry[1]['total_worked'], Decimal('4.00'))
-                self.assertEqual(entry[1]['billable'], Decimal('2.00'))
-                self.assertEqual(entry[1]['non_billable'], Decimal('2.00'))
+                week_total = entry[1]
+                print week_total
+                self.assertEqual(week_total['total_worked'], Decimal('4.00'))
+                self.assertEqual(week_total['billable'], Decimal('2.00'))
+                self.assertEqual(week_total['non_billable'], Decimal('2.00'))

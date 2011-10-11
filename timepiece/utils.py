@@ -1,6 +1,8 @@
 from dateutil import rrule
 from dateutil.relativedelta import relativedelta
+from decimal import Decimal
 
+from django.conf import settings
 from django.http import HttpResponse, HttpResponseRedirect, Http404
 from django.shortcuts import render_to_response
 from django.template import RequestContext
@@ -249,57 +251,86 @@ def get_week_start(day=None):
         week_start = day
     return week_start
 
-def get_last_entries_per_week(entries):
-    """Make a list with the datetime of the last day of entries for each week"""
+def get_week_start_non_iso(day=None):
+    if not day:
+        day = date.today()
+    if day.weekday() != 7:
+        week_start = day - timedelta(days=day.weekday())
+    else:
+        week_start = day
+    return week_start
+
+def get_row_nums(times):
+    """
+    Given a list of entry times, make a list with the row numbers of the last
+    day of entries for each week
+    """
     result = []
-    for index, entry in enumerate(entries):
-        current_weekday = entry.start_time.isoweekday()
+    for index, time in enumerate(times):
+        current_week = get_week_start_non_iso(time).date()
         if index > 0:
-            last_weekday = entries[index - 1].start_time.isoweekday()
-            if current_weekday < last_weekday:
-                result.append(entries[index - 1].start_time)
+            yesterday_week = get_week_start_non_iso(times[index - 1]).date()
+            print current_week, yesterday_week
+            if current_week != yesterday_week:
+                print "adding on", index + 1
+                result.append(index + 1)
     #Add the last day
-    if entries:
-        result.append(entries[len(entries)- 1].start_time)
+    if times:
+        result.append(len(times) + 1)
+    result = list(set(result))
+    result.sort()
     return result
-            
+
+def get_weekly_totals(entries):
+    """For a timesheet of entries return a list of dicts with weekly totals"""
+    projects = getattr(settings, 'TIMEPIECE_PROJECTS', {})
+    byweek_select = {"week": """DATE_TRUNC('week', start_time)"""}
+    totals = [entry \
+        for entry in entries.extra(select=byweek_select).values(
+        'week', 'billable').annotate(total_hours=Sum('hours')).order_by('week')]
+    billable = []
+    non_billable = []
+    for total in totals:
+        if total['billable']:
+            billable.append((total['week'], total['total_hours']))
+        else:
+            non_billable.append((total['week'], total['total_hours']))
+    billable_weeks = [week[0] for week in billable]
+    non_billable_weeks = [week[0] for week in non_billable]
+    #Fill each empty week with 0.00 so they are the same length
+    for total in billable:
+        if total[0] not in non_billable_weeks:
+            non_billable.append((total[0], Decimal('0.00')))
+    for total in non_billable:
+        if total[0] not in billable_weeks:
+            billable.append((total[0], Decimal('0.00')))
+    billable.sort()
+    non_billable.sort()
+    return [{
+        'billable': total[0][1],
+        'non_billable': total[1][1],
+        'total_worked': total[0][1] + total[1][1],
+    } for total in zip(billable, non_billable)]
+
+def build_week_rows(entries, row_nums):
+    weekly_totals = get_weekly_totals(entries)
+    result = {-1: weekly_totals[-1]}
+    for index, totals in zip(row_nums, weekly_totals):
+        result.update({
+            index: totals
+        })
+    return result
+
 
 def generate_weeks(end, start=None):
     start = get_week_start(start)
     return rrule.rrule(rrule.WEEKLY, dtstart=start, until=end, byweekday=6)
 
-
 def get_week_window(day):
     start = get_week_start(day)
     end = start + timedelta(weeks=1)
     weeks = generate_weeks(start=start, end=end)
-    return list(weeks)
-
-def get_weekly_totals(entries):
-    """For a timesheet of entries return a list of dicts with weekly totals"""
-    byweek_select = {"week": """DATE_TRUNC('week', start_time)"""}
-    total_worked = [entry['total'] \
-        for entry in entries.extra(select=byweek_select).values(
-        'week').annotate(total=Sum('hours')).order_by('week')]
-    non_billable = [entry['total'] \
-        for entry in entries.extra(select=byweek_select).values(
-        'week', 'billable').annotate(total=Sum('hours')).order_by('week')]
-    billable = [entry[0] - entry[1] \
-        for entry in zip(total_worked, non_billable)]
-    last_entries = get_last_entries_per_week(entries)
-    result = []
-    index = 0
-    for entry in entries:
-        if entry.start_time in last_entries and index < len(total_worked):
-            result.append({
-                'total_worked': total_worked[index],
-                'billable': billable[index],
-                'non_billable': non_billable[index]
-            })
-            index += 1
-        else:
-            result.append({})
-    return result
+    return list(weeks)    
 
 def date_filter(func):
     def inner_decorator(request, *args, **kwargs):

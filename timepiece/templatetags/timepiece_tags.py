@@ -10,7 +10,7 @@ from dateutil.relativedelta import relativedelta
 
 from timepiece.models import PersonRepeatPeriod, AssignmentAllocation
 import timepiece.models as timepiece
-from timepiece.utils import generate_weeks, get_total_time
+from timepiece.utils import generate_weeks, get_total_time, get_week_start
 
 
 register = template.Library()
@@ -182,6 +182,23 @@ def monthly_overtime(rp, date):
 def week_start(date):
     return get_week_start(date).strftime('%m/%d/%Y')
 
+
+@register.simple_tag
+def show_week_row(totals, index=-1):
+    total = totals.get(index, None)
+    if not total:
+        return ''
+    result = {
+        'billable': total.get('billable', 0),
+        'non_billable': total.get('non_billable', 0),
+        'total_worked': total.get('total_worked', 0),
+    }
+    return """
+        <td>%(billable)s</td>
+        <td>%(non_billable)s</td>
+        <td>%(total_worked)s</td>
+    """ % (result)
+show_week_row.is_safe = True
 
 @register.simple_tag
 def build_invoice_row(entries, to_date, from_date):
