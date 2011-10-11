@@ -270,9 +270,7 @@ def get_row_nums(times):
         current_week = get_week_start_non_iso(time).date()
         if index > 0:
             yesterday_week = get_week_start_non_iso(times[index - 1]).date()
-            print current_week, yesterday_week
             if current_week != yesterday_week:
-                print "adding on", index + 1
                 result.append(index + 1)
     #Add the last day
     if times:
@@ -313,6 +311,8 @@ def get_weekly_totals(entries):
     } for total in zip(billable, non_billable)]
 
 def build_week_rows(entries, row_nums):
+    if not entries:
+        return {}
     weekly_totals = get_weekly_totals(entries)
     result = {-1: weekly_totals[-1]}
     for index, totals in zip(row_nums, weekly_totals):
