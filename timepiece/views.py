@@ -510,12 +510,14 @@ def view_person_time_sheet(request, person_id, period_id=None,
         window_id=window_id,
         user=time_sheet.user,
     )
+    weekly_totals = utils.get_weekly_totals(entries)
     context = {
             'hourly': 'hourly',
             'person': time_sheet.user,
             'period': window.period,
             'window': window,
             'total': total_hours,
+            'weekly_totals': weekly_totals,
     }
     if hourly:
         template = 'timepiece/time-sheet/people/view_hours.html'
@@ -526,11 +528,10 @@ def view_person_time_sheet(request, person_id, period_id=None,
         daily_totals = entries.extra(select=byday_select).values(
             'day', 'project__name').annotate(
             total_hours=Sum('hours')).order_by('day')
-        row_nums = utils.get_row_nums([entry['day'] for entry in daily_totals])
-        week_rows = utils.build_week_rows(entries, row_nums)
+        row_nums = utils.get_row_nums([day['day'] for day in daily_totals])
         context.update({
             'entries': daily_totals,
-            'week_rows': week_rows,
+            'week_rows': row_nums,
         })
     else:
         project_entries = entries.order_by().values(
@@ -552,17 +553,15 @@ def view_person_time_sheet(request, person_id, period_id=None,
             and verified_count > 0 and total_statuses != 0
 
         summary = time_sheet.summary(window.date, window.end_date)
-        row_nums = utils.get_row_nums([entry.start_time \
-            for entry in entries])
-        week_rows = utils.build_week_rows(entries, row_nums)
+        row_nums = utils.get_row_nums([entry.start_time for entry in entries])
         template = 'timepiece/time-sheet/people/view.html'
         context.update({
             'show_verify': show_verify,
             'show_approve': show_approve,
             'project_entries': project_entries,
             'entries': entries,
-            'week_rows': week_rows,
             'summary': summary,
+            'week_rows': row_nums,
         })
     return render_to_response(template, context,
         context_instance=RequestContext(request))

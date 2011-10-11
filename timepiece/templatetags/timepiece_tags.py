@@ -184,8 +184,8 @@ def week_start(date):
 
 
 @register.simple_tag
-def show_week_row(totals, index=-1):
-    total = totals.get(index, None)
+def show_week_row(totals, date):
+    total = totals.get(str(date.date()), None)
     if not total:
         return ''
     result = {
@@ -199,6 +199,7 @@ def show_week_row(totals, index=-1):
         <td>%(total_worked)s</td>
     """ % (result)
 show_week_row.is_safe = True
+
 
 @register.simple_tag
 def build_invoice_row(entries, to_date, from_date):
