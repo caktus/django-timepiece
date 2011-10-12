@@ -271,9 +271,9 @@ def get_row_nums(times):
     """
     result = []
     for index, time in enumerate(times):
-        current_week = get_week_start(time, False).date()
+        current_week = get_week_start(time, False)
         if index > 0:
-            yesterday_week = get_week_start(times[index - 1], False).date()
+            yesterday_week = get_week_start(times[index - 1], False)
             if current_week != yesterday_week:
                 result.append(index)
     #Add the last day
@@ -301,11 +301,10 @@ def get_last_entries_in_week(entries):
 
 
 def get_weekly_totals(entries):
-    """For a timesheet of entries return a list of dicts with weekly totals"""
+    """For a timesheet of entries return a dict of dicts with weekly totals"""
     byweek_select = {"week": """DATE_TRUNC('week', start_time)"""}
     totals = entries.extra(select=byweek_select).values('week', 'billable'
         ).annotate(total_hours=Sum('hours')).order_by('week')
-    weeks = list(set([total['week'] for total in totals]))
     last_days = get_last_entries_in_week(entries)
     week_dict = {}
     for day in last_days:        
@@ -334,6 +333,52 @@ def get_weekly_totals(entries):
         })
     return result
 
+def get_daily_totals(entries):
+    """
+    Given entries in a time-sheet, return a list of nested dicts with totals
+    [(date, {project: {hour_type:hours}})]  - sorted by date
+    Where "hour_type" may include:
+        billable, non_billable, total_worked
+    """
+    #Use Postgres' DATE_TRUNC for totals
+    byday_select = {
+        "day": """DATE_TRUNC('day', start_time)"""
+    }
+    daily_totals = entries.extra(select=byday_select).values(
+        'day', 'project__name', 'billable').annotate(
+        total_hours=Sum('hours')).order_by('day', 'project__name')
+    #Put the list into a nested dictionary
+    day_dict = {}
+    for total in daily_totals:
+        date = total['day'].date()
+        if total['billable']:
+            billable_str = 'billable'
+        else:
+            billable_str = 'non_billable'
+        project = total['project__name']
+        hours = {billable_str: total['total_hours']}
+        if date in day_dict:
+            #If project is filled, there are billable and non-billable hours
+            #So we need to create the total_worked
+            if project in day_dict[date].keys():
+                both = sum(day_dict[date][project].values())
+                both += total['total_hours']
+                hours.update({'total_worked': both})
+                day_dict[date][project].update(hours)                    
+            #Date exists, project doesn't
+            else:
+                day_dict[date].update({
+                    project: hours
+                })
+        #Date doesn't exist, make a new entry
+        else:
+            day_dict.update({
+                date: {project: hours}
+            })
+    #Make a list of tuples [(date, {project: {hours}})] sorted by date
+    result = [(date, data) for date, data in day_dict.items()]
+    result.sort()
+    return result
 
 def date_filter(func):
     def inner_decorator(request, *args, **kwargs):

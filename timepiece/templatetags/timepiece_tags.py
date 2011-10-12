@@ -182,10 +182,25 @@ def monthly_overtime(rp, date):
 def week_start(date):
     return get_week_start(date).strftime('%m/%d/%Y')
 
+@register.simple_tag
+def show_daily_row(data):
+    row = ''
+    for index, (project, hours) in enumerate(data.items()):
+        billable = hours.get('billable', 0)
+        non_billable = hours.get('non_billable', 0)
+        total_worked = hours.get('total_worked', billable or non_billable)
+        totals = '<td>%s</td><td>%s</td><td>%s</td>' % \
+            (billable, non_billable, total_worked)
+        row += '<td>' + project + '</td>' + totals + '</tr>'
+        if index < len(data) - 1:
+            row+='<tr><td colspan="2"></td>'
+    return row
+show_daily_row.is_safe = True
+
 
 @register.simple_tag
 def show_week_row(totals, date):
-    total = totals.get(str(date.date()), None)
+    total = totals.get(str(date), None)
     if not total:
         return ''
     result = {

@@ -37,42 +37,45 @@
     </li>
 </ul>
 
-{% if entries %}
+{% if daily_totals %}
     <table>    
         <tr>
             <th colspan='2'>Date</th>
             <th colspan='2'>Project</th>
-            <th>Hours</th>
+            <th colspan='2'>Hours</th>
         </tr>
-        {% for entry in entries %}
-            {% ifchanged entry.day|date:"W" %}
+        {% for day, data in daily_totals %}
+            {% ifchanged day|date:"W" %}
                 <tr>
-                    <th colspan='5'>Week of {{ entry.day|date:"m/d/Y (D)" }} </th>
+                    <th colspan='3'>Week of {{ day|date:"m/d/Y (D)" }} </th>
+                    <th>Billable:</th>
+                    <th>Non Billable:</th>
+                    <th>Total:</th>
                 </tr>
             {% endifchanged %}
             <tr>
-                {% ifchanged entry.day %}
-                    <td colspan='2'>{{ entry.day|date:"m/d/Y (D)" }}</td>
+                {% ifchanged day %}
+                    <td colspan='2'>{{ day|date:"m/d/Y (D)" }}</td>
                 {% else %}
                     <td colspan='2'></td>
                 {% endifchanged %}
-            <td colspan='2'>{{ entry.project__name }}</td>
-            <td>{{ entry.total_hours|floatformat:2 }}</td>
+                {% show_daily_row data %}
+            </tr>
             {% if forloop.counter in week_rows %}
                 <tr>
-                    <th colspan='2'>Totals for this week:</th>
+                    <th colspan='3'>Totals for this week:</th>
                     <th>Billable:</th>
                     <th>Non Billable:</th>
                     <th>Total:</th>
                 </tr>
                 <tr>
-                    <th colspan='2'></th>
-                    {% show_week_row weekly_totals entry.day %}
+                    <th colspan='3'></th>
+                    {% show_week_row weekly_totals day %}
                 </tr>
             {% endif %}
         {% endfor %}
         <tr>
-            <th colspan='3'>Overall total for the period:</th>
+            <th colspan='5'>Overall total for the period:</th>
             <td>{{ total|floatformat:2 }}</td>
         </tr>
     </table>

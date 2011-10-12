@@ -521,16 +521,10 @@ def view_person_time_sheet(request, person_id, period_id=None,
     }
     if hourly:
         template = 'timepiece/time-sheet/people/view_hours.html'
-        #Postgres only query required as of 10-6-11.
-        byday_select = {
-            "day": """DATE_TRUNC('day', start_time)"""
-        }
-        daily_totals = entries.extra(select=byday_select).values(
-            'day', 'project__name').annotate(
-            total_hours=Sum('hours')).order_by('day')
-        row_nums = utils.get_row_nums([day['day'] for day in daily_totals])
+        daily_totals = utils.get_daily_totals(entries)
+        row_nums = utils.get_row_nums([date for date, data in daily_totals])
         context.update({
-            'entries': daily_totals,
+            'daily_totals': daily_totals,
             'week_rows': row_nums,
         })
     else:
@@ -553,7 +547,7 @@ def view_person_time_sheet(request, person_id, period_id=None,
             and verified_count > 0 and total_statuses != 0
 
         summary = time_sheet.summary(window.date, window.end_date)
-        row_nums = utils.get_row_nums([entry.start_time for entry in entries])
+        row_nums = utils.get_row_nums([entry.start_time.date() for entry in entries])
         template = 'timepiece/time-sheet/people/view.html'
         context.update({
             'show_verify': show_verify,

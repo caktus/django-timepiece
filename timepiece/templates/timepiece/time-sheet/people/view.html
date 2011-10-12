@@ -85,7 +85,7 @@
                 </tr>
                 <tr>
                     <th colspan='5'></th>
-                    {% show_week_row weekly_totals entry.start_time %}
+                    {% show_week_row weekly_totals entry.start_time.date %}
                 </tr>
             {% endif %}
         {% endfor %}

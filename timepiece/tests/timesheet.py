@@ -746,6 +746,8 @@ class TestTotals(TimepieceDataTestCase):
         self.create_person_repeat_period(data={'user': self.user})
         self.p1 = self.create_project(billable=True, name='1')
         self.p2 = self.create_project(billable=False, name='2')
+        #For use with daily totals (Same project, non-billable activity)
+        self.p3 = self.create_project(billable=False, name='1')
         period = timepiece.PersonRepeatPeriod.objects.get(user=self.user)
         self.billing_window = timepiece.BillingWindow.objects.create(
             period=period.repeat_period,
@@ -805,15 +807,20 @@ class TestTotals(TimepieceDataTestCase):
         day_3 = datetime.datetime(2011, 1, 3)
         self.log_time(project=self.p1, start=day_1, delta=(2, 0), status='approved')
         self.log_time(project=self.p1, start=day_1, delta=(2, 0), status='approved')
-        self.log_time(project=self.p1, start=day_1, delta=(4, 0), status='approved')
+        self.log_time(project=self.p3, start=day_1, delta=(4, 0), status='approved')
         self.log_time(project=self.p2, start=day_1, delta=(8, 0), status='approved')
         self.log_time(project=self.p2, start=day_2, delta=(4, 0), status='approved')
         self.log_time(project=self.p2, start=day_2, delta=(4, 0), status='approved')
         self.log_time(project=self.p2, start=day_3, delta=(8, 0), status='approved')
         response = self.client.get(self.hourly_url, follow=True)
-        for daily_total in response.context['entries']:
-            if daily_total:
-                self.assertEqual(daily_total['total_hours'], Decimal('8.00'))
+        for daily_total in response.context['daily_totals']:
+            for project, total in daily_total[1].items():
+                if project == '1':
+                    self.assertEqual(total['billable'], Decimal('4.00'))
+                    self.assertEqual(total['non_billable'], Decimal('4.00'))
+                    self.assertEqual(total['total_worked'], Decimal('8.00'))
+                if project == '2':
+                    self.assertEqual(total['non_billable'], Decimal('8.00'))
 
     def testWeeklyHours(self):
         self.client.login(username='user', password='abc')
