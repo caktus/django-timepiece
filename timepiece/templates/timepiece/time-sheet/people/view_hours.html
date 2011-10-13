@@ -53,9 +53,7 @@
                     <th>Total:</th>
                 </tr>
             {% endifchanged %}
-            <tr>
-                {% show_daily_row day data %}
-            </tr>
+            {% show_daily_row day data %}
             {% if forloop.counter in week_rows %}
                 <tr>
                     <th>Totals for this week:</th>

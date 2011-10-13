@@ -193,16 +193,14 @@ def show_daily_row(day, data):
                 'total_worked', hours['billable'] or hours['non_billable'])
         })
         totals.append(hours)
-    projects = [project for project in data.keys()]
     return {
         'day': day,
-        'data': zip(projects, totals)
+        'data': zip([project for project in data.keys()], totals)
     }
 
 
 @register.inclusion_tag('timepiece/time-sheet/people/week_row.html')
-def show_week_row(totals, date):
-    
+def show_week_row(totals, date):    
     total = totals.get(str(date), None)
     if total:
         billable = total.get('billable', 0)
