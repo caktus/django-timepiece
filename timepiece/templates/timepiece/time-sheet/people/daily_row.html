@@ -1,0 +1,14 @@
+{% for project, total in data %}
+    <tr>
+        <td colspan='2'>
+            {% if forloop.counter == 1 %}
+                {{ day|date:"m/d/Y (D)" }}
+            {% endif %}
+        </td>
+        <td>{{ project }}</td>
+        <td>{{ total.billable }}</td>
+        <td>{{ total.non_billable }}</td>
+        <td>{{ total.total_worked }}</td>
+    </tr>
+{% endfor %}
+

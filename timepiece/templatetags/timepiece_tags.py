@@ -182,38 +182,39 @@ def monthly_overtime(rp, date):
 def week_start(date):
     return get_week_start(date).strftime('%m/%d/%Y')
 
-@register.simple_tag
-def show_daily_row(data):
-    row = ''
-    for index, (project, hours) in enumerate(data.items()):
-        billable = hours.get('billable', 0)
-        non_billable = hours.get('non_billable', 0)
-        total_worked = hours.get('total_worked', billable or non_billable)
-        totals = '<td>%s</td><td>%s</td><td>%s</td>' % \
-            (billable, non_billable, total_worked)
-        row += '<td>' + project + '</td>' + totals + '</tr>'
-        if index < len(data) - 1:
-            row+='<tr><td colspan="2"></td>'
-    return row
-show_daily_row.is_safe = True
-
-
-@register.simple_tag
-def show_week_row(totals, date):
-    total = totals.get(str(date), None)
-    if not total:
-        return ''
-    result = {
-        'billable': total.get('billable', 0),
-        'non_billable': total.get('non_billable', 0),
-        'total_worked': total.get('total_worked', 0),
+@register.inclusion_tag('timepiece/time-sheet/people/daily_row.html')
+def show_daily_row(day, data):
+    totals = []
+    for hours in data.values():
+        hours.update({'billable': hours.get('billable', 0)})
+        hours.update({'non_billable': hours.get('non_billable', 0)})
+        hours.update({
+            'total_worked': hours.get(
+                'total_worked', hours['billable'] or hours['non_billable'])
+        })
+        totals.append(hours)
+    projects = [project for project in data.keys()]
+    return {
+        'day': day,
+        'data': zip(projects, totals)
     }
-    return """
-        <td>%(billable)s</td>
-        <td>%(non_billable)s</td>
-        <td>%(total_worked)s</td>
-    """ % (result)
-show_week_row.is_safe = True
+
+
+@register.inclusion_tag('timepiece/time-sheet/people/week_row.html')
+def show_week_row(totals, date):
+    
+    total = totals.get(str(date), None)
+    if total:
+        billable = total.get('billable', 0)
+        non_billable = total.get('non_billable', 0)
+        total_worked = total.get('total_worked', 0)
+    else:
+        billable = non_billable = total_worked = 0
+    return {
+        'billable': billable,
+        'non_billable': non_billable,
+        'total_worked': total_worked
+    }
 
 
 @register.simple_tag

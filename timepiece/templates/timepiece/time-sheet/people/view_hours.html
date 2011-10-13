@@ -54,24 +54,15 @@
                 </tr>
             {% endifchanged %}
             <tr>
-                {% ifchanged day %}
-                    <td colspan='2'>{{ day|date:"m/d/Y (D)" }}</td>
-                {% else %}
-                    <td colspan='2'></td>
-                {% endifchanged %}
-                {% show_daily_row data %}
+                {% show_daily_row day data %}
             </tr>
             {% if forloop.counter in week_rows %}
                 <tr>
-                    <th colspan='3'>Totals for this week:</th>
-                    <th>Billable:</th>
-                    <th>Non Billable:</th>
-                    <th>Total:</th>
-                </tr>
-                <tr>
-                    <th colspan='3'></th>
+                    <th>Totals for this week:</th>
+                    <th colspan='2'></th>
                     {% show_week_row weekly_totals day %}
                 </tr>
+                <tr><td>&nbsp;</td></tr>
             {% endif %}
         {% endfor %}
         <tr>
