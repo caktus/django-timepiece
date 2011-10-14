@@ -38,31 +38,40 @@
 </ul>
 
 {% if daily_totals %}
-    <table>    
-        <tr>
-            <th colspan='2'>Date</th>
-            <th colspan='2'>Project</th>
-            <th colspan='2'>Hours</th>
-        </tr>
-        {% for day, data in daily_totals %}
-            {% ifchanged day|date:"W" %}
-                <tr>
-                    <th colspan='3'>Week of {{ day|date:"m/d/Y (D)" }} </th>
-                    <th>Billable:</th>
-                    <th>Non Billable:</th>
-                    <th>Total:</th>
-                </tr>
-            {% endifchanged %}
-            {% show_daily_row day data %}
-            {% if forloop.counter in week_rows %}
-                <tr>
-                    <th>Totals for this week:</th>
-                    <th colspan='2'></th>
-                    {% show_week_row weekly_totals day %}
-                </tr>
-                <tr><td>&nbsp;</td></tr>
-            {% endif %}
+    <table> 
+        {% for week, week_totals, days in daily_totals %}
+            <tr>
+                <th colspan='2'>Week of {{ week|date:"m/d/Y (D)" }} </th>
+                <th>Billable:</th>
+                <th>Non Billable:</th>
+                <th>Total:</th>
+            </tr>
+            {% for day, projects in days %}
+                {% for project, totals in projects.iteritems %}
+                    <tr>
+                        <td>
+                        {% if forloop.counter == 1 %}
+                            {{day|date:"m/d/Y (D)"}}
+                        {% endif %}
+                        </td>
+                        <td>
+                            {{project}}
+                        </td>
+                        <td>{{totals.billable}}</td>
+                        <td>{{totals.non_billable}}</td>
+                        <td>{{totals.total}}</td>
+                    </tr>
+                {% endfor %}
+            {% endfor %}
+            <tr>
+                <th colspan="2">Totals for this week:</th>
+                <td>{{week_totals.billable}}</td>
+                <td>{{week_totals.non_billable}}</td>
+                <td>{{week_totals.total}}</td>
+            </tr>
+            <tr><td>&nbsp;</td><tr/>
         {% endfor %}
+
         <tr>
             <th colspan='5'>Overall total for the period:</th>
             <td>{{ total|floatformat:2 }}</td>

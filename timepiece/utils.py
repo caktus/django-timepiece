@@ -1,6 +1,7 @@
 from dateutil import rrule
 from dateutil.relativedelta import relativedelta
 from decimal import Decimal
+from itertools import groupby
 
 from django.http import HttpResponse, HttpResponseRedirect, Http404
 from django.shortcuts import render_to_response
@@ -241,15 +242,12 @@ def get_total_time(seconds):
     return u'%02i:%02i:%02i' % (hours, minutes, seconds)
 
 
-def get_week_start(day=None, iso=True):
+def get_week_start(day=None):
     if not day:
         day = date.today()
     isoweekday = day.isoweekday()
-    weekday = day.weekday()
-    if iso and isoweekday != 7:
-        return day - timedelta(days=isoweekday)
-    if not iso and weekday != 7:
-        return day - timedelta(days=weekday)
+    if isoweekday != 1:
+        day = day - timedelta(days=isoweekday - 1)
     return day
 
 
@@ -271,9 +269,9 @@ def get_row_nums(times):
     """
     result = []
     for index, time in enumerate(times):
-        current_week = get_week_start(time, False)
+        current_week = get_week_start(time)
         if index > 0:
-            yesterday_week = get_week_start(times[index - 1], False)
+            yesterday_week = get_week_start(times[index - 1])
             if current_week != yesterday_week:
                 result.append(index)
     #Add the last day
@@ -287,7 +285,7 @@ def get_row_nums(times):
 def get_last_entries_in_week(entries):
     """Given a list of entries, determine the last entry in each week"""
     result = []
-    week_starts = [get_week_start(entry.start_time, False).date() for entry in entries]
+    week_starts = [get_week_start(entry.start_time).date() for entry in entries]
 
     for index, (entry, week) in enumerate(zip(entries, week_starts)):
         current = entry.start_time.date()
@@ -309,7 +307,7 @@ def get_weekly_totals(entries):
     week_dict = {}
     for day in last_days:        
         for total in totals:
-            if get_week_start(day, False) == total['week'].date():
+            if get_week_start(day) == total['week'].date():
                 if total['billable']:
                     week_dict.update({
                         str(day) + ' billable': total['total_hours']
@@ -332,6 +330,19 @@ def get_weekly_totals(entries):
             }
         })
     return result
+
+def get_weekly_dict(entries):
+    byweek_select = {"week": """DATE_TRUNC('week', start_time)"""}
+    totals = entries.extra(select=byweek_select).values('week', 'billable'
+        ).annotate(total_hours=Sum('hours')).order_by('week', 'billable')
+    result = {}
+    for key, values in groupby(totals):
+        result.update({
+            str(key['week'].date()) + str(key['billable']): values.next()['total_hours']            
+        })
+    print result
+    return result
+
 
 def get_daily_totals(entries):
     """
@@ -400,3 +411,48 @@ def date_filter(func):
         return func(request, form, from_date, to_date, status, activity,
             *args, **kwargs)
     return inner_decorator
+
+
+
+import itertools
+
+def get_hours(entries):
+    hours = {'total': 0}
+    for entry in entries:
+        hours['total'] += entry['hours']
+        if entry['billable']:
+            hours['billable'] = entry['hours']
+        else:
+            hours['non_billable'] = entry['hours']
+    return hours
+
+
+def daily_summary(day_entries):
+    projects = {}
+    for name, entries in itertools.groupby(day_entries,
+                                           lambda x: x['project__name']):                  
+        projects[name] = get_hours(entries)
+    return projects
+
+
+def test_summary(entries):    
+    select = {"day": {"date": """DATE_TRUNC('day', end_time)"""},
+              "week": {"date": """DATE_TRUNC('week', end_time)"""}}
+    weekly = entries.extra(select=select["week"]).values('date', 'billable')
+    weekly = weekly.annotate(hours=Sum('hours')).order_by('date')
+    daily = entries.extra(select=select["day"]).values('date', 'project__name',
+                                                       'billable')
+    daily = daily.annotate(hours=Sum('hours')).order_by('date', 'project__name')
+    weeks = {}
+    for week, week_entries in itertools.groupby(weekly, lambda x: x['date']):
+        weeks[week] = get_hours(week_entries)
+    days = []
+    last_week = None
+    for day, day_entries in itertools.groupby(daily, lambda x: x['date']):
+        week = get_week_start(day)
+        if last_week and week > last_week:
+            yield last_week, weeks.get(last_week, {}), days
+            days = []
+        days.append((day, daily_summary(day_entries)))
+        last_week = week
+    yield week, weeks.get(week, {}), days

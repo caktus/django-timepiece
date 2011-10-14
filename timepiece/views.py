@@ -3,6 +3,7 @@ import csv
 import datetime
 import calendar
 import math
+import pprint
 from decimal import Decimal
 from dateutil.relativedelta import relativedelta
 from dateutil import rrule
@@ -521,11 +522,9 @@ def view_person_time_sheet(request, person_id, period_id=None,
     }
     if hourly:
         template = 'timepiece/time-sheet/people/view_hours.html'
-        daily_totals = utils.get_daily_totals(entries)
-        row_nums = utils.get_row_nums([date for date, data in daily_totals])
+        daily_totals = utils.test_summary(entries)
         context.update({
             'daily_totals': daily_totals,
-            'week_rows': row_nums,
         })
     else:
         project_entries = entries.order_by().values(
