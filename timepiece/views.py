@@ -511,20 +511,19 @@ def view_person_time_sheet(request, person_id, period_id=None,
         window_id=window_id,
         user=time_sheet.user,
     )
-    weekly_totals = utils.get_weekly_totals(entries)
+#    grouped_totals = utils.grouped_totals(entries)
     context = {
             'hourly': 'hourly',
             'person': time_sheet.user,
             'period': window.period,
             'window': window,
             'total': total_hours,
-            'weekly_totals': weekly_totals,
     }
     if hourly:
         template = 'timepiece/time-sheet/people/view_hours.html'
-        daily_totals = utils.test_summary(entries)
+        grouped_totals = utils.grouped_totals(entries)
         context.update({
-            'daily_totals': daily_totals,
+            'grouped_totals': grouped_totals,
         })
     else:
         project_entries = entries.order_by().values(
@@ -546,7 +545,6 @@ def view_person_time_sheet(request, person_id, period_id=None,
             and verified_count > 0 and total_statuses != 0
 
         summary = time_sheet.summary(window.date, window.end_date)
-        row_nums = utils.get_row_nums([entry.start_time.date() for entry in entries])
         template = 'timepiece/time-sheet/people/view.html'
         context.update({
             'show_verify': show_verify,
@@ -554,7 +552,6 @@ def view_person_time_sheet(request, person_id, period_id=None,
             'project_entries': project_entries,
             'entries': entries,
             'summary': summary,
-            'week_rows': row_nums,
         })
     return render_to_response(template, context,
         context_instance=RequestContext(request))

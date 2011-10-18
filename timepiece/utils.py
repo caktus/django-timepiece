@@ -1,7 +1,7 @@
 from dateutil import rrule
 from dateutil.relativedelta import relativedelta
 from decimal import Decimal
-from itertools import groupby
+import itertools
 
 from django.http import HttpResponse, HttpResponseRedirect, Http404
 from django.shortcuts import render_to_response
@@ -253,7 +253,8 @@ def get_week_start(day=None):
 
 def generate_weeks(end, start=None):
     start = get_week_start(start)
-    return rrule.rrule(rrule.WEEKLY, dtstart=start, until=end, byweekday=6)
+    #byweekday is set to Sunday, the last day of an ISO week
+    return rrule.rrule(rrule.WEEKLY, dtstart=start, until=end, byweekday=0)
 
 
 def get_week_window(day):
@@ -262,134 +263,6 @@ def get_week_window(day):
     weeks = generate_weeks(start=start, end=end)
     return list(weeks)
 
-def get_row_nums(times):
-    """
-    Given a list of entry times, make a list with the row numbers of the last
-    day of entries for each week
-    """
-    result = []
-    for index, time in enumerate(times):
-        current_week = get_week_start(time)
-        if index > 0:
-            yesterday_week = get_week_start(times[index - 1])
-            if current_week != yesterday_week:
-                result.append(index)
-    #Add the last day
-    if times:
-        result.append(len(times))
-    result = list(set(result))
-    result.sort()
-    return result
-
-
-def get_last_entries_in_week(entries):
-    """Given a list of entries, determine the last entry in each week"""
-    result = []
-    week_starts = [get_week_start(entry.start_time).date() for entry in entries]
-
-    for index, (entry, week) in enumerate(zip(entries, week_starts)):
-        current = entry.start_time.date()
-        if index > 0 and week_starts[index - 1] != week:
-            result.append(entries[index - 1].start_time.date())
-        if index == len(entries) - 1:
-            result.append(current)
-    if len(entries) == 1:
-        result = [entries[0].start_time.date()]
-    return result
-
-
-def get_weekly_totals(entries):
-    """For a timesheet of entries return a dict of dicts with weekly totals"""
-    byweek_select = {"week": """DATE_TRUNC('week', start_time)"""}
-    totals = entries.extra(select=byweek_select).values('week', 'billable'
-        ).annotate(total_hours=Sum('hours')).order_by('week')
-    last_days = get_last_entries_in_week(entries)
-    week_dict = {}
-    for day in last_days:        
-        for total in totals:
-            if get_week_start(day) == total['week'].date():
-                if total['billable']:
-                    week_dict.update({
-                        str(day) + ' billable': total['total_hours']
-                    })
-                else:
-                    week_dict.update({
-                        str(day) + ' non_billable': total['total_hours']
-                    })
-    result = {}
-    for day in last_days:
-        billable_key = str(day) + ' billable'
-        non_billable_key = str(day) + ' non_billable'
-        billable_hours = week_dict.get(billable_key, 0)
-        non_billable_hours = week_dict.get(non_billable_key, 0)
-        result.update({
-            str(day): {
-            'billable': billable_hours,
-            'non_billable': non_billable_hours,
-            'total_worked': billable_hours + non_billable_hours,
-            }
-        })
-    return result
-
-def get_weekly_dict(entries):
-    byweek_select = {"week": """DATE_TRUNC('week', start_time)"""}
-    totals = entries.extra(select=byweek_select).values('week', 'billable'
-        ).annotate(total_hours=Sum('hours')).order_by('week', 'billable')
-    result = {}
-    for key, values in groupby(totals):
-        result.update({
-            str(key['week'].date()) + str(key['billable']): values.next()['total_hours']            
-        })
-    print result
-    return result
-
-
-def get_daily_totals(entries):
-    """
-    Given entries in a time-sheet, return a list of nested dicts with totals
-    [(date, {project: {hour_type:hours}})]  - sorted by date
-    Where "hour_type" may include:
-        billable, non_billable, total_worked
-    """
-    #Use Postgres' DATE_TRUNC for totals
-    byday_select = {
-        "day": """DATE_TRUNC('day', start_time)"""
-    }
-    daily_totals = entries.extra(select=byday_select).values(
-        'day', 'project__name', 'billable').annotate(
-        total_hours=Sum('hours')).order_by('day', 'project__name')
-    #Put the list into a nested dictionary
-    day_dict = {}
-    for total in daily_totals:
-        date = total['day'].date()
-        if total['billable']:
-            billable_str = 'billable'
-        else:
-            billable_str = 'non_billable'
-        project = total['project__name']
-        hours = {billable_str: total['total_hours']}
-        if date in day_dict:
-            #If project is filled, there are billable and non-billable hours
-            #So we need to create the total_worked
-            if project in day_dict[date].keys():
-                both = sum(day_dict[date][project].values())
-                both += total['total_hours']
-                hours.update({'total_worked': both})
-                day_dict[date][project].update(hours)                    
-            #Date exists, project doesn't
-            else:
-                day_dict[date].update({
-                    project: hours
-                })
-        #Date doesn't exist, make a new entry
-        else:
-            day_dict.update({
-                date: {project: hours}
-            })
-    #Make a list of tuples [(date, {project: {hours}})] sorted by date
-    result = [(date, data) for date, data in day_dict.items()]
-    result.sort()
-    return result
 
 def date_filter(func):
     def inner_decorator(request, *args, **kwargs):
@@ -413,9 +286,6 @@ def date_filter(func):
     return inner_decorator
 
 
-
-import itertools
-
 def get_hours(entries):
     hours = {'total': 0}
     for entry in entries:
@@ -435,7 +305,7 @@ def daily_summary(day_entries):
     return projects
 
 
-def test_summary(entries):    
+def grouped_totals(entries):    
     select = {"day": {"date": """DATE_TRUNC('day', end_time)"""},
               "week": {"date": """DATE_TRUNC('week', end_time)"""}}
     weekly = entries.extra(select=select["week"]).values('date', 'billable')

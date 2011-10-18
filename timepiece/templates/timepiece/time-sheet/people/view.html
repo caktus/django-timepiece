@@ -53,11 +53,10 @@
             <th>Time Out</th>
             <th>Breaks</th>
             <th>Hours</th>
-        </tr>    
-            
+        </tr>            
         {% for entry in entries %}
             {% ifchanged entry.start_time|date:"W" %}
-                <tr>                
+                <tr>
                     <th colspan='8'>Week of {{ entry.start_time|date:"m/d/Y (D)" }} </th>
                 </tr>
             {% endifchanged %}

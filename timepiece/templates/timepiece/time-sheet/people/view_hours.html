@@ -37,9 +37,9 @@
     </li>
 </ul>
 
-{% if daily_totals %}
+{% if grouped_totals %}
     <table> 
-        {% for week, week_totals, days in daily_totals %}
+        {% for week, week_totals, days in grouped_totals %}
             <tr>
                 <th colspan='2'>Week of {{ week|date:"m/d/Y (D)" }} </th>
                 <th>Billable:</th>
@@ -73,7 +73,7 @@
         {% endfor %}
 
         <tr>
-            <th colspan='5'>Overall total for the period:</th>
+            <th colspan='4'>Overall total for the period:</th>
             <td>{{ total|floatformat:2 }}</td>
         </tr>
     </table>

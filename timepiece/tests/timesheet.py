@@ -762,67 +762,8 @@ class TestTotals(TimepieceDataTestCase):
             args=[period.user.pk, period.repeat_period.pk,
             self.billing_window.pk, 'hourly'])
 
-    def testUtilGetRowNums(self):
-        self.client.login(username='user', password='abc')
-        days = [
-            datetime.datetime(2011, 1, 3),
-            datetime.datetime(2011, 1, 4),
-            datetime.datetime(2011, 1, 5),
-            datetime.datetime(2011, 1, 20),
-            datetime.datetime(2011, 1, 21),
-            datetime.datetime(2011, 1, 22),
-            datetime.datetime(2011, 1, 23),
-            datetime.datetime(2011, 1, 24),
-        ]
-        for day in days:
-            self.log_time(start=day, delta=(2, 0), status='approved')
-        entries = timepiece.Entry.objects.all().order_by('start_time')
-        row_nums = utils.get_row_nums([entry.start_time \
-            for entry in entries])
-        self.assertEqual(row_nums, [3, 7, 8])
 
-    def testUtilLastDays(self):
-        self.client.login(username='user', password='abc')
-        days = [
-                datetime.datetime(2011, 1, 1),
-                datetime.datetime(2011, 1, 7),
-                datetime.datetime(2011, 1, 9),
-                datetime.datetime(2011, 1, 17),
-                datetime.datetime(2011, 1, 30)
-        ]
-        self.log_time(project=self.p1, start=days[0], delta=(3, 0), status='approved')
-        self.log_time(project=self.p2, start=days[1], delta=(2, 0), status='approved')
-        self.log_time(project=self.p1, start=days[2], delta=(1, 0), status='approved')
-        self.log_time(project=self.p2, start=days[3], delta=(4, 0), status='approved')
-        self.log_time(project=self.p1, start=days[4], delta=(8, 0), status='approved')
-        entries = timepiece.Entry.objects.all().order_by('start_time')
-        last_days = utils.get_last_entries_in_week(entries)
-        day_only = [last_day.day for last_day in last_days]
-        self.assertEqual(day_only, [1, 9, 17, 30])
-
-    def testDailyHours(self):
-        self.client.login(username='user', password='abc')
-        day_1 = datetime.datetime(2011, 1, 1)
-        day_2 = datetime.datetime(2011, 1, 2)
-        day_3 = datetime.datetime(2011, 1, 3)
-        self.log_time(project=self.p1, start=day_1, delta=(2, 0), status='approved')
-        self.log_time(project=self.p1, start=day_1, delta=(2, 0), status='approved')
-        self.log_time(project=self.p3, start=day_1, delta=(4, 0), status='approved')
-        self.log_time(project=self.p2, start=day_1, delta=(8, 0), status='approved')
-        self.log_time(project=self.p2, start=day_2, delta=(4, 0), status='approved')
-        self.log_time(project=self.p2, start=day_2, delta=(4, 0), status='approved')
-        self.log_time(project=self.p2, start=day_3, delta=(8, 0), status='approved')
-        response = self.client.get(self.hourly_url, follow=True)
-        for daily_total in response.context['daily_totals']:
-            for project, total in daily_total[1].items():
-                if project == '1':
-                    self.assertEqual(total['billable'], Decimal('4.00'))
-                    self.assertEqual(total['non_billable'], Decimal('4.00'))
-                    self.assertEqual(total['total_worked'], Decimal('8.00'))
-                if project == '2':
-                    self.assertEqual(total['non_billable'], Decimal('8.00'))
-
-    def testWeeklyHours(self):
+    def testGroupedTotals(self):
         self.client.login(username='user', password='abc')
         days = [
                 datetime.datetime(2011, 1, 3),
@@ -836,16 +777,18 @@ class TestTotals(TimepieceDataTestCase):
         self.log_time(project=self.p1, start=days[2], delta=(1, 0), status='approved')
         self.log_time(project=self.p2, start=days[3], delta=(4, 0), status='approved')
         self.log_time(project=self.p1, start=days[4], delta=(8, 0), status='approved')
-        entries = timepiece.Entry.objects.all().order_by('start_time')
-        last_days = utils.get_last_entries_in_week(entries)
-        response = self.client.get(self.url, follow=True)
-        totals = response.context['weekly_totals']
-        self.assertEqual(totals[str(last_days[0])]['total_worked'], Decimal('5.00'))
-        self.assertEqual(totals[str(last_days[0])]['billable'], Decimal('3.00'))
-        self.assertEqual(totals[str(last_days[0])]['non_billable'], Decimal('2.00'))
-        self.assertEqual(totals[str(last_days[1])]['total_worked'], Decimal('5.00'))
-        self.assertEqual(totals[str(last_days[1])]['billable'], Decimal('1.00'))
-        self.assertEqual(totals[str(last_days[1])]['non_billable'], Decimal('4.00'))
-        self.assertEqual(totals[str(last_days[2])]['total_worked'], Decimal('8.00'))
-        self.assertEqual(totals[str(last_days[2])]['billable'], Decimal('8.00'))
-        self.assertEqual(totals[str(last_days[2])]['non_billable'], Decimal('0.00'))
+        self.log_time(project=self.p1, start=days[0], delta=(2, 0), status='approved')
+        self.log_time(project=self.p1, start=days[1], delta=(2, 0), status='approved')
+        self.log_time(project=self.p3, start=days[2], delta=(4, 0), status='approved')
+        self.log_time(project=self.p2, start=days[3], delta=(8, 0), status='approved')
+        self.log_time(project=self.p2, start=days[1], delta=(4, 0), status='approved')
+        self.log_time(project=self.p2, start=days[2], delta=(4, 0), status='approved')
+        self.log_time(project=self.p2, start=days[3], delta=(8, 0), status='approved')
+        response = self.client.get(self.hourly_url, follow=True)
+
+        for week, week_totals, days in response.context['grouped_totals']:
+            print "Week:", week, week_totals
+            for day, projects in days:
+                print "Day:"
+                for project, totals in projects.items():
+                    print project, totals

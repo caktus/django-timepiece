@@ -83,10 +83,10 @@ class PayrollTest(TimepieceDataTestCase):
         """ Make sure hours worked on Sunday's don't overlap weekly hours """
         rp = self.create_person_repeat_period({'user': self.user})
         p1 = self.create_project()
-        start1 = datetime.datetime(2011, 1, 2)
+        start1 = datetime.datetime(2011, 1, 3)
         self.log_time(project=p1, start=start1, delta=(8, 0),
             status='approved')
-        start2 = datetime.datetime(2011, 1, 9)
+        start2 = datetime.datetime(2011, 1, 10)
         self.log_time(project=p1, start=start2, delta=(8, 0),
             status='approved')
         self.assertEqual(rp.hours_in_week(start1), Decimal('8.00'))
@@ -96,7 +96,7 @@ class PayrollTest(TimepieceDataTestCase):
         """ Test weekly overtime calculation """
         rp = self.create_person_repeat_period({'user': self.user})
         p1 = self.create_project()
-        start1 = datetime.datetime(2011, 1, 2)
+        start1 = datetime.datetime(2011, 1, 3)
         self.log_time(project=p1, start=start1, delta=(44, 0),
             status='approved')
         self.assertEqual(rp.overtime_hours_in_week(start1), Decimal('4.00'))
@@ -105,7 +105,7 @@ class PayrollTest(TimepieceDataTestCase):
         """ Test weekly overtime calculation """
         rp = self.create_person_repeat_period({'user': self.user})
         p1 = self.create_project()
-        start1 = datetime.datetime(2011, 1, 2)
+        start1 = datetime.datetime(2011, 1, 3)
         self.log_time(project=p1, start=start1, delta=(40, 0),
             status='approved')
         self.assertEqual(rp.overtime_hours_in_week(start1), Decimal('0.00'))
@@ -114,7 +114,7 @@ class PayrollTest(TimepieceDataTestCase):
         """ Test monthly overtime calculation """
         rp = self.create_person_repeat_period({'user': self.user})
         p1 = self.create_project()
-        start1 = datetime.datetime(2011, 1, 2)
+        start1 = datetime.datetime(2011, 1, 3)
         self.log_time(project=p1, start=start1, delta=(44, 0),
             status='approved')
         start1 = datetime.datetime(2011, 1, 9)
