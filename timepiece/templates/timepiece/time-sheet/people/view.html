@@ -43,7 +43,7 @@
 </ul>
 
 {% if entries %}
-    <table>    
+    <table class="time-sheet">    
         <tr>
             <th>Date</th>
             <th>Project</th>
@@ -71,25 +71,13 @@
                 <td>{{ entry.location }}</td>
                 <td>{{ entry.start_time|date:"P" }}</td>
                 <td>{{ entry.end_time|date:"P" }}</td>
-                <td>{{ entry.seconds_paused|seconds_to_hours }}</td>
-                <td>{{ entry.hours }}</td>
+                <td class="hours">{{ entry.seconds_paused|seconds_to_hours }}</td>
+                <td class="hours">{{ entry.hours }}</td>
                 {% if entry.is_editable %}<td><a href="{% url timepiece-update entry.id %}">Edit</a></td>{% endif %}
             </tr>
-            {% if forloop.counter in week_rows %}
-                <tr>
-                    <th colspan='5'>Totals for this week:</th>
-                    <th>Billable:</th>
-                    <th>Non Billable:</th>
-                    <th>Total:</th>
-                </tr>
-                <tr>
-                    <th colspan='5'></th>
-                    {% show_week_row weekly_totals entry.start_time.date %}
-                </tr>
-            {% endif %}
         {% endfor %}
         <tr>
-            <th colspan='7'>Overall total for the period:</th>
+            <th colspan='7' class="hours">Overall total for the period:</th>
             <td>{{ total|floatformat:2 }}</td>
         </tr>
     </table>
@@ -103,7 +91,7 @@
     {% for entry in project_entries %}
         <tr>
             <td>{{ entry.project__name}} </td>
-            <td>{{ entry.sum }}</td>
+            <td class="hours">{{ entry.sum }}</td>
         </tr>
     {% endfor %}        
     </table>
@@ -112,16 +100,16 @@
 <table id='activity-summary'>
     <caption>Billable Summary</caption>
     <tr>
-        <td>Billable</td><td>{{summary.billable}}</td>
+        <td>Billable</td><td class="hours">{{summary.billable}}</td>
     </tr>
     <tr>
-        <td>Non-billable</td><td>{{summary.non_billable}}</td>
+        <td>Non-billable</td><td class="hours">{{summary.non_billable}}</td>
     </tr>
     <tr>
-        <td>Invoiced</td><td>{{summary.invoiced}}</td>
+        <td>Invoiced</td><td class="hours">{{summary.invoiced}}</td>
     </tr>
     <tr>
-        <td>Uninvoiced</td><td>{{summary.uninvoiced}}</td>
+        <td>Uninvoiced</td><td class="hours">{{summary.uninvoiced}}</td>
     </tr>
 </table>
 

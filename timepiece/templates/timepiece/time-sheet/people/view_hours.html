@@ -38,7 +38,7 @@
 </ul>
 
 {% if grouped_totals %}
-    <table> 
+    <table class="time-sheet">
         {% for week, week_totals, days in grouped_totals %}
             <tr>
                 <th colspan='2'>Week of {{ week|date:"m/d/Y (D)" }} </th>
@@ -57,19 +57,19 @@
                         <td>
                             {{project}}
                         </td>
-                        <td>{{totals.billable}}</td>
-                        <td>{{totals.non_billable}}</td>
-                        <td>{{totals.total}}</td>
+                        <td class="hours">{{totals.billable}}</td>
+                        <td class="hours">{{totals.non_billable}}</td>
+                        <td class="hours">{{totals.total}}</td>
                     </tr>
                 {% endfor %}
             {% endfor %}
             <tr>
                 <th colspan="2">Totals for this week:</th>
-                <td>{{week_totals.billable}}</td>
-                <td>{{week_totals.non_billable}}</td>
-                <td>{{week_totals.total}}</td>
+                <td class="hours">{{week_totals.billable}}</td>
+                <td class="hours">{{week_totals.non_billable}}</td>
+                <td class="hours">{{week_totals.total}}</td>
             </tr>
-            <tr><td>&nbsp;</td><tr/>
+            <tr><th colspan='5'>&nbsp;</td><tr/>
         {% endfor %}
 
         <tr>
