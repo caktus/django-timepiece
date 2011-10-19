@@ -49,7 +49,7 @@ def view_entries(request):
     ).filter(
         user=request.user,
         end_time__gte=week_start,
-    )
+    ).select_related('project', 'activity', 'location')
     today = datetime.date.today()
     assignments = timepiece.ContractAssignment.objects.filter(
         user=request.user,
@@ -57,6 +57,7 @@ def view_entries(request):
         end_date__gte=today,
         contract__status='current',
     ).order_by('contract__project__type', 'end_date')
+    assignments = assignments.select_related('user', 'contract__project__type')
     activity_entries = entries.values(
         'billable',
     ).annotate(sum=Sum('hours')).order_by('-sum')
@@ -64,7 +65,7 @@ def view_entries(request):
         end_time__isnull=True,
     ).exclude(
         user=request.user,
-    )
+    ).select_related('user', 'project', 'activity')
     my_active_entries = timepiece.Entry.objects.select_related(
         'project__business',
     ).filter(
@@ -1106,7 +1107,8 @@ def create_edit_person_time_sheet(request, person_id=None):
 @render_with('timepiece/time-sheet/payroll/summary.html')
 @utils.date_filter
 def payroll_summary(request, form, from_date, to_date, status, activity):
-    all_weeks = utils.generate_weeks(start=from_date, end=to_date)
+    last_sat = utils.get_last_sat(from_date)
+    all_weeks = utils.generate_weeks(start=from_date, end=last_sat)
     rps = timepiece.PersonRepeatPeriod.objects.select_related(
         'user',
         'repeat_period',
@@ -1115,7 +1117,6 @@ def payroll_summary(request, form, from_date, to_date, status, activity):
     ).order_by('user__last_name')
     for rp in rps:
         rp.user.summary = rp.summary(from_date, to_date)
-
     cals = []
     date = from_date - relativedelta(months=1)
     end_date = from_date + relativedelta(months=1)
