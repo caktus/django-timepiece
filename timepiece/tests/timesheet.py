@@ -438,6 +438,77 @@ class ClockOutTest(TimepieceDataTestCase):
             '%(project)s - %(activity)s - from %(start_time_str)s to %(end_time_str)s' %
             entry1_data)
 
+class CheckOverlap(TimepieceDataTestCase):
+    """
+    With entry overlaps, entry.check_overlap method should return True
+    With valid entries, check_overlap should return False
+    """
+    def setUp(self):
+        super(CheckOverlap, self).setUp()
+        self.client.login(username='user', password='abc')
+        self.now = datetime.datetime.now()
+        #define start and end times to create valid entries
+        self.start = self.now - datetime.timedelta(days=0, hours=8)
+        self.end = self.now - datetime.timedelta(days=0)
+        #Create a valid entry for the tests to overlap with
+        self.log_time(start=self.start, end=self.end)
+        #define bad start times relative to the valid one (just in/outside)
+        self.start_before = self.start - datetime.timedelta(minutes=2)
+        self.start_inside = self.start + datetime.timedelta(minutes=2)
+        self.end_inside = self.end - datetime.timedelta(minutes=2)
+        self.end_after = self.end + datetime.timedelta(minutes=2)        
+
+    #helper functions
+    def use_checkoverlap(self, entries):
+        """
+        Uses entry.check_overlap given a list of entries returns all overlaps
+        """
+        user_total_overlaps = 0
+        for index_a, entry_a in enumerate(entries):
+            for index_b in xrange(index_a, len(entries)):
+                entry_b = entries[index_b]
+                if entry_a.check_overlap(entry_b):
+                    user_total_overlaps += 1
+        return user_total_overlaps
+
+    def get_entries(self):
+        return timepiece.Entry.objects.filter(user=self.user)
+
+    #Invalid entries to test against
+    def testBeforeAndIn(self):
+        self.log_time(start=self.start_before, end=self.end_inside)
+        user_total_overlaps = self.use_checkoverlap(self.get_entries())
+        self.assertEqual(user_total_overlaps, 1)
+
+    def testAfterAndIn(self):
+        self.log_time(start=self.start_inside, end=self.end_after)
+        user_total_overlaps = self.use_checkoverlap(self.get_entries())
+        self.assertEqual(user_total_overlaps, 1)
+
+    def testInside(self):
+        self.log_time(start=self.start_inside, end=self.end_inside)
+        user_total_overlaps = self.use_checkoverlap(self.get_entries())
+        self.assertEqual(user_total_overlaps, 1)
+
+    def testOutside(self):
+        self.log_time(start=self.start_before, end=self.end_after)
+        user_total_overlaps = self.use_checkoverlap(self.get_entries())
+        self.assertEqual(user_total_overlaps, 1)
+
+    def testOverlapWithPause(self):
+        """Overlaps by two minutes. Passes because it has 2 min. of pause"""
+        self.log_time(start=self.start_before, end=self.start_inside,
+            pause=120)
+        user_total_overlaps = self.use_checkoverlap(self.get_entries())
+        self.assertEqual(user_total_overlaps, 0)
+
+    def testOverlapWithoutEnoughPause(self):
+        """Overlaps by two minutes, but only has 119 seconds of pause"""
+        self.log_time(start=self.start_before, end=self.start_inside,
+            pause=119)
+        user_total_overlaps = self.use_checkoverlap(self.get_entries())
+        self.assertEqual(user_total_overlaps, 1)
+
 
 class CreateEditEntry(TimepieceDataTestCase):
     def setUp(self):

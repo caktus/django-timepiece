@@ -165,8 +165,8 @@ class TimepieceDataTestCase(TestCase):
         return timepiece.PersonSchedule.objects.create(**defaults)
 
     def log_time(self, delta=None, billable=True, project=None,
-        start=None, status=None):
-        if delta:
+        start=None, end=None, status=None, pause=0):
+        if delta and not end:
             hours, minutes = delta
         else:
             hours = 4
@@ -176,10 +176,12 @@ class TimepieceDataTestCase(TestCase):
             #In case the default would fall off the end of the billing period
             if start.day >= 28:
                 start -= relativedelta(days=1)
-        end = start + datetime.timedelta(hours=hours, minutes=minutes)
+        if not end:
+            end = start + datetime.timedelta(hours=hours, minutes=minutes)
         data = {'user': self.user,
                 'start_time': start,
                 'end_time': end,
+                'seconds_paused': pause,
                 }
         if billable:
             data['activity'] = self.devl_activity

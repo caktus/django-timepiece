@@ -183,5 +183,5 @@ class CheckEntries(TimepieceDataTestCase):
                 total_overlaps += user_overlaps
             except StopIteration:
                 self.assertEqual(
-                    total_overlaps, num_days * len(self.all_users) * 2)
+                    total_overlaps, num_days * len(self.all_users))
                 return
