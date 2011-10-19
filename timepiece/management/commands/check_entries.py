@@ -38,10 +38,10 @@ For options type:
         """
         return (
         make_option('--pep8-exclude',
-            action='store_true',
             dest='ignore_pep8',
-            default=False,
-            help='Jenkins uses this flag. It does nothing'),
+            type='str',
+            default='',
+            help='Jenkins uses this argument. It doesn\'t change behavior'),
         ) + (
         make_option('--thisweek',
             action='store_true',
