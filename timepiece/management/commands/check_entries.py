@@ -17,8 +17,7 @@ from timepiece import models as timepiece
 
 class Command(BaseCommand):
     """
-    Management command to check entries for overlapping times.
-    
+    Management command to check entries for overlapping times.    
     Use ./manage.py check_entries --help for more details
     """
     #boiler plate for console programs using optparse
@@ -114,17 +113,11 @@ For options type:
                 if args and verbosity >= 1 or verbosity >= 2:
                     self.show_name(entry_a.user)
                     user = entry_a.user
-            if entry_a.is_overlapping():
-                user_total_overlaps += 1
-                if verbosity >= 1:
-                    self.show_overlap(entry_a)                
-#Removed until check_overlap is fixed
-#            for index_b in range(index_a, len(entries)):
-#                entry_b = entries[index_b]
-#                if entry_a.check_overlap_pause(entry_b):
-#                    user_total_overlaps += 1
-#                    self.show_overlap(entry_a, entry_b)
-                    
+            for index_b in range(index_a, len(entries)):
+                entry_b = entries[index_b]
+                if entry_a.check_overlap(entry_b):
+                    user_total_overlaps += 1
+                    self.show_overlap(entry_a, entry_b, verbosity=verbosity)
         if user_total_overlaps and user and verbosity >= 1:
             overlap_data = {
                 'first': user.first_name,
@@ -162,7 +155,7 @@ For options type:
 
     def find_people(self, *args):
         """
-        Returns the users to search given names as args. 
+        Returns the users to search given names as args.
         Return all users if there are no args provided.
         """
         if args:
@@ -218,7 +211,7 @@ For options type:
         print 'Checking %s %s...' % \
         (person.first_name, person.last_name)
 
-    def show_overlap(self, entry_a, entry_b=None):
+    def show_overlap(self, entry_a, entry_b=None, **kwargs):
         def make_output_data(entry):
             return{
                 'first_name': entry.user.first_name,
@@ -239,4 +232,5 @@ For options type:
             output = 'Entry %(entry)d for %(first_name)s %(last_name)s from ' \
             % data_a + '%(start_time)s to %(end_time)s on %(project)s overlaps ' \
             % data_a + 'with another entry.'
-        print output
+        if kwargs.get('verbosity', 1):
+            print output
