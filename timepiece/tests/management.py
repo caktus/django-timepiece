@@ -194,36 +194,3 @@ class CheckEntries(TimepieceDataTestCase):
                 self.assertEqual(
                     total_overlaps, num_days * len(self.all_users))
                 return
-
-    def testCheckOverlap(self):
-        """
-        With every possbile type of overlap, check_overlap should return True
-        With valid entries, check_overlap should return False
-        """
-        #define start and end times relative to a valid entry
-        a_start_before = self.good_start - datetime.timedelta(minutes=2)
-        a_start_inside = self.good_end - datetime.timedelta(minutes=2)
-        a_end_inside = self.good_start + datetime.timedelta(minutes=2)
-        a_end_after = self.good_end + datetime.timedelta(minutes=2)
-        #Create a valid entry for today
-        self.make_entry(valid=True)
-
-        #Create a bad entry starting inside the valid one
-        self.make_entry(start_time=a_start_inside, end_time=a_end_after)
-        #Create a bad entry ending inside the valid one
-        self.make_entry(start_time=a_start_before, end_time=a_end_inside)
-        #Create a bad entry that starts and ends inside a valid one
-        self.make_entry(start_time=a_start_inside, end_time=a_end_inside)
-        #Bump the day back one so this entry only conflicts with a valid entry
-        a_start_before -= relativedelta(days=1)
-        a_end_after -= relativedelta(days=1)
-        #Create a bad entry that starts and ends outside a valid one
-        self.make_entry(start_time=a_start_before, end_time=a_end_after)
-        entries = timepiece.Entry.objects.filter(user=self.user)
-        user_total_overlaps = 0
-        for index_a, entry_a in enumerate(entries):
-            for index_b in range(index_a, len(entries)):
-                entry_b = entries[index_b]
-                if entry_a.check_overlap(entry_b):
-                    user_total_overlaps += 1
-        self.assertEqual(user_total_overlaps, 4)
