@@ -121,15 +121,3 @@ class PayrollTest(TimepieceDataTestCase):
         self.log_time(project=p1, start=start1, delta=(44, 0),
             status='approved')
         self.assertEqual(rp.total_monthly_overtime(start1), Decimal('8.00'))
-
-    def testOvertimeEndsEarly(self):
-        """Do not add hours in an unfinished week to overtime"""
-        rp = self.create_person_repeat_period({'user': self.user})
-        p1 = self.create_project()
-        start1 = datetime.datetime(2011, 1, 1)
-        self.log_time(project=p1, start=start1, delta=(44, 0),
-            status='approved')
-        on_not_done_week = datetime.datetime(2011, 1, 31)
-        self.log_time(project=p1, start=on_not_done_week, delta=(44, 0),
-            status='approved')
-        self.assertEqual(rp.total_monthly_overtime(start1), Decimal('4.00'))
