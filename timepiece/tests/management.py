@@ -1,4 +1,4 @@
-import datetime
+from datetime import datetime, timedelta
 from StringIO import StringIO
 from dateutil.relativedelta import relativedelta
 
@@ -23,15 +23,9 @@ class CheckEntries(TimepieceDataTestCase):
             'seconds_paused': 0,
             'status': 'verified',
         }
-        self.good_start = datetime.datetime.now() - datetime.timedelta(days=0, hours=8)
-        self.good_end = datetime.datetime.now() - datetime.timedelta(days=0)
-        self.bad_start = datetime.datetime.now() - datetime.timedelta(days=1, hours=8)
-        self.bad_end = datetime.datetime.now() - datetime.timedelta(days=1)
-        #Create users for the test
         self.user.first_name = 'first1'
         self.user.last_name = 'last1'
-        self.user.save()
-        
+        self.user.save()        
         self.user2.first_name = 'first2'
         self.user2.last_name = 'last2'
         self.user2.save()
@@ -44,7 +38,7 @@ class CheckEntries(TimepieceDataTestCase):
         """
         Make a valid or invalid entry
 
-        make_entry(**kwargs) 
+        make_entry(**kwargs)
         **kwargs can include: start_time, end_time, valid    
         Without any kwargs, make_entry makes a valid entry. (first time called)
         With valid=False, makes an invalid entry
@@ -87,10 +81,9 @@ class CheckEntries(TimepieceDataTestCase):
             #Range uses 1 so that good_start/good_end use today as valid times.
             for day in range(1, days + 1):
                 self.default_data.update({
-                    'start_time': datetime.datetime.now() - \
-                        datetime.timedelta(days=day, minutes=1),
-                    'end_time': datetime.datetime.now() - \
-                        datetime.timedelta(days=day,)
+                    'start_time': datetime.now() - \
+                        timedelta(days=day, minutes=1),
+                    'end_time': datetime.now() - timedelta(days=day)
                 })
                 self.create_entry(self.default_data)
 
@@ -100,7 +93,7 @@ class CheckEntries(TimepieceDataTestCase):
         With various kwargs, find_start should return the correct date
         """
         #Establish some datetimes
-        now = datetime.datetime.now()
+        now = datetime.now()
         today = now - relativedelta(
             hour=0, minute=0, second=0, microsecond=0)
         last_billing = today - relativedelta(months=1, day=1)
@@ -157,9 +150,7 @@ class CheckEntries(TimepieceDataTestCase):
         all_people = check_entries.Command().find_people()
         entries = check_entries.Command().find_entries(all_people, start)
         #Determine the number of days checked
-        today = datetime.datetime.now() - \
-            relativedelta(hour=0, minute=0, second=0, microsecond=0)
-        diff = today - start
+        diff = datetime.today() - start
         days_checked = diff.days
         total_entries = 0
         while True:
@@ -194,36 +185,3 @@ class CheckEntries(TimepieceDataTestCase):
                 self.assertEqual(
                     total_overlaps, num_days * len(self.all_users) * 2)
                 return
-
-    def testCheckOverlap(self):
-        """
-        With every possbile type of overlap, check_overlap should return True
-        With valid entries, check_overlap should return False
-        """
-        #define start and end times relative to a valid entry
-        a_start_before = self.good_start - datetime.timedelta(minutes=2)
-        a_start_inside = self.good_end - datetime.timedelta(minutes=2)
-        a_end_inside = self.good_start + datetime.timedelta(minutes=2)
-        a_end_after = self.good_end + datetime.timedelta(minutes=2)
-        #Create a valid entry for today
-        self.make_entry(valid=True)
-
-        #Create a bad entry starting inside the valid one
-        self.make_entry(start_time=a_start_inside, end_time=a_end_after)
-        #Create a bad entry ending inside the valid one
-        self.make_entry(start_time=a_start_before, end_time=a_end_inside)
-        #Create a bad entry that starts and ends inside a valid one
-        self.make_entry(start_time=a_start_inside, end_time=a_end_inside)
-        #Bump the day back one so this entry only conflicts with a valid entry
-        a_start_before -= relativedelta(days=1)
-        a_end_after -= relativedelta(days=1)
-        #Create a bad entry that starts and ends outside a valid one
-        self.make_entry(start_time=a_start_before, end_time=a_end_after)
-        entries = timepiece.Entry.objects.filter(user=self.user)
-        user_total_overlaps = 0
-        for index_a, entry_a in enumerate(entries):
-            for index_b in range(index_a, len(entries)):
-                entry_b = entries[index_b]
-                if entry_a.check_overlap(entry_b):
-                    user_total_overlaps += 1
-        self.assertEqual(user_total_overlaps, 4)
