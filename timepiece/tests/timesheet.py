@@ -605,7 +605,7 @@ class CreateEditEntry(TimepieceDataTestCase):
             'end_time_1': five_min_later.strftime('%H:%M:%S'),
         })
         response = self.client.post(self.create_url, future_entry, follow=True)
-        self.assertFormError(response,'form', None,
+        self.assertFormError(response,'form', None, 
             'Entries may not be added in the future.')
 
     def testProjectList(self):
@@ -762,33 +762,45 @@ class TestTotals(TimepieceDataTestCase):
             args=[period.user.pk, period.repeat_period.pk,
             self.billing_window.pk, 'hourly'])
 
-
     def testGroupedTotals(self):
         self.client.login(username='user', password='abc')
         days = [
                 datetime.datetime(2011, 1, 3),
                 datetime.datetime(2011, 1, 4),
-                datetime.datetime(2011, 1, 15),
+                datetime.datetime(2011, 1, 10),
                 datetime.datetime(2011, 1, 16),
-                datetime.datetime(2011, 1, 17)
+                datetime.datetime(2011, 1, 17),
+                datetime.datetime(2011, 1, 18)
         ]
-        self.log_time(project=self.p1, start=days[0], delta=(3, 0), status='approved')
-        self.log_time(project=self.p2, start=days[1], delta=(2, 0), status='approved')
-        self.log_time(project=self.p1, start=days[2], delta=(1, 0), status='approved')
-        self.log_time(project=self.p2, start=days[3], delta=(4, 0), status='approved')
-        self.log_time(project=self.p1, start=days[4], delta=(8, 0), status='approved')
-        self.log_time(project=self.p1, start=days[0], delta=(2, 0), status='approved')
-        self.log_time(project=self.p1, start=days[1], delta=(2, 0), status='approved')
-        self.log_time(project=self.p3, start=days[2], delta=(4, 0), status='approved')
-        self.log_time(project=self.p2, start=days[3], delta=(8, 0), status='approved')
-        self.log_time(project=self.p2, start=days[1], delta=(4, 0), status='approved')
-        self.log_time(project=self.p2, start=days[2], delta=(4, 0), status='approved')
-        self.log_time(project=self.p2, start=days[3], delta=(8, 0), status='approved')
-        response = self.client.get(self.hourly_url, follow=True)
-
-        for week, week_totals, days in response.context['grouped_totals']:
-            print "Week:", week, week_totals
+        self.log_time(project=self.p1, start=days[0], delta=(1, 0))
+        self.log_time(project=self.p2, start=days[0], delta=(1, 0))
+        self.log_time(project=self.p1, start=days[1], delta=(1, 0))
+        self.log_time(project=self.p3, start=days[1], delta=(1, 0))
+        self.log_time(project=self.p1, start=days[2], delta=(1, 0))
+        self.log_time(project=self.p2, start=days[2], delta=(1, 0))
+        self.log_time(project=self.p1, start=days[3], delta=(1, 0))
+        self.log_time(project=self.p3, start=days[3], delta=(1, 0))
+        self.log_time(project=self.p1, start=days[4], delta=(1, 0))
+        self.log_time(project=self.p2, start=days[4], delta=(1, 0))
+        self.log_time(project=self.p1, start=days[5], delta=(1, 0))
+        self.log_time(project=self.p3, start=days[5], delta=(1, 0))
+        entries = timepiece.Entry.objects.all()
+        grouped_totals = utils.grouped_totals(entries)
+        for week, week_totals, days in grouped_totals:
+            #Jan. 3rd is a monday. Each week should be on a monday
+            self.assertEqual(week.day % 7, 3)
+            self.assertEqual(week_totals['billable'], 2)
+            self.assertEqual(week_totals['non_billable'], 2)
+            self.assertEqual(week_totals['total'], 4)
             for day, projects in days:
-                print "Day:"
                 for project, totals in projects.items():
-                    print project, totals
+                    if project == self.p1:
+                        self.asserEqual(totals['billable'], 1)
+                        self.assertEqual(totals['total'], 1)
+                    if project == self.p2:
+                        self.asserEqual(totals['non_billable'], 1)
+                        self.assertEqual(totals['total'], 1)
+                    if project == self.p3:
+                        self.asserEqual(totals['billable'], 1)
+                        self.asserEqual(totals['non_billable'], 1)
+                        self.assertEqual(totals['total'], 2)

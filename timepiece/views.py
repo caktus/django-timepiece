@@ -511,7 +511,6 @@ def view_person_time_sheet(request, person_id, period_id=None,
         window_id=window_id,
         user=time_sheet.user,
     )
-#    grouped_totals = utils.grouped_totals(entries)
     context = {
             'hourly': 'hourly',
             'person': time_sheet.user,
@@ -543,7 +542,6 @@ def view_person_time_sheet(request, person_id, period_id=None,
         if request.user.has_perm('timepiece.edit_person_time_sheet'):
             show_approve = verified_count + approved_count == total_statuses \
             and verified_count > 0 and total_statuses != 0
-
         summary = time_sheet.summary(window.date, window.end_date)
         template = 'timepiece/time-sheet/people/view.html'
         context.update({
