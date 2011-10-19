@@ -182,38 +182,6 @@ def monthly_overtime(rp, date):
 def week_start(date):
     return get_week_start(date).strftime('%m/%d/%Y')
 
-@register.inclusion_tag('timepiece/time-sheet/people/daily_row.html')
-def show_daily_row(day, data):
-    totals = []
-    for hours in data.values():
-        hours.update({'billable': hours.get('billable', 0)})
-        hours.update({'non_billable': hours.get('non_billable', 0)})
-        hours.update({
-            'total_worked': hours.get(
-                'total_worked', hours['billable'] or hours['non_billable'])
-        })
-        totals.append(hours)
-    return {
-        'day': day,
-        'data': zip([project for project in data.keys()], totals)
-    }
-
-
-@register.inclusion_tag('timepiece/time-sheet/people/week_row.html')
-def show_week_row(totals, date):    
-    total = totals.get(str(date), None)
-    if total:
-        billable = total.get('billable', 0)
-        non_billable = total.get('non_billable', 0)
-        total_worked = total.get('total_worked', 0)
-    else:
-        billable = non_billable = total_worked = 0
-    return {
-        'billable': billable,
-        'non_billable': non_billable,
-        'total_worked': total_worked
-    }
-
 
 @register.simple_tag
 def build_invoice_row(entries, to_date, from_date):

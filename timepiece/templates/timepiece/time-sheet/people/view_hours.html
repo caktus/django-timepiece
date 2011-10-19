@@ -38,7 +38,7 @@
 </ul>
 
 {% if grouped_totals %}
-    <table class="time-sheet">
+    <table>
         {% for week, week_totals, days in grouped_totals %}
             <tr>
                 <th colspan='2'>Week of {{ week|date:"m/d/Y (D)" }} </th>
