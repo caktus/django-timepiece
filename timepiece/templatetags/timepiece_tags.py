@@ -51,12 +51,7 @@ def bar_graph(context, name, worked, total, width=None, suffix=None):
                         takes_context=True)
 def my_ledger(context):
     try:
-        period = PersonRepeatPeriod.objects.select_related(
-            'user',
-            'repeat_period',
-        ).get(
-            user=context['request'].user
-        )
+        period = PersonRepeatPeriod.objects.get(user=context['request'].user)
     except PersonRepeatPeriod.DoesNotExist:
         return {'period': False}
     return {'period': period}
