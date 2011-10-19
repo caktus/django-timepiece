@@ -632,8 +632,7 @@ class PersonRepeatPeriod(models.Model):
 
     def total_monthly_overtime(self, day):
         start = day.replace(day=1)
-        end = start + relativedelta(months=1)
-        weeks = utils.generate_weeks(start=start, end=end)
+        weeks = utils.generate_weeks(start=start, end=utils.get_last_sat(start))
         overtime = Decimal('0.0')
         for week in weeks:
             overtime += self.overtime_hours_in_week(week)

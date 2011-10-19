@@ -251,6 +251,13 @@ def get_week_start(day=None):
     return day
 
 
+def get_last_sat(day=None):
+    if not day:
+        day = date.today()
+    day += relativedelta(months=1)
+    return get_week_start(day) - timedelta(days=1)
+
+
 def generate_weeks(end, start=None):
     start = get_week_start(start)
     #byweekday is set to Sunday, the last day of an ISO week
