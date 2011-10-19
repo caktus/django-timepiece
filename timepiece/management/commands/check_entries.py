@@ -37,20 +37,12 @@ For options type:
         Define the arguments that can be used with this command
         """
         return (
-        #Jenkins arguments to ignore
         make_option('--pep8-exclude',
             dest='ignore_pep8',
             type='str',
             default='',
-            help='Jenkins only'),
+            help='Jenkins uses this argument. It doesn\'t change behavior'),
         ) + (
-        make_option('--coverage-exclude',
-            dest='ignore_coverage',
-            type='str',
-            default='',
-            help='Jenkins only'),
-        ) + (
-        #Arguments for user
         make_option('--thisweek',
             action='store_true',
             dest='week',
