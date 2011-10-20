@@ -1,10 +1,13 @@
 from dateutil import rrule
 from dateutil.relativedelta import relativedelta
+from decimal import Decimal
+import itertools
 
 from django.http import HttpResponse, HttpResponseRedirect, Http404
 from django.shortcuts import render_to_response
 from django.template import RequestContext
 from django.template.defaultfilters import slugify
+from django.db.models import Sum
 
 from django.contrib.sites.models import Site
 from datetime import date, datetime, timedelta, time as time_obj
@@ -242,14 +245,13 @@ def get_total_time(seconds):
 def get_week_start(day=None):
     if not day:
         day = date.today()
-    if day.isoweekday() != 7:
-        week_start = day - timedelta(days=day.isoweekday())
-    else:
-        week_start = day
-    return week_start
+    isoweekday = day.isoweekday()
+    if isoweekday != 1:
+        day = day - timedelta(days=isoweekday - 1)
+    return day
 
 
-def get_last_sat(day=None):
+def get_last_billable_day(day=None):
     if not day:
         day = date.today()
     day += relativedelta(months=1)
@@ -258,7 +260,8 @@ def get_last_sat(day=None):
 
 def generate_weeks(end, start=None):
     start = get_week_start(start)
-    return rrule.rrule(rrule.WEEKLY, dtstart=start, until=end, byweekday=6)
+    #byweekday is set to Sunday, the last day of an ISO week
+    return rrule.rrule(rrule.WEEKLY, dtstart=start, until=end, byweekday=0)
 
 
 def get_week_window(day):
@@ -288,3 +291,53 @@ def date_filter(func):
         return func(request, form, from_date, to_date, status, activity,
             *args, **kwargs)
     return inner_decorator
+
+
+def get_hours(entries):
+    hours = {'total': 0}
+    for entry in entries:
+        hours['total'] += entry['hours']
+        if entry['billable']:
+            hours['billable'] = entry['hours']
+        else:
+            hours['non_billable'] = entry['hours']
+    return hours
+
+
+def daily_summary(day_entries):
+    projects = {}
+    all_day = {}
+    for name, entries in itertools.groupby(day_entries,
+                                           lambda x: x['project__name']):
+        hours = get_hours(entries)
+        projects[name] = hours
+        for key in hours.keys():
+            if key in all_day:
+                all_day[key] += hours[key]
+            else:
+                all_day[key] = hours[key]
+
+    return (all_day, projects)
+
+
+def grouped_totals(entries):
+    select = {"day": {"date": """DATE_TRUNC('day', end_time)"""},
+              "week": {"date": """DATE_TRUNC('week', end_time)"""}}
+    weekly = entries.extra(select=select["week"]).values('date', 'billable')
+    weekly = weekly.annotate(hours=Sum('hours')).order_by('date')
+    daily = entries.extra(select=select["day"]).values('date', 'project__name',
+                                                       'billable')
+    daily = daily.annotate(hours=Sum('hours')).order_by('date', 'project__name')
+    weeks = {}
+    for week, week_entries in itertools.groupby(weekly, lambda x: x['date']):
+        weeks[week] = get_hours(week_entries)
+    days = []
+    last_week = None
+    for day, day_entries in itertools.groupby(daily, lambda x: x['date']):
+        week = get_week_start(day)
+        if last_week and week > last_week:
+            yield last_week, weeks.get(last_week, {}), days
+            days = []
+        days.append((day, daily_summary(day_entries)))
+        last_week = week
+    yield week, weeks.get(week, {}), days

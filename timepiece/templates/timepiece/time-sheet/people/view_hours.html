@@ -1,0 +1,92 @@
+{% extends 'timepiece/time-sheet/base.html' %}
+{% load timepiece_tags %}
+
+{% block title %}{{ person }} Hourly Summary{% endblock %}
+
+{% block content %}
+<h2>{{ person.first_name }} {{ person.last_name}}'s Hourly Summary ({{ window.date|date:"N j" }} &mdash; {{ window.end_date|date:"N j" }})</h2>
+<ul class='header-actions-left'>
+    <li>
+        {% if perms.timepiece.view_user %}
+            <a href='{% url view_person person.pk %}'>User Information</a>
+        {% endif %}
+    </li>
+    <li>
+        {% if perms.timepiece.view_user %}
+            <a href='{% url view_person_time_sheet person.pk, window.period.pk, window.pk %}'>Time Sheet</a>
+        {% endif %}
+    </li>
+    <li>
+        {% if perms.timepiece.view_user %}
+            Hourly Summary
+        {% endif %}
+    </li>
+    <li>
+        {% if window.previous %}
+            <a href='{% url view_person_time_sheet person.pk,window.period.pk,window.previous.pk, hourly %}'>Previous Time Sheet</a>
+        {% else %}
+            Previous Time Sheet
+        {% endif %}
+    </li>
+    <li>
+        {% if window.next %}
+            <a href='{% url view_person_time_sheet person.pk,window.period.pk,window.next.pk, hourly %}'>Next Time Sheet</a>
+        {% else %}
+            Next Time Sheet
+        {% endif %}
+    </li>
+</ul>
+
+{% if grouped_totals %}
+    <table>
+        {% for week, week_totals, days in grouped_totals %}
+            <tr>
+                <th colspan='2'>Week of {{ week|date:"m/d/Y (D)" }} </th>
+                <th>Billable:</th>
+                <th>Non Billable:</th>
+                <th>Total:</th>
+            </tr>
+            {% for day, projects in days %}
+                {% for project, totals in projects.1.iteritems %}
+                    <tr>
+                        <td>
+                        {% if forloop.counter == 1 %}
+                            {{day|date:"m/d/Y (D)"}}
+                        {% endif %}
+                        </td>
+                        <td>
+                            {{project}}
+                        </td>
+                        <td class="hours">{{totals.billable}}</td>
+                        <td class="hours">{{totals.non_billable}}</td>
+                        <td class="hours">{{totals.total}}</td>
+                    </tr>
+                {% endfor %}         
+                <tr>
+                    <td></td>
+                    <td class="hours"><strong>{{day|date:"D"}}:</strong></td>
+                    <td class="hours">{{projects.0.billable}}</td>
+                    <td class="hours">{{projects.0.non_billable}}</td>
+                    <td class="hours">{{projects.0.total}}</td>
+                <tr/>
+            {% endfor %}
+            <tr>
+                <th colspan="2">Totals for this week:</th>
+                <td class="hours">{{week_totals.billable}}</td>
+                <td class="hours">{{week_totals.non_billable}}</td>
+                <td class="hours">{{week_totals.total}}</td>
+            </tr>
+            <tr><th colspan='5'>&nbsp;</td><tr/>
+        {% endfor %}
+        <tr>
+            <th colspan='4'>Overall total for the period:</th>
+            <td>{{ total|floatformat:2 }}</td>
+        </tr>
+    </table>
+{% else %}
+    <p>No entries exist for this time sheet.</p>
+{% endif %}
+
+<br style='clear: both' />
+
+{% endblock %}
