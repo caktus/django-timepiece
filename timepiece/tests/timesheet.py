@@ -817,8 +817,10 @@ class TestTotals(TimepieceDataTestCase):
         self.create_person_repeat_period(data={'user': self.user})
         self.p1 = self.create_project(billable=True, name='1')
         self.p2 = self.create_project(billable=False, name='2')
+        self.p4 = self.create_project(billable=True, name='4')
         #For use with daily totals (Same project, non-billable activity)
         self.p3 = self.create_project(billable=False, name='1')
+
         period = timepiece.PersonRepeatPeriod.objects.get(user=self.user)
         self.billing_window = timepiece.BillingWindow.objects.create(
             period=period.repeat_period,
@@ -845,27 +847,35 @@ class TestTotals(TimepieceDataTestCase):
         ]
         self.log_time(project=self.p1, start=days[0], delta=(1, 0))
         self.log_time(project=self.p2, start=days[0], delta=(1, 0))
+        self.log_time(project=self.p4, start=days[0], delta=(1, 0))
         self.log_time(project=self.p1, start=days[1], delta=(1, 0))
         self.log_time(project=self.p3, start=days[1], delta=(1, 0))
+        self.log_time(project=self.p4, start=days[1], delta=(1, 0))
         self.log_time(project=self.p1, start=days[2], delta=(1, 0))
         self.log_time(project=self.p2, start=days[2], delta=(1, 0))
+        self.log_time(project=self.p4, start=days[2], delta=(1, 0))
         self.log_time(project=self.p1, start=days[3], delta=(1, 0))
         self.log_time(project=self.p3, start=days[3], delta=(1, 0))
+        self.log_time(project=self.p4, start=days[3], delta=(1, 0))
         self.log_time(project=self.p1, start=days[4], delta=(1, 0))
         self.log_time(project=self.p2, start=days[4], delta=(1, 0))
+        self.log_time(project=self.p4, start=days[4], delta=(1, 0))
         self.log_time(project=self.p1, start=days[5], delta=(1, 0))
         self.log_time(project=self.p3, start=days[5], delta=(1, 0))
+        self.log_time(project=self.p4, start=days[5], delta=(1, 0))
         entries = timepiece.Entry.objects.all()
         grouped_totals = utils.grouped_totals(entries)
         for week, week_totals, days in grouped_totals:
             #Jan. 3rd is a monday. Each week should be on a monday
             self.assertEqual(week.day % 7, 3)
-            self.assertEqual(week_totals['billable'], 2)
+            self.assertEqual(week_totals['billable'], 4)
             self.assertEqual(week_totals['non_billable'], 2)
-            self.assertEqual(week_totals['total'], 4)
+            self.assertEqual(week_totals['total'], 6)
             for day, projects in days:
                 for project, totals in projects[1].items():
-                    self.assertEqual(projects[0], 2) #Total for the day is 2
+                    self.assertEqual(projects[0]['billable'], 2)
+                    self.assertEqual(projects[0]['non_billable'], 1)
+                    self.assertEqual(projects[0]['total'], 3)
                     if project == self.p1:
                         self.assertEqual(totals['billable'], 1)
                         self.assertEqual(totals['total'], 1)
@@ -876,3 +886,6 @@ class TestTotals(TimepieceDataTestCase):
                         self.assertEqual(totals['billable'], 1)
                         self.assertEqual(totals['non_billable'], 1)
                         self.assertEqual(totals['total'], 2)
+                    if project == self.p4:
+                        self.assertEqual(totals['billable'], 1)
+                        self.assertEqual(totals['total'], 1)

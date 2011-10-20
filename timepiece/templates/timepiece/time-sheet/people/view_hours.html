@@ -63,8 +63,11 @@
                     </tr>
                 {% endfor %}         
                 <tr>
-                    <th colspan='4'>&nbsp;</th>
-                    <td class="hours"><strong>{{projects.0}}</strong></td>
+                    <td></td>
+                    <td class="hours"><strong>{{day|date:"D"}}:</strong></td>
+                    <td class="hours">{{projects.0.billable}}</td>
+                    <td class="hours">{{projects.0.non_billable}}</td>
+                    <td class="hours">{{projects.0.total}}</td>
                 <tr/>
             {% endfor %}
             <tr>
@@ -75,7 +78,6 @@
             </tr>
             <tr><th colspan='5'>&nbsp;</td><tr/>
         {% endfor %}
-
         <tr>
             <th colspan='4'>Overall total for the period:</th>
             <td>{{ total|floatformat:2 }}</td>

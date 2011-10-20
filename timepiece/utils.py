@@ -299,13 +299,18 @@ def get_hours(entries):
 
 def daily_summary(day_entries):
     projects = {}
-    total_for_day = []
+    all_day = {}
     for name, entries in itertools.groupby(day_entries,
                                            lambda x: x['project__name']):
         hours = get_hours(entries)
         projects[name] = hours
-        total_for_day.append(hours['total'])
-    return (sum(total_for_day), projects)
+        for key in hours.keys():
+            if key in all_day:
+                all_day[key] += hours[key]
+            else:
+                all_day[key] = hours[key]
+
+    return (all_day, projects)
 
 
 def grouped_totals(entries):
