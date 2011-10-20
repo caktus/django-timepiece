@@ -5,11 +5,8 @@ setup(
     version=__import__('timepiece').__version__,
     author='Caktus Consulting Group',
     author_email='solutions@caktusgroup.com',
-    packages=find_packages(),
+    packages=find_packages(exclude=['example_project']),
     include_package_data=True,
-    exclude_package_data={
-        '': ['*.sql', '*.pyc',],
-    },
     url='https://github.com/caktus/django-timepiece',
     license='BSD',
     long_description=open('README.rst').read(),
@@ -24,5 +21,11 @@ setup(
         'Topic :: Software Development :: Libraries :: Python Modules',
         'Development Status :: 4 - Beta',
         'Operating System :: OS Independent',
+    ],
+    install_requires = [
+        "python-dateutil==1.5",
+        "django-ajax-selects==1.1.4",
+        "django-pagination==1.0.7",
+        "textile==2.1.4"
     ],
 )
