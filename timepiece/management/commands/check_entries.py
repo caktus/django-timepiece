@@ -50,7 +50,6 @@ For options type:
             default='',
             help='Jenkins only'),
         ) + (
-        #Arguments for user
         make_option('--thisweek',
             action='store_true',
             dest='week',

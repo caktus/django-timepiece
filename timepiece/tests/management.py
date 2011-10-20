@@ -1,4 +1,4 @@
-from datetime import datetime, timedelta
+import datetime
 from StringIO import StringIO
 from dateutil.relativedelta import relativedelta
 
@@ -23,9 +23,15 @@ class CheckEntries(TimepieceDataTestCase):
             'seconds_paused': 0,
             'status': 'verified',
         }
+        self.good_start = datetime.datetime.now() - datetime.timedelta(days=0, hours=8)
+        self.good_end = datetime.datetime.now() - datetime.timedelta(days=0)
+        self.bad_start = datetime.datetime.now() - datetime.timedelta(days=1, hours=8)
+        self.bad_end = datetime.datetime.now() - datetime.timedelta(days=1)
+        #Create users for the test
         self.user.first_name = 'first1'
         self.user.last_name = 'last1'
-        self.user.save()        
+        self.user.save()
+        
         self.user2.first_name = 'first2'
         self.user2.last_name = 'last2'
         self.user2.save()
@@ -38,7 +44,7 @@ class CheckEntries(TimepieceDataTestCase):
         """
         Make a valid or invalid entry
 
-        make_entry(**kwargs)
+        make_entry(**kwargs) 
         **kwargs can include: start_time, end_time, valid    
         Without any kwargs, make_entry makes a valid entry. (first time called)
         With valid=False, makes an invalid entry
@@ -81,9 +87,10 @@ class CheckEntries(TimepieceDataTestCase):
             #Range uses 1 so that good_start/good_end use today as valid times.
             for day in range(1, days + 1):
                 self.default_data.update({
-                    'start_time': datetime.now() - \
-                        timedelta(days=day, minutes=1),
-                    'end_time': datetime.now() - timedelta(days=day)
+                    'start_time': datetime.datetime.now() - \
+                        datetime.timedelta(days=day, minutes=1),
+                    'end_time': datetime.datetime.now() - \
+                        datetime.timedelta(days=day,)
                 })
                 self.create_entry(self.default_data)
 
@@ -93,7 +100,7 @@ class CheckEntries(TimepieceDataTestCase):
         With various kwargs, find_start should return the correct date
         """
         #Establish some datetimes
-        now = datetime.now()
+        now = datetime.datetime.now()
         today = now - relativedelta(
             hour=0, minute=0, second=0, microsecond=0)
         last_billing = today - relativedelta(months=1, day=1)
@@ -150,7 +157,9 @@ class CheckEntries(TimepieceDataTestCase):
         all_people = check_entries.Command().find_people()
         entries = check_entries.Command().find_entries(all_people, start)
         #Determine the number of days checked
-        diff = datetime.today() - start
+        today = datetime.datetime.now() - \
+            relativedelta(hour=0, minute=0, second=0, microsecond=0)
+        diff = today - start
         days_checked = diff.days
         total_entries = 0
         while True:

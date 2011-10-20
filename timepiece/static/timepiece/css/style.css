@@ -41,8 +41,8 @@ input[type='text'].timepiece-time {
     margin-right: 1em;
 }
 
-table.my-projects td.hours {
-	text-align: right;
+td.hours{
+    text-align: right;
 }
 
 /*th, td {
