@@ -47,7 +47,7 @@ Installation
         "django.core.context_processors.request", # <----
     )
 
-#. Add the pagelets URLs to urls.py, e.g.::
+#. Add the timepiece URLs to urls.py, e.g.::
 
     urlpatterns = patterns('',
         ...
