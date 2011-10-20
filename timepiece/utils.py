@@ -251,7 +251,7 @@ def get_week_start(day=None):
     return day
 
 
-def get_last_sat(day=None):
+def get_last_billable_day(day=None):
     if not day:
         day = date.today()
     day += relativedelta(months=1)

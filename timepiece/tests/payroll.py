@@ -145,10 +145,11 @@ class PayrollTest(TimepieceDataTestCase):
         self.assertEqual(rp.total_monthly_overtime(start1), Decimal('4.00'))
 
     def testLastSat(self):
-        """Test the get_last_sat utility for validity"""
+        """Test the get_last_billable_day utility for validity"""
         months = range(1, 13)
         first_days = [datetime.datetime(2011, month, 1) for month in months]
-        last_sats = [utils.get_last_sat(day).day for day in first_days]
+        last_billable = [utils.get_last_billable_day(day).day \
+                         for day in first_days]
         #Should = the last saturday of every month in 2011
-        self.assertEqual(last_sats,
+        self.assertEqual(last_billable,
                          [30, 27, 27, 24, 29, 26, 31, 28, 25, 30, 27, 25])

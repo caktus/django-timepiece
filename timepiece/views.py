@@ -1107,8 +1107,8 @@ def create_edit_person_time_sheet(request, person_id=None):
 @render_with('timepiece/time-sheet/payroll/summary.html')
 @utils.date_filter
 def payroll_summary(request, form, from_date, to_date, status, activity):
-    last_sat = utils.get_last_sat(from_date)
-    all_weeks = utils.generate_weeks(start=from_date, end=last_sat)
+    last_billable = utils.get_last_billable_day(from_date)
+    all_weeks = utils.generate_weeks(start=from_date, end=last_billable)
     rps = timepiece.PersonRepeatPeriod.objects.select_related(
         'user',
         'repeat_period',
