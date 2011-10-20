@@ -105,11 +105,14 @@ class PayrollTest(TimepieceDataTestCase):
         """make sure Sunday belongs to previous week in overtime calculation"""
         rp = self.create_person_repeat_period({'user': self.user})
         p1 = self.create_project()
+        friday = datetime.datetime(2011, 1, 21)
         sunday = datetime.datetime(2011, 1, 23)
         monday = datetime.datetime(2011, 1, 24)
-        self.log_time(project=p1, start=sunday, delta=(44, 0),
+        self.log_time(project=p1, start=friday, delta=(40, 0),
                       status='approved')
-        self.assertEqual(rp.overtime_hours_in_week(monday), Decimal('4.00'))
+        self.log_time(project=p1, start=sunday, delta=(4, 0),
+                      status='approved')
+        self.assertEqual(rp.overtime_hours_in_week(monday), Decimal('0.00'))
 
     def testWeeklyNonOvertimeHours(self):
         """ Test weekly overtime calculation """
