@@ -299,13 +299,16 @@ def get_hours(entries):
 
 def daily_summary(day_entries):
     projects = {}
+    total_for_day = []
     for name, entries in itertools.groupby(day_entries,
-                                           lambda x: x['project__name']):                  
-        projects[name] = get_hours(entries)
-    return projects
+                                           lambda x: x['project__name']):
+        hours = get_hours(entries)
+        projects[name] = hours
+        total_for_day.append(hours['total'])
+    return (sum(total_for_day), projects)
 
 
-def grouped_totals(entries):    
+def grouped_totals(entries):
     select = {"day": {"date": """DATE_TRUNC('day', end_time)"""},
               "week": {"date": """DATE_TRUNC('week', end_time)"""}}
     weekly = entries.extra(select=select["week"]).values('date', 'billable')

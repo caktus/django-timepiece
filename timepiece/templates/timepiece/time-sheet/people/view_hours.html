@@ -47,7 +47,7 @@
                 <th>Total:</th>
             </tr>
             {% for day, projects in days %}
-                {% for project, totals in projects.iteritems %}
+                {% for project, totals in projects.1.iteritems %}
                     <tr>
                         <td>
                         {% if forloop.counter == 1 %}
@@ -61,7 +61,11 @@
                         <td class="hours">{{totals.non_billable}}</td>
                         <td class="hours">{{totals.total}}</td>
                     </tr>
-                {% endfor %}
+                {% endfor %}         
+                <tr>
+                    <th colspan='4'>&nbsp;</th>
+                    <td class="hours"><strong>{{projects.0}}</strong></td>
+                <tr/>
             {% endfor %}
             <tr>
                 <th colspan="2">Totals for this week:</th>
