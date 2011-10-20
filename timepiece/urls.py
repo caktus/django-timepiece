@@ -108,7 +108,8 @@ urlpatterns = patterns('',
     ),
     url(
         r'^time-sheet/people/(?P<person_id>\d+)/(period/)?' +
-        r'(?:(?P<period_id>\d+)/)?(?:(?P<window_id>\d+)/)?$',
+        r'(?:(?P<period_id>\d+)/)?(?:(?P<window_id>\d+)/)?' +
+        r'(?:(?P<hourly>hourly)/)?$',
         views.view_person_time_sheet,
         name='view_person_time_sheet',
     ),

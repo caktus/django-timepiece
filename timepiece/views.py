@@ -3,6 +3,7 @@ import csv
 import datetime
 import calendar
 import math
+import pprint
 from decimal import Decimal
 from dateutil.relativedelta import relativedelta
 from dateutil import rrule
@@ -486,8 +487,8 @@ def export_project_time_sheet(request, form, from_date, to_date, status,
 
 
 @login_required
-@render_with('timepiece/time-sheet/people/view.html')
-def view_person_time_sheet(request, person_id, period_id=None, window_id=None):
+def view_person_time_sheet(request, person_id, period_id=None, 
+    window_id=None, hourly=False):
     try:
         if not period_id:
             time_sheet = timepiece.PersonRepeatPeriod.objects.select_related(
@@ -511,40 +512,48 @@ def view_person_time_sheet(request, person_id, period_id=None, window_id=None):
         window_id=window_id,
         user=time_sheet.user,
     )
-
-    project_entries = entries.order_by().values(
-        'project__name',
-    ).annotate(sum=Sum('hours')).order_by('-sum')
-
-    show_approve = show_verify = False
-    if request.user.has_perm('timepiece.edit_person_time_sheet') or \
-        time_sheet.user.pk == request.user.pk:
-        statuses = list(entries.values_list('status', flat=True))
-        total_statuses = len(statuses)
-        unverified_count = statuses.count('unverified')
-        verified_count = statuses.count('verified')
-        approved_count = statuses.count('approved')
-
-    if time_sheet.user.pk == request.user.pk:
-        show_verify = unverified_count != 0
-
-    if request.user.has_perm('timepiece.edit_person_time_sheet'):
-        show_approve = verified_count + approved_count == total_statuses \
-        and verified_count > 0 and total_statuses != 0
-
-    summary = time_sheet.summary(window.date, window.end_date)
     context = {
-        'show_verify': show_verify,
-        'show_approve': show_approve,
-        'person': time_sheet.user,
-        'period': window.period,
-        'window': window,
-        'entries': entries,
-        'total': total_hours,
-        'project_entries': project_entries,
-        'summary': summary,
+            'hourly': 'hourly',
+            'person': time_sheet.user,
+            'period': window.period,
+            'window': window,
+            'total': total_hours,
     }
-    return context
+    if hourly:
+        template = 'timepiece/time-sheet/people/view_hours.html'
+        grouped_totals = utils.grouped_totals(entries)
+        context.update({
+            'grouped_totals': grouped_totals,
+        })
+    else:
+        project_entries = entries.order_by().values(
+            'project__name',
+        ).annotate(sum=Sum('hours')).order_by('-sum')
+
+        show_approve = show_verify = False
+        if request.user.has_perm('timepiece.edit_person_time_sheet') or \
+            time_sheet.user.pk == request.user.pk:
+            statuses = list(entries.values_list('status', flat=True))
+            total_statuses = len(statuses)
+            unverified_count = statuses.count('unverified')
+            verified_count = statuses.count('verified')
+            approved_count = statuses.count('approved')
+        if time_sheet.user.pk == request.user.pk:
+            show_verify = unverified_count != 0
+        if request.user.has_perm('timepiece.edit_person_time_sheet'):
+            show_approve = verified_count + approved_count == total_statuses \
+            and verified_count > 0 and total_statuses != 0
+        summary = time_sheet.summary(window.date, window.end_date)
+        template = 'timepiece/time-sheet/people/view.html'
+        context.update({
+            'show_verify': show_verify,
+            'show_approve': show_approve,
+            'project_entries': project_entries,
+            'entries': entries,
+            'summary': summary,
+        })
+    return render_to_response(template, context,
+        context_instance=RequestContext(request))
 
 
 @login_required
@@ -1098,8 +1107,8 @@ def create_edit_person_time_sheet(request, person_id=None):
 @render_with('timepiece/time-sheet/payroll/summary.html')
 @utils.date_filter
 def payroll_summary(request, form, from_date, to_date, status, activity):
-    last_sat = utils.get_last_sat(from_date)
-    all_weeks = utils.generate_weeks(start=from_date, end=last_sat)
+    last_billable = utils.get_last_billable_day(from_date)
+    all_weeks = utils.generate_weeks(start=from_date, end=last_billable)
     rps = timepiece.PersonRepeatPeriod.objects.select_related(
         'user',
         'repeat_period',

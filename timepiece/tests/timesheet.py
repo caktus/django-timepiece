@@ -2,6 +2,7 @@ import time
 import datetime
 import random
 import itertools
+from decimal import Decimal
 
 from django.core.urlresolvers import reverse
 
@@ -13,6 +14,7 @@ from timepiece.tests.base import TimepieceDataTestCase
 
 from timepiece import models as timepiece
 from timepiece import forms as timepiece_forms
+from timepiece import utils
 
 from dateutil import relativedelta
 
@@ -674,7 +676,7 @@ class CreateEditEntry(TimepieceDataTestCase):
             'end_time_1': five_min_later.strftime('%H:%M:%S'),
         })
         response = self.client.post(self.create_url, future_entry, follow=True)
-        self.assertFormError(response,'form', None,
+        self.assertFormError(response,'form', None, 
             'Entries may not be added in the future.')
 
     def testProjectList(self):
@@ -807,3 +809,83 @@ class StatusTest(TimepieceDataTestCase):
         self.client.login(username='user2', password='abc')
         response = self.client.get(self.approve_url,)
         self.assertTrue(response.status_code, 403)
+
+
+class TestTotals(TimepieceDataTestCase):
+    def setUp(self):
+        super(TestTotals, self).setUp()
+        self.create_person_repeat_period(data={'user': self.user})
+        self.p1 = self.create_project(billable=True, name='1')
+        self.p2 = self.create_project(billable=False, name='2')
+        self.p4 = self.create_project(billable=True, name='4')
+        #For use with daily totals (Same project, non-billable activity)
+        self.p3 = self.create_project(billable=False, name='1')
+
+        period = timepiece.PersonRepeatPeriod.objects.get(user=self.user)
+        self.billing_window = timepiece.BillingWindow.objects.create(
+            period=period.repeat_period,
+            date=datetime.datetime(2010, 12, 1),
+            end_date=datetime.datetime(2011, 12, 1),
+        )
+        self.client.login(username='user', password='abc')
+        self.url = reverse('view_person_time_sheet',
+            args=[period.user.pk, period.repeat_period.pk,
+            self.billing_window.pk])
+        self.hourly_url = reverse('view_person_time_sheet',
+            args=[period.user.pk, period.repeat_period.pk,
+            self.billing_window.pk, 'hourly'])
+
+    def testGroupedTotals(self):
+        self.client.login(username='user', password='abc')
+        days = [
+                datetime.datetime(2011, 1, 3),
+                datetime.datetime(2011, 1, 4),
+                datetime.datetime(2011, 1, 10),
+                datetime.datetime(2011, 1, 16),
+                datetime.datetime(2011, 1, 17),
+                datetime.datetime(2011, 1, 18)
+        ]
+        self.log_time(project=self.p1, start=days[0], delta=(1, 0))
+        self.log_time(project=self.p2, start=days[0], delta=(1, 0))
+        self.log_time(project=self.p4, start=days[0], delta=(1, 0))
+        self.log_time(project=self.p1, start=days[1], delta=(1, 0))
+        self.log_time(project=self.p3, start=days[1], delta=(1, 0))
+        self.log_time(project=self.p4, start=days[1], delta=(1, 0))
+        self.log_time(project=self.p1, start=days[2], delta=(1, 0))
+        self.log_time(project=self.p2, start=days[2], delta=(1, 0))
+        self.log_time(project=self.p4, start=days[2], delta=(1, 0))
+        self.log_time(project=self.p1, start=days[3], delta=(1, 0))
+        self.log_time(project=self.p3, start=days[3], delta=(1, 0))
+        self.log_time(project=self.p4, start=days[3], delta=(1, 0))
+        self.log_time(project=self.p1, start=days[4], delta=(1, 0))
+        self.log_time(project=self.p2, start=days[4], delta=(1, 0))
+        self.log_time(project=self.p4, start=days[4], delta=(1, 0))
+        self.log_time(project=self.p1, start=days[5], delta=(1, 0))
+        self.log_time(project=self.p3, start=days[5], delta=(1, 0))
+        self.log_time(project=self.p4, start=days[5], delta=(1, 0))
+        entries = timepiece.Entry.objects.all()
+        grouped_totals = utils.grouped_totals(entries)
+        for week, week_totals, days in grouped_totals:
+            #Jan. 3rd is a monday. Each week should be on a monday
+            self.assertEqual(week.day % 7, 3)
+            self.assertEqual(week_totals['billable'], 4)
+            self.assertEqual(week_totals['non_billable'], 2)
+            self.assertEqual(week_totals['total'], 6)
+            for day, projects in days:
+                for project, totals in projects[1].items():
+                    self.assertEqual(projects[0]['billable'], 2)
+                    self.assertEqual(projects[0]['non_billable'], 1)
+                    self.assertEqual(projects[0]['total'], 3)
+                    if project == self.p1:
+                        self.assertEqual(totals['billable'], 1)
+                        self.assertEqual(totals['total'], 1)
+                    if project == self.p2:
+                        self.assertEqual(totals['non_billable'], 1)
+                        self.assertEqual(totals['total'], 1)
+                    if project == self.p3:
+                        self.assertEqual(totals['billable'], 1)
+                        self.assertEqual(totals['non_billable'], 1)
+                        self.assertEqual(totals['total'], 2)
+                    if project == self.p4:
+                        self.assertEqual(totals['billable'], 1)
+                        self.assertEqual(totals['total'], 1)
