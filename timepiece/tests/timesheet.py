@@ -864,14 +864,15 @@ class TestTotals(TimepieceDataTestCase):
             self.assertEqual(week_totals['non_billable'], 2)
             self.assertEqual(week_totals['total'], 4)
             for day, projects in days:
-                for project, totals in projects.items():
+                for project, totals in projects[1].items():
+                    self.assertEqual(projects[0], 2) #Total for the day is 2
                     if project == self.p1:
-                        self.asserEqual(totals['billable'], 1)
+                        self.assertEqual(totals['billable'], 1)
                         self.assertEqual(totals['total'], 1)
                     if project == self.p2:
-                        self.asserEqual(totals['non_billable'], 1)
+                        self.assertEqual(totals['non_billable'], 1)
                         self.assertEqual(totals['total'], 1)
                     if project == self.p3:
-                        self.asserEqual(totals['billable'], 1)
-                        self.asserEqual(totals['non_billable'], 1)
+                        self.assertEqual(totals['billable'], 1)
+                        self.assertEqual(totals['non_billable'], 1)
                         self.assertEqual(totals['total'], 2)
