@@ -10,9 +10,19 @@ setup(
     exclude_package_data={
         '': ['*.sql', '*.pyc',],
     },
-    url='',
+    url='https://github.com/caktus/django-timepiece',
     license='BSD',
-    description='django-timepiece',
     long_description=open('README.rst').read(),
     zip_safe=False, # because we're including media that Django needs
+    description="django-timepiece is a multi-user application for tracking "
+                "people's time on projects.",
+    classifiers=[
+        'Topic :: Internet :: WWW/HTTP :: Dynamic Content',
+        'Intended Audience :: Developers',
+        'License :: OSI Approved :: BSD License',
+        'Programming Language :: Python',
+        'Topic :: Software Development :: Libraries :: Python Modules',
+        'Development Status :: 4 - Beta',
+        'Operating System :: OS Independent',
+    ],
 )
