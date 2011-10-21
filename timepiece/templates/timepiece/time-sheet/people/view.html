@@ -53,6 +53,7 @@
             <th>Time Out</th>
             <th>Breaks</th>
             <th>Hours</th>
+            <th>Comments</th>
         </tr>            
         {% for entry in entries %}
             {% ifchanged entry.start_time|date:"W" %}
@@ -73,7 +74,10 @@
                 <td>{{ entry.end_time|date:"P" }}</td>
                 <td class="hours">{{ entry.seconds_paused|seconds_to_hours }}</td>
                 <td class="hours">{{ entry.hours }}</td>
-                {% if entry.is_editable %}<td><a href="{% url timepiece-update entry.id %}">Edit</a></td>{% endif %}
+                <td class="hours">{{ entry.comments|truncatewords:12 }}</td>
+                {% if entry.is_editable %}
+                    <td><a href="{% url timepiece-update entry.id %}?next={{ request.path|urlencode }}">Edit</a></td>
+            {% endif %}
             </tr>
         {% endfor %}
         <tr>
