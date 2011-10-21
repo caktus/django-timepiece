@@ -197,7 +197,7 @@ def build_invoice_row(entries, to_date, from_date):
             invoiced_hours += entry['s']
         else:
             uninvoiced_hours += entry['s']
-    row = '<td>%s</td>' % uninvoiced_hours
+    row = '<td class="hours">%s</td>' % uninvoiced_hours
     url = reverse('export_project_time_sheet', args=[project, ])
     to_date_str = from_date_str = ''
     if to_date:
