@@ -2,6 +2,8 @@ import datetime
 import random
 import string
 
+from dateutil.relativedelta import relativedelta
+
 from django.test import TestCase
 from django.core.urlresolvers import reverse
 from django.template.defaultfilters import slugify
@@ -51,8 +53,9 @@ class TimepieceDataTestCase(TestCase):
         defaults.update(data)
         return timepiece.Attribute.objects.create(**defaults)
 
-    def create_project(self, billable=False, data={}):
-        name = self.random_string(30, extra_chars=' ')
+    def create_project(self, billable=False, name=None, data={}):
+        if not name:
+            name = self.random_string(30, extra_chars=' ')
         defaults = {
             'name': name,
             'type': self.create_project_type(data={'billable': billable}),
@@ -160,6 +163,35 @@ class TimepieceDataTestCase(TestCase):
         if 'user' not in defaults:
             defaults['user'] = self.create_person()
         return timepiece.PersonSchedule.objects.create(**defaults)
+
+    def log_time(self, delta=None, billable=True, project=None,
+        start=None, end=None, status=None, pause=0):
+        if delta and not end:
+            hours, minutes = delta
+        else:
+            hours = 4
+            minutes = 0
+        if not start:
+            start = datetime.datetime.now() - relativedelta(hour=0)
+            #In case the default would fall off the end of the billing period
+            if start.day >= 28:
+                start -= relativedelta(days=1)
+        if not end:
+            end = start + datetime.timedelta(hours=hours, minutes=minutes)
+        data = {'user': self.user,
+                'start_time': start,
+                'end_time': end,
+                'seconds_paused': pause,
+                }
+        if billable:
+            data['activity'] = self.devl_activity
+        if project:
+            data['project'] = project
+        else:
+            data['project'] = self.create_project(billable=billable)
+        if status:
+            data['status'] = status
+        return self.create_entry(data)
 
     def setUp(self):
         self.user = User.objects.create_user('user', 'u@abc.com', 'abc')

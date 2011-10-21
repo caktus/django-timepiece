@@ -1,0 +1,5 @@
+include README.rst
+include LICENSE.txt
+recursive-include timepiece/static *
+recursive-include timepiece/templates *
+prune example_project

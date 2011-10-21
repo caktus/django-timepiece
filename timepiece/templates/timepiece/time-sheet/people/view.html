@@ -12,6 +12,16 @@
         {% endif %}
     </li>
     <li>
+        {% if perms.timepiece.view_user %}
+            Time Sheet
+        {% endif %}
+    </li>
+    <li>
+        {% if perms.timepiece.view_user %}
+            <a href='{% url view_person_time_sheet person.pk, period.id, window.id, hourly %}'>Hourly Summary</a>
+        {% endif %}
+    </li>
+    <li>
         {% if window.previous %}
             <a href='{% url view_person_time_sheet person.pk,window.period.pk,window.previous.pk %}'>Previous Time Sheet</a>
         {% else %}
@@ -33,7 +43,7 @@
 </ul>
 
 {% if entries %}
-    <table>    
+    <table class="time-sheet">    
         <tr>
             <th>Date</th>
             <th>Project</th>
@@ -43,23 +53,31 @@
             <th>Time Out</th>
             <th>Breaks</th>
             <th>Hours</th>
-        </tr>    
-            
-        {% for entry in entries %}            
+        </tr>            
+        {% for entry in entries %}
+            {% ifchanged entry.start_time|date:"W" %}
+                <tr>
+                    <th colspan='8'>Week of {{ entry.start_time|date:"m/d/Y (D)" }} </th>
+                </tr>
+            {% endifchanged %}
             <tr>
-                <td>{{ entry.start_time|date:"m/d/Y (D)" }}</td>
+                {% ifchanged entry.start_time|date %}
+                    <td>{{ entry.start_time|date:"m/d/Y (D)" }}</td>
+                {% else %}
+                    <td></td>
+                {% endifchanged %}
                 <td>{{ entry.project.name }}</td>
                 <td>{{ entry.activity.name }}</td>
                 <td>{{ entry.location }}</td>
                 <td>{{ entry.start_time|date:"P" }}</td>
                 <td>{{ entry.end_time|date:"P" }}</td>
-                <td>{{ entry.seconds_paused|seconds_to_hours }}</td>
-                <td>{{ entry.hours }}</td>
+                <td class="hours">{{ entry.seconds_paused|seconds_to_hours }}</td>
+                <td class="hours">{{ entry.hours }}</td>
                 {% if entry.is_editable %}<td><a href="{% url timepiece-update entry.id %}">Edit</a></td>{% endif %}
             </tr>
         {% endfor %}
         <tr>
-            <th colspan='7'>Total:</th>
+            <th colspan='7' class="hours">Overall total for the period:</th>
             <td>{{ total|floatformat:2 }}</td>
         </tr>
     </table>
@@ -73,7 +91,7 @@
     {% for entry in project_entries %}
         <tr>
             <td>{{ entry.project__name}} </td>
-            <td>{{ entry.sum }}</td>
+            <td class="hours">{{ entry.sum }}</td>
         </tr>
     {% endfor %}        
     </table>
@@ -82,16 +100,16 @@
 <table id='activity-summary'>
     <caption>Billable Summary</caption>
     <tr>
-        <td>Billable</td><td>{{summary.billable}}</td>
+        <td>Billable</td><td class="hours">{{summary.billable}}</td>
     </tr>
     <tr>
-        <td>Non-billable</td><td>{{summary.non_billable}}</td>
+        <td>Non-billable</td><td class="hours">{{summary.non_billable}}</td>
     </tr>
     <tr>
-        <td>Invoiced</td><td>{{summary.invoiced}}</td>
+        <td>Invoiced</td><td class="hours">{{summary.invoiced}}</td>
     </tr>
     <tr>
-        <td>Uninvoiced</td><td>{{summary.uninvoiced}}</td>
+        <td>Uninvoiced</td><td class="hours">{{summary.uninvoiced}}</td>
     </tr>
 </table>
 

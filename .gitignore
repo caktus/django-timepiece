@@ -2,3 +2,4 @@
 *.egg*
 local_settings.py
 *.db
+dist/

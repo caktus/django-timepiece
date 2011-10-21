@@ -10,7 +10,7 @@ from dateutil.relativedelta import relativedelta
 
 from timepiece.models import PersonRepeatPeriod, AssignmentAllocation
 import timepiece.models as timepiece
-from timepiece.utils import generate_weeks, get_total_time
+from timepiece.utils import generate_weeks, get_total_time, get_week_start
 
 
 register = template.Library()
@@ -51,7 +51,12 @@ def bar_graph(context, name, worked, total, width=None, suffix=None):
                         takes_context=True)
 def my_ledger(context):
     try:
-        period = PersonRepeatPeriod.objects.get(user=context['request'].user)
+        period = PersonRepeatPeriod.objects.select_related(
+            'user',
+            'repeat_period',
+        ).get(
+            user=context['request'].user
+        )
     except PersonRepeatPeriod.DoesNotExist:
         return {'period': False}
     return {'period': period}

@@ -2,6 +2,7 @@ import time
 import datetime
 import random
 import itertools
+from decimal import Decimal
 
 from django.core.urlresolvers import reverse
 
@@ -13,6 +14,7 @@ from timepiece.tests.base import TimepieceDataTestCase
 
 from timepiece import models as timepiece
 from timepiece import forms as timepiece_forms
+from timepiece import utils
 
 from dateutil import relativedelta
 
@@ -436,6 +438,77 @@ class ClockOutTest(TimepieceDataTestCase):
             '%(project)s - %(activity)s - from %(start_time_str)s to %(end_time_str)s' %
             entry1_data)
 
+class CheckOverlap(TimepieceDataTestCase):
+    """
+    With entry overlaps, entry.check_overlap method should return True
+    With valid entries, check_overlap should return False
+    """
+    def setUp(self):
+        super(CheckOverlap, self).setUp()
+        self.client.login(username='user', password='abc')
+        self.now = datetime.datetime.now()
+        #define start and end times to create valid entries
+        self.start = self.now - datetime.timedelta(days=0, hours=8)
+        self.end = self.now - datetime.timedelta(days=0)
+        #Create a valid entry for the tests to overlap with
+        self.log_time(start=self.start, end=self.end)
+        #define bad start times relative to the valid one (just in/outside)
+        self.start_before = self.start - datetime.timedelta(minutes=2)
+        self.start_inside = self.start + datetime.timedelta(minutes=2)
+        self.end_inside = self.end - datetime.timedelta(minutes=2)
+        self.end_after = self.end + datetime.timedelta(minutes=2)        
+
+    #helper functions
+    def use_checkoverlap(self, entries):
+        """
+        Uses entry.check_overlap given a list of entries returns all overlaps
+        """
+        user_total_overlaps = 0
+        for index_a, entry_a in enumerate(entries):
+            for index_b in xrange(index_a, len(entries)):
+                entry_b = entries[index_b]
+                if entry_a.check_overlap(entry_b):
+                    user_total_overlaps += 1
+        return user_total_overlaps
+
+    def get_entries(self):
+        return timepiece.Entry.objects.filter(user=self.user)
+
+    #Invalid entries to test against
+    def testBeforeAndIn(self):
+        self.log_time(start=self.start_before, end=self.end_inside)
+        user_total_overlaps = self.use_checkoverlap(self.get_entries())
+        self.assertEqual(user_total_overlaps, 1)
+
+    def testAfterAndIn(self):
+        self.log_time(start=self.start_inside, end=self.end_after)
+        user_total_overlaps = self.use_checkoverlap(self.get_entries())
+        self.assertEqual(user_total_overlaps, 1)
+
+    def testInside(self):
+        self.log_time(start=self.start_inside, end=self.end_inside)
+        user_total_overlaps = self.use_checkoverlap(self.get_entries())
+        self.assertEqual(user_total_overlaps, 1)
+
+    def testOutside(self):
+        self.log_time(start=self.start_before, end=self.end_after)
+        user_total_overlaps = self.use_checkoverlap(self.get_entries())
+        self.assertEqual(user_total_overlaps, 1)
+
+    def testOverlapWithPause(self):
+        """Overlaps by two minutes. Passes because it has 2 min. of pause"""
+        self.log_time(start=self.start_before, end=self.start_inside,
+            pause=120)
+        user_total_overlaps = self.use_checkoverlap(self.get_entries())
+        self.assertEqual(user_total_overlaps, 0)
+
+    def testOverlapWithoutEnoughPause(self):
+        """Overlaps by two minutes, but only has 119 seconds of pause"""
+        self.log_time(start=self.start_before, end=self.start_inside,
+            pause=119)
+        user_total_overlaps = self.use_checkoverlap(self.get_entries())
+        self.assertEqual(user_total_overlaps, 1)
+
 
 class CreateEditEntry(TimepieceDataTestCase):
     def setUp(self):
@@ -603,7 +676,7 @@ class CreateEditEntry(TimepieceDataTestCase):
             'end_time_1': five_min_later.strftime('%H:%M:%S'),
         })
         response = self.client.post(self.create_url, future_entry, follow=True)
-        self.assertFormError(response,'form', None,
+        self.assertFormError(response,'form', None, 
             'Entries may not be added in the future.')
 
     def testProjectList(self):
@@ -736,3 +809,83 @@ class StatusTest(TimepieceDataTestCase):
         self.client.login(username='user2', password='abc')
         response = self.client.get(self.approve_url,)
         self.assertTrue(response.status_code, 403)
+
+
+class TestTotals(TimepieceDataTestCase):
+    def setUp(self):
+        super(TestTotals, self).setUp()
+        self.create_person_repeat_period(data={'user': self.user})
+        self.p1 = self.create_project(billable=True, name='1')
+        self.p2 = self.create_project(billable=False, name='2')
+        self.p4 = self.create_project(billable=True, name='4')
+        #For use with daily totals (Same project, non-billable activity)
+        self.p3 = self.create_project(billable=False, name='1')
+
+        period = timepiece.PersonRepeatPeriod.objects.get(user=self.user)
+        self.billing_window = timepiece.BillingWindow.objects.create(
+            period=period.repeat_period,
+            date=datetime.datetime(2010, 12, 1),
+            end_date=datetime.datetime(2011, 12, 1),
+        )
+        self.client.login(username='user', password='abc')
+        self.url = reverse('view_person_time_sheet',
+            args=[period.user.pk, period.repeat_period.pk,
+            self.billing_window.pk])
+        self.hourly_url = reverse('view_person_time_sheet',
+            args=[period.user.pk, period.repeat_period.pk,
+            self.billing_window.pk, 'hourly'])
+
+    def testGroupedTotals(self):
+        self.client.login(username='user', password='abc')
+        days = [
+                datetime.datetime(2011, 1, 3),
+                datetime.datetime(2011, 1, 4),
+                datetime.datetime(2011, 1, 10),
+                datetime.datetime(2011, 1, 16),
+                datetime.datetime(2011, 1, 17),
+                datetime.datetime(2011, 1, 18)
+        ]
+        self.log_time(project=self.p1, start=days[0], delta=(1, 0))
+        self.log_time(project=self.p2, start=days[0], delta=(1, 0))
+        self.log_time(project=self.p4, start=days[0], delta=(1, 0))
+        self.log_time(project=self.p1, start=days[1], delta=(1, 0))
+        self.log_time(project=self.p3, start=days[1], delta=(1, 0))
+        self.log_time(project=self.p4, start=days[1], delta=(1, 0))
+        self.log_time(project=self.p1, start=days[2], delta=(1, 0))
+        self.log_time(project=self.p2, start=days[2], delta=(1, 0))
+        self.log_time(project=self.p4, start=days[2], delta=(1, 0))
+        self.log_time(project=self.p1, start=days[3], delta=(1, 0))
+        self.log_time(project=self.p3, start=days[3], delta=(1, 0))
+        self.log_time(project=self.p4, start=days[3], delta=(1, 0))
+        self.log_time(project=self.p1, start=days[4], delta=(1, 0))
+        self.log_time(project=self.p2, start=days[4], delta=(1, 0))
+        self.log_time(project=self.p4, start=days[4], delta=(1, 0))
+        self.log_time(project=self.p1, start=days[5], delta=(1, 0))
+        self.log_time(project=self.p3, start=days[5], delta=(1, 0))
+        self.log_time(project=self.p4, start=days[5], delta=(1, 0))
+        entries = timepiece.Entry.objects.all()
+        grouped_totals = utils.grouped_totals(entries)
+        for week, week_totals, days in grouped_totals:
+            #Jan. 3rd is a monday. Each week should be on a monday
+            self.assertEqual(week.day % 7, 3)
+            self.assertEqual(week_totals['billable'], 4)
+            self.assertEqual(week_totals['non_billable'], 2)
+            self.assertEqual(week_totals['total'], 6)
+            for day, projects in days:
+                for project, totals in projects[1].items():
+                    self.assertEqual(projects[0]['billable'], 2)
+                    self.assertEqual(projects[0]['non_billable'], 1)
+                    self.assertEqual(projects[0]['total'], 3)
+                    if project == self.p1:
+                        self.assertEqual(totals['billable'], 1)
+                        self.assertEqual(totals['total'], 1)
+                    if project == self.p2:
+                        self.assertEqual(totals['non_billable'], 1)
+                        self.assertEqual(totals['total'], 1)
+                    if project == self.p3:
+                        self.assertEqual(totals['billable'], 1)
+                        self.assertEqual(totals['non_billable'], 1)
+                        self.assertEqual(totals['total'], 2)
+                    if project == self.p4:
+                        self.assertEqual(totals['billable'], 1)
+                        self.assertEqual(totals['total'], 1)

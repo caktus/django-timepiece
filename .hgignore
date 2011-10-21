@@ -1,5 +1,0 @@
-syntax: glob
-*.pyc
-*.egg*
-local_settings.py
-*.db

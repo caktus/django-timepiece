@@ -41,24 +41,25 @@ class ProjectionTest(TimepieceDataTestCase):
         return self.create_entry(data)
 
     def test_week_start(self):
-        """ Test that all days Sunday through Saturday return Sunday """
+        """ Test that all days Sun. through Sat. return the previous Monday"""
+        monday = datetime.date(2011, 1, 10)
+        self.assertEqual(monday, utils.get_week_start(monday))
         sunday = datetime.date(2011, 1, 16)
-        self.assertEqual(sunday, utils.get_week_start(sunday))
-        monday = datetime.date(2011, 1, 17)
-        self.assertEqual(sunday, utils.get_week_start(monday))
+        self.assertEqual(monday, utils.get_week_start(sunday))
+        following_monday = datetime.date(2011, 1, 17)
         saturday = datetime.date(2011, 1, 22)
-        self.assertEqual(sunday, utils.get_week_start(saturday))
+        self.assertEqual(following_monday, utils.get_week_start(saturday))
 
     def test_generate_weeks(self):
         """ Test generation of full week ranges """
         # 2 weeks
-        start = datetime.date(2011, 1, 16)
+        start = datetime.date(2011, 1, 17)
         end = datetime.date(2011, 1, 29)
         weeks = utils.generate_weeks(start=start, end=end)
         self.assertEqual(2, weeks.count())
         # 3 weeks
-        start = datetime.date(2011, 1, 16)
-        end = datetime.date(2011, 1, 30)
+        start = datetime.date(2011, 1, 17)
+        end = datetime.date(2011, 1, 31)
         weeks = utils.generate_weeks(start=start, end=end)
         self.assertEqual(3, weeks.count())
         # random weeks
@@ -72,8 +73,8 @@ class ProjectionTest(TimepieceDataTestCase):
         """ Test generation of weekly window with given date """
         #Tuesday
         day = datetime.date(2011, 2, 1)
-        expected_start = datetime.date(2011, 1, 30)
-        expected_end = datetime.date(2011, 2, 6)
+        expected_start = datetime.date(2011, 1, 31)
+        expected_end = datetime.date(2011, 2, 7)
         start, end = utils.get_week_window(day)
         self.assertEqual(start.toordinal(), expected_start.toordinal())
         self.assertEqual(end.toordinal(), expected_end.toordinal())
