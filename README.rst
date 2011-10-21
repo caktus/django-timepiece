@@ -80,5 +80,5 @@ History
 
 * First official release
 
-Development sponsored by `Caktus Consulting Group, LLC.
+Development sponsored by `Caktus Consulting Group, LLC
 <http://www.caktusgroup.com/services>`_.
