@@ -75,7 +75,9 @@
                 <td class="hours">{{ entry.seconds_paused|seconds_to_hours }}</td>
                 <td class="hours">{{ entry.hours }}</td>
                 <td class="hours">{{ entry.comments|truncatewords:12 }}</td>
-                {% if entry.is_editable %}<td><a href="{% url timepiece-update entry.id %}">Edit</a></td>{% endif %}
+                {% if entry.is_editable %}
+                    <td><a href="{% url timepiece-update entry.id %}?next={{ request.path|urlencode }}">Edit</a></td>
+            {% endif %}
             </tr>
         {% endfor %}
         <tr>
