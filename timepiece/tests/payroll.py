@@ -66,17 +66,52 @@ class PayrollTest(TimepieceDataTestCase):
         self.assertEqual(summary['paid_leave']['vacation'], Decimal('4.00'))
         self.assertEqual(summary['total'], Decimal('25.50'))
 
-    def testPersonSummaryDropZeroHours(self):
+    def testPersonSummaryShowWithHours(self):
+        """Test that users with hours for the period are listed"""
+        self.client.login(username='superuser', password='abc')
+        self.make_logs()
+        rp = self.create_person_repeat_period({'user': self.user})
+        response = self.client.get(reverse('payroll_summary'), follow=True)
+        self.assertEqual(len(response.context['periods']), 1)
+
+    def testPersonSummaryNoShowWithoutHours(self):
         """Test that users with no hours for the period are not listed"""
         self.client.login(username='superuser', password='abc')
         self.make_logs()
-        #user 1 has hours logged, but not user2
+        #user 1 has hours logged, but not user2. User2 should not appear
         rp = self.create_person_repeat_period({'user': self.user2})
         response = self.client.get(reverse('payroll_summary'), follow=True)
         self.assertEqual(len(response.context['periods']), 0)
 
-        #TODO Make a test to verify that overtime shows from last month
-        #even if there are no hours from this month
+    def testPersonSummaryOvertimeBefore(self):
+        """
+        Users with overtime from the last week of last month should appear
+        (even if they have no hours for this month)
+        """
+        rp = self.create_person_repeat_period({'user': self.user})
+        self.client.login(username='superuser', password='abc')
+        #Find the day after the last billable day of the previous month
+        #This is the first day to consider for overtime this period
+        now = datetime.datetime.now()
+        first = now - relativedelta(day=1, months=1)
+        first = utils.get_last_billable_day(first) + relativedelta(days=1)
+        self.log_time(start=first, delta=(44, 00), status='approved')
+        response = self.client.get(reverse('payroll_summary'))
+        self.assertEqual(len(response.context['periods']), 1)
+
+    def testPersonSummaryNoOvertimeBefore(self):
+        """
+        Users with no hours this period, that worked last week of last period
+        but have no overtime shoud not appear
+        """
+        rp = self.create_person_repeat_period({'user': self.user})
+        self.client.login(username='superuser', password='abc')
+        now = datetime.datetime.now()
+        first = now - relativedelta(day=1, months=1)
+        first = utils.get_last_billable_day(first) + relativedelta(days=1)
+        self.log_time(start=first, delta=(40, 00), status='approved')
+        response = self.client.get(reverse('payroll_summary'))
+        self.assertEqual(len(response.context['periods']), 0)
 
     def testWeeklyHours(self):
         """ Test basic functionality of hours worked per week """
