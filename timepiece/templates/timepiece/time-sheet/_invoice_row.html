@@ -1,0 +1,9 @@
+{% load timepiece_tags %}
+<td class="hours">{{hours_uninvoiced}}</td>
+<td>
+    <a href="#">
+    <ul class="actions">
+        <li><a href={{csv_url}}>CSV Timesheet</a></li>
+        <li><a href={{invoice_url}}>Mark as Invoiced</a></li>
+    </ul>
+</td>

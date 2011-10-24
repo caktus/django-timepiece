@@ -188,41 +188,39 @@ def week_start(date):
     return get_week_start(date).strftime('%m/%d/%Y')
 
 
-@register.simple_tag
-def build_invoice_row(entries, to_date, from_date):
-    uninvoiced_hours = invoiced_hours = 0
+
+@register.inclusion_tag('timepiece/time-sheet/_invoice_row.html',
+                        takes_context=True)
+def build_invoice_row(context, entries, to_date, from_date):
+    hours_invoiced = hours_uninvoiced = 0
     for entry in entries:
         project = entry['project__pk']
         if entry['status'] == 'invoiced':
-            invoiced_hours += entry['s']
+            hours_invoiced += entry['s']
         else:
-            uninvoiced_hours += entry['s']
-    row = '<td class="hours">%s</td>' % uninvoiced_hours
-    url = reverse('export_project_time_sheet', args=[project, ])
+            hours_uninvoiced += entry['s']
     to_date_str = from_date_str = ''
     if to_date:
         to_date_str = to_date.strftime('%m/%d/%Y')
     if from_date:
         from_date_str = from_date.strftime('%m/%d/%Y')
-    get_str = urllib.urlencode({
+    csv_get_str = urllib.urlencode({
         'to_date': to_date_str,
         'from_date': from_date_str,
         'status': 'approved',
     })
-    row += '<td><a href="#"><ul class="actions"><li>' + \
-        '<a href="%s?%s">CSV Timesheet</a></li>' % (url, get_str)
-    url = reverse('time_sheet_change_status', args=['invoice', ])
-    get_str = urllib.urlencode({
+    csv_url = reverse('export_project_time_sheet', args=[project, ])
+    csv_url += '?' + csv_get_str
+    invoice_get_str = urllib.urlencode({
         'to_date': to_date_str,
         'from_date': from_date_str,
         'project': project,
     })
-    row += '<li><a href="%s?%s">Mark as Invoiced</a></li>' % (url, get_str)
-    """
-    if invoiced_hours > 0:
-        row += '<li><a href="#">(Un)Mark as Invoiced</a></li>'
-    Not including invoiced hours currently.
-    """
-    row += '</ul></td>'
-    return row
-build_invoice_row.is_safe = True
+    invoice_url = reverse('time_sheet_change_status', args=['invoice', ])
+    invoice_url += '?' + invoice_get_str
+    return {
+        'hours_invoiced': hours_invoiced,
+        'hours_uninvoiced': hours_uninvoiced,
+        'csv_url': csv_url,
+        'invoice_url': invoice_url,
+        }
