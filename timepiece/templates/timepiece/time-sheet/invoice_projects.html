@@ -58,7 +58,7 @@
         {% for project in project_list %}  
             <tr>
                 <th>{{ project.grouper }}</th>
-                <td>{{ project.list.0.status|title }}</td>
+                <td>{{ project.list.0.project__status__label|title }}</td>
                 {% build_invoice_row project.list to_date from_date %}
             </tr>
         {% endfor %}
