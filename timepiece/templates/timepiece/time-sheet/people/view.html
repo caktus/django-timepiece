@@ -54,7 +54,7 @@
         {% for entry in entries %}
             {% ifchanged entry.start_time|date:"W" %}
                 <tr>
-                    <th colspan='8'>Week of {{ entry.start_time|date:"m/d/Y (D)" }} </th>
+                    <th colspan='8'>Week of {% week_start entry.start_time %} </th>
                 </tr>
             {% endifchanged %}
             <tr>
