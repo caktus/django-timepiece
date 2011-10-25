@@ -2,9 +2,7 @@ from dateutil import rrule
 from dateutil.relativedelta import relativedelta
 from decimal import Decimal
 import itertools
-import pprint
 
-from django.conf import settings
 from django.http import HttpResponse, HttpResponseRedirect, Http404
 from django.shortcuts import render_to_response
 from django.template import RequestContext
@@ -15,8 +13,6 @@ from django.contrib.sites.models import Site
 from datetime import date, datetime, timedelta, time as time_obj
 import time
 import calendar
-
-from timepiece.models import User
 
 
 def slugify_uniquely(s, queryset=None, field='slug'):
