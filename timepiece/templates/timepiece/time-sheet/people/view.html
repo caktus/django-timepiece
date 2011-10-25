@@ -12,14 +12,10 @@
         {% endif %}
     </li>
     <li>
-        {% if perms.timepiece.view_user %}
-            Time Sheet
-        {% endif %}
+        Time Sheet
     </li>
     <li>
-        {% if perms.timepiece.view_user %}
-            <a href='{% url view_person_time_sheet person.pk, period.id, window.id, hourly %}'>Hourly Summary</a>
-        {% endif %}
+        <a href='{% url view_person_time_sheet person.pk, period.id, window.id, hourly %}'>Hourly Summary</a>
     </li>
     <li>
         {% if window.previous %}
@@ -53,11 +49,12 @@
             <th>Time Out</th>
             <th>Breaks</th>
             <th>Hours</th>
+            <th>Comments</th>
         </tr>            
         {% for entry in entries %}
             {% ifchanged entry.start_time|date:"W" %}
                 <tr>
-                    <th colspan='8'>Week of {{ entry.start_time|date:"m/d/Y (D)" }} </th>
+                    <th colspan='8'>Week of {% week_start entry.start_time %} </th>
                 </tr>
             {% endifchanged %}
             <tr>
@@ -73,7 +70,10 @@
                 <td>{{ entry.end_time|date:"P" }}</td>
                 <td class="hours">{{ entry.seconds_paused|seconds_to_hours }}</td>
                 <td class="hours">{{ entry.hours }}</td>
-                {% if entry.is_editable %}<td><a href="{% url timepiece-update entry.id %}">Edit</a></td>{% endif %}
+                <td class="hours">{{ entry.comments|truncatewords:12 }}</td>
+                {% if entry.is_editable %}
+                    <td><a href="{% url timepiece-update entry.id %}?next={{ request.path|urlencode }}">Edit</a></td>
+            {% endif %}
             </tr>
         {% endfor %}
         <tr>
