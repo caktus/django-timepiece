@@ -31,6 +31,7 @@
         <tr>
             <th>Date</th>
             <th>Person</th>
+            <th>Activity</th>
             <th>Location</th>
             <th>Time In</th>
             <th>Time Out</th>
@@ -41,6 +42,7 @@
         <tr{% if entry.comments %} title='{{ entry.comments }}'{% endif %}>
             <td>{{ entry.start_time|date:"m/d/Y (D)" }}</td>
             <td>{{ entry.user.get_full_name }}</td>
+            <td>{{ entry.activity }}</td>
             <td>{{ entry.location }}</td>
             <td>{{ entry.start_time|date:"P" }}</td>
             <td>{{ entry.end_time|date:"P" }}</td>
