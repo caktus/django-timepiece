@@ -4,6 +4,7 @@ from decimal import Decimal
 import itertools
 import pprint
 
+from django.conf import settings
 from django.http import HttpResponse, HttpResponseRedirect, Http404
 from django.shortcuts import render_to_response
 from django.template import RequestContext
@@ -378,3 +379,13 @@ def payroll_totals(entries):
         name = user_data.pop('name')
         pprint.pprint((name, user_data))
         yield (name, user_data)
+"""
+
+projects = getattr(settings, 'TIMEPIECE_PROJECTS', {})
+
+
+data['paid_leave'] = {}
+        for name, pk in projects.iteritems():
+            qs = entries.filter(project=projects[name])
+            data['paid_leave'][name] = qs.aggregate(s=Sum('hours'))['s']
+"""
