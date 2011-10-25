@@ -1,5 +1,6 @@
 import urllib
 import datetime
+from decimal import Decimal
 
 from django import template
 from django.db.models import Sum
@@ -207,6 +208,16 @@ def show_payroll(context, totals, all_weeks):
     return {
         'rows': rows,
     }
+
+
+@register.simple_tag
+def get_active_hours(entry):
+    """Use with active entries to obtain time worked so far"""
+    if not entry.is_paused:
+        entry.end_time = datetime.datetime.now()
+    else:
+        entry.end_time = entry.pause_time
+    return Decimal('%.2f' % round(entry.total_hours, 2))
 
 
 @register.simple_tag

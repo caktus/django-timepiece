@@ -68,6 +68,8 @@ def view_entries(request):
     ).select_related('user', 'project', 'activity')
     my_active_entries = timepiece.Entry.objects.select_related(
         'project__business',
+    ).only(
+        'user','project','activity','start_time'
     ).filter(
         user=request.user,
         end_time__isnull=True,
