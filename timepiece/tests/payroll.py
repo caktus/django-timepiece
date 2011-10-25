@@ -55,8 +55,7 @@ class PayrollTest(TimepieceDataTestCase):
         response = self.client.get(this_month_url, follow=True)
         start = context['from_date']
         end = context['to_date']
-        this_user = context['periods'].get(user=self.user.pk)
-        summary = this_user.summary(start, end)
+        summary = context['periods'][0].summary(start, end)
         self.check_summary(summary)
 
     def check_summary(self, summary):

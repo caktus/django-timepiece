@@ -296,27 +296,6 @@ def date_filter(func):
             *args, **kwargs)
     return inner_decorator
 
-def payroll_summary(entries):
-    weeks = {}
-    for date, entries in itertools.groupby(entries, lambda x: x['date']):        
-        hours = {}
-        entry = list(entries)[0]
-        if entry['billable']:
-            key = 'billable'
-        else:
-            key = 'non_billable'
-        hours = {key: entry['hours'], 'total': entry['hours']}
-        if weeks.get(date, ''):
-            new = weeks[date]
-            new.update(hours)            
-            new['total'] = new.get('billable', 0) + new.get('non_billable', 0)
-            hours = new
-            weeks[date] = hours
-        else:
-            weeks[date] = hours
-    weeks['name'] = ' '.join((entry['user__first_name'],
-                              entry['user__last_name']))
-    return weeks
 
 def get_hours(entries):
     hours = {'total': 0}
@@ -366,26 +345,3 @@ def grouped_totals(entries):
         days.append((day, daily_summary(day_entries)))
         last_week = week
     yield week, weeks.get(week, {}), days
-
-
-def payroll_totals(entries):
-    select_weekly = {"date": """DATE_TRUNC('week', end_time)"""}
-    weekly = entries.extra(select=select_weekly).distinct('user').values(
-                           'date', 'user', 'user__last_name',
-                           'user__first_name', 'billable')
-    weekly = weekly.annotate(hours=Sum('hours')).order_by('user')
-    for user, user_entries in itertools.groupby(weekly, lambda x: x['user']):        
-        user_data = payroll_summary(user_entries)
-        name = user_data.pop('name')
-        pprint.pprint((name, user_data))
-        yield (name, user_data)
-"""
-
-projects = getattr(settings, 'TIMEPIECE_PROJECTS', {})
-
-
-data['paid_leave'] = {}
-        for name, pk in projects.iteritems():
-            qs = entries.filter(project=projects[name])
-            data['paid_leave'][name] = qs.aggregate(s=Sum('hours'))['s']
-"""
