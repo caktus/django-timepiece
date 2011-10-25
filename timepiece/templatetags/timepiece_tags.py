@@ -1,5 +1,6 @@
 import urllib
 import datetime
+from decimal import Decimal
 
 from django import template
 from django.db.models import Sum
@@ -186,6 +187,16 @@ def monthly_overtime(rp, date):
 @register.simple_tag
 def week_start(date):
     return get_week_start(date).strftime('%m/%d/%Y')
+
+
+@register.simple_tag
+def get_active_hours(entry):
+    """Use with active entries to obtain time worked so far"""
+    if not entry.is_paused:
+        entry.end_time = datetime.datetime.now()
+    else:
+        entry.end_time = entry.pause_time
+    return Decimal('%.2f' % round(entry.total_hours, 2))
 
 
 @register.simple_tag
