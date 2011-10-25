@@ -116,6 +116,7 @@ class ClockInForm(forms.ModelForm):
 
     def __init__(self, *args, **kwargs):
         self.user = kwargs.pop('user')
+        initial = kwargs.get('initial', {})
         default_loc = getattr(
             settings,
             'TIMEPIECE_DEFAULT_LOCATION_SLUG',
@@ -126,8 +127,7 @@ class ClockInForm(forms.ModelForm):
                 loc = timepiece.Location.objects.get(slug=default_loc)
             except timepiece.Location.DoesNotExist:
                 loc = None
-            if loc:
-                initial = kwargs.get('initial', {})
+            if loc:                
                 initial['location'] = loc.pk
         super(ClockInForm, self).__init__(*args, **kwargs)
         self.fields['start_time'].required = False
@@ -142,15 +142,12 @@ class ClockInForm(forms.ModelForm):
             Q(status__enable_timetracking=True) &
             Q(type__enable_timetracking=True)
         )
-
-        try:
-            profile = self.user.profile
-        except timepiece.UserProfile.DoesNotExist:
-            pass
-        else:
-            if profile.default_activity:
-                self.fields['activity'].initial = profile.default_activity
-        #model validation requires Entry.user to be set, so let's set it now
+        project = initial.get('project')
+        project_entries = timepiece.Entry.objects.filter(
+            user=self.user, project=project).order_by('-end_time')
+        if project_entries:
+            self.fields['activity'].initial = project_entries[0].activity.id
+        #TODO: Add a test for this, and remove default_activity from profile
         self.instance.user = self.user
 
     def clean_start_time(self):

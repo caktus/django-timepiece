@@ -49,13 +49,14 @@ class EditSettingsTest(TimepieceDataTestCase):
         self.profile = timepiece.UserProfile.objects.get(user=self.user)
         self.assertEquals(self.profile.default_activity, self.activities[0])
 
-    def test_default_activities(self):
-        profile = timepiece.UserProfile.objects.create(
-            user=self.user, default_activity=self.activities[3]
-        )
-        clock_in = forms.ClockInForm(user=self.user)
-        self.assertEquals(clock_in.fields['activity'].initial,
-            self.activities[3])
-        add_entry = forms.AddUpdateEntryForm(user=self.user)
-        self.assertEquals(add_entry.fields['activity'].initial,
-            self.activities[3])
+#TODO: Delete entirely and replace with a meaningful test for (issue 86)
+#    def test_default_activities(self):
+#        profile = timepiece.UserProfile.objects.create(
+#            user=self.user, default_activity=self.activities[3]
+#        )
+#        clock_in = forms.ClockInForm(user=self.user)
+#        self.assertEquals(clock_in.fields['activity'].initial,
+#            self.activities[3])
+#        add_entry = forms.AddUpdateEntryForm(user=self.user)
+#        self.assertEquals(add_entry.fields['activity'].initial,
+#            self.activities[3])
