@@ -61,7 +61,7 @@ History
 0.3.2
 *****
 
-* My Active Entries on Dashboard now shows the hours worked thusfar
+* My Active Entries on Dashboard now shows the hours worked thus far
 * Improved My Ledger by adding a comments column and a redirect from the edit entry link
 * Fixed issues related to the hourly summary option not appearing for some users
 * Fixed issues with date accuracy in weekly headings on ledger pages
