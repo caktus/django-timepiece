@@ -1115,11 +1115,17 @@ def payroll_summary(request, form, from_date, to_date, status, activity):
     ).filter(
         repeat_period__active=True,
     ).order_by('user__last_name')
-    #Only show users with hours or overtime from last month. Generate totals
-    rps_with_hours = [rp.id for rp in rps \
-        if rp.summary(from_date, to_date)['total'] > 0 \
-        or rp.total_monthly_overtime(from_date) > 0]
-    rps = rps.filter(id__in=rps_with_hours)
+    #Only show users with hours or overtime from last month. Generate totals    
+#    rps_with_hours = [rp.id for rp in rps \
+#        if rp.summary(from_date, to_date)['total'] > 0 \
+#        or rp.total_monthly_overtime(from_date) > 0]
+#    rps = rps.filter(id__in=rps_with_hours)
+    entries = timepiece.Entry.objects.filter(
+        (Q(status='invoiced') | Q(status='approved')),
+         end_time__gt=utils.get_week_start(from_date),
+         end_time__lt=last_billable)
+    payroll_totals = utils.payroll_totals(entries)
+    
     for rp in rps:
         rp.user.summary = rp.summary(from_date, to_date)
     cals = []
@@ -1137,6 +1143,7 @@ def payroll_summary(request, form, from_date, to_date, status, activity):
         'periods': rps,
         'to_date': to_date,
         'from_date': from_date,
+        'payroll_totals': payroll_totals,
     }
 
 

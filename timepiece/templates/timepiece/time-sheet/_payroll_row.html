@@ -1,0 +1,12 @@
+{% for row in rows %}
+    <tr>
+        <th>{{ row.1 }}</th>
+        {% for time in row.2 %}
+        <td>
+            {% if time %}
+                {{ time }}
+            {% endif %}
+        </td>
+        {% endfor %}
+    </tr>
+{% endfor %}

@@ -188,6 +188,27 @@ def week_start(date):
     return get_week_start(date).strftime('%m/%d/%Y')
 
 
+@register.inclusion_tag('timepiece/time-sheet/_payroll_row.html',
+    takes_context=True)
+def show_payroll(context, totals, all_weeks):
+    rows = []
+    for total in totals:
+        name = total[0]
+        last_name = name.split(' ')[1]
+        times = []
+        for week in all_weeks:
+            if week in total[1].keys():
+                time = total[1][week]['total']
+            else:
+                time = 0
+            times.append(time)
+        rows.append((last_name, name, times))
+    rows.sort()
+    return {
+        'rows': rows,
+    }
+
+
 @register.simple_tag
 def build_invoice_row(entries, to_date, from_date):
     uninvoiced_hours = invoiced_hours = 0

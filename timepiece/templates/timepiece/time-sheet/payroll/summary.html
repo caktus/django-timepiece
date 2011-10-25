@@ -36,6 +36,19 @@
         {% endfor %}
         <th>Overtime</th>
     </tr>
+    {% show_payroll payroll_totals all_weeks %}
+</table>
+
+<h3>Weekly Summary</h3>
+
+<table>
+    <tr>
+        <th>&nbsp;</th>
+        {% for week in all_weeks %}
+            <th>{{ week|date:"n/j" }}</th>
+        {% endfor %}
+        <th>Overtime</th>
+    </tr>
     {% for period in periods %}
         {% with period.user as user %}
             <tr{% if user.overtime > 40.00 %} class='overtime'{% endif %}>
