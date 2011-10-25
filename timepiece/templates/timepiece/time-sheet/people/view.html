@@ -12,14 +12,10 @@
         {% endif %}
     </li>
     <li>
-        {% if perms.timepiece.view_user %}
-            Time Sheet
-        {% endif %}
+        Time Sheet
     </li>
     <li>
-        {% if perms.timepiece.view_user %}
-            <a href='{% url view_person_time_sheet person.pk, period.id, window.id, hourly %}'>Hourly Summary</a>
-        {% endif %}
+        <a href='{% url view_person_time_sheet person.pk, period.id, window.id, hourly %}'>Hourly Summary</a>
     </li>
     <li>
         {% if window.previous %}
