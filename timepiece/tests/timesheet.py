@@ -2,6 +2,7 @@ import time
 import datetime
 import random
 import itertools
+import urllib
 from decimal import Decimal
 
 from django.core.urlresolvers import reverse
@@ -294,6 +295,18 @@ class ClockInTest(TimepieceDataTestCase):
         self.assertEqual(response.status_code, 200)
         self.assertTrue(response.context['form'].errors)
 
+    def testClockInAutoActivity(self):
+        self.client.login(username='user', password='abc')
+        entry = self.create_entry({
+            'project': self.project,
+            'activity': self.devl_activity,
+            'start_time': self.ten_min_ago,
+            'end_time': self.now,
+        })
+        get_data = '?' + urllib.urlencode({'project': self.project.id})
+        response = self.client.post(self.url + get_data)
+        #Find a way to obtain the selected=selected for project and activity
+        #Add another test with a different activity
 
 class ClockOutTest(TimepieceDataTestCase):
     def setUp(self):

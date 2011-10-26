@@ -147,7 +147,6 @@ class ClockInForm(forms.ModelForm):
             user=self.user, project=project).order_by('-end_time')
         if project_entries:
             self.fields['activity'].initial = project_entries[0].activity.id
-        #TODO: Add a test for this, and remove default_activity from profile
         self.instance.user = self.user
 
     def clean_start_time(self):
@@ -239,14 +238,6 @@ class AddUpdateEntryForm(forms.ModelForm):
         #if editing a current entry, remove the end time field
         if self.instance.start_time and not self.instance.end_time:
             self.fields.pop('end_time')
-        #Use default activity if possible
-        try:
-            profile = self.user.profile
-        except timepiece.UserProfile.DoesNotExist:
-            pass
-        else:
-            if profile.default_activity:
-                self.fields['activity'].initial = profile.default_activity
         self.instance.user = self.user
 
     def clean(self):
@@ -451,4 +442,4 @@ class UserProfileForm(forms.ModelForm):
 
     class Meta:
         model = timepiece.UserProfile
-        fields = ('default_activity',)
+        exclude = ('user',)
