@@ -98,20 +98,6 @@ class PayrollTest(TimepieceDataTestCase):
         response = self.client.get(reverse('payroll_summary'))
         self.assertEqual(len(response.context['periods']), 1)
 
-    def testPersonSummaryNoOvertimeBefore(self):
-        """
-        Users with no hours this period, that worked last week of last period
-        but have no overtime shoud not appear
-        """
-        rp = self.create_person_repeat_period({'user': self.user})
-        self.client.login(username='superuser', password='abc')
-        now = datetime.datetime.now()
-        first = now - relativedelta(day=1, months=1)
-        first = utils.get_last_billable_day(first) + relativedelta(days=1)
-        self.log_time(start=first, delta=(40, 00), status='approved')
-        response = self.client.get(reverse('payroll_summary'))
-        self.assertEqual(len(response.context['periods']), 0)
-
     def testWeeklyHours(self):
         """ Test basic functionality of hours worked per week """
         rp = self.create_person_repeat_period({'user': self.user})

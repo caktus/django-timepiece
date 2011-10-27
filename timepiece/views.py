@@ -1108,19 +1108,15 @@ def create_edit_person_time_sheet(request, person_id=None):
 def payroll_summary(request, form, from_date, to_date, status, activity):
     last_billable = utils.get_last_billable_day(from_date)
     all_weeks = utils.generate_weeks(start=from_date, end=last_billable)
-    rps = timepiece.PersonRepeatPeriod.objects.select_related(
-        'user',
-        'repeat_period',
-    ).filter(
-        repeat_period__active=True,
-    ).order_by('user__last_name')
-    #Only show users with hours or overtime from last month. Generate totals    
     workers = timepiece.Entry.objects.filter(
-        end_time__gt=from_date,
+        end_time__gt=utils.get_week_start(from_date),
         end_time__lt=last_billable + datetime.timedelta(days=1)
         ).values_list('user', flat=True).distinct()
-    rps = [rp for rp in rps \
-           if rp.user.id in workers or rp.total_monthly_overtime(from_date)]
+    rps = timepiece.PersonRepeatPeriod.objects.select_related(
+        'user', 'repeat_period',
+    ).filter(
+        repeat_period__active=True, user__id__in=workers
+    ).order_by('user__last_name')
     for rp in rps:
         rp.user.summary = rp.summary(from_date, to_date)
     cals = []
