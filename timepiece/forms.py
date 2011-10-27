@@ -127,8 +127,16 @@ class ClockInForm(forms.ModelForm):
                 loc = timepiece.Location.objects.get(slug=default_loc)
             except timepiece.Location.DoesNotExist:
                 loc = None
-            if loc:                
+            if loc:
                 initial['location'] = loc.pk
+        project = initial.get('project')
+        try:
+            last_project_entry = timepiece.Entry.objects.filter(
+                user=self.user, project=project).order_by('-end_time')[0]
+        except IndexError:
+            initial['activity'] = None
+        else:
+            initial['activity'] = last_project_entry.activity.id
         super(ClockInForm, self).__init__(*args, **kwargs)
         self.fields['start_time'].required = False
         self.fields['start_time'].initial = datetime.now()
@@ -137,16 +145,9 @@ class ClockInForm(forms.ModelForm):
             date_format='%m/%d/%Y',
         )
         self.fields['project'].queryset = timepiece.Project.objects.filter(
-            users=self.user,
-        ).filter(
-            Q(status__enable_timetracking=True) &
-            Q(type__enable_timetracking=True)
+            users=self.user, status__enable_timetracking=True,
+            type__enable_timetracking=True
         )
-        project = initial.get('project')
-        project_entries = timepiece.Entry.objects.filter(
-            user=self.user, project=project).order_by('-end_time')
-        if project_entries:
-            self.fields['activity'].initial = project_entries[0].activity.id
         self.instance.user = self.user
 
     def clean_start_time(self):

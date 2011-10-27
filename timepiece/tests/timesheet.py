@@ -295,18 +295,56 @@ class ClockInTest(TimepieceDataTestCase):
         self.assertEqual(response.status_code, 200)
         self.assertTrue(response.context['form'].errors)
 
-    def testClockInAutoActivity(self):
+class AutoActivityTest(TimepieceDataTestCase):
+    """Test the initial value chosen for activity on clock in form"""
+    def setUp(self):
+        super(AutoActivityTest, self).setUp()
+
+    def get_activity(self, project=None):
+        if not project:
+            project = self.project
+        initial = {'project': project.id}
+        form = timepiece_forms.ClockInForm(user=self.user, initial=initial)
+        return form.initial['activity']
+
+    def testNewWorker(self):
+        """The worker has 0 entries on this project. Activity should = None"""
         self.client.login(username='user', password='abc')
-        entry = self.create_entry({
-            'project': self.project,
-            'activity': self.devl_activity,
-            'start_time': self.ten_min_ago,
-            'end_time': self.now,
-        })
-        get_data = '?' + urllib.urlencode({'project': self.project.id})
-        response = self.client.post(self.url + get_data)
-        #Find a way to obtain the selected=selected for project and activity
-        #Add another test with a different activity
+        self.assertEqual(self.get_activity(), None)
+
+    def testLastWorkedOneEntry(self):
+        """The worker has one previous entry on the project"""
+        self.client.login(username='user', password='abc')
+        self.log_time(project=self.project, activity=self.devl_activity)
+        self.assertEqual(self.get_activity(), self.devl_activity.id)
+
+    def testLastWorkedSeveralEntries(self):
+        """The worker has several entries on a project. Use the most recent"""
+        self.client.login(username='user', password='abc')
+        for day in xrange(0, 10):
+            this_day = datetime.datetime(2011, 1, 1)
+            this_day += datetime.timedelta(days=day)
+            activity = self.activity if day == 9 else self.devl_activity
+            self.log_time(start=this_day, project=self.project,
+                          activity=activity)
+        self.assertEqual(self.get_activity(), self.activity.id)
+
+    def testLastWorkedSeveralProjects(self):
+        """
+        Obtain activities contingent on the project when worker is on several
+        """
+        self.client.login(username='user', password='abc')
+        project1 = self.project
+        project2 = self.project2
+        for day in xrange(0, 10):
+            this_day = datetime.datetime(2011, 1, 1)
+            this_day += datetime.timedelta(days=day)
+            #Cycle through projects and activities
+            project = project1 if day % 2 == 0 else project2
+            activity = self.devl_activity if day % 3 == 0 else self.activity
+            self.log_time(start=this_day, project=project, activity=activity)
+        self.assertEqual(self.get_activity(project1), self.activity.id)
+        self.assertEqual(self.get_activity(project2), self.devl_activity.id)
 
 class ClockOutTest(TimepieceDataTestCase):
     def setUp(self):

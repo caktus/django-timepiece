@@ -107,8 +107,7 @@ def view_entries(request):
 @permission_required('timepiece.can_clock_in')
 @transaction.commit_on_success
 def clock_in(request):
-    """For clocking the user into a project
-    """
+    """For clocking the user into a project"""
     if request.POST:
         form = timepiece_forms.ClockInForm(request.POST, user=request.user)
         if form.is_valid():
@@ -139,7 +138,6 @@ def clock_in(request):
     else:
         initial = dict([(k, request.GET[k]) for k in request.GET.keys()])
         form = timepiece_forms.ClockInForm(user=request.user, initial=initial)
-
     return render_to_response(
         'timepiece/time-sheet/entry/clock_in.html',
         {'form': form},
