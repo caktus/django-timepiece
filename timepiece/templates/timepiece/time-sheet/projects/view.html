@@ -73,10 +73,10 @@
 
 {% if activity_entries %}
     <table id='activity-summary'>
-        <caption>Billable Summary</caption>
+        <caption>Activity Summary</caption>
     {% for row in activity_entries %}
         <tr>
-            <td>{% if row.billable %}Billable{% else %}Non-billable{% endif %}</td>
+            <td>{{ row.activity__name }}</td>
             <td>{{ row.sum }}</td>
         </tr>
     {% endfor %}  
