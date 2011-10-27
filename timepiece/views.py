@@ -3,7 +3,7 @@ import csv
 import datetime
 import calendar
 import math
-import pprint
+
 from decimal import Decimal
 from dateutil.relativedelta import relativedelta
 from dateutil import rrule
@@ -674,7 +674,7 @@ def invoice_projects(request, form, from_date, to_date, status, activity):
     project_totals = entries.filter(status='approved',
         project__type__billable=True, project__status__billable=True).values(
         'project__type__pk', 'project__type__label', 'project__name',
-        'project__pk', 'status',
+        'project__pk', 'status', 'project__status__label'
     ).annotate(s=Sum('hours')).order_by('project__type__label',
                                         'project__name', 'status')
     cals = []
@@ -685,7 +685,6 @@ def invoice_projects(request, form, from_date, to_date, status, activity):
         while date < end_date:
             cals.append(html_cal.formatmonth(date.year, date.month))
             date += relativedelta(months=1)
-
     return render_to_response('timepiece/time-sheet/invoice_projects.html', {
         'form': form,
         'cals': cals,
