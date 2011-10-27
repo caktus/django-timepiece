@@ -165,7 +165,7 @@ class TimepieceDataTestCase(TestCase):
         return timepiece.PersonSchedule.objects.create(**defaults)
 
     def log_time(self, delta=None, billable=True, project=None,
-        start=None, end=None, status=None, pause=0):
+        start=None, end=None, status=None, pause=0, activity=None):
         if delta and not end:
             hours, minutes = delta
         else:
@@ -183,12 +183,17 @@ class TimepieceDataTestCase(TestCase):
                 'end_time': end,
                 'seconds_paused': pause,
                 }
-        if billable:
-            data['activity'] = self.devl_activity
         if project:
             data['project'] = project
         else:
             data['project'] = self.create_project(billable=billable)
+        if activity:
+            data['activity'] = activity
+        else:
+            if billable:
+                data['activity'] = self.devl_activity
+            else:
+                data['activity'] = self.activity
         if status:
             data['status'] = status
         return self.create_entry(data)
