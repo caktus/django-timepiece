@@ -65,6 +65,8 @@ History
 * Improved My Ledger by adding a comments column and a redirect from the edit entry link
 * Fixed issues related to the hourly summary option not appearing for some users
 * Fixed issues with date accuracy in weekly headings on ledger pages
+* General ledger now sorts users by last name
+* Enhanced project time sheets with an activity column and a summary of hours spent on each activity.
 
 0.3.1
 *****
