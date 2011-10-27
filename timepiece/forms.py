@@ -116,6 +116,7 @@ class ClockInForm(forms.ModelForm):
 
     def __init__(self, *args, **kwargs):
         self.user = kwargs.pop('user')
+        initial = kwargs.get('initial', {})
         default_loc = getattr(
             settings,
             'TIMEPIECE_DEFAULT_LOCATION_SLUG',
@@ -127,8 +128,15 @@ class ClockInForm(forms.ModelForm):
             except timepiece.Location.DoesNotExist:
                 loc = None
             if loc:
-                initial = kwargs.get('initial', {})
                 initial['location'] = loc.pk
+        project = initial.get('project')
+        try:
+            last_project_entry = timepiece.Entry.objects.filter(
+                user=self.user, project=project).order_by('-end_time')[0]
+        except IndexError:
+            initial['activity'] = None
+        else:
+            initial['activity'] = last_project_entry.activity.id
         super(ClockInForm, self).__init__(*args, **kwargs)
         self.fields['start_time'].required = False
         self.fields['start_time'].initial = datetime.now()
@@ -137,20 +145,9 @@ class ClockInForm(forms.ModelForm):
             date_format='%m/%d/%Y',
         )
         self.fields['project'].queryset = timepiece.Project.objects.filter(
-            users=self.user,
-        ).filter(
-            Q(status__enable_timetracking=True) &
-            Q(type__enable_timetracking=True)
+            users=self.user, status__enable_timetracking=True,
+            type__enable_timetracking=True
         )
-
-        try:
-            profile = self.user.profile
-        except timepiece.UserProfile.DoesNotExist:
-            pass
-        else:
-            if profile.default_activity:
-                self.fields['activity'].initial = profile.default_activity
-        #model validation requires Entry.user to be set, so let's set it now
         self.instance.user = self.user
 
     def clean_start_time(self):
@@ -242,14 +239,6 @@ class AddUpdateEntryForm(forms.ModelForm):
         #if editing a current entry, remove the end time field
         if self.instance.start_time and not self.instance.end_time:
             self.fields.pop('end_time')
-        #Use default activity if possible
-        try:
-            profile = self.user.profile
-        except timepiece.UserProfile.DoesNotExist:
-            pass
-        else:
-            if profile.default_activity:
-                self.fields['activity'].initial = profile.default_activity
         self.instance.user = self.user
 
     def clean(self):
@@ -454,4 +443,4 @@ class UserProfileForm(forms.ModelForm):
 
     class Meta:
         model = timepiece.UserProfile
-        fields = ('default_activity',)
+        exclude = ('user',)
