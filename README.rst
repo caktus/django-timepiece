@@ -68,6 +68,7 @@ History
 * General ledger now sorts users by last name
 * Enhanced project time sheets with an activity column and a summary of hours spent on each activity.
 * Invoice projects page now shows project status
+* Activity on clock in page now defaults to the last activity clocked on that project
 
 0.3.1
 *****
