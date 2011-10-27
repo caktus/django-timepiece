@@ -407,7 +407,7 @@ def project_time_sheet(request, project_id, window_id=None):
         'user__last_name',
     ).annotate(sum=Sum('hours')).order_by('-sum')
     activity_entries = entries.order_by().values(
-        'billable',
+        'activity__name',
     ).annotate(sum=Sum('hours')).order_by('-sum')
     context = {
         'project': project,
