@@ -341,7 +341,7 @@ def summary(request, username=None):
     )['hours']
     people_totals = timepiece.Entry.objects.values('user', 'user__first_name',
                                                    'user__last_name')
-    people_totals = people_totals.order_by('user').filter(dates)
+    people_totals = people_totals.order_by('user__last_name').filter(dates)
     people_totals = people_totals.annotate(total_hours=Sum('hours'))
     context = {
         'form': form,
