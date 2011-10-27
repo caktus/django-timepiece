@@ -3,7 +3,7 @@ import csv
 import datetime
 import calendar
 import math
-import pprint
+
 from decimal import Decimal
 from dateutil.relativedelta import relativedelta
 from dateutil import rrule
@@ -341,7 +341,7 @@ def summary(request, username=None):
     )['hours']
     people_totals = timepiece.Entry.objects.values('user', 'user__first_name',
                                                    'user__last_name')
-    people_totals = people_totals.order_by('user').filter(dates)
+    people_totals = people_totals.order_by('user__last_name').filter(dates)
     people_totals = people_totals.annotate(total_hours=Sum('hours'))
     context = {
         'form': form,
@@ -407,7 +407,7 @@ def project_time_sheet(request, project_id, window_id=None):
         'user__last_name',
     ).annotate(sum=Sum('hours')).order_by('-sum')
     activity_entries = entries.order_by().values(
-        'billable',
+        'activity__name',
     ).annotate(sum=Sum('hours')).order_by('-sum')
     context = {
         'project': project,
@@ -674,7 +674,7 @@ def invoice_projects(request, form, from_date, to_date, status, activity):
     project_totals = entries.filter(status='approved',
         project__type__billable=True, project__status__billable=True).values(
         'project__type__pk', 'project__type__label', 'project__name',
-        'project__pk', 'status',
+        'project__pk', 'status', 'project__status__label'
     ).annotate(s=Sum('hours')).order_by('project__type__label',
                                         'project__name', 'status')
     cals = []
@@ -685,7 +685,6 @@ def invoice_projects(request, form, from_date, to_date, status, activity):
         while date < end_date:
             cals.append(html_cal.formatmonth(date.year, date.month))
             date += relativedelta(months=1)
-
     return render_to_response('timepiece/time-sheet/invoice_projects.html', {
         'form': form,
         'cals': cals,
