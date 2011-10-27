@@ -67,6 +67,7 @@ History
 * Fixed issues with date accuracy in weekly headings on ledger pages
 * General ledger now sorts users by last name
 * Enhanced project time sheets with an activity column and a summary of hours spent on each activity.
+* Invoice projects page now shows project status
 
 0.3.1
 *****
