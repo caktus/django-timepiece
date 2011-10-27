@@ -341,7 +341,7 @@ def summary(request, username=None):
     )['hours']
     people_totals = timepiece.Entry.objects.values('user', 'user__first_name',
                                                    'user__last_name')
-    people_totals = people_totals.order_by('user').filter(dates)
+    people_totals = people_totals.order_by('user__last_name').filter(dates)
     people_totals = people_totals.annotate(total_hours=Sum('hours'))
     context = {
         'form': form,
@@ -407,7 +407,7 @@ def project_time_sheet(request, project_id, window_id=None):
         'user__last_name',
     ).annotate(sum=Sum('hours')).order_by('-sum')
     activity_entries = entries.order_by().values(
-        'billable',
+        'activity__name',
     ).annotate(sum=Sum('hours')).order_by('-sum')
     context = {
         'project': project,
