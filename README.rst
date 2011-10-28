@@ -58,8 +58,8 @@ Installation
 History
 -------
 
-0.3.2
-*****
+0.3.2 (10-28-2011)
+******************
 
 * My Active Entries on Dashboard now shows the hours worked thus far
 * Improved My Ledger by adding a comments column and a redirect from the edit entry link
