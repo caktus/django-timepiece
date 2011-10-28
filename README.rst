@@ -69,6 +69,7 @@ History
 * Enhanced project time sheets with an activity column and a summary of hours spent on each activity.
 * Invoice projects page now shows project status
 * Activity on clock in page now defaults to the last activity clocked on that project
+* Payroll report only shows users that have clocked hours for the period.
 
 0.3.1
 *****
