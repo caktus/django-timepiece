@@ -543,8 +543,9 @@ def view_person_time_sheet(request, person_id, period_id=None,
         if request.user.has_perm('timepiece.edit_person_time_sheet'):
             show_approve = verified_count + approved_count == total_statuses \
             and verified_count > 0 and total_statuses != 0
-        summary = time_sheet.summary(window.date, window.end_date)
         template = 'timepiece/time-sheet/people/view.html'
+        summary = time_sheet.summary(window.date, window.end_date,
+                                     unverified=True)
         context.update({
             'show_verify': show_verify,
             'show_approve': show_approve,

@@ -639,7 +639,7 @@ class PersonRepeatPeriod(models.Model):
             overtime += self.overtime_hours_in_week(week)
         return overtime
 
-    def summary(self, date, end_date):
+    def summary(self, date, end_date, unverified=False):
         """
         Returns a summary of hours worked in the given time frame, for this
         user.  The setting TIMEPIECE_PROJECTS can be used to separate out hours
@@ -650,8 +650,10 @@ class PersonRepeatPeriod(models.Model):
         projects = getattr(settings, 'TIMEPIECE_PROJECTS', {})
         user = self.user
         entries = user.timepiece_entries.filter(
-            (Q(status='invoiced') | Q(status='approved')),
             end_time__gt=date, end_time__lt=end_date)
+        if unverified == False:
+            entries = entries.filter(Q(status='invoiced') | \
+                                     Q(status='approved'))
         data = {
             'billable': Decimal('0'), 'non_billable': Decimal('0'),
             'invoiced': Decimal('0'), 'uninvoiced': Decimal('0'),
