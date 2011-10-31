@@ -605,9 +605,11 @@ def time_sheet_change_status(request, form, from_date, to_date, status,
     to_date -= relativedelta(days=1)
     if action == 'invoice':
         return_url = reverse('invoice_projects',)
+        to_str = to_date.strftime('%m/%d/%Y') if to_date else ''
+        from_str = from_date.strftime('%m/%d/%Y') if from_date else ''
         get_str = urllib.urlencode({
-            'from_date': from_date or '',
-            'to_date': to_date  or '',
+            'from_date': from_str,
+            'to_date': to_str,
         })
         return_url += '?%s' % get_str
     else:
