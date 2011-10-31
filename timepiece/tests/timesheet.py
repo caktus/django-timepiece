@@ -17,7 +17,7 @@ from timepiece import models as timepiece
 from timepiece import forms as timepiece_forms
 from timepiece import utils
 
-from dateutil import relativedelta
+from dateutil.relativedelta import relativedelta
 
 
 class EditableTest(TimepieceDataTestCase):
@@ -616,13 +616,10 @@ class CreateEditEntry(TimepieceDataTestCase):
         """
         response = self.client.post(self.create_url, self.default_data,
             follow=True)
-        #This post should redirect to the dashboard, with the correct message
-        #and 2 entries for this week, the one in setUp and this one.
         self.assertRedirects(response, reverse('timepiece-entries'),
             status_code=302, target_status_code=200)
         self.assertContains(response,
             'The entry has been created successfully', count=1)
-        self.assertEquals(len(response.context['this_weeks_entries']), 2)
 
     def testEditClosed(self):
         """
@@ -630,13 +627,10 @@ class CreateEditEntry(TimepieceDataTestCase):
         """
         response = self.client.post(self.edit_closed_url, self.default_data,
             follow=True)
-        #This post should redirect to the dashboard, with the correct message
-        #and 1 entry for this week, because we updated the entry in setUp
         self.assertRedirects(response, reverse('timepiece-entries'),
             status_code=302, target_status_code=200)
         self.assertContains(response,
             'The entry has been updated successfully', count=1)
-        self.assertEquals(len(response.context['this_weeks_entries']), 1)
 
     def testEditCurrentSameTime(self):
         """
