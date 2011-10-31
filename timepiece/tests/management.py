@@ -31,7 +31,6 @@ class CheckEntries(TimepieceDataTestCase):
         self.user.first_name = 'first1'
         self.user.last_name = 'last1'
         self.user.save()
-        
         self.user2.first_name = 'first2'
         self.user2.last_name = 'last2'
         self.user2.save()
@@ -39,13 +38,12 @@ class CheckEntries(TimepieceDataTestCase):
         #Create a valid entry for all users on every day since 60 days ago
         self.make_entry_bulk(self.all_users, 60)
 
-    #helper functions           
+    #helper functions
     def make_entry(self, **kwargs):
         """
         Make a valid or invalid entry
-
         make_entry(**kwargs) 
-        **kwargs can include: start_time, end_time, valid    
+        **kwargs can include: start_time, end_time, valid
         Without any kwargs, make_entry makes a valid entry. (first time called)
         With valid=False, makes an invalid entry
         start_time and end_time can be specified.
@@ -78,7 +76,6 @@ class CheckEntries(TimepieceDataTestCase):
     def make_entry_bulk(self, users, days, *args, **kwargs):
         """
         Create entries for users listed, from n days ago (but not today)
-        
         make_entry_bulk(users_list, num_days)
         """
         #Test cases may create overlapping entries later
@@ -168,12 +165,13 @@ class CheckEntries(TimepieceDataTestCase):
                     total_entries += 1
             except StopIteration:
                 #Verify that every entry from the start point was returned
-                self.assertEqual(total_entries, days_checked * len(self.all_users))
+                expected_total = days_checked * len(self.all_users)
+                self.assertEqual(total_entries, expected_total)
                 return
 
     def testCheckEntry(self):
         """
-        Given lists of entries from users, check_entry should return all 
+        Given lists of entries from users, check_entry should return all
         overlapping entries.
         """
         start = check_entries.Command().find_start()
