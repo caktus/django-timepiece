@@ -620,6 +620,9 @@ class CreateEditEntry(TimepieceDataTestCase):
             status_code=302, target_status_code=200)
         self.assertContains(response,
             'The entry has been created successfully', count=1)
+        #If after Monday, there is one entry this week, otherwise 1
+        this_w = 2 if self.now.isoweekday() != 1 else 1
+        self.assertEquals(len(response.context['this_weeks_entries']), this_w)
 
     def testEditClosed(self):
         """
@@ -631,6 +634,9 @@ class CreateEditEntry(TimepieceDataTestCase):
             status_code=302, target_status_code=200)
         self.assertContains(response,
             'The entry has been updated successfully', count=1)
+        #If after Monday, there are two entries this week, otherwise 0
+        this_w = 1 if self.now.isoweekday() != 1 else 0
+        self.assertEquals(len(response.context['this_weeks_entries']), this_w)
 
     def testEditCurrentSameTime(self):
         """
