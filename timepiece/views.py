@@ -69,7 +69,7 @@ def view_entries(request):
     my_active_entries = timepiece.Entry.objects.select_related(
         'project__business',
     ).only(
-        'user','project','activity','start_time'
+        'user', 'project', 'activity', 'start_time'
     ).filter(
         user=request.user,
         end_time__isnull=True,
@@ -487,7 +487,7 @@ def export_project_time_sheet(request, form, from_date, to_date, status,
 
 
 @login_required
-def view_person_time_sheet(request, person_id, period_id=None, 
+def view_person_time_sheet(request, person_id, period_id=None,
     window_id=None, hourly=False):
     try:
         if not period_id:

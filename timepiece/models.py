@@ -255,13 +255,13 @@ class Entry(models.Model):
         #if entries are open, consider them to be closed right now
         if not entry_a.end_time or not entry_b.end_time:
             return False
-        #Check the two entries against each other        
+        #Check the two entries against each other
         start_inside = entry_a.start_time > entry_b.start_time \
-            and entry_a.start_time < entry_b.end_time 
+            and entry_a.start_time < entry_b.end_time
         end_inside = entry_a.end_time > entry_b.start_time \
             and entry_a.end_time < entry_b.end_time
         a_is_inside = entry_a.start_time > entry_b.start_time \
-            and entry_a.end_time < entry_b.end_time        
+            and entry_a.end_time < entry_b.end_time
         b_is_inside = entry_a.start_time < entry_b.start_time \
             and entry_a.end_time > entry_b.end_time
         overlap = start_inside or end_inside or a_is_inside or b_is_inside

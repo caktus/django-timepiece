@@ -27,12 +27,13 @@ class PayrollTest(TimepieceDataTestCase):
         sick = self.log_time(delta=(8, 0), project=sick, status='approved')
         vacation = self.log_time(delta=(4, 0), project=vacation,
             status='approved')
-        #make an entry on the very last day no matter the current time 
+        #make an entry on the very last day no matter the current time
         #but start in the morning to stay in the billing period.
         end_day = datetime.datetime.now() + \
             relativedelta(months=1, day=1, hour=0) - \
             relativedelta(days=1)
-        last_day = self.log_time(start=end_day, status='approved', delta=(8,0))
+        last_day = self.log_time(start=end_day,
+                                 status='approved', delta=(8, 0))
 
     def testPersonSummary(self):
         self.make_logs()
@@ -41,7 +42,7 @@ class PayrollTest(TimepieceDataTestCase):
         end = start + relativedelta(months=1)
         summary = rp.summary(start, end)
         self.check_summary(summary)
-    
+
     def testPersonSummaryView(self):
         from timepiece.templatetags import timepiece_tags as tags
         self.client.login(username='superuser', password='abc')

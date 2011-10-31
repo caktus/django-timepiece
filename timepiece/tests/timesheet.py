@@ -194,8 +194,8 @@ class ClockInTest(TimepieceDataTestCase):
         }
         entry1 = self.create_entry(entry1_data)
         entry1_data.update({
-            'start_time_str': self.ten_min_ago.strftime('%H:%M:%S'),
-            'end_time_str': self.now.strftime('%H:%M:%S'),
+            'st_str': self.ten_min_ago.strftime('%H:%M:%S'),
+            'end_str': self.now.strftime('%H:%M:%S'),
         })
         blocked_start_time = entry1.start_time + datetime.timedelta(minutes=5)
         data = self.clock_in_form
@@ -207,7 +207,7 @@ class ClockInTest(TimepieceDataTestCase):
         response = self.client.post(self.url, data)
         self.assertFormError(response, 'form', None, \
             'Start time overlaps with: ' + \
-            '%(project)s - %(activity)s - from %(start_time_str)s to %(end_time_str)s' % \
+            '%(project)s - %(activity)s - from %(st_str)s to %(end_str)s' % \
             entry1_data)
 
     def testClockInSameTime(self):
@@ -223,7 +223,7 @@ class ClockInTest(TimepieceDataTestCase):
         }
         entry1 = self.create_entry(entry1_data)
         entry1_data.update({
-            'start_time_str': self.now.strftime('%H:%M:%S')
+            'st_str': self.now.strftime('%H:%M:%S')
         })
         data = self.clock_in_form
         data.update({
@@ -236,7 +236,7 @@ class ClockInTest(TimepieceDataTestCase):
             'Please enter a valid start time')
         self.assertFormError(response, 'form', 'start_time', \
             'The start time is on or before the current entry: ' + \
-            '%(project)s - %(activity)s starting at %(start_time_str)s' % entry1_data)
+            '%(project)s - %(activity)s starting at %(st_str)s' % entry1_data)
 
     def testClockInBeforeCurrent(self):
         """
@@ -251,7 +251,7 @@ class ClockInTest(TimepieceDataTestCase):
         }
         entry1 = self.create_entry(entry1_data)
         entry1_data.update({
-            'start_time_str': self.ten_min_ago.strftime('%H:%M:%S')
+            'st_str': self.ten_min_ago.strftime('%H:%M:%S')
         })
         before_entry1 = entry1.start_time - datetime.timedelta(minutes=5)
         data = self.clock_in_form
@@ -266,8 +266,7 @@ class ClockInTest(TimepieceDataTestCase):
             'Please enter a valid start time')
         self.assertFormError(response, 'form', 'start_time', \
             'The start time is on or before the current entry: ' + \
-            '%(project)s - %(activity)s starting at %(start_time_str)s' \
-             % entry1_data)
+            '%(project)s - %(activity)s starting at %(st_str)s' % entry1_data)
 
     def testProjectListFiltered(self):
         self.client.login(username='user', password='abc')
@@ -294,6 +293,7 @@ class ClockInTest(TimepieceDataTestCase):
         response = self.client.post(self.url, data)
         self.assertEqual(response.status_code, 200)
         self.assertTrue(response.context['form'].errors)
+
 
 class AutoActivityTest(TimepieceDataTestCase):
     """Test the initial value chosen for activity on clock in form"""
@@ -345,6 +345,7 @@ class AutoActivityTest(TimepieceDataTestCase):
             self.log_time(start=this_day, project=project, activity=activity)
         self.assertEqual(self.get_activity(project1), self.activity.id)
         self.assertEqual(self.get_activity(project2), self.devl_activity.id)
+
 
 class ClockOutTest(TimepieceDataTestCase):
     def setUp(self):
@@ -464,8 +465,8 @@ class ClockOutTest(TimepieceDataTestCase):
         })
         entry1 = self.create_entry(entry1_data)
         entry1_data.update({
-            'start_time_str': entry1.start_time.strftime('%H:%M:%S'),
-            'end_time_str': entry1.end_time.strftime('%H:%M:%S'),
+            'st_str': entry1.start_time.strftime('%H:%M:%S'),
+            'end_str': entry1.end_time.strftime('%H:%M:%S'),
         })
         #Create a form with times that overlap with entry1
         bad_start = entry1.start_time - datetime.timedelta(hours=1)
@@ -486,8 +487,9 @@ class ClockOutTest(TimepieceDataTestCase):
             reverse('timepiece-clock-out', args=[bad_entry.pk]), data)
         self.assertFormError(response, 'form', None,
             'Start time overlaps with: ' + \
-            '%(project)s - %(activity)s - from %(start_time_str)s to %(end_time_str)s' %
+            '%(project)s - %(activity)s - from %(st_str)s to %(end_str)s' %
             entry1_data)
+
 
 class CheckOverlap(TimepieceDataTestCase):
     """
@@ -507,7 +509,7 @@ class CheckOverlap(TimepieceDataTestCase):
         self.start_before = self.start - datetime.timedelta(minutes=2)
         self.start_inside = self.start + datetime.timedelta(minutes=2)
         self.end_inside = self.end - datetime.timedelta(minutes=2)
-        self.end_after = self.end + datetime.timedelta(minutes=2)        
+        self.end_after = self.end + datetime.timedelta(minutes=2)
 
     #helper functions
     def use_checkoverlap(self, entries):
@@ -598,11 +600,11 @@ class CreateEditEntry(TimepieceDataTestCase):
         self.closed_entry = self.create_entry(self.closed_entry_data)
         self.current_entry = self.create_entry(self.current_entry_data)
         self.closed_entry_data.update({
-            'start_time_str': two_hour_ago.strftime('%H:%M:%S'),
-            'end_time_str': one_hour_ago.strftime('%H:%M:%S'),
+            'st_str': two_hour_ago.strftime('%H:%M:%S'),
+            'end_str': one_hour_ago.strftime('%H:%M:%S'),
         })
         self.current_entry_data.update({
-            'start_time_str': ten_min_ago.strftime('%H:%M:%S'),
+            'st_str': ten_min_ago.strftime('%H:%M:%S'),
         })
         self.create_url = reverse('timepiece-add')
         self.edit_closed_url = reverse('timepiece-update',
@@ -693,7 +695,7 @@ class CreateEditEntry(TimepieceDataTestCase):
             follow=True)
         self.assertFormError(response, 'form', None, \
             'Start time overlaps with: ' + \
-            '%(project)s - %(activity)s - from %(start_time_str)s to %(end_time_str)s' % \
+            '%(project)s - %(activity)s - from %(st_str)s to %(end_str)s' % \
             self.closed_entry_data)
 
     def testCreateBlockByCurrent(self):
@@ -711,7 +713,7 @@ class CreateEditEntry(TimepieceDataTestCase):
             follow=True)
         self.assertFormError(response, 'form', None, \
             'The times below conflict with the current entry: ' + \
-            '%(project)s - %(activity)s starting at %(start_time_str)s' % \
+            '%(project)s - %(activity)s starting at %(st_str)s' % \
             self.current_entry_data)
 
     def testCreateBlockByFuture(self):
@@ -727,7 +729,7 @@ class CreateEditEntry(TimepieceDataTestCase):
             'end_time_1': five_min_later.strftime('%H:%M:%S'),
         })
         response = self.client.post(self.create_url, future_entry, follow=True)
-        self.assertFormError(response,'form', None, 
+        self.assertFormError(response, 'form', None,
             'Entries may not be added in the future.')
 
     def testProjectList(self):

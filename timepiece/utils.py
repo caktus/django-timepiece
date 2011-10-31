@@ -326,7 +326,8 @@ def grouped_totals(entries):
     weekly = weekly.annotate(hours=Sum('hours')).order_by('date')
     daily = entries.extra(select=select["day"]).values('date', 'project__name',
                                                        'billable')
-    daily = daily.annotate(hours=Sum('hours')).order_by('date', 'project__name')
+    daily = daily.annotate(hours=Sum('hours')).order_by('date',
+                                                        'project__name')
     weeks = {}
     for week, week_entries in itertools.groupby(weekly, lambda x: x['date']):
         weeks[week] = get_hours(week_entries)
