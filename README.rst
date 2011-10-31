@@ -58,6 +58,12 @@ Installation
 History
 -------
 
+0.3.3 (10-31-2011)
+******************
+
+* Fixed Time Detail This Week on Dashboard to show correct totals
+* Fixed Billable Summary on My Ledger to show totals for unverified hours
+
 0.3.2 (10-28-2011)
 ******************
 

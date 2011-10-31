@@ -42,7 +42,7 @@ class CheckEntries(TimepieceDataTestCase):
     def make_entry(self, **kwargs):
         """
         Make a valid or invalid entry
-        make_entry(**kwargs) 
+        make_entry(**kwargs)
         **kwargs can include: start_time, end_time, valid
         Without any kwargs, make_entry makes a valid entry. (first time called)
         With valid=False, makes an invalid entry
