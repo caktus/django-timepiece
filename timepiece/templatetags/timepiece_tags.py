@@ -192,10 +192,11 @@ def week_start(date):
 @register.simple_tag
 def get_active_hours(entry):
     """Use with active entries to obtain time worked so far"""
-    if not entry.is_paused:
-        entry.end_time = datetime.datetime.now()
-    else:
-        entry.end_time = entry.pause_time
+    if not entry.end_time:
+        if entry.is_paused:
+            entry.end_time = entry.pause_time
+        else:
+            entry.end_time = datetime.datetime.now()
     return Decimal('%.2f' % round(entry.total_hours, 2))
 
 
