@@ -82,7 +82,8 @@ class ToggleBillableWidget(forms.Select):
             console.log(billable_map);
             jQuery('#id_project').change(function() {
                 console.log(billable_map[jQuery(this).val()]);
-                jQuery('#id_billable').attr('checked', billable_map[jQuery(this).val()]);
+                jQuery('#id_billable').attr('checked',
+                                            billable_map[jQuery(this).val()]);
             });
         });
         </script>

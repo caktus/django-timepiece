@@ -17,7 +17,7 @@ from timepiece import models as timepiece
 
 class Command(BaseCommand):
     """
-    Management command to check entries for overlapping times.    
+    Management command to check entries for overlapping times.
     Use ./manage.py check_entries --help for more details
     """
     #boiler plate for console programs using optparse
@@ -230,20 +230,20 @@ For options type:
                 'first_name': entry.user.first_name,
                 'last_name': entry.user.last_name,
                 'entry': entry.id,
-                'start_time': entry.start_time,
-                'end_time': entry.end_time,
+                'start': entry.start_time,
+                'end': entry.end_time,
                 'project': entry.project
             }
         data_a = make_output_data(entry_a)
         if entry_b:
             data_b = make_output_data(entry_b)
             output = 'Entry %(entry)d for %(first_name)s %(last_name)s from ' \
-            % data_a + '%(start_time)s to %(end_time)s on %(project)s overlaps ' \
-            % data_a + 'entry %(entry)d from %(start_time)s to %(end_time)s on ' \
+            % data_a + '%(start)s to %(end)s on %(project)s overlaps ' \
+            % data_a + 'entry %(entry)d from %(start)s to %(end)s on ' \
             % data_b + '%(project)s.' % data_b
         else:
             output = 'Entry %(entry)d for %(first_name)s %(last_name)s from ' \
-            % data_a + '%(start_time)s to %(end_time)s on %(project)s overlaps ' \
+            % data_a + '%(start)s to %(end)s on %(project)s overlaps ' \
             % data_a + 'with another entry.'
         if kwargs.get('verbosity', 1):
             print output
