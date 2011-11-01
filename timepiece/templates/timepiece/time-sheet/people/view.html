@@ -53,8 +53,8 @@
         </tr>            
         {% for entry in entries %}
             {% ifchanged entry.start_time|date:"W" %}
-                <tr>
-                    <th colspan='8'>Week of {% week_start entry.start_time %} </th>
+                <tr class="ledger_header">
+                    <th colspan='9'>Week of {% week_start entry.start_time %} </th>
                 </tr>
             {% endifchanged %}
             <tr>

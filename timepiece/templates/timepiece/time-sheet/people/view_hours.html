@@ -36,8 +36,7 @@
 {% if grouped_totals %}
 <table>
     {% for week, week_totals, days in grouped_totals %}
-        {% if week %}
-            <tr>
+            <tr class="ledger_header">
                 <th colspan='2'>Week of {{ week|date:"m/d/Y (D)" }} </th>
                 <th>Billable:</th>
                 <th>Non Billable:</th>
@@ -59,7 +58,7 @@
                         <td class="hours">{{totals.total}}</td>
                     </tr>
                 {% endfor %}         
-                <tr>
+                <tr class="daily_total">
                     <td></td>
                     <td class="hours"><strong>{{day|date:"D"}}:</strong></td>
                     <td class="hours">{{projects.0.billable}}</td>
@@ -67,16 +66,15 @@
                     <td class="hours">{{projects.0.total}}</td>
                 <tr/>
             {% endfor %}
-            <tr>
+            <tr class="weekly_total">
                 <th colspan="2">Totals for this week:</th>
                 <td class="hours">{{week_totals.billable}}</td>
                 <td class="hours">{{week_totals.non_billable}}</td>
                 <td class="hours">{{week_totals.total}}</td>
             </tr>
             <tr><th colspan='5'>&nbsp;</td><tr/>
-        {% endif %}
     {% endfor %}
-    <tr>
+    <tr class="monthly_total">
         <th colspan='4'>Overall total for the period:</th>
         <td>{{ total|floatformat:2 }}</td>
     </tr>
