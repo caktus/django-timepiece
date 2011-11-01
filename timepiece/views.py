@@ -521,7 +521,7 @@ def view_person_time_sheet(request, person_id, period_id=None,
     }
     if hourly:
         template = 'timepiece/time-sheet/people/view_hours.html'
-        grouped_totals = utils.grouped_totals(entries)
+        grouped_totals = utils.grouped_totals(entries) if entries else ''        
         context.update({
             'grouped_totals': grouped_totals,
         })

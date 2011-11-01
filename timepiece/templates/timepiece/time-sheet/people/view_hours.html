@@ -34,8 +34,9 @@
 </ul>
 
 {% if grouped_totals %}
-    <table>
-        {% for week, week_totals, days in grouped_totals %}
+<table>
+    {% for week, week_totals, days in grouped_totals %}
+        {% if week %}
             <tr>
                 <th colspan='2'>Week of {{ week|date:"m/d/Y (D)" }} </th>
                 <th>Billable:</th>
@@ -73,12 +74,13 @@
                 <td class="hours">{{week_totals.total}}</td>
             </tr>
             <tr><th colspan='5'>&nbsp;</td><tr/>
-        {% endfor %}
-        <tr>
-            <th colspan='4'>Overall total for the period:</th>
-            <td>{{ total|floatformat:2 }}</td>
-        </tr>
-    </table>
+        {% endif %}
+    {% endfor %}
+    <tr>
+        <th colspan='4'>Overall total for the period:</th>
+        <td>{{ total|floatformat:2 }}</td>
+    </tr>
+</table>
 {% else %}
     <p>No entries exist for this time sheet.</p>
 {% endif %}
