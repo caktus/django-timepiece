@@ -85,9 +85,18 @@ class MyLedgerTest(TimepieceDataTestCase):
             'period_id': self.timesheet.repeat_period.pk,
         })
 
-    def testMyLedger(self):
+    def testEmptyTimeSheet(self):
         self.client.login(username='user', password='abc')
         response = self.client.get(self.url)
+        self.assertEquals(response.status_code, 200)
+
+    def testEmptyHourlySummary(self):
+        self.client.login(username='user', password='abc')
+        response = self.client.get(reverse('view_person_time_sheet', kwargs={
+            'person_id': self.user.pk,
+            'period_id': self.timesheet.repeat_period.pk,
+            'hourly': 'hourly',
+        }))
         self.assertEquals(response.status_code, 200)
 
     def testNotMyLedger(self):
