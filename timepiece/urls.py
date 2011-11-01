@@ -139,6 +139,12 @@ urlpatterns = patterns('',
     ),
 
     url(
+        r'^time-sheet/project/payroll/(?:(?P<trunc>day|week|month)/)?$',
+        views.project_payroll,
+        name='project_payroll',
+    ),
+
+    url(
         r'^payroll/summary/$',
         views.payroll_summary,
         name='payroll_summary',

@@ -292,11 +292,11 @@ def date_filter(func):
     return inner_decorator
 
 
-def get_hours(entries):
+def get_hours(entries, key='billable'):
     hours = {'total': 0}
     for entry in entries:
         hours['total'] += entry['hours']
-        if entry['billable']:
+        if entry[key]:
             hours['billable'] = entry['hours']
         else:
             hours['non_billable'] = entry['hours']
@@ -341,3 +341,14 @@ def grouped_totals(entries):
         days.append((day, daily_summary(day_entries)))
         last_week = week
     yield week, weeks.get(week, {}), days
+
+
+def project_totals(entries):
+    from pprint import pprint
+    users = {}
+    for user, user_entries in itertools.groupby(entries, lambda x: x['user']):
+        dates = {}
+        for date, date_entries in itertools.groupby(user_entries, lambda x: x['date']):            
+            dates[date] = get_hours(date_entries, 'project__type__billable')
+        users[user] = dates
+    pprint(users)

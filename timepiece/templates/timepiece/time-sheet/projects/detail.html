@@ -1,0 +1,52 @@
+{% extends 'timepiece/time-sheet/base.html' %}
+{% load timepiece_tags %}
+
+{% block title %}Payroll Per Project{% endblock %}
+
+{% block content %}
+
+{% date_filters "months" %}
+{% date_filters "quaters" %}
+{% date_filters "years" %}
+
+<form method="get" action="" id="date-filter" accept-charset="utf-8">
+    <ul id='ledger-date-fieldlist'>
+        {{ form.as_ul }}
+        <li>
+            <input type='submit' name='submit' value='Update' id='id_date_form_submit_btn'/>
+        </li>
+        <li>
+            <input type='button' name='clear' value='Clear' id='id_date_form_clear_btn'/>
+        </li>
+    </ul>
+</form>
+
+<div style='float: right;'>
+    {% for cal in cals %}
+        {{ cal|safe }}
+    {% endfor %}
+</div>
+
+
+<h2>Payroll Per Project</h2>
+<ul class='header-actions-left'>
+
+</ul>
+
+<table class='projects'>
+    <tr>
+        <th>Name</th>
+        <th>Hours</th>
+    </tr>
+    {% for entry in entries %}
+    <tr>
+        {{entry}}
+    </tr>
+    {% empty %}
+    <tr>
+        <td colspan='3'>No entries found.</td>
+    </tr>
+    {% endfor %}
+</table>
+
+{% endblock %}
