@@ -1188,31 +1188,3 @@ def edit_settings(request):
         profile_form = timepiece_forms.UserProfileForm(instance=profile)
         user_form = timepiece_forms.UserForm(instance=request.user)
     return {'profile_form': profile_form, 'user_form': user_form}
-
-
-@login_required
-@render_with('timepiece/time-sheet/projects/detail.html')
-@utils.date_filter
-def project_payroll(request, form, from_date, to_date, status, activity, trunc):
-    if not trunc:
-        trunc = 'month'
-    #Handle Get/Post for entry filters
-    entries = timepiece.Entry.objects.date_trunc(trunc)
-    entries = entries.filter(start_time__gt=from_date, end_time__lt=to_date)
-    project_totals = utils.project_totals(entries)
-    #may or may not use the calendars
-    cals = []
-    date = from_date - relativedelta(months=1)
-    end_date = from_date + relativedelta(months=1)
-    html_cal = calendar.HTMLCalendar(calendar.SUNDAY)
-    while date < end_date:
-        cals.append(html_cal.formatmonth(date.year, date.month))
-        date += relativedelta(months=1)
-    return {
-        'form': form,
-        'cals': cals,
-        'to_date': to_date,
-        'from_date': from_date,
-        'entries': entries,
-        'trunc': trunc,
-    }
