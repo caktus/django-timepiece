@@ -367,8 +367,3 @@ def project_totals(entries):
             dates[date] = get_hours(d_entries, 'project__type__billable')
         users[user] = (name, dates)
         yield (name, dates)
-
-#    users = users.values()
-#    users.sort()    
-#    pprint(users)
-#    yield users

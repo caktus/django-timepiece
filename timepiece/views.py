@@ -1227,5 +1227,4 @@ def people_project(request, date_form, from_date, to_date, status, activity):
         'cals': cals,
         'date_headers': date_headers,
         'project_totals': project_totals,
-        'trunc': trunc,
     }
