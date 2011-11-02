@@ -3,6 +3,11 @@
 
 {% block title %}Payroll Per Project{% endblock %}
 
+<!--TODO: Upgrade portal JQuer and JQuery UI, referrence in base.html and remove these CDN calls-->
+<link rel="stylesheet" href="https://ajax.googleapis.com/ajax/libs/jqueryui/1.8.13/themes/ui-lightness/jquery-ui.css" type="text/css" media="screen">
+<script type="text/javascript" src="https://ajax.googleapis.com/ajax/libs/jquery/1.4.4/jquery.min.js"></script>
+<script type="text/javascript" src="https://ajax.googleapis.com/ajax/libs/jqueryui/1.8.13/jquery-ui.min.js"></script>
+
 {% block content %}
 
 {% date_filters "months" %}
@@ -68,4 +73,10 @@
     </form>
 </div>
 
+<script type="text/javascript">
+    $(document).ready(function(){
+        $("#quick-search-area").hide();
+    });
+</script>
 {% endblock %}
+
