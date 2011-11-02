@@ -51,7 +51,7 @@
             {% for name, hours in project_totals %}
             <tr class="{% cycle 'odd' 'even' %}"> 
                 <th class='name_col'>{{name.1}} {{name.0}}</th>
-                {% show_project_hours hours date_headers project_filters_form %}
+                {% show_project_hours name hours date_headers project_filters_form %}
             </tr>
             {% endfor %}
         </table>

@@ -202,7 +202,7 @@ def get_active_hours(entry):
 
 @register.inclusion_tag('timepiece/time-sheet/_project_total_row.html',
                         takes_context=True)
-def show_project_hours(context, hours, date_headers, form):
+def show_project_hours(context, name, hours, date_headers, form):
     billable = form.data.get('billable', False)
     non_billable = form.data.get('non_billable', False)
     ordered_hours = []
@@ -219,7 +219,8 @@ def show_project_hours(context, hours, date_headers, form):
                 result += total.get('non_billable', 0)
         ordered_hours.append(result)
     return {
-        'hours': ordered_hours
+        'name': name[1],
+        'hours': ordered_hours,
     }
 
 
