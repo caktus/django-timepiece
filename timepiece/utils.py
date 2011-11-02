@@ -285,7 +285,7 @@ def get_week_window(day):
 def date_filter(func):
     def inner_decorator(request, *args, **kwargs):
         from timepiece import forms as timepiece_forms
-        if request.GET:
+        if 'to_date' in request.GET:
             form = timepiece_forms.DateForm(request.GET)
             if form.is_valid():
                 from_date, to_date = form.save()
@@ -356,7 +356,6 @@ def grouped_totals(entries):
 
 
 def project_totals(entries):
-    users = {}
     for user, user_entries in groupby(entries, lambda x: x['user']):
         dates = {}
         for date, date_entries in groupby(user_entries, lambda x: x['date']):
@@ -364,5 +363,4 @@ def project_totals(entries):
             name = (d_entries[0]['user__last_name'],
                     d_entries[0]['user__first_name'])
             dates[date] = get_hours(d_entries, 'project__type__billable')
-        users[user] = (name, dates)
         yield (name, dates)

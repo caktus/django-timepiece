@@ -3,27 +3,38 @@
 
 {% block title %}Payroll Per Project{% endblock %}
 
-<!--TODO: Upgrade portal JQuer and JQuery UI, referrence in base.html and remove these CDN calls-->
-<link rel="stylesheet" href="https://ajax.googleapis.com/ajax/libs/jqueryui/1.8.13/themes/ui-lightness/jquery-ui.css" type="text/css" media="screen">
-<script type="text/javascript" src="https://ajax.googleapis.com/ajax/libs/jquery/1.4.4/jquery.min.js"></script>
-<script type="text/javascript" src="https://ajax.googleapis.com/ajax/libs/jqueryui/1.8.13/jquery-ui.min.js"></script>
+{% block css %}
+    <link rel="stylesheet" href="https://ajax.googleapis.com/ajax/libs/jqueryui/1.8.13/themes/ui-lightness/jquery-ui.css" type="text/css" media="screen">
+{% endblock %}
+{% block base-javascript %}{% endblock %}
+{% block javascript %}
+    <script type="text/javascript" src="https://ajax.googleapis.com/ajax/libs/jquery/1.4.4/jquery.min.js"></script>
+    <script type="text/javascript" src="https://ajax.googleapis.com/ajax/libs/jqueryui/1.8.13/jquery-ui.min.js"></script>
+	<script src="{{ STATIC_URL }}js/django-crm.js" type="text/javascript"></script>
+	<script src="{{ STATIC_URL }}js/minibooks.js" type="text/javascript"></script>
+    {{pj_select.media}}
+{% endblock %}
 
 {% block content %}
+{% block quick-search %}{% endblock %}
+{% date_filters %}
 
-{% date_filters "months" %}
-{% date_filters "quarters" %}
-{% date_filters "years" %}
 
-<form method="get" action="" id="date-filter" accept-charset="utf-8">
+<form method="get" action="" id="pj_select" accept-charset="utf-8">
+    {{pj_select}}
     <ul id='ledger-date-fieldlist'>
         {{ date_form.as_ul }}
-        <li>
-            <input type='submit' name='submit' value='Update' id='id_date_form_submit_btn'/>
-        </li>
-        <li>
-            <input type='button' name='clear' value='Clear' id='id_date_form_clear_btn'/>
-        </li>
     </ul>
+    <div id='project_billable_form'>
+        {% for field in project_filters_form %}
+            {{field}}
+            {% if field.label != 'Trunc' %}
+                {{ field.label}}
+            {% endif %}
+        {% endfor %}
+        <input type='submit' name='project_filters_ok' value='Ok' id='billable'/>
+    </div>
+
 </form>
 
 <h2>Payroll Per Project</h2>
@@ -59,24 +70,5 @@
     {% else %}
         <p>No entries found.</p>
 {% endif %}
-
-<div id='project_billable_form'>
-    <form method="post" action="" id="billable" accept-charset="utf-8">
-    {% csrf_token %}
-        {% for field in project_filters_form %}
-            {{field}}
-            {% if field.label != 'Trunc' %}
-                {{ field.label}}
-            {% endif %}
-        {% endfor %}
-        <input type='submit' name='project_filters_ok' value='Ok' id='billable'/>
-    </form>
-</div>
-
-<script type="text/javascript">
-    $(document).ready(function(){
-        $("#quick-search-area").hide();
-    });
-</script>
 {% endblock %}
 

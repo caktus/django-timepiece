@@ -4,6 +4,7 @@ from timepiece import views
 
 urlpatterns = patterns('',
     url(r'^$', views.view_entries, name='timepiece-entries'),
+    url(r'^selectable/', include('selectable.urls')),
     url(r'^period/(?P<delta>\d+)/$', views.view_entries,
         name='timepiece-previous-entries'),
     url(r'^clockin/$', views.clock_in, name='timepiece-clock-in'),

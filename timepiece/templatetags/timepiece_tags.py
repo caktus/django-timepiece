@@ -65,26 +65,22 @@ def my_ledger(context):
 
 @register.inclusion_tag('timepiece/time-sheet/_date_filters.html',
     takes_context=True)
-def date_filters(context, options):
+def date_filters(context, options=None):
     request = context['request']
     from_slug = 'from_date'
     to_slug = 'to_date'
     use_range = True
     if not options:
-        options = ('months', 'quaters', 'years')
+        options = ('months', 'quarters', 'years')
 
     def construct_url(from_date, to_date):
-        url = '%s?%s=%s' % (
-            request.path,
-            to_slug,
-            to_date.strftime('%m/%d/%Y'),
-        )
+        query = request.GET.copy()
+        query.pop(to_slug, None)
+        query.pop(from_slug, None)
+        query[to_slug] = to_date.strftime('%m/%d/%Y')
         if use_range:
-            url += '&%s=%s' % (
-                from_slug,
-                from_date.strftime('%m/%d/%Y'),
-            )
-        return url
+            query[from_slug] = from_date.strftime('%m/%d/%Y')    
+        return '%s?%s' % (request.path, query.urlencode())
 
     filters = {}
     if 'months_no_range' in options:

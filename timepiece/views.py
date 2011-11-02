@@ -1195,11 +1195,17 @@ def edit_settings(request):
 @render_with('timepiece/time-sheet/projects/detail.html')
 @utils.date_filter
 def people_project(request, date_form, from_date, to_date, status, activity):
-    if request.POST:
-        project_filters_form = timepiece_forms.ProjectFiltersForm(request.POST)
+    print request.GET
+    trunc = 'month'
+    if request.GET:        
+        project_filters_form = timepiece_forms.ProjectFiltersForm(request.GET)
+        if project_filters_form.is_valid():
+            trunc = project_filters_form.cleaned_data.get('trunc', 'month')
     else:
         project_filters_form = timepiece_forms.ProjectFiltersForm()
-    trunc = project_filters_form.data.get('trunc', 'month')
+
+    pj_select_form = timepiece_forms.ProjectSelectForm()
+
     #Need to use last_billable here?
     #last_billable = utils.get_last_billable_day(from_date)
     header_to = to_date - relativedelta(days=1)
@@ -1223,5 +1229,6 @@ def people_project(request, date_form, from_date, to_date, status, activity):
         'date_headers': date_headers,
         'project_filters_form': project_filters_form,
         'trunc': trunc,
+        'pj_select': pj_select_form,
         'project_totals': project_totals,
     }
