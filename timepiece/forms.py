@@ -427,6 +427,21 @@ class PersonTimeSheet(forms.ModelForm):
             auth_models.User.objects.all().order_by('last_name')
 
 
+class ProjectFiltersForm(forms.Form):
+    TRUNC_CHOICES = [
+        ('day','Day'),
+        ('week','Week'),
+        ('month','Month'),
+    ]
+    billable = forms.BooleanField(initial=True)
+    non_billable = forms.BooleanField(label='Non-Billable', initial=True)
+    trunc = forms.ChoiceField(choices=TRUNC_CHOICES, 
+                              widget=forms.RadioSelect())
+
+class SearchForm(forms.Form):
+    search = forms.CharField(required=False)
+
+
 class UserForm(forms.ModelForm):
 
     class Meta:

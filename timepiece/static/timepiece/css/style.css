@@ -9,11 +9,43 @@ body {
     margin-top: 0px;
 }
 */
-.scroll_box {
-    width: 650px;
-    overflow-x:auto
+
+
+/*+    background-color: #EDEDFF;*/
+
+/*+    background-color: #8FA8D0;*/
+
+/*+    background-color: #DFDFEF;*/
+
+#scroll_box {
+    width: 700px;
+    overflow-x:auto;
 }
 
+table.project{
+    table-layout: fixed;
+}
+
+tr.name_col{
+    width: 400px;
+}
+
+tr.header{
+    background-color: #8FA8D0;
+}
+
+tr.odd{
+    background-color: #EDEDFF;
+}
+
+tr.even{
+    background-color: #DFDFEF;
+}
+
+td.date_col{
+    border-left: 1px solid #8FA8D0;
+    border-right: 1px solid #8FA8D0;
+}
 ul.actions {
     margin: 0;
     font-size: 93%;

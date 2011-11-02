@@ -139,7 +139,7 @@ urlpatterns = patterns('',
     ),
 
     url(
-        r'^time-sheet/people/project/(?:(?P<trunc>day|week|month)/)?$',
+        r'^time-sheet/people/project/$',
         views.people_project,
         name='people_project',
     ),

@@ -1194,17 +1194,25 @@ def edit_settings(request):
 @login_required
 @render_with('timepiece/time-sheet/projects/detail.html')
 @utils.date_filter
-def people_project(request, form, from_date, to_date, status, activity, trunc):
-    if not trunc:
-        trunc = 'month'
-#    last_billable = utils.get_last_billable_day(from_date)
-    date_headers = utils.generate_dates(start=from_date, end=to_date, by=trunc)
+def people_project(request, date_form, from_date, to_date, status, activity):
+    if request.POST:
+        project_filters_form = timepiece_forms.ProjectFiltersForm(request.POST)
+    else:
+        project_filters_form = timepiece_forms.ProjectFiltersForm()
+    trunc = project_filters_form.data.get('trunc', 'month')
+    billable_flags = {
+        'billable': project_filters_form.data.get('billable', False),
+        'non_billable': project_filters_form.data.get('non_billable', False)
+    }
+    #Need to use last_billable here?
+    #last_billable = utils.get_last_billable_day(from_date)
+    header_to = to_date - relativedelta(days=1)
+    date_headers = utils.generate_dates(start=from_date, end=header_to, by=trunc)        
 
-    #Handle Get/Post for entry filters
+    #Filter entries further by project
     entries = timepiece.Entry.objects.date_trunc(trunc)
     entries = entries.filter(start_time__gt=from_date, end_time__lt=to_date)
     project_totals = utils.project_totals(entries) if entries else ''
-    #may or may not use the calendars
     cals = []
     date = from_date - relativedelta(months=1)
     end_date = from_date + relativedelta(months=1)
@@ -1213,10 +1221,10 @@ def people_project(request, form, from_date, to_date, status, activity, trunc):
         cals.append(html_cal.formatmonth(date.year, date.month))
         date += relativedelta(months=1)
     return {
-        'form': form,
+        'date_form': date_form,
+        'project_filters_form': project_filters_form,
+        'billable_flags': billable_flags,
         'cals': cals,
-        'to_date': to_date,
-        'from_date': from_date,
         'date_headers': date_headers,
         'project_totals': project_totals,
         'trunc': trunc,

@@ -11,7 +11,7 @@
 
 <form method="get" action="" id="date-filter" accept-charset="utf-8">
     <ul id='ledger-date-fieldlist'>
-        {{ form.as_ul }}
+        {{ date_form.as_ul }}
         <li>
             <input type='submit' name='submit' value='Update' id='id_date_form_submit_btn'/>
         </li>
@@ -21,23 +21,21 @@
     </ul>
 </form>
 
+<h2>Payroll Per Project</h2>
+<ul class='header-actions-left'>
+</ul>
+
 <div style='float: right;'>
     {% for cal in cals %}
         {{ cal|safe }}
     {% endfor %}
 </div>
 
-
-<h2>Payroll Per Project</h2>
-<ul class='header-actions-left'>
-
-</ul>
-
 {% if project_totals %}
-    <div class="scroll_box">
-        <table class='projects'>
-            <tr>
-                <th>Name</th>
+    <div id="scroll_box">
+        <table class='project'>
+            <tr class="header">
+                <th class='name_col'>Name</th>
                 {% for date in date_headers %}
                     {% if trunc == 'month' %}
                         <th>{{date|date:"M 'Y"}}</th>
@@ -46,10 +44,10 @@
                     {% endif %}
                 {% endfor %}
             </tr>
-            {% for name, date in project_totals %}
-            <tr>
-                <th>{{name.1}} {{name.0}}</th>
-
+            {% for name, hours in project_totals %}
+            <tr class="{% cycle 'odd' 'even' %}"> 
+                <th class='name_col'>{{name.1}} {{name.0}}</th>
+                {% show_project_hours hours date_headers billable_flags %}
             </tr>
             {% endfor %}
         </table>
@@ -57,5 +55,19 @@
     {% else %}
         <p>No entries found.</p>
 {% endif %}
+
+
+<div id='project_billable_form'>
+    <form method="post" action="" id="billable" accept-charset="utf-8">
+    {% csrf_token %}
+        {% for field in project_filters_form %}
+            {{field}}
+            {% if field.label != 'Trunc' %}
+                {{ field.label}}
+            {% endif %}
+        {% endfor %}
+        <input type='submit' name='project_filters_ok' value='Ok' id='billable'/>
+    </form>
+</div>
 
 {% endblock %}
