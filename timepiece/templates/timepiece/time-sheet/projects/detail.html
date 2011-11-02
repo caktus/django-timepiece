@@ -6,7 +6,7 @@
 {% block content %}
 
 {% date_filters "months" %}
-{% date_filters "quaters" %}
+{% date_filters "quarters" %}
 {% date_filters "years" %}
 
 <form method="get" action="" id="date-filter" accept-charset="utf-8">
@@ -30,7 +30,6 @@
         {{ cal|safe }}
     {% endfor %}
 </div>
-
 {% if project_totals %}
     <div id="scroll_box">
         <table class='project'>
@@ -47,7 +46,7 @@
             {% for name, hours in project_totals %}
             <tr class="{% cycle 'odd' 'even' %}"> 
                 <th class='name_col'>{{name.1}} {{name.0}}</th>
-                {% show_project_hours hours date_headers billable_flags %}
+                {% show_project_hours hours date_headers project_filters_form %}
             </tr>
             {% endfor %}
         </table>

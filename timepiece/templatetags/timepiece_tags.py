@@ -124,14 +124,14 @@ def date_filters(context, options):
             url = construct_url(from_date, to_date - relativedelta(days=1))
             filters['Years'].append((str(from_date.year), url))
 
-    if 'quaters' in options:
-        filters['Quaters (Calendar Year)'] = []
+    if 'quarters' in options:
+        filters['Quarters (Calendar Year)'] = []
         to_date = datetime.date(datetime.date.today().year - 1, 1, 1)
         for x in range(8):
             from_date = to_date
             to_date = from_date + relativedelta(months=3)
             url = construct_url(from_date, to_date - relativedelta(days=1))
-            filters['Quaters (Calendar Year)'].append(
+            filters['Quarters (Calendar Year)'].append(
                 ('Q%s %s' % ((x % 4) + 1, from_date.year), url)
             )
 
@@ -202,9 +202,9 @@ def get_active_hours(entry):
 
 @register.inclusion_tag('timepiece/time-sheet/_project_total_row.html',
                         takes_context=True)
-def show_project_hours(context, hours, date_headers, billable_flags):
-    billable = billable_flags.get('billable', False)
-    non_billable = billable_flags.get('non_billable', False)
+def show_project_hours(context, hours, date_headers, form):
+    billable = form.data.get('billable', False)
+    non_billable = form.data.get('non_billable', False)
     ordered_hours = []
     for date in date_headers:
         total = hours.get(date, '')

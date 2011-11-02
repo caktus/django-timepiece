@@ -1200,16 +1200,13 @@ def people_project(request, date_form, from_date, to_date, status, activity):
     else:
         project_filters_form = timepiece_forms.ProjectFiltersForm()
     trunc = project_filters_form.data.get('trunc', 'month')
-    billable_flags = {
-        'billable': project_filters_form.data.get('billable', False),
-        'non_billable': project_filters_form.data.get('non_billable', False)
-    }
     #Need to use last_billable here?
     #last_billable = utils.get_last_billable_day(from_date)
     header_to = to_date - relativedelta(days=1)
     date_headers = utils.generate_dates(start=from_date, end=header_to, by=trunc)        
 
     #Filter entries further by project
+
     entries = timepiece.Entry.objects.date_trunc(trunc)
     entries = entries.filter(start_time__gt=from_date, end_time__lt=to_date)
     project_totals = utils.project_totals(entries) if entries else ''
@@ -1222,9 +1219,8 @@ def people_project(request, date_form, from_date, to_date, status, activity):
         date += relativedelta(months=1)
     return {
         'date_form': date_form,
-        'project_filters_form': project_filters_form,
-        'billable_flags': billable_flags,
         'cals': cals,
+        'project_filters_form': project_filters_form,
         'date_headers': date_headers,
         'project_totals': project_totals,
     }
