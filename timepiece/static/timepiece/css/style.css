@@ -9,6 +9,10 @@ body {
     margin-top: 0px;
 }
 */
+.scroll_box {
+    width: 650px;
+    overflow-x:auto
+}
 
 ul.actions {
     margin: 0;

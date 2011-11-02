@@ -1108,7 +1108,8 @@ def create_edit_person_time_sheet(request, person_id=None):
 @utils.date_filter
 def payroll_summary(request, form, from_date, to_date, status, activity):
     last_billable = utils.get_last_billable_day(from_date)
-    all_weeks = utils.generate_weeks(start=from_date, end=last_billable)
+    all_weeks = utils.generate_dates(start=from_date,
+                                     end=last_billable, by='week')
     workers = timepiece.Entry.objects.filter(
         end_time__gt=utils.get_week_start(from_date),
         end_time__lt=last_billable + datetime.timedelta(days=1)
@@ -1150,7 +1151,7 @@ def projection_summary(request, form, from_date, to_date, status, activity):
         project__in=settings.TIMEPIECE_PROJECTS.values())
     contracts = contracts.order_by('end_date')
     users = User.objects.filter(assignments__contract__in=contracts).distinct()
-    weeks = utils.generate_weeks(start=from_date, end=to_date)
+    weeks = utils.generate_dates(start=from_date, end=to_date, by='week')
 
     return {
         'form': form,
@@ -1193,13 +1194,16 @@ def edit_settings(request):
 @login_required
 @render_with('timepiece/time-sheet/projects/detail.html')
 @utils.date_filter
-def project_payroll(request, form, from_date, to_date, status, activity, trunc):
+def people_project(request, form, from_date, to_date, status, activity, trunc):
     if not trunc:
         trunc = 'month'
+#    last_billable = utils.get_last_billable_day(from_date)
+    date_headers = utils.generate_dates(start=from_date, end=to_date, by=trunc)
+
     #Handle Get/Post for entry filters
     entries = timepiece.Entry.objects.date_trunc(trunc)
     entries = entries.filter(start_time__gt=from_date, end_time__lt=to_date)
-    project_totals = utils.project_totals(entries)
+    project_totals = utils.project_totals(entries) if entries else ''
     #may or may not use the calendars
     cals = []
     date = from_date - relativedelta(months=1)
@@ -1213,6 +1217,7 @@ def project_payroll(request, form, from_date, to_date, status, activity, trunc):
         'cals': cals,
         'to_date': to_date,
         'from_date': from_date,
-        'entries': entries,
+        'date_headers': date_headers,
+        'project_totals': project_totals,
         'trunc': trunc,
     }

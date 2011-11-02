@@ -241,6 +241,13 @@ def get_total_time(seconds):
     return u'%02i:%02i:%02i' % (hours, minutes, seconds)
 
 
+def get_month_start(from_day=None):
+    if not from_day:
+        from_day = date.today()
+    from_day = from_day - timedelta(days=from_day.day - 1)
+    return from_day
+
+
 def get_week_start(day=None):
     if not day:
         day = date.today()
@@ -257,16 +264,21 @@ def get_last_billable_day(day=None):
     return get_week_start(day) - timedelta(days=1)
 
 
-def generate_weeks(end, start=None):
-    start = get_week_start(start)
-    #byweekday is set to Sunday, the last day of an ISO week
-    return rrule.rrule(rrule.WEEKLY, dtstart=start, until=end, byweekday=0)
+def generate_dates(end, start=None, by='week'):
+    if by == 'month':
+        start = get_month_start(start)
+        return rrule.rrule(rrule.MONTHLY, dtstart=start, until=end)
+    if by == 'week':
+        start = get_week_start(start)
+        return rrule.rrule(rrule.WEEKLY, dtstart=start, until=end, byweekday=0)
+    if by == 'day':
+        return rrule.rrule(rrule.DAILY, dtstart=start, until=end)
 
 
 def get_week_window(day):
     start = get_week_start(day)
     end = start + timedelta(weeks=1)
-    weeks = generate_weeks(start=start, end=end)
+    weeks = generate_dates(end=end, start=start, by='week')
     return list(weeks)
 
 
@@ -348,7 +360,15 @@ def project_totals(entries):
     users = {}
     for user, user_entries in itertools.groupby(entries, lambda x: x['user']):
         dates = {}
-        for date, date_entries in itertools.groupby(user_entries, lambda x: x['date']):            
-            dates[date] = get_hours(date_entries, 'project__type__billable')
-        users[user] = dates
-    pprint(users)
+        for date, date_entries in itertools.groupby(user_entries, lambda x: x['date']):
+            d_entries = list(date_entries)
+            name = (d_entries[0]['user__last_name'],
+                    d_entries[0]['user__first_name'])
+            dates[date] = get_hours(d_entries, 'project__type__billable')
+        users[user] = (name, dates)
+        yield (name, dates)
+
+#    users = users.values()
+#    users.sort()    
+#    pprint(users)
+#    yield users
