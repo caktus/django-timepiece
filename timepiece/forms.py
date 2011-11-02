@@ -436,7 +436,7 @@ class ProjectFiltersForm(forms.Form):
     billable = forms.BooleanField(initial=True)
     non_billable = forms.BooleanField(label='Non-Billable', initial=True)
     trunc = forms.ChoiceField(choices=TRUNC_CHOICES,
-                              widget=forms.RadioSelect())
+                              widget=forms.RadioSelect(), initial='month')
 
 
 class SearchForm(forms.Form):

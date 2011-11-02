@@ -356,7 +356,6 @@ def grouped_totals(entries):
 
 
 def project_totals(entries):
-    from pprint import pprint
     users = {}
     for user, user_entries in groupby(entries, lambda x: x['user']):
         dates = {}

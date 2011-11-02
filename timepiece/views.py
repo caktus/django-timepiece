@@ -1220,7 +1220,8 @@ def people_project(request, date_form, from_date, to_date, status, activity):
     return {
         'date_form': date_form,
         'cals': cals,
-        'project_filters_form': project_filters_form,
         'date_headers': date_headers,
+        'project_filters_form': project_filters_form,
+        'trunc': trunc,
         'project_totals': project_totals,
     }
