@@ -429,14 +429,15 @@ class PersonTimeSheet(forms.ModelForm):
 
 class ProjectFiltersForm(forms.Form):
     TRUNC_CHOICES = [
-        ('day','Day'),
-        ('week','Week'),
-        ('month','Month'),
+        ('day', 'Day'),
+        ('week', 'Week'),
+        ('month', 'Month'),
     ]
     billable = forms.BooleanField(initial=True)
     non_billable = forms.BooleanField(label='Non-Billable', initial=True)
-    trunc = forms.ChoiceField(choices=TRUNC_CHOICES, 
+    trunc = forms.ChoiceField(choices=TRUNC_CHOICES,
                               widget=forms.RadioSelect())
+
 
 class SearchForm(forms.Form):
     search = forms.CharField(required=False)

@@ -2,7 +2,7 @@ from datetime import date, datetime, timedelta, time as time_obj
 from dateutil import rrule
 from dateutil.relativedelta import relativedelta
 from decimal import Decimal
-import itertools
+from itertools import groupby
 import time
 import calendar
 
@@ -264,7 +264,7 @@ def get_last_billable_day(day=None):
     return get_week_start(day) - timedelta(days=1)
 
 
-def generate_dates(end, start=None, by='week'):
+def generate_dates(start=None, end=None, by='week'):
     if by == 'month':
         start = get_month_start(start)
         return rrule.rrule(rrule.MONTHLY, dtstart=start, until=end)
@@ -318,7 +318,7 @@ def get_hours(entries, key='billable'):
 def daily_summary(day_entries):
     projects = {}
     all_day = {}
-    for name, entries in itertools.groupby(day_entries,
+    for name, entries in groupby(day_entries,
                                            lambda x: x['project__name']):
         hours = get_hours(entries)
         projects[name] = hours
@@ -341,11 +341,11 @@ def grouped_totals(entries):
     daily = daily.annotate(hours=Sum('hours')).order_by('date',
                                                         'project__name')
     weeks = {}
-    for week, week_entries in itertools.groupby(weekly, lambda x: x['date']):
+    for week, week_entries in groupby(weekly, lambda x: x['date']):
         weeks[week] = get_hours(week_entries)
     days = []
     last_week = None
-    for day, day_entries in itertools.groupby(daily, lambda x: x['date']):
+    for day, day_entries in groupby(daily, lambda x: x['date']):
         week = get_week_start(day)
         if last_week and week > last_week:
             yield last_week, weeks.get(last_week, {}), days
@@ -358,9 +358,9 @@ def grouped_totals(entries):
 def project_totals(entries):
     from pprint import pprint
     users = {}
-    for user, user_entries in itertools.groupby(entries, lambda x: x['user']):
+    for user, user_entries in groupby(entries, lambda x: x['user']):
         dates = {}
-        for date, date_entries in itertools.groupby(user_entries, lambda x: x['date']):
+        for date, date_entries in groupby(user_entries, lambda x: x['date']):
             d_entries = list(date_entries)
             name = (d_entries[0]['user__last_name'],
                     d_entries[0]['user__first_name'])

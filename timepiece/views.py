@@ -1203,7 +1203,7 @@ def people_project(request, date_form, from_date, to_date, status, activity):
     #Need to use last_billable here?
     #last_billable = utils.get_last_billable_day(from_date)
     header_to = to_date - relativedelta(days=1)
-    date_headers = utils.generate_dates(start=from_date, end=header_to, by=trunc)        
+    date_headers = utils.generate_dates(from_date, header_to, by=trunc)
 
     #Filter entries further by project
 

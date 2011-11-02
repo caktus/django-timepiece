@@ -222,6 +222,7 @@ def show_project_hours(context, hours, date_headers, form):
         'hours': ordered_hours
     }
 
+
 @register.inclusion_tag('timepiece/time-sheet/_invoice_row.html',
                         takes_context=True)
 def build_invoice_row(context, entries, to_date, from_date):
