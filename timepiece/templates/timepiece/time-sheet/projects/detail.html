@@ -3,7 +3,7 @@
 
 {% block title %}Payroll Per Project{% endblock %}
 
-{% block css %}
+{% block extracss %}
     <link rel="stylesheet" href="https://ajax.googleapis.com/ajax/libs/jqueryui/1.8.13/themes/ui-lightness/jquery-ui.css" type="text/css" media="screen">
 {% endblock %}
 {% block base-javascript %}{% endblock %}
@@ -12,7 +12,7 @@
     <script type="text/javascript" src="https://ajax.googleapis.com/ajax/libs/jqueryui/1.8.13/jquery-ui.min.js"></script>
 	<script src="{{ STATIC_URL }}js/django-crm.js" type="text/javascript"></script>
 	<script src="{{ STATIC_URL }}js/minibooks.js" type="text/javascript"></script>
-    {{pj_select.media}}
+    {{pj_filters.media}}
 {% endblock %}
 
 {% block content %}
@@ -21,18 +21,22 @@
 
 
 <form method="get" action="" id="pj_select" accept-charset="utf-8">
-    {{pj_select}}
     <ul id='ledger-date-fieldlist'>
         {{ date_form.as_ul }}
     </ul>
     <div id='project_billable_form'>
-        {% for field in project_filters_form %}
-            {{field}}
-            {% if field.label != 'Trunc' %}
-                {{ field.label}}
+        {% for field in pj_filters %}
+            {% if field.label != 'Project Name:' %}
+                {{field}}
+                {% if field.label != 'Trunc' and field.label != 'Pjs' %}
+                    {{ field.label}}
+                {% endif %}
+            <br/>
+            {% else %}
+                {{field.label}} {{field}}<br/>
             {% endif %}
         {% endfor %}
-        <input type='submit' name='project_filters_ok' value='Ok' id='billable'/>
+        <input type='submit' name='ok' value='Ok' id='billable'/>
     </div>
 
 </form>
@@ -62,7 +66,7 @@
             {% for name, hours in project_totals %}
             <tr class="{% cycle 'odd' 'even' %}"> 
                 <th class='name_col'>{{name.1}} {{name.0}}</th>
-                {% show_project_hours name hours date_headers project_filters_form %}
+                {% show_project_hours name hours date_headers pj_filters %}
             </tr>
             {% endfor %}
         </table>

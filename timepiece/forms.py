@@ -25,11 +25,47 @@ from timepiece import models as timepiece
 from timepiece import utils
 
 
-class ProjectSelectForm(forms.Form):
-    autocomplete = selectable_forms.AutoCompleteSelectField(ProjectLookup,
+class ProjectFiltersForm(forms.Form):
+    TRUNC_CHOICES = [
+        ('day', 'Day'),
+        ('week', 'Week'),
+        ('month', 'Month'),
+    ]
+   
+    billable = forms.BooleanField(initial=True, required=False)
+    non_billable = forms.BooleanField(label='Non-Billable', initial=True,
+                                      required=False)
+    trunc = forms.ChoiceField(choices=TRUNC_CHOICES,
+                              widget=forms.RadioSelect(), initial='month')
+    pj_select = selectable_forms.AutoCompleteSelectField(ProjectLookup,
         label='Project Name:',
         required=False,
     )
+    pjs = forms.ModelMultipleChoiceField(queryset=Project.objects.all(),
+                                         required=False)
+    pj_list = []
+
+    def clean(self, *args, **kwargs):
+        super(ProjectFiltersForm, self).clean(*args, **kwargs)
+        pj_add = self.cleaned_data.get('pj_select', None)
+        pjs = self.cleaned_data.get('pjs', None)
+        if pj_add:
+            if pj_add.pk not in self.pj_list:
+                self.pj_list.append(pj_add.pk)
+        if pjs:
+            rms = [pj.pk for pj in pjs]
+            print "pj_list:", self.pj_list
+            print "Pjs:", pjs
+
+            print "rms", rms
+            try:
+                self.pj_list.remove(rms)
+            except ValueError:
+                return self.cleaned_data
+            query = Project.objects.filter(id__in=self.pj_list)
+            self.fields['pjs'].queryset = query
+        return self.cleaned_data
+
 
 
 class CreatePersonForm(auth_forms.UserCreationForm):
@@ -432,18 +468,6 @@ class PersonTimeSheet(forms.ModelForm):
         super(PersonTimeSheet, self).__init__(*args, **kwargs)
         self.fields['user'].queryset = \
             auth_models.User.objects.all().order_by('last_name')
-
-
-class ProjectFiltersForm(forms.Form):
-    TRUNC_CHOICES = [
-        ('day', 'Day'),
-        ('week', 'Week'),
-        ('month', 'Month'),
-    ]
-    billable = forms.BooleanField(initial=True)
-    non_billable = forms.BooleanField(label='Non-Billable', initial=True)
-    trunc = forms.ChoiceField(choices=TRUNC_CHOICES,
-                              widget=forms.RadioSelect(), initial='month')
 
 
 class SearchForm(forms.Form):

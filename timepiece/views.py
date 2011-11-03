@@ -1195,25 +1195,28 @@ def edit_settings(request):
 @render_with('timepiece/time-sheet/projects/detail.html')
 @utils.date_filter
 def people_project(request, date_form, from_date, to_date, status, activity):
-    print request.GET
+    if not from_date:
+        from_date = utils.get_month_start(datetime.datetime.now())
+    if not to_date:
+        to_date = datetime.datetime.now() + relativedelta(months=1)
     trunc = 'month'
+    pj_add = None
     if request.GET:        
-        project_filters_form = timepiece_forms.ProjectFiltersForm(request.GET)
-        if project_filters_form.is_valid():
-            trunc = project_filters_form.cleaned_data.get('trunc', 'month')
+        pj_filters = timepiece_forms.ProjectFiltersForm(request.GET)
+        if pj_filters.is_valid():
+            trunc = pj_filters.cleaned_data.get('trunc', 'month')        
     else:
-        project_filters_form = timepiece_forms.ProjectFiltersForm()
-
-    pj_select_form = timepiece_forms.ProjectSelectForm()
-
+        pj_filters = timepiece_forms.ProjectFiltersForm()
+    
     #Need to use last_billable here?
     #last_billable = utils.get_last_billable_day(from_date)
     header_to = to_date - relativedelta(days=1)
     date_headers = utils.generate_dates(from_date, header_to, by=trunc)
 
-    #Filter entries further by project
-
     entries = timepiece.Entry.objects.date_trunc(trunc)
+    #Filter entries further by project
+    
+#    entries = entries.filter(project__in=pj_filters.pj_list)
     entries = entries.filter(start_time__gt=from_date, end_time__lt=to_date)
     project_totals = utils.project_totals(entries) if entries else ''
     cals = []
@@ -1225,10 +1228,9 @@ def people_project(request, date_form, from_date, to_date, status, activity):
         date += relativedelta(months=1)
     return {
         'date_form': date_form,
-        'cals': cals,
         'date_headers': date_headers,
-        'project_filters_form': project_filters_form,
+        'cals': cals,
         'trunc': trunc,
-        'pj_select': pj_select_form,
+        'pj_filters': pj_filters,
         'project_totals': project_totals,
     }

@@ -198,7 +198,7 @@ class EntryManager(models.Manager):
                                    'timepiece_attribute.billable'})
         return qs
 
-    def date_trunc(self, key='day'):
+    def date_trunc(self, key='month'):
         qs = super(EntryManager, self).get_query_set()
         select = {"day": {"date": """DATE_TRUNC('day', end_time)"""},
                   "week": {"date": """DATE_TRUNC('week', end_time)"""},

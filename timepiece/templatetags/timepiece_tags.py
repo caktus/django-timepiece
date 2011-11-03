@@ -213,7 +213,7 @@ def show_project_hours(context, name, hours, date_headers, form):
                 result += total.get('billable', 0)
             if non_billable:
                 result += total.get('non_billable', 0)
-        ordered_hours.append(result)
+        ordered_hours.append(result) if result else ordered_hours.append('')
     return {
         'name': name[1],
         'hours': ordered_hours,
