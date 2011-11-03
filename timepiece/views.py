@@ -1217,7 +1217,6 @@ def people_project(request, date_form, from_date, to_date, status, activity):
     date_headers = utils.generate_dates(from_date, header_to, by=trunc)
 
     entries = timepiece.Entry.objects.date_trunc(trunc)
-    print pj_filters.pj_ids
     if pj_filters.pj_ids:
         entries = entries.filter(project__in=pj_filters.pj_ids)
     entries = entries.filter(start_time__gt=from_date, end_time__lt=to_date)
