@@ -3,8 +3,13 @@
 
 {% block title %}Payroll Per Project{% endblock %}
 
-{% block extracss %}
+{% block css %}
     <link rel="stylesheet" href="https://ajax.googleapis.com/ajax/libs/jqueryui/1.8.13/themes/ui-lightness/jquery-ui.css" type="text/css" media="screen">
+    <!--From timepiece's base.html 
+        This is a mess, but it is temporarily needed until we move away from autocomplete
+    -->
+    <link rel="stylesheet" href="{{ STATIC_URL }}timepiece/css/style.css" type="text/css" />
+    <link charset='UTF-8' rel="stylesheet" type="text/css" media="screen" href="{{ STATIC_URL }}css/books.css" />
 {% endblock %}
 {% block base-javascript %}{% endblock %}
 {% block javascript %}
@@ -26,9 +31,9 @@
     </ul>
     <div id='project_billable_form'>
         {% for field in pj_filters %}
-            {% if field.label != 'Project Name:' %}
+            {% if field.label != 'Project Name:' and field.label != 'Group Totals By:' %}
                 {{field}}
-                {% if field.label != 'Trunc' and field.label != 'Pjs' %}
+                {% if field.label != 'Pjs' %}
                     {{ field.label}}
                 {% endif %}
             <br/>
@@ -36,9 +41,18 @@
                 {{field.label}} {{field}}<br/>
             {% endif %}
         {% endfor %}
-        {% for pj in projects %}
-            {{pj.name}} <button type='submit' name='remove_filter' value="{{pj.id}}">Remove Filter</button><br/>
-        {% endfor %}
+        <div id="project_list">
+            {% for pj in projects %}
+                <ul class="projects">
+                    <li>
+                        {{pj.name}} <button type='submit' name='remove_filter' value="{{pj.id}}">
+                            <img alt="Remove {{pj.name}}" src="/static/images/icons//delete.png"> Remove Filter
+                        </button>
+                    </li>
+                </ul>
+            <br/>
+            {% endfor %}
+        </div>
         <input type='submit' name='ok' value='Ok' id='billable'/>
     </div>
 

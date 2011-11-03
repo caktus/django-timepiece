@@ -35,7 +35,7 @@ class ProjectFiltersForm(forms.Form):
     billable = forms.BooleanField(initial=True, required=False)
     non_billable = forms.BooleanField(label='Non-Billable', initial=True,
                                       required=False)
-    trunc = forms.ChoiceField(choices=TRUNC_CHOICES,
+    trunc = forms.ChoiceField(label='Group Totals By:', choices=TRUNC_CHOICES,
                               widget=forms.RadioSelect(), initial='month')
     pj_select = selectable_forms.AutoCompleteSelectField(ProjectLookup,
         label='Project Name:',
