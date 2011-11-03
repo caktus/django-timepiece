@@ -41,30 +41,26 @@ class ProjectFiltersForm(forms.Form):
         label='Project Name:',
         required=False,
     )
-    pjs = forms.ModelMultipleChoiceField(queryset=Project.objects.all(),
-                                         required=False)
     pj_list = []
+    pj_ids = []
 
     def clean(self, *args, **kwargs):
         super(ProjectFiltersForm, self).clean(*args, **kwargs)
         pj_add = self.cleaned_data.get('pj_select', None)
-        pjs = self.cleaned_data.get('pjs', None)
         if pj_add:
-            if pj_add.pk not in self.pj_list:
-                self.pj_list.append(pj_add.pk)
-        if pjs:
-            rms = [pj.pk for pj in pjs]
-            print "pj_list:", self.pj_list
-            print "Pjs:", pjs
-
-            print "rms", rms
-            try:
-                self.pj_list.remove(rms)
-            except ValueError:
-                return self.cleaned_data
-            query = Project.objects.filter(id__in=self.pj_list)
-            self.fields['pjs'].queryset = query
+            if pj_add not in self.pj_list:
+                self.pj_list.append(pj_add)
+        self.pj_ids = [pj.id for pj in self.pj_list]
         return self.cleaned_data
+
+    def pj_rm(self, id_num):
+        pj = Project.objects.get(id=id_num)
+        try:
+            self.pj_list.remove(pj)
+            self.pj_ids = [pj.id for pj in self.pj_list]
+        except:
+            pass
+        
 
 
 

@@ -36,6 +36,9 @@
                 {{field.label}} {{field}}<br/>
             {% endif %}
         {% endfor %}
+        {% for pj in projects %}
+            {{pj.name}} <button type='submit' name='remove_filter' value="{{pj.id}}">Remove Filter</button><br/>
+        {% endfor %}
         <input type='submit' name='ok' value='Ok' id='billable'/>
     </div>
 

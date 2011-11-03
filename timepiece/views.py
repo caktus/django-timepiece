@@ -1200,11 +1200,14 @@ def people_project(request, date_form, from_date, to_date, status, activity):
     if not to_date:
         to_date = datetime.datetime.now() + relativedelta(months=1)
     trunc = 'month'
-    pj_add = None
-    if request.GET:        
+    if request.GET:
         pj_filters = timepiece_forms.ProjectFiltersForm(request.GET)
-        if pj_filters.is_valid():
-            trunc = pj_filters.cleaned_data.get('trunc', 'month')        
+        if 'remove_filter' not in request.GET and pj_filters.is_valid():
+            trunc = pj_filters.cleaned_data.get('trunc', 'month')
+        if 'remove_filter' in request.GET:
+            num = request.GET.get('remove_filter', None)
+            if num:
+                pj_filters.pj_rm(num)
     else:
         pj_filters = timepiece_forms.ProjectFiltersForm()
     
@@ -1214,9 +1217,9 @@ def people_project(request, date_form, from_date, to_date, status, activity):
     date_headers = utils.generate_dates(from_date, header_to, by=trunc)
 
     entries = timepiece.Entry.objects.date_trunc(trunc)
-    #Filter entries further by project
-    
-#    entries = entries.filter(project__in=pj_filters.pj_list)
+    print pj_filters.pj_ids
+    if pj_filters.pj_ids:
+        entries = entries.filter(project__in=pj_filters.pj_ids)
     entries = entries.filter(start_time__gt=from_date, end_time__lt=to_date)
     project_totals = utils.project_totals(entries) if entries else ''
     cals = []
@@ -1232,5 +1235,6 @@ def people_project(request, date_form, from_date, to_date, status, activity):
         'cals': cals,
         'trunc': trunc,
         'pj_filters': pj_filters,
+        'projects': pj_filters.pj_list,
         'project_totals': project_totals,
     }
