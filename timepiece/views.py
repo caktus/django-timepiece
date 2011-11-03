@@ -1220,6 +1220,9 @@ def people_project(request, date_form, from_date, to_date, status, activity):
     if pj_filters.pj_ids:
         entries = entries.filter(project__in=pj_filters.pj_ids)
     entries = entries.filter(start_time__gt=from_date, end_time__lt=to_date)
+    if request.GET and not pj_filters.cleaned_data.get('paid_leave', True):
+        projects = getattr(settings, 'TIMEPIECE_PROJECTS', {})
+        entries = entries.exclude(project__in=projects.values())
     project_totals = utils.project_totals(entries) if entries else ''
     cals = []
     date = from_date - relativedelta(months=1)
