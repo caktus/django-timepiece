@@ -1191,7 +1191,7 @@ def edit_settings(request):
     return {'profile_form': profile_form, 'user_form': user_form}
 
 
-@login_required
+@permission_required('timepiece.view_payroll_summary')
 @render_with('timepiece/time-sheet/projects/detail.html')
 @utils.date_filter
 def people_project(request, date_form, from_date, to_date, status, activity):

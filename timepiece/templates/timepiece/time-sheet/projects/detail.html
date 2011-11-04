@@ -84,7 +84,7 @@
             <tr class="{% cycle 'odd' 'even' %}"> 
                 <th class='name_col'>{{name.1}} {{name.0}}</th>
                 {% for num in hours %}
-                <td> {% if num %}{{num}}{% endif %}</td>
+                <td title='{{name.1}}'> {% if num %}{{num}}{% endif %}</td>
                 {% endfor %}
             </tr>
             {% endfor %}
