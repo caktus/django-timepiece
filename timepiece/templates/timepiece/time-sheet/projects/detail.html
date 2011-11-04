@@ -25,12 +25,17 @@
 {% date_filters %}
 
 
+<h2>Payroll Per Project</h2>
+<ul class='header-actions-left'>
+</ul>
+
+<div id="sidebar">
 <form method="get" action="" id="pj_select" accept-charset="utf-8">
     <ul id='ledger-date-fieldlist'>
         {{ date_form.as_ul }}
     </ul>
     <div id='project_billable_form'>
-        {% for field in pj_filters %}
+        {% for field in pj_filters %}<br/>
             {% if field.label != 'Project Name:' and field.label != 'Group Totals By:' %}
                 {{field}}
                 {% if field.label != 'Pjs' %}
@@ -38,35 +43,14 @@
                 {% endif %}
             <br/>
             {% else %}
-                {{field.label}} {{field}}<br/>
+                {{field.label}} {{field}}
             {% endif %}
         {% endfor %}
-        <div id="project_list">
-            {% for pj in projects %}
-                <ul class="projects">
-                    <li>
-                        {{pj.name}} <button type='submit' name='remove_filter' value="{{pj.id}}">
-                            <img alt="Remove {{pj.name}}" src="/static/images/icons//delete.png"> Remove Filter
-                        </button>
-                    </li>
-                </ul>
-            <br/>
-            {% endfor %}
-        </div>
-        <input type='submit' name='ok' value='Ok' id='billable'/>
+        <input type='submit' name='ok' value="Apply Filters" id='billable'/>
     </div>
-
 </form>
-
-<h2>Payroll Per Project</h2>
-<ul class='header-actions-left'>
-</ul>
-
-<div style='float: right;'>
-    {% for cal in cals %}
-        {{ cal|safe }}
-    {% endfor %}
 </div>
+
 {% if project_totals %}
     <div id="scroll_box">
         <table class='project'>
@@ -93,5 +77,10 @@
     {% else %}
         <p>No entries found.</p>
 {% endif %}
+<div>
+    {% for cal in cals %}
+        {{ cal|safe }}
+    {% endfor %}
+</div>
 {% endblock %}
 

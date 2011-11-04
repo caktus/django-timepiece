@@ -114,7 +114,7 @@ def date_filters(context, options=None):
         start = datetime.date.today().year - 3
 
         filters['Years'] = []
-        for year in range(start, start + 3):
+        for year in range(start, start + 4):
             from_date = datetime.datetime(year, 1, 1)
             to_date = from_date + relativedelta(years=1)
             url = construct_url(from_date, to_date - relativedelta(days=1))

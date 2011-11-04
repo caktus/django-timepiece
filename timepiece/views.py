@@ -1202,31 +1202,30 @@ def people_project(request, date_form, from_date, to_date, status, activity):
     trunc = 'month'
     paid_leave = True
     hour_type = 'total'
+    projects = []
+    project_ids = []
     if request.GET:
         pj_filters = timepiece_forms.ProjectFiltersForm(request.GET)
-        if 'remove_filter' not in request.GET and pj_filters.is_valid():
+        if pj_filters.is_valid():
             trunc = pj_filters.cleaned_data.get('trunc', 'month')
             paid_leave = pj_filters.cleaned_data.get('paid_leave', True)
             hour_type = pj_filters.get_hour_type(pj_filters.cleaned_data)
-        if 'remove_filter' in request.GET:
-            num = request.GET.get('remove_filter', None)
-            if num:
-                pj_filters.pj_rm(num)
+            projects = pj_filters.cleaned_data.get('pj_select')
+            if projects:
+                project_ids = [project.id for project in projects]
     else:
         pj_filters = timepiece_forms.ProjectFiltersForm()
-    
-    #Need to use last_billable here?
-    #last_billable = utils.get_last_billable_day(from_date)
+
     header_to = to_date - relativedelta(days=1)
     date_headers = utils.generate_dates(from_date, header_to, by=trunc)
 
     entries = timepiece.Entry.objects.date_trunc(trunc)
-    if pj_filters.pj_ids:
-        entries = entries.filter(project__in=pj_filters.pj_ids)
+    if project_ids:
+        entries = entries.filter(project__in=project_ids)
     entries = entries.filter(start_time__gt=from_date, end_time__lt=to_date)
     if not paid_leave:
-        projects = getattr(settings, 'TIMEPIECE_PROJECTS', {})
-        entries = entries.exclude(project__in=projects.values())
+        leave_projects = getattr(settings, 'TIMEPIECE_PROJECTS', {})
+        entries = entries.exclude(project__in=leave_projects.values())
 
     project_totals = utils.project_totals(entries, date_headers, hour_type) \
         if entries else ''
@@ -1243,6 +1242,6 @@ def people_project(request, date_form, from_date, to_date, status, activity):
         'cals': cals,
         'trunc': trunc,
         'pj_filters': pj_filters,
-        'projects': pj_filters.pj_list,
+        'projects': projects,
         'project_totals': project_totals,
     }
