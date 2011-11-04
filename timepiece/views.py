@@ -1200,10 +1200,14 @@ def people_project(request, date_form, from_date, to_date, status, activity):
     if not to_date:
         to_date = datetime.datetime.now() + relativedelta(months=1)
     trunc = 'month'
+    paid_leave = True
+    hour_type = 'total'
     if request.GET:
         pj_filters = timepiece_forms.ProjectFiltersForm(request.GET)
         if 'remove_filter' not in request.GET and pj_filters.is_valid():
             trunc = pj_filters.cleaned_data.get('trunc', 'month')
+            paid_leave = pj_filters.cleaned_data.get('paid_leave', True)
+            hour_type = pj_filters.get_hour_type(pj_filters.cleaned_data)
         if 'remove_filter' in request.GET:
             num = request.GET.get('remove_filter', None)
             if num:
@@ -1220,10 +1224,12 @@ def people_project(request, date_form, from_date, to_date, status, activity):
     if pj_filters.pj_ids:
         entries = entries.filter(project__in=pj_filters.pj_ids)
     entries = entries.filter(start_time__gt=from_date, end_time__lt=to_date)
-    if request.GET and not pj_filters.cleaned_data.get('paid_leave', True):
+    if not paid_leave:
         projects = getattr(settings, 'TIMEPIECE_PROJECTS', {})
         entries = entries.exclude(project__in=projects.values())
-    project_totals = utils.project_totals(entries) if entries else ''
+
+    project_totals = utils.project_totals(entries, date_headers, hour_type) \
+        if entries else ''
     cals = []
     date = from_date - relativedelta(months=1)
     end_date = from_date + relativedelta(months=1)

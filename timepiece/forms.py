@@ -31,13 +31,13 @@ class ProjectFiltersForm(forms.Form):
         ('week', 'Week'),
         ('month', 'Month'),
     ]
-   
+    DEFAULT_TRUNC = TRUNC_CHOICES[2][0]
     billable = forms.BooleanField(initial=True, required=False)
     non_billable = forms.BooleanField(label='Non-Billable', initial=True,
                                       required=False)
     paid_leave = forms.BooleanField(initial=True, required=False)
     trunc = forms.ChoiceField(label='Group Totals By:', choices=TRUNC_CHOICES,
-                              widget=forms.RadioSelect(), initial='month')
+                              widget=forms.RadioSelect(), initial=DEFAULT_TRUNC)
     pj_select = selectable_forms.AutoCompleteSelectField(ProjectLookup,
         label='Project Name:',
         required=False,
@@ -61,8 +61,18 @@ class ProjectFiltersForm(forms.Form):
             self.pj_ids = [pj.id for pj in self.pj_list]
         except:
             pass
-        
 
+    def get_hour_type(self, cleaned_data):
+        billable = cleaned_data.get('billable', False)
+        non_billable = cleaned_data.get('non_billable', False)
+        if billable and non_billable:
+            return 'total'
+        elif billable:
+            return 'billable'
+        elif non_billable:
+            return 'non_billable'
+        return 'total'
+        
 
 
 class CreatePersonForm(auth_forms.UserCreationForm):

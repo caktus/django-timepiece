@@ -196,30 +196,6 @@ def get_active_hours(entry):
     return Decimal('%.2f' % round(entry.total_hours, 2))
 
 
-@register.inclusion_tag('timepiece/time-sheet/_project_total_row.html',
-                        takes_context=True)
-def show_project_hours(context, name, hours, date_headers, form):
-    billable = form.data.get('billable', False)
-    non_billable = form.data.get('non_billable', False)
-    ordered_hours = []
-    for date in date_headers:
-        total = hours.get(date, '')
-        result = ''
-        if total:
-            result = 0
-            if not billable and not non_billable:
-                result += total.get('total', 0)
-            if billable:
-                result += total.get('billable', 0)
-            if non_billable:
-                result += total.get('non_billable', 0)
-        ordered_hours.append(result) if result else ordered_hours.append('')
-    return {
-        'name': name[1],
-        'hours': ordered_hours,
-    }
-
-
 @register.inclusion_tag('timepiece/time-sheet/_invoice_row.html',
                         takes_context=True)
 def build_invoice_row(context, entries, to_date, from_date):

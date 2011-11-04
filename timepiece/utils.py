@@ -355,12 +355,14 @@ def grouped_totals(entries):
     yield week, weeks.get(week, {}), days
 
 
-def project_totals(entries):
+def project_totals(entries, date_headers, hour_type):
     for user, user_entries in groupby(entries, lambda x: x['user']):
-        dates = {}
+        date_dict = {}
         for date, date_entries in groupby(user_entries, lambda x: x['date']):
             d_entries = list(date_entries)
             name = (d_entries[0]['user__last_name'],
                     d_entries[0]['user__first_name'])
-            dates[date] = get_hours(d_entries, 'project__type__billable')
+            date_dict[date] = get_hours(d_entries, 'project__type__billable')
+        dates = [date_dict.get(day, {}).get(hour_type, 0) \
+            for day in date_headers]
         yield (name, dates)
