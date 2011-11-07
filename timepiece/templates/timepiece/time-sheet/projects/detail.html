@@ -68,12 +68,16 @@
                 {% endfor %}
             </tr>
             {% for name, hours in project_totals %}
-                <tr class="{% cycle 'odd' 'even' %}"> 
-                    <th class='name_col'>{{name.1}} {{name.0}}</th>
-                    {% for num in hours %}
-                    <td title='{{name.1}}'> {% if num %}{{num}}{% endif %}</td>
-                    {% endfor %}
-                </tr>
+                {% if name.0 != "Totals:" %}
+                    <tr class="{% cycle 'odd' 'even' %}">
+                {% else %}
+                    <tr class="total">
+                {% endif %}
+                        <th class='name_col'>{{name.1}} {{name.0}}</th>
+                        {% for num in hours %}
+                        <td title='{{name.1}}'> {% if num %}{{num}}{% endif %}</td>
+                        {% endfor %}
+                    </tr>
             {% endfor %}
         </table>
     </div>

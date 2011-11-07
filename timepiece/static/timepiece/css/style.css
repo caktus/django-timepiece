@@ -42,6 +42,10 @@ tr.even{
     background-color: #DFDFEF;
 }
 
+tr.total{
+    background-color: #CFFFCF;
+}
+
 td.date_col{
     border-left: 1px solid #8FA8D0;
     border-right: 1px solid #8FA8D0;
