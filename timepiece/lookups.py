@@ -11,7 +11,7 @@ from timepiece import models as timepiece
 
 class ProjectLookup(ModelLookup):
     model = timepiece.Project
-    search_field= 'name__icontains'
+    search_field = 'name__icontains'
 registry.register(ProjectLookup)
 
 

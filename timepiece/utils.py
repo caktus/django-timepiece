@@ -370,11 +370,9 @@ def project_totals(entries, date_headers, hour_type):
                     total_dict[date][k] += hours.get(k, 0)
             else:
                 total_dict[date] = hours
-
         dates = [date_dict.get(day, {}).get(hour_type, 0) \
                  for day in date_headers]
         yield (name, dates)
-
     totals = [total_dict.get(day, {}).get(hour_type, 0) \
               for day in date_headers]
     yield (('Totals:', ''), totals)

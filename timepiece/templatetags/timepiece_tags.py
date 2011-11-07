@@ -79,7 +79,7 @@ def date_filters(context, options=None):
         query.pop(from_slug, None)
         query[to_slug] = to_date.strftime('%m/%d/%Y')
         if use_range:
-            query[from_slug] = from_date.strftime('%m/%d/%Y')    
+            query[from_slug] = from_date.strftime('%m/%d/%Y')
         return '%s?%s' % (request.path, query.urlencode())
 
     filters = {}

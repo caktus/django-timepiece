@@ -52,7 +52,6 @@ class ProjectFiltersForm(forms.Form):
         elif non_billable:
             return 'non_billable'
         return 'total'
-        
 
 
 class CreatePersonForm(auth_forms.UserCreationForm):
