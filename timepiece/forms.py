@@ -42,9 +42,16 @@ class ProjectFiltersForm(forms.Form):
     pj_select = selectable_forms.AutoCompleteSelectMultipleField(ProjectLookup,
         label='Project Name:', required=False)
 
-    def get_hour_type(self, cleaned_data):
-        billable = cleaned_data.get('billable', False)
-        non_billable = cleaned_data.get('non_billable', False)
+    def __init__(self, *args, **kwargs):
+        initial = kwargs.get('initial', {})
+        super(ProjectFiltersForm, self).__init__(*args, **kwargs)
+        for key in self.fields:
+            self.fields[key].initial = initial.get(key, None)
+        self.fields['trunc'].initial = initial.get('trunc', self.DEFAULT_TRUNC)
+
+    def get_hour_type(self):
+        billable = self.cleaned_data.get('billable', False)
+        non_billable = self.cleaned_data.get('non_billable', False)
         if billable and non_billable:
             return 'total'
         elif billable:

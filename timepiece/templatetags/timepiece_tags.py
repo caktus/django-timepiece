@@ -1,5 +1,6 @@
 import urllib
 import datetime
+import calendar
 from decimal import Decimal
 
 from django import template
@@ -11,7 +12,7 @@ from dateutil.relativedelta import relativedelta
 
 from timepiece.models import PersonRepeatPeriod, AssignmentAllocation
 import timepiece.models as timepiece
-from timepiece.utils import get_total_time, get_week_start
+from timepiece.utils import get_total_time, get_week_start, get_month_start
 
 
 register = template.Library()
@@ -195,6 +196,13 @@ def get_active_hours(entry):
             entry.end_time = datetime.datetime.now()
     return Decimal('%.2f' % round(entry.total_hours, 2))
 
+
+@register.simple_tag
+def show_cal(from_date, offset=0):
+    date = get_month_start(from_date)
+    date = date + relativedelta(months=offset)
+    html_cal = calendar.HTMLCalendar(calendar.SUNDAY)
+    return html_cal.formatmonth(date.year, date.month)
 
 @register.inclusion_tag('timepiece/time-sheet/_invoice_row.html',
                         takes_context=True)

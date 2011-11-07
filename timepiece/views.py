@@ -1208,30 +1208,24 @@ def people_project(request, date_form, from_date, to_date, status, activity):
         form = timepiece_forms.ProjectFiltersForm(request.GET)
         if form.is_valid():
             trunc = form.cleaned_data['trunc']
-            hour_type = form.get_hour_type(form.cleaned_data)
+            hour_type = form.get_hour_type()
             if not form.cleaned_data['paid_leave']:
                 projects = getattr(settings, 'TIMEPIECE_PROJECTS', {})
                 query &= ~Q(project__in=projects.values())
             if form.cleaned_data['pj_select']:
                 query &= Q(project__in=form.cleaned_data['pj_select'])
     else:
-        form = timepiece_forms.ProjectFiltersForm()
+        form = timepiece_forms.ProjectFiltersForm(initial={})
     entries = timepiece.Entry.objects.date_trunc(trunc).filter(query)
     date_headers = utils.generate_dates(from_date, header_to, by=trunc)
     project_totals = utils.project_totals(entries, date_headers, hour_type) \
         if entries else ''
     if not export:
-        cals = []
-        date = from_date - relativedelta(months=1)
-        end_date = from_date + relativedelta(months=2)
-        html_cal = calendar.HTMLCalendar(calendar.SUNDAY)
-        while date < end_date:
-            cals.append(html_cal.formatmonth(date.year, date.month))
-            date += relativedelta(months=1)
         return {
             'date_form': date_form,
+            'from_date': from_date,
+            'cals': [-1, 0, 1],
             'date_headers': date_headers,
-            'cals': cals,
             'pj_filters': form,
             'trunc': trunc,
             'project_totals': project_totals,
