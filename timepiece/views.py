@@ -1199,34 +1199,24 @@ def people_project(request, date_form, from_date, to_date, status, activity):
         from_date = utils.get_month_start(datetime.datetime.now())
     if not to_date:
         to_date = datetime.datetime.now() + relativedelta(months=1)
-    trunc = 'month'
-    paid_leave = True
-    hour_type = 'total'
-    projects = []
-    project_ids = []
-    if request.GET:
-        pj_filters = timepiece_forms.ProjectFiltersForm(request.GET)
-        if pj_filters.is_valid():
-            trunc = pj_filters.cleaned_data.get('trunc', 'month')
-            paid_leave = pj_filters.cleaned_data.get('paid_leave', True)
-            hour_type = pj_filters.get_hour_type(pj_filters.cleaned_data)
-            projects = pj_filters.cleaned_data.get('pj_select')
-            if projects:
-                project_ids = [project.id for project in projects]
-    else:
-        pj_filters = timepiece_forms.ProjectFiltersForm()
-
     header_to = to_date - relativedelta(days=1)
+    trunc = 'month'
+    hour_type = 'total'
+    query = Q(start_time__gt=from_date, end_time__lt=to_date)
+    if request.GET:
+        form = timepiece_forms.ProjectFiltersForm(request.GET)
+        if form.is_valid():
+            trunc = form.cleaned_data['trunc']
+            hour_type = form.get_hour_type(form.cleaned_data)
+            if not form.cleaned_data['paid_leave']:
+                projects = getattr(settings, 'TIMEPIECE_PROJECTS', {})
+                query &= ~Q(project__in=projects.values())
+            if form.cleaned_data['pj_select']:
+                query &= Q(project__in=form.cleaned_data['pj_select'])
+    else:
+        form = timepiece_forms.ProjectFiltersForm()
+    entries = timepiece.Entry.objects.date_trunc(trunc).filter(query)
     date_headers = utils.generate_dates(from_date, header_to, by=trunc)
-
-    entries = timepiece.Entry.objects.date_trunc(trunc)
-    if project_ids:
-        entries = entries.filter(project__in=project_ids)
-    entries = entries.filter(start_time__gt=from_date, end_time__lt=to_date)
-    if not paid_leave:
-        leave_projects = getattr(settings, 'TIMEPIECE_PROJECTS', {})
-        entries = entries.exclude(project__in=leave_projects.values())
-
     project_totals = utils.project_totals(entries, date_headers, hour_type) \
         if entries else ''
     cals = []
@@ -1240,8 +1230,7 @@ def people_project(request, date_form, from_date, to_date, status, activity):
         'date_form': date_form,
         'date_headers': date_headers,
         'cals': cals,
+        'pj_filters': form,
         'trunc': trunc,
-        'pj_filters': pj_filters,
-        'projects': projects,
         'project_totals': project_totals,
     }
