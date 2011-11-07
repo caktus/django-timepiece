@@ -1196,10 +1196,9 @@ def edit_settings(request):
 @utils.date_filter
 def people_project(request, date_form, from_date, to_date, status, activity):
     if not from_date:
-        from_date = datetime.date.today()
-        from_date = from_date.replace(day=1)
+        from_date = utils.get_month_start(datetime.datetime.today()).date()
     if not to_date:
-        to_date = datetime.datetime.now() + relativedelta(months=1)
+        to_date = from_date + relativedelta(months=1)
     header_to = to_date - relativedelta(days=1)
     trunc = 'month'
     hour_type = 'total'
