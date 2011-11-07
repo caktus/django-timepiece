@@ -80,6 +80,27 @@ input[type='text'].timepiece-time {
 td.hours{
     text-align: right;
 }
+button {
+    margin: 10px;
+}
+
+#cal_wrapper{
+    width: 900px;
+    margin: 10px 0px;
+}
+
+div.cal{
+    float: left;
+    padding: 24px;    
+}
+
+div.cal.left, div.cal.right {
+    background-color: #EDEDFF;
+}
+
+div.cal.middle {
+    background-color: #DFDFEF;
+}
 
 /*th, td {
     padding: 0.2em; 

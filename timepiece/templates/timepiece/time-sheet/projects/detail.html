@@ -47,6 +47,9 @@
             {% endif %}
         {% endfor %}
         <input type='submit' name='ok' value="Apply Filters" id='billable'/>
+        {% if perms.timepiece.export_project_time_sheet %}
+            <button type='submit' name='export' value="True">Export as CSV</button>
+        {% endif %}
     </div>
 </form>
 </div>
@@ -77,10 +80,15 @@
     {% else %}
         <p>No entries found.</p>
 {% endif %}
-<div>
+
+<div id="cal_wrapper">
     {% for cal in cals %}
-        {{ cal|safe }}
+        <div class="cal {% cycle 'left' 'middle' 'right' %}">
+            {{ cal|safe }}
+        </div>
     {% endfor %}
 </div>
+
+<br style='clear: both' />
 {% endblock %}
 

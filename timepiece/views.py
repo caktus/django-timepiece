@@ -1202,6 +1202,7 @@ def people_project(request, date_form, from_date, to_date, status, activity):
     header_to = to_date - relativedelta(days=1)
     trunc = 'month'
     hour_type = 'total'
+    export = request.GET.get('export', False)
     query = Q(start_time__gt=from_date, end_time__lt=to_date)
     if request.GET:
         form = timepiece_forms.ProjectFiltersForm(request.GET)
@@ -1219,18 +1220,38 @@ def people_project(request, date_form, from_date, to_date, status, activity):
     date_headers = utils.generate_dates(from_date, header_to, by=trunc)
     project_totals = utils.project_totals(entries, date_headers, hour_type) \
         if entries else ''
-    cals = []
-    date = from_date - relativedelta(months=1)
-    end_date = from_date + relativedelta(months=1)
-    html_cal = calendar.HTMLCalendar(calendar.SUNDAY)
-    while date < end_date:
-        cals.append(html_cal.formatmonth(date.year, date.month))
-        date += relativedelta(months=1)
-    return {
-        'date_form': date_form,
-        'date_headers': date_headers,
-        'cals': cals,
-        'pj_filters': form,
-        'trunc': trunc,
-        'project_totals': project_totals,
-    }
+    if not export:
+        cals = []
+        date = from_date - relativedelta(months=1)
+        end_date = from_date + relativedelta(months=2)
+        html_cal = calendar.HTMLCalendar(calendar.SUNDAY)
+        while date < end_date:
+            cals.append(html_cal.formatmonth(date.year, date.month))
+            date += relativedelta(months=1)
+        return {
+            'date_form': date_form,
+            'date_headers': date_headers,
+            'cals': cals,
+            'pj_filters': form,
+            'trunc': trunc,
+            'project_totals': project_totals,
+        }
+    else:
+        response = HttpResponse(mimetype='text/csv')
+        response['Content-Disposition'] = \
+            'attachment; filename="ProjectPerPersonTimesheet.csv"'
+        writer = csv.writer(response)
+        dates = ';'.join([date.strftime('%m/%d/%Y') for date in date_headers])
+        writer.writerow((
+            'Name',
+            dates,
+        ))
+        for name, hours in project_totals:
+            full_name = str(' '.join((name[1], name[0])))
+            all_hours = ';'.join([str(hour) for hour in hours])
+            data = [
+                full_name,
+                all_hours,
+            ]
+            writer.writerow(data)
+        return response
