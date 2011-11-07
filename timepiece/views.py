@@ -1231,9 +1231,12 @@ def people_project(request, date_form, from_date, to_date, status, activity):
             'project_totals': project_totals,
         }
     else:
+        from_date_str = from_date.strftime('%m-%d')
+        to_date_str = to_date.strftime('%m-%d')
         response = HttpResponse(mimetype='text/csv')
         response['Content-Disposition'] = \
-            'attachment; filename="ProjectPerPersonTimesheet.csv"'
+            'attachment; filename="%s_hours_from_%s_to_%s_by_%s.csv"' % (
+            hour_type, from_date_str, to_date_str, trunc)
         writer = csv.writer(response)
         dates = ';'.join([date.strftime('%m/%d/%Y') for date in date_headers])
         writer.writerow((
