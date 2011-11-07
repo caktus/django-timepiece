@@ -356,13 +356,25 @@ def grouped_totals(entries):
 
 
 def project_totals(entries, date_headers, hour_type):
+    total_dict = {}
     for user, user_entries in groupby(entries, lambda x: x['user']):
         date_dict = {}
         for date, date_entries in groupby(user_entries, lambda x: x['date']):
             d_entries = list(date_entries)
             name = (d_entries[0]['user__last_name'],
                     d_entries[0]['user__first_name'])
-            date_dict[date] = get_hours(d_entries, 'project__type__billable')
+            hours = get_hours(d_entries, 'project__type__billable')
+            date_dict[date] = hours
+            if date in total_dict:
+                for k, v in total_dict[date].items():
+                    total_dict[date][k] += hours.get(k, 0)
+            else:
+                total_dict[date] = hours
+
         dates = [date_dict.get(day, {}).get(hour_type, 0) \
-            for day in date_headers]
+                 for day in date_headers]
         yield (name, dates)
+
+    totals = [total_dict.get(day, {}).get(hour_type, 0) \
+              for day in date_headers]
+    yield (('Totals:', ''), totals)
