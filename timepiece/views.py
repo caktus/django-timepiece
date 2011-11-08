@@ -1200,31 +1200,28 @@ def people_project(request, date_form, from_date, to_date, status, activity):
     if not to_date:
         to_date = from_date + relativedelta(months=1)
     header_to = to_date - relativedelta(days=1)
-    trunc = 'month'
-    hour_type = 'total'
-    export = request.GET.get('export', False)
+    trunc = timepiece_forms.ProjectFiltersForm.DEFAULT_TRUNC
     query = Q(start_time__gt=from_date, end_time__lt=to_date)
     if request.GET:
         form = timepiece_forms.ProjectFiltersForm(request.GET)
         if form.is_valid():
             trunc = form.cleaned_data['trunc']
-            hour_type = form.get_hour_type()
             if not form.cleaned_data['paid_leave']:
                 projects = getattr(settings, 'TIMEPIECE_PROJECTS', {})
                 query &= ~Q(project__in=projects.values())
             if form.cleaned_data['pj_select']:
                 query &= Q(project__in=form.cleaned_data['pj_select'])
     else:
-        form = timepiece_forms.ProjectFiltersForm(initial={})
+        form = timepiece_forms.ProjectFiltersForm(initial={trunc: 'trunc'})
+    hour_type = form.get_hour_type()
     entries = timepiece.Entry.objects.date_trunc(trunc).filter(query)
     date_headers = utils.generate_dates(from_date, header_to, by=trunc)
     project_totals = utils.project_totals(entries, date_headers, hour_type) \
         if entries else ''
-    if not export:
+    if not request.GET.get('export', False):
         return {
             'date_form': date_form,
             'from_date': from_date,
-            'cals': [-1, 0, 1],
             'date_headers': date_headers,
             'pj_filters': form,
             'trunc': trunc,

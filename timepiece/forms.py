@@ -39,19 +39,29 @@ class ProjectFiltersForm(forms.Form):
     trunc = forms.ChoiceField(label='Group Totals By:', choices=TRUNC_CHOICES,
                               widget=forms.RadioSelect(),
                               initial=DEFAULT_TRUNC)
-    pj_select = selectable_forms.AutoCompleteSelectMultipleField(ProjectLookup,
+    pj_select = selectable_forms.AutoComboboxSelectMultipleField(ProjectLookup,
         label='Project Name:', required=False)
 
     def __init__(self, *args, **kwargs):
         initial = kwargs.get('initial', {})
+        if 'billable' not in initial:
+            initial['billable'] = True
+        if 'non_billable' not in initial:
+            initial['non_billable'] = True
+        if 'paid_leave' not in initial:
+            initial['paid_leave'] = True
+        if 'trunc' not in initial:
+            initial['trunc'] = self.DEFAULT_TRUNC
+        if 'pj_select' not in initial:
+            initial['pj_select'] = []
         super(ProjectFiltersForm, self).__init__(*args, **kwargs)
-        for key in self.fields:
-            self.fields[key].initial = initial.get(key, None)
-        self.fields['trunc'].initial = initial.get('trunc', self.DEFAULT_TRUNC)
 
     def get_hour_type(self):
-        billable = self.cleaned_data.get('billable', False)
-        non_billable = self.cleaned_data.get('non_billable', False)
+        try:
+            billable = self.cleaned_data.get('billable', False)
+            non_billable = self.cleaned_data.get('non_billable', False)
+        except AttributeError:
+            return 'total'
         if billable and non_billable:
             return 'total'
         elif billable:

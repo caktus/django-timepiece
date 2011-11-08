@@ -244,8 +244,7 @@ def get_total_time(seconds):
 def get_month_start(from_day=None):
     if not from_day:
         from_day = date.today()
-    from_day = from_day - timedelta(days=from_day.day - 1)
-    return from_day
+    return from_day.replace(day=1)
 
 
 def get_week_start(day=None):

@@ -86,12 +86,16 @@
 {% endif %}
 
 <div id="cal_wrapper">
-        {% for cal in cals %}
-        <div class="cal {% cycle 'left' 'middle' 'right' %}">
-            {% show_cal from_date cal %}
-        </div>
-        {% endfor%}
 
+    <div class="cal left">
+        {% show_cal from_date -1 %}
+    </div>
+    <div class="cal middle">
+        {% show_cal from_date 0 %}
+    </div>
+    <div class="cal right">
+        {% show_cal from_date 1 %}
+    </div>
 </div>
 
 <br style='clear: both' />
