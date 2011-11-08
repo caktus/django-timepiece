@@ -204,6 +204,7 @@ def show_cal(from_date, offset=0):
     html_cal = calendar.HTMLCalendar(calendar.SUNDAY)
     return html_cal.formatmonth(date.year, date.month)
 
+
 @register.inclusion_tag('timepiece/time-sheet/_invoice_row.html',
                         takes_context=True)
 def build_invoice_row(context, entries, to_date, from_date):
