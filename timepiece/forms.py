@@ -37,24 +37,16 @@ class ProjectFiltersForm(forms.Form):
                                       required=False)
     paid_leave = forms.BooleanField(initial=True, required=False)
     trunc = forms.ChoiceField(label='Group Totals By:', choices=TRUNC_CHOICES,
-                              widget=forms.RadioSelect(),
+                              widget=forms.RadioSelect(), required=False,
                               initial=DEFAULT_TRUNC)
     pj_select = selectable_forms.AutoCompleteSelectMultipleField(ProjectLookup,
         label='Project Name:', required=False)
 
-    def __init__(self, *args, **kwargs):
-        initial = kwargs.get('initial', {})
-        if 'billable' not in initial:
-            initial['billable'] = True
-        if 'non_billable' not in initial:
-            initial['non_billable'] = True
-        if 'paid_leave' not in initial:
-            initial['paid_leave'] = True
-        if 'trunc' not in initial:
-            initial['trunc'] = self.DEFAULT_TRUNC
-        if 'pj_select' not in initial:
-            initial['pj_select'] = []
-        super(ProjectFiltersForm, self).__init__(*args, **kwargs)
+    def clean_trunc(self):        
+        trunc = self.cleaned_data.get('trunc', '')
+        if not trunc:
+            trunc = self.DEFAULT_TRUNC
+        return trunc
 
     def get_hour_type(self):
         try:

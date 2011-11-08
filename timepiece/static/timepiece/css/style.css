@@ -107,18 +107,23 @@ button {
 }
 
 #project_billable_form input[type='submit'], #project_billable_form button{
-    margin-left: 35px;
-    padding: 2px;
+    padding: 3px;
 }
 
 #project_billable_form input[type='checkbox'] {
-    margin-right: 200px;
-    float: right;
+    margin: 4px;
+}
+
+#project_billable_form ul.parent {
+    margin: 0px;
+}
+#project_billable_form ul {
+    margin: 4px 2em;
 }
 
 #project_billable_form li {
+    padding: 1px;
     list-style-type: none;
-    margin: 5px 10px;
 }
 
 /*th, td {

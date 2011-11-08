@@ -1196,6 +1196,7 @@ def hourly_report(request, date_form, from_date, to_date, status, activity):
     if request.GET:
         form = timepiece_forms.ProjectFiltersForm(request.GET)
         if form.is_valid():
+            print form.cleaned_data
             trunc = form.cleaned_data['trunc']
             if not form.cleaned_data['paid_leave']:
                 projects = getattr(settings, 'TIMEPIECE_PROJECTS', {})
@@ -1203,7 +1204,7 @@ def hourly_report(request, date_form, from_date, to_date, status, activity):
             if form.cleaned_data['pj_select']:
                 query &= Q(project__in=form.cleaned_data['pj_select'])
     else:
-        form = timepiece_forms.ProjectFiltersForm(initial={trunc: 'trunc'})
+        form = timepiece_forms.ProjectFiltersForm()
     hour_type = form.get_hour_type()
     entries = timepiece.Entry.objects.date_trunc(trunc).filter(query)
     date_headers = utils.generate_dates(from_date, header_to, by=trunc)
