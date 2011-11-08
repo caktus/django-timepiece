@@ -20,10 +20,9 @@
     </ul>
 </form>
 
-<div style='float: right;'>
-{% for cal in cals %}
-{{ cal|safe }}
-{% endfor %}
+<div class="cal_wrapper" style='float: right;'>
+    <div class="cal left"> {% show_cal to_date -1 %} </div>
+    <div class="cal middle"> {% show_cal to_date 0 %} </div>
 </div>
 
 {% if unverified %}

@@ -39,7 +39,7 @@ class ProjectFiltersForm(forms.Form):
     trunc = forms.ChoiceField(label='Group Totals By:', choices=TRUNC_CHOICES,
                               widget=forms.RadioSelect(),
                               initial=DEFAULT_TRUNC)
-    pj_select = selectable_forms.AutoComboboxSelectMultipleField(ProjectLookup,
+    pj_select = selectable_forms.AutoCompleteSelectMultipleField(ProjectLookup,
         label='Project Name:', required=False)
 
     def __init__(self, *args, **kwargs):

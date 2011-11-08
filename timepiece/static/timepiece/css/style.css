@@ -93,16 +93,16 @@ button {
     margin: 10px 0px;
 }
 
-div.cal{
+.cal{
     float: left;
     padding: 24px;    
 }
 
-div.cal.left, div.cal.right {
+.cal.left, div.cal.right {
     background-color: #EDEDFF;
 }
 
-div.cal.middle {
+.cal.middle {
     background-color: #DFDFEF;
 }
 

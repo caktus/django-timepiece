@@ -676,17 +676,8 @@ def invoice_projects(request, form, from_date, to_date, status, activity):
         'project__pk', 'status', 'project__status__label'
     ).annotate(s=Sum('hours')).order_by('project__type__label',
                                         'project__name', 'status')
-    cals = []
-    if from_date:
-        date = from_date - relativedelta(months=1)
-        end_date = from_date + relativedelta(months=1)
-        html_cal = calendar.HTMLCalendar(calendar.SUNDAY)
-        while date < end_date:
-            cals.append(html_cal.formatmonth(date.year, date.month))
-            date += relativedelta(months=1)
     return render_to_response('timepiece/time-sheet/invoice_projects.html', {
         'form': form,
-        'cals': cals,
         'project_totals': project_totals,
         'to_date': to_date - relativedelta(days=1),
         'from_date': from_date,
