@@ -15,8 +15,8 @@
 {% block javascript %}
     <script type="text/javascript" src="https://ajax.googleapis.com/ajax/libs/jquery/1.4.4/jquery.min.js"></script>
     <script type="text/javascript" src="https://ajax.googleapis.com/ajax/libs/jqueryui/1.8.13/jquery-ui.min.js"></script>
-	<script src="{{ STATIC_URL }}js/django-crm.js" type="text/javascript"></script>
-	<script src="{{ STATIC_URL }}js/minibooks.js" type="text/javascript"></script>
+        <script src="{{ STATIC_URL }}js/django-crm.js" type="text/javascript"></script>
+        <script src="{{ STATIC_URL }}js/minibooks.js" type="text/javascript"></script>
     {{pj_filters.media}}
 {% endblock %}
 
@@ -48,17 +48,9 @@
         {{ date_form.as_ul }}
     </ul>
     <div id='project_billable_form'>
-        {% for field in pj_filters %}<br/>
-            {% if field.label != 'Project Name:' and field.label != 'Group Totals By:' %}
-                {{field}}
-                {% if field.label != 'Pjs' %}
-                    {{ field.label}}
-                {% endif %}
-            <br/>
-            {% else %}
-                {{field.label}} {{field}}
-            {% endif %}
-        {% endfor %}
+        <ul>
+            {{ pj_filters.as_ul }}
+        </ul>
         <input type='submit' name='ok' value="Apply Filters" id='billable'/>
         {% if perms.timepiece.export_project_time_sheet %}
             <button type='submit' name='export' value="True">Export as CSV</button>
