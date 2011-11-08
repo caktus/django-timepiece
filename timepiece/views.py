@@ -309,7 +309,7 @@ def delete_entry(request, entry_id):
 
 
 @permission_required('timepiece.view_entry_summary')
-@render_with('timepiece/time-sheet/general_ledger.html')
+@render_with('timepiece/time-sheet/reports/general_ledger.html')
 def summary(request, username=None):
     if request.GET:
         form = timepiece_forms.DateForm(request.GET)
@@ -1104,7 +1104,7 @@ def create_edit_person_time_sheet(request, person_id=None):
 
 
 @permission_required('timepiece.view_payroll_summary')
-@render_with('timepiece/time-sheet/payroll/summary.html')
+@render_with('timepiece/time-sheet/reports/summary.html')
 @utils.date_filter
 def payroll_summary(request, form, from_date, to_date, status, activity):
     last_billable = utils.get_last_billable_day(from_date)
@@ -1192,9 +1192,9 @@ def edit_settings(request):
 
 
 @permission_required('timepiece.view_payroll_summary')
-@render_with('timepiece/time-sheet/projects/detail.html')
+@render_with('timepiece/time-sheet/reports/hourly.html')
 @utils.date_filter
-def people_project(request, date_form, from_date, to_date, status, activity):
+def hourly_report(request, date_form, from_date, to_date, status, activity):
     if not from_date:
         from_date = utils.get_month_start(datetime.datetime.today()).date()
     if not to_date:

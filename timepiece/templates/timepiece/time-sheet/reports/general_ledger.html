@@ -1,17 +1,39 @@
 {% extends 'timepiece/time-sheet/base.html' %}
 {% load timepiece_tags %}
 
-{% block title %}Timepiece Entries{% endblock %}
+{% block title %}General Ledger{% endblock %}
 
 {% block content %}
-<h2>Time Tracking Report</h2>
 
-<form action="" method="get" accept-charset="utf-8">
-    {% csrf_token %}
-    <table>
-        {{ form }}
-    </table>
+<h2>Reports</h2>
+<ul class='header-actions-left'>
+    <li>
+        {% if perms.timepiece.view_entry_summary %}
+            <a href='{% url hourly_report %}'>Hourly</a>
+        {% endif %}
+    </li>
+    <li>
+        General Ledger
+    </li>
+    <li>
+        {% if perms.timepiece.view_payroll_summary %}
+            <a href='{% url payroll_summary %}'>Payroll Report</a>
+        {% endif %}
+    </li>
+</ul>
+
+<form method="get" action="" id="date-filter" accept-charset="utf-8">
+    <ul id='ledger-date-fieldlist'>
+        {{ form.as_ul }}
+        <li>
+            <input type='submit' name='submit' value='Update' id='id_date_form_submit_btn'/>
+        </li>
+        <li>
+            <input type='button' name='clear' value='Clear' id='id_date_form_clear_btn'/>
+        </li>
+    </ul>
 </form>
+
 <div style="float:left;padding:10px;">
 <h3>Hours by Project</h3>
 

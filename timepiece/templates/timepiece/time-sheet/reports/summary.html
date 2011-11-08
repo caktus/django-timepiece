@@ -4,7 +4,24 @@
 {% block title %}Payroll Summary{% endblock %}
 
 {% block content %}
-<h2>Payroll Report</h2>
+
+
+<h2>Reports</h2>
+<ul class='header-actions-left'>
+    <li>
+        {% if perms.timepiece.view_entry_summary %}
+            <a href='{% url hourly_report %}'>Hourly</a>
+        {% endif %}
+    </li>
+    <li>
+        {% if perms.timepiece.view_entry_summary %}
+            <a href='{% url timepiece-summary %}'>General Ledger</a>
+        {% endif %}
+    </li>
+    <li>
+        Payroll Report        
+    </li>
+</ul>
 
 {% date_filters "months" %}
 
