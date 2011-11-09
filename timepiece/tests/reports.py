@@ -20,7 +20,7 @@ class TestHourlyReport(TimepieceDataTestCase):
         self.sick = self.create_project()
         self.vacation = self.create_project()
         settings.TIMEPIECE_PROJECTS = {
-            'sick': self.sick.pk, 
+            'sick': self.sick.pk,
             'vacation': self.vacation.pk
         }
         self.leave = [self.sick.pk, self.vacation.pk]
@@ -122,9 +122,10 @@ class TestHourlyReport(TimepieceDataTestCase):
         self.log_time(project=self.p1, start=start, delta=(1, 0))
         self.log_time(project=self.p1, start=day2, delta=(0, 30))
         self.log_time(project=self.p3, start=day2, delta=(1, 0))
-        self.log_time(project=self.p1, start=day2, delta=(3, 0), user=self.user2)
-        self.log_time(project=self.sick, start=end, delta=(2, 0), user=self.user2)
-        
+        self.log_time(project=self.p1, start=day2, delta=(3, 0),
+                      user=self.user2)
+        self.log_time(project=self.sick, start=end, delta=(2, 0),
+                      user=self.user2)
 
     def testDailyTotal(self):
         start = datetime.datetime(2011, 1, 1)
@@ -156,7 +157,7 @@ class TestHourlyReport(TimepieceDataTestCase):
         pj_non_billable = list(self.get_project_totals(
                            date_headers, trunc, Q(), 'non_billable'))
         pj_non_billable_q = list(self.get_project_totals(
-                                 date_headers, trunc, 
+                                 date_headers, trunc,
                                  Q(project__type__billable=False), 'total'))
 
         self.assertEqual(list(pj_billable), list(pj_billable_q))
@@ -171,12 +172,11 @@ class TestHourlyReport(TimepieceDataTestCase):
         trunc = 'week'
         date_headers = utils.generate_dates(start, end, trunc)
         pj_totals = list(self.get_project_totals(date_headers, trunc))
-
         self.assertEqual(pj_totals[0][1], [40])
         self.assertEqual(pj_totals[1][1], [20])
         self.assertEqual(pj_totals[2][1], [60])
 
-    def testMonthlyTotal(self):        
+    def testMonthlyTotal(self):
         start = datetime.datetime(2011, 1, 1)
         end = datetime.datetime(2011, 3, 1)
         trunc = 'month'
