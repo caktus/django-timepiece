@@ -1192,11 +1192,11 @@ def hourly_report(request, date_form, from_date, to_date, status, activity):
         to_date = from_date + relativedelta(months=1)
     header_to = to_date - relativedelta(days=1)
     trunc = timepiece_forms.ProjectFiltersForm.DEFAULT_TRUNC
-    query = Q(start_time__gt=from_date, end_time__lt=to_date)
-    if request.GET:
+    query = Q(start_time__gt=utils.get_week_start(from_date),
+              end_time__lt=to_date)
+    if 'ok' in request.GET or 'export' in request.GET:
         form = timepiece_forms.ProjectFiltersForm(request.GET)
         if form.is_valid():
-            print form.cleaned_data
             trunc = form.cleaned_data['trunc']
             if not form.cleaned_data['paid_leave']:
                 projects = getattr(settings, 'TIMEPIECE_PROJECTS', {})
@@ -1224,20 +1224,14 @@ def hourly_report(request, date_form, from_date, to_date, status, activity):
         to_date_str = to_date.strftime('%m-%d')
         response = HttpResponse(mimetype='text/csv')
         response['Content-Disposition'] = \
-            'attachment; filename="%s_hours_from_%s_to_%s_by_%s.csv"' % (
+            'attachment; filename="%s_hours_%s_to_%s_by_%s.csv"' % (
             hour_type, from_date_str, to_date_str, trunc)
         writer = csv.writer(response)
-        dates = ';'.join([date.strftime('%m/%d/%Y') for date in date_headers])
-        writer.writerow((
-            'Name',
-            dates,
-        ))
+        headers = ['Name']
+        headers.extend([date.strftime('%m/%d/%Y') for date in date_headers])
+        writer.writerow(headers)
         for name, hours in project_totals:
-            full_name = str(' '.join((name[1], name[0])))
-            all_hours = ';'.join([str(hour) for hour in hours])
-            data = [
-                full_name,
-                all_hours,
-            ]
+            data = [' '.join((name[1], name[0]))]
+            data.extend([hour or ' ' for hour in hours])
             writer.writerow(data)
         return response
