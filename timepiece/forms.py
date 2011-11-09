@@ -42,6 +42,12 @@ class ProjectFiltersForm(forms.Form):
     pj_select = selectable_forms.AutoCompleteSelectMultipleField(ProjectLookup,
         label='Project Name:', required=False)
 
+    def clean_trunc(self):        
+        trunc = self.cleaned_data.get('trunc', '')
+        if not trunc:
+            trunc = self.DEFAULT_TRUNC
+        return trunc
+
     def get_hour_type(self):
         try:
             billable = self.cleaned_data.get('billable', False)

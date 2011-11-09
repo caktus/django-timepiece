@@ -1,7 +1,11 @@
 import datetime
 from dateutil import relativedelta
+from decimal import Decimal
+from random import randint
 
+from django.conf import settings
 from django.core.urlresolvers import reverse
+from django.db.models import Q
 
 from timepiece.tests.base import TimepieceDataTestCase
 
@@ -13,21 +17,20 @@ from timepiece import utils
 class TestHourlyReport(TimepieceDataTestCase):
     def setUp(self):
         super(TestHourlyReport, self).setUp()
+        self.sick = self.create_project()
+        self.vacation = self.create_project()
+        settings.TIMEPIECE_PROJECTS = {
+            'sick': self.sick.pk, 
+            'vacation': self.vacation.pk
+        }
+        self.leave = [self.sick.pk, self.vacation.pk]
         self.p1 = self.create_project(billable=True, name='1')
         self.p2 = self.create_project(billable=False, name='2')
         self.p4 = self.create_project(billable=True, name='4')
         self.p3 = self.create_project(billable=False, name='1')
-        self.client.login(username='user', password='abc')
-        self.get_args = []
-        self.url = reverse('hourly_report', args=self.get_args)
-
-    def make_entries(self):
-        """Make several entries to help with reports tests"""
-        self.client.login(username='user', password='abc')
-        projects = [
-            self.p1, self.p2, self.p3, self.p4
-        ]
-        days = [
+        self.p5 = self.create_project(billable=True, name='3')
+        self.default_projects = [self.p1, self.p2, self.p3, self.p4, self.p5]
+        self.default_dates = [
                 datetime.datetime(2011, 1, 3),
                 datetime.datetime(2011, 1, 4),
                 datetime.datetime(2011, 1, 10),
@@ -35,22 +38,49 @@ class TestHourlyReport(TimepieceDataTestCase):
                 datetime.datetime(2011, 1, 17),
                 datetime.datetime(2011, 1, 18)
         ]
-        for day in days:
-            for project in projects:
-                self.log_time(project=project, start=day, delta=(1, 0))
+        self.client.login(username='user', password='abc')
+        self.get_args = []
+        self.url = reverse('hourly_report')
 
-    def date_headers(self, start, end, trunc):
-        return utils.generate_dates(start, end, trunc)
+    def make_entries(self, user=None, projects=None, dates=None,
+                     hours=1, minutes=0):
+        """Make several entries to help with reports tests"""
 
-    def generate_dates(self, start, end, trunc, dates):
-        for index, day in enumerate(self.date_headers(start, end, trunc)):
+        if not user:
+            user = self.user
+        if not projects:
+            projects = self.default_projects
+        if not dates:
+            dates = self.default_dates
+        self.client.login(username=user, password='abc')
+        for project in projects:
+            for day in dates:
+                self.log_time(project=project, start=day,
+                              delta=(hours, minutes), user=user)
+
+    def check_generate_dates(self, start, end, trunc, dates):
+        for index, day in enumerate(utils.generate_dates(start, end, trunc)):
             self.assertEqual(day, dates[index])
+
+    def get_truncs(self, trunc):
+        entries = timepiece.Entry.objects.date_trunc(trunc)
+        return entries
+
+    def check_truncs(self, trunc, billable, non_billable):
+        self.make_entries(user=self.user)
+        self.make_entries(user=self.user2)
+        entries = self.get_truncs(trunc)
+        for entry in entries:
+            if entry['project__type__billable']:
+                self.assertEqual(entry['hours'], billable)
+            else:
+                self.assertEqual(entry['hours'], non_billable)
 
     def testGenerateMonths(self):
         dates = [datetime.datetime(2011, month, 1) for month in xrange(1, 13)]
         start = datetime.datetime(2011, 1, 1)
         end = datetime.datetime(2011, 12, 1)
-        self.generate_dates(start, end, 'month', dates)
+        self.check_generate_dates(start, end, 'month', dates)
 
     def testGenerateWeeks(self):
         dates = [
@@ -63,14 +93,108 @@ class TestHourlyReport(TimepieceDataTestCase):
         ]
         start = datetime.datetime(2011, 1, 1)
         end = datetime.datetime(2011, 2, 1)
-        self.generate_dates(start, end, 'week', dates)
+        self.check_generate_dates(start, end, 'week', dates)
 
     def testGenerateDays(self):
         dates = [datetime.datetime(2011, 1, day) for day in xrange(1, 32)]
         start = datetime.datetime(2011, 1, 1)
         end = datetime.datetime(2011, 1, 31)
-        self.generate_dates(start, end, 'day', dates)
+        self.check_generate_dates(start, end, 'day', dates)
+
+    def testTruncMonth(self):
+        self.check_truncs('month', 18, 12)
+
+    def testTruncWeek(self):
+        self.check_truncs('week', 6, 4)
+
+    def testTruncDay(self):
+        self.check_truncs('day', 3, 2)
+
+    def get_project_totals(self, date_headers, trunc, query=Q(),
+                           hour_type='total'):
+        entries = timepiece.Entry.objects.date_trunc(trunc).filter(query)
+        if entries:
+            return utils.project_totals(entries, date_headers, hour_type)
+        else:
+            return ''
+
+    def log_daily(self, start, day2, end):
+        self.log_time(project=self.p1, start=start, delta=(1, 0))
+        self.log_time(project=self.p1, start=day2, delta=(0, 30))
+        self.log_time(project=self.p3, start=day2, delta=(1, 0))
+        self.log_time(project=self.p1, start=day2, delta=(3, 0), user=self.user2)
+        self.log_time(project=self.sick, start=end, delta=(2, 0), user=self.user2)
         
-    def testTruncs(self):
-        self.make_entries()
-        #TODO: test date_trunc model manager
+
+    def testDailyTotal(self):
+        start = datetime.datetime(2011, 1, 1)
+        day2 = datetime.datetime(2011, 1, 2)
+        end = datetime.datetime(2011, 1, 3)
+        self.log_daily(start, day2, end)
+        trunc = 'day'
+        date_headers = utils.generate_dates(start, end, trunc)
+        pj_totals = list(self.get_project_totals(date_headers, trunc))
+        self.assertEqual(pj_totals[0][1],
+                         [Decimal('1.00'), Decimal('1.50'), 0])
+        self.assertEqual(pj_totals[1][1],
+                         [0, Decimal('3.00'), Decimal('2.00')])
+        self.assertEqual(pj_totals[2][1],
+                         [Decimal('1.00'), Decimal('4.50'), Decimal('2.00')])
+
+    def testBillableNonBillable(self):
+        start = datetime.datetime(2011, 1, 1)
+        day2 = datetime.datetime(2011, 1, 2)
+        end = datetime.datetime(2011, 1, 3)
+        self.log_daily(start, day2, end)
+        trunc = 'day'
+        date_headers = utils.generate_dates(start, end, trunc)
+        pj_billable = list(self.get_project_totals(
+                           date_headers, trunc, Q(), 'billable'))
+        pj_billable_q = list(self.get_project_totals(
+                             date_headers, trunc,
+                             Q(project__type__billable=True), 'total'))
+        pj_non_billable = list(self.get_project_totals(
+                           date_headers, trunc, Q(), 'non_billable'))
+        pj_non_billable_q = list(self.get_project_totals(
+                                 date_headers, trunc, 
+                                 Q(project__type__billable=False), 'total'))
+
+        self.assertEqual(list(pj_billable), list(pj_billable_q))
+        self.assertEqual(list(pj_non_billable), list(pj_non_billable_q))
+
+    def testWeeklyTotal(self):
+        start = datetime.datetime(2011, 1, 3)
+        end = datetime.datetime(2011, 1, 6)
+        dates = utils.generate_dates(start, end, 'day')
+        self.make_entries(dates=dates, user=self.user, hours=2)
+        self.make_entries(dates=dates, user=self.user2, hours=1)
+        trunc = 'week'
+        date_headers = utils.generate_dates(start, end, trunc)
+        pj_totals = list(self.get_project_totals(date_headers, trunc))
+
+        self.assertEqual(pj_totals[0][1], [40])
+        self.assertEqual(pj_totals[1][1], [20])
+        self.assertEqual(pj_totals[2][1], [60])
+
+    def testMonthlyTotal(self):        
+        start = datetime.datetime(2011, 1, 1)
+        end = datetime.datetime(2011, 3, 1)
+        trunc = 'month'
+        last_day = randint(5, 10)
+        worked1 = randint(1, 3)
+        worked2 = randint(1, 3)
+        for month in xrange(1, 7):
+            for day in xrange(1, last_day + 1):
+                day = datetime.datetime(2011, month, day)
+                self.log_time(start=day, delta=(worked1, 0), user=self.user)
+                self.log_time(start=day, delta=(worked2, 0), user=self.user2)
+        date_headers = utils.generate_dates(start, end, trunc)
+        pj_totals = list(self.get_project_totals(date_headers, trunc))
+        for hour in pj_totals[0][1]:
+            self.assertEqual(hour, last_day * worked1)
+        for hour in pj_totals[1][1]:
+            self.assertEqual(hour, last_day * worked2)
+
+    def testFormFilters(self):
+        pass
+        #TODO: Add tests for the ProjectFiltersForm
