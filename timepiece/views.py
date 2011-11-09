@@ -1232,6 +1232,6 @@ def hourly_report(request, date_form, from_date, to_date, status, activity):
         writer.writerow(headers)
         for name, hours in project_totals:
             data = [' '.join((name[1], name[0]))]
-            data.extend([hour or ' ' for hour in hours])
+            data.extend([hour or '' for hour in hours])
             writer.writerow(data)
         return response
