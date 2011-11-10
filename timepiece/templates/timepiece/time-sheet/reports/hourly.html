@@ -49,11 +49,12 @@
     </ul>
     <div id='project_billable_form'>
         <ul class="parent">
-            <li>{{ pj_filters.billable}}{{ pj_filters.billable.label_tag}}</li>
-            <li>{{ pj_filters.non_billable}}{{ pj_filters.non_billable.label_tag}}</li>
-            <li>{{ pj_filters.paid_leave}}{{ pj_filters.paid_leave.label_tag}}</li>
+            <li>{{ pj_filters.billable }}{{ pj_filters.billable.label_tag}}</li>
+            <li>{{ pj_filters.non_billable }}{{ pj_filters.non_billable.label_tag}}</li>
+            <li>{{ pj_filters.paid_leave }}{{ pj_filters.paid_leave.label_tag}}</li>
             <br/>
-            <li>{{ pj_filters.trunc.label}}{{ pj_filters.trunc}}</li>
+            <li>{{ pj_filters.trunc.label }}{{ pj_filters.trunc}}</li>
+            <li>{{ pj_filters.pj_select.label }}{{ pj_filters.pj_select }}</li>
         </ul>
         <input type='submit' name='ok' value="Apply Filters" id='billable'/>
         {% if perms.timepiece.export_project_time_sheet %}
