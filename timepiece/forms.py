@@ -12,7 +12,7 @@ from django.utils.translation import ugettext_lazy as _
 from django.core.exceptions import ValidationError, NON_FIELD_ERRORS
 
 from selectable import forms as selectable_forms
-from lookups import ProjectLookup
+from timepiece.lookups import ProjectLookup
 
 from ajax_select.fields import AutoCompleteSelectMultipleField, \
                                AutoCompleteSelectField, \
