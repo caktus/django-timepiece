@@ -38,8 +38,6 @@ class TestHourlyReport(TimepieceDataTestCase):
                 datetime.datetime(2011, 1, 17),
                 datetime.datetime(2011, 1, 18)
         ]
-        self.client.login(username='user', password='abc')
-        self.get_args = []
         self.url = reverse('hourly_report')
 
     def make_entries(self, user=None, projects=None, dates=None,
@@ -52,29 +50,23 @@ class TestHourlyReport(TimepieceDataTestCase):
             projects = self.default_projects
         if not dates:
             dates = self.default_dates
-        self.client.login(username=user, password='abc')
         for project in projects:
             for day in dates:
                 self.log_time(project=project, start=day,
                               delta=(hours, minutes), user=user)
 
+    def bulk_entries(self, start=datetime.datetime(2011, 1, 2),
+                   end=datetime.datetime(2011, 1, 4)):
+        dates = utils.generate_dates(start, end, 'day')
+        projects = [self.p1, self.p2, self.p2, self.p4, self.p5, self.sick]
+        self.make_entries(projects=projects, dates=dates,
+                          user=self.user, hours=2)
+        self.make_entries(projects=projects, dates=dates,
+                          user=self.user2, hours=1)
+
     def check_generate_dates(self, start, end, trunc, dates):
         for index, day in enumerate(utils.generate_dates(start, end, trunc)):
             self.assertEqual(day, dates[index])
-
-    def get_truncs(self, trunc):
-        entries = timepiece.Entry.objects.date_trunc(trunc)
-        return entries
-
-    def check_truncs(self, trunc, billable, non_billable):
-        self.make_entries(user=self.user)
-        self.make_entries(user=self.user2)
-        entries = self.get_truncs(trunc)
-        for entry in entries:
-            if entry['project__type__billable']:
-                self.assertEqual(entry['hours'], billable)
-            else:
-                self.assertEqual(entry['hours'], non_billable)
 
     def testGenerateMonths(self):
         dates = [datetime.datetime(2011, month, 1) for month in xrange(1, 13)]
@@ -101,6 +93,16 @@ class TestHourlyReport(TimepieceDataTestCase):
         end = datetime.datetime(2011, 1, 31)
         self.check_generate_dates(start, end, 'day', dates)
 
+    def check_truncs(self, trunc, billable, non_billable):
+        self.make_entries(user=self.user)
+        self.make_entries(user=self.user2)
+        entries = timepiece.Entry.objects.date_trunc(trunc)
+        for entry in entries:
+            if entry['project__type__billable']:
+                self.assertEqual(entry['hours'], billable)
+            else:
+                self.assertEqual(entry['hours'], non_billable)
+
     def testTruncMonth(self):
         self.check_truncs('month', 18, 12)
 
@@ -112,6 +114,7 @@ class TestHourlyReport(TimepieceDataTestCase):
 
     def get_project_totals(self, date_headers, trunc, query=Q(),
                            hour_type='total'):
+        """Helper function for testing project_totals utility directly"""
         entries = timepiece.Entry.objects.date_trunc(trunc).filter(query)
         if entries:
             return utils.project_totals(entries, date_headers, hour_type)
@@ -166,15 +169,13 @@ class TestHourlyReport(TimepieceDataTestCase):
     def testWeeklyTotal(self):
         start = datetime.datetime(2011, 1, 3)
         end = datetime.datetime(2011, 1, 6)
-        dates = utils.generate_dates(start, end, 'day')
-        self.make_entries(dates=dates, user=self.user, hours=2)
-        self.make_entries(dates=dates, user=self.user2, hours=1)
+        self.bulk_entries(start, end)
         trunc = 'week'
         date_headers = utils.generate_dates(start, end, trunc)
         pj_totals = list(self.get_project_totals(date_headers, trunc))
-        self.assertEqual(pj_totals[0][1], [40])
-        self.assertEqual(pj_totals[1][1], [20])
-        self.assertEqual(pj_totals[2][1], [60])
+        self.assertEqual(pj_totals[0][1], [48])
+        self.assertEqual(pj_totals[1][1], [24])
+        self.assertEqual(pj_totals[2][1], [72])
 
     def testMonthlyTotal(self):
         start = datetime.datetime(2011, 1, 1)
@@ -195,6 +196,162 @@ class TestHourlyReport(TimepieceDataTestCase):
         for hour in pj_totals[1][1]:
             self.assertEqual(hour, last_day * worked2)
 
-    def testFormFilters(self):
-        pass
-        #TODO: Add tests for the ProjectFiltersForm
+    def argsHelper(self, args={}, start=datetime.datetime(2011, 1, 2),
+                   end=datetime.datetime(2011, 1, 4)):
+        args.update({
+            'from_date': start.strftime('%m/%d/%Y'),
+            'to_date': end.strftime('%m/%d/%Y'),
+            'export': True,
+        })
+        return args
+
+    def makeTotals(self, args={}):
+        """Return CSV from hourly report for verification in tests"""
+        self.client.login(username='superuser', password='abc')
+        response = self.client.get(self.url, args, follow=True)
+        return [item.split(',') \
+                for item in response.content.split('\r\n')][:-1]
+
+    def checkTotals(self, args, data):
+        """assert that project_totals contains the data passed in"""
+        totals = self.makeTotals(args)
+        for row, datum in zip(totals, data):
+            self.assertEqual(row[1:], datum)
+
+    def testForm_HourTypeFlags(self):
+        """Verify that the billable, non-billable and paid leave flags work"""
+        #Test paid leave
+        self.bulk_entries()
+        args = {
+            'billable': True,
+            'non_billable': True,
+            'paid_leave': False,
+            'trunc': 'week',
+        }
+        data = [
+            ['12/27/2010', '01/03/2011'],
+            ['10.00', '20.00'],
+            ['5.00', '10.00'],
+            ['15.00', '30.00'],
+        ]
+        args = self.argsHelper(args)
+        self.checkTotals(args, data)
+        #test billable
+        args = {
+            'billable': True,
+            'non_billable': False,
+            'paid_leave': False,
+            'trunc': 'week',
+        }
+        data = [
+            ['12/27/2010', '01/03/2011'],
+            ['6.00', '12.00'],
+            ['3.00', '6.00'],
+            ['9.00', '18.00'],
+        ]
+        args = self.argsHelper(args)
+        self.checkTotals(args, data)
+        #test non_billable
+        args = {
+            'billable': False,
+            'non_billable': True,
+            'paid_leave': False,
+            'trunc': 'week',
+        }
+        data = [
+            ['12/27/2010', '01/03/2011'],
+            ['4.00', '8.00'],
+            ['2.00', '4.00'],
+            ['6.00', '12.00'],
+        ]
+        args = self.argsHelper(args)
+        self.checkTotals(args, data)
+
+    def testForm_Day(self):
+        args = {
+            'billable': True,
+            'non_billable': False,
+            'paid_leave': False,
+            'trunc': 'day',
+        }
+        data = [
+            ['01/02/2011', '01/03/2011', '01/04/2011'],
+            ['6.00', '6.00', '6.00'],
+            ['3.00', '3.00', '3.00'],
+            ['9.00', '9.00', '9.00'],
+        ]
+        self.bulk_entries()
+        args = self.argsHelper(args)
+        self.checkTotals(args, data)
+
+    def testForm_Week(self):
+        args = {
+            'billable': True,
+            'non_billable': True,
+            'paid_leave': True,
+            'trunc': 'week',
+        }
+        data = [
+            ['12/27/2010', '01/03/2011'],
+            ['12.00', '24.00'],
+            ['6.00', '12.00'],
+            ['18.00', '36.00'],
+        ]
+        self.bulk_entries()
+        args = self.argsHelper(args)
+        self.checkTotals(args, data)
+
+    def testForm_Month(self):
+        start = datetime.datetime(2011, 1, 3)
+        end = datetime.datetime(2011, 3, 28)
+        args = {
+            'billable': True,
+            'non_billable': False,
+            'paid_leave': False,
+            'trunc': 'month',
+        }
+        data = [
+            ['01/01/2011', '02/01/2011', '03/01/2011'],
+            ['168.00', '168.00', '168.00'],
+            ['84.00', '84.00', '84.00'],
+            ['252.00', '252.00', '252.00'],
+        ]
+        self.bulk_entries(start, end)
+        args = self.argsHelper(args, start, end)
+        self.checkTotals(args, data)
+
+    def testForm_Pj_Select(self):
+        """Filter out hours just for one project"""
+        #Test project 1
+        self.bulk_entries()
+        args = {
+            'billable': True,
+            'non_billable': True,
+            'paid_leave': False,
+            'trunc': 'day',
+            'pj_select_1': self.p1.id,            
+        }
+        data = [
+            ['01/02/2011', '01/03/2011', '01/04/2011'],
+            ['2.00', '2.00', '2.00'],
+            ['1.00', '1.00', '1.00'],
+            ['3.00', '3.00', '3.00'],
+        ]
+        args = self.argsHelper(args)
+        self.checkTotals(args, data)
+        #Test with project 2
+        args = {
+            'billable': True,
+            'non_billable': True,
+            'paid_leave': False,
+            'trunc': 'day',
+            'pj_select_1': self.p2.id,
+        }
+        data = [
+            ['01/02/2011', '01/03/2011', '01/04/2011'],
+            ['4.00', '4.00', '4.00'],
+            ['2.00', '2.00', '2.00'],
+            ['6.00', '6.00', '6.00'],
+        ]
+        args = self.argsHelper(args)
+        self.checkTotals(args, data)
