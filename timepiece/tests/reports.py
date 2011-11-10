@@ -345,13 +345,29 @@ class TestHourlyReport(TimepieceDataTestCase):
             'non_billable': True,
             'paid_leave': False,
             'trunc': 'day',
-            'pj_select_1': self.p2.id,
+            'pj_select_1': self.p2.id
         }
         data = [
             ['01/02/2011', '01/03/2011', '01/04/2011'],
             ['4.00', '4.00', '4.00'],
             ['2.00', '2.00', '2.00'],
             ['6.00', '6.00', '6.00'],
+        ]
+        args = self.argsHelper(args)
+        self.checkTotals(args, data)
+        #Test with 2 project filters
+        args = {
+            'billable': True,
+            'non_billable': True,
+            'paid_leave': False,
+            'trunc': 'day',
+            'pj_select_1': [self.p2.id, self.p4.id]
+        }
+        data = [
+            ['01/02/2011', '01/03/2011', '01/04/2011'],
+            ['6.00', '6.00', '6.00'],
+            ['3.00', '3.00', '3.00'],
+            ['9.00', '9.00', '9.00'],
         ]
         args = self.argsHelper(args)
         self.checkTotals(args, data)
