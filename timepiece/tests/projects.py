@@ -102,12 +102,13 @@ class ProjectTestCase(TimepieceDataTestCase):
         #Mark as invoiced link links to a page with correct times in the URL
         response = self.client.get(url, data)
         self.assertEquals(response.status_code, 200)
-        returned_dates = re.findall('=(\d\d\d\d-\d\d-\d\d)&?',
+        returned_dates = re.findall('=(\d\d%2F\d\d%2F\d\d\d\d)&?',
             response.context['return_url'])
+        returned_dates = [r_d.replace('%2F', '/') for r_d in returned_dates]
         self.assertEqual(returned_dates[0],
-            self.invoice_from_date.strftime('%Y-%m-%d'))
+            self.invoice_from_date.strftime('%m/%d/%Y'))
         self.assertEqual(returned_dates[1],
-            self.invoice_to_date.strftime('%Y-%m-%d'))
+            self.invoice_to_date.strftime('%m/%d/%Y'))
         #Test that the "Yes" link on the mark as invoiced page redirects to
         #invoice projects with the correct date
         get_str = urllib.urlencode({
