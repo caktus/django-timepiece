@@ -302,7 +302,7 @@ class TestHourlyReport(TimepieceDataTestCase):
         self.checkTotals(args, data)
 
     def testForm_Month(self):
-        start = datetime.datetime(2011, 1, 3)
+        start = datetime.datetime(2011, 1, 4)
         end = datetime.datetime(2011, 3, 28)
         args = {
             'billable': True,
