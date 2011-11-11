@@ -40,11 +40,23 @@ input[type='text'].timepiece-time {
 #id_end_time_0 {
     margin-right: 1em;
 }
-
+/*My ledger */
+tr.ledger_header{
+    background-color: #EDEDFF;
+    border: 2px solid #CCD;
+}
+tr.monthly_total{
+    background-color: #8FA8D0;
+}
+tr.daily_total{
+    background-color: #DFDFEF;
+}
+tr.weekly_total{
+    background-color: #BBBFDD;
+}
 td.hours{
     text-align: right;
 }
-
 /*th, td {
     padding: 0.2em; 
 }
