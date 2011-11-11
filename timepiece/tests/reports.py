@@ -329,7 +329,7 @@ class TestHourlyReport(TimepieceDataTestCase):
             'non_billable': True,
             'paid_leave': False,
             'trunc': 'day',
-            'pj_select_1': self.p1.id,            
+            'pj_select_1': self.p1.id,
         }
         data = [
             ['01/02/2011', '01/03/2011', '01/04/2011'],
