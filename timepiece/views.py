@@ -1112,17 +1112,9 @@ def payroll_summary(request, form, from_date, to_date, status, activity):
     ).order_by('user__last_name')
     for rp in rps:
         rp.user.summary = rp.summary(from_date, to_date)
-    cals = []
-    date = from_date - relativedelta(months=1)
-    end_date = from_date + relativedelta(months=1)
-    html_cal = calendar.HTMLCalendar(calendar.SUNDAY)
-    while date < end_date:
-        cals.append(html_cal.formatmonth(date.year, date.month))
-        date += relativedelta(months=1)
     return {
         'form': form,
         'all_weeks': all_weeks,
-        'cals': cals,
         'periods': rps,
         'to_date': to_date,
         'from_date': from_date,
