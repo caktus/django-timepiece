@@ -1184,7 +1184,7 @@ def hourly_report(request, date_form, from_date, to_date, status, activity):
         to_date = from_date + relativedelta(months=1)
     header_to = to_date - relativedelta(days=1)
     trunc = timepiece_forms.ProjectFiltersForm.DEFAULT_TRUNC
-    query = Q(start_time__gt=utils.get_week_start(from_date),
+    query = Q(end_time__gt=utils.get_week_start(from_date),
               end_time__lt=to_date)
     if 'ok' in request.GET or 'export' in request.GET:
         form = timepiece_forms.ProjectFiltersForm(request.GET)
