@@ -303,11 +303,11 @@ def date_filter(func):
     return inner_decorator
 
 
-def get_hours(entries):
+def get_hours(entries, key='billable'):
     hours = {'total': 0}
     for entry in entries:
         hours['total'] += entry['hours']
-        if entry['billable']:
+        if entry[key]:
             hours['billable'] = entry['hours']
         else:
             hours['non_billable'] = entry['hours']
