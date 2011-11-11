@@ -138,6 +138,7 @@ urlpatterns = patterns('',
         views.invoice_projects,
         name='invoice_projects',
     ),
+
     url(
         r'^projection/$',
         views.projection_summary,
