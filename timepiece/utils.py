@@ -303,21 +303,14 @@ def date_filter(func):
     return inner_decorator
 
 
-def get_hours(entries, key=None):    
+def get_hours(entries):    
     hours = {'total': 0}
     for entry in entries:
         hours['total'] += entry['hours']
-        if key == 'billable':
-            if entry['billable']:
-                hours['billable'] = entry['hours']
-            else:
-                hours['non_billable'] = entry['hours']
+        if entry['billable']:
+            hours['billable'] = entry['hours']
         else:
-            if entry['activity__billable'] \
-                and entry['project__type__billable']:
-                hours['billable'] = entry['hours']
-            else:
-                hours['non_billable'] = entry['hours']
+            hours['non_billable'] = entry['hours']
     return hours
 
 
@@ -348,7 +341,7 @@ def grouped_totals(entries):
                                                         'project__name')
     weeks = {}
     for week, week_entries in groupby(weekly, lambda x: x['date']):
-        weeks[week] = get_hours(week_entries, 'billable')
+        weeks[week] = get_hours(week_entries)
     days = []
     last_week = None
     for day, day_entries in groupby(daily, lambda x: x['date']):

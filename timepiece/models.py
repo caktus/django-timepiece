@@ -199,15 +199,14 @@ class EntryManager(models.Manager):
         return qs
 
     def date_trunc(self, key='month'):
-        qs = super(EntryManager, self).get_query_set()
+        qs = self.get_query_set()
         select = {"day": {"date": """DATE_TRUNC('day', end_time)"""},
                   "week": {"date": """DATE_TRUNC('week', end_time)"""},
                   "month": {"date": """DATE_TRUNC('month', end_time)"""},
         }
         qs = qs.extra(select=select[key]).values('user', 'user__first_name',
                                                  'user__last_name', 'date',
-                                                 'project__type__billable',
-                                                 'activity__billable')
+                                                 'billable',)
         qs = qs.annotate(hours=Sum('hours')).order_by('user__last_name',
                                                       'date')
         return qs
