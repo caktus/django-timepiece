@@ -206,7 +206,8 @@ class EntryManager(models.Manager):
         }
         qs = qs.extra(select=select[key]).values('user', 'user__first_name',
                                                  'user__last_name', 'date',
-                                                 'project__type__billable')
+                                                 'project__type__billable',
+                                                 'activity__billable')
         qs = qs.annotate(hours=Sum('hours')).order_by('user__last_name',
                                                       'date')
         return qs

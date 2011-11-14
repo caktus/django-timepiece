@@ -303,14 +303,21 @@ def date_filter(func):
     return inner_decorator
 
 
-def get_hours(entries, key='billable'):
+def get_hours(entries, key=None):    
     hours = {'total': 0}
     for entry in entries:
         hours['total'] += entry['hours']
-        if entry[key]:
-            hours['billable'] = entry['hours']
+        if key == 'billable':
+            if entry['billable']:
+                hours['billable'] = entry['hours']
+            else:
+                hours['non_billable'] = entry['hours']
         else:
-            hours['non_billable'] = entry['hours']
+            if entry['activity__billable'] \
+                and entry['project__type__billable']:
+                hours['billable'] = entry['hours']
+            else:
+                hours['non_billable'] = entry['hours']
     return hours
 
 
@@ -341,7 +348,7 @@ def grouped_totals(entries):
                                                         'project__name')
     weeks = {}
     for week, week_entries in groupby(weekly, lambda x: x['date']):
-        weeks[week] = get_hours(week_entries)
+        weeks[week] = get_hours(week_entries, 'billable')
     days = []
     last_week = None
     for day, day_entries in groupby(daily, lambda x: x['date']):
@@ -362,7 +369,7 @@ def project_totals(entries, date_headers, hour_type):
             d_entries = list(date_entries)
             name = (d_entries[0]['user__last_name'],
                     d_entries[0]['user__first_name'])
-            hours = get_hours(d_entries, 'project__type__billable')
+            hours = get_hours(d_entries)
             date_dict[date] = hours
         dates = []
         for index, day in enumerate(date_headers):

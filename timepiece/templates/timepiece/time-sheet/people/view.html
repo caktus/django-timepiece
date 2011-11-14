@@ -53,8 +53,8 @@
         </tr>            
         {% for entry in entries %}
             {% ifchanged entry.start_time|date:"W" %}
-                <tr>
-                    <th colspan='8'>Week of {% week_start entry.start_time %} </th>
+                <tr class="ledger_header">
+                    <th colspan='10'>Week of {% week_start entry.start_time %} </th>
                 </tr>
             {% endifchanged %}
             <tr>
@@ -70,7 +70,7 @@
                 <td>{{ entry.end_time|date:"P" }}</td>
                 <td class="hours">{{ entry.seconds_paused|seconds_to_hours }}</td>
                 <td class="hours">{{ entry.hours }}</td>
-                <td class="hours">{{ entry.comments|truncatewords:12 }}</td>
+                <td title="{{entry.comments}}">{{ entry.comments|truncatewords:12 }}</td>
                 {% if entry.is_editable %}
                     <td><a href="{% url timepiece-update entry.id %}?next={{ request.path|urlencode }}">Edit</a></td>
             {% endif %}

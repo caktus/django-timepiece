@@ -17,6 +17,7 @@ Requirements
 ------------
 
  * `python-dateutil <http://labix.org/python-dateutil>`_
+ * `django-selectable <http://pypi.python.org/pypi/django-selectable>`_
  * `django-ajax-selects <http://pypi.python.org/pypi/django-ajax-selects>`_
  * `django-pagination <http://pypi.python.org/pypi/django-pagination>`_
  * `textile <http://pypi.python.org/pypi/textile>`_
@@ -57,6 +58,13 @@ Installation
 
 History
 -------
+
+0.3.4 (11-11-2011)
+******************
+* Added a new Hourly Reports view with project hours filtered and grouped by user specified criteria.
+* Hourly Reports, General Ledger and Payroll Summary are now subheadings under Reports.
+* Improved My Ledger with row highlighting, better CSS and a title attribute.
+* Fixed Invoice projects to return the date range with m/d/Y.
 
 0.3.3 (10-31-2011)
 ******************
