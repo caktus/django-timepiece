@@ -98,7 +98,7 @@ class TestHourlyReport(TimepieceDataTestCase):
         self.make_entries(user=self.user2)
         entries = timepiece.Entry.objects.date_trunc(trunc)
         for entry in entries:
-            if entry['project__type__billable']:
+            if entry['billable']:
                 self.assertEqual(entry['hours'], billable)
             else:
                 self.assertEqual(entry['hours'], non_billable)
