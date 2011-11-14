@@ -59,7 +59,7 @@ Installation
 History
 -------
 
-0.3.4 (11-11-2011)
+0.3.4 (11-14-2011)
 ******************
 * Added a new Hourly Reports view with project hours filtered and grouped by user specified criteria.
 * Hourly Reports, General Ledger and Payroll Summary are now subheadings under Reports.
