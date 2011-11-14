@@ -303,7 +303,7 @@ def date_filter(func):
     return inner_decorator
 
 
-def get_hours(entries):    
+def get_hours(entries):
     hours = {'total': 0}
     for entry in entries:
         hours['total'] += entry['hours']
