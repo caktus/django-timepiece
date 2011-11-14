@@ -4,7 +4,24 @@
 {% block title %}Payroll Summary{% endblock %}
 
 {% block content %}
-<h2>Payroll Report</h2>
+
+
+<h2>Reports</h2>
+<ul class='header-actions-left'>
+    <li>
+        {% if perms.timepiece.view_entry_summary %}
+            <a href='{% url hourly_report %}'>Hourly</a>
+        {% endif %}
+    </li>
+    <li>
+        {% if perms.timepiece.view_entry_summary %}
+            <a href='{% url timepiece-summary %}'>General Ledger</a>
+        {% endif %}
+    </li>
+    <li>
+        Payroll Report        
+    </li>
+</ul>
 
 {% date_filters "months" %}
 
@@ -20,11 +37,11 @@
     </ul>
 </form>
 
-<div style='float: right;'>
-{% for cal in cals %}
-{{ cal|safe }}
-{% endfor %}
+<div class="cal_wrapper" style='float: right;'>
+    <div class="cal left"> {% show_cal from_date -1 %} </div>
+    <div class="cal middle"> {% show_cal from_date 0 %} </div>
 </div>
+
 
 <h3>Weekly Summary</h3>
 

@@ -2,7 +2,7 @@ from datetime import date, datetime, timedelta, time as time_obj
 from dateutil import rrule
 from dateutil.relativedelta import relativedelta
 from decimal import Decimal
-import itertools
+from itertools import groupby
 import time
 import calendar
 
@@ -241,6 +241,12 @@ def get_total_time(seconds):
     return u'%02i:%02i:%02i' % (hours, minutes, seconds)
 
 
+def get_month_start(from_day=None):
+    if not from_day:
+        from_day = date.today()
+    return from_day.replace(day=1)
+
+
 def get_week_start(day=None):
     if not day:
         day = date.today()
@@ -257,23 +263,28 @@ def get_last_billable_day(day=None):
     return get_week_start(day) - timedelta(days=1)
 
 
-def generate_weeks(end, start=None):
-    start = get_week_start(start)
-    #byweekday is set to Sunday, the last day of an ISO week
-    return rrule.rrule(rrule.WEEKLY, dtstart=start, until=end, byweekday=0)
+def generate_dates(start=None, end=None, by='week'):
+    if by == 'month':
+        start = get_month_start(start)
+        return rrule.rrule(rrule.MONTHLY, dtstart=start, until=end)
+    if by == 'week':
+        start = get_week_start(start)
+        return rrule.rrule(rrule.WEEKLY, dtstart=start, until=end, byweekday=0)
+    if by == 'day':
+        return rrule.rrule(rrule.DAILY, dtstart=start, until=end)
 
 
 def get_week_window(day):
     start = get_week_start(day)
     end = start + timedelta(weeks=1)
-    weeks = generate_weeks(start=start, end=end)
+    weeks = generate_dates(end=end, start=start, by='week')
     return list(weeks)
 
 
 def date_filter(func):
     def inner_decorator(request, *args, **kwargs):
         from timepiece import forms as timepiece_forms
-        if request.GET:
+        if 'to_date' in request.GET:
             form = timepiece_forms.DateForm(request.GET)
             if form.is_valid():
                 from_date, to_date = form.save()
@@ -306,7 +317,7 @@ def get_hours(entries):
 def daily_summary(day_entries):
     projects = {}
     all_day = {}
-    for name, entries in itertools.groupby(day_entries,
+    for name, entries in groupby(day_entries,
                                            lambda x: x['project__name']):
         hours = get_hours(entries)
         projects[name] = hours
@@ -329,11 +340,11 @@ def grouped_totals(entries):
     daily = daily.annotate(hours=Sum('hours')).order_by('date',
                                                         'project__name')
     weeks = {}
-    for week, week_entries in itertools.groupby(weekly, lambda x: x['date']):
+    for week, week_entries in groupby(weekly, lambda x: x['date']):
         weeks[week] = get_hours(week_entries)
     days = []
     last_week = None
-    for day, day_entries in itertools.groupby(daily, lambda x: x['date']):
+    for day, day_entries in groupby(daily, lambda x: x['date']):
         week = get_week_start(day)
         if last_week and week > last_week:
             yield last_week, weeks.get(last_week, {}), days
@@ -341,3 +352,25 @@ def grouped_totals(entries):
         days.append((day, daily_summary(day_entries)))
         last_week = week
     yield week, weeks.get(week, {}), days
+
+
+def project_totals(entries, date_headers, hour_type):
+    totals = []
+    for user, user_entries in groupby(entries, lambda x: x['user']):
+        date_dict = {}
+        for date, date_entries in groupby(user_entries, lambda x: x['date']):
+            d_entries = list(date_entries)
+            name = (d_entries[0]['user__last_name'],
+                    d_entries[0]['user__first_name'])
+            hours = get_hours(d_entries)
+            date_dict[date] = hours
+        dates = []
+        for index, day in enumerate(date_headers):
+            total = date_dict.get(day, {}).get(hour_type, 0)
+            dates.append(total)
+            try:
+                totals[index] += total
+            except IndexError:
+                totals.append(total)
+        yield (name, dates)
+    yield (('Totals:', ''), totals)

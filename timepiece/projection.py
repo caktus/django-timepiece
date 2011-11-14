@@ -8,7 +8,7 @@ from dateutil import rrule
 from dateutil import relativedelta
 
 from timepiece import models as timepiece
-from timepiece.utils import get_week_start, generate_weeks
+from timepiece.utils import get_week_start, generate_dates
 
 
 logger = logging.getLogger('timepiece.projection')
@@ -17,7 +17,7 @@ logger = logging.getLogger('timepiece.projection')
 def user_weekly_assignments():
     schedules = timepiece.PersonSchedule.objects.select_related()
     for schedule in schedules:
-        for week in generate_weeks(end=schedule.furthest_end_date):
+        for week in generate_dates(end=schedule.furthest_end_date, by='week'):
             next_week = week + relativedelta.relativedelta(weeks=1)
             assignments = timepiece.ContractAssignment.objects
             assignments = assignments.active_during_week(week, next_week)

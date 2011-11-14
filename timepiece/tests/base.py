@@ -165,7 +165,9 @@ class TimepieceDataTestCase(TestCase):
         return timepiece.PersonSchedule.objects.create(**defaults)
 
     def log_time(self, delta=None, billable=True, project=None,
-        start=None, end=None, status=None, pause=0, activity=None):
+        start=None, end=None, status=None, pause=0, activity=None, user=None):
+        if not user:
+            user = self.user
         if delta and not end:
             hours, minutes = delta
         else:
@@ -178,7 +180,7 @@ class TimepieceDataTestCase(TestCase):
                 start -= relativedelta(days=1)
         if not end:
             end = start + datetime.timedelta(hours=hours, minutes=minutes)
-        data = {'user': self.user,
+        data = {'user': user,
                 'start_time': start,
                 'end_time': end,
                 'seconds_paused': pause,
@@ -200,7 +202,9 @@ class TimepieceDataTestCase(TestCase):
 
     def setUp(self):
         self.user = User.objects.create_user('user', 'u@abc.com', 'abc')
+        self.user.last_name = 'Jones'
         self.user2 = User.objects.create_user('user2', 'u2@abc.com', 'abc')
+        self.user2.last_name = 'Smith'
         self.superuser = User.objects.create_user('superuser',
                                                   'super@abc.com', 'abc')
         permissions = Permission.objects.filter(
@@ -212,6 +216,8 @@ class TimepieceDataTestCase(TestCase):
         self.user2.user_permissions = permissions
         self.superuser.is_superuser = True
         self.superuser.save()
+        self.user.save()
+        self.user2.save()
         self.user = self.user
         self.activity = timepiece.Activity.objects.create(
             code="WRK",
