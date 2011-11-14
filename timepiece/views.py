@@ -309,7 +309,7 @@ def delete_entry(request, entry_id):
 
 
 @permission_required('timepiece.view_entry_summary')
-@render_with('timepiece/time-sheet/general_ledger.html')
+@render_with('timepiece/time-sheet/reports/general_ledger.html')
 def summary(request, username=None):
     if request.GET:
         form = timepiece_forms.DateForm(request.GET)
@@ -678,17 +678,8 @@ def invoice_projects(request, form, from_date, to_date, status, activity):
         'project__pk', 'status', 'project__status__label'
     ).annotate(s=Sum('hours')).order_by('project__type__label',
                                         'project__name', 'status')
-    cals = []
-    if from_date:
-        date = from_date - relativedelta(months=1)
-        end_date = from_date + relativedelta(months=1)
-        html_cal = calendar.HTMLCalendar(calendar.SUNDAY)
-        while date < end_date:
-            cals.append(html_cal.formatmonth(date.year, date.month))
-            date += relativedelta(months=1)
     return render_to_response('timepiece/time-sheet/invoice_projects.html', {
         'form': form,
-        'cals': cals,
         'project_totals': project_totals,
         'to_date': to_date - relativedelta(days=1),
         'from_date': from_date,
@@ -1106,11 +1097,12 @@ def create_edit_person_time_sheet(request, person_id=None):
 
 
 @permission_required('timepiece.view_payroll_summary')
-@render_with('timepiece/time-sheet/payroll/summary.html')
+@render_with('timepiece/time-sheet/reports/summary.html')
 @utils.date_filter
 def payroll_summary(request, form, from_date, to_date, status, activity):
     last_billable = utils.get_last_billable_day(from_date)
-    all_weeks = utils.generate_weeks(start=from_date, end=last_billable)
+    all_weeks = utils.generate_dates(start=from_date,
+                                     end=last_billable, by='week')
     workers = timepiece.Entry.objects.filter(
         end_time__gt=utils.get_week_start(from_date),
         end_time__lt=last_billable + datetime.timedelta(days=1)
@@ -1122,17 +1114,9 @@ def payroll_summary(request, form, from_date, to_date, status, activity):
     ).order_by('user__last_name')
     for rp in rps:
         rp.user.summary = rp.summary(from_date, to_date)
-    cals = []
-    date = from_date - relativedelta(months=1)
-    end_date = from_date + relativedelta(months=1)
-    html_cal = calendar.HTMLCalendar(calendar.SUNDAY)
-    while date < end_date:
-        cals.append(html_cal.formatmonth(date.year, date.month))
-        date += relativedelta(months=1)
     return {
         'form': form,
         'all_weeks': all_weeks,
-        'cals': cals,
         'periods': rps,
         'to_date': to_date,
         'from_date': from_date,
@@ -1152,7 +1136,7 @@ def projection_summary(request, form, from_date, to_date, status, activity):
         project__in=settings.TIMEPIECE_PROJECTS.values())
     contracts = contracts.order_by('end_date')
     users = User.objects.filter(assignments__contract__in=contracts).distinct()
-    weeks = utils.generate_weeks(start=from_date, end=to_date)
+    weeks = utils.generate_dates(start=from_date, end=to_date, by='week')
 
     return {
         'form': form,
@@ -1190,3 +1174,58 @@ def edit_settings(request):
         profile_form = timepiece_forms.UserProfileForm(instance=profile)
         user_form = timepiece_forms.UserForm(instance=request.user)
     return {'profile_form': profile_form, 'user_form': user_form}
+
+
+@permission_required('timepiece.view_payroll_summary')
+@render_with('timepiece/time-sheet/reports/hourly.html')
+@utils.date_filter
+def hourly_report(request, date_form, from_date, to_date, status, activity):
+    if not from_date:
+        from_date = utils.get_month_start(datetime.datetime.today()).date()
+    if not to_date:
+        to_date = from_date + relativedelta(months=1)
+    header_to = to_date - relativedelta(days=1)
+    trunc = timepiece_forms.ProjectFiltersForm.DEFAULT_TRUNC
+    query = Q(end_time__gt=utils.get_week_start(from_date),
+              end_time__lt=to_date)
+    if 'ok' in request.GET or 'export' in request.GET:
+        form = timepiece_forms.ProjectFiltersForm(request.GET)
+        if form.is_valid():
+            trunc = form.cleaned_data['trunc']
+            if not form.cleaned_data['paid_leave']:
+                projects = getattr(settings, 'TIMEPIECE_PROJECTS', {})
+                query &= ~Q(project__in=projects.values())
+            if form.cleaned_data['pj_select']:
+                query &= Q(project__in=form.cleaned_data['pj_select'])
+    else:
+        form = timepiece_forms.ProjectFiltersForm()
+    hour_type = form.get_hour_type()
+    entries = timepiece.Entry.objects.date_trunc(trunc).filter(query)
+    date_headers = utils.generate_dates(from_date, header_to, by=trunc)
+    project_totals = utils.project_totals(entries, date_headers, hour_type) \
+        if entries else ''
+    if not request.GET.get('export', False):
+        return {
+            'date_form': date_form,
+            'from_date': from_date,
+            'date_headers': date_headers,
+            'pj_filters': form,
+            'trunc': trunc,
+            'project_totals': project_totals,
+        }
+    else:
+        from_date_str = from_date.strftime('%m-%d')
+        to_date_str = to_date.strftime('%m-%d')
+        response = HttpResponse(mimetype='text/csv')
+        response['Content-Disposition'] = \
+            'attachment; filename="%s_hours_%s_to_%s_by_%s.csv"' % (
+            hour_type, from_date_str, to_date_str, trunc)
+        writer = csv.writer(response)
+        headers = ['Name']
+        headers.extend([date.strftime('%m/%d/%Y') for date in date_headers])
+        writer.writerow(headers)
+        for name, hours in project_totals:
+            data = [' '.join((name[1], name[0]))]
+            data.extend([hour or '' for hour in hours])
+            writer.writerow(data)
+        return response

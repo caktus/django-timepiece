@@ -16,7 +16,6 @@ urlpatterns = patterns('',
         name='timepiece-update'),
     url(r'^delete/(?P<entry_id>\d+)/$', views.delete_entry,
         name='timepiece-delete'),
-    url(r'^summary/', views.summary, name='timepiece-summary'),
     url(r'^search/$', views.quick_search, name='quick_search'),
 
     url(r'^person/list/$', views.list_people, name='list_people'),
@@ -95,7 +94,9 @@ urlpatterns = patterns('',
         views.tracked_people,
         name='tracked_people',
     ),
-
+    url(r'^reports/$', views.hourly_report, name='hourly_report'),
+    url(r'^reports/summary/$', views.summary, name='timepiece-summary'),
+    url(r'^reports/payroll/$', views.payroll_summary, name='payroll_summary',),
     url(
         r'^time-sheet/people/create/$',
         views.create_edit_person_time_sheet,
@@ -120,6 +121,7 @@ urlpatterns = patterns('',
         views.time_sheet_change_status,
         name='time_sheet_change_status',
     ),
+
     url(
         r'^time-sheet/project/(?P<project_id>\d+)/(?:(?P<window_id>\d+)/)?$',
         views.project_time_sheet,
@@ -131,17 +133,10 @@ urlpatterns = patterns('',
         views.export_project_time_sheet,
         name='export_project_time_sheet',
     ),
-
     url(
         r'^time-sheet/project/invoices/$',
         views.invoice_projects,
         name='invoice_projects',
-    ),
-
-    url(
-        r'^payroll/summary/$',
-        views.payroll_summary,
-        name='payroll_summary',
     ),
 
     url(

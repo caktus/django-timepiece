@@ -198,6 +198,19 @@ class EntryManager(models.Manager):
                                    'timepiece_attribute.billable'})
         return qs
 
+    def date_trunc(self, key='month'):
+        qs = self.get_query_set()
+        select = {"day": {"date": """DATE_TRUNC('day', end_time)"""},
+                  "week": {"date": """DATE_TRUNC('week', end_time)"""},
+                  "month": {"date": """DATE_TRUNC('month', end_time)"""},
+        }
+        qs = qs.extra(select=select[key]).values('user', 'user__first_name',
+                                                 'user__last_name', 'date',
+                                                 'billable',)
+        qs = qs.annotate(hours=Sum('hours')).order_by('user__last_name',
+                                                      'date')
+        return qs
+
 
 class EntryWorkedManager(models.Manager):
     def get_query_set(self):
@@ -632,7 +645,7 @@ class PersonRepeatPeriod(models.Model):
 
     def total_monthly_overtime(self, day):
         start = day.replace(day=1)
-        weeks = utils.generate_weeks(start=start,
+        weeks = utils.generate_dates(start=start,
                                      end=utils.get_last_billable_day(start))
         overtime = Decimal('0.0')
         for week in weeks:
@@ -749,7 +762,7 @@ class ProjectContract(models.Model):
 
     @property
     def weeks_remaining(self):
-        return utils.generate_weeks(end=self.end_date)
+        return utils.generate_dates(end=self.end_date, by='week')
 
     def __unicode__(self):
         return unicode(self.project)

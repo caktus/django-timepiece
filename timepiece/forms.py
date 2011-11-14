@@ -1,14 +1,22 @@
 from decimal import Decimal
+from datetime import datetime, timedelta
+from dateutil.relativedelta import relativedelta
 
 from django import forms
 from django.db.models import Q
 from django.conf import settings
-
 from django.contrib.auth import models as auth_models
 from django.contrib.auth import forms as auth_forms
 from django.core.urlresolvers import reverse
 from django.utils.translation import ugettext_lazy as _
 from django.core.exceptions import ValidationError, NON_FIELD_ERRORS
+
+from selectable import forms as selectable_forms
+from timepiece.lookups import ProjectLookup
+
+from ajax_select.fields import AutoCompleteSelectMultipleField, \
+                               AutoCompleteSelectField, \
+                               AutoCompleteSelectWidget
 
 from timepiece.models import Project, Entry, Activity, UserProfile
 from timepiece.fields import PendulumDateTimeField
@@ -16,13 +24,43 @@ from timepiece.widgets import PendulumDateTimeWidget, SecondsToHoursWidget
 from timepiece import models as timepiece
 from timepiece import utils
 
-from datetime import datetime, timedelta
-from dateutil.relativedelta import relativedelta
 
+class ProjectFiltersForm(forms.Form):
+    TRUNC_CHOICES = [
+        ('day', 'Day'),
+        ('week', 'Week'),
+        ('month', 'Month'),
+    ]
+    DEFAULT_TRUNC = TRUNC_CHOICES[2][0]
+    billable = forms.BooleanField(initial=True, required=False)
+    non_billable = forms.BooleanField(label='Non-Billable', initial=True,
+                                      required=False)
+    paid_leave = forms.BooleanField(initial=True, required=False)
+    trunc = forms.ChoiceField(label='Group Totals By:', choices=TRUNC_CHOICES,
+                              widget=forms.RadioSelect(), required=False,
+                              initial=DEFAULT_TRUNC)
+    pj_select = selectable_forms.AutoCompleteSelectMultipleField(ProjectLookup,
+        label='Project Name:', required=False)
 
-from ajax_select.fields import AutoCompleteSelectMultipleField, \
-                               AutoCompleteSelectField, \
-                               AutoCompleteSelectWidget
+    def clean_trunc(self):
+        trunc = self.cleaned_data.get('trunc', '')
+        if not trunc:
+            trunc = self.DEFAULT_TRUNC
+        return trunc
+
+    def get_hour_type(self):
+        try:
+            billable = self.cleaned_data.get('billable', False)
+            non_billable = self.cleaned_data.get('non_billable', False)
+        except AttributeError:
+            return 'total'
+        if billable and non_billable:
+            return 'total'
+        elif billable:
+            return 'billable'
+        elif non_billable:
+            return 'non_billable'
+        return 'nothing'
 
 
 class CreatePersonForm(auth_forms.UserCreationForm):
@@ -425,6 +463,10 @@ class PersonTimeSheet(forms.ModelForm):
         super(PersonTimeSheet, self).__init__(*args, **kwargs)
         self.fields['user'].queryset = \
             auth_models.User.objects.all().order_by('last_name')
+
+
+class SearchForm(forms.Form):
+    search = forms.CharField(required=False)
 
 
 class UserForm(forms.ModelForm):

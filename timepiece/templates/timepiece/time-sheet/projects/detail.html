@@ -1,0 +1,116 @@
+{% extends 'timepiece/time-sheet/base.html' %}
+{% load timepiece_tags %}
+
+{% block title %}Payroll Per Project{% endblock %}
+
+{% block css %}
+    <link rel="stylesheet" href="https://ajax.googleapis.com/ajax/libs/jqueryui/1.8.13/themes/ui-lightness/jquery-ui.css" type="text/css" media="screen">
+    <!--From timepiece's base.html 
+        This is a mess, but it is temporarily needed until we move away from autocomplete
+    -->
+    <link rel="stylesheet" href="{{ STATIC_URL }}timepiece/css/style.css" type="text/css" />
+    <link charset='UTF-8' rel="stylesheet" type="text/css" media="screen" href="{{ STATIC_URL }}css/books.css" />
+{% endblock %}
+{% block base-javascript %}{% endblock %}
+{% block javascript %}
+    <script type="text/javascript" src="https://ajax.googleapis.com/ajax/libs/jquery/1.4.4/jquery.min.js"></script>
+    <script type="text/javascript" src="https://ajax.googleapis.com/ajax/libs/jqueryui/1.8.13/jquery-ui.min.js"></script>
+	<script src="{{ STATIC_URL }}js/django-crm.js" type="text/javascript"></script>
+	<script src="{{ STATIC_URL }}js/minibooks.js" type="text/javascript"></script>
+    {{pj_filters.media}}
+{% endblock %}
+
+{% block content %}
+{% block quick-search %}{% endblock %}
+
+<h2>Reports</h2>
+<ul class='header-actions-left'>
+    <li>
+        Hourly
+    </li>
+    <li>
+        {% if perms.timepiece.view_entry_summary %}
+            <a href='{% url timepiece-summary %}'>General Ledger</a>
+        {% endif %}
+    </li>
+    <li>
+        {% if perms.timepiece.view_payroll_summary %}
+            <a href='{% url payroll_summary %}'>Payroll Report</a>
+        {% endif %}
+    </li>
+</ul>
+
+{% date_filters %}
+
+<div id="sidebar">
+<form method="get" action="" id="pj_select" accept-charset="utf-8">
+    <ul id='ledger-date-fieldlist'>
+        {{ date_form.as_ul }}
+    </ul>
+    <div id='project_billable_form'>
+        {% for field in pj_filters %}<br/>
+            {% if field.label != 'Project Name:' and field.label != 'Group Totals By:' %}
+                {{field}}
+                {% if field.label != 'Pjs' %}
+                    {{ field.label}}
+                {% endif %}
+            <br/>
+            {% else %}
+                {{field.label}} {{field}}
+            {% endif %}
+        {% endfor %}
+        <input type='submit' name='ok' value="Apply Filters" id='billable'/>
+        {% if perms.timepiece.export_project_time_sheet %}
+            <button type='submit' name='export' value="True">Export as CSV</button>
+        {% endif %}
+    </div>
+</form>
+</div>
+
+{% if project_totals %}
+    <div id="scroll_box">
+        <table class='project'>
+            <tr class="header">
+                <th class='name_col'>Name</th>
+                {% for date in date_headers %}
+                    {% if trunc == 'month' %}
+                        <th>{{date|date:"M 'Y"}}</th>
+                    {% else %}
+                        <th>{{date|date:"M/d/Y"}}</th>
+                    {% endif %}
+                {% endfor %}
+            </tr>
+            {% for name, hours in project_totals %}
+                {% if name.0 != "Totals:" %}
+                    <tr class="{% cycle 'odd' 'even' %}">
+                {% else %}
+                    <tr class="total">
+                {% endif %}
+                        <th class='name_col'>{{name.1}} {{name.0}}</th>
+                        {% for num in hours %}
+                        <td title='{{name.1}}'> {% if num %}{{num}}{% endif %}</td>
+                        {% endfor %}
+                    </tr>
+            {% endfor %}
+        </table>
+    </div>
+    {% else %}
+        <p>No entries found.</p>
+{% endif %}
+
+<div id="cal_wrapper">
+
+    <div class="cal left">
+        {% show_cal from_date -1 %}
+    </div>
+    <div class="cal middle">
+        {% show_cal from_date 0 %}
+    </div>
+    <div class="cal right">
+        {% show_cal from_date 1 %}
+    </div>
+</div>
+
+<br style='clear: both' />
+{% endblock %}
+
