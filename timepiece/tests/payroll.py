@@ -180,7 +180,7 @@ class PayrollTest(TimepieceDataTestCase):
                       status='approved')
         self.assertEqual(rp.total_monthly_overtime(start1), Decimal('4.00'))
 
-    def testLastSat(self):
+    def testLastBillable(self):
         """Test the get_last_billable_day utility for validity"""
         months = range(1, 13)
         first_days = [datetime.datetime(2011, month, 1) for month in months]

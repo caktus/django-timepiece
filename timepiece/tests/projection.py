@@ -50,24 +50,51 @@ class ProjectionTest(TimepieceDataTestCase):
         saturday = datetime.date(2011, 1, 22)
         self.assertEqual(following_monday, utils.get_week_start(saturday))
 
-    def test_generate_weeks(self):
-        """ Test generation of full week ranges """
+    def  test_month_start(self):
+        """ Test that any day returns the first day of the month"""
+        days = [datetime.date(2011, 1, 1),
+                datetime.date(2011, 1, 16),
+                datetime.date(2011, 1, 17),
+                datetime.date(2011, 1, 22),
+                datetime.date(2011, 1, 31),
+                ]
+        for day in days:
+            self.assertEqual(utils.get_month_start(day),
+                             datetime.date(2011, 1, 1))
+
+    def test_generate_dates(self):
+        """ Test generation of full date ranges """
+        ### test WEEKLY
         # 2 weeks
         start = datetime.date(2011, 1, 17)
         end = datetime.date(2011, 1, 29)
-        weeks = utils.generate_weeks(start=start, end=end)
+        weeks = utils.generate_dates(start=start, end=end)
         self.assertEqual(2, weeks.count())
         # 3 weeks
         start = datetime.date(2011, 1, 17)
         end = datetime.date(2011, 1, 31)
-        weeks = utils.generate_weeks(start=start, end=end)
+        weeks = utils.generate_dates(start=start, end=end)
         self.assertEqual(3, weeks.count())
         # random weeks
         num = random.randint(5, 20)
         start = utils.get_week_start(datetime.date.today())
         end = start + datetime.timedelta(weeks=num - 1)
-        weeks = utils.generate_weeks(start=start, end=end)
+        weeks = utils.generate_dates(start=start, end=end)
         self.assertEqual(num, weeks.count())
+        ### test MONTHLY
+        start = datetime.date(2011, 1, 17)
+        end = datetime.date(2011, 4, 29)
+        months = utils.generate_dates(start=start, end=end, by='month')
+        self.assertEqual(4, months.count())
+        for index, month in enumerate(months):
+            self.assertEqual(month.date(), datetime.date(2011, index + 1, 1))
+        ### test DAILY
+        start = datetime.date(2011, 2, 1)
+        end = datetime.date(2011, 2, 15)
+        days = utils.generate_dates(start=start, end=end, by='day')
+        self.assertEqual(15, days.count())
+        for index, day in enumerate(days):
+            self.assertEqual(day.date(), datetime.date(2011, 2, index + 1))
 
     def test_week_window(self):
         """ Test generation of weekly window with given date """

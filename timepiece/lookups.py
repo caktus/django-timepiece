@@ -2,7 +2,17 @@ from django.db.models import Q
 from django.core.urlresolvers import reverse
 from django.contrib.auth import models as auth_models
 
+from selectable.base import ModelLookup
+from selectable.base import LookupBase
+from selectable.registry import registry
+
 from timepiece import models as timepiece
+
+
+class ProjectLookup(ModelLookup):
+    model = timepiece.Project
+    search_field = 'name__icontains'
+registry.register(ProjectLookup)
 
 
 class UserLookup(object):

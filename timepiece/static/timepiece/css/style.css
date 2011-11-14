@@ -10,6 +10,46 @@ body {
 }
 */
 
+
+/*+    background-color: #EDEDFF;*/
+
+/*+    background-color: #8FA8D0;*/
+
+/*+    background-color: #DFDFEF;*/
+
+#scroll_box {
+    width: 900px;
+    overflow-x:auto;
+}
+
+table.project{
+    table-layout: fixed;
+}
+
+tr.name_col{
+    width: 400px;
+}
+
+tr.header{
+    background-color: #8FA8D0;
+}
+
+tr.odd{
+    background-color: #EDEDFF;
+}
+
+tr.even{
+    background-color: #DFDFEF;
+}
+
+tr.total{
+    background-color: #CFFFCF;
+}
+
+td.date_col{
+    border-left: 1px solid #8FA8D0;
+    border-right: 1px solid #8FA8D0;
+}
 ul.actions {
     margin: 0;
     font-size: 93%;
@@ -57,6 +97,49 @@ tr.weekly_total{
 td.hours{
     text-align: right;
 }
+
+button {
+    margin: 10px;
+}
+
+#cal_wrapper{
+    width: 900px;
+    margin: 10px 0px;
+}
+
+.cal{
+    float: left;
+    padding: 24px;    
+}
+
+.cal.left, div.cal.right {
+    background-color: #EDEDFF;
+}
+
+.cal.middle {
+    background-color: #DFDFEF;
+}
+
+#project_billable_form input[type='submit'], #project_billable_form button{
+    padding: 3px;
+}
+
+#project_billable_form input[type='checkbox'] {
+    margin: 4px;
+}
+
+#project_billable_form ul.parent {
+    margin: 0px;
+}
+#project_billable_form ul {
+    margin: 4px 2em;
+}
+
+#project_billable_form li {
+    padding: 1px;
+    list-style-type: none;
+}
+
 /*th, td {
     padding: 0.2em; 
 }

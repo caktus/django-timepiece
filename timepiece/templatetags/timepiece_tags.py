@@ -1,5 +1,6 @@
 import urllib
 import datetime
+import calendar
 from decimal import Decimal
 
 from django import template
@@ -11,7 +12,7 @@ from dateutil.relativedelta import relativedelta
 
 from timepiece.models import PersonRepeatPeriod, AssignmentAllocation
 import timepiece.models as timepiece
-from timepiece.utils import generate_weeks, get_total_time, get_week_start
+from timepiece.utils import get_total_time, get_week_start, get_month_start
 
 
 register = template.Library()
@@ -65,26 +66,22 @@ def my_ledger(context):
 
 @register.inclusion_tag('timepiece/time-sheet/_date_filters.html',
     takes_context=True)
-def date_filters(context, options):
+def date_filters(context, options=None):
     request = context['request']
     from_slug = 'from_date'
     to_slug = 'to_date'
     use_range = True
     if not options:
-        options = ('months', 'quaters', 'years')
+        options = ('months', 'quarters', 'years')
 
     def construct_url(from_date, to_date):
-        url = '%s?%s=%s' % (
-            request.path,
-            to_slug,
-            to_date.strftime('%m/%d/%Y'),
-        )
+        query = request.GET.copy()
+        query.pop(to_slug, None)
+        query.pop(from_slug, None)
+        query[to_slug] = to_date.strftime('%m/%d/%Y')
         if use_range:
-            url += '&%s=%s' % (
-                from_slug,
-                from_date.strftime('%m/%d/%Y'),
-            )
-        return url
+            query[from_slug] = from_date.strftime('%m/%d/%Y')
+        return '%s?%s' % (request.path, query.urlencode())
 
     filters = {}
     if 'months_no_range' in options:
@@ -118,20 +115,20 @@ def date_filters(context, options):
         start = datetime.date.today().year - 3
 
         filters['Years'] = []
-        for year in range(start, start + 3):
+        for year in range(start, start + 4):
             from_date = datetime.datetime(year, 1, 1)
             to_date = from_date + relativedelta(years=1)
             url = construct_url(from_date, to_date - relativedelta(days=1))
             filters['Years'].append((str(from_date.year), url))
 
-    if 'quaters' in options:
-        filters['Quaters (Calendar Year)'] = []
+    if 'quarters' in options:
+        filters['Quarters (Calendar Year)'] = []
         to_date = datetime.date(datetime.date.today().year - 1, 1, 1)
         for x in range(8):
             from_date = to_date
             to_date = from_date + relativedelta(months=3)
             url = construct_url(from_date, to_date - relativedelta(days=1))
-            filters['Quaters (Calendar Year)'].append(
+            filters['Quarters (Calendar Year)'].append(
                 ('Q%s %s' % ((x % 4) + 1, from_date.year), url)
             )
 
@@ -198,6 +195,14 @@ def get_active_hours(entry):
         else:
             entry.end_time = datetime.datetime.now()
     return Decimal('%.2f' % round(entry.total_hours, 2))
+
+
+@register.simple_tag
+def show_cal(from_date, offset=0):
+    date = get_month_start(from_date)
+    date = date + relativedelta(months=offset)
+    html_cal = calendar.HTMLCalendar(calendar.SUNDAY)
+    return html_cal.formatmonth(date.year, date.month)
 
 
 @register.inclusion_tag('timepiece/time-sheet/_invoice_row.html',
