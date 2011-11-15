@@ -20,7 +20,6 @@ Requirements
  * `django-selectable <http://pypi.python.org/pypi/django-selectable>`_
  * `django-ajax-selects <http://pypi.python.org/pypi/django-ajax-selects>`_
  * `django-pagination <http://pypi.python.org/pypi/django-pagination>`_
- * `textile <http://pypi.python.org/pypi/textile>`_
 
 Installation
 ------------
