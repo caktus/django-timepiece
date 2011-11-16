@@ -38,66 +38,62 @@
 </form>
 
 <div class="cal_wrapper" style='float: right;'>
-    <div class="cal left"> {% show_cal from_date -1 %} </div>
+    <div class="cal left"> {% show_cal from_date 1 %} </div>
     <div class="cal middle"> {% show_cal from_date 0 %} </div>
 </div>
 
 
 <h3>Weekly Summary</h3>
-
-<table>
-    <tr>
-        <th>&nbsp;</th>
-        {% for week in all_weeks %}
-            <th>{{ week|date:"n/j" }}</th>
+{% if weekly_totals %}
+    <table class='project'>
+        <tr class="header">
+            <th class='name_col'>Name</th>
+            {% for date in date_headers %}
+                <th>{{date|date:"M/d"}}</th>
+            {% endfor %}
+            <th>Overtime</th>
+        </tr>
+        {% for name, hours in weekly_totals %}
+            {% if name.0 != "Totals:" %}
+                <tr class="{% cycle 'odd' 'even' %}">           
+                    <th class='name_col'>{{name.1}} {{name.0}}</th>
+                    {% for num in hours %}
+                        <td class='hours' title='{{name.1}}'>{{num|default:""}}</td>
+                    {% endfor %}
+                </tr>
+            {% endif %}
         {% endfor %}
-        <th>Overtime</th>
-    </tr>
-    {% for period in periods %}
-        {% with period.user as user %}
-            <tr{% if user.overtime > 40.00 %} class='overtime'{% endif %}>
-                <th>{{ user.first_name }} {{ user.last_name }}</th>
-                {% for week in all_weeks %}
-                    <td>{% weekly_hours_worked period week %}</td>
-                {% endfor %}
-                <td>{% monthly_overtime period from_date %}
-            </tr>
-        {% endwith %}
-    {% endfor %}
-</table>
+    </table>
+    {% else %}
+        <p>No entries found.</p>
+{% endif %}
 
 <h3>Hourly Summary</h3>
 
 <table>
     <tr>
         <th>&nbsp;</th>
-        <th>Billable</th>
-        <th>Non-Billable</th>
+        <th colspan="2">Billable</th>
+        <th colspan="2">Non-Billable</th>
         <th>Total Worked</th>
-        <th>Paid Leave</th>
+        <th style="text-align:right;">Paid Leave</th>
         <th>Grand Total</th>
     </tr>
-    {% for period in periods %}
-        {% with period.user as user %}
-            <tr>
-                <th>{{ user.first_name }} {{ user.last_name }}</th>
-                {% if user.summary %}
-                    <td>{% if user.summary.billable %}{{ user.summary.billable }} ({% widthratio user.summary.billable user.summary.total_worked 100 %}%){% endif %}</td>
-                    <td>{% if user.summary.non_billable %}{{ user.summary.non_billable }} ({% widthratio user.summary.non_billable user.summary.total_worked 100 %}%){% endif %}</td>
-                    <td>{% if user.summary.total_worked %}{{ user.summary.total_worked }}{% endif %}</td>
-                    <td>
-                    {% for leave_type, leave_hours in user.summary.paid_leave.iteritems %}
-                        {% if leave_hours %}
-                        {{ leave_type|capfirst }}: {{ leave_hours }}<br/>
-                        {% endif %}
-                    {% endfor %}
-                    </td>
-                    <td>{{ user.summary.total|default_if_none:'' }}</td>
-                {% else %}
-                    <td colspan='5'>&nbsp;</td>
-                {% endif %}
-            </tr>
-        {% endwith %}
+    {% for name, hours, descs, all in monthly_totals %}
+        <tr class="{% cycle 'odd' 'even' %}">           
+            <th class='name_col'>{{name.1}} {{name.0}}</th>
+            {% for num in hours|slice:"0:2" %}
+                <td class="hours">{{num.0|default:""}}</td>
+                <td class="hours">{% if num.1 %}({{num.1}}%){% endif %}</td>
+            {% endfor %}
+            <td class="hours">{{hours.2}}</td>
+            <td class="hours" style="width: 200px;">
+            {% for desc in descs %}
+                {{desc.0}}:&nbsp;&nbsp;{{desc.1}}
+            {% endfor %}
+            </td>
+            <td class="hours">{{all}}</td>
+        </tr>
     {% endfor %}
 </table>
 {% endblock %}

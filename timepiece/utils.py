@@ -353,9 +353,44 @@ def grouped_totals(entries):
         last_week = week
     yield week, weeks.get(week, {}), days
 
+def find_overtime(dates):
+    return sum([day - 40 for day in dates if day > 40])
 
-def project_totals(entries, date_headers, hour_type):
-    totals = []
+def find_leave(leave):
+    leave_hours = 0
+    leave_desc = {}
+    for entry in leave:
+        pj = entry.get('project__name')
+        pj_hours = entry.get('hours')
+        old = leave_desc.get(pj, 0)
+        leave_desc[pj] = pj_hours + old
+        leave_hours += pj_hours
+    return leave_desc.items(), leave_hours
+
+def get_hour_summaries(total_dict):
+    all_totals = {}
+    for k, v in total_dict.items():
+        old = all_totals.get(k, 0)
+        all_totals[k] = old + v
+    billable = all_totals.get('billable', 0)
+    non_billable = all_totals.get('non_billable', 0)
+    worked = all_totals.get('total', 0)
+    if worked > 0:
+        return [
+            (billable, round(billable/worked * 100, 2)),
+            (non_billable, round(non_billable/worked * 100, 2)),
+            worked,
+        ]
+    else:
+        return [(0, 0), (0, 0), 0]
+
+def project_totals(entries, date_headers, hour_type,
+                   overtime=False, leave=None):
+    """
+    Yield hour totals grouped by user and date. Optionally including overtime
+    or paid leave.
+    """
+    totals = [0 for date in date_headers]
     for user, user_entries in groupby(entries, lambda x: x['user']):
         date_dict = {}
         for date, date_entries in groupby(user_entries, lambda x: x['date']):
@@ -366,11 +401,20 @@ def project_totals(entries, date_headers, hour_type):
             date_dict[date] = hours
         dates = []
         for index, day in enumerate(date_headers):
-            total = date_dict.get(day, {}).get(hour_type, 0)
-            dates.append(total)
-            try:
+            if hour_type == 'all':
+                dates = get_hour_summaries(date_dict.get(day, {}))                
+            else:
+                total = date_dict.get(day, {}).get(hour_type, 0)
                 totals[index] += total
-            except IndexError:
-                totals.append(total)
-        yield (name, dates)
-    yield (('Totals:', ''), totals)
+                dates.append(total)
+        if overtime:
+            dates.append(find_overtime(dates))
+        if leave:
+            leave_desc, leave_hours = find_leave(leave.filter(user=user))
+            all_hours = dates[2] + leave_hours
+            yield (name, dates, leave_desc, all_hours)
+        else:
+            yield (name, dates)
+    #Totals doesn't work with all, because we can't add a dictionary simply
+    if hour_type != 'all':
+        yield (('Totals:', ''), totals)

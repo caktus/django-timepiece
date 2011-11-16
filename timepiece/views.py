@@ -1100,26 +1100,38 @@ def create_edit_person_time_sheet(request, person_id=None):
 @render_with('timepiece/time-sheet/reports/summary.html')
 @utils.date_filter
 def payroll_summary(request, form, from_date, to_date, status, activity):
+    if not from_date:
+        from_date = utils.get_month_start(datetime.datetime.today()).date()
+    if not to_date:
+        to_date = from_date + relativedelta(months=1)
     last_billable = utils.get_last_billable_day(from_date)
-    all_weeks = utils.generate_dates(start=from_date,
-                                     end=last_billable, by='week')
-    workers = timepiece.Entry.objects.filter(
-        end_time__gt=utils.get_week_start(from_date),
-        end_time__lt=last_billable + datetime.timedelta(days=1)
-        ).values_list('user', flat=True).distinct()
-    rps = timepiece.PersonRepeatPeriod.objects.select_related(
-        'user', 'repeat_period',
-    ).filter(
-        repeat_period__active=True, user__id__in=workers
-    ).order_by('user__last_name')
-    for rp in rps:
-        rp.user.summary = rp.summary(from_date, to_date)
+    projects = getattr(settings, 'TIMEPIECE_PROJECTS', {})
+    weekQ = Q(end_time__gt=utils.get_week_start(from_date),
+              end_time__lt=last_billable + datetime.timedelta(days=1))
+    monthQ = Q(end_time__gt=from_date, end_time__lt=to_date)
+    statusQ = Q(status='invoiced') | Q(status='approved')
+    workQ = ~Q(project__in=projects.values())
+
+    entries = timepiece.Entry.objects.date_trunc('week').filter(weekQ, statusQ, workQ)
+
+    date_headers = utils.generate_dates(from_date, last_billable, by='week')
+    weekly_totals = utils.project_totals(entries, date_headers, 'total',
+                                         overtime=True
+                                         ) if entries else ''
+
+    leave = timepiece.Entry.objects.filter(monthQ, statusQ, ~workQ).values('user', 'hours', 'project__name')
+    months = utils.generate_dates(from_date, from_date, by='month')
+    month_entries = timepiece.Entry.objects.date_trunc('month').filter(monthQ, statusQ,
+                                                                       workQ)
+    monthly_totals = utils.project_totals(month_entries, months, 'all',
+                                          overtime=False, leave=leave) \
+        if month_entries else ''
+
     return {
-        'form': form,
-        'all_weeks': all_weeks,
-        'periods': rps,
-        'to_date': to_date,
         'from_date': from_date,
+        'date_headers': date_headers,
+        'weekly_totals': weekly_totals,
+        'monthly_totals': monthly_totals,
     }
 
 
