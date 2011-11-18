@@ -38,7 +38,7 @@
 </form>
 
 <div class="cal_wrapper" style='float: right;'>
-    <div class="cal left"> {% show_cal from_date 1 %} </div>
+    <div class="cal left"> {% show_cal from_date -1 %} </div>
     <div class="cal middle"> {% show_cal from_date 0 %} </div>
 </div>
 
@@ -70,31 +70,35 @@
 
 <h3>Hourly Summary</h3>
 
-<table>
-    <tr>
-        <th>&nbsp;</th>
-        <th colspan="2">Billable</th>
-        <th colspan="2">Non-Billable</th>
-        <th>Total Worked</th>
-        <th style="text-align:right;">Paid Leave</th>
-        <th>Grand Total</th>
-    </tr>
-    {% for name, hours, descs, all in monthly_totals %}
-        <tr class="{% cycle 'odd' 'even' %}">           
-            <th class='name_col'>{{name.1}} {{name.0}}</th>
-            {% for num in hours|slice:"0:2" %}
-                <td class="hours">{{num.0|default:""}}</td>
-                <td class="hours">{% if num.1 %}({{num.1}}%){% endif %}</td>
-            {% endfor %}
-            <td class="hours">{{hours.2}}</td>
-            <td class="hours" style="width: 200px;">
-            {% for desc in descs %}
-                {{desc.0}}:&nbsp;&nbsp;{{desc.1}}
-            {% endfor %}
-            </td>
-            <td class="hours">{{all}}</td>
+{% if monthly_totals %}
+    <table>
+        <tr>
+            <th>Name</th>
+            <th colspan="2">Billable</th>
+            <th colspan="2">Non-Billable</th>
+            <th>Total Worked</th>
+            <th style="text-align:right;">Paid Leave</th>
+            <th>Grand Total</th>
         </tr>
-    {% endfor %}
-</table>
+        {% for name, hours, descs, all in monthly_totals %}
+            <tr class="{% cycle 'odd' 'even' %}">           
+                <th class='name_col'>{{name.1}} {{name.0}}</th>
+                {% for num in hours|slice:"0:2" %}
+                    <td class="hours">{{num.0|default:""}}</td>
+                    <td class="hours">{% if num.1 %}({{num.1}}%){% endif %}</td>
+                {% endfor %}
+                <td class="hours">{{hours.2}}</td>
+                <td class="hours" style="width: 200px;">
+                {% for desc in descs %}
+                    {{desc.0}}:&nbsp;&nbsp;{{desc.1}}
+                {% endfor %}
+                </td>
+                <td class="hours">{{all}}</td>
+            </tr>
+        {% endfor %}
+    </table>
+{% else %}
+    <p> No entries found.</p>
+{% endif %}
 {% endblock %}
 

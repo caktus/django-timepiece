@@ -354,9 +354,13 @@ def grouped_totals(entries):
     yield week, weeks.get(week, {}), days
 
 def find_overtime(dates):
+    """Given a list of weekly summaries, return the overtime for each week"""
     return sum([day - 40 for day in dates if day > 40])
 
-def find_leave(leave):
+def format_leave(leave):
+    """
+    Formats leave time to ([(project name, hours)], total hours)
+    """
     leave_hours = 0
     leave_desc = {}
     for entry in leave:
@@ -368,13 +372,12 @@ def find_leave(leave):
     return leave_desc.items(), leave_hours
 
 def get_hour_summaries(total_dict):
-    all_totals = {}
-    for k, v in total_dict.items():
-        old = all_totals.get(k, 0)
-        all_totals[k] = old + v
-    billable = all_totals.get('billable', 0)
-    non_billable = all_totals.get('non_billable', 0)
-    worked = all_totals.get('total', 0)
+    """
+    Coerce totals dictionary into a list of ordered tuples with percentages
+    """
+    billable = total_dict.get('billable', 0)
+    non_billable = total_dict.get('non_billable', 0)
+    worked = total_dict.get('total', 0)
     if worked > 0:
         return [
             (billable, round(billable/worked * 100, 2)),
@@ -384,37 +387,42 @@ def get_hour_summaries(total_dict):
     else:
         return [(0, 0), (0, 0), 0]
 
-def project_totals(entries, date_headers, hour_type,
-                   overtime=False, leave=None):
+def user_date_totals(user_entries):
+    """Yield a user's name and a dictionary of their hours"""
+    date_dict = {}
+    for date, date_entries in groupby(user_entries, lambda x: x['date']):
+        d_entries = list(date_entries)
+        name = (d_entries[0]['user__last_name'],
+                d_entries[0]['user__first_name'])
+        hours = get_hours(d_entries)
+        date_dict[date] = hours
+    return name, date_dict
+
+def project_totals(entries, date_headers, hour_type, overtime=False):
     """
-    Yield hour totals grouped by user and date. Optionally including overtime
-    or paid leave.
+    Yield hour totals grouped by user and date. Optionally including overtime.
     """
     totals = [0 for date in date_headers]
     for user, user_entries in groupby(entries, lambda x: x['user']):
-        date_dict = {}
-        for date, date_entries in groupby(user_entries, lambda x: x['date']):
-            d_entries = list(date_entries)
-            name = (d_entries[0]['user__last_name'],
-                    d_entries[0]['user__first_name'])
-            hours = get_hours(d_entries)
-            date_dict[date] = hours
+        name, date_dict = user_date_totals(user_entries)
         dates = []
         for index, day in enumerate(date_headers):
-            if hour_type == 'all':
-                dates = get_hour_summaries(date_dict.get(day, {}))                
-            else:
-                total = date_dict.get(day, {}).get(hour_type, 0)
-                totals[index] += total
-                dates.append(total)
+            total = date_dict.get(day, {}).get(hour_type, 0)
+            totals[index] += total
+            dates.append(total)
         if overtime:
             dates.append(find_overtime(dates))
-        if leave:
-            leave_desc, leave_hours = find_leave(leave.filter(user=user))
-            all_hours = dates[2] + leave_hours
-            yield (name, dates, leave_desc, all_hours)
-        else:
-            yield (name, dates)
-    #Totals doesn't work with all, because we can't add a dictionary simply
-    if hour_type != 'all':
-        yield (('Totals:', ''), totals)
+        yield (name, dates)
+    yield (('Totals:', ''), totals)
+
+def payroll_totals(entries, date, leave):
+    """
+    Yield totals for a month, grouped by user and type of work.
+    """
+    date = datetime(month=date.month, day=date.day, year = date.year)
+    for user, user_entries in groupby(entries, lambda x: x['user']):
+        name, date_dict = user_date_totals(user_entries)
+        totals = get_hour_summaries(date_dict.get(date, {}))
+        leave_desc, leave_hours = format_leave(leave.filter(user=user))
+        all_hours = totals[2] + leave_hours
+        yield (name, totals, leave_desc, all_hours)

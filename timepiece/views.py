@@ -1106,27 +1106,24 @@ def payroll_summary(request, form, from_date, to_date, status, activity):
         to_date = from_date + relativedelta(months=1)
     last_billable = utils.get_last_billable_day(from_date)
     projects = getattr(settings, 'TIMEPIECE_PROJECTS', {})
+    workQ = ~Q(project__in=projects.values())
     weekQ = Q(end_time__gt=utils.get_week_start(from_date),
               end_time__lt=last_billable + datetime.timedelta(days=1))
     monthQ = Q(end_time__gt=from_date, end_time__lt=to_date)
     statusQ = Q(status='invoiced') | Q(status='approved')
-    workQ = ~Q(project__in=projects.values())
-
-    entries = timepiece.Entry.objects.date_trunc('week').filter(weekQ, statusQ, workQ)
-
+    weekQ &= statusQ
+    monthQ &= statusQ
+    #Weekly totals
+    entries = timepiece.Entry.objects.date_trunc('week').filter(weekQ, workQ)
     date_headers = utils.generate_dates(from_date, last_billable, by='week')
-    weekly_totals = utils.project_totals(entries, date_headers, 'total',
-                                         overtime=True
-                                         ) if entries else ''
-
-    leave = timepiece.Entry.objects.filter(monthQ, statusQ, ~workQ).values('user', 'hours', 'project__name')
-    months = utils.generate_dates(from_date, from_date, by='month')
-    month_entries = timepiece.Entry.objects.date_trunc('month').filter(monthQ, statusQ,
+    weekly_totals = list(utils.project_totals(entries, date_headers, 'total',
+                                         overtime=True))
+    #Monthly totals
+    leave = timepiece.Entry.objects.filter(monthQ, ~workQ
+                                  ).values('user', 'hours', 'project__name')
+    month_entries = timepiece.Entry.objects.date_trunc('month').filter(monthQ,
                                                                        workQ)
-    monthly_totals = utils.project_totals(month_entries, months, 'all',
-                                          overtime=False, leave=leave) \
-        if month_entries else ''
-
+    monthly_totals = list(utils.payroll_totals(month_entries, from_date, leave))
     return {
         'from_date': from_date,
         'date_headers': date_headers,
