@@ -34,7 +34,7 @@ class PayrollTest(TimepieceDataTestCase):
         self.url = reverse('payroll_summary')
         self.args ={
             'from_date': self.first.strftime('%m/%d/%Y'),
-            'to_date': self.last.strftime('%m/%d/%Y'),         
+            'to_date': self.last.strftime('%m/%d/%Y'),
         }
 
     def make_entry(self, user, start, delta, status='approved', billable=True,
@@ -116,6 +116,33 @@ class PayrollTest(TimepieceDataTestCase):
                           Decimal('11.00'), 0
                          ])
 
+    def testWeeklyOvertimes(self):
+        """Date_trunc on week should result in correct overtime totals"""
+        dates = self.dates
+        for day_num in xrange(28, 31):
+            dates.append(datetime.datetime(2011, 4, day_num))
+        for day_num in xrange(5, 9):
+            dates.append(datetime.datetime(2011, 5, day_num))
+        for day in dates:
+            self.make_logs(day)
+        def check_overtime(week0=55.00, week1=55.00, overtime=30.00):
+            self.client.login(username='superuser', password='abc')
+            response = self.client.get(self.url, self.args)
+            weekly_totals = response.context['weekly_totals']
+            self.assertEqual(weekly_totals[0][1][0], week0)
+            self.assertEqual(weekly_totals[0][1][1], week1)
+            self.assertEqual(weekly_totals[0][1][5], overtime)
+        check_overtime()
+        #Entry on following Monday doesn't add to week1 or overtime
+        self.make_logs(datetime.datetime(2011, 5, 9))
+        check_overtime()
+        #Entries in previous month before last_billable do not change overtime
+        self.make_logs(datetime.datetime(2011, 4, 24))
+        check_overtime()
+        #Entry in previous month after last_billable change week0 and overtime
+        self.make_logs(datetime.datetime(2011, 4, 25, 1, 0))
+        check_overtime(66.00, 55.00, 41.00)
+
     def testMonthlyTotals(self):
         self.all_logs()
         self.all_logs(self.user2)
@@ -123,19 +150,11 @@ class PayrollTest(TimepieceDataTestCase):
         response = self.client.get(self.url, self.args)
         monthly_totals = response.context['monthly_totals']
         self.assertEqual(monthly_totals[0][1],
-                         [(Decimal('45.00'), 81.82),
-                          (Decimal('10.00'), 18.18),
-                          Decimal('55.00')
+                         [(45.00, 81.82),
+                          (10.00, 18.18),
+                          55.00
                          ])
         self.assertEqual(monthly_totals[0][2],
-                         [(u'vacation', Decimal('20.00')),
-                          (u'sick', Decimal('40.00'))])
-        self.assertEqual(monthly_totals[0][3], Decimal('115.00'))
-
-"""
-TODO:
-Old tests checked that sunday belongs to the previous week for overtime and
-all other purposes. Also, overtime is not calculated for an incomplete week.
-    Double check that this happening, perhaps with smaller tests.
-        (date trunc should do all of this for us automatically)
-"""
+                         [(u'vacation', 20.00),
+                          (u'sick', 40.00)])
+        self.assertEqual(monthly_totals[0][3], 115.00)
