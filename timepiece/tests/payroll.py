@@ -84,9 +84,9 @@ class PayrollTest(TimepieceDataTestCase):
         leave = timepiece.Entry.objects.filter(project__in=projects.values())
         leave = leave.values('user', 'hours', 'project__name')
         desc, totals = utils.format_leave(leave)
-        self.assertEqual(desc[0],(u'vacation', Decimal(4.00)))
-        self.assertEqual(desc[1],(u'sick', Decimal(8.00)))
-        self.assertEqual(totals, Decimal(12.00))
+        self.assertEqual(desc[0],(u'vacation', Decimal('4.00')))
+        self.assertEqual(desc[1],(u'sick', Decimal('8.00')))
+        self.assertEqual(totals, Decimal('12.00'))
 
     def testGetHourSummaries(self):
         """
