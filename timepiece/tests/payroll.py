@@ -125,7 +125,8 @@ class PayrollTest(TimepieceDataTestCase):
             dates.append(datetime.datetime(2011, 5, day_num))
         for day in dates:
             self.make_logs(day)
-        def check_overtime(week0=55.00, week1=55.00, overtime=30.00):
+        def check_overtime(week0=Decimal('55.00'), week1=Decimal('55.00'),
+                           overtime=Decimal('30.00')):
             self.client.login(username='superuser', password='abc')
             response = self.client.get(self.url, self.args)
             weekly_totals = response.context['weekly_totals']
@@ -141,7 +142,7 @@ class PayrollTest(TimepieceDataTestCase):
         check_overtime()
         #Entry in previous month after last_billable change week0 and overtime
         self.make_logs(datetime.datetime(2011, 4, 25, 1, 0))
-        check_overtime(66.00, 55.00, 41.00)
+        check_overtime(Decimal('66.00'), Decimal('55.00'), Decimal('41.00'))
 
     def testMonthlyTotals(self):
         self.all_logs()
@@ -150,11 +151,11 @@ class PayrollTest(TimepieceDataTestCase):
         response = self.client.get(self.url, self.args)
         monthly_totals = response.context['monthly_totals']
         self.assertEqual(monthly_totals[0][1],
-                         [(45.00, 81.82),
-                          (10.00, 18.18),
-                          55.00
+                         [(Decimal('45.00'), 81.82),
+                          (Decimal('10.00'), 18.18),
+                          Decimal('55.00')
                          ])
         self.assertEqual(monthly_totals[0][2],
-                         [(u'vacation', 20.00),
-                          (u'sick', 40.00)])
-        self.assertEqual(monthly_totals[0][3], 115.00)
+                         [(u'vacation', Decimal('20.00')),
+                          (u'sick', Decimal('40.00'))])
+        self.assertEqual(monthly_totals[0][3], Decimal('115.00'))
