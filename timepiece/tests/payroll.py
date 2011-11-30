@@ -30,9 +30,9 @@ class PayrollTest(TimepieceDataTestCase):
         self.dates = [
             self.overtime_before, self.first, self.first_week, self.middle,
             self.last, self.last_billable, self.next
-        ]        
+        ]
         self.url = reverse('payroll_summary')
-        self.args ={
+        self.args = {
             'from_date': self.first.strftime('%m/%d/%Y'),
             'to_date': self.last.strftime('%m/%d/%Y'),
         }
@@ -46,7 +46,7 @@ class PayrollTest(TimepieceDataTestCase):
         if not user:
             user = self.user
         if not day:
-            day=self.first
+            day = self.first
         billable = self.make_entry(user, day, (3, 30))
         non_billable = self.make_entry(user, day, (2, 0), billable=False)
         invoiced = self.make_entry(user, day, (5, 30), status='invoiced')
@@ -80,12 +80,12 @@ class PayrollTest(TimepieceDataTestCase):
         format_leave formats leave time to (list of descriptions, total hours)
         """
         self.make_logs()
-        projects = getattr(settings, 'TIMEPIECE_PROJECTS', {})        
+        projects = getattr(settings, 'TIMEPIECE_PROJECTS', {})
         leave = timepiece.Entry.objects.filter(project__in=projects.values())
         leave = leave.values('user', 'hours', 'project__name')
         desc, totals = utils.format_leave(leave)
-        self.assertEqual(desc[0],(u'vacation', Decimal('4.00')))
-        self.assertEqual(desc[1],(u'sick', Decimal('8.00')))
+        self.assertEqual(desc[0], (u'vacation', Decimal('4.00')))
+        self.assertEqual(desc[1], (u'sick', Decimal('8.00')))
         self.assertEqual(totals, Decimal('12.00'))
 
     def testGetHourSummaries(self):
@@ -125,6 +125,7 @@ class PayrollTest(TimepieceDataTestCase):
             dates.append(datetime.datetime(2011, 5, day_num))
         for day in dates:
             self.make_logs(day)
+
         def check_overtime(week0=Decimal('55.00'), week1=Decimal('55.00'),
                            overtime=Decimal('30.00')):
             self.client.login(username='superuser', password='abc')

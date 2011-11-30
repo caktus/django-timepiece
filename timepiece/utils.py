@@ -353,9 +353,11 @@ def grouped_totals(entries):
         last_week = week
     yield week, weeks.get(week, {}), days
 
+
 def find_overtime(dates):
     """Given a list of weekly summaries, return the overtime for each week"""
     return sum([day - 40 for day in dates if day > 40])
+
 
 def format_leave(leave):
     """
@@ -371,6 +373,7 @@ def format_leave(leave):
         leave_hours += pj_hours
     return leave_desc.items(), leave_hours
 
+
 def get_hour_summaries(total_dict):
     """
     Coerce totals dictionary into a list of ordered tuples with percentages
@@ -380,12 +383,13 @@ def get_hour_summaries(total_dict):
     worked = total_dict.get('total', 0)
     if worked > 0:
         return [
-            (billable, round(billable/worked * 100, 2)),
-            (non_billable, round(non_billable/worked * 100, 2)),
+            (billable, round(billable / worked * 100, 2)),
+            (non_billable, round(non_billable / worked * 100, 2)),
             worked,
         ]
     else:
         return [(0, 0), (0, 0), 0]
+
 
 def user_date_totals(user_entries):
     """Yield a user's name and a dictionary of their hours"""
@@ -397,6 +401,7 @@ def user_date_totals(user_entries):
         hours = get_hours(d_entries)
         date_dict[date] = hours
     return name, date_dict
+
 
 def project_totals(entries, date_headers, hour_type, overtime=False):
     """
@@ -419,11 +424,12 @@ def project_totals(entries, date_headers, hour_type, overtime=False):
     totals = [total or '' for total in totals]
     yield (rows, totals)
 
+
 def payroll_totals(entries, date, leave):
     """
     Yield totals for a month, grouped by user and billable status of each entry
     """
-    date = datetime(month=date.month, day=date.day, year = date.year)
+    date = datetime(month=date.month, day=date.day, year=date.year)
     for user, user_entries in groupby(entries, lambda x: x['user']):
         name, date_dict = user_date_totals(user_entries)
         totals = get_hour_summaries(date_dict.get(date, {}))
