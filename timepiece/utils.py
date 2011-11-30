@@ -403,6 +403,7 @@ def project_totals(entries, date_headers, hour_type, overtime=False):
     Yield hour totals grouped by user and date. Optionally including overtime.
     """
     totals = [0 for date in date_headers]
+    rows = []
     for user, user_entries in groupby(entries, lambda x: x['user']):
         name, date_dict = user_date_totals(user_entries)
         dates = []
@@ -412,12 +413,15 @@ def project_totals(entries, date_headers, hour_type, overtime=False):
             dates.append(total)
         if overtime:
             dates.append(find_overtime(dates))
-        yield (name, dates)
-    yield (('Totals:', ''), totals)
+        name = ' '.join((name[1], name[0]))
+        dates = [date or '' for date in dates]
+        rows.append((name, dates))
+    totals = [total or '' for total in totals]
+    yield (rows, totals)
 
 def payroll_totals(entries, date, leave):
     """
-    Yield totals for a month, grouped by user and type of work.
+    Yield totals for a month, grouped by user and billable status of each entry
     """
     date = datetime(month=date.month, day=date.day, year = date.year)
     for user, user_entries in groupby(entries, lambda x: x['user']):

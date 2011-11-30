@@ -47,15 +47,15 @@
             {% endfor %}
             <th>Overtime</th>
         </tr>
-        {% for name, hours in weekly_totals %}
-            {% if name.0 != "Totals:" %}
+        {% for rows, totals in weekly_totals %}
+            {% for name, hours in rows %}
                 <tr class="{% cycle 'odd' 'even' %}">           
-                    <th class='name_col'>{{name.1}} {{name.0}}</th>
+                    <th class='name_col'>{{name}}</th>
                     {% for num in hours %}
-                        <td class='hours' title='{{name.1}}'>{{num|default:""}}</td>
+                        <td class='hours' title='{{name}}'>{{num}}</td>
                     {% endfor %}
-                </tr>
-            {% endif %}
+                </tr>                
+            {% endfor %}
         {% endfor %}
     </table>
     {% else %}

@@ -117,7 +117,12 @@ class TestHourlyReport(TimepieceDataTestCase):
         """Helper function for testing project_totals utility directly"""
         entries = timepiece.Entry.objects.date_trunc(trunc).filter(query)
         if entries:
-            return utils.project_totals(entries, date_headers, hour_type)
+            pj_totals = utils.project_totals(entries, date_headers, hour_type)
+            pj_totals = list(pj_totals)
+            rows = pj_totals[0][0]
+            hours = [hours for name, hours in rows]
+            totals = pj_totals[0][1]
+            return hours, totals
         else:
             return ''
 
@@ -137,12 +142,12 @@ class TestHourlyReport(TimepieceDataTestCase):
         self.log_daily(start, day2, end)
         trunc = 'day'
         date_headers = utils.generate_dates(start, end, trunc)
-        pj_totals = list(self.get_project_totals(date_headers, trunc))
+        pj_totals = self.get_project_totals(date_headers, trunc)
+        self.assertEqual(pj_totals[0][0],
+                         [Decimal('1.00'), Decimal('1.50'), ''])
         self.assertEqual(pj_totals[0][1],
-                         [Decimal('1.00'), Decimal('1.50'), 0])
-        self.assertEqual(pj_totals[1][1],
-                         [0, Decimal('3.00'), Decimal('2.00')])
-        self.assertEqual(pj_totals[2][1],
+                         ['', Decimal('3.00'), Decimal('2.00')])
+        self.assertEqual(pj_totals[1],
                          [Decimal('1.00'), Decimal('4.50'), Decimal('2.00')])
 
     def testBillableNonBillable(self):
@@ -151,18 +156,17 @@ class TestHourlyReport(TimepieceDataTestCase):
         end = datetime.datetime(2011, 1, 3)
         self.log_daily(start, day2, end)
         trunc = 'day'
+        billableQ = Q(project__type__billable=True)
+        non_billableQ = Q(project__type__billable=False)
         date_headers = utils.generate_dates(start, end, trunc)
-        pj_billable = list(self.get_project_totals(
-                           date_headers, trunc, Q(), 'billable'))
-        pj_billable_q = list(self.get_project_totals(
-                             date_headers, trunc,
-                             Q(project__type__billable=True), 'total'))
-        pj_non_billable = list(self.get_project_totals(
-                           date_headers, trunc, Q(), 'non_billable'))
-        pj_non_billable_q = list(self.get_project_totals(
-                                 date_headers, trunc,
-                                 Q(project__type__billable=False), 'total'))
-
+        pj_billable = self.get_project_totals(date_headers, trunc, Q(),
+                                              'billable')
+        pj_billable_q = self.get_project_totals(date_headers, trunc, billableQ,
+                                                'total')
+        pj_non_billable = self.get_project_totals(date_headers, trunc, Q(),
+                                                  'non_billable')
+        pj_non_billable_q = self.get_project_totals(date_headers, trunc,
+                                                    non_billableQ, 'total')
         self.assertEqual(list(pj_billable), list(pj_billable_q))
         self.assertEqual(list(pj_non_billable), list(pj_non_billable_q))
 
@@ -172,10 +176,10 @@ class TestHourlyReport(TimepieceDataTestCase):
         self.bulk_entries(start, end)
         trunc = 'week'
         date_headers = utils.generate_dates(start, end, trunc)
-        pj_totals = list(self.get_project_totals(date_headers, trunc))
-        self.assertEqual(pj_totals[0][1], [48])
-        self.assertEqual(pj_totals[1][1], [24])
-        self.assertEqual(pj_totals[2][1], [72])
+        pj_totals = self.get_project_totals(date_headers, trunc)
+        self.assertEqual(pj_totals[0][0], [48])
+        self.assertEqual(pj_totals[0][1], [24])
+        self.assertEqual(pj_totals[1], [72])
 
     def testMonthlyTotal(self):
         start = datetime.datetime(2011, 1, 1)
@@ -190,10 +194,10 @@ class TestHourlyReport(TimepieceDataTestCase):
                 self.log_time(start=day, delta=(worked1, 0), user=self.user)
                 self.log_time(start=day, delta=(worked2, 0), user=self.user2)
         date_headers = utils.generate_dates(start, end, trunc)
-        pj_totals = list(self.get_project_totals(date_headers, trunc))
-        for hour in pj_totals[0][1]:
+        pj_totals = self.get_project_totals(date_headers, trunc)
+        for hour in pj_totals[0][0]:
             self.assertEqual(hour, last_day * worked1)
-        for hour in pj_totals[1][1]:
+        for hour in pj_totals[0][1]:
             self.assertEqual(hour, last_day * worked2)
 
     def argsHelper(self, args={}, start=datetime.datetime(2011, 1, 2),

@@ -1123,7 +1123,8 @@ def payroll_summary(request, form, from_date, to_date, status, activity):
                                   ).values('user', 'hours', 'project__name')
     month_entries = timepiece.Entry.objects.date_trunc('month').filter(monthQ,
                                                                        workQ)
-    monthly_totals = list(utils.payroll_totals(month_entries, from_date, leave))
+    monthly_totals = list(utils.payroll_totals(month_entries, from_date,
+                                               leave))
     return {
         'from_date': from_date,
         'date_headers': date_headers,
@@ -1233,8 +1234,12 @@ def hourly_report(request, date_form, from_date, to_date, status, activity):
         headers = ['Name']
         headers.extend([date.strftime('%m/%d/%Y') for date in date_headers])
         writer.writerow(headers)
-        for name, hours in project_totals:
-            data = [' '.join((name[1], name[0]))]
-            data.extend([hour or '' for hour in hours])
-            writer.writerow(data)
+        for rows, totals in project_totals:
+            for name, hours in rows:
+                data = [name]
+                data.extend(hours)
+                writer.writerow(data)
+            total = ['Totals']
+            total.extend(totals)
+            writer.writerow(total)
         return response

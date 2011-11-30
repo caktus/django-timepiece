@@ -109,11 +109,11 @@ class PayrollTest(TimepieceDataTestCase):
         self.client.login(username='superuser', password='abc')
         response = self.client.get(self.url, self.args)
         weekly_totals = response.context['weekly_totals']
-        self.assertEqual(weekly_totals[0][1],
+        self.assertEqual(weekly_totals[0][0][0][1],
                          [Decimal('22.00'),
-                          Decimal('11.00'), 0,
+                          Decimal('11.00'), '',
                           Decimal('11.00'),
-                          Decimal('11.00'), 0
+                          Decimal('11.00'), ''
                          ])
 
     def testWeeklyOvertimes(self):
@@ -129,10 +129,10 @@ class PayrollTest(TimepieceDataTestCase):
                            overtime=Decimal('30.00')):
             self.client.login(username='superuser', password='abc')
             response = self.client.get(self.url, self.args)
-            weekly_totals = response.context['weekly_totals']
-            self.assertEqual(weekly_totals[0][1][0], week0)
-            self.assertEqual(weekly_totals[0][1][1], week1)
-            self.assertEqual(weekly_totals[0][1][5], overtime)
+            weekly_totals = response.context['weekly_totals'][0][0][0][1]
+            self.assertEqual(weekly_totals[0], week0)
+            self.assertEqual(weekly_totals[1], week1)
+            self.assertEqual(weekly_totals[5], overtime)
         check_overtime()
         #Entry on following Monday doesn't add to week1 or overtime
         self.make_logs(datetime.datetime(2011, 5, 9))
