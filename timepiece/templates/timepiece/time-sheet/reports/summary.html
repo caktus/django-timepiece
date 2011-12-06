@@ -28,12 +28,6 @@
 <form method="get" action="" id="date-filter" accept-charset="utf-8">
     <ul id='ledger-date-fieldlist'>
         {{ form.as_ul }}
-        <li>
-            <input type='submit' name='submit' value='Update' id='id_date_form_submit_btn'/>
-        </li>
-        <li>
-            <input type='button' name='clear' value='Clear' id='id_date_form_clear_btn'/>
-        </li>
     </ul>
 </form>
 
@@ -44,61 +38,61 @@
 
 
 <h3>Weekly Summary</h3>
-
-<table>
-    <tr>
-        <th>&nbsp;</th>
-        {% for week in all_weeks %}
-            <th>{{ week|date:"n/j" }}</th>
+{% if weekly_totals %}
+    <table class='project'>
+        <tr class="header">
+            <th class='name_col'>Name</th>
+            {% for date in date_headers %}
+                <th>{{date|date:"M/d"}}</th>
+            {% endfor %}
+            <th>Overtime</th>
+        </tr>
+        {% for rows, totals in weekly_totals %}
+            {% for name, hours in rows %}
+                <tr class="{% cycle 'odd' 'even' %}">           
+                    <th class='name_col'>{{name}}</th>
+                    {% for num in hours %}
+                        <td class='hours' title='{{name}}'>{{num}}</td>
+                    {% endfor %}
+                </tr>                
+            {% endfor %}
         {% endfor %}
-        <th>Overtime</th>
-    </tr>
-    {% for period in periods %}
-        {% with period.user as user %}
-            <tr{% if user.overtime > 40.00 %} class='overtime'{% endif %}>
-                <th>{{ user.first_name }} {{ user.last_name }}</th>
-                {% for week in all_weeks %}
-                    <td>{% weekly_hours_worked period week %}</td>
-                {% endfor %}
-                <td>{% monthly_overtime period from_date %}
-            </tr>
-        {% endwith %}
-    {% endfor %}
-</table>
+    </table>
+    {% else %}
+        <p>No entries found.</p>
+{% endif %}
 
 <h3>Hourly Summary</h3>
 
-<table>
-    <tr>
-        <th>&nbsp;</th>
-        <th>Billable</th>
-        <th>Non-Billable</th>
-        <th>Total Worked</th>
-        <th>Paid Leave</th>
-        <th>Grand Total</th>
-    </tr>
-    {% for period in periods %}
-        {% with period.user as user %}
-            <tr>
-                <th>{{ user.first_name }} {{ user.last_name }}</th>
-                {% if user.summary %}
-                    <td>{% if user.summary.billable %}{{ user.summary.billable }} ({% widthratio user.summary.billable user.summary.total_worked 100 %}%){% endif %}</td>
-                    <td>{% if user.summary.non_billable %}{{ user.summary.non_billable }} ({% widthratio user.summary.non_billable user.summary.total_worked 100 %}%){% endif %}</td>
-                    <td>{% if user.summary.total_worked %}{{ user.summary.total_worked }}{% endif %}</td>
-                    <td>
-                    {% for leave_type, leave_hours in user.summary.paid_leave.iteritems %}
-                        {% if leave_hours %}
-                        {{ leave_type|capfirst }}: {{ leave_hours }}<br/>
-                        {% endif %}
-                    {% endfor %}
-                    </td>
-                    <td>{{ user.summary.total|default_if_none:'' }}</td>
-                {% else %}
-                    <td colspan='5'>&nbsp;</td>
-                {% endif %}
+{% if monthly_totals %}
+    <table>
+        <tr class="header">
+            <th>Name</th>
+            <th colspan="2">Billable</th>
+            <th colspan="2">Non-Billable</th>
+            <th>Total Worked</th>
+            <th style="text-align:right;">Paid Leave</th>
+            <th>Grand Total</th>
+        </tr>
+        {% for name, hours, descs, all in monthly_totals %}
+            <tr class="{% cycle 'odd' 'even' %}">           
+                <th class='name_col'>{{name.1}} {{name.0}}</th>
+                {% for num in hours|slice:"0:2" %}
+                    <td class="hours">{{num.0|default:""}}</td>
+                    <td class="hours">{% if num.1 %}({{num.1}}%){% endif %}</td>
+                {% endfor %}
+                <td class="hours">{{hours.2}}</td>
+                <td class="hours" style="width: 200px;">
+                {% for desc in descs %}
+                    {{desc.0}}:&nbsp;&nbsp;{{desc.1}}
+                {% endfor %}
+                </td>
+                <td class="hours">{{all}}</td>
             </tr>
-        {% endwith %}
-    {% endfor %}
-</table>
+        {% endfor %}
+    </table>
+{% else %}
+    <p> No entries found.</p>
+{% endif %}
 {% endblock %}
 
