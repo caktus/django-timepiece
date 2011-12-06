@@ -58,6 +58,11 @@ Installation
 History
 -------
 
+0.3.5 (Unreleased)
+******************
+* Optimized Payroll Summary with reusable code from Hourly Reports.
+* Removed use of Textile and used the linebreaks filter tag in its place.
+
 0.3.4 (11-14-2011)
 ******************
 * Added a new Hourly Reports view with project hours filtered and grouped by user specified criteria.
