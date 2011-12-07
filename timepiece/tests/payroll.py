@@ -33,8 +33,8 @@ class PayrollTest(TimepieceDataTestCase):
         ]
         self.url = reverse('payroll_summary')
         self.args = {
-            'from_date': self.first.strftime('%m/%d/%Y'),
-            'to_date': self.last.strftime('%m/%d/%Y'),
+            'year': self.first.year,
+            'month': self.first.month,
         }
 
     def make_entry(self, user, start, delta, status='approved', billable=True,

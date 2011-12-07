@@ -23,9 +23,9 @@
     </li>
 </ul>
 
-<form method="post" action="" id="date-filter" accept-charset="utf-8">{% csrf_token %}
+<form method="get" action="" id="date-filter" accept-charset="utf-8">
     {{ year_month_form }}
-    <input type='submit' name='ok' value="Update" id='yearmonth'/>
+    <input type='submit' name='yearmonth' value="Update" id='yearmonth'/>
 </form>
 
 <div class="cal_wrapper" style='float: right;'>
@@ -35,7 +35,6 @@
 
 
 <h3>Weekly Summary</h3>
-
 {% if weekly_totals.0.0 %}
     <table class='project'>
         <tr class="header">
@@ -61,7 +60,6 @@
 {% endif %}
 
 <h3>Hourly Summary</h3>
-
 {% if monthly_totals %}
     <table>
         <tr class="header">

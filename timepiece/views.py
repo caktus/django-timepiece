@@ -1099,8 +1099,8 @@ def create_edit_person_time_sheet(request, person_id=None):
 @permission_required('timepiece.view_payroll_summary')
 @render_with('timepiece/time-sheet/reports/summary.html')
 def payroll_summary(request):
-    year_month_form = timepiece_forms.YearMonthForm(request.POST or None)
-    if request.POST and year_month_form.is_valid():
+    year_month_form = timepiece_forms.YearMonthForm(request.GET or None)
+    if request.GET and year_month_form.is_valid():
         from_date, to_date = year_month_form.save()
     else:
         from_date = utils.get_month_start(datetime.datetime.today()).date()
@@ -1118,7 +1118,7 @@ def payroll_summary(request):
     entries = timepiece.Entry.objects.date_trunc('week').filter(weekQ, workQ)
     date_headers = utils.generate_dates(from_date, last_billable, by='week')
     weekly_totals = list(utils.project_totals(entries, date_headers, 'total',
-                                         overtime=True))
+                                              overtime=True))
     #Monthly totals
     leave = timepiece.Entry.objects.filter(monthQ, ~workQ
                                   ).values('user', 'hours', 'project__name')
@@ -1126,7 +1126,6 @@ def payroll_summary(request):
                                                                        workQ)
     monthly_totals = list(utils.payroll_totals(month_entries, from_date,
                                                leave))
-
     return {
         'from_date': from_date,
         'year_month_form': year_month_form,
