@@ -1,4 +1,5 @@
 from decimal import Decimal
+import time
 from datetime import datetime, timedelta
 from dateutil.relativedelta import relativedelta
 
@@ -338,6 +339,39 @@ class DateForm(forms.Form):
         to_date = self.cleaned_data.get('to_date', '')
         if to_date:
             to_date += timedelta(days=1)
+        return (from_date, to_date)
+
+
+class YearMonthForm(forms.Form):
+    MONTH_CHOICES = [(i, time.strftime('%B', time.strptime(str(i), '%m'))) \
+                     for i in xrange(1, 13)]
+    year = forms.ChoiceField()
+    month = forms.ChoiceField(choices=MONTH_CHOICES)
+
+    def __init__(self, *args, **kwargs):
+        super(YearMonthForm, self).__init__(*args, **kwargs)
+        now = datetime.now()
+        this_year = now.year
+        this_month = now.month
+        try:
+            first_entry = timepiece.Entry.objects.all().order_by('end_time')[0]
+        except IndexError:
+            first_year = this_year
+        else:
+            first_year = first_entry.end_time.year
+        years = [(year, year) for year in xrange(first_year, this_year + 1)]
+        self.fields['year'].choices = years
+        self.fields['year'].initial = this_year
+        self.fields['month'].initial = this_month
+
+    def save(self):
+        now = datetime.now()
+        this_year = now.year
+        this_month = now.month
+        month = int(self.cleaned_data.get('month', this_month))
+        year = int(self.cleaned_data.get('year', this_year))
+        from_date = datetime(year, month, 1)
+        to_date = from_date + relativedelta(months=1)
         return (from_date, to_date)
 
 
