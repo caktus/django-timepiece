@@ -26,7 +26,6 @@ setup(
         "python-dateutil==1.5",
         "django-ajax-selects==1.1.4",
         "django-pagination==1.0.7",
-        "textile==2.1.4",
         "django-selectable==0.2.0",
     ],
 )
