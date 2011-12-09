@@ -58,7 +58,7 @@ Installation
 History
 -------
 
-0.3.5 (Unreleased)
+0.3.5 (12-09-2011)
 ******************
 * Optimized Payroll Summary with reusable code from Hourly Reports.
 * Removed use of Textile and used the linebreaks filter tag in its place.
