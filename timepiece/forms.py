@@ -425,6 +425,15 @@ class ProjectRelationshipForm(forms.ModelForm):
         self.fields['types'].help_text = ''
 
 
+class InvoiceForm(forms.ModelForm):
+    class Meta:
+        model = timepiece.Invoice
+        fields = ('number',)
+
+    def __init__(self, *args, **kwargs):
+        super(InvoiceForm, self).__init__(*args, **kwargs)
+        print self.initial
+
 class RepeatPeriodForm(forms.ModelForm):
     class Meta:
         model = timepiece.RepeatPeriod

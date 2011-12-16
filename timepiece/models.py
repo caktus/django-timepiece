@@ -186,6 +186,14 @@ class Location(models.Model):
         return self.name
 
 
+class Invoice(models.Model):
+    number = models.IntegerField()
+    project = models.ForeignKey(Project, related_name='invoice')
+    created = models.DateTimeField(auto_now=True)
+    start = models.DateField()
+    end = models.DateField()
+
+
 class EntryManager(models.Manager):
     def get_query_set(self):
         qs = super(EntryManager, self).get_query_set()
@@ -242,11 +250,17 @@ class Entry(models.Model):
         Location,
         related_name='entries',
     )
+    invoice = models.ForeignKey(
+        Invoice,
+        related_name='entries',
+        blank=True, null=True,
+    )
     status = models.CharField(
         max_length=24,
         choices=ENTRY_STATUS,
         default='unverified',
     )
+
     start_time = models.DateTimeField()
     end_time = models.DateTimeField(blank=True, null=True)
     seconds_paused = models.PositiveIntegerField(default=0)

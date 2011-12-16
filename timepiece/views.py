@@ -602,7 +602,8 @@ def time_sheet_change_status(request, form, from_date, to_date, status,
                 end_time__gte=from_date,
             )
         if request.GET and form.cleaned_data.get('project'):
-            entries = entries.filter(project=form.cleaned_data.get('project'))
+            project = form.cleaned_data.get('project')
+            entries = entries.filter(project=project)
     to_date -= relativedelta(days=1)
     if action == 'invoice':
         return_url = reverse('invoice_projects',)
@@ -613,6 +614,12 @@ def time_sheet_change_status(request, form, from_date, to_date, status,
             'to_date': to_str,
         })
         return_url += '?%s' % get_str
+        intial = {
+            'project': project,
+            'start': from_date or utils.get_month_start(to_date),
+            'end': to_date,
+        }
+        invoice_form = timepiece_forms.InvoiceForm(initial=intial)
     else:
         return_url = reverse('view_person_time_sheet',
                     kwargs={'person_id': person_id, 'period_id': period_id, })
@@ -630,6 +637,9 @@ def time_sheet_change_status(request, form, from_date, to_date, status,
             'approve': 'approved',
             'invoice': 'invoiced',
         }
+        if invoice_form.is_valid:
+            invoice = invoice_form.save()
+        entries.update(invoice=invoice)
         entries.update(status=update_status[action])
         messages.info(request,
             'Your entries have been %s' % update_status[action])
@@ -637,6 +647,7 @@ def time_sheet_change_status(request, form, from_date, to_date, status,
 
     context = {
         'person': person,
+        'invoice_form': invoice_form,
         'return_url': return_url,
         'hours': entries.all().aggregate(s=Sum('hours'))['s'],
     }

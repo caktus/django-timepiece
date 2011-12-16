@@ -8,6 +8,7 @@
   <h3><p>Are you sure you want to invoice all entries in this project and date range, which includes a total of {{ hours }} hours? 
   <p>After entries are invoiced, they cannot be changed, and are considered charged to the client.</p></h3>
   <form method="post">{% csrf_token %}
+      {{ invoice_form }}
       <input type="submit" name="do_action" value="Yes"/>
       <a href="{{ return_url }}"><input type="button" value="No"/></a>
   </form>
