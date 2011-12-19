@@ -557,6 +557,35 @@ def view_person_time_sheet(request, person_id, period_id=None,
         context_instance=RequestContext(request))
 
 
+@transaction.commit_on_success
+def time_sheet_invoice_project(request, project_id, year, month):
+    if not request.user.has_perm('timepiece.edit_person_time_sheet'):
+        return HttpResponseForbidden('Forbidden')
+    project = get_object_or_404(timepiece.Project, pk=project_id)
+    initial = {
+        'project': project,
+        'year': year,
+        'month': month,
+    }
+    invoice_form = timepiece_forms.InvoiceForm(request.POST or None,
+                                               initial=initial)
+    if request.POST and invoice_form.is_valid():
+        invoice = invoice_form.save()
+        from_date = invoice.start
+        to_date = invoice.end
+        entries = timepiece.Entry.objects.filter(statusend_time__lt=to_date,
+                                                 end_time__gte=from_date,
+                                                 project__id=invoice.project.id)
+        entries.update(status='invoiced', invoice=invoice)
+        return HttpResponseRedirect(reverse('invoice_projects'))
+    return render_to_response('timepiece/time-sheet/invoice_project_confirm.html', {
+        'invoice_form': invoice_form,
+        'project': project,
+        'year': year,
+        'month': month,
+    }, context_instance=RequestContext(request))
+
+
 @login_required
 @utils.date_filter
 def time_sheet_change_status(request, form, from_date, to_date, status,
@@ -576,12 +605,7 @@ def time_sheet_change_status(request, form, from_date, to_date, status,
         verify_allowed = \
             request.user.has_perm('timepiece.edit_person_time_sheet') or \
             (time_sheet.user.pk == request.user.pk and action == 'verify')
-    else:
-        if action == 'invoice' and form.is_valid():
-            time_sheet = None
-            person = None
-        else:
-            raise Http404
+    else:        
         verify_allowed = \
             request.user.has_perm('timepiece.edit_person_time_sheet')
     if not verify_allowed:
@@ -614,19 +638,12 @@ def time_sheet_change_status(request, form, from_date, to_date, status,
             'to_date': to_str,
         })
         return_url += '?%s' % get_str
-        intial = {
-            'project': project,
-            'start': from_date or utils.get_month_start(to_date),
-            'end': to_date,
-        }
-        invoice_form = timepiece_forms.InvoiceForm(initial=intial)
     else:
         return_url = reverse('view_person_time_sheet',
                     kwargs={'person_id': person_id, 'period_id': period_id, })
     filter_status = {
         'verify': 'unverified',
         'approve': 'verified',
-        'invoice': 'approved',
     }
     entries = entries.filter(status=filter_status[action])
 
@@ -635,11 +652,7 @@ def time_sheet_change_status(request, form, from_date, to_date, status,
         update_status = {
             'verify': 'verified',
             'approve': 'approved',
-            'invoice': 'invoiced',
         }
-        if invoice_form.is_valid:
-            invoice = invoice_form.save()
-        entries.update(invoice=invoice)
         entries.update(status=update_status[action])
         messages.info(request,
             'Your entries have been %s' % update_status[action])
@@ -647,7 +660,6 @@ def time_sheet_change_status(request, form, from_date, to_date, status,
 
     context = {
         'person': person,
-        'invoice_form': invoice_form,
         'return_url': return_url,
         'hours': entries.all().aggregate(s=Sum('hours'))['s'],
     }
@@ -656,18 +668,16 @@ def time_sheet_change_status(request, form, from_date, to_date, status,
         context_instance=RequestContext(request))
 
 
-@permission_required('timepiece.timepiece.edit_person_time_sheet')
-@utils.date_filter
-def invoice_projects(request, form, from_date, to_date, status, activity):
-    entries = timepiece.Entry.objects.all()
-    if to_date:
-        entries = entries.filter(
-            end_time__lt=to_date,
-        )
-    if from_date:
-        entries = entries.filter(
-            end_time__gte=from_date,
-        )
+def invoice_projects(request):
+    year_month_form = timepiece_forms.YearMonthForm(request.GET or None)
+    if request.GET and year_month_form.is_valid():
+        from_date, to_date = year_month_form.save()
+    else:
+        from_date = utils.get_month_start(datetime.datetime.today()).date()
+        to_date = from_date + relativedelta(months=1)
+    entries = timepiece.Entry.objects.filter(end_time__lt=to_date,
+                                             end_time__gte=from_date,)
+
     unverified = entries.filter(
         status='unverified', user__is_active=True).values_list(
         'user__pk',
@@ -678,11 +688,6 @@ def invoice_projects(request, form, from_date, to_date, status, activity):
         'user__pk',
         'user__first_name',
         'user__last_name').distinct()
-
-#    Am no longer including invoiced entries, therefor all projects
-#    have uninvoiced hours and it returns only one line for them.
-#    project_totals = projects.filter(
-#        status__in=['approved', 'invoiced']).values(
     project_totals = entries.filter(status='approved',
         project__type__billable=True, project__status__billable=True).values(
         'project__type__pk', 'project__type__label', 'project__name',
@@ -690,7 +695,7 @@ def invoice_projects(request, form, from_date, to_date, status, activity):
     ).annotate(s=Sum('hours')).order_by('project__type__label',
                                         'project__name', 'status')
     return render_to_response('timepiece/time-sheet/invoice_projects.html', {
-        'form': form,
+        'year_month_form': year_month_form,
         'project_totals': project_totals,
         'to_date': to_date - relativedelta(days=1),
         'from_date': from_date,
