@@ -1,7 +1,7 @@
 {% extends 'timepiece/time-sheet/base.html' %}
 {% load timepiece_tags %}
 
-{% block title %}{{ person }} Time Sheet{% endblock %}
+{% block title %}{{ person.get_full_name }} Time Sheet{% endblock %}
 
 {% block content %}
 <h2>{{ person.first_name }} {{ person.last_name}}'s Time Sheet ({{ window.date|date:"N j" }} &mdash; {{ window.end_date|date:"N j" }})</h2>
