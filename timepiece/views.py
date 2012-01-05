@@ -671,12 +671,16 @@ def time_sheet_change_status(request, form, from_date, to_date, status,
 
 @login_required
 def invoice_projects(request):
-    year_month_form = timepiece_forms.YearMonthForm(request.GET or None)
+    month_start = utils.get_month_start(datetime.datetime.today()).date()
+    from_date = month_start - relativedelta(months=1)
+    to_date = month_start
+    defaults = {
+        'year': from_date.year,
+        'month': from_date.month,
+    }
+    year_month_form = timepiece_forms.YearMonthForm(request.GET or defaults)
     if request.GET and year_month_form.is_valid():
         from_date, to_date = year_month_form.save()
-    else:
-        from_date = utils.get_month_start(datetime.datetime.today()).date()
-        to_date = from_date + relativedelta(months=1)
     entries = timepiece.Entry.objects.filter(end_time__lt=to_date,
                                              end_time__gte=from_date,)
 
