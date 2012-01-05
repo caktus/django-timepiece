@@ -1,5 +1,5 @@
 {% extends "base.html" %}
-{% block title %}{% if not person %}Create Person{% else %}Edit {{ person }}{% endif %}{% endblock %}
+{% block title %}{% if not person %}Create Person{% else %}Edit {{ person.get_full_name }}{% endif %}{% endblock %}
 
 {% block content %}
 
