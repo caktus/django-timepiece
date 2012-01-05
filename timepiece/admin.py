@@ -11,6 +11,13 @@ class ActivityAdmin(admin.ModelAdmin):
 admin.site.register(timepiece.Activity, ActivityAdmin)
 
 
+class ActivityGroupAdmin(admin.ModelAdmin):
+    model = timepiece.ActivityGroup
+    list_display = ('name',)
+    list_filter = ('activities',)
+admin.site.register(timepiece.ActivityGroup, ActivityGroupAdmin)
+
+
 class RelationshipTypeAdmin(admin.ModelAdmin):
     pass
 admin.site.register(timepiece.RelationshipType, RelationshipTypeAdmin)

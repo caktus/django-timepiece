@@ -178,6 +178,18 @@ class Activity(models.Model):
         verbose_name_plural = 'activities'
 
 
+class ActivityGroup(models.Model):
+
+    name = models.CharField(max_length=255, unique=True)
+    activities = models.ManyToManyField(
+        Activity,
+        related_name='activity_group',
+    )
+
+    def __unicode__(self):
+        return self.name
+
+
 class Location(models.Model):
     name = models.CharField(max_length=255, unique=True)
     slug = models.CharField(max_length=255, unique=True)
