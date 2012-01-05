@@ -561,24 +561,31 @@ def view_person_time_sheet(request, person_id, period_id=None,
 def time_sheet_invoice_project(request, project_id, year, month):
     if not request.user.has_perm('timepiece.edit_person_time_sheet'):
         return HttpResponseForbidden('Forbidden')
+    from_date = datetime.datetime(int(year), int(month), 1)
+    to_date = datetime.datetime(int(year), int(month) + 1, 1)
     project = get_object_or_404(timepiece.Project, pk=project_id)
     initial = {
         'project': project,
         'year': year,
         'month': month,
     }
+    entries_query = {
+        'status': "approved",
+        'end_time__gte': from_date,
+        'end_time__lt': to_date,
+        'project__id': project.id
+    }
     invoice_form = timepiece_forms.InvoiceForm(request.POST or None,
                                                initial=initial)
     if request.POST and invoice_form.is_valid():
         invoice = invoice_form.save()
-        from_date = invoice.start
-        to_date = invoice.end
-        entries = timepiece.Entry.objects.filter(status="approved",
-                                                 end_time__lt=to_date,
-                                                 end_time__gte=from_date,
-                                                 project__id=project.id)
+        entries = timepiece.Entry.objects.filter(**entries_query)
         entries.update(status='invoiced', invoice=invoice)
         return HttpResponseRedirect(reverse('invoice_projects'))
+    else:
+        entries = timepiece.Entry.objects.filter(**entries_query)
+        if not entries:
+            raise Http404()
     return render_to_response('timepiece/time-sheet/invoice_project_confirm.html', {
         'invoice_form': invoice_form,
         'project': project,

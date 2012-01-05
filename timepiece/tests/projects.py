@@ -90,6 +90,20 @@ class InvoiceTestCase(TimepieceDataTestCase):
         self.assertEquals(from_date_str, '2011 01 01')
         self.assertEquals(to_date_str, '2011 01 31')
 
+    def test_invoice_view(self):
+        args = [self.project_billable.id, 2011, 1]
+        url = reverse('time_sheet_invoice_project', args=args)
+        response = self.client.get(url)
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.context['month'], '1')
+        self.assertEqual(response.context['year'], '2011')
+
+    def test_invoice_bad_args(self):
+        args = [self.project_billable.id, 2001, 1]
+        url = reverse('time_sheet_invoice_project', args=args)
+        response = self.client.get(url)
+        self.assertEqual(response.status_code, 404)
+
     def test_make_invoice(self):
         args = [self.project_billable.id, 2011, 1]
         url = reverse('time_sheet_invoice_project', args=args)
@@ -110,3 +124,11 @@ class InvoiceTestCase(TimepieceDataTestCase):
         approved = entries.filter(status='approved')
         self.assertEqual(len(approved), 1)
         self.assertEqual(approved[0].invoice_id, None)
+
+    def test_invoice_bad_number(self):
+        args = [self.project_billable.id, 2011, 1]
+        url = reverse('time_sheet_invoice_project', args=args)
+        response = self.client.post(url, {'number': 'string'})
+        self.assertFormError(response, 'invoice_form', 'number', 'Enter a whole number.')
+        response = self.client.post(url, {'number': None})
+        self.assertFormError(response, 'invoice_form', 'number', 'Enter a whole number.')
