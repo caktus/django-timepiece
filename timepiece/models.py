@@ -193,6 +193,14 @@ class Invoice(models.Model):
     start = models.DateField()
     end = models.DateField()
 
+    def __unicode__(self):
+        invoice_data = { 
+            'number': self.number,
+            'project': self.project,
+            'start': self.start.strftime('%b %Y'),
+        }
+        return 'Invoice %(number)s : %(project)s - %(start)s' % invoice_data
+
 
 class EntryManager(models.Manager):
     def get_query_set(self):

@@ -573,9 +573,10 @@ def time_sheet_invoice_project(request, project_id, year, month):
         invoice = invoice_form.save()
         from_date = invoice.start
         to_date = invoice.end
-        entries = timepiece.Entry.objects.filter(statusend_time__lt=to_date,
+        entries = timepiece.Entry.objects.filter(status="approved",
+                                                 end_time__lt=to_date,
                                                  end_time__gte=from_date,
-                                                 project__id=invoice.project.id)
+                                                 project__id=project.id)
         entries.update(status='invoiced', invoice=invoice)
         return HttpResponseRedirect(reverse('invoice_projects'))
     return render_to_response('timepiece/time-sheet/invoice_project_confirm.html', {
@@ -629,18 +630,8 @@ def time_sheet_change_status(request, form, from_date, to_date, status,
             project = form.cleaned_data.get('project')
             entries = entries.filter(project=project)
     to_date -= relativedelta(days=1)
-    if action == 'invoice':
-        return_url = reverse('invoice_projects',)
-        to_str = to_date.strftime('%m/%d/%Y') if to_date else ''
-        from_str = from_date.strftime('%m/%d/%Y') if from_date else ''
-        get_str = urllib.urlencode({
-            'from_date': from_str,
-            'to_date': to_str,
-        })
-        return_url += '?%s' % get_str
-    else:
-        return_url = reverse('view_person_time_sheet',
-                    kwargs={'person_id': person_id, 'period_id': period_id, })
+    return_url = reverse('view_person_time_sheet',
+                kwargs={'person_id': person_id, 'period_id': period_id, })
     filter_status = {
         'verify': 'unverified',
         'approve': 'verified',
@@ -678,16 +669,12 @@ def invoice_projects(request):
     entries = timepiece.Entry.objects.filter(end_time__lt=to_date,
                                              end_time__gte=from_date,)
 
-    unverified = entries.filter(
-        status='unverified', user__is_active=True).values_list(
-        'user__pk',
-        'user__first_name',
-        'user__last_name').distinct()
-    unapproved = entries.filter(
-        status='verified').values_list(
-        'user__pk',
-        'user__first_name',
-        'user__last_name').distinct()
+    user_values = ['user__pk', 'user__first_name', 'user__last_name']
+    unverified = entries.filter(status='unverified', user__is_active=True)
+    unverified = unverified.values_list(*user_values).distinct()
+    unapproved = entries.filter(status='verified')
+    unapproved = unapproved.values_list(*user_values).distinct()
+
     project_totals = entries.filter(status='approved',
         project__type__billable=True, project__status__billable=True).values(
         'project__type__pk', 'project__type__label', 'project__name',
