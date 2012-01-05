@@ -556,7 +556,7 @@ def view_person_time_sheet(request, person_id, period_id=None,
     return render_to_response(template, context,
         context_instance=RequestContext(request))
 
-
+@login_required
 @transaction.commit_on_success
 def time_sheet_invoice_project(request, project_id, year, month):
     if not request.user.has_perm('timepiece.edit_person_time_sheet'):
@@ -585,7 +585,7 @@ def time_sheet_invoice_project(request, project_id, year, month):
     else:
         entries = timepiece.Entry.objects.filter(**entries_query)
         if not entries:
-            raise Http404()
+            raise Http404
     return render_to_response('timepiece/time-sheet/invoice_project_confirm.html', {
         'invoice_form': invoice_form,
         'project': project,
@@ -665,7 +665,7 @@ def time_sheet_change_status(request, form, from_date, to_date, status,
     return render_to_response(template, context,
         context_instance=RequestContext(request))
 
-
+@login_required
 def invoice_projects(request):
     year_month_form = timepiece_forms.YearMonthForm(request.GET or None)
     if request.GET and year_month_form.is_valid():
