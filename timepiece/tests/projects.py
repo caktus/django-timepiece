@@ -5,13 +5,11 @@ import re
 
 from django.core.urlresolvers import reverse
 
-from timepiece.models import ProjectRelationship
+from timepiece import models as timepiece
 from timepiece.tests.base import TimepieceDataTestCase
 
 
 class ProjectTestCase(TimepieceDataTestCase):
-    invoice_to_date = datetime.datetime.now().date()
-    invoice_from_date = datetime.datetime.now().date()
 
     def test_remove_user(self):
         self.user.is_superuser = True
@@ -29,94 +27,130 @@ class ProjectTestCase(TimepieceDataTestCase):
         self.user.save()
 
         self.client.login(username=self.user.username, password='abc')
-        ProjectRelationship.objects.all().delete()
+        timepiece.ProjectRelationship.objects.all().delete()
         self.assertEquals(self.project.users.all().count(), 0)
         url = reverse('add_user_to_project', args=(self.project.pk,))
         response = self.client.post(url, {'user': self.user.pk, })
         self.assertEquals(response.status_code, 302)
         self.assertEquals(self.project.users.all().count(), 1)
 
+
+class InvoiceTestCase(TimepieceDataTestCase):
+    def setUp(self):
+        super(InvoiceTestCase, self).setUp()
+        self.user.is_superuser = True
+        self.user.save()
+        self.client.login(username=self.user.username, password='abc')
+        start = datetime.datetime(2011, 1, 1, 8, 0, 0)
+        end = datetime.datetime(2011, 1, 1, 12, 0, 0)
+        self.project_billable = self.create_project(billable=True)
+        self.project_non_billable = self.create_project(billable=False)
+        self.entry1 = self.create_entry({
+            'user': self.user,
+            'project': self.project_billable,
+            'start_time': start,
+            'end_time': end,
+            'status': 'approved',
+        })
+        self.entry2 = self.create_entry({
+            'user': self.user,
+            'project': self.project_billable,
+            'start_time': start,
+            'end_time': end,
+            'status': 'approved',
+        })
+        self.entry3 = self.create_entry({
+            'user': self.user,
+            'project': self.project_non_billable,
+            'start_time': start + datetime.timedelta(hours=11),
+            'end_time': end + datetime.timedelta(hours=15),
+            'status': 'approved',
+        })
+
     def test_invoice_list(self):
         """
         Verify that only billable projects appear on the invoice list and that
         the links have accurate date information
         """
-        self.user.is_superuser = True
-        self.user.save()
-        self.client.login(username=self.user.username, password='abc')
-        now = datetime.datetime.now() - datetime.timedelta(hours=10)
-        backthen = now - datetime.timedelta(hours=20)
-        project_billable = self.create_project(billable=True)
-        project_non_billable = self.create_project(billable=False)
-        entry1 = self.create_entry({
-            'user': self.user,
-            'project': project_billable,
-            'start_time': backthen,
-            'end_time': now,
-            'status': 'approved',
-        })
-        entry2 = self.create_entry({
-            'user': self.user,
-            'project': project_non_billable,
-            'start_time': entry1.start_time + datetime.timedelta(hours=11),
-            'end_time': entry1.end_time + datetime.timedelta(hours=15),
-            'status': 'approved',
-        })
         url = reverse('invoice_projects')
-        response = self.client.get(url)
-        #The number of projects should be 1 because entry2 has billable=False
+        params = {
+            'year': 2011,
+            'month': 1,
+        }
+        response = self.client.get(url, params)
+        # The number of projects should be 1 because entry3 has billable=False
         num_project_totals = len(response.context['project_totals'])
         self.assertEquals(num_project_totals, 1)
-        #verify that the date on the mark as invoiced links are correct
-        correct_begin = entry1.start_time + \
+        # Verify that the date on the mark as invoiced links are correct
+        correct_begin = self.entry1.start_time + \
             relativedelta.relativedelta(day=1)
-        correct_end = entry1.end_time + \
+        correct_end = self.entry1.end_time + \
             relativedelta.relativedelta(months=+1, day=1)
-        self.invoice_from_date = response.context['from_date']
-        self.invoice_to_date = response.context['to_date']
+        from_date_str = response.context['from_date'].strftime('%Y %m %d')
+        to_date_str = response.context['to_date'].strftime('%Y %m %d')
+        self.assertEquals(from_date_str, '2011 01 01')
+        self.assertEquals(to_date_str, '2011 01 31')
 
-    def test_mark_invoice(self):
-        """
-        Test that billable entries create a valid link to mark them as invoiced
-        """
-        self.user.is_superuser = True
-        self.user.save()
-        self.client.login(username=self.user.username, password='abc')
-        now = datetime.datetime.now() - datetime.timedelta(hours=10)
-        backthen = now - datetime.timedelta(hours=20)
-        project_billable = self.create_project(billable=True)
-        entry1 = self.create_entry({
+    def test_invoice_view(self):
+        args = [self.project_billable.id, 2011, 1]
+        url = reverse('time_sheet_invoice_project', args=args)
+        response = self.client.get(url)
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.context['month'], '1')
+        self.assertEqual(response.context['year'], '2011')
+
+    def test_invoice_bad_args(self):
+        # A year/month/project with no entries should raise a 404
+        args = [self.project_billable.id, 2005, 1]
+        url = reverse('time_sheet_invoice_project', args=args)
+        response = self.client.get(url)
+        self.assertEqual(response.status_code, 404)
+        # A year/month with bad values, such as month 13, should raise a 404
+        args = [self.project_billable.id, 2001, 13]
+        url = reverse('time_sheet_invoice_project', args=args)
+        response = self.client.get(url)
+        self.assertEqual(response.status_code, 404)
+
+    def test_invoice_december(self):
+        # Sanity check to make sure December's to_date is in the next year
+        self.create_entry({
             'user': self.user,
-            'project': project_billable,
-            'start_time': backthen,
-            'end_time': now,
+            'project': self.project_billable,
+            'start_time': datetime.datetime(2005, 12, 2, 8, 0, 0),
+            'end_time': datetime.datetime(2005, 12, 2, 12, 0, 0),
             'status': 'approved',
         })
-        url = reverse('time_sheet_change_status',
-            kwargs={'action': 'invoice'})
-        data = {
-            'project': project_billable.pk,
-            'to_date': self.invoice_to_date,
-            'from_date': self.invoice_from_date,
-        }
-        #Mark as invoiced link links to a page with correct times in the URL
-        response = self.client.get(url, data)
-        self.assertEquals(response.status_code, 200)
-        returned_dates = re.findall('=(\d\d%2F\d\d%2F\d\d\d\d)&?',
-            response.context['return_url'])
-        returned_dates = [r_d.replace('%2F', '/') for r_d in returned_dates]
-        self.assertEqual(returned_dates[0],
-            self.invoice_from_date.strftime('%m/%d/%Y'))
-        self.assertEqual(returned_dates[1],
-            self.invoice_to_date.strftime('%m/%d/%Y'))
-        #Test that the "Yes" link on the mark as invoiced page redirects to
-        #invoice projects with the correct date
-        get_str = urllib.urlencode({
-            'from_date': self.invoice_from_date,
-            'to_date': self.invoice_to_date,
-        })
-        return_url = url + '?%s' % get_str
-        data = {'do_action': 'Yes'}
-        response = self.client.post(return_url, data, follow=True)
-        self.assertEqual(response.context['from_date'], self.invoice_from_date)
-        self.assertEqual(response.context['to_date'], self.invoice_to_date)
+        args = [self.project_billable.id, 2005, 12]
+        url = reverse('time_sheet_invoice_project', args=args)
+        response = self.client.get(url)
+        self.assertEqual(response.status_code, 200)
+
+    def test_make_invoice(self):
+        args = [self.project_billable.id, 2011, 1]
+        url = reverse('time_sheet_invoice_project', args=args)
+        response = self.client.post(url, {'number': 3})
+        self.assertEqual(response.status_code, 302)
+        # Verify an invoice was created with the correct attributes
+        invoice = timepiece.Invoice.objects.get(number=3)
+        self.assertEqual(invoice.project.id, self.project_billable.id)
+        self.assertEqual(invoice.start.strftime('%Y %m %d'), '2011 01 01')
+        self.assertEqual(invoice.end.strftime('%Y %m %d'), '2011 02 01')
+        self.assertEqual(len(invoice.entries.all()), 2)
+        # Verify that the entries were invoiced appropriately
+        # and the unrelated entries were untouched
+        entries = timepiece.Entry.objects.all()
+        invoiced = entries.filter(status='invoiced')
+        for entry in invoiced:
+            self.assertEqual(entry.invoice_id, invoice.id)
+        approved = entries.filter(status='approved')
+        self.assertEqual(len(approved), 1)
+        self.assertEqual(approved[0].invoice_id, None)
+
+    def test_invoice_bad_number(self):
+        args = [self.project_billable.id, 2011, 1]
+        url = reverse('time_sheet_invoice_project', args=args)
+        response = self.client.post(url, {'number': 'string'})
+        err_msg = 'Enter a whole number.'
+        self.assertFormError(response, 'invoice_form', 'number', err_msg)
+        response = self.client.post(url, {'number': None})
+        self.assertFormError(response, 'invoice_form', 'number', err_msg)

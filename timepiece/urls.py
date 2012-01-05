@@ -123,6 +123,13 @@ urlpatterns = patterns('',
     ),
 
     url(
+        r'time-sheet/invoice_project/(?P<project_id>\d+)/' +
+        r'(?P<year>\d+)/(?P<month>\d+)/$',
+        views.time_sheet_invoice_project,
+        name='time_sheet_invoice_project',
+    ),
+
+    url(
         r'^time-sheet/project/(?P<project_id>\d+)/(?:(?P<window_id>\d+)/)?$',
         views.project_time_sheet,
         name='project_time_sheet',

@@ -1,0 +1,16 @@
+{% extends 'timepiece/time-sheet/base.html' %}
+{% load timepiece_tags %}
+{% load url from future %}
+
+{% block title %}Invoice Hours for Time Sheet{% endblock %}
+
+{% block content %}
+  <h2>Invoice Hours for Time Sheet</h2>
+  <h3><p>Are you sure you want to invoice all entries for {{ project.name }} in the month of {{ month }}/{{ year }}</p>
+  <p>After entries are invoiced, they cannot be changed, and are considered charged to the client.</p></h3>
+  <form method="post">{% csrf_token %}
+      {{ invoice_form }}
+      <input type="submit" name="invoice" value="Yes"/>
+      <input type='button' value='No' onclick='history.go(-1)' />
+  </form>
+{% endblock %}
