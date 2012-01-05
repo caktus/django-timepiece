@@ -446,6 +446,7 @@ class InvoiceForm(forms.ModelForm):
         instance.save()
         return instance
 
+
 class RepeatPeriodForm(forms.ModelForm):
     class Meta:
         model = timepiece.RepeatPeriod

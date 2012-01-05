@@ -194,7 +194,7 @@ class Invoice(models.Model):
     end = models.DateField()
 
     def __unicode__(self):
-        invoice_data = { 
+        invoice_data = {
             'number': self.number,
             'project': self.project,
             'start': self.start.strftime('%b %Y'),

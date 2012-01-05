@@ -34,6 +34,7 @@ class ProjectTestCase(TimepieceDataTestCase):
         self.assertEquals(response.status_code, 302)
         self.assertEquals(self.project.users.all().count(), 1)
 
+
 class InvoiceTestCase(TimepieceDataTestCase):
     def setUp(self):
         super(InvoiceTestCase, self).setUp()
@@ -61,8 +62,8 @@ class InvoiceTestCase(TimepieceDataTestCase):
         self.entry3 = self.create_entry({
             'user': self.user,
             'project': self.project_non_billable,
-            'start_time': self.entry1.start_time + datetime.timedelta(hours=11),
-            'end_time': self.entry1.end_time + datetime.timedelta(hours=15),
+            'start_time': start + datetime.timedelta(hours=11),
+            'end_time': end + datetime.timedelta(hours=15),
             'status': 'approved',
         })
 
@@ -129,6 +130,7 @@ class InvoiceTestCase(TimepieceDataTestCase):
         args = [self.project_billable.id, 2011, 1]
         url = reverse('time_sheet_invoice_project', args=args)
         response = self.client.post(url, {'number': 'string'})
-        self.assertFormError(response, 'invoice_form', 'number', 'Enter a whole number.')
+        err_msg = 'Enter a whole number.'
+        self.assertFormError(response, 'invoice_form', 'number', err_msg)
         response = self.client.post(url, {'number': None})
-        self.assertFormError(response, 'invoice_form', 'number', 'Enter a whole number.')
+        self.assertFormError(response, 'invoice_form', 'number', err_msg)

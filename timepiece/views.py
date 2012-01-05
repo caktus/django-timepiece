@@ -586,7 +586,8 @@ def time_sheet_invoice_project(request, project_id, year, month):
         entries = timepiece.Entry.objects.filter(**entries_query)
         if not entries:
             raise Http404
-    return render_to_response('timepiece/time-sheet/invoice_project_confirm.html', {
+    template = 'timepiece/time-sheet/invoice_project_confirm.html'
+    return render_to_response(template, {
         'invoice_form': invoice_form,
         'project': project,
         'year': year,
@@ -613,7 +614,7 @@ def time_sheet_change_status(request, form, from_date, to_date, status,
         verify_allowed = \
             request.user.has_perm('timepiece.edit_person_time_sheet') or \
             (time_sheet.user.pk == request.user.pk and action == 'verify')
-    else:        
+    else:
         verify_allowed = \
             request.user.has_perm('timepiece.edit_person_time_sheet')
     if not verify_allowed:

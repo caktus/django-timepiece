@@ -234,7 +234,8 @@ def build_invoice_row(context, entries, to_date, from_date):
     })
     to_date_str = to_date.strftime('%m-%d-%Y')
     from_date_str = from_date.strftime('%m-%d-%Y')
-    invoice_url = reverse('time_sheet_invoice_project', args=(project, from_date.year, from_date.month))
+    args = (project, from_date.year, from_date.month)
+    invoice_url = reverse('time_sheet_invoice_project', args=args)
     return {
         'hours_invoiced': hours_invoiced,
         'hours_uninvoiced': hours_uninvoiced,

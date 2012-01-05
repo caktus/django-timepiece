@@ -123,7 +123,8 @@ urlpatterns = patterns('',
     ),
 
     url(
-        r'time-sheet/invoice_project/(?P<project_id>\d+)/(?P<year>\d+)/(?P<month>\d+)/$',
+        r'time-sheet/invoice_project/(?P<project_id>\d+)/' +
+        r'(?P<year>\d+)/(?P<month>\d+)/$',
         views.time_sheet_invoice_project,
         name='time_sheet_invoice_project',
     ),
