@@ -561,7 +561,10 @@ def view_person_time_sheet(request, person_id, period_id=None,
 def time_sheet_invoice_project(request, project_id, year, month):
     if not request.user.has_perm('timepiece.edit_person_time_sheet'):
         return HttpResponseForbidden('Forbidden')
-    from_date = datetime.datetime(int(year), int(month), 1)
+    try:
+        from_date = datetime.datetime(int(year), int(month), 1)
+    except (ValueError, OverflowError):
+        raise Http404
     to_date = from_date + relativedelta(months=1)
     project = get_object_or_404(timepiece.Project, pk=project_id)
     initial = {

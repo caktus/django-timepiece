@@ -100,10 +100,30 @@ class InvoiceTestCase(TimepieceDataTestCase):
         self.assertEqual(response.context['year'], '2011')
 
     def test_invoice_bad_args(self):
-        args = [self.project_billable.id, 2001, 1]
+        # A year/month/project with no entries should raise a 404
+        args = [self.project_billable.id, 2005, 1]
         url = reverse('time_sheet_invoice_project', args=args)
         response = self.client.get(url)
         self.assertEqual(response.status_code, 404)
+        # A year/month with bad values, such as month 13, should raise a 404
+        args = [self.project_billable.id, 2001, 13]
+        url = reverse('time_sheet_invoice_project', args=args)
+        response = self.client.get(url)
+        self.assertEqual(response.status_code, 404)
+
+    def test_invoice_december(self):
+        # Sanity check to make sure December's to_date is in the next year
+        self.create_entry({
+            'user': self.user,
+            'project': self.project_billable,
+            'start_time': datetime.datetime(2005, 12, 2, 8, 0, 0),
+            'end_time': datetime.datetime(2005, 12, 2, 12, 0, 0),
+            'status': 'approved',
+        })
+        args = [self.project_billable.id, 2005, 12]
+        url = reverse('time_sheet_invoice_project', args=args)
+        response = self.client.get(url)
+        self.assertEqual(response.status_code, 200)
 
     def test_make_invoice(self):
         args = [self.project_billable.id, 2011, 1]
