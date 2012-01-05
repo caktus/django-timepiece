@@ -79,6 +79,12 @@ class Project(models.Model):
         related_name='user_projects',
         through='ProjectRelationship',
     )
+    activity_group = models.ForeignKey(
+        'ActivityGroup',
+        related_name='activity_group',
+        null=True,
+        blank=True,
+    )
     type = models.ForeignKey(
         Attribute,
         limit_choices_to={'type': 'project-type'},
