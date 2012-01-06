@@ -6,9 +6,9 @@
 
 {% block content %}
 <h2>Project Invoice Summary</h2>
-
+{% date_filters "months_no_range" %}
 <form method="get" action="" id="date-filter" accept-charset="utf-8">
-    {{ year_month_form }}
+    {{ date_form }}
     <input type='submit' name='yearmonth' value="Update" id='yearmonth'/>
 </form>
 

@@ -558,43 +558,50 @@ def view_person_time_sheet(request, person_id, period_id=None,
 
 @login_required
 @transaction.commit_on_success
-def time_sheet_invoice_project(request, project_id, year, month):
+def time_sheet_invoice_project(request, project_id, to_ordinal, from_ordinal=None):
     if not request.user.has_perm('timepiece.edit_person_time_sheet'):
         return HttpResponseForbidden('Forbidden')
     try:
-        from_date = datetime.datetime(int(year), int(month), 1)
+        to_date = datetime.datetime.fromordinal(int(to_ordinal))
+        if from_ordinal:
+            from_date = datetime.datetime.fromordinal(int(from_ordinal))
+        else:
+            from_date = None
     except (ValueError, OverflowError):
         raise Http404
-    to_date = from_date + relativedelta(months=1)
     project = get_object_or_404(timepiece.Project, pk=project_id)
     initial = {
         'project': project,
-        'year': year,
-        'month': month,
+        'user': request.user,
+        'from_date': from_date,
+        'to_date': to_date,
     }
     entries_query = {
         'status': "approved",
-        'end_time__gte': from_date,
         'end_time__lt': to_date,
         'project__id': project.id
     }
+    if from_date:
+        entries_query.update({'end_time__gte': from_date})
     invoice_form = timepiece_forms.InvoiceForm(request.POST or None,
                                                initial=initial)
     if request.POST and invoice_form.is_valid():
         invoice = invoice_form.save()
         entries = timepiece.Entry.objects.filter(**entries_query)
-        entries.update(status='invoiced', invoice=invoice)
+        entries.update(status=invoice.status, entry_group=invoice)
         return HttpResponseRedirect(reverse('invoice_projects'))
     else:
         entries = timepiece.Entry.objects.filter(**entries_query)
+        entries = entries.order_by('start_time')
         if not entries:
             raise Http404
     template = 'timepiece/time-sheet/invoice_project_confirm.html'
     return render_to_response(template, {
         'invoice_form': invoice_form,
+        'entries': entries,
         'project': project,
-        'year': year,
-        'month': month,
+        'from_date': from_date,
+        'to_date': to_date,
     }, context_instance=RequestContext(request))
 
 
@@ -671,18 +678,19 @@ def time_sheet_change_status(request, form, from_date, to_date, status,
 
 @login_required
 def invoice_projects(request):
-    month_start = utils.get_month_start(datetime.datetime.today()).date()
-    from_date = month_start - relativedelta(months=1)
-    to_date = month_start
+    to_date = utils.get_month_start(datetime.datetime.today()).date()
+    from_date = to_date - relativedelta(months=1)
     defaults = {
-        'year': from_date.year,
-        'month': from_date.month,
+        'from_date': from_date,
+        'to_date': to_date - relativedelta(days=1),
     }
-    year_month_form = timepiece_forms.YearMonthForm(request.GET or defaults)
-    if request.GET and year_month_form.is_valid():
-        from_date, to_date = year_month_form.save()
-    entries = timepiece.Entry.objects.filter(end_time__lt=to_date,
-                                             end_time__gte=from_date,)
+    date_form = timepiece_forms.DateForm(request.GET or defaults)
+    if request.GET and date_form.is_valid():
+        from_date, to_date = date_form.save()
+    datesQ = Q()
+    datesQ &= Q(end_time__gte=from_date)  if from_date else Q()
+    datesQ &= Q(end_time__lt=to_date)  if to_date else Q()
+    entries = timepiece.Entry.objects.filter(datesQ)
 
     user_values = ['user__pk', 'user__first_name', 'user__last_name']
     unverified = entries.filter(status='unverified', user__is_active=True)
@@ -697,9 +705,9 @@ def invoice_projects(request):
     ).annotate(s=Sum('hours')).order_by('project__type__label',
                                         'project__name', 'status')
     return render_to_response('timepiece/time-sheet/invoice_projects.html', {
-        'year_month_form': year_month_form,
-        'project_totals': project_totals,
-        'to_date': to_date - relativedelta(days=1),
+        'date_form': date_form,
+        'project_totals': project_totals if to_date else [],
+        'to_date': to_date - relativedelta(days=1) if to_date else '',
         'from_date': from_date,
         'unverified': unverified,
         'unapproved': unapproved,

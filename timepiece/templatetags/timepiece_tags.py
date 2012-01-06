@@ -1,5 +1,5 @@
 import urllib
-import datetime
+import datetime, time
 import calendar
 from decimal import Decimal
 
@@ -218,8 +218,10 @@ def build_invoice_row(context, entries, to_date, from_date):
     to_date_str = from_date_str = ''
     if to_date:
         to_date_str = to_date.strftime('%m/%d/%Y')
+        to_ordinal = to_date.toordinal()
     if from_date:
         from_date_str = from_date.strftime('%m/%d/%Y')
+        from_ordinal = from_date.toordinal()
     csv_get_str = urllib.urlencode({
         'to_date': to_date_str,
         'from_date': from_date_str,
@@ -232,9 +234,9 @@ def build_invoice_row(context, entries, to_date, from_date):
         'from_date': from_date_str,
         'project': project,
     })
-    to_date_str = to_date.strftime('%m-%d-%Y')
-    from_date_str = from_date.strftime('%m-%d-%Y')
-    args = (project, from_date.year, from_date.month)
+    args = [project, to_ordinal]
+    if from_date:
+        args.append(from_ordinal)
     invoice_url = reverse('time_sheet_invoice_project', args=args)
     return {
         'hours_invoiced': hours_invoiced,

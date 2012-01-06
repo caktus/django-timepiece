@@ -124,7 +124,7 @@ urlpatterns = patterns('',
 
     url(
         r'time-sheet/invoice_project/(?P<project_id>\d+)/' +
-        r'(?P<year>\d+)/(?P<month>\d+)/$',
+        r'(?P<to_ordinal>\d+)/(?:(?P<from_ordinal>\d+)/)?$',
         views.time_sheet_invoice_project,
         name='time_sheet_invoice_project',
     ),

@@ -186,20 +186,30 @@ class Location(models.Model):
         return self.name
 
 
-class Invoice(models.Model):
-    number = models.IntegerField()
-    project = models.ForeignKey(Project, related_name='invoice')
+ENTRY_GROUP_STATUS = (
+    ('invoiced', 'Invoiced',),
+    ('uninvoiced', 'UnInvoiced',),
+)
+
+class EntryGroup(models.Model):
+    user = models.ForeignKey(User, related_name='entry_group')
+    project = models.ForeignKey(Project, related_name='entry_group')
+    status = models.CharField(max_length=24, choices=ENTRY_GROUP_STATUS,
+                              default='invoiced')
+    number = models.IntegerField(blank=True, null=True)
+    comments = models.TextField(blank=True, null=True)
     created = models.DateTimeField(auto_now=True)
-    start = models.DateField()
+    start = models.DateField(blank=True, null=True)
     end = models.DateField()
 
     def __unicode__(self):
         invoice_data = {
             'number': self.number,
+            'status': self.status,
             'project': self.project,
             'start': self.start.strftime('%b %Y'),
         }
-        return 'Invoice %(number)s : %(project)s - %(start)s' % invoice_data
+        return 'Entry Group %(number)s : %(status)s - %(project)s - %(start)s' % invoice_data
 
 
 class EntryManager(models.Manager):
@@ -240,6 +250,7 @@ ENTRY_STATUS = (
     ('verified', 'Verified',),
     ('approved', 'Approved',),
     ('invoiced', 'Invoiced',),
+    ('uninvoiced', 'UnInvoiced',),
 )
 
 
@@ -258,8 +269,8 @@ class Entry(models.Model):
         Location,
         related_name='entries',
     )
-    invoice = models.ForeignKey(
-        Invoice,
+    entry_group = models.ForeignKey(
+        EntryGroup,
         related_name='entries',
         blank=True, null=True,
     )

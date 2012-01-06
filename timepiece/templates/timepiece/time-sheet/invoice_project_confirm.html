@@ -6,11 +6,51 @@
 
 {% block content %}
   <h2>Invoice Hours for Time Sheet</h2>
-  <h3><p>Are you sure you want to invoice all entries for {{ project.name }} in the month of {{ month }}/{{ year }}</p>
-  <p>After entries are invoiced, they cannot be changed, and are considered charged to the client.</p></h3>
+  <h3>
+  <p>Are you sure you want to invoice or mark as uninvoiced all entries for {{ project.name }}
+  {% if from_date %}
+    from {{ from_date.date }} to {{ to_date.date }}</p>
+  {% else %}
+    until {{ to_date.date }}</p>
+  {% endif %}
+  <p>After entries are marked, they cannot be changed, and are considered charged to the client if invoiced status is selected.</p></h3>
   <form method="post">{% csrf_token %}
-      {{ invoice_form }}
+      {{ invoice_form.as_p }}
       <input type="submit" name="invoice" value="Yes"/>
       <input type='button' value='No' onclick='history.go(-1)' />
   </form>
+<br />
+<p>Entries for this invoice:</p>
+<table class="time-sheet">    
+    <tr>
+        <th>Date</th>
+        <th>User</th>
+        <th>Time</th>
+        <th>Project</th>
+        <th>Activity</th>
+        <th>Hours</th>
+        <th>Comments</th>
+    </tr>            
+    {% for entry in entries %}
+        {% ifchanged entry.start_time|date:"W" %}
+            <tr class="ledger_header">
+                <th colspan='10'>Week of {% week_start entry.start_time %} </th>
+            </tr>
+        {% endifchanged %}
+        <tr>
+            {% ifchanged entry.start_time|date %}
+                <td>{{ entry.start_time|date:"m/d/Y (D)" }}</td>
+            {% else %}
+                <td></td>
+            {% endifchanged %}
+        <td>{{ entry.user.get_full_name }} </td>
+        <td>{{ entry.start_time|date:"P" }} - {{ entry.end_time|date:"P" }} </td>
+        <td>{{ entry.project.name }}</td>
+        <td>{{ entry.activity.name }}</td>
+        <td class="hours">{{ entry.hours }}</td>
+        <td title="{{entry.comments}}">{{ entry.comments|truncatewords:12 }}</td>
+    </tr>
+    {% endfor %}
+</table>
+
 {% endblock %}
