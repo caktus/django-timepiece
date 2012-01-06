@@ -8,20 +8,31 @@ class Migration(SchemaMigration):
 
     def forwards(self, orm):
         
-        # Changing field 'EntryGroup.end'
-        db.alter_column('timepiece_entrygroup', 'end', self.gf('django.db.models.fields.DateTimeField')())
+        # Adding model 'EntryGroup'
+        db.create_table('timepiece_entrygroup', (
+            ('id', self.gf('django.db.models.fields.AutoField')(primary_key=True)),
+            ('user', self.gf('django.db.models.fields.related.ForeignKey')(related_name='entry_group', to=orm['auth.User'])),
+            ('project', self.gf('django.db.models.fields.related.ForeignKey')(related_name='entry_group', to=orm['timepiece.Project'])),
+            ('status', self.gf('django.db.models.fields.CharField')(default='invoiced', max_length=24)),
+            ('number', self.gf('django.db.models.fields.IntegerField')(null=True, blank=True)),
+            ('comments', self.gf('django.db.models.fields.TextField')(null=True, blank=True)),
+            ('created', self.gf('django.db.models.fields.DateTimeField')(auto_now=True, blank=True)),
+            ('start', self.gf('django.db.models.fields.DateField')(null=True, blank=True)),
+            ('end', self.gf('django.db.models.fields.DateField')()),
+        ))
+        db.send_create_signal('timepiece', ['EntryGroup'])
 
-        # Changing field 'EntryGroup.start'
-        db.alter_column('timepiece_entrygroup', 'start', self.gf('django.db.models.fields.DateTimeField')())
+        # Adding field 'Entry.entry_group'
+        db.add_column('timepiece_entry', 'entry_group', self.gf('django.db.models.fields.related.ForeignKey')(blank=True, related_name='entries', null=True, to=orm['timepiece.EntryGroup']), keep_default=False)
 
 
     def backwards(self, orm):
         
-        # Changing field 'EntryGroup.end'
-        db.alter_column('timepiece_entrygroup', 'end', self.gf('django.db.models.fields.DateField')())
+        # Deleting model 'EntryGroup'
+        db.delete_table('timepiece_entrygroup')
 
-        # Changing field 'EntryGroup.start'
-        db.alter_column('timepiece_entrygroup', 'start', self.gf('django.db.models.fields.DateField')())
+        # Deleting field 'Entry.entry_group'
+        db.delete_column('timepiece_entry', 'entry_group_id')
 
 
     models = {
@@ -132,11 +143,11 @@ class Migration(SchemaMigration):
             'Meta': {'object_name': 'EntryGroup'},
             'comments': ('django.db.models.fields.TextField', [], {'null': 'True', 'blank': 'True'}),
             'created': ('django.db.models.fields.DateTimeField', [], {'auto_now': 'True', 'blank': 'True'}),
-            'end': ('django.db.models.fields.DateTimeField', [], {}),
+            'end': ('django.db.models.fields.DateField', [], {}),
             'id': ('django.db.models.fields.AutoField', [], {'primary_key': 'True'}),
             'number': ('django.db.models.fields.IntegerField', [], {'null': 'True', 'blank': 'True'}),
             'project': ('django.db.models.fields.related.ForeignKey', [], {'related_name': "'entry_group'", 'to': "orm['timepiece.Project']"}),
-            'start': ('django.db.models.fields.DateTimeField', [], {}),
+            'start': ('django.db.models.fields.DateField', [], {'null': 'True', 'blank': 'True'}),
             'status': ('django.db.models.fields.CharField', [], {'default': "'invoiced'", 'max_length': '24'}),
             'user': ('django.db.models.fields.related.ForeignKey', [], {'related_name': "'entry_group'", 'to': "orm['auth.User']"})
         },
