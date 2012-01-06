@@ -380,10 +380,12 @@ class Entry(models.Model):
                     '%(project)s - %(activity)s - ' % entry_data + \
                     'from %(start_time)s to %(end_time)s' % entry_data
                     raise ValidationError(output)
+        
         try:
             activity_group = self.project.activity_group
             if activity_group:
-                if self.activity not in activity_group.activities.all():
+                activity = self.activity.pk
+                if not activity_group.activities.filter(pk=activity).exists():
                     err_msg = 'That activity is not allowed for this project'
                     raise ValidationError(err_msg)
         except (Project.DoesNotExist, Activity.DoesNotExist):
