@@ -291,9 +291,6 @@ class AddUpdateEntryForm(forms.ModelForm):
         if not start:
             raise forms.ValidationError(
                 'Please enter a valid date/time.')
-        if start >= datetime.now() or end and end > datetime.now():
-            raise forms.ValidationError(
-                'Entries may not be added in the future.')
         #Obtain all current entries, except the one being edited
         times = [start, end] if end else [start]
         query = reduce(lambda q, time: q | Q(start_time__lte=time), times, Q())
