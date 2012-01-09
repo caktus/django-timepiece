@@ -1,5 +1,6 @@
 import urllib
-import datetime, time
+import datetime
+import time
 import calendar
 from decimal import Decimal
 

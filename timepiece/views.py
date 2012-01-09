@@ -556,6 +556,7 @@ def view_person_time_sheet(request, person_id, period_id=None,
     return render_to_response(template, context,
         context_instance=RequestContext(request))
 
+
 @login_required
 @transaction.commit_on_success
 def time_sheet_invoice_project(request, project_id, to_date, from_date=None):
@@ -675,6 +676,7 @@ def time_sheet_change_status(request, form, from_date, to_date, status,
     template = 'timepiece/time-sheet/%s_time_sheet.html' % action
     return render_to_response(template, context,
         context_instance=RequestContext(request))
+
 
 @login_required
 def invoice_projects(request):

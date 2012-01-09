@@ -122,8 +122,8 @@ urlpatterns = patterns('',
         name='time_sheet_change_status',
     ),
     url(
-        r'time-sheet/invoice-project/(?P<project_id>\d+)/' + 
-        r'(?P<to_date>\d\d\d\d-\d\d-\d\d)/' + 
+        r'time-sheet/invoice-project/(?P<project_id>\d+)/' +
+        r'(?P<to_date>\d\d\d\d-\d\d-\d\d)/' +
         r'(?:(?P<from_date>\d\d\d\d-\d\d-\d\d)/)?$',
         views.time_sheet_invoice_project,
         name='time_sheet_invoice_project',
