@@ -1,0 +1,47 @@
+{% extends 'timepiece/time-sheet/base.html' %}
+{% load timepiece_tags %}
+{% load url from future %}
+
+{% block title %}Invoices{% endblock %}
+
+{% block content %}
+<h2>Project Invoice Summary</h2>
+<ul class='header-actions-left'>
+    <li>
+        <a href="{% url 'invoice_projects' %}">Make Invoices</a>
+    </li>
+    <li>
+        Previous Invoices
+    </li>
+</ul>
+<h3>Invoices</h3>
+{% if invoices %}
+    <table>
+        <tr>
+            <th>Project name</th>
+            <th>Status</th>
+            <th>Invoiced by</th>
+            <th>Number</th>
+            <th>Created on</th>
+            <th>Starting on</th>
+            <th>Ending on</th>
+            <th>Comments</th>
+        </tr>
+        {% for invoice in invoices %}
+            <tr>
+                <th>{{ invoice.project }}</th>
+                <td>{{ invoice.status|capfirst }}</td>
+                <td>{{ invoice.user.get_full_name }}</td>
+                <td>{{ invoice.number|default:"Not specified" }}</td>
+                <td>{{ invoice.created|date:"M d Y P" }}</td>
+                <td>{{ invoice.start|date:"M d Y"|default:"Not specified" }}</td>
+                <td>{{ invoice.end|date:"M d Y" }}</td>
+                <td title="{{ invoice.comments }} ">{{ invoice.comments|truncatewords:12 }}</td>
+            </tr>
+        {% endfor %}
+    </table>
+{% else %}
+    <p>There are no invoices.</p>
+{% endif %}
+
+{% endblock %}

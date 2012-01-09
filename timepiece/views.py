@@ -596,7 +596,7 @@ def time_sheet_invoice_project(request, project_id, to_date, from_date=None):
         entries = entries.order_by('start_time')
         if not entries:
             raise Http404
-    template = 'timepiece/time-sheet/invoice_project_confirm.html'
+    template = 'timepiece/time-sheet/invoice/confirm.html'
     return render_to_response(template, {
         'invoice_form': invoice_form,
         'entries': entries.select_related(),
@@ -705,7 +705,8 @@ def invoice_projects(request):
         'project__pk', 'status', 'project__status__label'
     ).annotate(s=Sum('hours')).order_by('project__type__label',
                                         'project__name', 'status')
-    return render_to_response('timepiece/time-sheet/invoice_projects.html', {
+    return render_to_response(
+        'timepiece/time-sheet/invoice/make_invoice.html', {
         'date_form': date_form,
         'project_totals': project_totals if to_date else [],
         'to_date': to_date - relativedelta(days=1) if to_date else '',
@@ -713,6 +714,16 @@ def invoice_projects(request):
         'unverified': unverified,
         'unapproved': unapproved,
     }, context_instance=RequestContext(request))
+
+
+
+def list_invoices(request):
+    invoices = timepiece.EntryGroup.objects.all()
+    context = {
+        'invoices': invoices,
+    }
+    return render_to_response('timepiece/time-sheet/invoice/list.html',
+        context, context_instance=RequestContext(request))
 
 
 @permission_required('timepiece.view_business')

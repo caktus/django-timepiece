@@ -2,10 +2,22 @@
 {% load timepiece_tags %}
 {% load url from future %}
 
-{% block title %}Project Invoice Summary{% endblock %}
+{% block title %}Make Invoices{% endblock %}
 
 {% block content %}
 <h2>Project Invoice Summary</h2>
+<ul class='header-actions-left'>
+    <li>
+        Make Invoices
+    </li>
+    <li>
+        {% if perms.timepiece.view_person_time_sheet %}
+            <a href="{% url 'list_invoices' %}">Previous Invoices</a>
+        {% endif %}
+    </li>
+</ul>
+
+
 {% date_filters "months_no_range" %}
 <form method="get" action="" id="date-filter" accept-charset="utf-8">
     {{ date_form }}
