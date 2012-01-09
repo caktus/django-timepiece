@@ -397,6 +397,7 @@ class ProjectForm(forms.ModelForm):
             'point_person',
             'type',
             'status',
+            'activity_group',
             'description',
         )
 
