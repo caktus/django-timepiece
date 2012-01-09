@@ -84,6 +84,7 @@ class Project(models.Model):
         related_name='activity_group',
         null=True,
         blank=True,
+        verbose_name="restrict activities to",
     )
     type = models.ForeignKey(
         Attribute,
