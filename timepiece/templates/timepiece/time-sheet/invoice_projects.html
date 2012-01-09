@@ -1,23 +1,15 @@
 {% extends 'timepiece/time-sheet/base.html' %}
 {% load timepiece_tags %}
+{% load url from future %}
 
 {% block title %}Project Invoice Summary{% endblock %}
 
 {% block content %}
 <h2>Project Invoice Summary</h2>
-
 {% date_filters "months_no_range" %}
-
 <form method="get" action="" id="date-filter" accept-charset="utf-8">
-    <ul id='ledger-date-fieldlist'>
-        {{ form.as_ul }}
-        <li>
-            <input type='submit' name='submit' value='Update' id='id_date_form_submit_btn'/>
-        </li>
-        <li>
-            <input type='button' name='clear' value='Clear' id='id_date_form_clear_btn'/>
-        </li>
-    </ul>
+    {{ date_form }}
+    <input type='submit' name='yearmonth' value="Update" id='yearmonth'/>
 </form>
 
 <div class="cal_wrapper" style='float: right;'>
@@ -29,7 +21,7 @@
     <p><strong>Warning:</strong> The following users have <strong>unverified</strong> time during this period:</p>
     <ul>
         {% for pk, first, last in unverified %}
-            <li><a href="{% url view_person_time_sheet pk %}">{{ first }} {{ last }}</a></li>
+            <li><a href="{% url 'view_person_time_sheet' pk %}">{{ first }} {{ last }}</a></li>
         {% endfor %}
     </ul>
 {% endif %}
@@ -38,7 +30,7 @@
     <p><strong>Warning:</strong> The following users have <strong>unapproved</strong> time during this period:</p>
     <ul>
         {% for pk, first, last in unapproved %}
-            <li><a href="{% url view_person_time_sheet pk %}">{{ first }} {{ last }}</a></li>
+            <li><a href="{% url 'view_person_time_sheet' pk %}">{{ first }} {{ last }}</a></li>
         {% endfor %}
     </ul>
 {% endif %}
@@ -54,7 +46,7 @@
             <th></th>
         </tr>
         {% regroup type.list by project__name as project_list %}
-        {% for project in project_list %}  
+        {% for project in project_list %}
             <tr>
                 <th>{{ project.grouper }}</th>
                 <td>{{ project.list.0.project__status__label|title }}</td>

@@ -205,6 +205,15 @@ class Location(models.Model):
         return self.name
 
 
+ENTRY_STATUS = (
+    ('unverified', 'Unverified',),
+    ('verified', 'Verified',),
+    ('approved', 'Approved',),
+    ('invoiced', 'Invoiced',),
+    ('not-invoiced', 'Not Invoiced',),
+)
+
+
 class EntryManager(models.Manager):
     def get_query_set(self):
         qs = super(EntryManager, self).get_query_set()
@@ -238,14 +247,6 @@ class EntryWorkedManager(models.Manager):
         return qs.exclude(project__in=projects.values())
 
 
-ENTRY_STATUS = (
-    ('unverified', 'Unverified',),
-    ('verified', 'Verified',),
-    ('approved', 'Approved',),
-    ('invoiced', 'Invoiced',),
-)
-
-
 class Entry(models.Model):
     """
     This class is where all of the time logs are taken care of
@@ -261,11 +262,17 @@ class Entry(models.Model):
         Location,
         related_name='entries',
     )
+    entry_group = models.ForeignKey(
+       'EntryGroup',
+        related_name='entries',
+        blank=True, null=True,
+    )
     status = models.CharField(
         max_length=24,
         choices=ENTRY_STATUS,
         default='unverified',
     )
+
     start_time = models.DateTimeField()
     end_time = models.DateTimeField(blank=True, null=True)
     seconds_paused = models.PositiveIntegerField(default=0)
@@ -381,7 +388,6 @@ class Entry(models.Model):
                     '%(project)s - %(activity)s - ' % entry_data + \
                     'from %(start_time)s to %(end_time)s' % entry_data
                     raise ValidationError(output)
-        
         try:
             activity_group = self.project.activity_group
             if activity_group:
@@ -526,6 +532,31 @@ class Entry(models.Model):
             ('can_clock_out', 'Can use Pendulum to clock out'),
             ('view_entry_summary', 'Can view entry summary page'),
         )
+
+
+class EntryGroup(models.Model):
+    VALID_STATUS = ('invoiced', 'not-invoiced')
+    STATUS_CHOICES = [status for status in ENTRY_STATUS \
+                      if status[0] in VALID_STATUS]
+    user = models.ForeignKey(User, related_name='entry_group')
+    project = models.ForeignKey(Project, related_name='entry_group')
+    status = models.CharField(max_length=24, choices=STATUS_CHOICES,
+                              default='invoiced')
+    number = models.IntegerField("Reference #", blank=True, null=True)
+    comments = models.TextField(blank=True, null=True)
+    created = models.DateTimeField(auto_now=True)
+    start = models.DateField(blank=True, null=True)
+    end = models.DateField()
+
+    def __unicode__(self):
+        invoice_data = {
+            'number': self.number,
+            'status': self.status,
+            'project': self.project,
+            'start': self.start.strftime('%b %Y'),
+        }
+        return 'Entry Group %(number)s : %(status)s - %(project)s - %(start)s' % invoice_data
+
 
 # Add a utility method to the User class that will tell whether or not a
 # particular user has any unclosed entries
