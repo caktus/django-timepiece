@@ -62,6 +62,7 @@ History
 ******************
 * Allowed entries to be added in the future.
 * Added per project activity restrictions.
+* Allowed marking entries as 'not invoiced' and grouped entries together after clicking on "Mark as invoiced"
 
 0.3.5 (12-09-2011)
 ******************
