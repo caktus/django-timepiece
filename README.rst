@@ -58,6 +58,10 @@ Installation
 History
 -------
 
+0.3.6 (Unreleased)
+******************
+* Allowed entries to be added in the future. 
+
 0.3.5 (12-09-2011)
 ******************
 * Optimized Payroll Summary with reusable code from Hourly Reports.
