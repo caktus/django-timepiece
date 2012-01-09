@@ -8,31 +8,14 @@ class Migration(SchemaMigration):
 
     def forwards(self, orm):
         
-        # Adding model 'EntryGroup'
-        db.create_table('timepiece_entrygroup', (
-            ('id', self.gf('django.db.models.fields.AutoField')(primary_key=True)),
-            ('user', self.gf('django.db.models.fields.related.ForeignKey')(related_name='entry_group', to=orm['auth.User'])),
-            ('project', self.gf('django.db.models.fields.related.ForeignKey')(related_name='entry_group', to=orm['timepiece.Project'])),
-            ('status', self.gf('django.db.models.fields.CharField')(default='invoiced', max_length=24)),
-            ('number', self.gf('django.db.models.fields.IntegerField')(null=True, blank=True)),
-            ('comments', self.gf('django.db.models.fields.TextField')(null=True, blank=True)),
-            ('created', self.gf('django.db.models.fields.DateTimeField')(auto_now=True, blank=True)),
-            ('start', self.gf('django.db.models.fields.DateField')(null=True, blank=True)),
-            ('end', self.gf('django.db.models.fields.DateField')()),
-        ))
-        db.send_create_signal('timepiece', ['EntryGroup'])
-
-        # Adding field 'Entry.entry_group'
-        db.add_column('timepiece_entry', 'entry_group', self.gf('django.db.models.fields.related.ForeignKey')(blank=True, related_name='entries', null=True, to=orm['timepiece.EntryGroup']), keep_default=False)
+        # Adding field 'Project.activity_group'
+        db.add_column('timepiece_project', 'activity_group', self.gf('django.db.models.fields.related.ForeignKey')(blank=True, related_name='activity_group', null=True, to=orm['timepiece.ActivityGroup']), keep_default=False)
 
 
     def backwards(self, orm):
         
-        # Deleting model 'EntryGroup'
-        db.delete_table('timepiece_entrygroup')
-
-        # Deleting field 'Entry.entry_group'
-        db.delete_column('timepiece_entry', 'entry_group_id')
+        # Deleting field 'Project.activity_group'
+        db.delete_column('timepiece_project', 'activity_group_id')
 
 
     models = {
@@ -78,6 +61,12 @@ class Migration(SchemaMigration):
             'code': ('django.db.models.fields.CharField', [], {'unique': 'True', 'max_length': '5'}),
             'id': ('django.db.models.fields.AutoField', [], {'primary_key': 'True'}),
             'name': ('django.db.models.fields.CharField', [], {'max_length': '50'})
+        },
+        'timepiece.activitygroup': {
+            'Meta': {'object_name': 'ActivityGroup'},
+            'activities': ('django.db.models.fields.related.ManyToManyField', [], {'related_name': "'activity_group'", 'symmetrical': 'False', 'to': "orm['timepiece.Activity']"}),
+            'id': ('django.db.models.fields.AutoField', [], {'primary_key': 'True'}),
+            'name': ('django.db.models.fields.CharField', [], {'unique': 'True', 'max_length': '255'})
         },
         'timepiece.assignmentallocation': {
             'Meta': {'object_name': 'AssignmentAllocation'},
@@ -128,7 +117,6 @@ class Migration(SchemaMigration):
             'comments': ('django.db.models.fields.TextField', [], {'blank': 'True'}),
             'date_updated': ('django.db.models.fields.DateTimeField', [], {'auto_now': 'True', 'blank': 'True'}),
             'end_time': ('django.db.models.fields.DateTimeField', [], {'null': 'True', 'blank': 'True'}),
-            'entry_group': ('django.db.models.fields.related.ForeignKey', [], {'blank': 'True', 'related_name': "'entries'", 'null': 'True', 'to': "orm['timepiece.EntryGroup']"}),
             'hours': ('django.db.models.fields.DecimalField', [], {'default': '0', 'max_digits': '8', 'decimal_places': '2'}),
             'id': ('django.db.models.fields.AutoField', [], {'primary_key': 'True'}),
             'location': ('django.db.models.fields.related.ForeignKey', [], {'related_name': "'entries'", 'to': "orm['timepiece.Location']"}),
@@ -138,18 +126,6 @@ class Migration(SchemaMigration):
             'start_time': ('django.db.models.fields.DateTimeField', [], {}),
             'status': ('django.db.models.fields.CharField', [], {'default': "'unverified'", 'max_length': '24'}),
             'user': ('django.db.models.fields.related.ForeignKey', [], {'related_name': "'timepiece_entries'", 'to': "orm['auth.User']"})
-        },
-        'timepiece.entrygroup': {
-            'Meta': {'object_name': 'EntryGroup'},
-            'comments': ('django.db.models.fields.TextField', [], {'null': 'True', 'blank': 'True'}),
-            'created': ('django.db.models.fields.DateTimeField', [], {'auto_now': 'True', 'blank': 'True'}),
-            'end': ('django.db.models.fields.DateField', [], {}),
-            'id': ('django.db.models.fields.AutoField', [], {'primary_key': 'True'}),
-            'number': ('django.db.models.fields.IntegerField', [], {'null': 'True', 'blank': 'True'}),
-            'project': ('django.db.models.fields.related.ForeignKey', [], {'related_name': "'entry_group'", 'to': "orm['timepiece.Project']"}),
-            'start': ('django.db.models.fields.DateField', [], {'null': 'True', 'blank': 'True'}),
-            'status': ('django.db.models.fields.CharField', [], {'default': "'invoiced'", 'max_length': '24'}),
-            'user': ('django.db.models.fields.related.ForeignKey', [], {'related_name': "'entry_group'", 'to': "orm['auth.User']"})
         },
         'timepiece.location': {
             'Meta': {'object_name': 'Location'},
@@ -172,6 +148,7 @@ class Migration(SchemaMigration):
         },
         'timepiece.project': {
             'Meta': {'ordering': "('name', 'status', 'type')", 'object_name': 'Project'},
+            'activity_group': ('django.db.models.fields.related.ForeignKey', [], {'blank': 'True', 'related_name': "'activity_group'", 'null': 'True', 'to': "orm['timepiece.ActivityGroup']"}),
             'billing_period': ('django.db.models.fields.related.ForeignKey', [], {'blank': 'True', 'related_name': "'projects'", 'null': 'True', 'to': "orm['timepiece.RepeatPeriod']"}),
             'business': ('django.db.models.fields.related.ForeignKey', [], {'related_name': "'new_business_projects'", 'to': "orm['timepiece.Business']"}),
             'description': ('django.db.models.fields.TextField', [], {}),

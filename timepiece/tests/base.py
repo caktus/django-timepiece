@@ -228,6 +228,22 @@ class TimepieceDataTestCase(TestCase):
             name="development",
             billable=True,
         )
+        self.sick_activity = timepiece.Activity.objects.create(
+            code="sick",
+            name="sick/personal",
+            billable=False,
+        )
+        self.activity_group_all = timepiece.ActivityGroup.objects.create(
+            name='All',
+        )
+        self.activity_group_work = timepiece.ActivityGroup.objects.create(
+            name='Client work',
+        )
+        activities = timepiece.Activity.objects.all()
+        for activity in activities:
+            activity.activity_group.add(self.activity_group_all)
+            if activity != self.sick_activity:
+                activity.activity_group.add(self.activity_group_work)
         self.business = timepiece.Business.objects.create(
             name='Example Business',
             description='',
@@ -248,6 +264,7 @@ class TimepieceDataTestCase(TestCase):
             status=status,
             business=self.business,
             point_person=self.user,
+            activity_group=self.activity_group_work,
         )
         self.project2 = timepiece.Project.objects.create(
             name='Example Project 2',
@@ -255,6 +272,7 @@ class TimepieceDataTestCase(TestCase):
             status=status,
             business=self.business,
             point_person=self.user2,
+            activity_group=self.activity_group_all,
         )
         timepiece.ProjectRelationship.objects.create(
             user=self.user,
