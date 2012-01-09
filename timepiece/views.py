@@ -679,9 +679,8 @@ def time_sheet_change_status(request, form, from_date, to_date, status,
 @login_required
 def invoice_projects(request):
     to_date = utils.get_month_start(datetime.datetime.today()).date()
-    from_date = to_date - relativedelta(months=1)
+    from_date = None
     defaults = {
-        'from_date': from_date,
         'to_date': to_date - relativedelta(days=1),
     }
     date_form = timepiece_forms.DateForm(request.GET or defaults)
