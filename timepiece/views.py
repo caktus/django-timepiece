@@ -598,7 +598,7 @@ def time_sheet_invoice_project(request, project_id, to_date, from_date=None):
     template = 'timepiece/time-sheet/invoice_project_confirm.html'
     return render_to_response(template, {
         'invoice_form': invoice_form,
-        'entries': entries,
+        'entries': entries.select_related(),
         'project': project,
         'from_date': from_date,
         'to_date': to_date,
