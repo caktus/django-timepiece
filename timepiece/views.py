@@ -683,7 +683,7 @@ def invoice_projects(request):
     to_date = utils.get_month_start(datetime.datetime.today()).date()
     from_date = None
     defaults = {
-        'to_date': to_date - relativedelta(days=1),
+        'to_date': (to_date - relativedelta(days=1)).strftime('%m/%d/%Y'),
     }
     date_form = timepiece_forms.DateForm(request.GET or defaults)
     if request.GET and date_form.is_valid():
