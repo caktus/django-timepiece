@@ -331,6 +331,15 @@ class DateForm(forms.Form):
         widget=forms.HiddenInput(), required=False,
     )
 
+    def clean(self):
+        data = self.cleaned_data
+        from_date = data.get('from_date', None)
+        to_date = data.get('to_date', None)
+        if from_date and to_date and from_date > to_date:
+            err_msg = 'The ending date must exceed the beginning date'
+            raise ValidationError(err_msg)
+        return data
+
     def save(self):
         from_date = self.cleaned_data.get('from_date', '')
         to_date = self.cleaned_data.get('to_date', '')
@@ -358,6 +367,10 @@ class YearMonthForm(forms.Form):
             first_year = first_entry.end_time.year
         years = [(year, year) for year in xrange(first_year, this_year + 1)]
         self.fields['year'].choices = years
+        initial = kwargs.get('initial')
+        if initial:
+            this_year = initial.get('year', this_year)
+            this_month = initial.get('month', this_month)
         self.fields['year'].initial = this_year
         self.fields['month'].initial = this_month
 
@@ -421,6 +434,23 @@ class ProjectRelationshipForm(forms.ModelForm):
             choices=self.fields['types'].choices
         )
         self.fields['types'].help_text = ''
+
+
+class InvoiceForm(forms.ModelForm):
+    class Meta:
+        model = timepiece.EntryGroup
+        fields = ('status', 'number', 'comments')
+
+    def save(self, commit=True):
+        instance = super(InvoiceForm, self).save(commit=False)
+        instance.project = self.initial['project']
+        instance.user = self.initial['user']
+        from_date = self.initial['from_date']
+        to_date = self.initial['to_date']
+        instance.start = from_date
+        instance.end = to_date
+        instance.save()
+        return instance
 
 
 class RepeatPeriodForm(forms.ModelForm):
