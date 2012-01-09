@@ -121,7 +121,7 @@ class InvoiceTestCase(TimepieceDataTestCase):
 
     def test_invoice_view(self):
         to_date = datetime.datetime(2011, 1, 31)
-        args = [self.project_billable.id, to_date.toordinal()]
+        args = [self.project_billable.id, to_date.strftime('%Y-%m-%d')]
         url = reverse('time_sheet_invoice_project', args=args)
         response = self.client.get(url)
         self.assertEqual(response.status_code, 200)
@@ -131,8 +131,8 @@ class InvoiceTestCase(TimepieceDataTestCase):
         from_date = datetime.datetime(2011, 1, 1)
         args = [
             self.project_billable.id,
-            to_date.toordinal(),
-            from_date.toordinal()
+            to_date.strftime('%Y-%m-%d'),
+            from_date.strftime('%Y-%m-%d')
         ]
         url = reverse('time_sheet_invoice_project', args=args)
         response = self.client.get(url)
@@ -144,19 +144,19 @@ class InvoiceTestCase(TimepieceDataTestCase):
 
     def test_invoice_bad_args(self):
         # A year/month/project with no entries should raise a 404
-        args = [self.project_billable.id, 200]
+        args = [self.project_billable.id, '2008-01-13']
         url = reverse('time_sheet_invoice_project', args=args)
         response = self.client.get(url)
         self.assertEqual(response.status_code, 404)
         # A year/month with bad/overflow values should raise a 404
-        args = [self.project_billable.id, 21231231231231231231231231231231213]
+        args = [self.project_billable.id, '9999-13-01']
         url = reverse('time_sheet_invoice_project', args=args)
         response = self.client.get(url)
         self.assertEqual(response.status_code, 404)
 
     def test_make_invoice(self):
         to_date = datetime.datetime(2011, 1, 31)
-        args = [self.project_billable.id, to_date.toordinal()]
+        args = [self.project_billable.id, to_date.strftime('%Y-%m-%d')]
         url = reverse('time_sheet_invoice_project', args=args)
         response = self.client.post(url, {'number': 3, 'status': 'invoiced'})
         self.assertEqual(response.status_code, 302)
@@ -182,8 +182,8 @@ class InvoiceTestCase(TimepieceDataTestCase):
         from_date = datetime.datetime(2011, 1, 1)
         args = [
             self.project_billable.id,
-            to_date.toordinal(),
-            from_date.toordinal()
+            to_date.strftime('%Y-%m-%d'),
+            from_date.strftime('%Y-%m-%d')
         ]
         url = reverse('time_sheet_invoice_project', args=args)
         response = self.client.post(url, {'number': 5, 'status': 'uninvoiced'})
@@ -203,7 +203,7 @@ class InvoiceTestCase(TimepieceDataTestCase):
 
     def test_invoice_bad_number(self):
         to_date = datetime.datetime(2011, 1, 31)
-        args = [self.project_billable.id, to_date.toordinal()]
+        args = [self.project_billable.id, to_date.strftime('%Y-%m-%d')]
         url = reverse('time_sheet_invoice_project', args=args)
         response = self.client.post(url, {'number': 'string'})
         err_msg = 'Enter a whole number.'

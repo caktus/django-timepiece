@@ -558,13 +558,13 @@ def view_person_time_sheet(request, person_id, period_id=None,
 
 @login_required
 @transaction.commit_on_success
-def time_sheet_invoice_project(request, project_id, to_ordinal, from_ordinal=None):
+def time_sheet_invoice_project(request, project_id, to_date, from_date=None):
     if not request.user.has_perm('timepiece.edit_person_time_sheet'):
         return HttpResponseForbidden('Forbidden')
     try:
-        to_date = datetime.datetime.fromordinal(int(to_ordinal))
-        if from_ordinal:
-            from_date = datetime.datetime.fromordinal(int(from_ordinal))
+        to_date = datetime.datetime.strptime(to_date, '%Y-%m-%d')
+        if from_date:
+            from_date = datetime.datetime.strptime(from_date, '%Y-%m-%d')
         else:
             from_date = None
     except (ValueError, OverflowError):

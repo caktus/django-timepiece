@@ -215,13 +215,8 @@ def build_invoice_row(context, entries, to_date, from_date):
             hours_invoiced += entry['s']
         else:
             hours_uninvoiced += entry['s']
-    to_date_str = from_date_str = ''
-    if to_date:
-        to_date_str = to_date.strftime('%m/%d/%Y')
-        to_ordinal = to_date.toordinal()
-    if from_date:
-        from_date_str = from_date.strftime('%m/%d/%Y')
-        from_ordinal = from_date.toordinal()
+    to_date_str = to_date.strftime('%Y-%m-%d') if to_date else ''
+    from_date_str = from_date.strftime('%Y-%m-%d') if from_date else ''
     csv_get_str = urllib.urlencode({
         'to_date': to_date_str,
         'from_date': from_date_str,
@@ -229,14 +224,9 @@ def build_invoice_row(context, entries, to_date, from_date):
     })
     csv_url = reverse('export_project_time_sheet', args=[project, ])
     csv_url += '?' + csv_get_str
-    invoice_get_str = urllib.urlencode({
-        'to_date': to_date_str,
-        'from_date': from_date_str,
-        'project': project,
-    })
-    args = [project, to_ordinal]
+    args = [project, to_date_str]
     if from_date:
-        args.append(from_ordinal)
+        args.append(from_date_str)
     invoice_url = reverse('time_sheet_invoice_project', args=args)
     return {
         'hours_invoiced': hours_invoiced,

@@ -121,14 +121,13 @@ urlpatterns = patterns('',
         views.time_sheet_change_status,
         name='time_sheet_change_status',
     ),
-
     url(
-        r'time-sheet/invoice_project/(?P<project_id>\d+)/' +
-        r'(?P<to_ordinal>\d+)/(?:(?P<from_ordinal>\d+)/)?$',
+        r'time-sheet/invoice-project/(?P<project_id>\d+)/' + 
+        r'(?P<to_date>\d\d\d\d-\d\d-\d\d)/' + 
+        r'(?:(?P<from_date>\d\d\d\d-\d\d-\d\d)/)?$',
         views.time_sheet_invoice_project,
         name='time_sheet_invoice_project',
     ),
-
     url(
         r'^time-sheet/project/(?P<project_id>\d+)/(?:(?P<window_id>\d+)/)?$',
         views.project_time_sheet,
@@ -145,7 +144,6 @@ urlpatterns = patterns('',
         views.invoice_projects,
         name='invoice_projects',
     ),
-
     url(
         r'^projection/$',
         views.projection_summary,
