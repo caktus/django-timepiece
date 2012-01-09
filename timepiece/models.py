@@ -79,6 +79,13 @@ class Project(models.Model):
         related_name='user_projects',
         through='ProjectRelationship',
     )
+    activity_group = models.ForeignKey(
+        'ActivityGroup',
+        related_name='activity_group',
+        null=True,
+        blank=True,
+        verbose_name="restrict activities to",
+    )
     type = models.ForeignKey(
         Attribute,
         limit_choices_to={'type': 'project-type'},
@@ -176,6 +183,18 @@ class Activity(models.Model):
     class Meta:
         ordering = ('name',)
         verbose_name_plural = 'activities'
+
+
+class ActivityGroup(models.Model):
+
+    name = models.CharField(max_length=255, unique=True)
+    activities = models.ManyToManyField(
+        Activity,
+        related_name='activity_group',
+    )
+
+    def __unicode__(self):
+        return self.name
 
 
 class Location(models.Model):
@@ -362,7 +381,17 @@ class Entry(models.Model):
                     '%(project)s - %(activity)s - ' % entry_data + \
                     'from %(start_time)s to %(end_time)s' % entry_data
                     raise ValidationError(output)
-
+        
+        try:
+            activity_group = self.project.activity_group
+            if activity_group:
+                activity = self.activity.pk
+                if not activity_group.activities.filter(pk=activity).exists():
+                    err_msg = 'That activity is not allowed for this project'
+                    raise ValidationError(err_msg)
+        except (Project.DoesNotExist, Activity.DoesNotExist):
+            # Will be caught by field requirements
+            pass
         if end <= start:
             raise ValidationError('Ending time must exceed the starting time')
         return True

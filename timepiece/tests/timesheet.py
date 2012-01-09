@@ -294,14 +294,25 @@ class ClockInTest(TimepieceDataTestCase):
 
     def testClockInUnauthorizedProject(self):
         self.client.login(username='user', password='abc')
-        data = {
-            'project': self.project2.id,
-            'start_time_0': [u'11/02/2009'],
-            'start_time_1': [u'11:09:21'],
-        }
+        data = self.clock_in_form
+        data.update({'project': self.project2.id})
         response = self.client.post(self.url, data)
         self.assertEqual(response.status_code, 200)
         self.assertTrue(response.context['form'].errors)
+        err_msg = 'Select a valid choice. That choice is not one of the ' + \
+                  'available choices.'
+        self.assertFormError(response, 'form', 'project', err_msg)
+
+    def testClockInBadActivity(self):
+        self.client.login(username='user', password='abc')
+        data = self.clock_in_form
+        data.update({
+            'project': self.project.id,
+            'activity': self.sick_activity.id,
+        })
+        response = self.client.post(self.url, data)
+        err_msg = 'That activity is not allowed for this project'
+        self.assertFormError(response, 'form', None, err_msg)
 
 
 class AutoActivityTest(TimepieceDataTestCase):
@@ -734,6 +745,17 @@ class CreateEditEntry(TimepieceDataTestCase):
         projects = list(response.context['form'].fields['project'].queryset)
         self.assertTrue(self.project in projects)
         self.assertFalse(self.project2 in projects)
+
+    def testBadActivity(self):
+        """
+        Make sure the user cannot add an entry for an activity that is not in
+        the project's activity group
+        """
+        data = self.default_data
+        data.update({'activity': self.sick_activity.id})
+        response = self.client.post(self.create_url, data)
+        err_msg = 'That activity is not allowed for this project'
+        self.assertFormError(response, 'form', None, err_msg)
 
 
 class StatusTest(TimepieceDataTestCase):
