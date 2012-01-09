@@ -716,14 +716,23 @@ def invoice_projects(request):
     }, context_instance=RequestContext(request))
 
 
-
+@login_required
 def list_invoices(request):
     invoices = timepiece.EntryGroup.objects.all()
-    context = {
-        'invoices': invoices,
-    }
-    return render_to_response('timepiece/time-sheet/invoice/list.html',
-        context, context_instance=RequestContext(request))
+    return render_to_response('timepiece/time-sheet/invoice/list.html', {
+            'invoices': invoices,
+        }, context_instance=RequestContext(request))
+
+
+@login_required
+def view_invoice(request, invoice_id):
+    invoice = get_object_or_404(timepiece.EntryGroup, pk=invoice_id)
+    entries = timepiece.Entry.objects.filter(entry_group=invoice)
+    entries = entries.order_by('start_time')
+    return render_to_response('timepiece/time-sheet/invoice/view.html', {
+            'invoice': invoice,
+            'entries': entries.select_related(),
+        }, context_instance=RequestContext(request))
 
 
 @permission_required('timepiece.view_business')

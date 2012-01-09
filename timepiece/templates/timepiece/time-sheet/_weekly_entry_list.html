@@ -1,0 +1,36 @@
+{% load timepiece_tags %}
+{% if entries %}
+    <table class="time-sheet">    
+        <tr>
+            <th>Date</th>
+            <th>User</th>
+            <th>Time</th>
+            <th>Project</th>
+            <th>Activity</th>
+            <th>Hours</th>
+            <th>Comments</th>
+        </tr>            
+        {% for entry in entries %}
+            {% ifchanged entry.start_time|date:"W" %}
+                <tr class="ledger_header">
+                    <th colspan='7'>Week of {% week_start entry.start_time %} </th>
+                </tr>
+            {% endifchanged %}
+            <tr>
+                {% ifchanged entry.start_time|date %}
+                    <td>{{ entry.start_time|date:"m/d/Y (D)" }}</td>
+                {% else %}
+                    <td></td>
+                {% endifchanged %}
+            <td>{{ entry.user.get_full_name }} </td>
+            <td>{{ entry.start_time|date:"P" }} - {{ entry.end_time|date:"P" }} </td>
+            <td>{{ entry.project.name }}</td>
+            <td>{{ entry.activity.name }}</td>
+            <td class="hours">{{ entry.hours }}</td>
+            <td title="{{entry.comments}}">{{ entry.comments|truncatewords:12 }}</td>
+        </tr>
+        {% endfor %}
+    </table>
+{% else %}
+    <p>No entries were found</p>
+{% endif %}

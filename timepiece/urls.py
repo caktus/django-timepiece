@@ -150,6 +150,11 @@ urlpatterns = patterns('',
         name='list_invoices',
     ),
     url(
+        r'^time-sheet/project/invoice/(?P<invoice_id>\d+)/$',
+        views.view_invoice,
+        name='view_invoice',
+    ),
+    url(
         r'^projection/$',
         views.projection_summary,
         name='projection_summary',

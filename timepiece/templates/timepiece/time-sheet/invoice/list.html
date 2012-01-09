@@ -18,10 +18,10 @@
 {% if invoices %}
     <table>
         <tr>
+            <th>Number</th>
             <th>Project name</th>
             <th>Status</th>
             <th>Invoiced by</th>
-            <th>Number</th>
             <th>Created on</th>
             <th>Starting on</th>
             <th>Ending on</th>
@@ -29,10 +29,10 @@
         </tr>
         {% for invoice in invoices %}
             <tr>
+                <td><a href="{% url 'view_invoice' invoice.pk %}">{{ invoice.number|default:"Not specified" }}</a></td>
                 <th>{{ invoice.project }}</th>
                 <td>{{ invoice.status|capfirst }}</td>
                 <td>{{ invoice.user.get_full_name }}</td>
-                <td>{{ invoice.number|default:"Not specified" }}</td>
                 <td>{{ invoice.created|date:"M d Y P" }}</td>
                 <td>{{ invoice.start|date:"M d Y"|default:"Not specified" }}</td>
                 <td>{{ invoice.end|date:"M d Y" }}</td>
