@@ -79,6 +79,12 @@ class Migration(SchemaMigration):
             'id': ('django.db.models.fields.AutoField', [], {'primary_key': 'True'}),
             'name': ('django.db.models.fields.CharField', [], {'max_length': '50'})
         },
+        'timepiece.activitygroup': {
+            'Meta': {'object_name': 'ActivityGroup'},
+            'activities': ('django.db.models.fields.related.ManyToManyField', [], {'related_name': "'activity_group'", 'symmetrical': 'False', 'to': "orm['timepiece.Activity']"}),
+            'id': ('django.db.models.fields.AutoField', [], {'primary_key': 'True'}),
+            'name': ('django.db.models.fields.CharField', [], {'unique': 'True', 'max_length': '255'})
+        },
         'timepiece.assignmentallocation': {
             'Meta': {'object_name': 'AssignmentAllocation'},
             'assignment': ('django.db.models.fields.related.ForeignKey', [], {'related_name': "'blocks'", 'to': "orm['timepiece.ContractAssignment']"}),
@@ -172,6 +178,7 @@ class Migration(SchemaMigration):
         },
         'timepiece.project': {
             'Meta': {'ordering': "('name', 'status', 'type')", 'object_name': 'Project'},
+            'activity_group': ('django.db.models.fields.related.ForeignKey', [], {'blank': 'True', 'related_name': "'activity_group'", 'null': 'True', 'to': "orm['timepiece.ActivityGroup']"}),
             'billing_period': ('django.db.models.fields.related.ForeignKey', [], {'blank': 'True', 'related_name': "'projects'", 'null': 'True', 'to': "orm['timepiece.RepeatPeriod']"}),
             'business': ('django.db.models.fields.related.ForeignKey', [], {'related_name': "'new_business_projects'", 'to': "orm['timepiece.Business']"}),
             'description': ('django.db.models.fields.TextField', [], {}),
