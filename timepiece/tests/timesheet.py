@@ -725,22 +725,6 @@ class CreateEditEntry(TimepieceDataTestCase):
             '%(project)s - %(activity)s starting at %(st_str)s' % \
             self.current_entry_data)
 
-    def testCreateBlockByFuture(self):
-        """
-        Test that add entry is blocked if the end time is in the future
-        """
-        five_min_later = self.now + datetime.timedelta(minutes=5)
-        future_entry = self.default_data
-        future_entry.update({
-            'start_time_0': self.now.strftime('%m/%d/%Y'),
-            'start_time_1': self.now.strftime('%H:%M:%S'),
-            'end_time_0': five_min_later.strftime('%m/%d/%Y'),
-            'end_time_1': five_min_later.strftime('%H:%M:%S'),
-        })
-        response = self.client.post(self.create_url, future_entry, follow=True)
-        self.assertFormError(response, 'form', None,
-            'Entries may not be added in the future.')
-
     def testProjectList(self):
         """
         Make sure the list of available projects conforms to user associations
