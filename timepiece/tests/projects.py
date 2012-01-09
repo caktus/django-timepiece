@@ -186,7 +186,8 @@ class InvoiceTestCase(TimepieceDataTestCase):
             from_date.strftime('%Y-%m-%d')
         ]
         url = reverse('time_sheet_invoice_project', args=args)
-        response = self.client.post(url, {'number': 5, 'status': 'uninvoiced'})
+        response = self.client.post(url, {'number': 5,
+                                          'status': 'not-invoiced'})
         self.assertEqual(response.status_code, 302)
         # Verify an invoice was created with the correct attributes
         invoice = timepiece.EntryGroup.objects.get(number=5)
