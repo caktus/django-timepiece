@@ -1,0 +1,57 @@
+{% extends 'timepiece/time-sheet/base.html' %}
+{% load timepiece_tags %}
+{% load url from future %}
+
+{% block title %}Invoice Hours for Time Sheet{% endblock %}
+
+{% block content %}
+  <h2>Invoice {{ project.name }} Hours {% if from_date %}from {{ from_date.date }} to {{ to_date.date }}{% else %}through {{ to_date.date }}{% endif %}</h2>
+  <br />
+  <form method="post">{% csrf_token %}
+      <table class='vertical'>
+        {{ invoice_form }}
+        <tr>
+          <td>&nbsp;</td>
+          <td class='submit'>
+            <input type='button' value='Cancel' onclick='history.go(-1)' />
+            &nbsp;
+            <input type='submit' name='submit' value='Update Entries &rarr;' />
+          </td>
+        </tr>
+      </table>
+  </form>
+<br />
+<h3>Selected Entries</h3>
+<table class="time-sheet">    
+    <tr>
+        <th>Date</th>
+        <th>User</th>
+        <th>Time</th>
+        <th>Project</th>
+        <th>Activity</th>
+        <th>Hours</th>
+        <th>Comments</th>
+    </tr>            
+    {% for entry in entries %}
+        {% ifchanged entry.start_time|date:"W" %}
+            <tr class="ledger_header">
+                <th colspan='7'>Week of {% week_start entry.start_time %} </th>
+            </tr>
+        {% endifchanged %}
+        <tr>
+            {% ifchanged entry.start_time|date %}
+                <td>{{ entry.start_time|date:"m/d/Y (D)" }}</td>
+            {% else %}
+                <td></td>
+            {% endifchanged %}
+        <td>{{ entry.user.get_full_name }} </td>
+        <td>{{ entry.start_time|date:"P" }} - {{ entry.end_time|date:"P" }} </td>
+        <td>{{ entry.project.name }}</td>
+        <td>{{ entry.activity.name }}</td>
+        <td class="hours">{{ entry.hours }}</td>
+        <td title="{{entry.comments}}">{{ entry.comments|truncatewords:12 }}</td>
+    </tr>
+    {% endfor %}
+</table>
+
+{% endblock %}

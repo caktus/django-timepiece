@@ -1,5 +1,6 @@
 import urllib
 import datetime
+import time
 import calendar
 from decimal import Decimal
 
@@ -215,11 +216,8 @@ def build_invoice_row(context, entries, to_date, from_date):
             hours_invoiced += entry['s']
         else:
             hours_uninvoiced += entry['s']
-    to_date_str = from_date_str = ''
-    if to_date:
-        to_date_str = to_date.strftime('%m/%d/%Y')
-    if from_date:
-        from_date_str = from_date.strftime('%m/%d/%Y')
+    to_date_str = to_date.strftime('%Y-%m-%d') if to_date else ''
+    from_date_str = from_date.strftime('%Y-%m-%d') if from_date else ''
     csv_get_str = urllib.urlencode({
         'to_date': to_date_str,
         'from_date': from_date_str,
@@ -227,13 +225,10 @@ def build_invoice_row(context, entries, to_date, from_date):
     })
     csv_url = reverse('export_project_time_sheet', args=[project, ])
     csv_url += '?' + csv_get_str
-    invoice_get_str = urllib.urlencode({
-        'to_date': to_date_str,
-        'from_date': from_date_str,
-        'project': project,
-    })
-    invoice_url = reverse('time_sheet_change_status', args=['invoice', ])
-    invoice_url += '?' + invoice_get_str
+    args = [project, to_date_str]
+    if from_date:
+        args.append(from_date_str)
+    invoice_url = reverse('time_sheet_invoice_project', args=args)
     return {
         'hours_invoiced': hours_invoiced,
         'hours_uninvoiced': hours_uninvoiced,
