@@ -60,7 +60,8 @@ History
 
 0.3.6 (Unreleased)
 ******************
-* Allowed entries to be added in the future. 
+* Allowed entries to be added in the future.
+* Added per project activity restrictions.
 
 0.3.5 (12-09-2011)
 ******************
