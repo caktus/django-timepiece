@@ -188,7 +188,7 @@ class Location(models.Model):
 
 ENTRY_GROUP_STATUS = (
     ('invoiced', 'Invoiced',),
-    ('uninvoiced', 'UnInvoiced',),
+    ('not-invoiced', 'Not Invoiced',),
 )
 
 class EntryGroup(models.Model):
@@ -196,7 +196,7 @@ class EntryGroup(models.Model):
     project = models.ForeignKey(Project, related_name='entry_group')
     status = models.CharField(max_length=24, choices=ENTRY_GROUP_STATUS,
                               default='invoiced')
-    number = models.IntegerField(blank=True, null=True)
+    number = models.IntegerField("Reference #", blank=True, null=True)
     comments = models.TextField(blank=True, null=True)
     created = models.DateTimeField(auto_now=True)
     start = models.DateField(blank=True, null=True)

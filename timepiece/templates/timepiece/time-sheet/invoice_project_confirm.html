@@ -5,22 +5,23 @@
 {% block title %}Invoice Hours for Time Sheet{% endblock %}
 
 {% block content %}
-  <h2>Invoice Hours for Time Sheet</h2>
-  <h3>
-  <p>Are you sure you want to invoice or mark as uninvoiced all entries for {{ project.name }}
-  {% if from_date %}
-    from {{ from_date.date }} to {{ to_date.date }}</p>
-  {% else %}
-    until {{ to_date.date }}</p>
-  {% endif %}
-  <p>After entries are marked, they cannot be changed, and are considered charged to the client if invoiced status is selected.</p></h3>
+  <h2>Invoice {{ project.name }} Hours {% if from_date %}from {{ from_date.date }} to {{ to_date.date }}{% else %}through {{ to_date.date }}{% endif %}</h2>
+  <br />
   <form method="post">{% csrf_token %}
-      {{ invoice_form.as_p }}
-      <input type="submit" name="invoice" value="Yes"/>
-      <input type='button' value='No' onclick='history.go(-1)' />
+      <table class='vertical'>
+        {{ invoice_form }}
+        <tr>
+          <td>&nbsp;</td>
+          <td class='submit'>
+            <input type='button' value='Cancel' onclick='history.go(-1)' />
+            &nbsp;
+            <input type='submit' name='submit' value='Update Entries &rarr;' />
+          </td>
+        </tr>
+      </table>
   </form>
 <br />
-<p>Entries for this invoice:</p>
+<h3>Selected Entries</h3>
 <table class="time-sheet">    
     <tr>
         <th>Date</th>
@@ -34,7 +35,7 @@
     {% for entry in entries %}
         {% ifchanged entry.start_time|date:"W" %}
             <tr class="ledger_header">
-                <th colspan='10'>Week of {% week_start entry.start_time %} </th>
+                <th colspan='7'>Week of {% week_start entry.start_time %} </th>
             </tr>
         {% endifchanged %}
         <tr>

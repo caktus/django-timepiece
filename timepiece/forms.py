@@ -441,7 +441,7 @@ class ProjectRelationshipForm(forms.ModelForm):
 class InvoiceForm(forms.ModelForm):
     class Meta:
         model = timepiece.EntryGroup
-        fields = ('number', 'comments', 'status')
+        fields = ('status', 'number', 'comments')
 
     def save(self, commit=True):
         instance = super(InvoiceForm, self).save(commit=False)
