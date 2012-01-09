@@ -555,7 +555,8 @@ class EntryGroup(models.Model):
             'project': self.project,
             'start': self.start.strftime('%b %Y'),
         }
-        return 'Entry Group %(number)s : %(status)s - %(project)s - %(start)s' % invoice_data
+        return 'Entry Group ' + \
+               '%(number)s: %(status)s-%(project)s-%(start)s' % invoice_data
 
 
 # Add a utility method to the User class that will tell whether or not a
