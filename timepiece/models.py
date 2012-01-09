@@ -204,6 +204,7 @@ class Location(models.Model):
     def __unicode__(self):
         return self.name
 
+
 ENTRY_STATUS = (
     ('unverified', 'Unverified',),
     ('verified', 'Verified',),
@@ -211,6 +212,7 @@ ENTRY_STATUS = (
     ('invoiced', 'Invoiced',),
     ('not-invoiced', 'Not Invoiced',),
 )
+
 
 class EntryManager(models.Manager):
     def get_query_set(self):
@@ -386,7 +388,6 @@ class Entry(models.Model):
                     '%(project)s - %(activity)s - ' % entry_data + \
                     'from %(start_time)s to %(end_time)s' % entry_data
                     raise ValidationError(output)
-        
         try:
             activity_group = self.project.activity_group
             if activity_group:
