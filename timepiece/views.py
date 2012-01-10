@@ -718,7 +718,7 @@ def invoice_projects(request):
 
 @login_required
 def list_invoices(request):
-    invoices = timepiece.EntryGroup.objects.all()
+    invoices = timepiece.EntryGroup.objects.order_by('-created')
     return render_to_response('timepiece/time-sheet/invoice/list.html', {
             'invoices': invoices,
         }, context_instance=RequestContext(request))
