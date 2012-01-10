@@ -122,7 +122,7 @@ urlpatterns = patterns('',
         name='time_sheet_change_status',
     ),
     url(
-        r'time-sheet/invoice-project/(?P<project_id>\d+)/' +
+        r'invoice/project/(?P<project_id>\d+)/create/' +
         r'(?P<to_date>\d\d\d\d-\d\d-\d\d)/' +
         r'(?:(?P<from_date>\d\d\d\d-\d\d-\d\d)/)?$',
         views.time_sheet_invoice_project,
@@ -140,17 +140,17 @@ urlpatterns = patterns('',
         name='export_project_time_sheet',
     ),
     url(
-        r'^time-sheet/project/invoice-projects/$',
+        r'^invoice/outstanding/$',
         views.invoice_projects,
         name='invoice_projects',
     ),
     url(
-        r'^time-sheet/project/invoices/$',
+        r'^invoice/list/$',
         views.list_invoices,
         name='list_invoices',
     ),
     url(
-        r'^time-sheet/project/invoice/(?P<invoice_id>\d+)/$',
+        r'^invoice/(?P<invoice_id>\d+)/$',
         views.view_invoice,
         name='view_invoice',
     ),

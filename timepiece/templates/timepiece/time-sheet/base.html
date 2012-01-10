@@ -18,7 +18,7 @@
             <li><a href="{% url hourly_report %}">Reports</a></li>
         {% endif %}
         {% if perms.timepiece.edit_person_time_sheet %}
-            <li><a href="{% url invoice_projects %}">Invoice Projects</a></li>
+            <li><a href="{% url invoice_projects %}">Invoices</a></li>
         {% endif %}
         {% if perms.timepiece.view_projection_summary %}
             <li><a href="{% url projection_summary %}">Projection</a></li>
