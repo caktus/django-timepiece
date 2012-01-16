@@ -6,7 +6,8 @@
 
 {% block content %}
 <h2> Invoice details </h2>
-
+View Invoice
+<a href="{% url 'edit_invoice' invoice.id %}">Edit Invoice</a>
 <a href="{% url 'view_invoice_csv' invoice.id %}">Download CSV</a>
 <table class='vertical'>
     {% if invoice.number %}

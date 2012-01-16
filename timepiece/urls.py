@@ -160,11 +160,11 @@ urlpatterns = patterns('',
         views.list_invoices,
         name='list_invoices',
     ),
-#    url(
-#        r'^invoice/(?P<invoice_id>\d+)/$',
-#        views.view_invoice,
-#        name='view_invoice',
-#    ),
+    url(
+        r'^invoice/edit/(?P<invoice_id>\d+)/$',
+        views.InvoiceEdit.as_view(),
+        name='edit_invoice',
+    ),
     url(
         r'^projection/$',
         views.projection_summary,

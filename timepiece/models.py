@@ -544,7 +544,8 @@ class EntryGroup(models.Model):
                               default='invoiced')
     number = models.IntegerField("Reference #", blank=True, null=True)
     comments = models.TextField(blank=True, null=True)
-    created = models.DateTimeField(auto_now=True)
+    created = models.DateTimeField(auto_now_add=True)
+    modified = models.DateTimeField(auto_now=True)
     start = models.DateField(blank=True, null=True)
     end = models.DateField()
 

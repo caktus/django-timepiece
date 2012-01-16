@@ -238,3 +238,11 @@ class InvoiceCreateTestCase(TimepieceDataTestCase):
         self.assertFormError(response, 'invoice_form', 'number', err_msg)
         response = self.client.post(url, {'number': None})
         self.assertFormError(response, 'invoice_form', 'number', err_msg)
+
+    def test_invoice_csv(self):
+        # TODO: Add tests for this view
+        pass
+
+    def test_invoice_edit(self):
+        # TODO: Add tests for this view
+        pass       

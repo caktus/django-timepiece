@@ -795,6 +795,37 @@ class InvoiceCSV(CSVMixin, InvoiceDetail):
         return rows
 
 
+class InvoiceEdit(InvoiceDetail):
+    template_name = 'timepiece/time-sheet/invoice/edit.html'
+
+    def get_context_data(self, **kwargs):
+        context = super(InvoiceEdit, self).get_context_data(**kwargs)
+        invoice = context['invoice']
+        invoice_form = timepiece_forms.InvoiceForm(instance = invoice)
+        context.update({
+            'invoice_form': invoice_form,
+            'from_date': invoice.start,
+            'to_date': invoice.end,
+        })
+        return context
+
+    def post(self, request, **kwargs):
+        invoice_id = kwargs.get('invoice_id')
+        invoice = get_object_or_404(timepiece.EntryGroup, pk=invoice_id)
+        initial = {
+            'project': invoice.project,
+            'user': request.user,
+            'from_date': invoice.start,
+            'to_date': invoice.end,
+        }
+        invoice_form = timepiece_forms.InvoiceForm(request.POST,
+                                                   initial=initial,
+                                                   instance=invoice)
+        if invoice_form.is_valid():
+            invoice_form.save()
+            return HttpResponseRedirect(reverse('view_invoice', kwargs=kwargs))
+
+
 @permission_required('timepiece.view_business')
 @render_with('timepiece/business/list.html')
 def list_businesses(request):
