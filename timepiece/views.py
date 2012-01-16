@@ -10,7 +10,7 @@ from dateutil import rrule
 
 from django.contrib import messages
 from django.template import RequestContext
-from django.shortcuts import render_to_response, get_object_or_404, redirect
+from django.shortcuts import render_to_response, get_object_or_404, redirect, render
 from django.core.urlresolvers import reverse, resolve
 from django.http import HttpResponse, HttpResponseRedirect
 from django.http import  Http404, HttpResponseForbidden
@@ -22,6 +22,7 @@ from django.db import transaction
 from django.conf import settings
 from django.utils.datastructures import SortedDict
 from django.views.decorators.csrf import csrf_exempt
+from django.views.generic.base import TemplateView
 
 from timepiece.utils import render_with
 
@@ -559,7 +560,7 @@ def view_person_time_sheet(request, person_id, period_id=None,
 
 @login_required
 @transaction.commit_on_success
-def time_sheet_invoice_project(request, project_id, to_date, from_date=None):
+def confirm_invoice_project(request, project_id, to_date, from_date=None):
     if not request.user.has_perm('timepiece.edit_person_time_sheet'):
         return HttpResponseForbidden('Forbidden')
     try:
@@ -724,15 +725,76 @@ def list_invoices(request):
         }, context_instance=RequestContext(request))
 
 
-@login_required
-def view_invoice(request, invoice_id):
-    invoice = get_object_or_404(timepiece.EntryGroup, pk=invoice_id)
-    entries = timepiece.Entry.objects.filter(entry_group=invoice)
-    entries = entries.order_by('start_time')
-    return render_to_response('timepiece/time-sheet/invoice/view.html', {
+class CSVMixin(object):
+    def render_to_response(self, context):
+        "Returns a JSON response containing 'context' as payload"
+        "Construct an `HttpResponse` object."
+        response = HttpResponse(content_type='text/csv')
+        fn = self.get_filename(context)
+        response['Content-Disposition'] = 'attachment; filename=%s.csv' % fn
+        rows = self.convert_context_to_csv(context)
+        writer = csv.writer(response)
+        for row in rows:
+            writer.writerow(row)
+        return response
+
+    def get_filename(self, context):
+        raise NotImplemented("You must implement this in the subclass")
+
+    def convert_context_to_csv(self, context):
+        "Convert the context dictionary into a CSV file"
+        raise NotImplemented("You must implement this in the subclass")
+
+
+class InvoiceDetail(TemplateView):
+    template_name = 'timepiece/time-sheet/invoice/view.html'
+
+    def get_context_data(self, **kwargs):
+        invoice_id = self.kwargs.get('invoice_id')
+        invoice = get_object_or_404(timepiece.EntryGroup, pk=invoice_id)
+        entries = invoice.entries.all()
+        entries = entries.order_by('start_time')
+        context = {
             'invoice': invoice,
             'entries': entries.select_related(),
-        }, context_instance=RequestContext(request))
+            'total': entries.aggregate(hours=Sum('hours'))['hours'],
+        }
+        return context
+
+
+class InvoiceCSV(CSVMixin, InvoiceDetail):
+    def get_filename(self, context):
+        invoice = context['invoice']
+        project = str(invoice.project).replace(' ', '_')
+        end_day = invoice.end.strftime("%m-%d-%Y")
+        return "Invoice-{0}-{1}".format(project, end_day)
+
+    def convert_context_to_csv(self, context):
+        rows = []
+        rows.append([
+            'Date',
+            'Weekday',
+            'Name',
+            'Location',
+            'Time In',
+            'Time Out',
+            'Breaks',
+            'Hours',
+        ])
+        for entry in context['entries']:
+            data = [
+                entry.start_time.strftime('%x'),
+                entry.start_time.strftime('%A'),
+                entry.user.get_full_name(),
+                entry.location,
+                entry.start_time.strftime('%X'),
+                entry.end_time.strftime('%X'),
+                seconds_to_hours(entry.seconds_paused),
+                entry.hours,
+            ]
+            rows.append(data)
+        rows.append(('', '', '', '', '', '', 'Total:', context['total']))
+        return rows
 
 
 @permission_required('timepiece.view_business')

@@ -228,7 +228,7 @@ def build_invoice_row(context, entries, to_date, from_date):
     args = [project, to_date_str]
     if from_date:
         args.append(from_date_str)
-    invoice_url = reverse('time_sheet_invoice_project', args=args)
+    invoice_url = reverse('confirm_invoice_project', args=args)
     return {
         'hours_invoiced': hours_invoiced,
         'hours_uninvoiced': hours_uninvoiced,
