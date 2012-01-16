@@ -24,6 +24,11 @@
         <th>Created on:</th>
         <td>{{ invoice.created|date:"M d Y P" }}</td>
     </tr>
+    <tr>
+        <th>Last modified:</th>
+        <td>{{ invoice.modified|date:"M d Y P" }}</td>
+    </tr>
+
     {% if invoice.start %}
         <tr>
             <th>Starting on:</th>
