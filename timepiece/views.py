@@ -727,8 +727,6 @@ def list_invoices(request):
 
 class CSVMixin(object):
     def render_to_response(self, context):
-        "Returns a JSON response containing 'context' as payload"
-        "Construct an `HttpResponse` object."
         response = HttpResponse(content_type='text/csv')
         fn = self.get_filename(context)
         response['Content-Disposition'] = 'attachment; filename=%s.csv' % fn
