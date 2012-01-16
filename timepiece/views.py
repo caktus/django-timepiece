@@ -826,6 +826,29 @@ class InvoiceEdit(InvoiceDetail):
             return HttpResponseRedirect(reverse('view_invoice', kwargs=kwargs))
 
 
+@login_required
+def remove_invoice_entry(request, invoice_id, entry_id):
+    invoice = get_object_or_404(timepiece.EntryGroup, pk=invoice_id)
+    entry = get_object_or_404(timepiece.Entry, pk=entry_id)
+
+    if request.POST:
+        entry.status = 'approved'
+        entry.entry_group = None
+        entry.save()
+        kwargs = {'invoice_id': invoice_id}
+        return HttpResponseRedirect(reverse('edit_invoice', kwargs=kwargs))
+    else:
+        context = {
+            'invoice': invoice,
+            'entry': entry,
+        }
+        return render_to_response(
+            'timepiece/time-sheet/invoice/remove_invoice_entry.html',
+            context,
+            context_instance=RequestContext(request)
+        )
+
+
 @permission_required('timepiece.view_business')
 @render_with('timepiece/business/list.html')
 def list_businesses(request):

@@ -166,6 +166,12 @@ urlpatterns = patterns('',
         name='edit_invoice',
     ),
     url(
+        r'^invoice/remove/(?P<invoice_id>\d+)/(?P<entry_id>\d+)/$',
+        views.remove_invoice_entry,
+        name='remove_invoice_entry',
+    ),
+
+    url(
         r'^projection/$',
         views.projection_summary,
         name='projection_summary',

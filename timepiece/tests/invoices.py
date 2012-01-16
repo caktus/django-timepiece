@@ -245,4 +245,8 @@ class InvoiceCreateTestCase(TimepieceDataTestCase):
 
     def test_invoice_edit(self):
         # TODO: Add tests for this view
-        pass       
+        pass
+
+    def test_rm_invoice_entry(self):
+        # TODO: Add tests for removing entries from an invoice
+        pass
