@@ -824,13 +824,18 @@ class InvoiceEdit(InvoiceDetail):
         if invoice_form.is_valid():
             invoice_form.save()
             return HttpResponseRedirect(reverse('view_invoice', kwargs=kwargs))
+        else:
+            context = super(InvoiceEdit, self).get_context_data(**kwargs)
+            context.update({
+                'invoice_form': invoice_form,
+            })
+            return self.render_to_response(context)
 
 
 @login_required
 def remove_invoice_entry(request, invoice_id, entry_id):
     invoice = get_object_or_404(timepiece.EntryGroup, pk=invoice_id)
     entry = get_object_or_404(timepiece.Entry, pk=entry_id)
-
     if request.POST:
         entry.status = 'approved'
         entry.entry_group = None

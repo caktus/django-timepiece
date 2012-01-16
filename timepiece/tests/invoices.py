@@ -46,6 +46,14 @@ class InvoiceViewPreviousTestCase(TimepieceDataTestCase):
         }
         response = self.client.post(url, params)
 
+    def get_invoice(self):
+        invoices = timepiece.EntryGroup.objects.all()
+        return random.choice(invoices)
+
+    def get_entry(self, invoice):
+        entries = invoice.entries.all()
+        return random.choice(entries)
+
     def test_previous_invoice_list(self):
         url = reverse('list_invoices')
         response = self.client.get(url)
@@ -60,6 +68,97 @@ class InvoiceViewPreviousTestCase(TimepieceDataTestCase):
             response = self.client.get(url)
             self.assertEqual(response.status_code, 200)
             self.assertTrue(response.context['invoice'])
+
+    def test_invoice_csv(self):
+        invoice = self.get_invoice()
+        url = reverse('view_invoice_csv', args=[invoice.id])
+        response = self.client.get(url)
+        self.assertEqual(response.status_code, 200)
+        data = dict(response.items())
+        self.assertEqual(data['Content-Type'], 'text/csv')
+        disposition = data['Content-Disposition']
+        self.assertTrue(disposition.startswith('attachment; filename=Invoice'))
+        contents = response.content.splitlines()
+        # TODO: Possibly find a meaningful way to test contents
+
+    def test_invoice_csv_bad_id(self):        
+        url = reverse('view_invoice_csv', args=[9999999999])
+        response = self.client.get(url)
+        self.assertEqual(response.status_code, 404)
+
+    def test_invoice_edit_get(self):
+        invoice = self.get_invoice()
+        url = reverse('edit_invoice', args=[invoice.id])
+        response = self.client.get(url)
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.context['invoice'].id, invoice.id)
+        self.assertTrue(response.context['entries'])
+
+    def test_invoice_edit_bad_id(self):
+        url = reverse('edit_invoice', args=[99999999999])
+        response = self.client.get(url)
+        self.assertEqual(response.status_code, 404)
+
+    def test_invoice_edit_post(self):
+        invoice = self.get_invoice()
+        url = reverse('edit_invoice', args=[invoice.id])
+        status = 'invoiced' if invoice.status != 'invoiced' else 'not-invoiced'
+        params = {
+            'number': invoice.number + 1,
+            'status': status,
+            'comments': 'Comments',
+        }
+        response = self.client.post(url, params)
+        self.assertEqual(response.status_code, 302)
+        new_invoice = timepiece.EntryGroup.objects.get(pk=invoice.id)
+        self.assertEqual(invoice.number + 1, new_invoice.number)
+        self.assertTrue(invoice.status != new_invoice.status)
+        self.assertEqual(new_invoice.comments, 'Comments')
+
+    def test_invoice_edit_bad_post(self):
+        invoice = self.get_invoice()
+        url = reverse('edit_invoice', args=[invoice.id])
+        params = {
+            'number': 'String',
+            'status': 'not_in_choices',
+        }
+        response = self.client.post(url, params)
+        err_msg = 'Enter a whole number.'
+        self.assertFormError(response, 'invoice_form', 'number', err_msg)
+        err_msg = 'Select a valid choice. not_in_choices is not one of the available choices.'
+        self.assertFormError(response, 'invoice_form', 'status', err_msg)
+
+    def test_rm_invoice_entry_get(self):
+        invoice = self.get_invoice()
+        entry = self.get_entry(invoice)
+        url = reverse('remove_invoice_entry', args=[invoice.id, entry.id])
+        response = self.client.get(url)
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.context['invoice'], invoice)
+        self.assertEqual(response.context['entry'], entry)
+
+    def test_rm_invoice_entry_get_bad_id(self):
+        invoice = self.get_invoice()
+        entry = self.get_entry(invoice)
+        url = reverse('remove_invoice_entry', args=[invoice.id, 999999])
+        response = self.client.get(url)
+        self.assertEqual(response.status_code, 404)
+        url = reverse('remove_invoice_entry', args=[9999, entry.id])
+        response = self.client.get(url)
+        self.assertEqual(response.status_code, 404)
+
+    def test_rm_invoice_entry_post(self):
+        invoice = self.get_invoice()
+        entry = self.get_entry(invoice)
+        url = reverse('remove_invoice_entry', args=[invoice.id, entry.id])
+        response = self.client.post(url, {'submit': ''})
+        self.assertEqual(response.status_code, 302)
+        new_invoice = timepiece.EntryGroup.objects.get(pk=invoice.pk)
+        rm_entry = new_invoice.entries.filter(pk=entry.id)
+        self.assertFalse(rm_entry)
+        new_entry = timepiece.Entry.objects.get(pk=entry.pk)
+        self.assertEqual(new_entry.status, 'approved')
+        self.assertEqual(new_entry.entry_group, None)
 
 
 class InvoiceCreateTestCase(TimepieceDataTestCase):
@@ -238,15 +337,3 @@ class InvoiceCreateTestCase(TimepieceDataTestCase):
         self.assertFormError(response, 'invoice_form', 'number', err_msg)
         response = self.client.post(url, {'number': None})
         self.assertFormError(response, 'invoice_form', 'number', err_msg)
-
-    def test_invoice_csv(self):
-        # TODO: Add tests for this view
-        pass
-
-    def test_invoice_edit(self):
-        # TODO: Add tests for this view
-        pass
-
-    def test_rm_invoice_entry(self):
-        # TODO: Add tests for removing entries from an invoice
-        pass
