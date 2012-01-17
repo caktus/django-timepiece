@@ -50,7 +50,6 @@ urlpatterns = patterns('',
         views.create_edit_business,
         name='edit_business',
     ),
-
     url(r'^project/list/$', views.list_projects, name='list_projects'),
     url(
         r'^project/(?P<project_id>\d+)/$',
@@ -132,17 +131,18 @@ urlpatterns = patterns('',
         views.export_project_time_sheet,
         name='export_project_time_sheet',
     ),
-    # INVOICES
     url(
-        r'^invoice/(?P<invoice_id>\d+)/$',
-        views.InvoiceDetail.as_view(),
-        name='view_invoice'
+        r'^projection/$',
+        views.projection_summary,
+        name='projection_summary',
     ),
     url(
-        r'^invoice/(?P<invoice_id>\d+)/csv/$',
-        views.InvoiceCSV.as_view(),
-        name='view_invoice_csv'
+        r'^edit-settings/$',
+        views.edit_settings,
+        name='edit_settings',
     ),
+
+    ### Invoices ###
     url(
         r'^invoice/outstanding/$',
         views.invoice_projects,
@@ -157,28 +157,32 @@ urlpatterns = patterns('',
     ),
     url(
         r'^invoice/list/$',
-        views.list_invoices,
+        views.InvoiceList.as_view(),
         name='list_invoices',
     ),
     url(
-        r'^invoice/edit/(?P<invoice_id>\d+)/$',
+        r'^invoice/(?P<pk>\d+)/$',
+        views.InvoiceDetail.as_view(),
+        name='view_invoice'
+    ),
+    url(
+        r'^invoice/(?P<pk>\d+)/csv/$',
+        views.InvoiceCSV.as_view(),
+        name='view_invoice_csv'
+    ),
+    url(
+        r'^invoice/edit/(?P<pk>\d+)/$',
         views.InvoiceEdit.as_view(),
         name='edit_invoice',
     ),
     url(
-        r'^invoice/remove/(?P<invoice_id>\d+)/(?P<entry_id>\d+)/$',
+        r'^invoice/delete/(?P<pk>\d+)/$',
+        views.InvoiceDelete.as_view(),
+        name='delete_invoice',
+    ),
+    url(
+        r'^invoice/remove-entry/(?P<invoice_id>\d+)/(?P<entry_id>\d+)/$',
         views.remove_invoice_entry,
         name='remove_invoice_entry',
-    ),
-
-    url(
-        r'^projection/$',
-        views.projection_summary,
-        name='projection_summary',
-    ),
-    url(
-        r'^edit-settings/$',
-        views.edit_settings,
-        name='edit_settings',
     ),
 )

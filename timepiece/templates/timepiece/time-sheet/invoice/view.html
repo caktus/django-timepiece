@@ -5,7 +5,14 @@
 {% block title %}Invoice Detail{% endblock %}
 
 {% block content %}
-<h2> Invoice details </h2>
+
+<h2>
+    Invoice details for {{ project.name }} hours
+    {% if from_date %}
+        from {{ from_date }} to {{ to_date }}
+    {% else %}
+        through {{ to_date }}{% endif %}
+</h2>
 
 <ul class='header-actions-left'>
     <li>

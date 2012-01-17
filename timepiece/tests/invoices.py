@@ -101,9 +101,10 @@ class InvoiceViewPreviousTestCase(TimepieceDataTestCase):
 
     def test_invoice_edit_post(self):
         invoice = self.get_invoice()
-        url = reverse('edit_invoice', args=[invoice.id])
+        url = reverse('edit_invoice', kwargs={'pk': invoice.id})
         status = 'invoiced' if invoice.status != 'invoiced' else 'not-invoiced'
         params = {
+            'submit': 'submit',
             'number': invoice.number + 1,
             'status': status,
             'comments': 'Comments',
@@ -127,6 +128,38 @@ class InvoiceViewPreviousTestCase(TimepieceDataTestCase):
         self.assertFormError(response, 'invoice_form', 'number', err_msg)
         err_msg = 'Select a valid choice. not_in_choices is not one of the available choices.'
         self.assertFormError(response, 'invoice_form', 'status', err_msg)
+
+    def test_invoice_delete_get(self):
+        invoice = self.get_invoice()
+        url = reverse('delete_invoice', args=[invoice.id])
+        response = self.client.get(url)
+        self.assertEqual(response.status_code, 200)
+
+    def test_invoice_delete(self):
+        invoice = self.get_invoice()
+        entry_ids = [entry.pk for entry in invoice.entries.all()]
+        url = reverse('delete_invoice', args=[invoice.id])
+        response = self.client.post(url, {'delete': 'delete'})
+        self.assertEqual(response.status_code, 302)
+        self.assertFalse(timepiece.EntryGroup.objects.filter(pk=invoice.id))
+        entries = timepiece.Entry.objects.filter(pk__in=entry_ids)
+        for entry in entries:
+            self.assertEqual(entry.status, 'approved')
+
+    def test_invoice_delete_cancel(self):
+        invoice = self.get_invoice()
+        url = reverse('delete_invoice', args=[invoice.id])
+        response = self.client.post(url, {'cancel': 'cancel'})
+        self.assertEqual(response.status_code, 302)
+        # Canceled out so the invoice was not deleted
+        self.assertTrue(timepiece.EntryGroup.objects.get(pk=invoice.id))
+
+    def test_invoice_delete_bad_args(self):
+        invoice = self.get_invoice()
+        entry_ids = [entry.pk for entry in invoice.entries.all()]
+        url = reverse('delete_invoice', args=[1232345345])
+        response = self.client.post(url, {'delete': 'delete'})
+        self.assertEqual(response.status_code, 404)
 
     def test_rm_invoice_entry_get(self):
         invoice = self.get_invoice()

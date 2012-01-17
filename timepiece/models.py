@@ -266,6 +266,7 @@ class Entry(models.Model):
        'EntryGroup',
         related_name='entries',
         blank=True, null=True,
+        on_delete=models.SET_NULL,
     )
     status = models.CharField(
         max_length=24,
@@ -548,6 +549,10 @@ class EntryGroup(models.Model):
     modified = models.DateTimeField(auto_now=True)
     start = models.DateField(blank=True, null=True)
     end = models.DateField()
+
+    def delete(self):
+        self.entries.update(status='approved')
+        super(EntryGroup, self).delete()
 
     def __unicode__(self):
         invoice_data = {
