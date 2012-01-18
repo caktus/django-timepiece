@@ -14,7 +14,7 @@
     </tr>
     <tr>
         <th>Status:</th>
-        <td>{{ invoice.status|capfirst }}</td>
+        <td>{{ invoice.get_status_display }}</td>
     </tr>
     <tr>
         <th>Created by:</th>

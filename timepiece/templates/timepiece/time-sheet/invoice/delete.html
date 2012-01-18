@@ -9,7 +9,7 @@
       {% if from_date %}from {{ from_date }} to {{ to_date }}{% else %}through {{ to_date }}{% endif %}
   </h2>
   <br />
-  Are you sure you would like to delete this invoice, and set its entries' to approved status?
+  <p>Deleting this invoice will return all associated entries to "approved" status. Are you sure you want to do this?</p>
   <form method="post">{% csrf_token %}
       <table class='vertical'>
         <tr>

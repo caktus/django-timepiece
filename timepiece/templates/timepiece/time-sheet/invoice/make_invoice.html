@@ -62,7 +62,14 @@
             <tr>
                 <th>{{ project.grouper }}</th>
                 <td>{{ project.list.0.project__status__label|title }}</td>
-                {% build_invoice_row project.list to_date from_date %}
+                <td class="hours">{% get_uninvoiced_hours project.list %}</td>
+                <td>
+                    {% if from_date %}
+                        <a href="{% url 'confirm_invoice_project' project.list.0.project__pk to_date|date:'Y-m-d' from_date|date:'Y-m-d' %}">Make Invoice</a>
+                    {% else %}
+                        <a href="{% url 'confirm_invoice_project' project.list.0.project__pk to_date|date:'Y-m-d' %}">Make Invoice</a>
+                    {% endif %}
+                </td>
             </tr>
         {% endfor %}
     </table>

@@ -719,10 +719,9 @@ def invoice_projects(request):
     unverified = unverified.values_list(*user_values).distinct()
     unapproved = entries.filter(status='verified')
     unapproved = unapproved.values_list(*user_values).distinct()
-
     project_totals = entries.filter(status='approved',
         project__type__billable=True, project__status__billable=True).values(
-        'project__type__pk', 'project__type__label', 'project__name',
+        'project__type__pk', 'project__type__label', 'project__name', 'hours',
         'project__pk', 'status', 'project__status__label'
     ).annotate(s=Sum('hours')).order_by('project__type__label',
                                         'project__name', 'status')
