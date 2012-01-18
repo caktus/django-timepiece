@@ -10,7 +10,7 @@ from dateutil import rrule
 
 from django.contrib import messages
 from django.template import RequestContext
-from django.shortcuts import render_to_response, get_object_or_404, redirect
+from django.shortcuts import render_to_response, get_object_or_404, redirect, render
 from django.core.urlresolvers import reverse, resolve
 from django.http import HttpResponse, HttpResponseRedirect
 from django.http import  Http404, HttpResponseForbidden
@@ -22,6 +22,8 @@ from django.db import transaction
 from django.conf import settings
 from django.utils.datastructures import SortedDict
 from django.views.decorators.csrf import csrf_exempt
+from django.views.generic.base import TemplateView
+from django.views.generic import UpdateView, ListView, DetailView
 
 from timepiece.utils import render_with
 
@@ -38,6 +40,25 @@ def quick_search(request):
         if form.is_valid():
             return HttpResponseRedirect(form.save())
     raise Http404
+
+
+class CSVMixin(object):
+    def render_to_response(self, context):
+        response = HttpResponse(content_type='text/csv')
+        fn = self.get_filename(context)
+        response['Content-Disposition'] = 'attachment; filename=%s.csv' % fn
+        rows = self.convert_context_to_csv(context)
+        writer = csv.writer(response)
+        for row in rows:
+            writer.writerow(row)
+        return response
+
+    def get_filename(self, context):
+        raise NotImplemented("You must implement this in the subclass")
+
+    def convert_context_to_csv(self, context):
+        "Convert the context dictionary into a CSV file"
+        raise NotImplemented("You must implement this in the subclass")
 
 
 @login_required
@@ -558,55 +579,6 @@ def view_person_time_sheet(request, person_id, period_id=None,
 
 
 @login_required
-@transaction.commit_on_success
-def time_sheet_invoice_project(request, project_id, to_date, from_date=None):
-    if not request.user.has_perm('timepiece.edit_person_time_sheet'):
-        return HttpResponseForbidden('Forbidden')
-    try:
-        to_date = datetime.datetime.strptime(to_date, '%Y-%m-%d')
-        if from_date:
-            from_date = datetime.datetime.strptime(from_date, '%Y-%m-%d')
-        else:
-            from_date = None
-    except (ValueError, OverflowError):
-        raise Http404
-    project = get_object_or_404(timepiece.Project, pk=project_id)
-    initial = {
-        'project': project,
-        'user': request.user,
-        'from_date': from_date,
-        'to_date': to_date,
-    }
-    entries_query = {
-        'status': "approved",
-        'end_time__lt': to_date,
-        'project__id': project.id
-    }
-    if from_date:
-        entries_query.update({'end_time__gte': from_date})
-    invoice_form = timepiece_forms.InvoiceForm(request.POST or None,
-                                               initial=initial)
-    if request.POST and invoice_form.is_valid():
-        invoice = invoice_form.save()
-        entries = timepiece.Entry.objects.filter(**entries_query)
-        entries.update(status=invoice.status, entry_group=invoice)
-        return HttpResponseRedirect(reverse('invoice_projects'))
-    else:
-        entries = timepiece.Entry.objects.filter(**entries_query)
-        entries = entries.order_by('start_time')
-        if not entries:
-            raise Http404
-    template = 'timepiece/time-sheet/invoice/confirm.html'
-    return render_to_response(template, {
-        'invoice_form': invoice_form,
-        'entries': entries.select_related(),
-        'project': project,
-        'from_date': from_date,
-        'to_date': to_date,
-    }, context_instance=RequestContext(request))
-
-
-@login_required
 @utils.date_filter
 def time_sheet_change_status(request, form, from_date, to_date, status,
     activity, action, person_id=None, period_id=None, window_id=None):
@@ -679,6 +651,55 @@ def time_sheet_change_status(request, form, from_date, to_date, status,
 
 
 @login_required
+@transaction.commit_on_success
+def confirm_invoice_project(request, project_id, to_date, from_date=None):
+    if not request.user.has_perm('timepiece.edit_person_time_sheet'):
+        return HttpResponseForbidden('Forbidden')
+    try:
+        to_date = datetime.datetime.strptime(to_date, '%Y-%m-%d')
+        if from_date:
+            from_date = datetime.datetime.strptime(from_date, '%Y-%m-%d')
+        else:
+            from_date = None
+    except (ValueError, OverflowError):
+        raise Http404
+    project = get_object_or_404(timepiece.Project, pk=project_id)
+    initial = {
+        'project': project,
+        'user': request.user,
+        'from_date': from_date,
+        'to_date': to_date,
+    }
+    entries_query = {
+        'status': "approved",
+        'end_time__lt': to_date,
+        'project__id': project.id
+    }
+    if from_date:
+        entries_query.update({'end_time__gte': from_date})
+    invoice_form = timepiece_forms.InvoiceForm(request.POST or None,
+                                               initial=initial)
+    if request.POST and invoice_form.is_valid():
+        invoice = invoice_form.save()
+        entries = timepiece.Entry.objects.filter(**entries_query)
+        entries.update(status=invoice.status, entry_group=invoice)
+        return HttpResponseRedirect(reverse('invoice_projects'))
+    else:
+        entries = timepiece.Entry.objects.filter(**entries_query)
+        entries = entries.order_by('start_time')
+        if not entries:
+            raise Http404
+    template = 'timepiece/time-sheet/invoice/confirm.html'
+    return render_to_response(template, {
+        'invoice_form': invoice_form,
+        'entries': entries.select_related(),
+        'project': project,
+        'from_date': from_date,
+        'to_date': to_date,
+    }, context_instance=RequestContext(request))
+
+
+@login_required
 def invoice_projects(request):
     to_date = utils.get_month_start(datetime.datetime.today()).date()
     from_date = None
@@ -698,10 +719,9 @@ def invoice_projects(request):
     unverified = unverified.values_list(*user_values).distinct()
     unapproved = entries.filter(status='verified')
     unapproved = unapproved.values_list(*user_values).distinct()
-
     project_totals = entries.filter(status='approved',
         project__type__billable=True, project__status__billable=True).values(
-        'project__type__pk', 'project__type__label', 'project__name',
+        'project__type__pk', 'project__type__label', 'project__name', 'hours',
         'project__pk', 'status', 'project__status__label'
     ).annotate(s=Sum('hours')).order_by('project__type__label',
                                         'project__name', 'status')
@@ -716,23 +736,133 @@ def invoice_projects(request):
     }, context_instance=RequestContext(request))
 
 
-@login_required
-def list_invoices(request):
-    invoices = timepiece.EntryGroup.objects.order_by('-created')
-    return render_to_response('timepiece/time-sheet/invoice/list.html', {
-            'invoices': invoices,
-        }, context_instance=RequestContext(request))
+class InvoiceList(ListView):
+    template_name = 'timepiece/time-sheet/invoice/list.html'
+    context_object_name = 'invoices'    
+    queryset = timepiece.EntryGroup.objects.all().order_by('-created')
 
 
-@login_required
-def view_invoice(request, invoice_id):
-    invoice = get_object_or_404(timepiece.EntryGroup, pk=invoice_id)
-    entries = timepiece.Entry.objects.filter(entry_group=invoice)
-    entries = entries.order_by('start_time')
-    return render_to_response('timepiece/time-sheet/invoice/view.html', {
+class InvoiceDetail(DetailView):
+    template_name = 'timepiece/time-sheet/invoice/view.html'
+    model = timepiece.EntryGroup
+    context_object_name = 'invoice'
+
+    def get_context_data(self, **kwargs):
+        context = super(InvoiceDetail, self).get_context_data(**kwargs)
+        invoice = context['invoice']
+        entries = invoice.entries.order_by('start_time').select_related()
+        context = {
             'invoice': invoice,
-            'entries': entries.select_related(),
-        }, context_instance=RequestContext(request))
+            'from_date': invoice.start,
+            'to_date': invoice.end,
+            'project': invoice.project,
+            'entries': entries,
+            'total': entries.aggregate(hours=Sum('hours'))['hours'],
+        }
+        return context
+
+
+class InvoiceCSV(CSVMixin, InvoiceDetail):
+    def get_filename(self, context):
+        invoice = context['invoice']
+        project = str(invoice.project).replace(' ', '_')
+        end_day = invoice.end.strftime("%m-%d-%Y")
+        return "Invoice-{0}-{1}".format(project, end_day)
+
+    def convert_context_to_csv(self, context):
+        rows = []
+        rows.append([
+            'Date',
+            'Weekday',
+            'Name',
+            'Location',
+            'Time In',
+            'Time Out',
+            'Breaks',
+            'Hours',
+        ])
+        for entry in context['entries']:
+            data = [
+                entry.start_time.strftime('%x'),
+                entry.start_time.strftime('%A'),
+                entry.user.get_full_name(),
+                entry.location,
+                entry.start_time.strftime('%X'),
+                entry.end_time.strftime('%X'),
+                seconds_to_hours(entry.seconds_paused),
+                entry.hours,
+            ]
+            rows.append(data)
+        rows.append(('', '', '', '', '', '', 'Total:', context['total']))
+        return rows
+
+
+class InvoiceEdit(InvoiceDetail):
+    template_name = 'timepiece/time-sheet/invoice/edit.html'
+
+    def get_context_data(self, **kwargs):
+        context = super(InvoiceEdit, self).get_context_data(**kwargs)
+        invoice_form = timepiece_forms.InvoiceForm(instance=self.object)
+        context.update({
+            'invoice_form': invoice_form,
+        })
+        return context        
+
+    def post(self, request, **kwargs):
+        invoice = get_object_or_404(timepiece.EntryGroup, pk=kwargs.get('pk'))
+        self.object = invoice
+        initial = {
+            'project': invoice.project,
+            'user': request.user,
+            'from_date': invoice.start,
+            'to_date': invoice.end,
+        }
+        invoice_form = timepiece_forms.InvoiceForm(request.POST,
+                                                   initial=initial,
+                                                   instance=invoice)
+        if invoice_form.is_valid():
+            invoice_form.save()
+            return HttpResponseRedirect(reverse('view_invoice', kwargs=kwargs))
+        else:
+            context = super(InvoiceEdit, self).get_context_data(**kwargs)
+            context.update({
+                'invoice_form': invoice_form,
+            })
+            return self.render_to_response(context)
+
+
+class InvoiceDelete(InvoiceDetail):
+    template_name = 'timepiece/time-sheet/invoice/delete.html'
+
+    def post(self, request, **kwargs):
+        invoice = get_object_or_404(timepiece.EntryGroup, pk=kwargs.get('pk'))
+        if 'delete' in request.POST:
+            invoice.delete()
+            return HttpResponseRedirect(reverse('list_invoices'))
+        else:
+            return redirect(reverse('edit_invoice', kwargs=kwargs))
+
+
+@login_required
+def remove_invoice_entry(request, invoice_id, entry_id):
+    invoice = get_object_or_404(timepiece.EntryGroup, pk=invoice_id)
+    entry = get_object_or_404(timepiece.Entry, pk=entry_id)
+    if request.POST:
+        entry.status = 'approved'
+        entry.entry_group = None
+        entry.save()
+        kwargs = {'pk': invoice_id}
+        return HttpResponseRedirect(reverse('edit_invoice', kwargs=kwargs))
+    else:
+        context = {
+            'invoice': invoice,
+            'entry': entry,
+        }
+        return render_to_response(
+            'timepiece/time-sheet/invoice/remove_invoice_entry.html',
+            context,
+            context_instance=RequestContext(request)
+        )
 
 
 @permission_required('timepiece.view_business')

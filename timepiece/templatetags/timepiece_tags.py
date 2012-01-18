@@ -206,32 +206,10 @@ def show_cal(from_date, offset=0):
     return html_cal.formatmonth(date.year, date.month)
 
 
-@register.inclusion_tag('timepiece/time-sheet/invoice/_invoice_row.html',
-                        takes_context=True)
-def build_invoice_row(context, entries, to_date, from_date):
-    hours_invoiced = hours_uninvoiced = 0
+@register.simple_tag
+def get_uninvoiced_hours(entries):
+    hours_uninvoiced = 0
     for entry in entries:
-        project = entry['project__pk']
-        if entry['status'] == 'invoiced':
-            hours_invoiced += entry['s']
-        else:
+        if entry['status'] != 'invoiced' and entry['status'] != 'not-invoiced':
             hours_uninvoiced += entry['s']
-    to_date_str = to_date.strftime('%Y-%m-%d') if to_date else ''
-    from_date_str = from_date.strftime('%Y-%m-%d') if from_date else ''
-    csv_get_str = urllib.urlencode({
-        'to_date': to_date_str,
-        'from_date': from_date_str,
-        'status': 'approved',
-    })
-    csv_url = reverse('export_project_time_sheet', args=[project, ])
-    csv_url += '?' + csv_get_str
-    args = [project, to_date_str]
-    if from_date:
-        args.append(from_date_str)
-    invoice_url = reverse('time_sheet_invoice_project', args=args)
-    return {
-        'hours_invoiced': hours_invoiced,
-        'hours_uninvoiced': hours_uninvoiced,
-        'csv_url': csv_url,
-        'invoice_url': invoice_url,
-        }
+    return hours_uninvoiced

@@ -1,0 +1,81 @@
+{% extends 'timepiece/time-sheet/base.html' %}
+{% load timepiece_tags %}
+{% load url from future %}
+
+{% block title %}Edit Invoice{% endblock %}
+
+{% block content %}
+<h2>
+    Edit Invoice for {{ project.name }} hours
+    {% if from_date %}
+        from {{ from_date }} to {{ to_date }}
+    {% else %}
+        through {{ to_date }}{% endif %}
+</h2>
+<ul class='header-actions-left'>
+    <li>
+        <a href="{% url 'list_invoices' %}">Previous Invoices</a>
+    </li>
+    <li>
+        <a href="{% url 'view_invoice' invoice.id %}">View Invoice</a>
+    </li>
+    <li>
+        Edit Invoice
+    </li>
+    <li>
+        <a href="{% url 'view_invoice_csv' invoice.id %}">Download CSV</a>
+    </li>
+</ul>
+  <br />
+  <form method="post">{% csrf_token %}
+      <table class='vertical'>
+        {{ invoice_form }}
+        <tr>
+          <td class='submit'><a href="{% url 'delete_invoice' invoice.pk %}">Delete Invoice</a></td>
+          <td class='submit'>
+            <input type='submit' name='submit' value='Update Invoice &rarr;' />
+          </td>
+        </tr>
+      </table>
+  </form>
+<br />
+<h3>Selected Entries</h3>
+{% if entries %}
+    <table class="time-sheet">    
+        <tr>
+            <th>Date</th>
+            <th>User</th>
+            <th>Time</th>
+            <th>Project</th>
+            <th>Activity</th>
+            <th>Hours</th>
+            <th>Comments</th>
+            <th>Remove</th>
+        </tr>            
+        {% for entry in entries %}
+            {% ifchanged entry.start_time|date:"W" %}
+                <tr class="ledger_header">
+                    <th colspan='8'>Week of {% week_start entry.start_time %} </th>
+                </tr>
+            {% endifchanged %}
+            <tr>
+                {% ifchanged entry.start_time|date %}
+                    <td>{{ entry.start_time|date:"m/d/Y (D)" }}</td>
+                {% else %}
+                    <td></td>
+                {% endifchanged %}
+            <td>{{ entry.user.get_full_name }} </td>
+            <td>{{ entry.start_time|date:"P" }} - {{ entry.end_time|date:"P" }} </td>
+            <td>{{ entry.project.name }}</td>
+            <td>{{ entry.activity.name }}</td>
+            <td class="hours">{{ entry.hours }}</td>
+            <td title="{{entry.comments}}">{{ entry.comments|truncatewords:12 }}</td>
+            <td><a href="{% url 'remove_invoice_entry' invoice.pk entry.pk %}">Remove</a></td>
+        </tr>
+        {% endfor %}
+    </table>
+{% else %}
+    <p>No entries were found</p>
+{% endif %}
+
+{% endblock %}

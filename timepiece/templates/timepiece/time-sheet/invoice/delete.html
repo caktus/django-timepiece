@@ -5,23 +5,23 @@
 {% block title %}Invoice Hours for Time Sheet{% endblock %}
 
 {% block content %}
-  <h2>Invoice {{ project.name }} Hours {% if from_date %}from {{ from_date.date }} to {{ to_date.date }}{% else %}through {{ to_date.date }}{% endif %}</h2>
+  <h2>Delete the invoice for {{ project.name }} hours 
+      {% if from_date %}from {{ from_date }} to {{ to_date }}{% else %}through {{ to_date }}{% endif %}
+  </h2>
   <br />
+  <p>Deleting this invoice will return all associated entries to "approved" status. Are you sure you want to do this?</p>
   <form method="post">{% csrf_token %}
       <table class='vertical'>
-        {{ invoice_form }}
         <tr>
-          <td>&nbsp;</td>
           <td class='submit'>
-            <input type='button' value='Cancel' onclick='history.go(-1)' />
-            &nbsp;
-            <input type='submit' name='submit' value='Create Invoice &rarr;' />
+            <input type='submit' value='Cancel' />
+            <input type='submit' name='delete' value='Delete Invoice &rarr;' />
           </td>
         </tr>
       </table>
   </form>
 <br />
+
 <h3>Selected Entries</h3>
 {% include 'timepiece/time-sheet/_weekly_entry_list.html' %}
-
 {% endblock %}
