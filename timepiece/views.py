@@ -820,12 +820,9 @@ class InvoiceEdit(InvoiceDetail):
         invoice_form = timepiece_forms.InvoiceForm(request.POST,
                                                    initial=initial,
                                                    instance=invoice)
-        if invoice_form.is_valid() and 'submit' in request.POST:
+        if invoice_form.is_valid():
             invoice_form.save()
             return HttpResponseRedirect(reverse('view_invoice', kwargs=kwargs))
-        elif 'delete' in request.POST:
-            return HttpResponseRedirect(reverse('delete_invoice',
-                                                kwargs=kwargs))
         else:
             context = super(InvoiceEdit, self).get_context_data(**kwargs)
             context.update({

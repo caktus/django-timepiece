@@ -104,7 +104,6 @@ class InvoiceViewPreviousTestCase(TimepieceDataTestCase):
         url = reverse('edit_invoice', kwargs={'pk': invoice.id})
         status = 'invoiced' if invoice.status != 'invoiced' else 'not-invoiced'
         params = {
-            'submit': 'submit',
             'number': invoice.number + 1,
             'status': status,
             'comments': 'Comments',
