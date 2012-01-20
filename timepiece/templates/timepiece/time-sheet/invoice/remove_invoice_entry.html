@@ -1,0 +1,48 @@
+{% extends 'timepiece/time-sheet/base.html' %}
+{% load timepiece_tags %}
+{% load url from future %}
+
+{% block title %}Remove Entry from Invoice{% endblock %}
+
+{% block content %}
+<h2>Are you sure you want to remove this entry from the current invoice?</h3>
+
+<h3> Invoice </h3>
+{% include 'timepiece/time-sheet/invoice/_invoice_detail.html' %}
+
+<h3> Entry </h3>
+<table class="time-sheet">
+    <tr>
+        <th>Date</th>
+        <th>User</th>
+        <th>Time</th>
+        <th>Project</th>
+        <th>Activity</th>
+        <th>Hours</th>
+        <th>Comments</th>
+    </tr>
+    <tr>
+        <td>{{ entry.start_time|date:"m/d/Y (D)" }}</td>
+        <td>{{ entry.user.get_full_name }} </td>
+        <td>{{ entry.start_time|date:"P" }} - {{ entry.end_time|date:"P" }} </td>
+        <td>{{ entry.project.name }}</td>
+        <td>{{ entry.activity.name }}</td>
+        <td class="hours">{{ entry.hours }}</td>
+        <td title="{{entry.comments}}">{{ entry.comments|truncatewords:12 }}</td>
+    </tr>
+</table>
+  <br />
+  <form method="post">{% csrf_token %}
+      <table class='vertical'>
+        <tr>
+          <td>&nbsp;</td>
+          <td class='submit'>
+            <input type='button' value='Cancel' onclick='history.go(-1)' />
+            &nbsp;
+            <input type='submit' name='submit' value='Remove Entry &rarr;' />
+          </td>
+        </tr>
+      </table>
+  </form>
+<br />
+{% endblock %}

@@ -266,6 +266,7 @@ class Entry(models.Model):
        'EntryGroup',
         related_name='entries',
         blank=True, null=True,
+        on_delete=models.SET_NULL,
     )
     status = models.CharField(
         max_length=24,
@@ -544,9 +545,14 @@ class EntryGroup(models.Model):
                               default='invoiced')
     number = models.IntegerField("Reference #", blank=True, null=True)
     comments = models.TextField(blank=True, null=True)
-    created = models.DateTimeField(auto_now=True)
+    created = models.DateTimeField(auto_now_add=True)
+    modified = models.DateTimeField(auto_now=True)
     start = models.DateField(blank=True, null=True)
     end = models.DateField()
+
+    def delete(self):
+        self.entries.update(status='approved')
+        super(EntryGroup, self).delete()
 
     def __unicode__(self):
         invoice_data = {

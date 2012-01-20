@@ -39,12 +39,20 @@ class InvoiceViewPreviousTestCase(TimepieceDataTestCase):
             project = self.project
         to_date = datetime.datetime(2011, 1, 31)
         args = [project.id, to_date.strftime('%Y-%m-%d')]
-        url = reverse('time_sheet_invoice_project', args=args)
+        url = reverse('confirm_invoice_project', args=args)
         params = {
             'number': random.randint(999, 9999),
             'status': status,
         }
         response = self.client.post(url, params)
+
+    def get_invoice(self):
+        invoices = timepiece.EntryGroup.objects.all()
+        return random.choice(invoices)
+
+    def get_entry(self, invoice):
+        entries = invoice.entries.all()
+        return random.choice(entries)
 
     def test_previous_invoice_list(self):
         url = reverse('list_invoices')
@@ -60,6 +68,129 @@ class InvoiceViewPreviousTestCase(TimepieceDataTestCase):
             response = self.client.get(url)
             self.assertEqual(response.status_code, 200)
             self.assertTrue(response.context['invoice'])
+
+    def test_invoice_csv(self):
+        invoice = self.get_invoice()
+        url = reverse('view_invoice_csv', args=[invoice.id])
+        response = self.client.get(url)
+        self.assertEqual(response.status_code, 200)
+        data = dict(response.items())
+        self.assertEqual(data['Content-Type'], 'text/csv')
+        disposition = data['Content-Disposition']
+        self.assertTrue(disposition.startswith('attachment; filename=Invoice'))
+        contents = response.content.splitlines()
+        # TODO: Possibly find a meaningful way to test contents
+
+    def test_invoice_csv_bad_id(self):        
+        url = reverse('view_invoice_csv', args=[9999999999])
+        response = self.client.get(url)
+        self.assertEqual(response.status_code, 404)
+
+    def test_invoice_edit_get(self):
+        invoice = self.get_invoice()
+        url = reverse('edit_invoice', args=[invoice.id])
+        response = self.client.get(url)
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.context['invoice'].id, invoice.id)
+        self.assertTrue(response.context['entries'])
+
+    def test_invoice_edit_bad_id(self):
+        url = reverse('edit_invoice', args=[99999999999])
+        response = self.client.get(url)
+        self.assertEqual(response.status_code, 404)
+
+    def test_invoice_edit_post(self):
+        invoice = self.get_invoice()
+        url = reverse('edit_invoice', kwargs={'pk': invoice.id})
+        status = 'invoiced' if invoice.status != 'invoiced' else 'not-invoiced'
+        params = {
+            'number': invoice.number + 1,
+            'status': status,
+            'comments': 'Comments',
+        }
+        response = self.client.post(url, params)
+        self.assertEqual(response.status_code, 302)
+        new_invoice = timepiece.EntryGroup.objects.get(pk=invoice.id)
+        self.assertEqual(invoice.number + 1, new_invoice.number)
+        self.assertTrue(invoice.status != new_invoice.status)
+        self.assertEqual(new_invoice.comments, 'Comments')
+
+    def test_invoice_edit_bad_post(self):
+        invoice = self.get_invoice()
+        url = reverse('edit_invoice', args=[invoice.id])
+        params = {
+            'number': 'String',
+            'status': 'not_in_choices',
+        }
+        response = self.client.post(url, params)
+        err_msg = 'Enter a whole number.'
+        self.assertFormError(response, 'invoice_form', 'number', err_msg)
+        err_msg = 'Select a valid choice. not_in_choices is not one of the available choices.'
+        self.assertFormError(response, 'invoice_form', 'status', err_msg)
+
+    def test_invoice_delete_get(self):
+        invoice = self.get_invoice()
+        url = reverse('delete_invoice', args=[invoice.id])
+        response = self.client.get(url)
+        self.assertEqual(response.status_code, 200)
+
+    def test_invoice_delete(self):
+        invoice = self.get_invoice()
+        entry_ids = [entry.pk for entry in invoice.entries.all()]
+        url = reverse('delete_invoice', args=[invoice.id])
+        response = self.client.post(url, {'delete': 'delete'})
+        self.assertEqual(response.status_code, 302)
+        self.assertFalse(timepiece.EntryGroup.objects.filter(pk=invoice.id))
+        entries = timepiece.Entry.objects.filter(pk__in=entry_ids)
+        for entry in entries:
+            self.assertEqual(entry.status, 'approved')
+
+    def test_invoice_delete_cancel(self):
+        invoice = self.get_invoice()
+        url = reverse('delete_invoice', args=[invoice.id])
+        response = self.client.post(url, {'cancel': 'cancel'})
+        self.assertEqual(response.status_code, 302)
+        # Canceled out so the invoice was not deleted
+        self.assertTrue(timepiece.EntryGroup.objects.get(pk=invoice.id))
+
+    def test_invoice_delete_bad_args(self):
+        invoice = self.get_invoice()
+        entry_ids = [entry.pk for entry in invoice.entries.all()]
+        url = reverse('delete_invoice', args=[1232345345])
+        response = self.client.post(url, {'delete': 'delete'})
+        self.assertEqual(response.status_code, 404)
+
+    def test_rm_invoice_entry_get(self):
+        invoice = self.get_invoice()
+        entry = self.get_entry(invoice)
+        url = reverse('remove_invoice_entry', args=[invoice.id, entry.id])
+        response = self.client.get(url)
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.context['invoice'], invoice)
+        self.assertEqual(response.context['entry'], entry)
+
+    def test_rm_invoice_entry_get_bad_id(self):
+        invoice = self.get_invoice()
+        entry = self.get_entry(invoice)
+        url = reverse('remove_invoice_entry', args=[invoice.id, 999999])
+        response = self.client.get(url)
+        self.assertEqual(response.status_code, 404)
+        url = reverse('remove_invoice_entry', args=[9999, entry.id])
+        response = self.client.get(url)
+        self.assertEqual(response.status_code, 404)
+
+    def test_rm_invoice_entry_post(self):
+        invoice = self.get_invoice()
+        entry = self.get_entry(invoice)
+        url = reverse('remove_invoice_entry', args=[invoice.id, entry.id])
+        response = self.client.post(url, {'submit': ''})
+        self.assertEqual(response.status_code, 302)
+        new_invoice = timepiece.EntryGroup.objects.get(pk=invoice.pk)
+        rm_entry = new_invoice.entries.filter(pk=entry.id)
+        self.assertFalse(rm_entry)
+        new_entry = timepiece.Entry.objects.get(pk=entry.pk)
+        self.assertEqual(new_entry.status, 'approved')
+        self.assertEqual(new_entry.entry_group, None)
 
 
 class InvoiceCreateTestCase(TimepieceDataTestCase):
@@ -149,7 +280,7 @@ class InvoiceCreateTestCase(TimepieceDataTestCase):
     def test_invoice_confirm_view(self):
         to_date = datetime.datetime(2011, 1, 31)
         args = [self.project_billable.id, to_date.strftime('%Y-%m-%d')]
-        url = reverse('time_sheet_invoice_project', args=args)
+        url = reverse('confirm_invoice_project', args=args)
         response = self.client.get(url)
         self.assertEqual(response.status_code, 200)
         to_date_str = response.context['to_date'].strftime('%Y %m %d')
@@ -161,7 +292,7 @@ class InvoiceCreateTestCase(TimepieceDataTestCase):
             to_date.strftime('%Y-%m-%d'),
             from_date.strftime('%Y-%m-%d')
         ]
-        url = reverse('time_sheet_invoice_project', args=args)
+        url = reverse('confirm_invoice_project', args=args)
         response = self.client.get(url)
         self.assertEqual(response.status_code, 200)
         from_date_str = response.context['from_date'].strftime('%Y %m %d')
@@ -172,19 +303,19 @@ class InvoiceCreateTestCase(TimepieceDataTestCase):
     def test_invoice_confirm_bad_args(self):
         # A year/month/project with no entries should raise a 404
         args = [self.project_billable.id, '2008-01-13']
-        url = reverse('time_sheet_invoice_project', args=args)
+        url = reverse('confirm_invoice_project', args=args)
         response = self.client.get(url)
         self.assertEqual(response.status_code, 404)
         # A year/month with bad/overflow values should raise a 404
         args = [self.project_billable.id, '9999-13-01']
-        url = reverse('time_sheet_invoice_project', args=args)
+        url = reverse('confirm_invoice_project', args=args)
         response = self.client.get(url)
         self.assertEqual(response.status_code, 404)
 
     def test_make_invoice(self):
         to_date = datetime.datetime(2011, 1, 31)
         args = [self.project_billable.id, to_date.strftime('%Y-%m-%d')]
-        url = reverse('time_sheet_invoice_project', args=args)
+        url = reverse('confirm_invoice_project', args=args)
         response = self.client.post(url, {'number': 3, 'status': 'invoiced'})
         self.assertEqual(response.status_code, 302)
         # Verify an invoice was created with the correct attributes
@@ -212,7 +343,7 @@ class InvoiceCreateTestCase(TimepieceDataTestCase):
             to_date.strftime('%Y-%m-%d'),
             from_date.strftime('%Y-%m-%d')
         ]
-        url = reverse('time_sheet_invoice_project', args=args)
+        url = reverse('confirm_invoice_project', args=args)
         response = self.client.post(url, {'number': 5,
                                           'status': 'not-invoiced'})
         self.assertEqual(response.status_code, 302)
@@ -232,7 +363,7 @@ class InvoiceCreateTestCase(TimepieceDataTestCase):
     def test_make_invoice_bad_number(self):
         to_date = datetime.datetime(2011, 1, 31)
         args = [self.project_billable.id, to_date.strftime('%Y-%m-%d')]
-        url = reverse('time_sheet_invoice_project', args=args)
+        url = reverse('confirm_invoice_project', args=args)
         response = self.client.post(url, {'number': 'string'})
         err_msg = 'Enter a whole number.'
         self.assertFormError(response, 'invoice_form', 'number', err_msg)

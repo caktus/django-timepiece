@@ -5,51 +5,33 @@
 {% block title %}Invoice Detail{% endblock %}
 
 {% block content %}
-<h2> Invoice details </h2>
 
-<table class='vertical'>
-    {% if invoice.number %}
-        <tr>
-            <th>Number:</th>
-            <td>{{ invoice.number }}</td>
-        </tr>
-    {% endif %}
-    <tr>
-        <th>Project:</th>
-        <td>{{ invoice.project.name }}</td>
-    </tr>
-    <tr>
-        <th>Status:</th>
-        <td>{{ invoice.status|capfirst }}</td>
-    </tr>
-    <tr>
-        <th>Created by:</th>
-        <td>{{ invoice.user.get_full_name }}</td>
-    </tr>
-    <tr>
-        <th>Created on:</th>
-        <td>{{ invoice.created|date:"M d Y P" }}</td>
-    </tr>
-    {% if invoice.start %}
-        <tr>
-            <th>Starting on:</th>
-            <td>{{ invoice.start|date:"M d Y"|default:"Not specified" }}</td>
-        </tr>
-    {% endif %}
-    <tr>
-        <th>Ending on:</th>
-        <td>{{ invoice.end|date:"M d Y" }}</td>
-    </tr>
-    {% if invoice.comments %}
-        <tr>
-            <th>Comments:</th>
-            <td>{{ invoice.comments }}</td>
-        </tr>
-    {% endif %}
-</table>
+<h2>
+    Invoice details for {{ project.name }} hours
+    {% if from_date %}
+        from {{ from_date }} to {{ to_date }}
+    {% else %}
+        through {{ to_date }}{% endif %}
+</h2>
+
+<ul class='header-actions-left'>
+    <li>
+        <a href="{% url 'list_invoices' %}">Previous Invoices</a>
+    </li>
+    <li>
+        View Invoice
+    </li>
+    <li>
+        <a href="{% url 'edit_invoice' invoice.id %}">Edit Invoice</a>
+    </li>
+    <li>
+        <a href="{% url 'view_invoice_csv' invoice.id %}">Download CSV</a>
+    </li>
+</ul>
+
+{% include 'timepiece/time-sheet/invoice/_invoice_detail.html' %}
 
 <h3>Selected Entries</h3>
 {% include 'timepiece/time-sheet/_weekly_entry_list.html' %}
 
 {% endblock %}
-

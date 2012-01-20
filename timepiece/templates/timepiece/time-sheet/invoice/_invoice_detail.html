@@ -1,0 +1,48 @@
+{% load timepiece_tags %}
+{% load url from future %}
+
+<table class='vertical'>
+    {% if invoice.number %}
+        <tr>
+            <th>Number:</th>
+            <td>{{ invoice.number }}</td>
+        </tr>
+    {% endif %}
+    <tr>
+        <th>Project:</th>
+        <td>{{ invoice.project.name }}</td>
+    </tr>
+    <tr>
+        <th>Status:</th>
+        <td>{{ invoice.get_status_display }}</td>
+    </tr>
+    <tr>
+        <th>Created by:</th>
+        <td>{{ invoice.user.get_full_name }}</td>
+    </tr>
+    <tr>
+        <th>Created on:</th>
+        <td>{{ invoice.created|date:"M d Y P" }}</td>
+    </tr>
+    <tr>
+        <th>Last modified:</th>
+        <td>{{ invoice.modified|date:"M d Y P" }}</td>
+    </tr>
+
+    {% if invoice.start %}
+        <tr>
+            <th>Starting on:</th>
+            <td>{{ invoice.start|date:"M d Y"|default:"Not specified" }}</td>
+        </tr>
+    {% endif %}
+    <tr>
+        <th>Ending on:</th>
+        <td>{{ invoice.end|date:"M d Y" }}</td>
+    </tr>
+    {% if invoice.comments %}
+        <tr>
+            <th>Comments:</th>
+            <td>{{ invoice.comments }}</td>
+        </tr>
+    {% endif %}
+</table>

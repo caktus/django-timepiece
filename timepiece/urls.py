@@ -50,7 +50,6 @@ urlpatterns = patterns('',
         views.create_edit_business,
         name='edit_business',
     ),
-
     url(r'^project/list/$', views.list_projects, name='list_projects'),
     url(
         r'^project/(?P<project_id>\d+)/$',
@@ -122,13 +121,6 @@ urlpatterns = patterns('',
         name='time_sheet_change_status',
     ),
     url(
-        r'invoice/project/(?P<project_id>\d+)/create/' +
-        r'(?P<to_date>\d\d\d\d-\d\d-\d\d)/' +
-        r'(?:(?P<from_date>\d\d\d\d-\d\d-\d\d)/)?$',
-        views.time_sheet_invoice_project,
-        name='time_sheet_invoice_project',
-    ),
-    url(
         r'^time-sheet/project/(?P<project_id>\d+)/(?:(?P<window_id>\d+)/)?$',
         views.project_time_sheet,
         name='project_time_sheet',
@@ -140,21 +132,6 @@ urlpatterns = patterns('',
         name='export_project_time_sheet',
     ),
     url(
-        r'^invoice/outstanding/$',
-        views.invoice_projects,
-        name='invoice_projects',
-    ),
-    url(
-        r'^invoice/list/$',
-        views.list_invoices,
-        name='list_invoices',
-    ),
-    url(
-        r'^invoice/(?P<invoice_id>\d+)/$',
-        views.view_invoice,
-        name='view_invoice',
-    ),
-    url(
         r'^projection/$',
         views.projection_summary,
         name='projection_summary',
@@ -163,5 +140,49 @@ urlpatterns = patterns('',
         r'^edit-settings/$',
         views.edit_settings,
         name='edit_settings',
+    ),
+
+    ### Invoices ###
+    url(
+        r'^invoice/outstanding/$',
+        views.invoice_projects,
+        name='invoice_projects',
+    ),
+    url(
+        r'invoice/project/(?P<project_id>\d+)/create/' +
+        r'(?P<to_date>\d\d\d\d-\d\d-\d\d)/' +
+        r'(?:(?P<from_date>\d\d\d\d-\d\d-\d\d)/)?$',
+        views.confirm_invoice_project,
+        name='confirm_invoice_project',
+    ),
+    url(
+        r'^invoice/list/$',
+        views.InvoiceList.as_view(),
+        name='list_invoices',
+    ),
+    url(
+        r'^invoice/(?P<pk>\d+)/$',
+        views.InvoiceDetail.as_view(),
+        name='view_invoice'
+    ),
+    url(
+        r'^invoice/(?P<pk>\d+)/csv/$',
+        views.InvoiceCSV.as_view(),
+        name='view_invoice_csv'
+    ),
+    url(
+        r'^invoice/edit/(?P<pk>\d+)/$',
+        views.InvoiceEdit.as_view(),
+        name='edit_invoice',
+    ),
+    url(
+        r'^invoice/delete/(?P<pk>\d+)/$',
+        views.InvoiceDelete.as_view(),
+        name='delete_invoice',
+    ),
+    url(
+        r'^invoice/remove-entry/(?P<invoice_id>\d+)/(?P<entry_id>\d+)/$',
+        views.remove_invoice_entry,
+        name='remove_invoice_entry',
     ),
 )
