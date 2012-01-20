@@ -24,6 +24,7 @@ from django.utils.datastructures import SortedDict
 from django.views.decorators.csrf import csrf_exempt
 from django.views.generic.base import TemplateView
 from django.views.generic import UpdateView, ListView, DetailView
+from django.utils.decorators import method_decorator
 
 from timepiece.utils import render_with
 
@@ -699,7 +700,7 @@ def confirm_invoice_project(request, project_id, to_date, from_date=None):
     }, context_instance=RequestContext(request))
 
 
-@login_required
+@permission_required('timepiece.change_entrygroup')
 def invoice_projects(request):
     to_date = utils.get_month_start(datetime.datetime.today()).date()
     from_date = None
@@ -741,11 +742,19 @@ class InvoiceList(ListView):
     context_object_name = 'invoices'    
     queryset = timepiece.EntryGroup.objects.all().order_by('-created')
 
+    @method_decorator(permission_required('timepiece.change_entrygroup'))
+    def dispatch(self, *args, **kwargs):
+        return super(InvoiceList, self).dispatch(*args, **kwargs)
+
 
 class InvoiceDetail(DetailView):
     template_name = 'timepiece/time-sheet/invoice/view.html'
     model = timepiece.EntryGroup
     context_object_name = 'invoice'
+
+    @method_decorator(permission_required('timepiece.change_entrygroup'))
+    def dispatch(self, *args, **kwargs):
+        return super(InvoiceDetail, self).dispatch(*args, **kwargs)
 
     def get_context_data(self, **kwargs):
         context = super(InvoiceDetail, self).get_context_data(**kwargs)
@@ -763,6 +772,7 @@ class InvoiceDetail(DetailView):
 
 
 class InvoiceCSV(CSVMixin, InvoiceDetail):
+
     def get_filename(self, context):
         invoice = context['invoice']
         project = str(invoice.project).replace(' ', '_')
@@ -843,7 +853,7 @@ class InvoiceDelete(InvoiceDetail):
             return redirect(reverse('edit_invoice', kwargs=kwargs))
 
 
-@login_required
+@permission_required('timepiece.change_entrygroup')
 def remove_invoice_entry(request, invoice_id, entry_id):
     invoice = get_object_or_404(timepiece.EntryGroup, pk=invoice_id)
     entry = get_object_or_404(timepiece.Entry, pk=entry_id)
