@@ -10,6 +10,7 @@ from django.db.models import Sum
 from django.core.urlresolvers import reverse
 
 from dateutil.relativedelta import relativedelta
+from dateutil import rrule
 
 from timepiece.models import PersonRepeatPeriod, AssignmentAllocation
 import timepiece.models as timepiece
@@ -213,3 +214,11 @@ def get_uninvoiced_hours(entries):
         if entry['status'] != 'invoiced' and entry['status'] != 'not-invoiced':
             hours_uninvoiced += entry['s']
     return hours_uninvoiced
+
+
+@register.filter
+def work_days(end):
+    weekdays = (rrule.MO, rrule.TU, rrule.WE, rrule.TH, rrule.FR)
+    days = rrule.rrule(rrule.DAILY, byweekday=weekdays,
+                       dtstart=datetime.date.today(), until=end)
+    return len(list(days))

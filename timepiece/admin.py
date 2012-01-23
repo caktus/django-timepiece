@@ -62,6 +62,14 @@ admin.site.register(timepiece.Attribute, AttributeAdmin)
 
 class ContractAssignmentInline(admin.TabularInline):
     model = timepiece.ContractAssignment
+    raw_id_fields = ('user',)
+
+    def queryset(self, request):
+        return super(ContractAssignmentInline, self).queryset(request).select_related()
+
+
+class ContractMilestoneInline(admin.TabularInline):
+    model = timepiece.ContractMilestone
 
 
 class ProjectContractAdmin(admin.ModelAdmin):
@@ -70,20 +78,23 @@ class ProjectContractAdmin(admin.ModelAdmin):
                     'num_hours', 'hours_assigned', 'hours_unassigned',
                     'hours_worked')
     ordering = ('-end_date',)
-    inlines = (ContractAssignmentInline,)
+    inlines = (ContractAssignmentInline, ContractMilestoneInline)
     list_filter = ('status',)
+    raw_id_fields = ('project',)
+    list_per_page = 20
 
     def hours_unassigned(self, obj):
         return obj.num_hours - obj.hours_assigned
 
-    def save_formset(self, request, form, formset, change):
-        instances = formset.save()
-        form.save_m2m()
-        run_projection()
+    # disabled by copelco 1/23/2012
+    # def save_formset(self, request, form, formset, change):
+    #     instances = formset.save()
+    #     form.save_m2m()
+    #     run_projection()
 
-    def delete_model(self, request, obj):
-        obj.delete()
-        run_projection()
+    # def delete_model(self, request, obj):
+    #     obj.delete()
+    #     run_projection()
 
 admin.site.register(timepiece.ProjectContract, ProjectContractAdmin)
 
