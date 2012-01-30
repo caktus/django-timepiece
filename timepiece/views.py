@@ -690,11 +690,14 @@ def confirm_invoice_project(request, project_id, to_date, from_date=None):
         entries = entries.order_by('start_time')
         if not entries:
             raise Http404
+
+    totals = utils.hour_group_totals(entries)
     template = 'timepiece/time-sheet/invoice/confirm.html'
     return render_to_response(template, {
         'invoice_form': invoice_form,
         'entries': entries.select_related(),
         'project': project,
+        'totals': totals,
         'from_date': from_date,
         'to_date': to_date,
     }, context_instance=RequestContext(request))

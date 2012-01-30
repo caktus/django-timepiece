@@ -185,14 +185,28 @@ class Activity(models.Model):
         verbose_name_plural = 'activities'
 
 
+class HourGroup(models.Model):
+    """Activities that are bundled together for billing"""
+
+    name = models.CharField(max_length=255, unique=True)
+    activities = models.ManyToManyField(
+        Activity,
+        related_name='activity_bundle',
+    )
+    order = models.PositiveIntegerField(unique=True)
+
+    def __unicode__(self):
+        return self.name
+
+
 class ActivityGroup(models.Model):
+    """Activities that are allowed for a project"""
 
     name = models.CharField(max_length=255, unique=True)
     activities = models.ManyToManyField(
         Activity,
         related_name='activity_group',
     )
-
     def __unicode__(self):
         return self.name
 

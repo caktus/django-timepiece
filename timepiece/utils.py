@@ -436,3 +436,34 @@ def payroll_totals(entries, date, leave):
         leave_desc, leave_hours = format_leave(leave.filter(user=user))
         all_hours = totals[2] + leave_hours
         yield (name, totals, leave_desc, all_hours)
+
+def hour_group_totals(entries):
+    """Return a list of tuples with totals based on activity type"""
+    from timepiece.models import HourGroup
+
+    totals = {}
+    bundles = [{
+                'order': bundle.order,
+                'name': bundle.name,
+                'ids': bundle.activities.all().values_list('id', flat=True)
+               }
+               for bundle in HourGroup.objects.all()]
+    bundle_names = sorted([(bundle['order'], bundle['name'])
+                           for bundle in bundles])
+    entries = entries.values('activity', 'hours')
+    for activity, activity_entries in groupby(entries, lambda x:x['activity']):
+        for activity_entry in activity_entries:
+            hours = activity_entry['hours']
+            last_key = len(bundles)
+            totals[last_key] = totals.get(last_key, 0) + hours
+            for bundle in bundles:
+                if activity in bundle['ids']:
+                    key = bundle['order']
+                    totals[key] = totals.get(key, 0) + hours
+    results = []
+    for order, hours in sorted(totals.items()):
+        if order < len(bundles):
+            results.append((bundle_names[order][1], hours))
+        else:
+            results.append(('Total', hours))
+    return results
