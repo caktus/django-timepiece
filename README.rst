@@ -63,6 +63,8 @@ History
 * Allowed entries to be added in the future.
 * Added per project activity restrictions.
 * Allowed marking entries as 'not invoiced' and grouped entries together after clicking on "Mark as invoiced"
+* Added the ability to view previous invoices and export them as csv's
+* Added the ability to group different activities together into Hour Groups for summarizing in invoices.
 
 0.3.5 (12-09-2011)
 ******************
