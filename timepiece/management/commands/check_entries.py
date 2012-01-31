@@ -150,7 +150,7 @@ For options type:
         year = kwargs.get('year', False)
         days = kwargs.get('days', 0)
         #If no flags are True, set to the beginning of last billing window
-        #to assure we catch all recent violates
+        #to assure we catch all recent violations
         start = datetime.datetime.now() - relativedelta(months=1, day=1)
         #Set the start date based on arguments provided through options
         if week:

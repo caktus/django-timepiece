@@ -150,6 +150,8 @@ class CheckEntries(TimepieceDataTestCase):
         list of all entries for each user from that time until now.
         """
         start = check_entries.Command().find_start()
+        if start.day == 1:
+            start += timedelta(days=1)
         all_people = check_entries.Command().find_people()
         entries = check_entries.Command().find_entries(all_people, start)
         #Determine the number of days checked

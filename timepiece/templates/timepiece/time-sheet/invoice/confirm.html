@@ -21,6 +21,22 @@
       </table>
   </form>
 <br />
+{% if totals %}
+<h3>Totals</h3>
+    <table>
+        <tr>
+            <th>Activity Type</th>
+            <th>Total Hours</th>
+        </tr>
+        {% for type, hours in totals %}
+            <tr>
+                <th>{{ type }}</th>
+                <td class="hours"> {{ hours }} </td>
+            </tr>
+        {% endfor %}
+    </table>
+<br />
+{% endif %}
 <h3>Selected Entries</h3>
 {% include 'timepiece/time-sheet/_weekly_entry_list.html' %}
 
