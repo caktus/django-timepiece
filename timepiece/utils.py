@@ -440,30 +440,28 @@ def payroll_totals(entries, date, leave):
 def hour_group_totals(entries):
     """Return a list of tuples with totals based on activity type"""
     from timepiece.models import HourGroup
-
     totals = {}
+    bundles_query = HourGroup.objects.all()
     bundles = [{
-                'order': bundle.order,
+                'order': bundle.order if bundle.order else len(bundles_query),
                 'name': bundle.name,
-                'ids': bundle.activities.all().values_list('id', flat=True)
+                'ids': bundle.activities.all().values_list('id', flat=True),
                }
-               for bundle in HourGroup.objects.all()]
-    bundle_names = sorted([(bundle['order'], bundle['name'])
-                           for bundle in bundles])
-    entries = entries.values('activity', 'hours')
+               for bundle in bundles_query]
+    # Totals dictionary is in the form: {[name]: (hours, order)}
+    entries = entries.values('activity', 'hours').order_by('activity')
     for activity, activity_entries in groupby(entries, lambda x:x['activity']):
-        for activity_entry in activity_entries:
-            hours = activity_entry['hours']
-            last_key = len(bundles)
-            totals[last_key] = totals.get(last_key, 0) + hours
+        for entry in activity_entries:
+            hours = entry['hours']
+            key = 'Total'
+            order = len(bundles) + 1
+            totals[key] = (totals.get(key, (0, 0))[0] + hours, order)
             for bundle in bundles:
                 if activity in bundle['ids']:
-                    key = bundle['order']
-                    totals[key] = totals.get(key, 0) + hours
-    results = []
-    for order, hours in sorted(totals.items()):
-        if order < len(bundles):
-            results.append((bundle_names[order][1], hours))
-        else:
-            results.append(('Total', hours))
-    return results
+                    key = bundle['name']
+                    order = bundle['order']
+                    totals[key] = (totals.get(key, (0, 0))[0] + hours, order)
+    # Coerce totals into a list of tuples and sort by order.
+    results = sorted([(v[1], k, v[0]) for k, v in totals.items()])
+    # Return tuples without order number
+    return [(name, hours) for order, name, hours in results]

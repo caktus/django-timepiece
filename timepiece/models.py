@@ -193,7 +193,7 @@ class HourGroup(models.Model):
         Activity,
         related_name='activity_bundle',
     )
-    order = models.PositiveIntegerField(unique=True)
+    order = models.PositiveIntegerField(unique=True, blank=True, null=True)
 
     def __unicode__(self):
         return self.name

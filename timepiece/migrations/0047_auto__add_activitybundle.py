@@ -12,7 +12,7 @@ class Migration(SchemaMigration):
         db.create_table('timepiece_hourgroup', (
             ('id', self.gf('django.db.models.fields.AutoField')(primary_key=True)),
             ('name', self.gf('django.db.models.fields.CharField')(unique=True, max_length=255)),
-            ('order', self.gf('django.db.models.fields.PositiveIntegerField')(unique=True)),
+            ('order', self.gf('django.db.models.fields.PositiveIntegerField')(unique=True, blank=True, null=True)),
         ))
         db.send_create_signal('timepiece', ['HourGroup'])
 
