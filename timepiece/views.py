@@ -10,7 +10,8 @@ from dateutil import rrule
 
 from django.contrib import messages
 from django.template import RequestContext
-from django.shortcuts import render_to_response, get_object_or_404, redirect, render
+from django.shortcuts import (render_to_response, get_object_or_404, redirect,
+                              render)
 from django.core.urlresolvers import reverse, resolve
 from django.http import HttpResponse, HttpResponseRedirect
 from django.http import  Http404, HttpResponseForbidden
@@ -739,7 +740,7 @@ def invoice_projects(request):
 
 class InvoiceList(ListView):
     template_name = 'timepiece/time-sheet/invoice/list.html'
-    context_object_name = 'invoices'    
+    context_object_name = 'invoices'
     queryset = timepiece.EntryGroup.objects.all().order_by('-created')
 
     @method_decorator(permission_required('timepiece.change_entrygroup'))
@@ -816,7 +817,7 @@ class InvoiceEdit(InvoiceDetail):
         context.update({
             'invoice_form': invoice_form,
         })
-        return context        
+        return context
 
     def post(self, request, **kwargs):
         invoice = get_object_or_404(timepiece.EntryGroup, pk=kwargs.get('pk'))

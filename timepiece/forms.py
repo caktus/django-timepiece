@@ -267,7 +267,8 @@ class AddUpdateEntryForm(forms.ModelForm):
 
     class Meta:
         model = Entry
-        exclude = ('user', 'pause_time', 'site', 'hours', 'status', 'entry_group')
+        exclude = ('user', 'pause_time', 'site', 'hours', 'status',
+                   'entry_group')
 
     def __init__(self, *args, **kwargs):
         self.user = kwargs.pop('user')
