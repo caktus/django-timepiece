@@ -185,4 +185,9 @@ urlpatterns = patterns('',
         views.remove_invoice_entry,
         name='remove_invoice_entry',
     ),
+    url(
+        r'^contract/(?P<pk>\d+)/$',
+        views.ContractDetail.as_view(),
+        name='view_contract',
+    ),
 )

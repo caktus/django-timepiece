@@ -1432,3 +1432,13 @@ def hourly_report(request, date_form, from_date, to_date, status, activity):
             total.extend(totals)
             writer.writerow(total)
         return response
+
+
+class ContractDetail(DetailView):
+    template_name = 'timepiece/time-sheet/contract/view.html'
+    model = timepiece.ProjectContract
+    context_object_name = 'contract'
+
+    @method_decorator(permission_required('timepiece.add_entry'))
+    def dispatch(self, *args, **kwargs):
+        return super(ContractDetail, self).dispatch(*args, **kwargs)
