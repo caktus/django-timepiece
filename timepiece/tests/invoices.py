@@ -233,6 +233,22 @@ class InvoiceCreateTestCase(TimepieceDataTestCase):
             'status': 'approved',
         })
 
+    def make_hourgroups(self):
+        """
+        Make several hour groups, one for each activity, and one that contains
+        all activities to check for hour groups with multiple activities.
+        """
+        all_activities = timepiece.Activity.objects.all()
+        for activity in all_activities:
+            hg = timepiece.HourGroup.objects.create(name=activity.name)
+            hg.activities.add(activity)
+            hg.save()
+        hg = timepiece.HourGroup.objects.create(name='all')
+        activity_ids = [activity.id for activity in all_activities]
+        hg.activities.add(*activity_ids)
+        hg.save()
+    
+
     def test_invoice_create(self):
         """
         Verify that only billable projects appear on the create invoice and
@@ -299,6 +315,35 @@ class InvoiceCreateTestCase(TimepieceDataTestCase):
         to_date_str = response.context['to_date'].strftime('%Y %m %d')
         self.assertEqual(from_date_str, '2011 01 01')
         self.assertEqual(to_date_str, '2011 01 31')
+
+    def test_invoice_confirm_totals(self):
+        """Verify that the per activity totals are valid."""
+        # Make a few extra entries to test per activity totals
+        start = datetime.datetime(2011, 1, 1, 8, 0, 0)
+        end = datetime.datetime(2011, 1, 1, 12, 0, 0)
+        activity = self.create_activity(data={'name': 'activity1'})
+        for num in xrange(0, 4):
+            new_entry = self.create_entry({
+                'user': self.user,
+                'project': self.project_billable,
+                'start_time': start - datetime.timedelta(days=num),
+                'end_time': end - datetime.timedelta(days=num),
+                'status': 'approved',
+                'activity': activity,
+            })
+        self.make_hourgroups()
+        to_date = datetime.datetime(2011, 1, 31)
+        args = [self.project_billable.id, to_date.strftime('%Y-%m-%d')]
+        url = reverse('confirm_invoice_project', args=args)
+        response = self.client.get(url)
+        self.assertEqual(response.status_code, 200)
+        for name, hours in response.context['totals']:
+            if name == 'activity1':
+                self.assertEqual(hours, 16)
+            elif name == 'Total' or name == 'all':
+                self.assertEqual(hours, 24)
+            else:
+                self.assertEqual(hours, 4)
 
     def test_invoice_confirm_bad_args(self):
         # A year/month/project with no entries should raise a 404
