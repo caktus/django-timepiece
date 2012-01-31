@@ -81,7 +81,7 @@ class InvoiceViewPreviousTestCase(TimepieceDataTestCase):
         contents = response.content.splitlines()
         # TODO: Possibly find a meaningful way to test contents
 
-    def test_invoice_csv_bad_id(self):        
+    def test_invoice_csv_bad_id(self):
         url = reverse('view_invoice_csv', args=[9999999999])
         response = self.client.get(url)
         self.assertEqual(response.status_code, 404)
@@ -125,7 +125,8 @@ class InvoiceViewPreviousTestCase(TimepieceDataTestCase):
         response = self.client.post(url, params)
         err_msg = 'Enter a whole number.'
         self.assertFormError(response, 'invoice_form', 'number', err_msg)
-        err_msg = 'Select a valid choice. not_in_choices is not one of the available choices.'
+        err_msg = 'Select a valid choice. not_in_choices is not one of ' + \
+                  'the available choices.'
         self.assertFormError(response, 'invoice_form', 'status', err_msg)
 
     def test_invoice_delete_get(self):

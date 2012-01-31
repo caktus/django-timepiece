@@ -10,7 +10,8 @@ from dateutil import rrule
 
 from django.contrib import messages
 from django.template import RequestContext
-from django.shortcuts import render_to_response, get_object_or_404, redirect, render
+from django.shortcuts import (render_to_response, get_object_or_404, redirect,
+                              render)
 from django.core.urlresolvers import reverse, resolve
 from django.http import HttpResponse, HttpResponseRedirect
 from django.http import  Http404, HttpResponseForbidden
@@ -742,7 +743,7 @@ def invoice_projects(request):
 
 class InvoiceList(ListView):
     template_name = 'timepiece/time-sheet/invoice/list.html'
-    context_object_name = 'invoices'    
+    context_object_name = 'invoices'
     queryset = timepiece.EntryGroup.objects.all().order_by('-created')
 
     @method_decorator(permission_required('timepiece.change_entrygroup'))
@@ -819,7 +820,7 @@ class InvoiceEdit(InvoiceDetail):
         context.update({
             'invoice_form': invoice_form,
         })
-        return context        
+        return context
 
     def post(self, request, **kwargs):
         invoice = get_object_or_404(timepiece.EntryGroup, pk=kwargs.get('pk'))
@@ -1435,3 +1436,13 @@ def hourly_report(request, date_form, from_date, to_date, status, activity):
             total.extend(totals)
             writer.writerow(total)
         return response
+
+
+class ContractDetail(DetailView):
+    template_name = 'timepiece/time-sheet/contract/view.html'
+    model = timepiece.ProjectContract
+    context_object_name = 'contract'
+
+    @method_decorator(permission_required('timepiece.add_entry'))
+    def dispatch(self, *args, **kwargs):
+        return super(ContractDetail, self).dispatch(*args, **kwargs)

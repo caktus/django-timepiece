@@ -1,0 +1,67 @@
+{% extends 'timepiece/time-sheet/base.html' %}
+{% load timepiece_tags %}
+
+{% block title %}{{ contract }} Report{% endblock %}
+
+{% block content %}
+<h2>{{ contract }} Report</h2>
+<ul class='header-actions-left'>
+    <li><a href="{% url timepiece-entries %}">Return to Dashboard</a></li>
+</ul>
+
+<table class='timepiece-summary vertical'>
+    <tr>
+        <th>Project</th>
+        <td>{{ contract.project }}</td>
+    </tr>
+    <tr>
+        <th>Time Frame</th>
+        <td>{{ contract.start_date|date }} &mdash; {{ contract.end_date }}</td>
+    </tr>
+    <tr>
+        <th>Hours</th>
+        <td>Worked {{ contract.hours_worked }} of {{ contract.num_hours }} ({% widthratio contract.hours_worked contract.num_hours 100 %}%)</td>
+    </tr>
+</table>
+
+{% if contract.milestones.exists %}
+<h3>Milestones</h3>
+
+<table class='timepiece-summary'>
+    <tr>
+        <th>Name</th>
+        <th>Status</th>
+        <th>Time Frame</th>
+        <th>Budget</th>
+        <th></th>
+        <th>Worked</th>
+        <th></th>
+        <th>Remaining</th>
+    </tr>
+    {% for milestone in contract.milestones.select_related %}
+    <tr>
+        <td>{{ milestone.name }}</td>
+        <td>
+            {% if milestone.is_complete %}
+                Complete
+            {% else %}
+                {% if milestone.is_before %}
+                    Upcoming
+                {% else %}
+                    {{ milestone.end_date|work_days }} days left
+                {% endif %}
+            {% endif %}
+        </td>
+        <td>{{ milestone.start_date }} &mdash; {{ milestone.end_date }}</td>
+        <td class='hours'>{{ milestone.hours }}</td>
+        <td class='hours'>{{ milestone.total_budget }}</td>
+        <td class='hours'>{{ milestone.hours_worked }}</td>
+        <td class='hours'>{{ milestone.total_hours_worked }}</td>
+        <td class='hours'>{{ milestone.hours_remaining }}</td>
+        <td class='hours'>{{ milestone.total_hours_remaining }}</td>
+    </tr>
+    {% endfor %}
+</table>
+{% endif %}
+
+{% endblock %}

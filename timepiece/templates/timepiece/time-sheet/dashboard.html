@@ -75,7 +75,8 @@
        <td>{{ assignment.end_date }}</td>
        <td>
 			<ul class='actions'>
-			    <li><a href="{% url timepiece-add %}?project={{ assignment.contract.project.pk }}">Add Entry</a></li>
+                <li><a href="{% url timepiece-add %}?project={{ assignment.contract.project.pk }}">Add Entry</a></li>
+                <li><a href="{% url view_contract assignment.contract.pk %}">Report</a></li>
 			</ul>
        </td>
 	</tr>
