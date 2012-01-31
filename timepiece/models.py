@@ -207,6 +207,7 @@ class ActivityGroup(models.Model):
         Activity,
         related_name='activity_group',
     )
+
     def __unicode__(self):
         return self.name
 

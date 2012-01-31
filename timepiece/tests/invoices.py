@@ -249,7 +249,6 @@ class InvoiceCreateTestCase(TimepieceDataTestCase):
         hg.activities.add(*activity_ids)
         hg.save()
     
-
     def test_invoice_create(self):
         """
         Verify that only billable projects appear on the create invoice and

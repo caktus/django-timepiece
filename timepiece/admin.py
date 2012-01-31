@@ -18,6 +18,7 @@ class HourGroupAdmin(admin.ModelAdmin):
     ordering = ('order', 'name')
 admin.site.register(timepiece.HourGroup, HourGroupAdmin)
 
+
 class ActivityGroupAdmin(admin.ModelAdmin):
     model = timepiece.ActivityGroup
     list_display = ('name',)
