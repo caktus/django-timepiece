@@ -407,9 +407,24 @@ class Entry(models.Model):
         try:
             activity_group = self.project.activity_group
             if activity_group:
-                activity = self.activity.pk
-                if not activity_group.activities.filter(pk=activity).exists():
-                    err_msg = 'That activity is not allowed for this project'
+                activity = self.activity
+                if not activity_group.activities.filter(pk=activity.pk).exists():
+                    name = activity.name
+                    err_msg = '%s is not allowed for this project. ' % name
+                    allowed = activity_group.activities.filter()
+                    allowed = allowed.values_list('name', flat=True)
+                    allowed_names = ['among ']
+                    if len(allowed) > 1:
+                        for index, activity in enumerate(allowed):
+                            allowed_names += activity
+                            if index < len(allowed) - 2:
+                                allowed_names += ', '
+                            elif index < len(allowed) - 1:
+                                allowed_names += ', and '
+                        allowed_activities = ''.join(allowed_names)
+                    else:
+                        allowed_activities = allowed[0]
+                    err_msg += 'Please choose %s' % allowed_activities
                     raise ValidationError(err_msg)
         except (Project.DoesNotExist, Activity.DoesNotExist):
             # Will be caught by field requirements

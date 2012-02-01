@@ -310,8 +310,9 @@ class ClockInTest(TimepieceDataTestCase):
             'project': self.project.id,
             'activity': self.sick_activity.id,
         })
-        response = self.client.post(self.url, data)
-        err_msg = 'That activity is not allowed for this project'
+        response = self.client.post(self.url, data)        
+        err_msg = 'sick/personal is not allowed for this project. Please '
+        err_msg += 'choose among development, and Work'
         self.assertFormError(response, 'form', None, err_msg)
 
 
@@ -754,7 +755,8 @@ class CreateEditEntry(TimepieceDataTestCase):
         data = self.default_data
         data.update({'activity': self.sick_activity.id})
         response = self.client.post(self.create_url, data)
-        err_msg = 'That activity is not allowed for this project'
+        err_msg = 'sick/personal is not allowed for this project. Please '
+        err_msg += 'choose among development, and Work'
         self.assertFormError(response, 'form', None, err_msg)
 
 
