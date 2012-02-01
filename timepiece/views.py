@@ -1406,8 +1406,8 @@ def hourly_report(request, date_form, from_date, to_date, status, activity):
     hour_type = form.get_hour_type()
     entries = timepiece.Entry.objects.date_trunc(trunc).filter(query)
     date_headers = utils.generate_dates(from_date, header_to, by=trunc)
-    project_totals = utils.project_totals(entries, date_headers, hour_type) \
-        if entries else ''
+    project_totals = utils.project_totals(entries, date_headers, hour_type,
+                                          total_column=True) if entries else ''
     if not request.GET.get('export', False):
         return {
             'date_form': date_form,
@@ -1427,6 +1427,7 @@ def hourly_report(request, date_form, from_date, to_date, status, activity):
         writer = csv.writer(response)
         headers = ['Name']
         headers.extend([date.strftime('%m/%d/%Y') for date in date_headers])
+        headers.append('Total')
         writer.writerow(headers)
         for rows, totals in project_totals:
             for name, hours in rows:
