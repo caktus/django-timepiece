@@ -66,24 +66,9 @@ class EditableTest(TimepieceDataTestCase):
 class MyLedgerTest(TimepieceDataTestCase):
     def setUp(self):
         super(MyLedgerTest, self).setUp()
-        self.month_period = timepiece.RepeatPeriod.objects.create(
-            count=1,
-            interval='month',
-            active=True,
+        self.url = reverse('view_person_time_sheet',
+                           kwargs={'user_id': self.user.pk,}
         )
-        self.timesheet = timepiece.PersonRepeatPeriod.objects.create(
-            user=self.user,
-            repeat_period=self.month_period
-        )
-        self.billing_window = timepiece.BillingWindow.objects.create(
-            period=self.month_period,
-            date=datetime.datetime.now(),
-            end_date=datetime.datetime.now() + self.month_period.delta()
-        )
-        self.url = reverse('view_person_time_sheet', kwargs={
-            'person_id': self.user.pk,
-            'period_id': self.timesheet.repeat_period.pk,
-        })
 
     def testEmptyTimeSheet(self):
         self.client.login(username='user', password='abc')
@@ -92,11 +77,14 @@ class MyLedgerTest(TimepieceDataTestCase):
 
     def testEmptyHourlySummary(self):
         self.client.login(username='user', password='abc')
-        response = self.client.get(reverse('view_person_time_sheet', kwargs={
-            'person_id': self.user.pk,
-            'period_id': self.timesheet.repeat_period.pk,
-            'hourly': 'hourly',
-        }))
+        now = datetime.datetime.now()
+        empty_month = now + relativedelta(months=1)
+        data = {
+            'year': empty_month.year,
+            'month': empty_month.month,
+        }
+        url = reverse('view_person_time_sheet', args=[self.user.pk])        
+        response = self.client.get(url, data)
         self.assertEquals(response.status_code, 200)
 
     def testNotMyLedger(self):
@@ -763,23 +751,15 @@ class CreateEditEntry(TimepieceDataTestCase):
 class StatusTest(TimepieceDataTestCase):
     def setUp(self):
         super(StatusTest, self).setUp()
-        self.create_person_repeat_period(data={'user': self.user})
-        period = timepiece.PersonRepeatPeriod.objects.get(user=self.user)
-        self.billing_window = timepiece.BillingWindow.objects.create(
-            period=period.repeat_period,
-            date=datetime.datetime.now(),
-            end_date=datetime.datetime.now() + period.repeat_period.delta()
-        )
         self.client.login(username='user', password='abc')
+        now = datetime.datetime.now()
+        from_date = utils.get_month_start(now)
         self.sheet_url = reverse('view_person_time_sheet',
-            args=[period.user.pk, period.repeat_period.pk,
-            self.billing_window.pk])
-        self.verify_url = reverse('time_sheet_change_status',
-            args=['verify', period.user.pk, period.repeat_period.pk,
-            self.billing_window.pk])
-        self.approve_url = reverse('time_sheet_change_status',
-            args=['approve', period.user.pk, period.repeat_period.pk,
-            self.billing_window.pk])
+            args=[self.user.pk])
+        self.verify_url = reverse('change_person_time_sheet',
+            args=['verify', self.user.pk, from_date.strftime("%Y-%m-%d")])
+        self.approve_url = reverse('change_person_time_sheet',
+            args=['approve', self.user.pk, from_date.strftime("%Y-%m-%d")])
 
     def testVerifyButton(self):
         response = self.client.get(self.sheet_url)
@@ -791,11 +771,11 @@ class StatusTest(TimepieceDataTestCase):
             'end_time':  datetime.datetime.now(),
         })
         response = self.client.get(self.sheet_url)
-        self.assertContains(response, self.verify_url)
+        self.assertTrue(response.context['show_verify'])
         entry.status = 'verified'
         entry.save()
         response = self.client.get(self.sheet_url)
-        self.assertNotContains(response, self.verify_url)
+        self.assertFalse(response.context['show_verify'])
 
     def testApproveButton(self):
         edit_time_sheet = Permission.objects.get(
@@ -809,7 +789,7 @@ class StatusTest(TimepieceDataTestCase):
         self.user2.save()
         self.client.login(username='user2', password='abc')
         response = self.client.get(self.sheet_url)
-        self.assertNotContains(response, self.approve_url)
+        self.assertFalse(response.context['show_approve'])
         entry = self.create_entry(data={
             'user': self.user,
             'start_time': datetime.datetime.now() - \
@@ -817,15 +797,15 @@ class StatusTest(TimepieceDataTestCase):
             'end_time':  datetime.datetime.now(),
         })
         response = self.client.get(self.sheet_url)
-        self.assertNotContains(response, self.approve_url)
+        self.assertFalse(response.context['show_approve'])
         entry.status = 'verified'
         entry.save()
         response = self.client.get(self.sheet_url)
-        self.assertContains(response, self.approve_url)
+        self.assertTrue(response.context['show_approve'])
         entry.status = 'approved'
         entry.save()
         response = self.client.get(self.sheet_url)
-        self.assertNotContains(response, self.approve_url)
+        self.assertFalse(response.context['show_approve'])
 
     def testVerifyPage(self):
         entry = self.create_entry(data={
@@ -891,19 +871,6 @@ class TestTotals(TimepieceDataTestCase):
         #For use with daily totals (Same project, non-billable activity)
         self.p3 = self.create_project(billable=False, name='1')
 
-        period = timepiece.PersonRepeatPeriod.objects.get(user=self.user)
-        self.billing_window = timepiece.BillingWindow.objects.create(
-            period=period.repeat_period,
-            date=datetime.datetime(2010, 12, 1),
-            end_date=datetime.datetime(2011, 12, 1),
-        )
-        self.client.login(username='user', password='abc')
-        self.url = reverse('view_person_time_sheet',
-            args=[period.user.pk, period.repeat_period.pk,
-            self.billing_window.pk])
-        self.hourly_url = reverse('view_person_time_sheet',
-            args=[period.user.pk, period.repeat_period.pk,
-            self.billing_window.pk, 'hourly'])
 
     def testGroupedTotals(self):
         self.client.login(username='user', password='abc')

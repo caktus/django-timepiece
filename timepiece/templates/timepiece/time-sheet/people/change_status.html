@@ -1,0 +1,21 @@
+{% extends 'timepiece/time-sheet/base.html' %}
+{% load timepiece_tags %}
+
+{% block title %}{{ action.capitalize }} Hours for Time Sheet{% endblock %}
+
+{% block content %}
+    <h2>{{ action.capitalize }} Hours for Time Sheet</h2>
+    <h3>
+    Are you sure you want to {{ action }} all of {{ user.get_full_name }}'s timesheet,
+    from {{ from_date|date:"N j, Y" }} to {{ to_date|date:"N j, Y" }}, which includes a total of {{ hours }} hours?
+    </h3>
+    {% if action == 'approve' %}
+      <p>After entries have been approved they are ready to be submitted for payroll.</p>
+    {% else %}
+      <p>After entries are verified they cannot be changed.</p>
+    {% endif %}
+    <form method="post">{% csrf_token %}
+        <input type="submit" name="do_action" value="Yes"/>
+        <a href="{{ return_url }}"><input type="button" value="No"/></a>
+    </form>
+{% endblock %}

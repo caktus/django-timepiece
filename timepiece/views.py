@@ -3,6 +3,7 @@ import csv
 import datetime
 import calendar
 import math
+import urllib
 
 from decimal import Decimal
 from dateutil.relativedelta import relativedelta
@@ -510,129 +511,78 @@ def export_project_time_sheet(request, form, from_date, to_date, status,
 
 
 @login_required
-def view_person_time_sheet(request, person_id, period_id=None,
-    window_id=None, hourly=False):
-    try:
-        if not period_id:
-            time_sheet = timepiece.PersonRepeatPeriod.objects.select_related(
-                'user',
-                'repeat_period',
-            ).get(user__id=person_id)
-        else:
-            time_sheet = timepiece.PersonRepeatPeriod.objects.select_related(
-                'user',
-                'repeat_period',
-            ).get(
-                user__id=person_id,
-                repeat_period__id=period_id)
-    except timepiece.PersonRepeatPeriod.DoesNotExist:
-        raise Http404
+def view_person_time_sheet(request, user_id):
+    user = get_object_or_404(User, pk=user_id)
     if not (request.user.has_perm('timepiece.view_person_time_sheet') or \
-    time_sheet.user.pk == request.user.pk):
+        user.pk == request.user.pk):
         return HttpResponseForbidden('Forbidden')
-    window, entries, total_hours = get_entries(
-        time_sheet.repeat_period,
-        window_id=window_id,
-        user=time_sheet.user,
-    )
-    context = {
-            'hourly': 'hourly',
-            'person': time_sheet.user,
-            'period': window.period,
-            'window': window,
-            'total': total_hours,
-    }
-    if hourly:
-        template = 'timepiece/time-sheet/people/view_hours.html'
-        grouped_totals = utils.grouped_totals(entries) if entries else ''
-        context.update({
-            'grouped_totals': grouped_totals,
-        })
+    year_month_form = timepiece_forms.YearMonthForm(request.GET or None)
+    if request.GET and year_month_form.is_valid():
+        from_date, to_date = year_month_form.save()
     else:
-        project_entries = entries.order_by().values(
-            'project__name',
-        ).annotate(sum=Sum('hours')).order_by('-sum')
-
-        show_approve = show_verify = False
-        if request.user.has_perm('timepiece.edit_person_time_sheet') or \
-            time_sheet.user.pk == request.user.pk:
-            statuses = list(entries.values_list('status', flat=True))
-            total_statuses = len(statuses)
-            unverified_count = statuses.count('unverified')
-            verified_count = statuses.count('verified')
-            approved_count = statuses.count('approved')
-        if time_sheet.user.pk == request.user.pk:
-            show_verify = unverified_count != 0
-        if request.user.has_perm('timepiece.edit_person_time_sheet'):
-            show_approve = verified_count + approved_count == total_statuses \
-            and verified_count > 0 and total_statuses != 0
-        template = 'timepiece/time-sheet/people/view.html'
-        summary = time_sheet.summary(window.date, window.end_date,
-                                    verified=False)
-        context.update({
-            'show_verify': show_verify,
-            'show_approve': show_approve,
-            'project_entries': project_entries,
-            'entries': entries,
-            'summary': summary,
-        })
-    return render_to_response(template, context,
-        context_instance=RequestContext(request))
+        from_date = utils.get_month_start(datetime.datetime.today()).date()
+        to_date = from_date + relativedelta(months=1)
+    datesQ = Q(end_time__gte=from_date, end_time__lt=to_date)
+    entries_qs = timepiece.Entry.objects.filter(datesQ, user=user)
+    show_approve = show_verify = False
+    if request.user.has_perm('timepiece.edit_person_time_sheet') or \
+        user == request.user:
+        statuses = list(entries_qs.values_list('status', flat=True))
+        total_statuses = len(statuses)
+        unverified_count = statuses.count('unverified')
+        verified_count = statuses.count('verified')
+        approved_count = statuses.count('approved')
+        show_verify = unverified_count != 0
+    if request.user.has_perm('timepiece.edit_person_time_sheet'):
+        show_approve = verified_count + approved_count == total_statuses \
+        and verified_count > 0 and total_statuses != 0
+    month_entries = timepiece.Entry.objects.date_trunc('month', True)
+    month_entries  = month_entries.filter(datesQ, user=user)
+    grouped_totals = utils.grouped_totals(entries_qs) if month_entries else ''
+    project_entries = entries_qs.order_by().values(
+        'project__name').annotate(sum=Sum('hours')).order_by('-sum')
+    summary = timepiece.Entry.summary(user, from_date, to_date)
+    context = {
+        'year_month_form': year_month_form,
+        'from_date': from_date,
+        'to_date': to_date - datetime.timedelta(days=1),
+        'show_verify': show_verify,
+        'show_approve': show_approve,
+        'user': user,
+        'entries': month_entries,
+        'grouped_totals': grouped_totals,
+        'project_entries': project_entries,
+        'summary': summary,
+    }
+    return render_to_response('timepiece/time-sheet/people/view.html',
+        context, context_instance=RequestContext(request))
 
 
 @login_required
-@utils.date_filter
-def time_sheet_change_status(request, form, from_date, to_date, status,
-    activity, action, person_id=None, period_id=None, window_id=None):
-    if period_id and person_id:
-        try:
-            time_sheet = timepiece.PersonRepeatPeriod.objects.select_related(
-                'user',
-                'repeat_period',
-            ).get(
-                user__id=person_id,
-                repeat_period__id=period_id,
-            )
-        except timepiece.PersonRepeatPeriod.DoesNotExist:
-            raise Http404
-        person = User.objects.get(pk=person_id)
-        verify_allowed = \
-            request.user.has_perm('timepiece.edit_person_time_sheet') or \
-            (time_sheet.user.pk == request.user.pk and action == 'verify')
-    else:
-        verify_allowed = \
-            request.user.has_perm('timepiece.edit_person_time_sheet')
-    if not verify_allowed:
+def change_person_time_sheet(request, action, user_id, from_date):
+    user = get_object_or_404(User, pk=user_id)
+    admin_verify = request.user.has_perm('timepiece.edit_person_time_sheet')
+    if not admin_verify and user != request.user:
         return HttpResponseForbidden('Forbidden')
-    if time_sheet:
-        window, entries, total = get_entries(
-            time_sheet.repeat_period,
-            user=time_sheet.user, window_id=window_id,
-        )
-    else:
-        entries = timepiece.Entry.objects.all()
-        if to_date:
-            entries = entries.filter(
-                end_time__lt=to_date,
-            )
-        if from_date:
-            entries = entries.filter(
-                end_time__gte=from_date,
-            )
-        if request.GET and form.cleaned_data.get('project'):
-            project = form.cleaned_data.get('project')
-            entries = entries.filter(project=project)
-    to_date -= relativedelta(days=1)
-    return_url = reverse('view_person_time_sheet',
-                kwargs={'person_id': person_id, 'period_id': period_id, })
+    try:
+        from_date = datetime.datetime.strptime(from_date, '%Y-%m-%d')
+    except (ValueError, OverflowError):
+        raise Http404
+    to_date = from_date + relativedelta(months=1)
+    entries = timepiece.Entry.objects.filter(user=user_id,
+                                             end_time__gte=from_date,
+                                             end_time__lt=to_date)
     filter_status = {
         'verify': 'unverified',
         'approve': 'verified',
     }
     entries = entries.filter(status=filter_status[action])
-
-    if request.POST and 'do_action' in request.POST \
-    and request.POST['do_action'] == 'Yes':
+    return_url = reverse('view_person_time_sheet', kwargs={'user_id': user_id})
+    return_url += '?%s' % urllib.urlencode({
+        'year': from_date.year,
+        'month': from_date.month,
+    })
+    if request.POST and request.POST.get('do_action', 'No') == 'Yes':
         update_status = {
             'verify': 'verified',
             'approve': 'approved',
@@ -641,15 +591,16 @@ def time_sheet_change_status(request, form, from_date, to_date, status,
         messages.info(request,
             'Your entries have been %s' % update_status[action])
         return redirect(return_url)
-
     context = {
-        'person': person,
+        'action': action,
+        'user': user,
+        'from_date': from_date,
+        'to_date': to_date - datetime.timedelta(days=1),
         'return_url': return_url,
         'hours': entries.all().aggregate(s=Sum('hours'))['s'],
     }
-    template = 'timepiece/time-sheet/%s_time_sheet.html' % action
-    return render_to_response(template, context,
-        context_instance=RequestContext(request))
+    return render_to_response('timepiece/time-sheet/people/change_status.html',
+        context, context_instance=RequestContext(request))
 
 
 @login_required

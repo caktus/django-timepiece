@@ -20,7 +20,7 @@
         {% if perms.timepiece.edit_person_time_sheet %}
             <li><a href="{% url invoice_projects %}">Invoices</a></li>
         {% endif %}
-        {% my_ledger %}
+            <li><a href="{% url view_person_time_sheet request.user.pk %}">My Ledger</a></li>
     </ul>
 {% endblock %}
 

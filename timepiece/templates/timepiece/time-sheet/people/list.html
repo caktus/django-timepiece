@@ -20,7 +20,7 @@
     </tr>
     {% for sheet in time_sheets %}
     <tr>
-        <td><a href='{% url view_person_time_sheet sheet.user.pk,sheet.repeat_period.pk %}'>{{ sheet.user.first_name }} {{ sheet.user.last_name }}</a></td>
+        <td><a href='{% url view_person_time_sheet sheet.user.pk  %}'>{{ sheet.user.first_name }} {{ sheet.user.last_name }}</a></td>
         <td>{{ sheet.repeat_period.billing_windows.latest }}</td>
         {% for aggs in sheet.list_total_hours %}
             {% if aggs.total %}

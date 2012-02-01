@@ -107,18 +107,15 @@ urlpatterns = patterns('',
         name='edit_person_time_sheet',
     ),
     url(
-        r'^time-sheet/people/(?P<person_id>\d+)/(period/)?' +
-        r'(?:(?P<period_id>\d+)/)?(?:(?P<window_id>\d+)/)?' +
-        r'(?:(?P<hourly>hourly)/)?$',
+        r'time-sheet/people/(?P<user_id>\d+)/$',
         views.view_person_time_sheet,
         name='view_person_time_sheet',
     ),
     url(
-        r'^time-sheet/(?P<action>verify|approve)/' +
-        r'(?:(?P<person_id>\d+)/)?(?:(?P<period_id>\d+)/)?' +
-        r'(?:(?P<window_id>\d+)/)?$',
-        views.time_sheet_change_status,
-        name='time_sheet_change_status',
+        r'^time-sheet/(?P<action>verify|approve)/(?P<user_id>\d+)/' + 
+        r'(?P<from_date>\d\d\d\d-\d\d-\d\d)/$',
+        views.change_person_time_sheet,
+        name='change_person_time_sheet',
     ),
     url(
         r'^time-sheet/project/(?P<project_id>\d+)/(?:(?P<window_id>\d+)/)?$',

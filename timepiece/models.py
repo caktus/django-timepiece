@@ -241,19 +241,23 @@ class EntryManager(models.Manager):
                                    'timepiece_attribute.billable'})
         return qs
 
-    def date_trunc(self, key='month'):
+    def date_trunc(self, key='month', all_values=False):
         qs = self.get_query_set()
         select = {"day": {"date": """DATE_TRUNC('day', end_time)"""},
                   "week": {"date": """DATE_TRUNC('week', end_time)"""},
                   "month": {"date": """DATE_TRUNC('month', end_time)"""},
         }
-        qs = qs.extra(select=select[key]).values('user', 'user__first_name',
-                                                 'user__last_name', 'date',
-                                                 'billable',)
+        basic_values = (        
+            'user', 'date', 'user__first_name', 'user__last_name', 'billable',
+        )
+        extra_values = (
+            'start_time', 'end_time', 'comments', 'seconds_paused',
+            'location__name','project__name', 'activity__name', 'status'
+        ) if all_values else ()
+        qs = qs.extra(select=select[key]).values(*basic_values + extra_values)
         qs = qs.annotate(hours=Sum('hours')).order_by('user__last_name',
                                                       'date')
         return qs
-
 
 class EntryWorkedManager(models.Manager):
     def get_query_set(self):
@@ -548,6 +552,50 @@ class Entry(models.Model):
             key = hashlib.sha1(salt).hexdigest()
         return key
     delete_key = property(__delete_key)
+
+    @staticmethod
+    def summary(user, date, end_date):
+        """
+        Returns a summary of hours worked in the given time frame, for this
+        user.  The setting TIMEPIECE_PROJECTS can be used to separate out hours
+        for paid leave that should not be included in the total worked (e.g.,
+        sick time, vacation time, etc.).  Those hours will be added to the
+        summary separately using the dictionary key set in TIMEPIECE_PROJECTS.
+        """
+        projects = getattr(settings, 'TIMEPIECE_PROJECTS', {})
+        entries = user.timepiece_entries.filter(
+            end_time__gt=date, end_time__lt=end_date)
+        data = {
+            'billable': Decimal('0'), 'non_billable': Decimal('0'),
+            'invoiced': Decimal('0'), 'uninvoiced': Decimal('0'),
+            'total': Decimal('0')
+            }
+        invoiced = entries.filter(
+            status='invoiced').aggregate(i=Sum('hours'))['i']
+        uninvoiced = entries.exclude(
+            status='invoiced').aggregate(uninv=Sum('hours'))['uninv']
+        total = entries.aggregate(s=Sum('hours'))['s']
+        if invoiced:
+            data['invoiced'] = invoiced
+        if uninvoiced:
+            data['uninvoiced'] = uninvoiced
+        if total:
+            data['total'] = total
+        billable = entries.exclude(project__in=projects.values())
+        billable = billable.values(
+            'billable',
+        ).annotate(s=Sum('hours'))
+        for row in billable:
+            if row['billable']:
+                data['billable'] += row['s']
+            else:
+                data['non_billable'] += row['s']
+        data['total_worked'] = data['billable'] + data['non_billable']
+        data['paid_leave'] = {}
+        for name, pk in projects.iteritems():
+            qs = entries.filter(project=projects[name])
+            data['paid_leave'][name] = qs.aggregate(s=Sum('hours'))['s']
+        return data
 
     def __unicode__(self):
         """
