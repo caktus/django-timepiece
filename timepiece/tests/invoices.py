@@ -244,10 +244,6 @@ class InvoiceCreateTestCase(TimepieceDataTestCase):
             hg = timepiece.HourGroup.objects.create(name=activity.name)
             hg.activities.add(activity)
             hg.save()
-        hg = timepiece.HourGroup.objects.create(name='all')
-        activity_ids = [activity.id for activity in all_activities]
-        hg.activities.add(*activity_ids)
-        hg.save()
     
     def test_invoice_create(self):
         """
@@ -340,7 +336,7 @@ class InvoiceCreateTestCase(TimepieceDataTestCase):
         for name, hours in response.context['totals']:
             if name == 'activity1':
                 self.assertEqual(hours, 16)
-            elif name == 'Total' or name == 'all':
+            elif name == 'Total':
                 self.assertEqual(hours, 24)
             else:
                 self.assertEqual(hours, 4)

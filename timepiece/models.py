@@ -185,6 +185,22 @@ class Activity(models.Model):
         verbose_name_plural = 'activities'
 
 
+class HourGroupManager(models.Manager):
+    def summaries(self, entries):
+        entries = entries.values('activity', 'activity__activity_bundle',
+                                 'activity__activity_bundle__name')
+        entries = entries.annotate(Sum('hours'))
+        entries = entries.order_by('activity__activity_bundle__order',
+                                   'activity__activity_bundle__name')
+  
+        totals = list(entries.values_list('activity__activity_bundle__name',
+                                          'hours__sum'))
+
+        all_totals = sum([total[1] for total in totals])
+        totals.append(('Total', all_totals))
+        return totals
+
+
 class HourGroup(models.Model):
     """Activities that are bundled together for billing"""
 
@@ -194,6 +210,8 @@ class HourGroup(models.Model):
         related_name='activity_bundle',
     )
     order = models.PositiveIntegerField(unique=True, blank=True, null=True)
+
+    objects = HourGroupManager()
 
     def __unicode__(self):
         return self.name

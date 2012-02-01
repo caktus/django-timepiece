@@ -692,7 +692,7 @@ def confirm_invoice_project(request, project_id, to_date, from_date=None):
         if not entries:
             raise Http404
 
-    totals = utils.hour_group_totals(entries)
+    totals = timepiece.HourGroup.objects.summaries(entries)
     template = 'timepiece/time-sheet/invoice/confirm.html'
     return render_to_response(template, {
         'invoice_form': invoice_form,
@@ -770,7 +770,7 @@ class InvoiceDetail(DetailView):
             'to_date': invoice.end,
             'project': invoice.project,
             'entries': entries,
-            'totals': utils.hour_group_totals(entries),
+            'totals': timepiece.HourGroup.objects.summaries(entries),
             'total': entries.aggregate(hours=Sum('hours'))['hours'],
         }
         return context
