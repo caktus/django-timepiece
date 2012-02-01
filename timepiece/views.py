@@ -685,7 +685,7 @@ def confirm_invoice_project(request, project_id, to_date, from_date=None):
         invoice = invoice_form.save()
         entries = timepiece.Entry.objects.filter(**entries_query)
         entries.update(status=invoice.status, entry_group=invoice)
-        return HttpResponseRedirect(reverse('invoice_projects'))
+        return HttpResponseRedirect(reverse('view_invoice', args=[invoice.pk]))
     else:
         entries = timepiece.Entry.objects.filter(**entries_query)
         entries = entries.order_by('start_time')
@@ -770,6 +770,7 @@ class InvoiceDetail(DetailView):
             'to_date': invoice.end,
             'project': invoice.project,
             'entries': entries,
+            'totals': utils.hour_group_totals(entries),
             'total': entries.aggregate(hours=Sum('hours'))['hours'],
         }
         return context
