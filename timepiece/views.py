@@ -770,6 +770,7 @@ class InvoiceDetail(DetailView):
             'to_date': invoice.end,
             'project': invoice.project,
             'entries': entries,
+            'totals': utils.hour_group_totals(entries),
             'total': entries.aggregate(hours=Sum('hours'))['hours'],
         }
         return context
