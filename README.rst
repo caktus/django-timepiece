@@ -58,7 +58,7 @@ Installation
 History
 -------
 
-0.3.6 (Unreleased)
+0.3.6 (02-01-2012)
 ******************
 * Allowed entries to be added in the future.
 * Added per project activity restrictions.
