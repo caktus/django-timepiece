@@ -674,7 +674,7 @@ def confirm_invoice_project(request, project_id, to_date, from_date=None):
     }
     entries_query = {
         'status': "approved",
-        'end_time__lt': to_date,
+        'end_time__lt': to_date + relativedelta(days=1),
         'project__id': project.id
     }
     if from_date:
