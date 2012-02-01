@@ -718,12 +718,6 @@ def invoice_projects(request):
     datesQ &= Q(end_time__gte=from_date)  if from_date else Q()
     datesQ &= Q(end_time__lt=to_date)  if to_date else Q()
     entries = timepiece.Entry.objects.filter(datesQ)
-
-    user_values = ['user__pk', 'user__first_name', 'user__last_name']
-    unverified = entries.filter(status='unverified', user__is_active=True)
-    unverified = unverified.values_list(*user_values).distinct()
-    unapproved = entries.filter(status='verified')
-    unapproved = unapproved.values_list(*user_values).distinct()
     project_totals = entries.filter(status='approved',
         project__type__billable=True, project__status__billable=True).values(
         'project__type__pk', 'project__type__label', 'project__name', 'hours',
@@ -736,8 +730,6 @@ def invoice_projects(request):
         'project_totals': project_totals if to_date else [],
         'to_date': to_date - relativedelta(days=1) if to_date else '',
         'from_date': from_date,
-        'unverified': unverified,
-        'unapproved': unapproved,
     }, context_instance=RequestContext(request))
 
 
@@ -1299,31 +1291,38 @@ def payroll_summary(request):
         to_date = from_date + relativedelta(months=1)
     last_billable = utils.get_last_billable_day(from_date)
     projects = getattr(settings, 'TIMEPIECE_PROJECTS', {})
-    workQ = ~Q(project__in=projects.values())
     weekQ = Q(end_time__gt=utils.get_week_start(from_date),
               end_time__lt=last_billable + datetime.timedelta(days=1))
     monthQ = Q(end_time__gt=from_date, end_time__lt=to_date)
+    workQ = ~Q(project__in=projects.values())
     statusQ = Q(status='invoiced') | Q(status='approved')
-    weekQ &= statusQ
-    monthQ &= statusQ
-    #Weekly totals
-    entries = timepiece.Entry.objects.date_trunc('week').filter(weekQ, workQ)
+    # Weekly totals
+    week_entries = timepiece.Entry.objects.date_trunc('week')
+    week_entries = week_entries.filter(weekQ, statusQ, workQ)
     date_headers = utils.generate_dates(from_date, last_billable, by='week')
-    weekly_totals = list(utils.project_totals(entries, date_headers, 'total',
-                                              overtime=True))
-    #Monthly totals
+    weekly_totals = list(utils.project_totals(week_entries, date_headers,
+                                              'total', overtime=True))
+    # Monthly totals
     leave = timepiece.Entry.objects.filter(monthQ, ~workQ
                                   ).values('user', 'hours', 'project__name')
-    month_entries = timepiece.Entry.objects.date_trunc('month').filter(monthQ,
-                                                                       workQ)
-    monthly_totals = list(utils.payroll_totals(month_entries, from_date,
+    month_entries = timepiece.Entry.objects.date_trunc('month')
+    month_entries_valid = month_entries.filter(monthQ, statusQ, workQ)
+    monthly_totals = list(utils.payroll_totals(month_entries_valid, from_date,
                                                leave))
+    # Unapproved and unverified hours
+    entries = timepiece.Entry.objects.filter(monthQ)
+    user_values = ['user__pk', 'user__first_name', 'user__last_name']
+    unverified =  entries.filter(monthQ, status='unverified',
+                                 user__is_active=True)
+    unapproved = entries.filter(monthQ, status='verified')
     return {
         'from_date': from_date,
         'year_month_form': year_month_form,
         'date_headers': date_headers,
         'weekly_totals': weekly_totals,
         'monthly_totals': monthly_totals,
+        'unverified': unverified.values_list(*user_values).distinct(),
+        'unapproved': unapproved.values_list(*user_values).distinct(),
     }
 
 
