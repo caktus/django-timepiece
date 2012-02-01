@@ -50,7 +50,8 @@ class EntryAdmin(admin.ModelAdmin):
                     'is_paused',
                     )
     list_filter = ['activity', 'project__type', 'user', 'project']
-    search_fields = ['user', 'project', 'activity', 'comments']
+    search_fields = ['user__first_name', 'user__last_name', 'project__name',
+                     'activity__name', 'comments']
     date_hierarchy = 'start_time'
     ordering = ('-start_time',)
 
