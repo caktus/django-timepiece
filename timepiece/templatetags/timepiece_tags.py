@@ -12,7 +12,6 @@ from django.core.urlresolvers import reverse
 from dateutil.relativedelta import relativedelta
 from dateutil import rrule
 
-from timepiece.models import PersonRepeatPeriod, AssignmentAllocation
 import timepiece.models as timepiece
 from timepiece.utils import get_total_time, get_week_start, get_month_start
 
@@ -144,7 +143,8 @@ def total_allocated(assignment):
 @register.simple_tag
 def hours_for_week(user, date):
     end = date + relativedelta(days=5)
-    blocks = AssignmentAllocation.objects.filter(assignment__user=user,
+    blocks = timepiece.AssignmentAllocation.objects.filter(
+                                                 assignment__user=user,
                                                  date__gte=date, date__lte=end)
     hours = blocks.aggregate(hours=Sum('hours'))['hours']
     if not hours:
