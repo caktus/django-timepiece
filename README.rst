@@ -58,6 +58,10 @@ Installation
 History
 -------
 
+0.3.7 (02-01-2012)
+******************
+* Make create invoice page inclusive of date
+
 0.3.6 (02-01-2012)
 ******************
 * Allowed entries to be added in the future.
