@@ -424,9 +424,9 @@ def project_totals(entries, date_headers, hour_type, overtime=False,
         name = ' '.join((name[1], name[0]))
         dates = [date or '' for date in dates]
         rows.append((name, dates))
-    totals = [total or '' for total in totals]
     if total_column:
         totals.append(sum(totals))
+    totals = [total or '' for total in totals]
     yield (rows, totals)
 
 
