@@ -33,7 +33,23 @@
     <div class="cal left"> {% show_cal from_date -1 %} </div>
     <div class="cal middle"> {% show_cal from_date 0 %} </div>
 </div>
-
+<br/>
+{% if unverified %}
+    <p><strong>Warning:</strong> The following users have <strong>unverified</strong> time during this period:</p>
+    <ul>
+        {% for pk, first, last in unverified %}            
+            <li><a href="{% url 'view_person_time_sheet' pk %}">{{ first }} {{ last }}</a></li>
+        {% endfor %}
+    </ul>
+{% endif %}
+{% if unapproved %}
+    <p><strong>Warning:</strong> The following users have <strong>unapproved</strong> time during this period:</p>
+    <ul>
+        {% for pk, first, last in unapproved %}
+            <li><a href="{% url 'view_person_time_sheet' pk %}">{{ first }} {{ last }}</a></li>
+        {% endfor %}
+    </ul>
+{% endif %}
 
 <h3>Weekly Summary</h3>
 {% if weekly_totals.0.0 %}
@@ -92,22 +108,5 @@
     <p> No entries found.</p>
 {% endif %}
 
-{% if unverified %}
-    <p><strong>Warning:</strong> The following users have <strong>unverified</strong> time during this period:</p>
-    <ul>
-        {% for pk, first, last in unverified %}            
-            <li><a href="{% url 'view_person_time_sheet' pk %}">{{ first }} {{ last }}</a></li>
-        {% endfor %}
-    </ul>
-{% endif %}
-
-{% if unapproved %}
-    <p><strong>Warning:</strong> The following users have <strong>unapproved</strong> time during this period:</p>
-    <ul>
-        {% for pk, first, last in unapproved %}
-            <li><a href="{% url 'view_person_time_sheet' pk %}">{{ first }} {{ last }}</a></li>
-        {% endfor %}
-    </ul>
-{% endif %}
 {% endblock %}
 
