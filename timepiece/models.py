@@ -259,6 +259,20 @@ class EntryManager(models.Manager):
                                                       'date')
         return qs
 
+    def timespan(self, from_date, timespan='month', group_by='user'):
+        if timespan == 'month':
+            to_date = from_date + relativedelta(months=1)
+        if timespan == 'week':
+            to_date = from_date + relativedelta(weeks=1)
+        dateQ = Q(end_time__gte=from_date, end_time__lt=to_date)
+        qs = self.date_trunc(timespan, all_values=True).filter(dateQ)
+        from itertools import groupby
+        totals = []
+        for group, group_entries in groupby(qs, lambda x: x[group_by]):
+            totals.append((group, [entry for entry in group_entries]))
+        return totals
+
+
 class EntryWorkedManager(models.Manager):
     def get_query_set(self):
         qs = super(EntryWorkedManager, self).get_query_set()
