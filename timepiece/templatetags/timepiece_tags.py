@@ -51,21 +51,6 @@ def bar_graph(context, name, worked, total, width=None, suffix=None):
         }
 
 
-@register.inclusion_tag('timepiece/time-sheet/my_ledger.html',
-                        takes_context=True)
-def my_ledger(context):
-    try:
-        period = PersonRepeatPeriod.objects.select_related(
-            'user',
-            'repeat_period',
-        ).get(
-            user=context['request'].user
-        )
-    except PersonRepeatPeriod.DoesNotExist:
-        return {'period': False}
-    return {'period': period}
-
-
 @register.inclusion_tag('timepiece/time-sheet/_date_filters.html',
     takes_context=True)
 def date_filters(context, options=None):
