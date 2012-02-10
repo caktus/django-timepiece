@@ -7,4 +7,25 @@
 {% block content %}
     {% invoice_subheaders 'detail' %}
     {% include 'timepiece/time-sheet/invoice/_invoice_detail.html' %}
+
+    {% if totals %}
+        <h3>Totals</h3>
+            <table>
+                <tr>
+                    <th>Activity Type</th>
+                    <th>Total Hours</th>
+                </tr>
+                {% for name, hours in totals %}
+                    <tr>
+                        {% if name %}
+                            <th>{{ name }}</th>
+                        {% else %}
+                            <th>Other</th>
+                        {% endif %}
+                        <td class="hours"> {{ hours }} </td>
+                    </tr>
+                {% endfor %}
+            </table>
+        <br />
+    {% endif %}
 {% endblock %}

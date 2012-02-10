@@ -759,6 +759,7 @@ class InvoiceDetail(DetailView):
         return {
             'invoice': invoice,
             'entries': entries,
+            'totals': timepiece.HourGroup.objects.summaries(entries),
             'from_date': invoice.start,
             'to_date': invoice.end,
             'project': invoice.project,
@@ -772,7 +773,6 @@ class InvoiceEntryDetail(InvoiceDetail):
         context = super(InvoiceEntryDetail, self).get_context_data(**kwargs)
         entries = context['entries']
         context.update({
-            'totals': timepiece.HourGroup.objects.summaries(entries),
             'total': entries.aggregate(hours=Sum('hours'))['hours'],
         })
         return context
