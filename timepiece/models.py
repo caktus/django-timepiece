@@ -295,17 +295,26 @@ class EntryQuerySet(models.query.QuerySet):
                                                       'date')
         return qs
 
-    def timespan(self, from_date, to_date=None, span='month'):
-        if not to_date:
-            #Default is one month
-            diff = relativedelta(months=1)
-            if span == 'day':
-                diff = relativedelta(days=1)
+    def timespan(self, from_date, to_date=None, span=None):
+        """
+        Takes a beginning date a filters entries. An optional to_date can be
+        specified, or a span, which is one of ('month', 'week', 'day').
+        N.B. - If given a to_date, it does not include that date, only before.
+        """
+        if span and not to_date:
+            diff = None
+            if span == 'month':
+                diff = relativedelta(months=1)
             if span == 'week':
                 diff = relativedelta(days=7)
-            to_date = from_date + diff
-        dateQ = Q(end_time__gte=from_date, end_time__lt=to_date)
-        return self.filter(dateQ)
+            if span == 'day':
+                diff = relativedelta(days=1)
+            if diff is not None:
+                to_date = from_date + diff
+        datesQ = Q()
+        datesQ &= Q(end_time__gte=from_date)
+        datesQ &= Q(end_time__lt=to_date) if to_date else Q()
+        return self.filter(datesQ)
 
 
 class EntryManager(models.Manager):
