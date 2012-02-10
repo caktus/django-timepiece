@@ -187,15 +187,44 @@ class Activity(models.Model):
 
 class HourGroupManager(models.Manager):
     def summaries(self, entries):
-        entries = entries.values('activity__activity_bundle',
-                                 'activity__activity_bundle__name')
-        entries = entries.annotate(Sum('hours'))
-        entries = entries.order_by('activity__activity_bundle__order',
-                                   'activity__activity_bundle__name')  
-        totals = list(entries.values_list('activity__activity_bundle__name',
-                                          'hours__sum'))
-        all_totals = sum([total[1] for total in totals])
-        totals.append(('Total', all_totals))
+        #Get the list of bundle names and hour sums
+        bundled_entries = entries.values('activity__activity_bundle',
+                                         'activity__activity_bundle__name')
+        bundled_entries = bundled_entries.annotate(Sum('hours'))
+        bundled_entries = bundled_entries.order_by(
+                                            'activity__activity_bundle__order',
+                                            'activity__activity_bundle__name'
+        )
+        bundled_totals = list(bundled_entries.values_list(
+                                             'activity__activity_bundle__name',
+                                             'activity__activity_bundle',
+                                             'hours__sum')
+        )
+        #Get the list of activity names and hour sums
+        activity_entries = entries.values('activity', 'activity__name', 
+                                          'activity__activity_bundle')
+        activity_entries = activity_entries.annotate(Sum('hours'))
+        activity_entries = activity_entries.order_by('activity')
+        activity_totals = list(activity_entries.values_list(
+                                                   'activity__name',
+                                                   'activity__activity_bundle',
+                                                   'hours__sum')
+        )
+        totals = {}
+        other_values = ()
+        for bundle in bundled_totals:
+            bundle_key, bundle_value = bundle[0], bundle[2]
+            act_values = [(act[0], act[2]) for act in activity_totals \
+                          if act[1] == bundle[1]]
+            if bundle_key is not None:
+                totals[bundle_key] = (bundle_value, act_values)
+            else:
+                other_values = (bundle_value, act_values)
+        totals = sorted(totals.items())
+        if other_values:
+            totals.append(('Other', other_values))
+        all_totals = sum([bt[2] for bt in bundled_totals])
+        totals.append(('Total', (all_totals, [])))
         return totals
 
 
