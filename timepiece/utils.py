@@ -403,7 +403,8 @@ def user_date_totals(user_entries):
     return name, date_dict
 
 
-def project_totals(entries, date_headers, hour_type, overtime=False):
+def project_totals(entries, date_headers, hour_type, overtime=False,
+                   total_column=False):
     """
     Yield hour totals grouped by user and date. Optionally including overtime.
     """
@@ -416,11 +417,15 @@ def project_totals(entries, date_headers, hour_type, overtime=False):
             total = date_dict.get(day, {}).get(hour_type, 0)
             totals[index] += total
             dates.append(total)
+        if total_column:
+            dates.append(sum(dates))
         if overtime:
             dates.append(find_overtime(dates))
         name = ' '.join((name[1], name[0]))
         dates = [date or '' for date in dates]
         rows.append((name, dates))
+    if total_column:
+        totals.append(sum(totals))
     totals = [total or '' for total in totals]
     yield (rows, totals)
 

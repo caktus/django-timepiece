@@ -76,6 +76,7 @@
                         <th>{{date|date:"M/d/Y"}}</th>
                     {% endif %}
                 {% endfor %}
+                <th>Total</th>
             </tr>
             {% for rows, totals in project_totals %}
                 {% for name, hours in rows %}
