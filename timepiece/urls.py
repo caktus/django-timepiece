@@ -160,12 +160,17 @@ urlpatterns = patterns('',
     url(
         r'^invoice/(?P<pk>\d+)/$',
         views.InvoiceDetail.as_view(),
-        name='view_invoice'
+        name='view_invoice',
+    ),
+    url(
+        r'^invoice/(?P<pk>\d+)/entries/$',
+        views.InvoiceEntryDetail.as_view(),
+        name='view_invoice_entries',
     ),
     url(
         r'^invoice/(?P<pk>\d+)/csv/$',
         views.InvoiceCSV.as_view(),
-        name='view_invoice_csv'
+        name='view_invoice_csv',
     ),
     url(
         r'^invoice/edit/(?P<pk>\d+)/$',

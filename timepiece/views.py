@@ -643,7 +643,7 @@ def confirm_invoice_project(request, project_id, to_date, from_date=None):
         if not entries:
             raise Http404
 
-    totals = utils.hour_group_totals(entries)
+    totals = timepiece.HourGroup.objects.summaries(entries)
     template = 'timepiece/time-sheet/invoice/confirm.html'
     return render_to_response(template, {
         'invoice_form': invoice_form,
@@ -707,15 +707,25 @@ class InvoiceDetail(DetailView):
         context = super(InvoiceDetail, self).get_context_data(**kwargs)
         invoice = context['invoice']
         entries = invoice.entries.order_by('start_time').select_related()
-        context = {
+        return {
             'invoice': invoice,
+            'entries': entries,
+            'totals': timepiece.HourGroup.objects.summaries(entries),
             'from_date': invoice.start,
             'to_date': invoice.end,
             'project': invoice.project,
-            'entries': entries,
-            'totals': utils.hour_group_totals(entries),
-            'total': entries.aggregate(hours=Sum('hours'))['hours'],
         }
+
+
+class InvoiceEntryDetail(InvoiceDetail):
+    template_name = 'timepiece/time-sheet/invoice/view_entries.html'
+
+    def get_context_data(self, **kwargs):
+        context = super(InvoiceEntryDetail, self).get_context_data(**kwargs)
+        entries = context['entries']
+        context.update({
+            'total': entries.aggregate(hours=Sum('hours'))['hours'],
+        })
         return context
 
 
@@ -751,7 +761,8 @@ class InvoiceCSV(CSVMixin, InvoiceDetail):
                 entry.hours,
             ]
             rows.append(data)
-        rows.append(('', '', '', '', '', '', 'Total:', context['total']))
+        total = context['entries'].aggregate(hours=Sum('hours'))['hours']
+        rows.append(('', '', '', '', '', '', 'Total:', total))
         return rows
 
 

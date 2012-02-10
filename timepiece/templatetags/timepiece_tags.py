@@ -121,6 +121,14 @@ def date_filters(context, options=None):
     return {'filters': filters}
 
 
+@register.inclusion_tag('timepiece/time-sheet/invoice/_invoice_subheader.html',
+                        takes_context=True)
+def invoice_subheaders(context, current):
+    return {
+        'current': current,
+        'invoice': context['invoice'],
+    }
+
 @register.simple_tag
 def hours_for_assignment(assignment, date):
     end = date + relativedelta(days=5)
