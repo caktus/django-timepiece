@@ -1,0 +1,10 @@
+{% extends 'timepiece/time-sheet/base.html' %}
+{% load timepiece_tags %}
+{% load url from future %}
+
+{% block title %}Invoice Detail{% endblock %}
+
+{% block content %}
+    {% invoice_subheaders 'entries' %}
+    {% include 'timepiece/time-sheet/_weekly_entry_list.html' %}
+{% endblock %}
