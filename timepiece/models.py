@@ -229,20 +229,10 @@ ENTRY_STATUS = (
 )
 
 
-class EntryManager(models.Manager):
-    def get_query_set(self):
-        qs = super(EntryManager, self).get_query_set()
-        qs = qs.select_related('activity', 'project__type')
-        # ensure our select_related are added.  Without this line later calls
-        # to select_related will void ours (not sure why - probably a bug
-        # in Django)
-        foo = str(qs.query)
-        qs = qs.extra({'billable': 'timepiece_activity.billable AND '
-                                   'timepiece_attribute.billable'})
-        return qs
+class EntryQuerySet(models.query.QuerySet):
+    """QuerySet extension to provide filtering by billable status"""
 
     def date_trunc(self, key='month', all_values=False):
-        qs = self.get_query_set()
         select = {"day": {"date": """DATE_TRUNC('day', end_time)"""},
                   "week": {"date": """DATE_TRUNC('week', end_time)"""},
                   "month": {"date": """DATE_TRUNC('month', end_time)"""},
@@ -254,28 +244,50 @@ class EntryManager(models.Manager):
             'start_time', 'end_time', 'comments', 'seconds_paused',
             'location__name','project__name', 'activity__name', 'status'
         ) if all_values else ()
-        qs = qs.extra(select=select[key]).values(*basic_values + extra_values)
+        qs = self.extra(select=select[key])
+        qs = qs.values(*basic_values + extra_values)
         qs = qs.annotate(hours=Sum('hours')).order_by('user__last_name',
                                                       'date')
         return qs
 
-    def timespan(self, from_date, timespan='month', group_by='user'):
-        if timespan == 'month':
-            to_date = from_date + relativedelta(months=1)
-        if timespan == 'week':
-            to_date = from_date + relativedelta(weeks=1)
+    def timespan(self, from_date, to_date=None, span='month'):
+        if not to_date:
+            #Default is one month
+            diff = relativedelta(months=1)
+            if span == 'day':
+                diff = relativedelta(days=1)
+            if span == 'week':
+                diff = relativedelta(days=7)
+            to_date = from_date + diff
         dateQ = Q(end_time__gte=from_date, end_time__lt=to_date)
-        qs = self.date_trunc(timespan, all_values=True).filter(dateQ)
-        from itertools import groupby
-        totals = []
-        for group, group_entries in groupby(qs, lambda x: x[group_by]):
-            totals.append((group, [entry for entry in group_entries]))
-        return totals
+        return self.filter(dateQ)
+
+
+class EntryManager(models.Manager):
+    def get_query_set(self):
+        qs = EntryQuerySet(self.model)
+        qs = qs.select_related('activity', 'project__type')
+        # ensure our select_related are added.  Without this line later calls
+        # to select_related will void ours (not sure why - probably a bug
+        # in Django)
+        foo = str(qs.query)
+        qs = qs.extra({'billable': 'timepiece_activity.billable AND '
+                                   'timepiece_attribute.billable'})
+        return qs
+
+    def date_trunc(self, key='month', all_values=False):
+        return self.get_query_set().date_trunc(key, all_values)
+
+    def timespan(self, from_date, to_date=None, span='month'):
+        return self.get_query_set().timespan(from_date, to_date, span)
+
+    def total(self, key='user', sort=None):
+        return self.get_query_set().total(key, sort)
 
 
 class EntryWorkedManager(models.Manager):
     def get_query_set(self):
-        qs = super(EntryWorkedManager, self).get_query_set()
+        qs = EntryQuerySet(self.model)
         projects = getattr(settings, 'TIMEPIECE_PROJECTS', {})
         return qs.exclude(project__in=projects.values())
 

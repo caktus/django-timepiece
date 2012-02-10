@@ -1168,10 +1168,11 @@ def tracked_projects(request):
 @permission_required('timepiece.view_person_time_sheet')
 @render_with('timepiece/time-sheet/people/list.html')
 def tracked_people(request):
-    this_month = utils.get_month_start(datetime.datetime.today()).date()
-    last_month = this_month - relativedelta(months=1)
-    this_month_totals = timepiece.Entry.objects.timespan(this_month, 'month')
-    last_month_totals = timepiece.Entry.objects.timespan(last_month, 'month')
+    this_month_start = utils.get_month_start(datetime.datetime.today()).date()
+    last_month_start = this_month_start - relativedelta(months=1)
+    entry_q = timepiece.Entry.objects
+    this_month_totals = entry_q.timespan(this_month_start)
+    last_month_totals = entry_q.timespan(last_month_start)
     #TODO: Replace timesheets with values from these lists
 
     time_sheets = timepiece.PersonRepeatPeriod.objects.select_related(
