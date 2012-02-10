@@ -1,12 +1,13 @@
 {% extends 'timepiece/time-sheet/base.html' %}
 {% load timepiece_tags %}
+{% load url from future %}
 
 {% block title %}{{ contract }} Report{% endblock %}
 
 {% block content %}
 <h2>{{ contract }} Report</h2>
 <ul class='header-actions-left'>
-    <li><a href="{% url timepiece-entries %}">Return to Dashboard</a></li>
+    <li><a href="{% url 'list_contracts' %}">Contracts</a></li>
 </ul>
 
 <table class='timepiece-summary vertical'>

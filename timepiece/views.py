@@ -1458,3 +1458,14 @@ class ContractDetail(DetailView):
     @method_decorator(permission_required('timepiece.add_entry'))
     def dispatch(self, *args, **kwargs):
         return super(ContractDetail, self).dispatch(*args, **kwargs)
+
+
+class ContractList(ListView):
+    template_name = 'timepiece/time-sheet/contract/list.html'
+    model = timepiece.ProjectContract
+    context_object_name = 'contracts'
+    queryset = timepiece.ProjectContract.objects.filter(status='current').select_related('project')
+
+    @method_decorator(permission_required('timepiece.add_entry'))
+    def dispatch(self, *args, **kwargs):
+        return super(ContractList, self).dispatch(*args, **kwargs)
