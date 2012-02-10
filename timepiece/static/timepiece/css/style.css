@@ -98,6 +98,11 @@ td.hours{
     text-align: right;
 }
 
+td.nested {
+    color: #006;
+    padding: 0px 50px;    
+}
+
 button {
     margin: 10px;
 }

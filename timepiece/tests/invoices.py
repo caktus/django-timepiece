@@ -244,10 +244,6 @@ class InvoiceCreateTestCase(TimepieceDataTestCase):
             hg = timepiece.HourGroup.objects.create(name=activity.name)
             hg.activities.add(activity)
             hg.save()
-        hg = timepiece.HourGroup.objects.create(name='all')
-        activity_ids = [activity.id for activity in all_activities]
-        hg.activities.add(*activity_ids)
-        hg.save()
     
     def test_invoice_create(self):
         """
@@ -337,13 +333,19 @@ class InvoiceCreateTestCase(TimepieceDataTestCase):
         url = reverse('confirm_invoice_project', args=args)
         response = self.client.get(url)
         self.assertEqual(response.status_code, 200)
-        for name, hours in response.context['totals']:
+        for name, hours_activities in response.context['totals']:
+            total, activities = hours_activities
             if name == 'activity1':
-                self.assertEqual(hours, 16)
-            elif name == 'Total' or name == 'all':
-                self.assertEqual(hours, 24)
+                self.assertEqual(total, 16)
+                self.assertEqual(total, activities[0][1])
+                self.assertEqual(name, activities[0][0])
+            elif name == 'Total':
+                self.assertEqual(total, 24)
+                self.assertEqual(activities, [])
             else:
-                self.assertEqual(hours, 4)
+                self.assertEqual(total, 4)
+                self.assertEqual(total, activities[0][1])
+                self.assertEqual(name, activities[0][0])
 
     def test_invoice_confirm_bad_args(self):
         # A year/month/project with no entries should raise a 404

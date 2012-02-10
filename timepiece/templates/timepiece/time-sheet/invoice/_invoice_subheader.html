@@ -1,0 +1,47 @@
+{% load url from future %}
+<h2>
+    {% if current == 'edit' %}
+        Edit Invoice for
+    {% endif %}
+    {% if current == 'entries' %}
+        Entries for invoice of
+    {% endif %}
+    {% if current == 'detail' %}
+        Invoice Details for
+    {% endif %}
+
+    {{ invoice.project.name }} hours
+    {% if invoice.start %}
+        from {{ invoice.start }} to {{ invoice.end }}
+    {% else %}
+        through {{ invoice.end }}{% endif %}
+</h2>
+<ul class='header-actions-left'>
+    <li>
+        <a href="{% url 'list_invoices' %}">Previous Invoices</a>
+    </li>
+    <li>
+        {% if current != 'detail' %}
+            <a href="{% url 'view_invoice' invoice.id %}">View Invoice</a>
+        {% else %}
+            View Invoice
+        {% endif %}
+    </li>
+    <li>
+        {% if current != 'edit' %}
+            <a href="{% url 'edit_invoice' invoice.id %}">Edit Invoice</a>
+        {% else %}
+            Edit Invoice
+        {% endif %}
+    </li>
+    <li>
+        {% if current != 'entries' %}
+            <a href="{% url 'view_invoice_entries' invoice.id %}">Entries</a>
+        {% else %}
+            Entries
+        {% endif %}
+    </li>
+    <li>
+        <a href="{% url 'view_invoice_csv' invoice.id %}">Download CSV</a>
+    </li>
+</ul>
