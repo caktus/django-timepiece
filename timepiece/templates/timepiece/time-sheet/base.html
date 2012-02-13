@@ -8,12 +8,6 @@
 {% block sub_navigation %}
     <ul class='header-actions-left'>
         <li><strong><a href='{% url timepiece-entries %}'>Timepiece</a></strong></li>
-        {% if perms.timepiece.view_project_time_sheet %}
-            <li><a href="{% url tracked_projects %}">Projects</a></li>
-        {% endif %}
-        {% if perms.timepiece.view_person_time_sheet %}
-            <li><a href="{% url tracked_people %}">People</a></li>
-        {% endif %}
         {% if perms.timepiece.view_payroll_summary %}
             <li><a href="{% url hourly_report %}">Reports</a></li>
         {% endif %}

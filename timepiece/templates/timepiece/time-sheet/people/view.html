@@ -2,7 +2,14 @@
 {% load timepiece_tags %}
 {% load url from future %}
 
-{% block title %}{{ user.get_full_name }} Time Sheet{% endblock %}
+{% block title %}
+    {% if user.get_full_name %}
+        {{ user.get_full_name }}'s
+    {% else %}
+        {{ user.username }}'s
+    {% endif %}
+    Time Sheet
+{% endblock %}
 
 {% block javascript %}{{ block.super }}
 
@@ -26,7 +33,15 @@ $(document).ready(function() {
 {% endblock %}
 
 {% block content %}
-<h2>{{ user.first_name }} {{ user.last_name}}'s Time Sheet ({{ from_date|date:"N j, Y" }} &mdash; {{ to_date|date:"N j, Y" }})</h2>
+<h2>
+    {% if user.get_full_name %}
+        {{ user.get_full_name }}'s
+    {% else %}
+        {{ user.username }}'s
+    {% endif %}
+    TimeSheet
+    ({{ from_date|date:"N j, Y" }} &mdash; {{ to_date|date:"N j, Y" }})
+</h2>
 <ul class='header-actions-left'>
     {% if perms.timepiece.view_user %}
         <li><a href='{% url 'view_person' user.pk %}'>User Information</a></li>

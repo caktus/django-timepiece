@@ -1175,48 +1175,7 @@ def tracked_projects(request):
         'time_sheets': time_sheets,
     }
 
-
 @permission_required('timepiece.view_person_time_sheet')
-@render_with('timepiece/time-sheet/people/list.html')
-def tracked_people(request):
-    this_month_start = utils.get_month_start(datetime.datetime.today()).date()
-    last_month_start = this_month_start - relativedelta(months=1)
-    entry_q = timepiece.Entry.objects
-    this_month_totals = entry_q.timespan(this_month_start, span='month')
-    this_month_totals = this_month_totals.select_related('user')
-    this_month_totals = this_month_totals.values('user__first_name',
-                                                 'user__last_name')
-    this_month_totals = this_month_totals.annotate(Sum('hours'))
-    last_month_totals = entry_q.timespan(last_month_start, span='month')
-    last_month_totals = last_month_totals.select_related('user')
-    last_month_totals = last_month_totals.values('user__first_name',
-                                                 'user__last_name')
-    last_month_totals = last_month_totals.annotate(Sum('hours'))
-    master = {}
-    for index, totals in enumerate([this_month_totals, last_month_totals]):
-        for entry in totals:
-            key = ','.join((entry['user__last_name'], entry['user__first_name']))
-            temp = master.get(key, [0, 0])
-            temp[index] = entry['hours__sum']
-            master[key] = temp
-    master = sorted(master.items())
-
-    #TODO: Replace timesheets with values from these lists
-
-    time_sheets = timepiece.PersonRepeatPeriod.objects.select_related(
-        'user',
-        'repeat_period',
-    ).filter(
-        repeat_period__active=True,
-    ).order_by(
-        'user__last_name',
-    )
-    return {
-        'time_sheets': time_sheets,
-    }
-
-
-@permission_required('timepiece.view_project_time_sheet')
 @transaction.commit_on_success
 @render_with('timepiece/time-sheet/people/create_edit.html')
 def create_edit_person_time_sheet(request, person_id=None):

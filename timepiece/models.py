@@ -335,9 +335,6 @@ class EntryManager(models.Manager):
     def timespan(self, from_date, to_date=None, span='month'):
         return self.get_query_set().timespan(from_date, to_date, span)
 
-    def total(self, key='user', sort=None):
-        return self.get_query_set().total(key, sort)
-
 
 class EntryWorkedManager(models.Manager):
     def get_query_set(self):

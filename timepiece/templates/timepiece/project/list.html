@@ -1,12 +1,12 @@
 {% extends "base.html" %}
-
+{% load url from future %}
 {% block title %}Projects{% endblock %}
 
 {% block content %}
 <h2>Projects</h2>
 <ul class='header-actions-left'>
 {% if perms.timepiece.add_project %}
-	<li><a href='{% url create_project %}'>Create Project</a></li>
+	<li><a href='{% url 'create_project' %}'>Create Project</a></li>
 {% endif %}
 </ul>
 
@@ -28,12 +28,14 @@
 		<th>Name</th>
 		<th>Business</th>
 		<th>Description</th>
+        <th>Timesheet</th>
 	</tr>
 	{% for project in projects %}
 	<tr>
-		<td><a href='{% url view_project project_id=project.id %}'>{{ project.name }}</a></td>
+		<td><a href="{% url 'view_project' project_id=project.id %}">{{ project.name }}</a></td>
 		<td>{{ project.business }}</td>
 		<td>{{ project.description|truncatewords:8 }}</td>
+        <td><a href="{% url 'project_time_sheet' project.id %}">Timesheet</a></td>
 	</tr>
 	{% endfor %}
 </table>

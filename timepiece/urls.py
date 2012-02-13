@@ -83,19 +83,12 @@ urlpatterns = patterns('',
     ),
 
     ### time sheets ###
-    url(
-        r'^time-sheet/projects/$',
-        views.tracked_projects,
-        name='tracked_projects',
-    ),
-    url(
-        r'^time-sheet/people/$',
-        views.tracked_people,
-        name='tracked_people',
-    ),
+
+    # Reports
     url(r'^reports/$', views.hourly_report, name='hourly_report'),
     url(r'^reports/summary/$', views.summary, name='timepiece-summary'),
     url(r'^reports/payroll/$', views.payroll_summary, name='payroll_summary',),
+    # People
     url(
         r'^time-sheet/people/create/$',
         views.create_edit_person_time_sheet,
@@ -117,6 +110,7 @@ urlpatterns = patterns('',
         views.change_person_time_sheet,
         name='change_person_time_sheet',
     ),
+    # Projects
     url(
         r'^time-sheet/project/(?P<project_id>\d+)/(?:(?P<window_id>\d+)/)?$',
         views.project_time_sheet,

@@ -1,12 +1,12 @@
 {% extends "base.html" %}
-
+{% load url from future %}
 {% block title %}People{% endblock %}
 
 {% block content %}
 <h2>People</h2>
 <ul class='header-actions-left'>
 {% if perms.auth.add_user %}
-	<li><a href='{% url create_person %}'>Create Person</a></li>
+	<li><a href='{% url 'create_person' %}'>Create Person</a></li>
 {% endif %}
 </ul>
 
@@ -29,13 +29,16 @@
 		<th>First Name</th>
 		<th>Last Name</th>
 		<th>Email</th>
+        <th>Timesheet</th>
 	</tr>
 	{% for person in people %}
 	<tr>
-		<td><a href='{% url view_person person.pk %}'>{{ person.username }}</a></td>
+		<td><a href='{% url 'view_person' person.pk %}'>{{ person.username }}</a></td>
 		<td>{{ person.first_name }}</td>
 		<td>{{ person.last_name }}</td>
 		<td>{{ person.email }}</td>
+
+        <td><a href="{% url 'view_person_time_sheet' person.pk %}">View Timesheet</a></td>
 	</tr>
 	{% endfor %}
 </table>
