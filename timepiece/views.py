@@ -1158,23 +1158,6 @@ def create_edit_project(request, project_id=None):
     return context
 
 
-@permission_required('timepiece.view_project_time_sheet')
-@render_with('timepiece/time-sheet/projects/list.html')
-def tracked_projects(request):
-    time_sheets = timepiece.Entry.objects.filter(
-        project__billing_period__active=True,
-    ).values(
-        'project__name',
-        'project__business__name',
-        'project__id',
-        'project__business__id',
-    ).annotate(
-        total_hours=Sum('hours'),
-    ).order_by('project__name')
-    return {
-        'time_sheets': time_sheets,
-    }
-
 @permission_required('timepiece.view_person_time_sheet')
 @transaction.commit_on_success
 @render_with('timepiece/time-sheet/people/create_edit.html')
