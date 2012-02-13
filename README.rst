@@ -58,6 +58,14 @@ Installation
 History
 -------
 
+0.3.8 (Unreleased)
+******************
+* Added project milestones
+* Added list and detail views for project contracts
+* Hour groups now show totals for each activity nested within them
+* Moved unapproved and unverified entry warnings to the payroll summary page.
+
+
 0.3.7 (02-01-2012)
 ******************
 * Make create invoice page inclusive of date
