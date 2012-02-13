@@ -1,5 +1,7 @@
 {% extends "timepiece/base.html" %}
 {% load timepiece_tags %}
+{% load url from future %}
+
 {% block javascript %}{{ block.super }}
 	<script src="{{ STATIC_URL }}timepiece/js/clear_form.js" type="text/javascript"></script>
 {% endblock %}
@@ -7,14 +9,17 @@
 {% endblock %}
 {% block sub_navigation %}
     <ul class='header-actions-left'>
-        <li><strong><a href='{% url timepiece-entries %}'>Timepiece</a></strong></li>
+        <li><strong><a href="{% url 'timepiece-entries' %}">Timepiece</a></strong></li>
+        {% if perms.timepiece.add_project_contract %}
+            <li><a href="{% url 'list_contracts' %}">Contracts</a></li>
+        {% endif %}
         {% if perms.timepiece.view_payroll_summary %}
-            <li><a href="{% url hourly_report %}">Reports</a></li>
+            <li><a href="{% url 'hourly_report' %}">Reports</a></li>
         {% endif %}
         {% if perms.timepiece.edit_person_time_sheet %}
-            <li><a href="{% url invoice_projects %}">Invoices</a></li>
+            <li><a href="{% url 'invoice_projects' %}">Invoices</a></li>
         {% endif %}
-            <li><a href="{% url view_person_time_sheet request.user.pk %}">My Ledger</a></li>
+            <li><a href="{% url 'view_person_time_sheet' request.user.pk %}">My Ledger</a></li>
     </ul>
 {% endblock %}
 

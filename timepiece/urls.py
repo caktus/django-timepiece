@@ -170,9 +170,15 @@ urlpatterns = patterns('',
         views.remove_invoice_entry,
         name='remove_invoice_entry',
     ),
+    # contracts
     url(
         r'^contract/(?P<pk>\d+)/$',
         views.ContractDetail.as_view(),
         name='view_contract',
+    ),
+    url(
+        r'^contract/list/$',
+        views.ContractList.as_view(),
+        name='list_contracts',
     ),
 )
