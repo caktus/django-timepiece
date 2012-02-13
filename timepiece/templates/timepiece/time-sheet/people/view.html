@@ -149,7 +149,7 @@ $(document).ready(function() {
                 <td title="{{entry.comments}}">{{ entry.comments|truncatewords:12 }}</td>
                 {% if entry.is_editable %}
                     <td><a href="{% url 'timepiece-update' entry.id %}?next={{ request.path|urlencode }}">Edit</a></td>
-            {% endif %}
+                {% endif %}
             </tr>
         {% endfor %}
         <tr>

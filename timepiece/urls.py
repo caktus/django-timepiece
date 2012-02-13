@@ -88,17 +88,7 @@ urlpatterns = patterns('',
     url(r'^reports/$', views.hourly_report, name='hourly_report'),
     url(r'^reports/summary/$', views.summary, name='timepiece-summary'),
     url(r'^reports/payroll/$', views.payroll_summary, name='payroll_summary',),
-    # People
-    url(
-        r'^time-sheet/people/create/$',
-        views.create_edit_person_time_sheet,
-        name='create_person_time_sheet',
-    ),
-    url(
-        r'^time-sheet/people/(?P<person_id>\d+)/edit/$',
-        views.create_edit_person_time_sheet,
-        name='edit_person_time_sheet',
-    ),
+    # People   
     url(
         r'time-sheet/people/(?P<user_id>\d+)/$',
         views.view_person_time_sheet,
@@ -112,14 +102,13 @@ urlpatterns = patterns('',
     ),
     # Projects
     url(
-        r'^time-sheet/project/(?P<project_id>\d+)/(?:(?P<window_id>\d+)/)?$',
-        views.project_time_sheet,
+        r'^time-sheet/project/(?P<pk>\d+)/$',
+        views.ProjectTimesheet.as_view(),
         name='project_time_sheet',
     ),
     url(
-        r'^time-sheet/project/(?P<project_id>\d+)/(?:(?P<window_id>\d+)/)' +
-        r'?export/$',
-        views.export_project_time_sheet,
+        r'^time-sheet/project/(?P<pk>\d+)/csv/$',
+        views.ProjectTimesheetCSV.as_view(),
         name='export_project_time_sheet',
     ),
     url(

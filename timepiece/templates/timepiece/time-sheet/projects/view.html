@@ -1,30 +1,23 @@
 {% extends 'timepiece/time-sheet/base.html' %}
+{% load url from future %}
 {% load timepiece_tags %}
 
 {% block title %}{{ project }} Time Sheet{% endblock %}
 
 {% block content %}
-<h2>{{ project }} Time Sheet ({{ window.date|date:"N j" }} &mdash; {{ window.end_date|date:"N j" }})</h2>
+<h2>{{ project }} Time Sheet ({{ from_date|date:"N j" }} &mdash; {{ to_date|date:"N j" }})</h2>
 <ul class='header-actions-left'>
-    <li><a href='{% url view_project project.id %}'>Project Information</a></li>
-    <li>
-        {% if window.previous %}
-            <a href='{% url project_time_sheet project.id,window.previous.id %}'>Previous Time Sheet</a>
-        {% else %}
-            Previous Time Sheet
-        {% endif %}
-    </li>
-    <li>
-        {% if window.next %}
-            <a href='{% url project_time_sheet project.id,window.next.id %}'>Next Time Sheet</a>
-        {% else %}
-            Next Time Sheet
-        {% endif %}
-    </li>
-    {% if perms.timepiece.export_project_time_sheet %}
-    <li><a href='{% url export_project_time_sheet project.id,window.id %}'>Export as CSV</a></li>
-    {% endif %}
+    <li><a href='{% url 'view_project' project.id %}'>Project Information</a></li>
 </ul>
+
+<form method="get" action="" id="date-filter" accept-charset="utf-8">
+    {{ year_month_form }}
+    <input type='submit' name='yearmonth' value="Update" id='yearmonth'/>
+    {% if perms.timepiece.export_project_time_sheet %}
+        <button type='submit' name='csv' value="csv" id='csv'>Download CSV</button>
+    {% endif %}
+</form>
+<br />
 
 {% if entries %}
     <table>
@@ -37,21 +30,23 @@
             <th>Time Out</th>
             <th>Breaks</th>
             <th>Hours</th>
+            <th>Comments</th>
         </tr>
         {% for entry in entries %}
         <tr{% if entry.comments %} title='{{ entry.comments }}'{% endif %}>
             <td>{{ entry.start_time|date:"m/d/Y (D)" }}</td>
-            <td>{{ entry.user.get_full_name }}</td>
-            <td>{{ entry.activity }}</td>
-            <td>{{ entry.location }}</td>
+            <td>{{ entry.user__first_name }} {{ entry.user__last_name }}</td>
+            <td>{{ entry.activity__name }}</td>
+            <td>{{ entry.location__name }}</td>
             <td>{{ entry.start_time|date:"P" }}</td>
             <td>{{ entry.end_time|date:"P" }}</td>
             <td>{{ entry.seconds_paused|seconds_to_hours }}</td>
             <td>{{ entry.hours }}</td>
+            <td title="{{entry.comments}}">{{ entry.comments|truncatewords:12 }}</td>
         </tr>
         {% endfor %}
         <tr>
-            <th colspan='6'>Total:</th>
+            <th colspan='7'>Total:</th>
             <td>{{ total|floatformat:2 }}</td>
         </tr>
     </table>
@@ -74,10 +69,10 @@
 {% if activity_entries %}
     <table id='activity-summary'>
         <caption>Activity Summary</caption>
-    {% for row in activity_entries %}
+    {% for entry in activity_entries %}
         <tr>
-            <td>{{ row.activity__name }}</td>
-            <td>{{ row.sum }}</td>
+            <td>{{ entry.activity__name }}</td>
+            <td>{{ entry.sum }}</td>
         </tr>
     {% endfor %}  
     </table>
