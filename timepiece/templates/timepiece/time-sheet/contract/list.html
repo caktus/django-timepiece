@@ -1,0 +1,30 @@
+{% extends 'timepiece/time-sheet/base.html' %}
+{% load timepiece_tags %}
+{% load url from future %}
+
+{% block title %}Current Contracts{% endblock %}
+
+{% block content %}
+<h2>Current Contracts</h2>
+
+<table class='timepiece-summary'>
+    <tr>
+        <th>Project</th>
+        <th>Time Frame</th>
+        <th>Hours Worked</th>
+        <th>Contract Hours</th>
+        <th>Percent Complete</th>
+    </tr>
+    {% for contract in contracts %}
+        <tr>
+            <td>
+                <a href="{% url 'view_contract' contract.id %}">{{ contract.project }}</a>
+            </td>
+            <td>{{ contract.start_date|date }} &mdash; {{ contract.end_date }}</td>
+            <td class="hours">{{ contract.hours_worked }}</td>
+            <td class="hours">{{ contract.num_hours }}</td>
+            <td class="hours">{% widthratio contract.hours_worked contract.num_hours 100 %}%</td>
+        </tr>
+    {% endfor %}
+</table>
+{% endblock %}
