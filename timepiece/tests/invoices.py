@@ -41,7 +41,7 @@ class InvoiceViewPreviousTestCase(TimepieceDataTestCase):
         args = [project.id, to_date.strftime('%Y-%m-%d')]
         url = reverse('confirm_invoice_project', args=args)
         params = {
-            'number': random.randint(999, 9999),
+            'number': str(random.randint(999, 9999)),
             'status': status,
         }
         response = self.client.post(url, params)
@@ -104,14 +104,14 @@ class InvoiceViewPreviousTestCase(TimepieceDataTestCase):
         url = reverse('edit_invoice', kwargs={'pk': invoice.id})
         status = 'invoiced' if invoice.status != 'invoiced' else 'not-invoiced'
         params = {
-            'number': invoice.number + 1,
+            'number': int(invoice.number) + 1,
             'status': status,
             'comments': 'Comments',
         }
         response = self.client.post(url, params)
         self.assertEqual(response.status_code, 302)
         new_invoice = timepiece.EntryGroup.objects.get(pk=invoice.id)
-        self.assertEqual(invoice.number + 1, new_invoice.number)
+        self.assertEqual(int(invoice.number) + 1, int(new_invoice.number))
         self.assertTrue(invoice.status != new_invoice.status)
         self.assertEqual(new_invoice.comments, 'Comments')
 
@@ -119,12 +119,10 @@ class InvoiceViewPreviousTestCase(TimepieceDataTestCase):
         invoice = self.get_invoice()
         url = reverse('edit_invoice', args=[invoice.id])
         params = {
-            'number': 'String',
+            'number': '2',
             'status': 'not_in_choices',
         }
         response = self.client.post(url, params)
-        err_msg = 'Enter a whole number.'
-        self.assertFormError(response, 'invoice_form', 'number', err_msg)
         err_msg = 'Select a valid choice. not_in_choices is not one of ' + \
                   'the available choices.'
         self.assertFormError(response, 'invoice_form', 'status', err_msg)
@@ -363,7 +361,7 @@ class InvoiceCreateTestCase(TimepieceDataTestCase):
         to_date = datetime.datetime(2011, 1, 31)
         args = [self.project_billable.id, to_date.strftime('%Y-%m-%d')]
         url = reverse('confirm_invoice_project', args=args)
-        response = self.client.post(url, {'number': 3, 'status': 'invoiced'})
+        response = self.client.post(url, {'number': '3', 'status': 'invoiced'})
         self.assertEqual(response.status_code, 302)
         # Verify an invoice was created with the correct attributes
         invoice = timepiece.EntryGroup.objects.get(number=3)
@@ -391,7 +389,7 @@ class InvoiceCreateTestCase(TimepieceDataTestCase):
             from_date.strftime('%Y-%m-%d')
         ]
         url = reverse('confirm_invoice_project', args=args)
-        response = self.client.post(url, {'number': 5,
+        response = self.client.post(url, {'number': '5',
                                           'status': 'not-invoiced'})
         self.assertEqual(response.status_code, 302)
         # Verify an invoice was created with the correct attributes
@@ -406,13 +404,3 @@ class InvoiceCreateTestCase(TimepieceDataTestCase):
         uninvoiced = entries.filter(status='uninvoiced')
         for entry in uninvoiced:
             self.assertEqual(entry.entry_group_id, invoice.id)
-
-    def test_make_invoice_bad_number(self):
-        to_date = datetime.datetime(2011, 1, 31)
-        args = [self.project_billable.id, to_date.strftime('%Y-%m-%d')]
-        url = reverse('confirm_invoice_project', args=args)
-        response = self.client.post(url, {'number': 'string'})
-        err_msg = 'Enter a whole number.'
-        self.assertFormError(response, 'invoice_form', 'number', err_msg)
-        response = self.client.post(url, {'number': None})
-        self.assertFormError(response, 'invoice_form', 'number', err_msg)
