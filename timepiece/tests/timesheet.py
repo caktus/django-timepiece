@@ -23,21 +23,6 @@ from dateutil.relativedelta import relativedelta
 class EditableTest(TimepieceDataTestCase):
     def setUp(self):
         super(EditableTest, self).setUp()
-        self.day_period = timepiece.RepeatPeriod.objects.create(
-            count=2,
-            interval='day',
-            active=True,
-        )
-        self.timesheet = timepiece.PersonRepeatPeriod.objects.create(
-            user=self.user,
-            repeat_period=self.day_period
-        )
-        self.billing_window = timepiece.BillingWindow.objects.create(
-            period=self.day_period,
-            date=datetime.datetime.now() - datetime.timedelta(days=8),
-            end_date=datetime.datetime.now() - datetime.timedelta(days=8) \
-            + self.day_period.delta(),
-        )
         self.entry = self.create_entry({
             'user': self.user,
             'project': self.project,
