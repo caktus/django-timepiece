@@ -37,7 +37,7 @@ class ProjectTestCase(TimepieceDataTestCase):
         self.log_time(project=self.p1, start=days[3], delta=(1, 0))
         self.log_time(project=self.p3, start=days[3], delta=(1, 0))
         self.log_time(project=self.p1, start=days[4], delta=(1, 0))
-        self.log_time(project=self.p3, start=days[4], delta=(1, 0))
+        self.log_time(project=self.p2, start=days[4], delta=(1, 0))
 
     def test_remove_user(self):
         self.user.is_superuser = True
@@ -61,6 +61,17 @@ class ProjectTestCase(TimepieceDataTestCase):
         response = self.client.post(url, {'user': self.user.pk, })
         self.assertEquals(response.status_code, 302)
         self.assertEquals(self.project.users.all().count(), 1)
+
+    def testNoPermission(self):
+        self.client.login(username='user', password='abc')
+        self.make_entries()
+        response = self.client.get(self.url)
+        self.assertEqual(response.status_code, 302)
+
+    def testNoProject(self):
+        self.client.login(username='superuser', password='abc')
+        response = self.client.get(reverse('project_time_sheet', args=(999, )))
+        self.assertEqual(response.status_code, 404)
 
     def testEmptyProjectTimesheet(self):
         """
@@ -117,3 +128,18 @@ class ProjectTestCase(TimepieceDataTestCase):
                          self.user2.first_name
         )
         self.assertEqual(user_entry1['sum'], Decimal(1))
+
+    def testOtherProjectTimesheet(self):
+        self.client.login(username='superuser', password='abc')
+        self.make_entries()
+        response = self.client.get(reverse('project_time_sheet',
+                                           args=(self.p2.pk, ))
+        )
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.context['project'], self.p2)
+        self.assertEqual(len(response.context['entries']), 1)
+        self.assertEqual(response.context['total'], Decimal(1))
+        user_entry = response.context['user_entries'][0]
+        self.assertEqual(user_entry['user__last_name'], self.user.last_name)
+        self.assertEqual(user_entry['user__first_name'], self.user.first_name)
+        self.assertEqual(user_entry['sum'], Decimal(1))
