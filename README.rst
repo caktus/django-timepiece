@@ -58,9 +58,9 @@ Installation
 History
 -------
 
-0.3.8 (Unreleased)
+0.3.8 (02-16-2012)
 ******************
-* Added project milestones
+* Converted invoice reference to a CharField for more flexibility
 * Added list and detail views for project contracts
 * Hour groups now show totals for each activity nested within them
 * Moved unapproved and unverified entry warnings to the payroll summary page.

@@ -698,7 +698,8 @@ class EntryGroup(models.Model):
     project = models.ForeignKey(Project, related_name='entry_group')
     status = models.CharField(max_length=24, choices=STATUS_CHOICES,
                               default='invoiced')
-    number = models.IntegerField("Reference #", blank=True, null=True)
+    number = models.CharField("Reference #", max_length=50, blank=True,
+                              null=True)
     comments = models.TextField(blank=True, null=True)
     created = models.DateTimeField(auto_now_add=True)
     modified = models.DateTimeField(auto_now=True)
