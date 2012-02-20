@@ -59,6 +59,7 @@ class MyLedgerTest(TimepieceDataTestCase):
         self.client.login(username='user', password='abc')
         response = self.client.get(self.url)
         self.assertEquals(response.status_code, 200)
+        self.assertEquals(list(response.context['entries']), [])
 
     def testEmptyHourlySummary(self):
         self.client.login(username='user', password='abc')
@@ -71,6 +72,7 @@ class MyLedgerTest(TimepieceDataTestCase):
         url = reverse('view_person_time_sheet', args=[self.user.pk])        
         response = self.client.get(url, data)
         self.assertEquals(response.status_code, 200)
+        self.assertEquals(response.context['grouped_totals'], '')
 
     def testNotMyLedger(self):
         self.client.login(username='user2', password='abc')
@@ -84,6 +86,54 @@ class MyLedgerTest(TimepieceDataTestCase):
             response = self.client.get(self.url)
         except Exception, e:
             self.fail(e)
+
+    def make_entries(self):
+        self.p1 = self.create_project(billable=True, name='1')
+        self.p2 = self.create_project(billable=False, name='2')
+        self.p4 = self.create_project(billable=True, name='4')
+        self.p3 = self.create_project(billable=False, name='1')
+        days = [
+                datetime.datetime(2011, 1, 1),
+                datetime.datetime(2011, 1, 28),
+                datetime.datetime(2011, 1, 31),
+                datetime.datetime(2011, 2, 1),
+                datetime.datetime.now(),
+        ]
+        self.log_time(project=self.p1, start=days[0], delta=(1, 0))
+        self.log_time(project=self.p2, start=days[0], delta=(1, 0))
+        self.log_time(project=self.p4, start=days[0], delta=(1, 0))
+        self.log_time(project=self.p1, start=days[1], delta=(1, 0))
+        self.log_time(project=self.p3, start=days[1], delta=(1, 0))
+        self.log_time(project=self.p4, start=days[1], delta=(1, 0))
+        self.log_time(project=self.p1, start=days[2], delta=(1, 0))
+        self.log_time(project=self.p2, start=days[2], delta=(1, 0))
+        self.log_time(project=self.p4, start=days[2], delta=(1, 0))
+        self.log_time(project=self.p1, start=days[3], delta=(1, 0))
+        self.log_time(project=self.p3, start=days[3], delta=(1, 0))
+        self.log_time(project=self.p4, start=days[3], delta=(1, 0))
+        self.log_time(project=self.p1, start=days[4], delta=(1, 0))
+        self.log_time(project=self.p3, start=days[4], delta=(1, 0))
+        self.log_time(project=self.p4, start=days[4], delta=(1, 0))
+
+    def testCurrentTimeSheet(self):
+        self.client.login(username='user', password='abc')
+        self.make_entries()
+        response = self.client.get(self.url)
+        self.assertEquals(response.status_code, 200)
+        self.assertEqual(len(response.context['entries']), 3)
+        self.assertEqual(response.context['summary']['total'], Decimal(3))
+
+    def testOldTimeSheet(self):
+        self.client.login(username='user', password='abc')
+        self.make_entries()
+        data = {
+            'month': 1,
+            'year': 2011,
+        }
+        response = self.client.get(self.url, data)
+        self.assertEquals(response.status_code, 200)
+        self.assertEqual(len(response.context['entries']), 9)
+        self.assertEqual(response.context['summary']['total'], Decimal(9))
 
 
 class ClockInTest(TimepieceDataTestCase):
@@ -849,7 +899,6 @@ class StatusTest(TimepieceDataTestCase):
 class TestTotals(TimepieceDataTestCase):
     def setUp(self):
         super(TestTotals, self).setUp()
-        self.create_person_repeat_period(data={'user': self.user})
         self.p1 = self.create_project(billable=True, name='1')
         self.p2 = self.create_project(billable=False, name='2')
         self.p4 = self.create_project(billable=True, name='4')
