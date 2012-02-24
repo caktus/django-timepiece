@@ -371,7 +371,7 @@ class Entry(models.Model):
     )
 
     start_time = models.DateTimeField()
-    end_time = models.DateTimeField(blank=True, null=True)
+    end_time = models.DateTimeField(blank=True, null=True, db_index=True)
     seconds_paused = models.PositiveIntegerField(default=0)
     pause_time = models.DateTimeField(blank=True, null=True)
     comments = models.TextField(blank=True)
@@ -381,6 +381,7 @@ class Entry(models.Model):
 
     objects = EntryManager()
     worked = EntryWorkedManager()
+    no_join = models.Manager()
 
     def check_overlap(self, entry_b, **kwargs):
         """

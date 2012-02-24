@@ -361,11 +361,11 @@ class YearMonthForm(forms.Form):
         this_year = now.year
         this_month = now.month
         try:
-            first_entry = timepiece.Entry.objects.all().order_by('end_time')[0]
+            first_entry = timepiece.Entry.no_join.values('end_time').order_by('end_time')[0]
         except IndexError:
             first_year = this_year
         else:
-            first_year = first_entry.end_time.year
+            first_year = first_entry['end_time'].year
         years = [(year, year) for year in xrange(first_year, this_year + 1)]
         self.fields['year'].choices = years
         initial = kwargs.get('initial')
