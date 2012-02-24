@@ -61,6 +61,38 @@ $(document).ready(function() {
 <input type='button' value="View Hourly Summary" id="hourly-button">
 <br />
 
+<div id="totals">
+    {% if project_entries %}
+        <table id='person-summary'>
+            <caption>Project Summary</caption>
+        {% for entry in project_entries %}
+            <tr>
+                <td>{{ entry.project__name}} </td>
+                <td class="hours">{{ entry.sum }}</td>
+            </tr>
+        {% endfor %}        
+        </table>
+    {% endif %}
+    {% if entries %}
+        <table id='activity-summary'>
+            <caption>Billable Summary</caption>
+            <tr>
+                <td>Billable</td><td class="hours">{{summary.billable}}</td>
+            </tr>
+            <tr>
+                <td>Non-billable</td><td class="hours">{{summary.non_billable}}</td>
+            </tr>
+            <tr>
+                <td>Invoiced</td><td class="hours">{{summary.invoiced}}</td>
+            </tr>
+            <tr>
+                <td>Uninvoiced</td><td class="hours">{{summary.uninvoiced}}</td>
+            </tr>
+        </table>
+    {% endif %}
+</div>
+<br style='clear: both' />
+
 <div id="hourly-entry-table">
 {% if grouped_totals %}
 <table>
@@ -162,33 +194,4 @@ $(document).ready(function() {
 {% endif %}
 </div>
 
-{% if project_entries %}
-    <table id='person-summary'>
-        <caption>Project Summary</caption>
-    {% for entry in project_entries %}
-        <tr>
-            <td>{{ entry.project__name}} </td>
-            <td class="hours">{{ entry.sum }}</td>
-        </tr>
-    {% endfor %}        
-    </table>
-{% endif %}
-{% if entries %}
-    <table id='activity-summary'>
-        <caption>Billable Summary</caption>
-        <tr>
-            <td>Billable</td><td class="hours">{{summary.billable}}</td>
-        </tr>
-        <tr>
-            <td>Non-billable</td><td class="hours">{{summary.non_billable}}</td>
-        </tr>
-        <tr>
-            <td>Invoiced</td><td class="hours">{{summary.invoiced}}</td>
-        </tr>
-        <tr>
-            <td>Uninvoiced</td><td class="hours">{{summary.uninvoiced}}</td>
-        </tr>
-    </table>
-{% endif %}
-<br style='clear: both' />
 {% endblock %}

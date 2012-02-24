@@ -352,8 +352,9 @@ class DateForm(forms.Form):
 class YearMonthForm(forms.Form):
     MONTH_CHOICES = [(i, time.strftime('%B', time.strptime(str(i), '%m'))) \
                      for i in xrange(1, 13)]
-    year = forms.ChoiceField()
-    month = forms.ChoiceField(choices=MONTH_CHOICES)
+    month = forms.ChoiceField(choices=MONTH_CHOICES, label='')
+    year = forms.ChoiceField(label='')
+
 
     def __init__(self, *args, **kwargs):
         super(YearMonthForm, self).__init__(*args, **kwargs)
