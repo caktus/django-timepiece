@@ -86,6 +86,8 @@
                     <td>Uninvoiced</td><td class="hours">{{summary.uninvoiced}}</td>
                 </tr>
             </table>
+        {% else %}
+            <p>No entries exist for this time sheet.</p>
         {% endif %}
     </div>
     <div id="tabs-2">
