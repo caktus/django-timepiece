@@ -138,7 +138,7 @@ def clock_in(request):
             entry = form.save()
             #check that the user is not currently logged into another project.
             #if so, clock them out of all others.
-            my_active_entries = timepiece.Entry.objects.select_related(
+            my_active_entries = timepiece.Entry.no_join.select_related(
                 'project__business',
             ).filter(
                 user=request.user,
@@ -210,7 +210,7 @@ def toggle_paused(request, entry_id):
 
     try:
         # retrieve the log entry
-        entry = timepiece.Entry.objects.get(pk=entry_id,
+        entry = timepiece.Entry.no_join.get(pk=entry_id,
                                   user=request.user,
                                   end_time__isnull=True)
     except:
@@ -254,7 +254,7 @@ def toggle_paused(request, entry_id):
 def create_edit_entry(request, entry_id=None):
     if entry_id:
         try:
-            entry = timepiece.Entry.objects.get(
+            entry = timepiece.Entry.no_join.get(
                 pk=entry_id,
                 user=request.user,
             )
@@ -310,7 +310,7 @@ def delete_entry(request, entry_id):
 
     try:
         # retrieve the log entry
-        entry = timepiece.Entry.objects.get(pk=entry_id,
+        entry = timepiece.Entry.no_join.get(pk=entry_id,
                                   user=request.user)
     except:
         # entry does not exist
@@ -342,7 +342,7 @@ def summary(request, username=None):
     else:
         form = timepiece_forms.DateForm()
         from_date, to_date = None, None
-    entries = timepiece.Entry.objects.values(
+    entries = timepiece.Entry.no_join.values(
         'project__id',
         'project__business__id',
         'project__name',
@@ -361,7 +361,7 @@ def summary(request, username=None):
     total_hours = timepiece.Entry.objects.filter(dates).aggregate(
         hours=Sum('hours')
     )['hours']
-    people_totals = timepiece.Entry.objects.values('user', 'user__first_name',
+    people_totals = timepiece.Entry.no_join.values('user', 'user__first_name',
                                                    'user__last_name')
     people_totals = people_totals.order_by('user__last_name').filter(dates)
     people_totals = people_totals.annotate(total_hours=Sum('hours'))
@@ -526,7 +526,7 @@ def change_person_time_sheet(request, action, user_id, from_date):
     except (ValueError, OverflowError):
         raise Http404
     to_date = from_date + relativedelta(months=1)
-    entries = timepiece.Entry.objects.filter(user=user_id,
+    entries = timepiece.Entry.no_join.filter(user=user_id,
                                              end_time__gte=from_date,
                                              end_time__lt=to_date)
     filter_status = {
@@ -591,7 +591,7 @@ def confirm_invoice_project(request, project_id, to_date, from_date=None):
                                                initial=initial)
     if request.POST and invoice_form.is_valid():
         invoice = invoice_form.save()
-        entries = timepiece.Entry.objects.filter(**entries_query)
+        entries = timepiece.Entry.no_join.filter(**entries_query)
         entries.update(status=invoice.status, entry_group=invoice)
         return HttpResponseRedirect(reverse('view_invoice', args=[invoice.pk]))
     else:
