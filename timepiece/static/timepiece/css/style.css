@@ -144,6 +144,9 @@ button {
     padding: 1px;
     list-style-type: none;
 }
+.ui-widget {
+    font-size: 13px;
+}
 
 #tabs tr, #tabs caption{
     font-size: 90%;
