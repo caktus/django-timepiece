@@ -471,7 +471,7 @@ class ProjectTimesheetCSV(CSVMixin, ProjectTimesheet):
 @login_required
 def view_person_time_sheet(request, user_id):
     user = get_object_or_404(User, pk=user_id)
-    if not (request.user.has_perm('timepiece.view_person_time_sheet') or \
+    if not (request.user.has_perm('timepiece.view_entry_summary') or \
         user.pk == request.user.pk):
         return HttpResponseForbidden('Forbidden')
     year_month_form = timepiece_forms.YearMonthForm(request.GET or None)
@@ -483,7 +483,7 @@ def view_person_time_sheet(request, user_id):
     entries_qs = timepiece.Entry.objects
     entries_qs = entries_qs.timespan(from_date, span='month').filter(user=user)
     show_approve = show_verify = False
-    if request.user.has_perm('timepiece.edit_person_time_sheet') or \
+    if request.user.has_perm('timepiece.change_entry') or \
         user == request.user:
         statuses = list(entries_qs.values_list('status', flat=True))
         total_statuses = len(statuses)
@@ -491,7 +491,7 @@ def view_person_time_sheet(request, user_id):
         verified_count = statuses.count('verified')
         approved_count = statuses.count('approved')
         show_verify = unverified_count != 0
-    if request.user.has_perm('timepiece.edit_person_time_sheet'):
+    if request.user.has_perm('timepiece.change_entry'):
         show_approve = verified_count + approved_count == total_statuses \
         and verified_count > 0 and total_statuses != 0
     month_entries = entries_qs.date_trunc('month', True)
@@ -518,7 +518,7 @@ def view_person_time_sheet(request, user_id):
 @login_required
 def change_person_time_sheet(request, action, user_id, from_date):
     user = get_object_or_404(User, pk=user_id)
-    admin_verify = request.user.has_perm('timepiece.edit_person_time_sheet')
+    admin_verify = request.user.has_perm('timepiece.change_entry')
     if not admin_verify and user != request.user:
         return HttpResponseForbidden('Forbidden')
     try:
@@ -563,7 +563,7 @@ def change_person_time_sheet(request, action, user_id, from_date):
 @login_required
 @transaction.commit_on_success
 def confirm_invoice_project(request, project_id, to_date, from_date=None):
-    if not request.user.has_perm('timepiece.edit_person_time_sheet'):
+    if not request.user.has_perm('timepiece.change_entry'):
         return HttpResponseForbidden('Forbidden')
     try:
         to_date = datetime.datetime.strptime(to_date, '%Y-%m-%d')

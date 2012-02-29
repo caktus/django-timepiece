@@ -39,7 +39,6 @@ class EditableTest(TimepieceDataTestCase):
             'seconds_paused': 0,
             'status': 'unverified',
         })
-        timepiece.RepeatPeriod.objects.update_billing_windows()
 
     def testUnEditable(self):
         self.assertFalse(self.entry.is_editable)
@@ -813,12 +812,12 @@ class StatusTest(TimepieceDataTestCase):
         self.assertFalse(response.context['show_verify'])
 
     def testApproveButton(self):
-        edit_time_sheet = Permission.objects.get(
-            codename=('edit_person_time_sheet')
+        edit_time_sheet = Permission.objects.get(codename='change_entry',
+            content_type__app_label='timepiece'
         )
         self.user2.user_permissions.add(edit_time_sheet)
         view_time_sheet = Permission.objects.get(
-            codename=('view_person_time_sheet')
+            codename=('view_entry_summary')
         )
         self.user2.user_permissions.add(view_time_sheet)
         self.user2.save()
@@ -856,12 +855,12 @@ class StatusTest(TimepieceDataTestCase):
         self.assertEquals(entries[0].status, 'verified')
 
     def testApprovePage(self):
-        edit_time_sheet = Permission.objects.get(
-            codename=('edit_person_time_sheet')
+        edit_time_sheet = Permission.objects.get(codename='change_entry',
+            content_type__app_label='timepiece'
         )
         self.user2.user_permissions.add(edit_time_sheet)
         view_time_sheet = Permission.objects.get(
-            codename=('view_person_time_sheet')
+            codename=('view_entry_summary')
         )
         self.user2.user_permissions.add(view_time_sheet)
         self.user2.save()

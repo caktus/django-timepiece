@@ -10,7 +10,7 @@
     {% if perms.auth.change_person %}
 	    <li><a href="{% url 'edit_person' person.pk %}">Edit Person</a></li>
     {% endif %}
-    {% if perms.auth.view_person_time_sheet %}
+    {% if perms.auth.view_entry_summary %}
 	    <li><a href="{% url 'view_person_time_sheet' person.pk %}">View Timesheet</a></li>
     {% endif %}
     </ul>
