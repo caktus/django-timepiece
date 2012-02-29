@@ -113,24 +113,6 @@ class TimepieceDataTestCase(TestCase):
             defaults['status'] = 'unverified'
         return timepiece.Entry.objects.create(**defaults)
 
-    def create_repeat_period(self, data={}):
-        defaults = {
-            'count': 1,
-            'interval': 'month',
-            'active': True,
-        }
-        defaults.update(data)
-        return timepiece.RepeatPeriod.objects.create(**defaults)
-
-    def create_person_repeat_period(self, data={}):
-        defaults = {}
-        defaults.update(data)
-        if 'user' not in defaults:
-            defaults['user'] = self.create_person()
-        if 'repeat_period' not in defaults:
-            defaults['repeat_period'] = self.create_repeat_period()
-        return timepiece.PersonRepeatPeriod.objects.create(**defaults)
-
     def create_project_contract(self, data={}):
         defaults = {
             'start_date': datetime.date.today(),

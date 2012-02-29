@@ -352,8 +352,9 @@ class DateForm(forms.Form):
 class YearMonthForm(forms.Form):
     MONTH_CHOICES = [(i, time.strftime('%B', time.strptime(str(i), '%m'))) \
                      for i in xrange(1, 13)]
-    year = forms.ChoiceField()
-    month = forms.ChoiceField(choices=MONTH_CHOICES)
+    month = forms.ChoiceField(choices=MONTH_CHOICES, label='')
+    year = forms.ChoiceField(label='')
+
 
     def __init__(self, *args, **kwargs):
         super(YearMonthForm, self).__init__(*args, **kwargs)
@@ -361,11 +362,11 @@ class YearMonthForm(forms.Form):
         this_year = now.year
         this_month = now.month
         try:
-            first_entry = timepiece.Entry.objects.all().order_by('end_time')[0]
+            first_entry = timepiece.Entry.no_join.values('end_time').order_by('end_time')[0]
         except IndexError:
             first_year = this_year
         else:
-            first_year = first_entry.end_time.year
+            first_year = first_entry['end_time'].year
         years = [(year, year) for year in xrange(first_year, this_year + 1)]
         self.fields['year'].choices = years
         initial = kwargs.get('initial')
@@ -452,80 +453,6 @@ class InvoiceForm(forms.ModelForm):
         instance.end = to_date
         instance.save()
         return instance
-
-
-class RepeatPeriodForm(forms.ModelForm):
-    class Meta:
-        model = timepiece.RepeatPeriod
-        fields = ('active', 'count', 'interval')
-
-    def __init__(self, *args, **kwargs):
-        super(RepeatPeriodForm, self).__init__(*args, **kwargs)
-        self.fields['count'].required = False
-        self.fields['interval'].required = False
-        self.fields['date'] = forms.DateField(required=False)
-
-    def _clean_optional(self, name):
-        active = self.cleaned_data.get('active', False)
-        value = self.cleaned_data.get(name, '')
-        if active and not value:
-            raise forms.ValidationError('This field is required.')
-        return self.cleaned_data[name]
-
-    def clean_count(self):
-        return self._clean_optional('count')
-
-    def clean_interval(self):
-        return self._clean_optional('interval')
-
-    def clean_date(self):
-        active = self.cleaned_data.get('active', False)
-        date = self.cleaned_data.get('date', '')
-        if active and not self.instance.id and not date:
-            raise forms.ValidationError(
-                'Start date is required for new billing periods')
-        return date
-
-    def clean(self):
-        date = self.cleaned_data.get('date', '')
-        if self.instance.id and date:
-            latest = self.instance.billing_windows.latest()
-            if self.cleaned_data['active'] and date < latest.end_date:
-                raise forms.ValidationError(
-                    'New start date must be after %s' % latest.end_date)
-        return self.cleaned_data
-
-    def save(self):
-        period = super(RepeatPeriodForm, self).save(commit=False)
-        if not self.instance.id and period.active:
-            period.save()
-            period.billing_windows.create(
-                date=self.cleaned_data['date'],
-                end_date=self.cleaned_data['date'] + period.delta(),
-            )
-        elif self.instance.id:
-            period.save()
-            start_date = self.cleaned_data['date']
-            if period.active and start_date:
-                latest = period.billing_windows.latest()
-                if start_date > latest.end_date:
-                    period.billing_windows.create(
-                        date=latest.end_date,
-                        end_date=start_date + period.delta(),
-                    )
-        period.update_billing_windows()
-        return period
-
-
-class PersonTimeSheet(forms.ModelForm):
-    class Meta:
-        model = timepiece.PersonRepeatPeriod
-        fields = ('user',)
-
-    def __init__(self, *args, **kwargs):
-        super(PersonTimeSheet, self).__init__(*args, **kwargs)
-        self.fields['user'].queryset = \
-            auth_models.User.objects.all().order_by('last_name')
 
 
 class SearchForm(forms.Form):

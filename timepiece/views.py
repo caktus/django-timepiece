@@ -3,6 +3,7 @@ import csv
 import datetime
 import calendar
 import math
+import urllib
 
 from decimal import Decimal
 from dateutil.relativedelta import relativedelta
@@ -137,7 +138,7 @@ def clock_in(request):
             entry = form.save()
             #check that the user is not currently logged into another project.
             #if so, clock them out of all others.
-            my_active_entries = timepiece.Entry.objects.select_related(
+            my_active_entries = timepiece.Entry.no_join.select_related(
                 'project__business',
             ).filter(
                 user=request.user,
@@ -209,7 +210,7 @@ def toggle_paused(request, entry_id):
 
     try:
         # retrieve the log entry
-        entry = timepiece.Entry.objects.get(pk=entry_id,
+        entry = timepiece.Entry.no_join.get(pk=entry_id,
                                   user=request.user,
                                   end_time__isnull=True)
     except:
@@ -253,7 +254,7 @@ def toggle_paused(request, entry_id):
 def create_edit_entry(request, entry_id=None):
     if entry_id:
         try:
-            entry = timepiece.Entry.objects.get(
+            entry = timepiece.Entry.no_join.get(
                 pk=entry_id,
                 user=request.user,
             )
@@ -309,7 +310,7 @@ def delete_entry(request, entry_id):
 
     try:
         # retrieve the log entry
-        entry = timepiece.Entry.objects.get(pk=entry_id,
+        entry = timepiece.Entry.no_join.get(pk=entry_id,
                                   user=request.user)
     except:
         # entry does not exist
@@ -341,7 +342,7 @@ def summary(request, username=None):
     else:
         form = timepiece_forms.DateForm()
         from_date, to_date = None, None
-    entries = timepiece.Entry.objects.values(
+    entries = timepiece.Entry.no_join.values(
         'project__id',
         'project__business__id',
         'project__name',
@@ -360,7 +361,7 @@ def summary(request, username=None):
     total_hours = timepiece.Entry.objects.filter(dates).aggregate(
         hours=Sum('hours')
     )['hours']
-    people_totals = timepiece.Entry.objects.values('user', 'user__first_name',
+    people_totals = timepiece.Entry.no_join.values('user', 'user__first_name',
                                                    'user__last_name')
     people_totals = people_totals.order_by('user__last_name').filter(dates)
     people_totals = people_totals.annotate(total_hours=Sum('hours'))
@@ -373,266 +374,172 @@ def summary(request, username=None):
     return context
 
 
-def get_entries(period, window_id=None, project=None, user=None):
-    """
-    Returns a tuple of the billing window, corresponding entries, and total
-    hours for the given project and window_id, if specified.
-    """
-    if not project and not user:
-        raise ValueError('project or user required')
-    window = timepiece.BillingWindow.objects.select_related('period')
-    if window_id:
-        window = window.get(
-            pk=window_id,
-            period__active=True,
-            period=period,
-        )
-    else:
-        window = window.filter(
-            period__active=True,
-            period=period,
-        ).order_by('-date')
-        try:
-            window = window[0]
-        except IndexError:
-            return None, [], 0
-    entries = timepiece.Entry.objects.filter(
-        end_time__gte=window.date,
-        end_time__lt=window.end_date,
-    ).select_related(
-        'user',
-        'project',
-        'activity',
-        'location',
-    ).order_by('start_time')
-    if project:
-        entries = entries.filter(project=project)
-    elif user:
-        entries = entries.filter(user=user)
-    total = entries.aggregate(hours=Sum('hours'))['hours']
-    return window, entries, total
+class ProjectTimesheet(DetailView):
+    template_name = 'timepiece/time-sheet/projects/view.html'
+    model = timepiece.Project
+    context_object_name = 'project'
 
+    @method_decorator(permission_required('timepiece.view_project_time_sheet'))
+    def dispatch(self, *args, **kwargs):
+        return super(ProjectTimesheet, self).dispatch(*args, **kwargs)
 
-@permission_required('timepiece.view_project_time_sheet')
-@render_with('timepiece/time-sheet/projects/view.html')
-def project_time_sheet(request, project_id, window_id=None):
-    project = get_object_or_404(timepiece_forms.Project, pk=project_id)
-    window, entries, total = get_entries(
-        project.billing_period,
-        window_id=window_id,
-        project=project,
-    )
-    user_entries = entries.order_by().values(
-        'user__username',
-        'user__first_name',
-        'user__last_name',
-    ).annotate(sum=Sum('hours')).order_by('-sum')
-    activity_entries = entries.order_by().values(
-        'activity__name',
-    ).annotate(sum=Sum('hours')).order_by('-sum')
-    context = {
-        'project': project,
-        'period': window.period,
-        'window': window,
-        'entries': entries,
-        'total': total,
-        'user_entries': user_entries,
-        'activity_entries': activity_entries,
-    }
-    return context
+    def get(self, *args, **kwargs):
+        if 'csv' in self.request.GET:
+            request_get = self.request.GET.copy()
+            request_get.pop('csv')
+            return_url = reverse('export_project_time_sheet', kwargs={'pk': self.get_object().pk})
+            return_url += '?%s' % urllib.urlencode(request_get)
+            return redirect(return_url)
+        return super(ProjectTimesheet, self).get(*args, **kwargs)
 
-
-@permission_required('timepiece.export_project_time_sheet')
-@utils.date_filter
-def export_project_time_sheet(request, form, from_date, to_date, status,
-    activity, project_id, window_id=None):
-    project = get_object_or_404(timepiece_forms.Project, pk=project_id)
-    if request.GET and form.is_valid():
-        entries = timepiece.Entry.objects.filter(project=project)
-        if to_date:
-            entries = entries.filter(
-                end_time__lt=to_date,
-            )
-        if from_date:
-            entries = entries.filter(
-                end_time__gte=from_date,
-            )
-        if status:
-            entries = entries.filter(status=status)
-        if activity:
-            entries = entries.filter(activity=activity)
-        entries = entries.select_related('user',).order_by('start_time')
-        window = None
-        total = entries.aggregate(hours=Sum('hours'))['hours']
-    else:
-        window, entries, total = get_entries(
-            project.billing_period,
-            window_id=window_id,
-            project=project,
-        )
-
-    response = HttpResponse(mimetype='text/csv')
-    if window:
-        disposition = (project.name, window.end_date.strftime('%Y-%m-%d'))
-    else:
-        if to_date:
-            to_date_str = to_date.strftime('%Y-%m-%d')
+    def get_context_data(self, **kwargs):
+        context = super(ProjectTimesheet, self).get_context_data(**kwargs)
+        project = self.object
+        year_month_form = timepiece_forms.YearMonthForm(self.request.GET or
+                                                        None)
+        if self.request.GET and year_month_form.is_valid():
+            from_date, to_date = year_month_form.save()
         else:
-            to_date_str = 'all'
-        disposition = (project.name, to_date_str)
-    response['Content-Disposition'] = \
-        'attachment; filename="%s Timesheet %s.csv"' % disposition
-    writer = csv.writer(response)
-    writer.writerow((
-        'Date',
-        'Weekday',
-        'Developer',
-        'Location',
-        'Time In',
-        'Time Out',
-        'Breaks',
-        'Hours',
-    ))
-    for entry in entries:
-        data = [
-            entry.start_time.strftime('%x'),
-            entry.start_time.strftime('%A'),
-            entry.user.get_full_name(),
-            entry.location,
-            entry.start_time.strftime('%X'),
-            entry.end_time.strftime('%X'),
-            seconds_to_hours(entry.seconds_paused),
-            entry.hours,
-        ]
-        writer.writerow(data)
-    writer.writerow(('', '', '', '', '', '', 'Total:', total))
-    return response
+            from_date = utils.get_month_start(datetime.datetime.today()).date()
+            to_date = from_date + relativedelta(months=1)
+        entries_qs = timepiece.Entry.objects
+        entries_qs = entries_qs.timespan(from_date, span='month').filter(
+            project=project
+        )
+        month_entries = entries_qs.date_trunc('month', True).order_by(
+            'start_time'
+        )
+        total = entries_qs.aggregate(hours=Sum('hours'))['hours']
+        user_entries = entries_qs.order_by().values(
+            'user__first_name', 'user__last_name').annotate(
+            sum=Sum('hours')).order_by('-sum'
+        )
+        activity_entries = entries_qs.order_by().values(
+            'activity__name').annotate(
+            sum=Sum('hours')).order_by('-sum'
+        )
+        return {
+            'project': project,
+            'year_month_form': year_month_form,
+            'from_date': from_date,
+            'to_date': to_date - datetime.timedelta(days=1),
+            'entries': month_entries,
+            'total': total,
+            'user_entries': user_entries,
+            'activity_entries': activity_entries,
+        }
+
+
+class ProjectTimesheetCSV(CSVMixin, ProjectTimesheet):
+
+    def get_filename(self, context):
+        project = self.object.name
+        to_date_str = context['to_date'].strftime("%m-%d-%Y")
+        return "Project_timesheet {0} {1}".format(project, to_date_str)
+
+    def convert_context_to_csv(self, context):
+        rows = []
+        rows.append([
+            'Date',
+            'Person',
+            'Activity',
+            'Location',
+            'Time In',
+            'Time Out',
+            'Breaks',
+            'Hours',
+            'Comments'
+        ])
+        for entry in context['entries']:
+            data = [
+                entry['start_time'].strftime('%x'),
+                ' '.join((entry['user__first_name'], entry['user__last_name'])),
+                entry['activity__name'],
+                entry['location__name'],
+                entry['start_time'].strftime('%X'),
+                entry['end_time'].strftime('%X'),
+                seconds_to_hours(entry['seconds_paused']),
+                entry['hours'],
+                entry['comments'],
+            ]
+            rows.append(data)
+        total = context['total']
+        rows.append(('', '', '', '', '', '', 'Total:', total))
+        return rows
 
 
 @login_required
-def view_person_time_sheet(request, person_id, period_id=None,
-    window_id=None, hourly=False):
+def view_person_time_sheet(request, user_id):
+    user = get_object_or_404(User, pk=user_id)
+    if not (request.user.has_perm('timepiece.view_entry_summary') or \
+        user.pk == request.user.pk):
+        return HttpResponseForbidden('Forbidden')
+    year_month_form = timepiece_forms.YearMonthForm(request.GET or None)
+    if request.GET and year_month_form.is_valid():
+        from_date, to_date = year_month_form.save()
+    else:
+        from_date = utils.get_month_start(datetime.datetime.today()).date()
+        to_date = from_date + relativedelta(months=1)
+    entries_qs = timepiece.Entry.objects
+    entries_qs = entries_qs.timespan(from_date, span='month').filter(user=user)
+    show_approve = show_verify = False
+    if request.user.has_perm('timepiece.change_entry') or \
+        user == request.user:
+        statuses = list(entries_qs.values_list('status', flat=True))
+        total_statuses = len(statuses)
+        unverified_count = statuses.count('unverified')
+        verified_count = statuses.count('verified')
+        approved_count = statuses.count('approved')
+        show_verify = unverified_count != 0
+    if request.user.has_perm('timepiece.change_entry'):
+        show_approve = verified_count + approved_count == total_statuses \
+        and verified_count > 0 and total_statuses != 0
+    month_entries = entries_qs.date_trunc('month', True)
+    grouped_totals = utils.grouped_totals(entries_qs) if month_entries else ''
+    project_entries = entries_qs.order_by().values(
+        'project__name').annotate(sum=Sum('hours')).order_by('-sum')
+    summary = timepiece.Entry.summary(user, from_date, to_date)
+    context = {
+        'year_month_form': year_month_form,
+        'from_date': from_date,
+        'to_date': to_date - datetime.timedelta(days=1),
+        'show_verify': show_verify,
+        'show_approve': show_approve,
+        'user': user,
+        'entries': month_entries,
+        'grouped_totals': grouped_totals,
+        'project_entries': project_entries,
+        'summary': summary,
+    }
+    return render_to_response('timepiece/time-sheet/people/view.html',
+        context, context_instance=RequestContext(request))
+
+
+@login_required
+def change_person_time_sheet(request, action, user_id, from_date):
+    user = get_object_or_404(User, pk=user_id)
+    admin_verify = request.user.has_perm('timepiece.change_entry')
+    if not admin_verify and user != request.user:
+        return HttpResponseForbidden('Forbidden')
     try:
-        if not period_id:
-            time_sheet = timepiece.PersonRepeatPeriod.objects.select_related(
-                'user',
-                'repeat_period',
-            ).get(user__id=person_id)
-        else:
-            time_sheet = timepiece.PersonRepeatPeriod.objects.select_related(
-                'user',
-                'repeat_period',
-            ).get(
-                user__id=person_id,
-                repeat_period__id=period_id)
-    except timepiece.PersonRepeatPeriod.DoesNotExist:
+        from_date = datetime.datetime.strptime(from_date, '%Y-%m-%d')
+    except (ValueError, OverflowError):
         raise Http404
-    if not (request.user.has_perm('timepiece.view_person_time_sheet') or \
-    time_sheet.user.pk == request.user.pk):
-        return HttpResponseForbidden('Forbidden')
-    window, entries, total_hours = get_entries(
-        time_sheet.repeat_period,
-        window_id=window_id,
-        user=time_sheet.user,
-    )
-    context = {
-            'hourly': 'hourly',
-            'person': time_sheet.user,
-            'period': window.period,
-            'window': window,
-            'total': total_hours,
-    }
-    if hourly:
-        template = 'timepiece/time-sheet/people/view_hours.html'
-        grouped_totals = utils.grouped_totals(entries) if entries else ''
-        context.update({
-            'grouped_totals': grouped_totals,
-        })
-    else:
-        project_entries = entries.order_by().values(
-            'project__name',
-        ).annotate(sum=Sum('hours')).order_by('-sum')
-
-        show_approve = show_verify = False
-        if request.user.has_perm('timepiece.edit_person_time_sheet') or \
-            time_sheet.user.pk == request.user.pk:
-            statuses = list(entries.values_list('status', flat=True))
-            total_statuses = len(statuses)
-            unverified_count = statuses.count('unverified')
-            verified_count = statuses.count('verified')
-            approved_count = statuses.count('approved')
-        if time_sheet.user.pk == request.user.pk:
-            show_verify = unverified_count != 0
-        if request.user.has_perm('timepiece.edit_person_time_sheet'):
-            show_approve = verified_count + approved_count == total_statuses \
-            and verified_count > 0 and total_statuses != 0
-        template = 'timepiece/time-sheet/people/view.html'
-        summary = time_sheet.summary(window.date, window.end_date,
-                                    verified=False)
-        context.update({
-            'show_verify': show_verify,
-            'show_approve': show_approve,
-            'project_entries': project_entries,
-            'entries': entries,
-            'summary': summary,
-        })
-    return render_to_response(template, context,
-        context_instance=RequestContext(request))
-
-
-@login_required
-@utils.date_filter
-def time_sheet_change_status(request, form, from_date, to_date, status,
-    activity, action, person_id=None, period_id=None, window_id=None):
-    if period_id and person_id:
-        try:
-            time_sheet = timepiece.PersonRepeatPeriod.objects.select_related(
-                'user',
-                'repeat_period',
-            ).get(
-                user__id=person_id,
-                repeat_period__id=period_id,
-            )
-        except timepiece.PersonRepeatPeriod.DoesNotExist:
-            raise Http404
-        person = User.objects.get(pk=person_id)
-        verify_allowed = \
-            request.user.has_perm('timepiece.edit_person_time_sheet') or \
-            (time_sheet.user.pk == request.user.pk and action == 'verify')
-    else:
-        verify_allowed = \
-            request.user.has_perm('timepiece.edit_person_time_sheet')
-    if not verify_allowed:
-        return HttpResponseForbidden('Forbidden')
-    if time_sheet:
-        window, entries, total = get_entries(
-            time_sheet.repeat_period,
-            user=time_sheet.user, window_id=window_id,
-        )
-    else:
-        entries = timepiece.Entry.objects.all()
-        if to_date:
-            entries = entries.filter(
-                end_time__lt=to_date,
-            )
-        if from_date:
-            entries = entries.filter(
-                end_time__gte=from_date,
-            )
-        if request.GET and form.cleaned_data.get('project'):
-            project = form.cleaned_data.get('project')
-            entries = entries.filter(project=project)
-    to_date -= relativedelta(days=1)
-    return_url = reverse('view_person_time_sheet',
-                kwargs={'person_id': person_id, 'period_id': period_id, })
+    to_date = from_date + relativedelta(months=1)
+    entries = timepiece.Entry.no_join.filter(user=user_id,
+                                             end_time__gte=from_date,
+                                             end_time__lt=to_date)
     filter_status = {
         'verify': 'unverified',
         'approve': 'verified',
     }
     entries = entries.filter(status=filter_status[action])
-
-    if request.POST and 'do_action' in request.POST \
-    and request.POST['do_action'] == 'Yes':
+    return_url = reverse('view_person_time_sheet', kwargs={'user_id': user_id})
+    return_url += '?%s' % urllib.urlencode({
+        'year': from_date.year,
+        'month': from_date.month,
+    })
+    if request.POST and request.POST.get('do_action', 'No') == 'Yes':
         update_status = {
             'verify': 'verified',
             'approve': 'approved',
@@ -641,21 +548,22 @@ def time_sheet_change_status(request, form, from_date, to_date, status,
         messages.info(request,
             'Your entries have been %s' % update_status[action])
         return redirect(return_url)
-
     context = {
-        'person': person,
+        'action': action,
+        'user': user,
+        'from_date': from_date,
+        'to_date': to_date - datetime.timedelta(days=1),
         'return_url': return_url,
         'hours': entries.all().aggregate(s=Sum('hours'))['s'],
     }
-    template = 'timepiece/time-sheet/%s_time_sheet.html' % action
-    return render_to_response(template, context,
-        context_instance=RequestContext(request))
+    return render_to_response('timepiece/time-sheet/people/change_status.html',
+        context, context_instance=RequestContext(request))
 
 
 @login_required
 @transaction.commit_on_success
 def confirm_invoice_project(request, project_id, to_date, from_date=None):
-    if not request.user.has_perm('timepiece.edit_person_time_sheet'):
+    if not request.user.has_perm('timepiece.change_entry'):
         return HttpResponseForbidden('Forbidden')
     try:
         to_date = datetime.datetime.strptime(to_date, '%Y-%m-%d')
@@ -683,7 +591,7 @@ def confirm_invoice_project(request, project_id, to_date, from_date=None):
                                                initial=initial)
     if request.POST and invoice_form.is_valid():
         invoice = invoice_form.save()
-        entries = timepiece.Entry.objects.filter(**entries_query)
+        entries = timepiece.Entry.no_join.filter(**entries_query)
         entries.update(status=invoice.status, entry_group=invoice)
         return HttpResponseRedirect(reverse('view_invoice', args=[invoice.pk]))
     else:
@@ -1160,135 +1068,20 @@ def edit_project_relationship(request, project_id, user_id):
 @permission_required('timepiece.change_project')
 @render_with('timepiece/project/create_edit.html')
 def create_edit_project(request, project_id=None):
-    if project_id:
-        project = get_object_or_404(timepiece.Project, pk=project_id)
-        billing_period = project.billing_period
-    else:
-        billing_period = None
-        project = None
-    if request.POST:
-        project_form = timepiece_forms.ProjectForm(
-            request.POST,
-            instance=project,
-        )
-        repeat_period_form = timepiece_forms.RepeatPeriodForm(
-            request.POST,
-            instance=billing_period,
-            prefix='repeat',
-        )
-        if project_form.is_valid() and repeat_period_form.is_valid():
-            period = repeat_period_form.save()
+    project = get_object_or_404(timepiece.Project, pk=project_id) \
+        if project_id else None
+    project_form = timepiece_forms.ProjectForm(request.POST or None, instance=project)
+    if request.POST and project_form.is_valid():
             project = project_form.save()
-            project.billing_period = period
             project.save()
             return HttpResponseRedirect(
                 reverse('view_project', args=(project.id,))
             )
-    else:
-        project_form = timepiece_forms.ProjectForm(
-            instance=project
-        )
-        repeat_period_form = timepiece_forms.RepeatPeriodForm(
-            instance=billing_period,
-            prefix='repeat',
-        )
-
-    if billing_period:
-        latest_window = project.billing_period.billing_windows.latest()
-    else:
-        latest_window = None
-
     context = {
         'project': project,
         'project_form': project_form,
-        'repeat_period_form': repeat_period_form,
-        'latest_window': latest_window,
     }
     return context
-
-
-@permission_required('timepiece.view_project_time_sheet')
-@render_with('timepiece/time-sheet/projects/list.html')
-def tracked_projects(request):
-    time_sheets = timepiece.Entry.objects.filter(
-        project__billing_period__active=True,
-    ).values(
-        'project__name',
-        'project__business__name',
-        'project__id',
-        'project__business__id',
-    ).annotate(
-        total_hours=Sum('hours'),
-    ).order_by('project__name')
-    return {
-        'time_sheets': time_sheets,
-    }
-
-
-@permission_required('timepiece.view_person_time_sheet')
-@render_with('timepiece/time-sheet/people/list.html')
-def tracked_people(request):
-    time_sheets = timepiece.PersonRepeatPeriod.objects.select_related(
-        'user',
-        'repeat_period',
-    ).filter(
-        repeat_period__active=True,
-    ).order_by(
-        'user__last_name',
-    )
-    return {
-        'time_sheets': time_sheets,
-    }
-
-
-@permission_required('timepiece.view_project_time_sheet')
-@transaction.commit_on_success
-@render_with('timepiece/time-sheet/people/create_edit.html')
-def create_edit_person_time_sheet(request, person_id=None):
-    if person_id:
-        try:
-            time_sheet = timepiece.PersonRepeatPeriod.objects.select_related(
-                'user',
-                'repeat_period',
-            ).get(user__id=person_id)
-        except timepiece.PersonRepeatPeriod.DoesNotExist:
-            raise Http404
-        person = time_sheet.user
-        repeat_period = time_sheet.repeat_period
-        latest_window = repeat_period.billing_windows.latest()
-    else:
-        person = None
-        time_sheet = None
-        repeat_period = None
-        latest_window = None
-
-    if request.POST:
-        form = timepiece_forms.PersonTimeSheet(
-            request.POST,
-            instance=time_sheet,
-        )
-        repeat_period_form = timepiece_forms.RepeatPeriodForm(
-            request.POST,
-            instance=repeat_period,
-        )
-        if form.is_valid() and repeat_period_form.is_valid():
-            repeat_period = repeat_period_form.save()
-            person_time_sheet = form.save(commit=False)
-            person_time_sheet.repeat_period = repeat_period
-            person_time_sheet.save()
-            return HttpResponseRedirect(reverse('tracked_people'))
-    else:
-        form = timepiece_forms.PersonTimeSheet(instance=time_sheet)
-        repeat_period_form = timepiece_forms.RepeatPeriodForm(
-            instance=repeat_period,
-        )
-
-    return {
-        'form': form,
-        'person': person,
-        'repeat_period_form': repeat_period_form,
-        'latest_window': latest_window,
-    }
 
 
 @permission_required('timepiece.view_payroll_summary')
