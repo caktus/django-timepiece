@@ -145,6 +145,9 @@ button {
     list-style-type: none;
 }
 
+#tabs tr, #tabs caption{
+    font-size: 90%;
+}
 /*th, td {
     padding: 0.2em; 
 }
