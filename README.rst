@@ -58,6 +58,13 @@ Installation
 History
 -------
 
+0.3.9 (Unreleased)
+******************
+* Improved personnel timesheets with a simplified, tabbed layout.
+* Improved efficency and consistency of entry queries
+* Removed BillingWindow, RepeatPeriod, and PersonRepeatPeriod models, tables and related code.
+* Removed the update billing windows management command as it is no longer needed.
+
 0.3.8 (02-16-2012)
 ******************
 * Converted invoice reference to a CharField for more flexibility
