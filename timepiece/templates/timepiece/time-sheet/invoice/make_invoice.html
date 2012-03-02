@@ -11,7 +11,7 @@
         Create Invoice
     </li>
     <li>
-        {% if perms.timepiece.view_person_time_sheet %}
+        {% if perms.timepiece.view_entry_group %}
             <a href="{% url 'list_invoices' %}">Previous Invoices</a>
         {% endif %}
     </li>

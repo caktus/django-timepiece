@@ -1,4 +1,5 @@
 {% extends "base.html" %}
+{% load url from future %}
 {% load timepiece_tags markup %}
 
 {% block title %}{{ person.first_name }} {{ person.last_name }}{% endblock %}
@@ -6,10 +7,13 @@
 {% block content %}
 <h2>{{ person.first_name }} {{ person.last_name }}</h2>
 <ul class='header-actions-left'>
-{% if perms.auth.change_person %}
-	<li><a href='{% url edit_person person.pk %}'>Edit Person</a></li>
-{% endif %}
-</ul>
+    {% if perms.auth.change_person %}
+	    <li><a href="{% url 'edit_person' person.pk %}">Edit Person</a></li>
+    {% endif %}
+    {% if perms.auth.view_entry_summary %}
+	    <li><a href="{% url 'view_person_time_sheet' person.pk %}">View Timesheet</a></li>
+    {% endif %}
+    </ul>
 <table class='vertical'>
 		<tr><th>Username</th><td>{{ person.username }}</td></tr>
 		<tr><th>First Name</th><td>{{ person.first_name }}</td></tr>

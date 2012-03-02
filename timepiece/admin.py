@@ -175,18 +175,6 @@ class PersonScheduleAdmin(admin.ModelAdmin):
 admin.site.register(timepiece.PersonSchedule, PersonScheduleAdmin)
 
 
-class RepeatPeriodAdmin(admin.ModelAdmin):
-    list_display = ('count', 'interval')
-    list_filter = ('interval',)
-admin.site.register(timepiece.RepeatPeriod, RepeatPeriodAdmin)
-
-
-class BillingWindowAdmin(admin.ModelAdmin):
-    list_display = ('id', 'period', 'date', 'end_date')
-    list_filter = ('period',)
-admin.site.register(timepiece.BillingWindow, BillingWindowAdmin)
-
-
 class LocationAdmin(admin.ModelAdmin):
     list_display = ('id', 'name')
 admin.site.register(timepiece.Location, LocationAdmin)
