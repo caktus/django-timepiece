@@ -975,7 +975,6 @@ def view_project(request, project_id):
     context = {
         'project': project,
         'add_user_form': add_user_form,
-        'repeat_period': project.billing_period,
     }
     try:
         from ledger.models import Exchange

@@ -12,7 +12,7 @@
 {% if perms.timepiece.view_businesses %}
     <li><a href='{% url view_business business=project.business.id %}'>Return to {{ project.business.name }}</a></li>
 {% endif %}
-{% if repeat_period and perms.timepiece.view_project_time_sheet %}
+{% if perms.timepiece.view_project_time_sheet %}
     <li><a href='{% url project_time_sheet project.id %}'>Project Time Sheet</a></li>
 {% endif %}
 </ul>
