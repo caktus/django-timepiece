@@ -1071,11 +1071,11 @@ def create_edit_project(request, project_id=None):
         if project_id else None
     project_form = timepiece_forms.ProjectForm(request.POST or None, instance=project)
     if request.POST and project_form.is_valid():
-            project = project_form.save()
-            project.save()
-            return HttpResponseRedirect(
-                reverse('view_project', args=(project.id,))
-            )
+        project = project_form.save()
+        project.save()
+        return HttpResponseRedirect(
+            reverse('view_project', args=(project.id,))
+        )
     context = {
         'project': project,
         'project_form': project_form,

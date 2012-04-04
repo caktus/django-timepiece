@@ -62,12 +62,6 @@
         <th>Point Person:</th>
         <td>{{ project.point_person }}</td>
     </tr>
-    {% if project.billing_period %}
-        <tr>
-            <th>Billing Period:</th>
-            <td>{{ project.billing_period }} - Latest billing window: {{ project.billing_period.billing_windows.latest }}</td>
-        </tr>
-    {% endif %}
     <tr>
         <th>Description:</th>
         <td>{{ project.description|linebreaks }}</td>
