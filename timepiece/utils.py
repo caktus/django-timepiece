@@ -334,4 +334,5 @@ def payroll_totals(entries, date, leave):
         all_paid_hours += paid_hours
         yield (name, worked_hours, leave_desc, paid_hours)
     nested_hours = get_hour_summaries(all_worked_hours)
-    yield ('Totals', nested_hours, all_leave_hours.items(), all_paid_hours)
+    if all_paid_hours:
+        yield ('Totals', nested_hours, all_leave_hours.items(), all_paid_hours)
