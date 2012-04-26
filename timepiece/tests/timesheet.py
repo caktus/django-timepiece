@@ -492,6 +492,35 @@ class ClockOutTest(TimepieceDataTestCase):
         self.assertFormError(response, 'form', None,
             'Ending time must exceed the starting time')
 
+    def testClockOutTooLong(self):
+        end_time = self.entry.start_time + datetime.timedelta(hours=13)
+        data = {
+            'start_time_0': self.entry.start_time.strftime('%m/%d/%Y'),
+            'start_time_1': self.entry.start_time.strftime('%H:%M:%S'),
+            'end_time_0': end_time.strftime('%m/%d/%Y'),
+            'end_time_1': end_time.strftime('%H:%M:%S'),
+            'location': self.location.pk,
+        }
+        response = self.client.post(self.url, data)
+        self.assertFormError(response, 'form', None,
+            'Ending time exceeds starting time by 12 hours or more.')
+
+    def testClockOutPauseTooLong(self):
+        paused_entry = self.entry
+        paused_entry.seconds_paused = 60 * 60 * 13
+        paused_entry.save()
+        data = {
+            'start_time_0': paused_entry.start_time.strftime('%m/%d/%Y'),
+            'start_time_1': paused_entry.start_time.strftime('%H:%M:%S'),
+            'end_time_0': self.default_end_time.strftime('%m/%d/%Y'),
+            'end_time_1': self.default_end_time.strftime('%H:%M:%S'),
+            'location': self.location.pk,
+        }
+        response = self.client.post(
+            reverse('timepiece-clock-out', args=[paused_entry.pk]), data)
+        self.assertFormError(response, 'form', None,
+            'Ending time exceeds starting time by 12 hours or more.')
+
     def testClockOutOverlap(self):
         """
         Test that the user cannot clock out if the times overlap with an
@@ -758,6 +787,30 @@ class CreateEditEntry(TimepieceDataTestCase):
             'The times below conflict with the current entry: ' + \
             '%(project)s - %(activity)s starting at %(st_str)s' % \
             self.current_entry_data)
+
+    def testCreateTooLongEntry(self):
+        """
+        Test that the entry is blocked if the duration is too long.
+        """
+        long_entry = self.default_data
+        end_time = self.now + datetime.timedelta(hours=13)
+        long_entry.update({
+            'start_time_0': self.now.strftime('%m/%d/%Y'),
+            'start_time_1': self.now.strftime('%H:%M:%S'),
+            'end_time_0': end_time.strftime('%m/%d/%Y'),
+            'end_time_1': end_time.strftime('%H:%M:%S'),
+        })
+        response = self.client.post(self.create_url, long_entry, follow=True)
+        self.assertFormError(response, 'form', None, \
+            'Ending time exceeds starting time by 12 hours or more.')
+
+    def testCreateLongPauseEntry(self):
+        """
+        Test that the entry is blocked if the duration is too long.
+        """
+        long_pause = self.default_data
+        long_pause['seconds_paused'] = 60 * 60 * 13
+        response = self.client.post(self.create_url, long_pause, follow=True)
 
     def testProjectList(self):
         """
