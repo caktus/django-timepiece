@@ -788,6 +788,7 @@ class StatusTest(TimepieceDataTestCase):
         self.client.login(username='user', password='abc')
         now = datetime.datetime.now()
         from_date = utils.get_month_start(now)
+        self.from_date = from_date
         self.sheet_url = reverse('view_person_time_sheet',
             args=[self.user.pk])
         self.verify_url = reverse('change_person_time_sheet',

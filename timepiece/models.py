@@ -280,8 +280,8 @@ class EntryQuerySet(models.query.QuerySet):
             'user', 'date', 'user__first_name', 'user__last_name', 'billable',
         )
         extra_values = (
-            'start_time', 'end_time', 'comments', 'seconds_paused',
-            'location__name','project__name', 'activity__name', 'status'
+            'start_time', 'end_time', 'comments', 'seconds_paused', 'id',
+            'location__name','project__name', 'activity__name', 'status',
         ) if all_values else ()
         qs = self.extra(select=select[key])
         qs = qs.values(*basic_values + extra_values)
