@@ -195,7 +195,7 @@ class HourGroupManager(models.Manager):
                                              'hours__sum')
         )
         #Get the list of activity names and hour sums
-        activity_entries = entries.values('activity', 'activity__name', 
+        activity_entries = entries.values('activity', 'activity__name',
                                           'activity__activity_bundle')
         activity_entries = activity_entries.annotate(Sum('hours'))
         activity_entries = activity_entries.order_by('activity')
@@ -276,12 +276,12 @@ class EntryQuerySet(models.query.QuerySet):
                   "week": {"date": """DATE_TRUNC('week', end_time)"""},
                   "month": {"date": """DATE_TRUNC('month', end_time)"""},
         }
-        basic_values = (        
+        basic_values = (
             'user', 'date', 'user__first_name', 'user__last_name', 'billable',
         )
         extra_values = (
             'start_time', 'end_time', 'comments', 'seconds_paused', 'id',
-            'location__name','project__name', 'activity__name', 'status',
+            'location__name', 'project__name', 'activity__name', 'status',
         ) if all_values else ()
         qs = self.extra(select=select[key])
         qs = qs.values(*basic_values + extra_values)
@@ -481,13 +481,13 @@ class Entry(models.Model):
                     'from %(start_time)s to %(end_time)s' % entry_data
                     raise ValidationError(output)
         try:
-            activity_group = self.project.activity_group
-            if activity_group:
+            act_group = self.project.activity_group
+            if act_group:
                 activity = self.activity
-                if not activity_group.activities.filter(pk=activity.pk).exists():
+                if not act_group.activities.filter(pk=activity.pk).exists():
                     name = activity.name
                     err_msg = '%s is not allowed for this project. ' % name
-                    allowed = activity_group.activities.filter()
+                    allowed = act_group.activities.filter()
                     allowed = allowed.values_list('name', flat=True)
                     allowed_names = ['among ']
                     if len(allowed) > 1:

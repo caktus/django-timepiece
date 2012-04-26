@@ -242,7 +242,7 @@ class InvoiceCreateTestCase(TimepieceDataTestCase):
             hg = timepiece.HourGroup.objects.create(name=activity.name)
             hg.activities.add(activity)
             hg.save()
-    
+
     def test_invoice_create(self):
         """
         Verify that only billable projects appear on the create invoice and

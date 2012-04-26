@@ -51,7 +51,7 @@ class MyLedgerTest(TimepieceDataTestCase):
     def setUp(self):
         super(MyLedgerTest, self).setUp()
         self.url = reverse('view_person_time_sheet',
-                           kwargs={'user_id': self.user.pk,}
+                           kwargs={'user_id': self.user.pk}
         )
 
     def testEmptyTimeSheet(self):
@@ -68,7 +68,7 @@ class MyLedgerTest(TimepieceDataTestCase):
             'year': empty_month.year,
             'month': empty_month.month,
         }
-        url = reverse('view_person_time_sheet', args=[self.user.pk])        
+        url = reverse('view_person_time_sheet', args=[self.user.pk])
         response = self.client.get(url, data)
         self.assertEquals(response.status_code, 200)
         self.assertEquals(response.context['grouped_totals'], '')
@@ -332,7 +332,7 @@ class ClockInTest(TimepieceDataTestCase):
             'project': self.project.id,
             'activity': self.sick_activity.id,
         })
-        response = self.client.post(self.url, data)        
+        response = self.client.post(self.url, data)
         err_msg = 'sick/personal is not allowed for this project. Please '
         err_msg += 'choose among development, and Work'
         self.assertFormError(response, 'form', None, err_msg)
@@ -904,7 +904,6 @@ class TestTotals(TimepieceDataTestCase):
         self.p4 = self.create_project(billable=True, name='4')
         #For use with daily totals (Same project, non-billable activity)
         self.p3 = self.create_project(billable=False, name='1')
-
 
     def testGroupedTotals(self):
         self.client.login(username='user', password='abc')
