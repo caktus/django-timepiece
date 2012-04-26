@@ -85,6 +85,7 @@ def view_entries(request):
     activity_entries = entries.values(
         'billable',
     ).annotate(sum=Sum('hours')).order_by('-sum')
+    current_total = entries.aggregate(sum=Sum('hours'))['sum']
     others_active_entries = timepiece.Entry.objects.filter(
         end_time__isnull=True,
     ).exclude(
@@ -122,6 +123,7 @@ def view_entries(request):
         'schedule': schedule,
         'project_entries': project_entries,
         'activity_entries': activity_entries,
+        'current_total': current_total,
         'others_active_entries': others_active_entries,
         'my_active_entries': my_active_entries,
     }
