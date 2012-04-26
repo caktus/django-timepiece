@@ -507,6 +507,11 @@ class Entry(models.Model):
             pass
         if end <= start:
             raise ValidationError('Ending time must exceed the starting time')
+        delta_secs = (end - start).total_seconds()
+        limit_secs = 60 * 60 * 12
+        if delta_secs > limit_secs or self.seconds_paused > limit_secs:
+            err_msg = 'Ending time exceeds starting time by 12 hours or more.'
+            raise ValidationError(err_msg)
         return True
 
     def save(self, **kwargs):
