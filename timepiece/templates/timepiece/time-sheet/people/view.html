@@ -37,10 +37,10 @@
         <li><a href='{% url 'view_person' user.pk %}'>User Information</a></li>
     {% endif %}
     {% if show_verify %}
-        <li><a href='{% url 'change_person_time_sheet' 'verify' user.id from_date|date:"Y-d-m" %}'>Verify Time Sheet</a></li>
+        <li><a href='{% url 'change_person_time_sheet' 'verify' user.id from_date|date:"Y-m-d" %}'>Verify Time Sheet</a></li>
     {% endif %}
     {% if show_approve %}
-        <li><a href='{% url 'change_person_time_sheet' 'approve' user.id from_date|date:"Y-d-m" %}'>Approve Time Sheet</a></li>
+        <li><a href='{% url 'change_person_time_sheet' 'approve' user.id from_date|date:"Y-m-d" %}'>Approve Time Sheet</a></li>
     {% endif %}
 </ul>
 

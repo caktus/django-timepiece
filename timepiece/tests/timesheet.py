@@ -788,6 +788,7 @@ class StatusTest(TimepieceDataTestCase):
         self.client.login(username='user', password='abc')
         now = datetime.datetime.now()
         from_date = utils.get_month_start(now)
+        self.from_date = from_date
         self.sheet_url = reverse('view_person_time_sheet',
             args=[self.user.pk])
         self.verify_url = reverse('change_person_time_sheet',
@@ -806,6 +807,12 @@ class StatusTest(TimepieceDataTestCase):
         })
         response = self.client.get(self.sheet_url)
         self.assertTrue(response.context['show_verify'])
+        # Assert that the verify link contains the right date stamp
+        from_stamp = self.from_date.strftime('%Y-%m-%d')
+        self.assertContains(response,
+            'timepiece/time-sheet/verify/{0}/{1}'\
+            .format(self.user.pk, from_stamp)
+        )
         entry.status = 'verified'
         entry.save()
         response = self.client.get(self.sheet_url)
@@ -836,6 +843,12 @@ class StatusTest(TimepieceDataTestCase):
         entry.save()
         response = self.client.get(self.sheet_url)
         self.assertTrue(response.context['show_approve'])
+        # Assert that the approve link contains the right date stamp
+        from_stamp = self.from_date.strftime('%Y-%m-%d')
+        self.assertContains(response,
+            'timepiece/time-sheet/approve/{0}/{1}'\
+            .format(self.user.pk, from_stamp)
+        )
         entry.status = 'approved'
         entry.save()
         response = self.client.get(self.sheet_url)
