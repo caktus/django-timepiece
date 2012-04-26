@@ -126,7 +126,10 @@
                         <td class="hours">{{ entry.hours }}</td>
                         <td title="{{entry.comments}}">{{ entry.comments|truncatewords:12 }}</td>
                         {% if entry.status == 'unverified' %}
-                            <td><a href="{% url 'timepiece-update' entry.id %}?next={{ request.path|urlencode }}">Edit</a></td>
+                            <td><a href="{% url 'timepiece-update' entry.id %}?next={{ request.get_full_path|urlencode }}#tabs-2">Edit</a></td>
+                        {% endif %}
+                        {% if perms.timepiece.change_user and entry.status != 'invoiced' and entry.status != 'unverified' %}
+                            <td><a href="{% url 'timepiece-reject-entry' entry.id %}?next={{ request.get_full_path|urlencode }}#tabs-2">Reject</a></td>
                         {% endif %}
                     </tr>
                 {% endfor %}

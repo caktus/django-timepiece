@@ -299,6 +299,37 @@ def create_edit_entry(request, entry_id=None):
     }
 
 
+@permission_required('timepiece.change_entry')
+def reject_entry(request, entry_id):
+    """
+    Admins can reject an entry that has been verified or approved but not
+    invoiced to set its status to 'unverified' for the user to fix.
+    """
+    return_url = request.REQUEST.get('next', reverse('timepiece-entries'))
+    try:
+        entry = timepiece.Entry.no_join.get(pk=entry_id)
+    except:
+        request.user.message_set.create(message='No such log entry.')
+        return redirect(return_url)
+
+    if entry.status == 'unverified' or entry.status == 'invoiced':
+        msg_text = 'This entry is unverified or is already invoiced'
+        request.user.message_set.create(message=msg_text)
+        return redirect(return_url)
+
+    if request.POST.get('Yes'):
+        entry.status = 'unverified'
+        entry.save()
+        msg_text = "The entry's status was set to unverified"
+        request.user.message_set.create(message=msg_text)
+        return redirect(return_url)
+    return render_to_response('timepiece/time-sheet/entry/reject_entry.html', {
+                                  'entry': entry,
+                                  'next': request.REQUEST.get('next'),
+                              },
+                              context_instance=RequestContext(request))
+
+
 @permission_required('timepiece.delete_entry')
 def delete_entry(request, entry_id):
     """
