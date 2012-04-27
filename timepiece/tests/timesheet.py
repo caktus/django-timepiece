@@ -150,9 +150,7 @@ class ClockInTest(TimepieceDataTestCase):
         }
 
     def testClockIn(self):
-        """
-        Test the simplest clock in scenario
-        """
+        """Test the simplest clock in scenario"""
         self.client.login(username='user', password='abc')
         data = self.clock_in_form
         response = self.client.post(self.url, data, follow=True)
@@ -190,6 +188,43 @@ class ClockInTest(TimepieceDataTestCase):
         self.assertEqual(closed_entry.end_time + datetime.timedelta(seconds=1),
                          current_entry.start_time)
 
+    def testClockInManyActive(self):
+        """
+        There should never be more than one active entry. If this happens,
+        there is not a clean way to auto-clock out. Redirect to dashboard.
+        """
+        self.client.login(username='user', password='abc')
+        entry1 = self.create_entry({
+            'start_time': self.ten_min_ago,
+        })
+        entry2 = self.create_entry({
+            'start_time': self.now - datetime.timedelta(minutes=20),
+        })
+        data = self.clock_in_form
+        data.update({
+            'start_time_0': self.now.strftime('%m/%d/%Y'),
+            'start_time_1': self.now.strftime('%H:%M:%S'),
+        })
+        response = self.client.post(self.url, data, follow=True)
+        self.assertRedirects(response, reverse('timepiece-entries'),
+                             status_code=302, target_status_code=200)
+        message = response.context['messages']._loaded_messages[0].message
+        self.assertTrue(message.startswith('You have more than one active'))
+
+    def testClockInCurrentStatus(self):
+        """Verify the status of the current entry shows what is expected"""
+        self.client.login(username='user', password='abc')
+        entry1 = self.create_entry({
+            'start_time': self.ten_min_ago,
+        })
+        data = self.clock_in_form
+        data.update({
+            'start_time_0': self.now.strftime('%m/%d/%Y'),
+            'start_time_1': self.now.strftime('%H:%M:%S'),
+        })
+        response = self.client.get(self.url, data)
+        self.assertEqual(response.context['active'], entry1)
+
     def testClockInPause(self):
         """
         Test that the user can clock in while the current entry is paused.
@@ -205,12 +240,14 @@ class ClockInTest(TimepieceDataTestCase):
         data.update({
             'start_time_0': self.now.strftime('%m/%d/%Y'),
             'start_time_1': self.now.strftime('%H:%M:%S'),
+            'active_comment': 'test comment',
         })
         response = self.client.post(self.url, data, follow=True)
         #obtain entry1 now that it is closed. The hours should be recorded
         e_id = timepiece.Entry.objects.get(pk=entry1.id)
         self.assertTrue(e_id.is_closed)
         self.assertTrue(e_id.hours)
+        self.assertEqual(e_id.comments, 'test comment')
 
     def testClockInBlock(self):
         """

@@ -132,39 +132,27 @@ def view_entries(request):
 @transaction.commit_on_success
 def clock_in(request):
     """For clocking the user into a project"""
-    if request.POST:
-        form = timepiece_forms.ClockInForm(request.POST, user=request.user)
-        if form.is_valid():
-            entry = form.save()
-            #check that the user is not currently logged into another project.
-            #if so, clock them out of all others.
-            my_active_entries = timepiece.Entry.no_join.select_related(
-                'project__business',
-            ).filter(
-                user=request.user,
-                end_time__isnull=True,
-            ).exclude(
-                id=entry.id
-            )
-            #clock_out all open entries one second before the last
-            for sec_bump, active_entry in enumerate(my_active_entries):
-                active_entry.unpause()
-                active_entry.end_time = entry.start_time - \
-                    datetime.timedelta(seconds=sec_bump + 1)
-                active_entry.save()
-
-            request.user.message_set.create(
-                message='You have clocked into %s' % entry.project)
-            return HttpResponseRedirect(reverse('timepiece-entries'))
-        else:
-            request.user.message_set.create(
-                message='Please correct the errors below.')
-    else:
-        initial = dict([(k, request.GET[k]) for k in request.GET.keys()])
-        form = timepiece_forms.ClockInForm(user=request.user, initial=initial)
-    return render_to_response(
-        'timepiece/time-sheet/entry/clock_in.html',
-        {'form': form},
+    active_entry = timepiece.Entry.no_join.filter(user=request.user,
+                                                  end_time__isnull=True)
+    # Should never happen, but just in case.
+    if len(active_entry) > 1:
+        err_msg = 'You have more than one active entry and must clock out ' \
+                  'of these entries before clocking into another.'
+        request.user.message_set.create(message=err_msg)
+        return redirect('timepiece-entries')
+    active_entry = active_entry[0] if active_entry else None
+    initial = dict([(k, v) for k, v in request.GET.items()])
+    form = timepiece_forms.ClockInForm(request.POST or None, initial=initial,
+                                       user=request.user, active=active_entry)
+    if form.is_valid():
+        entry = form.save()
+        request.user.message_set.create(
+            message='You have clocked into %s' % entry.project)
+        return HttpResponseRedirect(reverse('timepiece-entries'))
+    return render_to_response('timepiece/time-sheet/entry/clock_in.html', {
+            'form': form,
+            'active': active_entry,
+        },
         context_instance=RequestContext(request),
     )
 

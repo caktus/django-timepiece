@@ -149,12 +149,18 @@ class AddUserToProjectForm(forms.Form):
 
 
 class ClockInForm(forms.ModelForm):
+    active_comment = forms.CharField(label='Notes for the current entry',
+                                     widget=forms.Textarea, required=False)
+
     class Meta:
         model = timepiece.Entry
-        fields = ('location', 'project', 'activity', 'start_time',)
+        fields = (
+            'active_comment', 'location', 'project', 'activity', 'start_time',
+        )
 
     def __init__(self, *args, **kwargs):
         self.user = kwargs.pop('user')
+        self.active = kwargs.pop('active', None)
         initial = kwargs.get('initial', {})
         default_loc = getattr(
             settings,
@@ -187,6 +193,8 @@ class ClockInForm(forms.ModelForm):
             users=self.user, status__enable_timetracking=True,
             type__enable_timetracking=True
         )
+        if not self.active:
+            self.fields.pop('active_comment')
         self.instance.user = self.user
 
     def clean_start_time(self):
@@ -209,6 +217,11 @@ class ClockInForm(forms.ModelForm):
         entry.clock_in(self.user, self.cleaned_data['project'])
         if commit:
             entry.save()
+        if self.active:
+            self.active.unpause()
+            self.active.comments = self.cleaned_data['active_comment']
+            self.active.end_time = entry.start_time - timedelta(seconds=1)
+            self.active.save()
         return entry
 
 
