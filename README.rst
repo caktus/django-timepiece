@@ -60,7 +60,7 @@ Installation
 History
 -------
 
-0.3.9 (Unreleased)
+0.4.0 (04-27-2012)
 ******************
 * Improved personnel timesheets with a simplified, tabbed layout.
 * Improved efficency and consistency of entry queries
