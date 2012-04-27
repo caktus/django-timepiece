@@ -201,7 +201,9 @@ class ClockInForm(forms.ModelForm):
         """
         Make sure that the start time doesn't come before the active entry
         """
-        start = self.cleaned_data['start_time']
+        start = self.cleaned_data.get('start_time')
+        if not start:
+            return start
         active_entries = self.user.timepiece_entries.filter(
             start_time__gte=start, end_time__isnull=True)
         for entry in active_entries:
@@ -211,17 +213,25 @@ class ClockInForm(forms.ModelForm):
             raise forms.ValidationError(output)
         return start
 
+    def clean(self):
+        start_time = self.clean_start_time()
+        data = self.cleaned_data
+        if not start_time:
+            return data
+        if self.active:
+            self.active.unpause()
+            self.active.comments = data['active_comment']
+            self.active.end_time = start_time - timedelta(seconds=1)
+            if self.active.clean():
+                self.active.save()
+        return data
+
     def save(self, commit=True):
         entry = super(ClockInForm, self).save(commit=False)
         entry.hours = 0
         entry.clock_in(self.user, self.cleaned_data['project'])
         if commit:
             entry.save()
-        if self.active:
-            self.active.unpause()
-            self.active.comments = self.cleaned_data['active_comment']
-            self.active.end_time = entry.start_time - timedelta(seconds=1)
-            self.active.save()
         return entry
 
 

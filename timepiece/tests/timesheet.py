@@ -336,6 +336,24 @@ class ClockInTest(TimepieceDataTestCase):
             'The start time is on or before the current entry: ' + \
             '%(project)s - %(activity)s starting at %(st_str)s' % entry1_data)
 
+    def testClockInActiveTooLong(self):
+        """
+        Test that if the active entry is too long, the clock in form will
+        invalidate
+        """
+        self.client.login(username='user', password='abc')
+        entry1 = self.create_entry({
+            'start_time': self.now - datetime.timedelta(hours=13),
+        })
+        data = self.clock_in_form
+        data.update({
+            'start_time_0': self.now.strftime('%m/%d/%Y'),
+            'start_time_1': self.now.strftime('%H:%M:%S'),
+        })
+        response = self.client.post(self.url, data)
+        err_msg = 'Ending time exceeds starting time by 12 hours or more.'
+        self.assertFormError(response, 'form', None, err_msg)
+
     def testProjectListFiltered(self):
         self.client.login(username='user', password='abc')
         response = self.client.get(self.url)
