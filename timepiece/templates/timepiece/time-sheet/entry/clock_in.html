@@ -1,10 +1,13 @@
 {% extends 'timepiece/time-sheet/base.html' %}
-
+{% load timepiece_tags %}
 {% block title %}Clock In{% endblock %}
 
 {% block content %}
 <h2>Clock Into Project</h2>
 <br />
+{% if active %}
+    This will clock out {{ active.project.name }} at {% get_active_hours active %} hours
+{% endif %}
 <form action="{% url timepiece-clock-in %}" method="post">
     {% csrf_token %}
     <table class='vertical'>
