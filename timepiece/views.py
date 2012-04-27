@@ -132,7 +132,8 @@ def view_entries(request):
 @transaction.commit_on_success
 def clock_in(request):
     """For clocking the user into a project"""
-    active_entry = timepiece.Entry.no_join.filter(user=request.user, end_time__isnull=True)
+    active_entry = timepiece.Entry.no_join.filter(user=request.user,
+                                                  end_time__isnull=True)
     # Should never happen, but just in case.
     if len(active_entry) > 1:
         err_msg = 'You have more than one active entry and must clock out ' \

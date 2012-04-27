@@ -149,11 +149,14 @@ class AddUserToProjectForm(forms.Form):
 
 
 class ClockInForm(forms.ModelForm):
-    active_comment = forms.CharField(widget=forms.Textarea, label='Notes for the current entry', required=False)
+    active_comment = forms.CharField(label='Notes for the current entry',
+                                     widget=forms.Textarea, required=False)
 
     class Meta:
         model = timepiece.Entry
-        fields = ('active_comment', 'location', 'project', 'activity', 'start_time',)
+        fields = (
+            'active_comment', 'location', 'project', 'activity', 'start_time',
+        )
 
     def __init__(self, *args, **kwargs):
         self.user = kwargs.pop('user')
