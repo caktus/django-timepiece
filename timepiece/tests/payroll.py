@@ -3,6 +3,7 @@ from decimal import Decimal
 
 from django.conf import settings
 from django.core.urlresolvers import reverse
+from django.contrib.auth.models import Permission
 
 from timepiece import models as timepiece
 from timepiece import forms as timepiece_forms
@@ -160,3 +161,21 @@ class PayrollTest(TimepieceDataTestCase):
                          [(u'vacation', Decimal('20.00')),
                           (u'sick', Decimal('40.00'))])
         self.assertEqual(monthly_totals[0][3], Decimal('115.00'))
+
+    def testNoPermission(self):
+        self.client.login(username='user', password='abc')
+        response = self.client.get(self.url, self.args)
+        self.assertEqual(response.status_code, 302)
+
+    def testSuperUserPermission(self):
+        self.client.login(username='superuser', password='abc')
+        response = self.client.get(self.url, self.args)
+        self.assertEqual(response.status_code, 200)
+
+    def testPayrollPermission(self):
+        self.client.login(username='user', password='abc')
+	payroll_permission = Permission.objects.get(codename='view_payroll_summary')
+        self.user.user_permissions.add(payroll_permission)
+	self.user.save()
+        response = self.client.get(self.url, self.args)
+        self.assertEqual(response.status_code, 200)

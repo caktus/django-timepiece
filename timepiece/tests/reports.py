@@ -6,6 +6,7 @@ from random import randint
 from django.conf import settings
 from django.core.urlresolvers import reverse
 from django.db.models import Q
+from django.contrib.auth.models import Permission
 
 from timepiece.tests.base import TimepieceDataTestCase
 
@@ -375,3 +376,21 @@ class TestHourlyReport(TimepieceDataTestCase):
         ]
         args = self.argsHelper(args)
         self.checkTotals(args, data)
+
+    def testNoPermission(self):
+        self.client.login(username='user', password='abc')
+        response = self.client.get(self.url)
+        self.assertEqual(response.status_code, 302)
+
+    def testSuperUserPermission(self):
+        self.client.login(username='superuser', password='abc')
+        response = self.client.get(self.url)
+        self.assertEqual(response.status_code, 200)
+
+    def testEntrySummaryPermission(self):
+        self.client.login(username='user', password='abc')
+	entry_summary_permission = Permission.objects.get(codename='view_entry_summary')
+        self.user.user_permissions.add(entry_summary_permission)
+	self.user.save()
+        response = self.client.get(self.url)
+        self.assertEqual(response.status_code, 200)
