@@ -306,6 +306,11 @@ class ClockInTest(TimepieceDataTestCase):
         projects = list(response.context['form'].fields['project'].queryset)
         self.assertTrue(self.project in projects)
         self.assertFalse(self.project2 in projects)
+        self.project.status.enable_timetracking = False
+        self.project.status.save()
+        response = self.client.get(self.url)
+        projects = list(response.context['form'].fields['project'].queryset)
+        self.assertTrue(self.project not in projects)
 
     def testClockInLogin(self):
         response = self.client.get(self.url)
@@ -767,7 +772,12 @@ class CreateEditEntry(TimepieceDataTestCase):
         self.assertEqual(response.status_code, 200)
         projects = list(response.context['form'].fields['project'].queryset)
         self.assertTrue(self.project in projects)
-        self.assertFalse(self.project2 in projects)
+        self.assertTrue(self.project2 not in projects)
+        self.project.status.enable_timetracking = False
+        self.project.status.save()
+        response = self.client.get(reverse('timepiece-add'))
+        projects = list(response.context['form'].fields['project'].queryset)
+        self.assertTrue(self.project not in projects)
 
     def testBadActivity(self):
         """
