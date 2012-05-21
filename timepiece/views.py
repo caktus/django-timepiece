@@ -437,7 +437,6 @@ class ProjectTimesheetCSV(CSVMixin, ProjectTimesheet):
             'Time Out',
             'Breaks',
             'Hours',
-            'Comments'
         ])
         for entry in context['entries']:
             data = [
@@ -450,7 +449,6 @@ class ProjectTimesheetCSV(CSVMixin, ProjectTimesheet):
                 entry['end_time'].strftime('%X'),
                 seconds_to_hours(entry['seconds_paused']),
                 entry['hours'],
-                entry['comments'],
             ]
             rows.append(data)
         total = context['total']

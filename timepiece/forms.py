@@ -297,7 +297,8 @@ class AddUpdateEntryForm(forms.ModelForm):
         self.user = kwargs.pop('user')
         super(AddUpdateEntryForm, self).__init__(*args, **kwargs)
         self.fields['project'].queryset = timepiece.Project.objects.filter(
-            users=self.user,
+            users=self.user, status__enable_timetracking=True,
+            type__enable_timetracking=True
         )
         #if editing a current entry, remove the end time field
         if self.instance.start_time and not self.instance.end_time:

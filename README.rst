@@ -16,6 +16,8 @@ Features
 Requirements
 ------------
 
+django-timepiece uses Python 2.6
+
  * `python-dateutil <http://labix.org/python-dateutil>`_
  * `django-selectable <http://pypi.python.org/pypi/django-selectable>`_
  * `django-ajax-selects <http://pypi.python.org/pypi/django-ajax-selects>`_
@@ -58,7 +60,7 @@ Installation
 History
 -------
 
-0.3.9 (Unreleased)
+0.4.0 (04-27-2012)
 ******************
 * Improved personnel timesheets with a simplified, tabbed layout.
 * Improved efficency and consistency of entry queries
