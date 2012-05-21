@@ -99,7 +99,7 @@ td.hours{
 }
 
 tr.before_from_date {
-    background-color: #AAB;
+    color: #999;
 }
 
 td.nested {

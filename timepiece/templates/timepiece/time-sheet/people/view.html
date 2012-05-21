@@ -165,7 +165,7 @@
                                 <td class="hours">{{totals.total}}</td>
                             </tr>
                         {% endfor %}         
-                        <tr class="daily_total">
+                        <tr class="daily_total {% if day < from_date %}before_from_date{% endif %}">
                             <td></td>
                             <td class="hours"><strong>{{day|date:"D"}}:</strong></td>
                             <td class="hours">{{projects.0.billable}}</td>
