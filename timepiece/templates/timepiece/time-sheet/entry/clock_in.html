@@ -6,7 +6,8 @@
 <h2>Clock Into Project</h2>
 <br />
 {% if active %}
-    This will clock out {{ active.project.name }} at {% get_active_hours active %} hours
+    You currently have an active entry on {{ active.project.name }}. Switching to a new project below will clock out of this entry at {% get_active_hours active %} hours and start a new one.
+Please enter any notes about switching below:
 {% endif %}
 <form action="{% url timepiece-clock-in %}" method="post">
     {% csrf_token %}
