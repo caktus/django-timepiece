@@ -60,6 +60,11 @@ Installation
 History
 -------
 
+0.4.1 - Unreleased
+******************
+* Made URL's in entry comments display as HTML links
+* Fixed permissions checking for payroll and entry summary views.
+
 0.4.0 (04-27-2012)
 ******************
 * Improved personnel timesheets with a simplified, tabbed layout.
