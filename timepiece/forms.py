@@ -19,7 +19,7 @@ from ajax_select.fields import AutoCompleteSelectMultipleField, \
                                AutoCompleteSelectField, \
                                AutoCompleteSelectWidget
 
-from timepiece.models import Project, Entry, Activity, UserProfile
+from timepiece.models import Project, Entry, Activity, UserProfile, Attribute
 from timepiece.fields import PendulumDateTimeField
 from timepiece.widgets import PendulumDateTimeWidget, SecondsToHoursWidget
 from timepiece import models as timepiece
@@ -477,3 +477,12 @@ class UserProfileForm(forms.ModelForm):
     class Meta:
         model = timepiece.UserProfile
         exclude = ('user',)
+
+
+PROJ_STATUS_CHOICES = [('', 'Any')]
+PROJ_STATUS_CHOICES.extend([(a.pk, a.label) for a 
+                  in Attribute.objects.all().filter(type="project-status")])
+class ProjectSearchForm(forms.Form):
+    search = forms.CharField(required=False)
+    status = forms.ChoiceField(required=False, 
+                                 choices=PROJ_STATUS_CHOICES)
