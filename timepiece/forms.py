@@ -13,11 +13,8 @@ from django.utils.translation import ugettext_lazy as _
 from django.core.exceptions import ValidationError, NON_FIELD_ERRORS
 
 from selectable import forms as selectable_forms
-from timepiece.lookups import ProjectLookup
 
-from ajax_select.fields import AutoCompleteSelectMultipleField, \
-                               AutoCompleteSelectField, \
-                               AutoCompleteSelectWidget
+from timepiece.lookups import ProjectLookup, QuickLookup, UserLookup
 
 from timepiece.models import Project, Entry, Activity, UserProfile
 from timepiece.fields import PendulumDateTimeField
@@ -105,32 +102,31 @@ class EditPersonForm(auth_forms.UserChangeForm):
             instance.save()
         return instance
 
-
-class CharAutoCompleteSelectWidget(AutoCompleteSelectWidget):
-    def value_from_datadict(self, data, files, name):
-        return data.get(name, None)
-
-
 class QuickSearchForm(forms.Form):
-    quick_search = AutoCompleteSelectField(
-        'quick_search',
-        widget=CharAutoCompleteSelectWidget('quick_search'),
+    quick_search = selectable_forms.AutoCompleteSelectField(
+        QuickLookup,
+        label='Quick Search',
+        required=False
     )
 
     def clean_quick_search(self):
         item = self.cleaned_data['quick_search']
-        if isinstance(item, timepiece.Project):
-            return reverse('view_project', kwargs={
-                'project_id': item.id,
-            })
-        elif isinstance(item, timepiece.Business,):
-            return reverse('view_business', kwargs={
-                'business': item.id,
-            })
-        elif isinstance(item, auth_models.User,):
+
+        type, pk = item.split('-') # Data comes as defined by SearchResult.pk
+
+        if type == 'individual':
             return reverse('view_person', kwargs={
-                'person_id': item.id,
+                'person_id': pk
             })
+        elif type == 'business':
+            return reverse('view_business', kwargs={
+                'business': pk
+            })
+        elif type == 'project':
+            return reverse('view_project', kwargs={
+                'project_id': pk
+            })
+
         raise forms.ValidationError('Must be a User or Project')
 
     def save(self):
@@ -142,7 +138,7 @@ class SearchForm(forms.Form):
 
 
 class AddUserToProjectForm(forms.Form):
-    user = AutoCompleteSelectField('user')
+    user = selectable_forms.AutoCompleteSelectField(UserLookup)
 
     def save(self):
         return self.cleaned_data['user']

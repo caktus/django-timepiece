@@ -506,7 +506,7 @@ form#quick-search-form table {
 	margin: 0;
 }
 
-form#quick-search-form table td input#id_quick_search_text[name=quick_search_text] {
+form#quick-search-form table td input[name=quick_search_0] {
   padding: 0.2em;
   width: 20em;
   font-size: 150%;
@@ -859,7 +859,17 @@ ul.reports {
 
 ul.reports li {
 	list-style-image: url('../images/icons/chart_bar.png');
-	margin-bottom: 0.5em;
+	margin-bottom: 0.2em;
+}
+
+/* Override jquery-ui list/list item for autocomplete */
+ul.ui-autocomplete {
+	width: 20em;
+}
+
+ul.ui-autocomplete li {
+	padding: 0.5em 0em;
+	list-style-type: none;
 }
 
 img.icon {

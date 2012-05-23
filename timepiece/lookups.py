@@ -14,7 +14,34 @@ class ProjectLookup(ModelLookup):
     search_fields = ('name__icontains',)
 registry.register(ProjectLookup)
 
-class UserLookup(LookupBase):
+class UserLookup(ModelLookup):
+    model = auth_models.User
+    search_fields = (
+        'username__icontains',
+        'first_name__icontains',
+        'last_name__icontains',
+        'email__icontains'
+    )
+
+    def format_result(self, user):
+        """
+        a more verbose display, used in the search results display.
+        may contain html and multi-lines
+        """
+        return u"<span class='%s'>%s</span>" % ('individual', user.get_full_name())
+
+    def get_item_label(self, user):
+        return self.format_result(user)
+
+    def get_item_id(self, user):
+        return user.pk
+
+    def get_item_value(self, user):
+        return user.get_full_name()
+
+registry.register(UserLookup)
+
+'''class UserLookup(LookupBase):
     def get_query(self, request, q):
         """
         return a query set.  you also have access to request.user if needed
@@ -46,7 +73,7 @@ class UserLookup(LookupBase):
         on the admin page. This is for displaying the currently selected items
         (in the case of a ManyToMany field)
         """
-        return auth_models.User.objects.filter(pk__in=ids)
+        return auth_models.User.objects.filter(pk__in=ids)'''
 
 
 class SearchResult(object):
