@@ -872,6 +872,10 @@ ul.ui-autocomplete li {
 	list-style-type: none;
 }
 
+ul.ui-autocomplete li span.highlight {
+	font-weight: bold;
+}
+
 img.icon {
 	padding-right: 0.5em;
 	height:16px;
