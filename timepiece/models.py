@@ -68,7 +68,7 @@ class Business(models.Model):
 
 class Project(models.Model):
     name = models.CharField(max_length=255)
-    trac_environment = models.CharField(max_length=255, blank=True, null=True)
+    tracker_url = models.CharField(max_length=255, blank=True, null=False, default="")
     business = models.ForeignKey(
         Business,
         related_name='new_business_projects',
@@ -111,7 +111,7 @@ class Project(models.Model):
         return self.name
 
     def trac_url(self):
-        return settings.TRAC_URL % self.trac_environment
+        return settings.TRAC_URL % self.tracker_url
 
 
 class RelationshipType(models.Model):
