@@ -160,7 +160,9 @@ class ProjectTestCase(TimepieceDataTestCase):
     def test_project_csv(self):
         self.client.login(username='superuser', password='abc')
         self.make_entries()
-        response = self.client.get(reverse('export_project_time_sheet', args=[self.p1.id]))
+        response = self.client.get(reverse('export_project_time_sheet', 
+                                           args=[self.p1.id])
+        )
         self.assertEqual(response.status_code, 200)
         data = dict(response.items())
         self.assertEqual(data['Content-Type'], 'text/csv')
