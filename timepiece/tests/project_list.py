@@ -171,8 +171,8 @@ class ProjectListTest(TimepieceDataTestCase):
             status = s.pk
             data = {'status':str(status)}
             response = self.client.get(self.url, data=data, follow=True)
-            if hasattr(response, 'redirect_chain')
-                    and len(response.redirect_chain) > 0:
+            if (hasattr(response, 'redirect_chain')
+                    and len(response.redirect_chain) > 0):
                 total += 1
             else:
                 total += len(response.context['projects'])
