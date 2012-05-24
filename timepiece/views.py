@@ -945,16 +945,10 @@ def list_projects(request):
     form = timepiece_forms.ProjectSearchForm(request.GET)
     if form.is_valid() and ('search' in request.GET
             or 'status' in request.GET):
-        search = form.cleaned_data['search']
-        status = form.cleaned_data['status']
+        search, status = form.save()
         projects = timepiece.Project.objects.filter(
-            Q(name__icontains=search) |
-            Q(description__icontains=search)
-        )
-        if status:
-            projects = projects.filter(
-                Q(status__exact=status)
-        )
+            Q(name__icontains=search) | Q(description__icontains=search))
+        projects = projects.filter(status=status) if status else projects
         if projects.count() == 1:
             url_kwargs = {
                 'project_id': projects[0].id,

@@ -1,3 +1,6 @@
+from urllib import unquote, urlencode
+
+from django.conf import settings
 from django.contrib.auth.models import User, Permission
 from django.core.urlresolvers import reverse
 
@@ -37,9 +40,9 @@ class ProjectListTest(TimepieceDataTestCase):
     def testUserPermission(self):
         """Regular users should be redirected to the login page."""
         self.client.login(username='user', password='abc')
-        response = self.client.get(self.url, follow=True)
-        self.assertTrue(len(response.redirect_chain) > 0)
-        self.assertTemplateUsed(response, 'registration/login.html')
+        response = self.client.get(self.url)
+        get_params = '?' + unquote(urlencode({'next': self.url}))
+        self.assertRedirects(response, settings.LOGIN_URL + get_params)
 
     def testAddPermissionToUser(self):
         """Users with view_project permission should see the project list view.

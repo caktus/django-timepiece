@@ -489,3 +489,8 @@ class ProjectSearchForm(forms.Form):
         PROJ_STATUS_CHOICES.extend([(a.pk, a.label) for a
                 in Attribute.objects.all().filter(type="project-status")])
         self.fields['status'].choices = PROJ_STATUS_CHOICES
+
+    def save(self):
+        search = self.cleaned_data.get('search', '')
+        status = self.cleaned_data.get('status', '')
+        return (search, status)
