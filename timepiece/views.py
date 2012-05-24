@@ -943,7 +943,8 @@ def create_edit_person(request, person_id=None):
 @render_with('timepiece/project/list.html')
 def list_projects(request):
     form = timepiece_forms.ProjectSearchForm(request.GET)
-    if form.is_valid() and 'search' in request.GET:
+    if form.is_valid() and ('search' in request.GET
+            or 'status' in request.GET):
         search = form.cleaned_data['search']
         status = form.cleaned_data['status']
         projects = timepiece.Project.objects.filter(

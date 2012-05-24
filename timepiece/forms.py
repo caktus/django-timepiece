@@ -479,10 +479,13 @@ class UserProfileForm(forms.ModelForm):
         exclude = ('user',)
 
 
-PROJ_STATUS_CHOICES = [('', 'Any')]
-PROJ_STATUS_CHOICES.extend([(a.pk, a.label) for a 
-                  in Attribute.objects.all().filter(type="project-status")])
 class ProjectSearchForm(forms.Form):
     search = forms.CharField(required=False)
-    status = forms.ChoiceField(required=False, 
-                                 choices=PROJ_STATUS_CHOICES)
+    status = forms.ChoiceField(required=False, choices=[])
+
+    def __init__(self, *args, **kwargs):
+        super(ProjectSearchForm, self).__init__(*args, **kwargs)
+        PROJ_STATUS_CHOICES = [('', 'Any')]
+        PROJ_STATUS_CHOICES.extend([(a.pk, a.label) for a
+                in Attribute.objects.all().filter(type="project-status")])
+        self.fields['status'].choices = PROJ_STATUS_CHOICES
