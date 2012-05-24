@@ -6,8 +6,5 @@ from timepiece.tests.invoices import *
 from timepiece.tests.user_settings import *
 from timepiece.tests.management import *
 from timepiece.tests.reports import *
-<<<<<<< .merge_file_ROvcnj
 from timepiece.tests.search import *
-=======
 from timepiece.tests.general_ledger import *
->>>>>>> .merge_file_9idr4i
