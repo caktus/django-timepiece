@@ -93,13 +93,6 @@ class QuickLookup(LookupBase):
         results.sort(lambda a, b: cmp(a.name, b.name))
         return results
 
-    '''def format_item(self, item):
-        """
-        simple display of an object when it is displayed in the list of
-        selected objects
-        """
-        return item.name'''
-
     def format_result(self, item):
         """
         a more verbose display, used in the search results display.
