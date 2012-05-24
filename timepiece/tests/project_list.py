@@ -6,6 +6,7 @@ from django.core.urlresolvers import reverse
 
 from timepiece.tests.base import TimepieceDataTestCase
 
+
 class ProjectListTest(TimepieceDataTestCase):
 
     def setUp(self):
@@ -38,11 +39,18 @@ class ProjectListTest(TimepieceDataTestCase):
                 data={'description': 'e', 'status': self.statuses[3]}))
 
     def testUserPermission(self):
-        """Regular users should be redirected to the login page."""
+        """Regular users should be redirected to the login page.
+
+        As written, this test could fail to detect a problem if
+            1) the user is allowed to see the page, and
+            2) there is only one project in the database.
+        In that situation, a redirect will be issued to the individual
+        project view page.
+
+        """
         self.client.login(username='user', password='abc')
         response = self.client.get(self.url)
-        get_params = '?' + unquote(urlencode({'next': self.url}))
-        self.assertRedirects(response, settings.LOGIN_URL + get_params)
+        self.assertEquals(response.status_code, 302)
 
     def testAddPermissionToUser(self):
         """Users with view_project permission should see the project list view.
@@ -77,7 +85,7 @@ class ProjectListTest(TimepieceDataTestCase):
 
         """
         self.client.login(username='super', password='abc')
-        data={}
+        data = {}
         response = self.client.get(self.url, data=data, follow=True)
 
         self.assertEqual(response.status_code, 200)
@@ -172,7 +180,7 @@ class ProjectListTest(TimepieceDataTestCase):
         total = 0
         for s in self.statuses:
             status = s.pk
-            data = {'status':str(status)}
+            data = {'status': str(status)}
             response = self.client.get(self.url, data=data, follow=True)
             if (hasattr(response, 'redirect_chain')
                     and len(response.redirect_chain) > 0):
