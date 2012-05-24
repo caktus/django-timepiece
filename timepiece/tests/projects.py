@@ -16,7 +16,7 @@ class ProjectTestCase(TimepieceDataTestCase):
         self.p4 = self.create_project(billable=True, name='4')
         self.p3 = self.create_project(billable=False, name='1')
         self.url = reverse('project_time_sheet',
-                           kwargs={'pk': self.p1.pk,}
+                           kwargs={'pk': self.p1.pk}
         )
 
     def make_entries(self):
@@ -77,8 +77,9 @@ class ProjectTestCase(TimepieceDataTestCase):
         """
         The project timesheet should be empty if there are no entries, or a
         month has been selected for which there are no entries
-        """        
+        """
         self.client.login(username='superuser', password='abc')
+
         def verify_empty(response):
             self.assertEqual(response.status_code, 200)
             self.assertEqual(response.context['project'], self.p1)
@@ -106,7 +107,7 @@ class ProjectTestCase(TimepieceDataTestCase):
         self.assertEqual(user_entry['user__first_name'], self.user.first_name)
         self.assertEqual(user_entry['sum'], Decimal(1))
 
-    def testOldProjectTimesheet(self):        
+    def testOldProjectTimesheet(self):
         self.client.login(username='superuser', password='abc')
         self.make_entries()
         data = {
@@ -119,7 +120,7 @@ class ProjectTestCase(TimepieceDataTestCase):
         self.assertEqual(len(response.context['entries']), 3)
         self.assertEqual(response.context['total'], Decimal(3))
         user_entry0 = response.context['user_entries'][0]
-        user_entry1 = response.context['user_entries'][1]        
+        user_entry1 = response.context['user_entries'][1]
         self.assertEqual(user_entry0['user__last_name'], self.user.last_name)
         self.assertEqual(user_entry0['user__first_name'], self.user.first_name)
         self.assertEqual(user_entry0['sum'], Decimal(2))
@@ -143,3 +144,19 @@ class ProjectTestCase(TimepieceDataTestCase):
         self.assertEqual(user_entry['user__last_name'], self.user.last_name)
         self.assertEqual(user_entry['user__first_name'], self.user.first_name)
         self.assertEqual(user_entry['sum'], Decimal(1))
+
+    def test_project_csv(self):
+        self.client.login(username='superuser', password='abc')
+        self.make_entries()
+        response = self.client.get(reverse('export_project_time_sheet', 
+                                           args=[self.p1.id])
+        )
+        self.assertEqual(response.status_code, 200)
+        data = dict(response.items())
+        self.assertEqual(data['Content-Type'], 'text/csv')
+        disposition = data['Content-Disposition']
+        self.assertTrue(disposition.startswith('attachment; filename='))
+        contents = response.content.splitlines()
+        headers = contents[0].split(',')
+        # Assure user's comments are not included.
+        self.assertTrue('comments' not in headers)

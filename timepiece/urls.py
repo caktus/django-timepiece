@@ -88,14 +88,14 @@ urlpatterns = patterns('',
     url(r'^reports/$', views.hourly_report, name='hourly_report'),
     url(r'^reports/summary/$', views.summary, name='timepiece-summary'),
     url(r'^reports/payroll/$', views.payroll_summary, name='payroll_summary',),
-    # People   
+    # People
     url(
         r'time-sheet/people/(?P<user_id>\d+)/$',
         views.view_person_time_sheet,
         name='view_person_time_sheet',
     ),
     url(
-        r'^time-sheet/(?P<action>verify|approve)/(?P<user_id>\d+)/' + 
+        r'^time-sheet/(?P<action>verify|approve)/(?P<user_id>\d+)/' +
         r'(?P<from_date>\d\d\d\d-\d\d-\d\d)/$',
         views.change_person_time_sheet,
         name='change_person_time_sheet',

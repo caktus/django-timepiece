@@ -3,6 +3,7 @@ from decimal import Decimal
 
 from django.conf import settings
 from django.core.urlresolvers import reverse
+from django.contrib.auth.models import Permission
 
 from timepiece import models as timepiece
 from timepiece import forms as timepiece_forms
@@ -171,3 +172,32 @@ class PayrollTest(TimepieceDataTestCase):
                          [(u'vacation', Decimal('40.00')),
                           (u'sick', Decimal('80.00'))])
         self.assertEqual(monthly_totals[-1][3], Decimal('230.00'))
+
+    def testNoPermission(self):
+        """
+        Regular users shouldn't be able to retrieve the payroll report 
+        page.
+
+        """
+        self.client.login(username='user', password='abc')
+        response = self.client.get(self.url, self.args)
+        self.assertEqual(response.status_code, 302)
+
+    def testSuperUserPermission(self):
+        """Super users should be able to retrieve the payroll report page."""
+        self.client.login(username='superuser', password='abc')
+        response = self.client.get(self.url, self.args)
+        self.assertEqual(response.status_code, 200)
+
+    def testPayrollPermission(self):
+        """
+        If a regular user is given the view_payroll_summary permission, they
+        should be able to retrieve the payroll summary page.
+
+        """
+        self.client.login(username='user', password='abc')
+        payroll_perm = Permission.objects.get(codename='view_payroll_summary')
+        self.user.user_permissions.add(payroll_perm)
+        self.user.save()
+        response = self.client.get(self.url, self.args)
+        self.assertEqual(response.status_code, 200)

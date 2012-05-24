@@ -129,6 +129,7 @@ def invoice_subheaders(context, current):
         'invoice': context['invoice'],
     }
 
+
 @register.simple_tag
 def hours_for_assignment(assignment, date):
     end = date + relativedelta(days=5)

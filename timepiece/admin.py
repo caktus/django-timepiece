@@ -74,7 +74,8 @@ class ContractAssignmentInline(admin.TabularInline):
     raw_id_fields = ('user',)
 
     def queryset(self, request):
-        return super(ContractAssignmentInline, self).queryset(request).select_related()
+        qs = super(ContractAssignmentInline, self).queryset(request)
+        return qs.select_related()
 
 
 class ContractMilestoneInline(admin.TabularInline):

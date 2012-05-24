@@ -387,7 +387,8 @@ class ProjectTimesheet(DetailView):
         if 'csv' in self.request.GET:
             request_get = self.request.GET.copy()
             request_get.pop('csv')
-            return_url = reverse('export_project_time_sheet', kwargs={'pk': self.get_object().pk})
+            return_url = reverse('export_project_time_sheet',
+                                 kwargs={'pk': self.get_object().pk})
             return_url += '?%s' % urllib.urlencode(request_get)
             return redirect(return_url)
         return super(ProjectTimesheet, self).get(*args, **kwargs)
@@ -448,19 +449,18 @@ class ProjectTimesheetCSV(CSVMixin, ProjectTimesheet):
             'Time Out',
             'Breaks',
             'Hours',
-            'Comments'
         ])
         for entry in context['entries']:
             data = [
                 entry['start_time'].strftime('%x'),
-                ' '.join((entry['user__first_name'], entry['user__last_name'])),
+                ' '.join((entry['user__first_name'],
+                          entry['user__last_name'])),
                 entry['activity__name'],
                 entry['location__name'],
                 entry['start_time'].strftime('%X'),
                 entry['end_time'].strftime('%X'),
                 seconds_to_hours(entry['seconds_paused']),
                 entry['hours'],
-                entry['comments'],
             ]
             rows.append(data)
         total = context['total']
@@ -1069,16 +1069,16 @@ def edit_project_relationship(request, project_id, user_id):
 def create_edit_project(request, project_id=None):
     project = get_object_or_404(timepiece.Project, pk=project_id) \
         if project_id else None
-    project_form = timepiece_forms.ProjectForm(request.POST or None, instance=project)
-    if request.POST and project_form.is_valid():
-        project = project_form.save()
+    form = timepiece_forms.ProjectForm(request.POST or None, instance=project)
+    if request.POST and form.is_valid():
+        project = form.save()
         project.save()
         return HttpResponseRedirect(
             reverse('view_project', args=(project.id,))
         )
     context = {
         'project': project,
-        'project_form': project_form,
+        'project_form': form,
     }
     return context
 
@@ -1115,8 +1115,8 @@ def payroll_summary(request):
     # Unapproved and unverified hours
     entries = timepiece.Entry.objects.filter(monthQ)
     user_values = ['user__pk', 'user__first_name', 'user__last_name']
-    unverified =  entries.filter(monthQ, status='unverified',
-                                 user__is_active=True)
+    unverified = entries.filter(monthQ, status='unverified',
+                                user__is_active=True)
     unapproved = entries.filter(monthQ, status='verified')
     return {
         'from_date': from_date,
@@ -1182,7 +1182,7 @@ def edit_settings(request):
     return {'profile_form': profile_form, 'user_form': user_form}
 
 
-@permission_required('timepiece.view_payroll_summary')
+@permission_required('timepiece.view_entry_summary')
 @render_with('timepiece/time-sheet/reports/hourly.html')
 @utils.date_filter
 def hourly_report(request, date_form, from_date, to_date, status, activity):
