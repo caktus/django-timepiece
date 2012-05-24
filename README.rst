@@ -64,6 +64,7 @@ History
 ******************
 * Made URL's in entry comments display as HTML links
 * Fixed permissions checking for payroll and entry summary views.
+* Made project list page filterable by project status.
 
 0.4.0 (04-27-2012)
 ******************

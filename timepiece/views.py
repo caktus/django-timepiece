@@ -942,13 +942,12 @@ def create_edit_person(request, person_id=None):
 @permission_required('timepiece.view_project')
 @render_with('timepiece/project/list.html')
 def list_projects(request):
-    form = timepiece_forms.SearchForm(request.GET)
-    if form.is_valid() and 'search' in request.GET:
-        search = form.cleaned_data['search']
+    form = timepiece_forms.ProjectSearchForm(request.GET)
+    if form.is_valid():
+        search, status = form.save()
         projects = timepiece.Project.objects.filter(
-            Q(name__icontains=search) |
-            Q(description__icontains=search)
-        )
+            Q(name__icontains=search) | Q(description__icontains=search))
+        projects = projects.filter(status=status) if status else projects
         if projects.count() == 1:
             url_kwargs = {
                 'project_id': projects[0].id,
