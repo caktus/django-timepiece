@@ -1182,7 +1182,7 @@ def edit_settings(request):
     return {'profile_form': profile_form, 'user_form': user_form}
 
 
-@permission_required('timepiece.view_payroll_summary')
+@permission_required('timepiece.view_entry_summary')
 @render_with('timepiece/time-sheet/reports/hourly.html')
 @utils.date_filter
 def hourly_report(request, date_form, from_date, to_date, status, activity):
