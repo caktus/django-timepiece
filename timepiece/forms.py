@@ -416,7 +416,7 @@ class ProjectForm(forms.ModelForm):
         fields = (
             'name',
             'business',
-            'trac_environment',
+            'tracker_url',
             'point_person',
             'type',
             'status',
