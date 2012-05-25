@@ -42,7 +42,7 @@ def quick_search(request):
         form = timepiece_forms.QuickSearchForm(request.GET)
         if form.is_valid():
             return HttpResponseRedirect(form.save())
-    raise Http404
+    return HttpResponse(form.errors['quick_search'], status=500)
 
 
 class CSVMixin(object):
@@ -942,13 +942,12 @@ def create_edit_person(request, person_id=None):
 @permission_required('timepiece.view_project')
 @render_with('timepiece/project/list.html')
 def list_projects(request):
-    form = timepiece_forms.SearchForm(request.GET)
-    if form.is_valid() and 'search' in request.GET:
-        search = form.cleaned_data['search']
+    form = timepiece_forms.ProjectSearchForm(request.GET)
+    if form.is_valid():
+        search, status = form.save()
         projects = timepiece.Project.objects.filter(
-            Q(name__icontains=search) |
-            Q(description__icontains=search)
-        )
+            Q(name__icontains=search) | Q(description__icontains=search))
+        projects = projects.filter(status=status) if status else projects
         if projects.count() == 1:
             url_kwargs = {
                 'project_id': projects[0].id,
@@ -1182,7 +1181,7 @@ def edit_settings(request):
     return {'profile_form': profile_form, 'user_form': user_form}
 
 
-@permission_required('timepiece.view_payroll_summary')
+@permission_required('timepiece.view_entry_summary')
 @render_with('timepiece/time-sheet/reports/hourly.html')
 @utils.date_filter
 def hourly_report(request, date_form, from_date, to_date, status, activity):

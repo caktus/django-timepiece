@@ -124,7 +124,7 @@
                         <td>{{ entry.end_time|date:"P" }}</td>
                         <td class="hours">{{ entry.seconds_paused|seconds_to_hours }}</td>
                         <td class="hours">{{ entry.hours }}</td>
-                        <td title="{{entry.comments}}">{{ entry.comments|truncatewords:12 }}</td>
+                        <td title="{{entry.comments}}">{{ entry.comments|truncatewords:12|urlizetrunc:25|safe }}</td>
                         {% if entry.status == 'unverified' %}
                             <td><a href="{% url 'timepiece-update' entry.id %}?next={{ request.path|urlencode }}">Edit</a></td>
                         {% endif %}

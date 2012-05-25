@@ -58,7 +58,19 @@ class ProjectTestCase(TimepieceDataTestCase):
         timepiece.ProjectRelationship.objects.all().delete()
         self.assertEquals(self.project.users.all().count(), 0)
         url = reverse('add_user_to_project', args=(self.project.pk,))
-        response = self.client.post(url, {'user': self.user.pk, })
+        response = self.client.post(url, {
+            'user_0': self.user.get_full_name(), # Can be anything
+            'user_1': self.user.pk # Must be pk
+        })
+        self.assertEquals(response.status_code, 302)
+        self.assertEquals(self.project.users.all().count(), 1)
+
+        timepiece.ProjectRelationship.objects.all().delete()
+        self.assertEquals(self.project.users.all().count(), 0)
+        response = self.client.post(url, {
+            'user_0': '', # Can be anything
+            'user_1': self.user.pk # Must be pk
+        });
         self.assertEquals(response.status_code, 302)
         self.assertEquals(self.project.users.all().count(), 1)
 
@@ -148,7 +160,9 @@ class ProjectTestCase(TimepieceDataTestCase):
     def test_project_csv(self):
         self.client.login(username='superuser', password='abc')
         self.make_entries()
-        response = self.client.get(reverse('export_project_time_sheet', args=[self.p1.id]))
+        response = self.client.get(reverse('export_project_time_sheet', 
+                                           args=[self.p1.id])
+        )
         self.assertEqual(response.status_code, 200)
         data = dict(response.items())
         self.assertEqual(data['Content-Type'], 'text/csv')
