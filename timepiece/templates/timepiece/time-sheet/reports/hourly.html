@@ -11,17 +11,17 @@
     <link rel="stylesheet" href="{{ STATIC_URL }}timepiece/css/style.css" type="text/css" />
     <link charset='UTF-8' rel="stylesheet" type="text/css" media="screen" href="{{ STATIC_URL }}css/books.css" />
 {% endblock %}
-{% block base-javascript %}{% endblock %}
+
 {% block javascript %}
     <script type="text/javascript" src="https://ajax.googleapis.com/ajax/libs/jquery/1.4.4/jquery.min.js"></script>
     <script type="text/javascript" src="https://ajax.googleapis.com/ajax/libs/jqueryui/1.8.13/jquery-ui.min.js"></script>
         <script src="{{ STATIC_URL }}js/django-crm.js" type="text/javascript"></script>
         <script src="{{ STATIC_URL }}js/minibooks.js" type="text/javascript"></script>
+        <script src="{{ STATIC_URL }}js/quicksearch.js" type="text/javascript"></script>
     {{pj_filters.media}}
 {% endblock %}
 
 {% block content %}
-{% block quick-search %}{% endblock %}
 
 <h2>Reports</h2>
 <ul class='header-actions-left'>
