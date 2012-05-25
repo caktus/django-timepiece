@@ -65,6 +65,8 @@ History
 * Made URL's in entry comments display as HTML links
 * Fixed permissions checking for payroll and entry summary views.
 * Made project list page filterable by project status.
+* Replaced django-ajax-select with latest version of django-selectable
+* Added migration to remove tables related to django-crm
 
 0.4.0 (04-27-2012)
 ******************
