@@ -918,36 +918,35 @@ class TestTotals(TimepieceDataTestCase):
     def testGroupedTotals(self):
         self.client.login(username='user', password='abc')
         days = [
+                datetime.datetime(2010, 12, 20),
+                datetime.datetime(2010, 12, 27),
+                datetime.datetime(2010, 12, 28),
                 datetime.datetime(2011, 1, 3),
                 datetime.datetime(2011, 1, 4),
                 datetime.datetime(2011, 1, 10),
                 datetime.datetime(2011, 1, 16),
                 datetime.datetime(2011, 1, 17),
-                datetime.datetime(2011, 1, 18)
+                datetime.datetime(2011, 1, 18),
+                datetime.datetime(2011, 2, 2),
         ]
-        self.log_time(project=self.p1, start=days[0], delta=(1, 0))
-        self.log_time(project=self.p2, start=days[0], delta=(1, 0))
-        self.log_time(project=self.p4, start=days[0], delta=(1, 0))
-        self.log_time(project=self.p1, start=days[1], delta=(1, 0))
-        self.log_time(project=self.p3, start=days[1], delta=(1, 0))
-        self.log_time(project=self.p4, start=days[1], delta=(1, 0))
-        self.log_time(project=self.p1, start=days[2], delta=(1, 0))
-        self.log_time(project=self.p2, start=days[2], delta=(1, 0))
-        self.log_time(project=self.p4, start=days[2], delta=(1, 0))
-        self.log_time(project=self.p1, start=days[3], delta=(1, 0))
-        self.log_time(project=self.p3, start=days[3], delta=(1, 0))
-        self.log_time(project=self.p4, start=days[3], delta=(1, 0))
-        self.log_time(project=self.p1, start=days[4], delta=(1, 0))
-        self.log_time(project=self.p2, start=days[4], delta=(1, 0))
-        self.log_time(project=self.p4, start=days[4], delta=(1, 0))
-        self.log_time(project=self.p1, start=days[5], delta=(1, 0))
-        self.log_time(project=self.p3, start=days[5], delta=(1, 0))
-        self.log_time(project=self.p4, start=days[5], delta=(1, 0))
-        entries = timepiece.Entry.objects.all()
+        # Each week has two days of entries, except 12-20, and 2-2 but these
+        # are excluded in the timespan queryset
+        for day in days:
+            self.log_time(project=self.p1, start=day, delta=(1, 0))
+            self.log_time(project=self.p4, start=day, delta=(1, 0))
+            if random.choice([True, False]):
+                self.log_time(project=self.p2, start=day, delta=(1, 0))
+            else:
+                self.log_time(project=self.p3, start=day, delta=(1, 0))
+        from_date = utils.get_month_start(datetime.datetime(2011, 1, 19))
+        to_date = from_date + relativedelta(months=1)
+        first_week = utils.get_week_start(from_date)
+        entries = timepiece.Entry.objects.timespan(first_week, to_date=to_date)
         grouped_totals = utils.grouped_totals(entries)
         for week, week_totals, days in grouped_totals:
             #Jan. 3rd is a monday. Each week should be on a monday
-            self.assertEqual(week.day % 7, 3)
+            if week.month == 1:
+                self.assertEqual(week.day % 7, 3)
             self.assertEqual(week_totals['billable'], 4)
             self.assertEqual(week_totals['non_billable'], 2)
             self.assertEqual(week_totals['total'], 6)

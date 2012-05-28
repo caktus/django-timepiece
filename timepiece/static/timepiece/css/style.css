@@ -98,6 +98,10 @@ td.hours{
     text-align: right;
 }
 
+tr.before_from_date {
+    color: #999;
+}
+
 td.nested {
     color: #006;
     padding: 0px 50px;    
