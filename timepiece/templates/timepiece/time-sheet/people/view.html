@@ -151,7 +151,7 @@
                     </tr>
                     {% for day, projects in days %}
                         {% for project, totals in projects.1.iteritems %}
-                            <tr>
+                            <tr class="{% if day < from_date %}before_from_date{% endif %}">
                                 <td>
                                 {% if forloop.counter == 1 %}
                                     {{day|date:"m/d/Y (D)"}}
@@ -165,7 +165,7 @@
                                 <td class="hours">{{totals.total}}</td>
                             </tr>
                         {% endfor %}         
-                        <tr class="daily_total">
+                        <tr class="daily_total {% if day < from_date %}before_from_date{% endif %}">
                             <td></td>
                             <td class="hours"><strong>{{day|date:"D"}}:</strong></td>
                             <td class="hours">{{projects.0.billable}}</td>
