@@ -89,7 +89,7 @@
         </tr>
         {% for name, hours, descs, all in monthly_totals %}
             <tr class="{% cycle 'odd' 'even' %}">           
-                <th class='name_col'>{{name.1}} {{name.0}}</th>
+                <th class='name_col'>{{ name }}</th>
                 {% for num in hours|slice:"0:2" %}
                     <td class="hours">{{num.0|default:""}}</td>
                     <td class="hours">{% if num.1 %}({{num.1}}%){% endif %}</td>

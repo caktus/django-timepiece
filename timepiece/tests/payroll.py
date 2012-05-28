@@ -152,6 +152,7 @@ class PayrollTest(TimepieceDataTestCase):
         self.client.login(username='superuser', password='abc')
         response = self.client.get(self.url, self.args)
         monthly_totals = response.context['monthly_totals']
+        # Test the first entry
         self.assertEqual(monthly_totals[0][1],
                          [(Decimal('45.00'), 81.82),
                           (Decimal('10.00'), 18.18),
@@ -161,6 +162,16 @@ class PayrollTest(TimepieceDataTestCase):
                          [(u'vacation', Decimal('20.00')),
                           (u'sick', Decimal('40.00'))])
         self.assertEqual(monthly_totals[0][3], Decimal('115.00'))
+        # Test the totals row at the bottom.
+        self.assertEqual(monthly_totals[-1][1],
+                         [(Decimal('90.00'), 81.82),
+                          (Decimal('20.00'), 18.18),
+                          Decimal('110.00')
+                         ])
+        self.assertEqual(monthly_totals[-1][2],
+                         [(u'vacation', Decimal('40.00')),
+                          (u'sick', Decimal('80.00'))])
+        self.assertEqual(monthly_totals[-1][3], Decimal('230.00'))
 
     def testNoPermission(self):
         """
