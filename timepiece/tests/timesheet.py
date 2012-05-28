@@ -806,6 +806,23 @@ class StatusTest(TimepieceDataTestCase):
         self.approve_url = reverse('change_person_time_sheet',
             args=['approve', self.user.pk, from_date.strftime("%Y-%m-%d")])
 
+    def get_reject_url(self, entry_id):
+        "Helper for the reject entry view"
+        return reverse('timepiece-reject-entry', args=[entry_id])
+
+    def login_as_admin(self):
+        "Helper to login as an admin user"
+        edit_time_sheet = Permission.objects.get(codename='change_entry',
+            content_type__app_label='timepiece'
+        )
+        self.user2.user_permissions.add(edit_time_sheet)
+        view_time_sheet = Permission.objects.get(
+            codename=('view_entry_summary')
+        )
+        self.user2.user_permissions.add(view_time_sheet)
+        self.user2.save()
+        self.client.login(username='user2', password='abc')
+
     def testVerifyButton(self):
         response = self.client.get(self.sheet_url)
         self.assertNotContains(response, self.verify_url)
@@ -823,16 +840,7 @@ class StatusTest(TimepieceDataTestCase):
         self.assertFalse(response.context['show_verify'])
 
     def testApproveButton(self):
-        edit_time_sheet = Permission.objects.get(codename='change_entry',
-            content_type__app_label='timepiece'
-        )
-        self.user2.user_permissions.add(edit_time_sheet)
-        view_time_sheet = Permission.objects.get(
-            codename=('view_entry_summary')
-        )
-        self.user2.user_permissions.add(view_time_sheet)
-        self.user2.save()
-        self.client.login(username='user2', password='abc')
+        self.login_as_admin()
         response = self.client.get(self.sheet_url)
         self.assertFalse(response.context['show_approve'])
         entry = self.create_entry(data={
@@ -866,17 +874,7 @@ class StatusTest(TimepieceDataTestCase):
         self.assertEquals(entries[0].status, 'verified')
 
     def testApprovePage(self):
-        edit_time_sheet = Permission.objects.get(codename='change_entry',
-            content_type__app_label='timepiece'
-        )
-        self.user2.user_permissions.add(edit_time_sheet)
-        view_time_sheet = Permission.objects.get(
-            codename=('view_entry_summary')
-        )
-        self.user2.user_permissions.add(view_time_sheet)
-        self.user2.save()
-        self.client.login(username='user2', password='abc')
-
+        self.login_as_admin()
         entry = self.create_entry(data={
             'user': self.user,
             'start_time': datetime.datetime.now() - \
@@ -896,13 +894,49 @@ class StatusTest(TimepieceDataTestCase):
         response = self.client.post(self.approve_url, {'do_action': 'Yes'})
         self.assertEquals(entries[0].status, 'approved')
 
-    def testNotAllowedToAproveTimesheet(self):
+    def testRejectPage(self):
+        self.login_as_admin()
+        entry = self.create_entry(data={
+            'user': self.user,
+            'start_time': datetime.datetime.now() - \
+                datetime.timedelta(hours=1),
+            'end_time':  datetime.datetime.now(),
+        })
+        reject_url = self.get_reject_url(entry.id)
+
+        def check_entry_against_code(status, status_code):
+            entry.status = status
+            entry.save()
+            response = self.client.get(reject_url)
+            self.assertEqual(response.status_code, status_code)
+
+        check_entry_against_code('unverified', 302)
+        check_entry_against_code('invoiced', 302)
+        check_entry_against_code('approved', 200)
+        check_entry_against_code('verified', 200)
+        response = self.client.post(reject_url, {'Yes': 'yes'})
+        self.assertTrue(response.status_code, 302)
+        entry = timepiece.Entry.objects.get(user=self.user)
+        self.assertEqual(entry.status, 'unverified')
+
+    def testNotAllowedToRejectTimesheet(self):
+        entry = self.create_entry(data={
+            'user': self.user,
+            'start_time': datetime.datetime.now() - \
+                datetime.timedelta(hours=1),
+            'end_time':  datetime.datetime.now(),
+        })
+        reject_url = self.get_reject_url(entry.id)
+        response = self.client.get(reject_url)
+        self.assertTrue(response.status_code, 403)
+
+    def testNotAllowedToApproveTimesheet(self):
         response = self.client.get(self.approve_url,)
         self.assertTrue(response.status_code, 403)
 
     def testNotAllowedToVerifyTimesheet(self):
         self.client.login(username='user2', password='abc')
-        response = self.client.get(self.approve_url,)
+        response = self.client.get(self.verify_url,)
         self.assertTrue(response.status_code, 403)
 
 
