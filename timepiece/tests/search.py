@@ -47,8 +47,8 @@ class QuickSearchTest(TimepieceDataTestCase):
         }, follow=True)
 
         self.assertEquals(response.status_code, 500)
-        self.assertEquals(response.content, 'User, business, or project does \
-            not exist')
+        self.assertEquals(response.content,
+            'User, business, or project does not exist')
 
         response = self.client.get(url, data={
             'quick_search_0': '%s' % self.superuser.get_full_name(),
@@ -56,8 +56,8 @@ class QuickSearchTest(TimepieceDataTestCase):
         }, follow=True)
 
         self.assertEquals(response.status_code, 500)
-        self.assertEquals(response.content, 'User, business, or project does \
-            not exist')
+        self.assertEquals(response.content,
+            'User, business, or project does not exist')
 
         response = self.client.get(url, data={
             'quick_search_0': '%s' % self.superuser.get_full_name(),
@@ -65,8 +65,8 @@ class QuickSearchTest(TimepieceDataTestCase):
         }, follow=True)
 
         self.assertEquals(response.status_code, 500)
-        self.assertEquals(response.content, 'User, business, or project does \
-            not exist')
+        self.assertEquals(response.content,
+            'User, business, or project does not exist')
 
         response = self.client.get(url, data={
             'quick_search_0': '%s' % self.superuser.get_full_name(),
@@ -74,5 +74,5 @@ class QuickSearchTest(TimepieceDataTestCase):
         }, follow=True)
 
         self.assertEquals(response.status_code, 500)
-        self.assertEquals(response.content, 'User, business, or project does \
-            not exist')
+        self.assertEquals(response.content,
+            'User, business, or project does not exist')
