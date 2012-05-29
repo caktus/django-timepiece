@@ -68,7 +68,8 @@ class Business(models.Model):
 
 class Project(models.Model):
     name = models.CharField(max_length=255)
-    tracker_url = models.CharField(max_length=255, blank=True, null=False, default="")
+    tracker_url = models.CharField(max_length=255, blank=True, null=False,
+        default="")
     business = models.ForeignKey(
         Business,
         related_name='new_business_projects',

@@ -13,7 +13,7 @@ class TestGeneralLedger(TimepieceDataTestCase):
 
     def testNoPermission(self):
         """
-        Regular users shouldn't be able to retrieve the general ledger 
+        Regular users shouldn't be able to retrieve the general ledger
         page.
 
         """

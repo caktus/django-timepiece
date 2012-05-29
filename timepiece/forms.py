@@ -102,6 +102,7 @@ class EditPersonForm(auth_forms.UserChangeForm):
             instance.save()
         return instance
 
+
 class QuickSearchForm(forms.Form):
     quick_search = selectable_forms.AutoCompleteSelectField(
         QuickLookup,

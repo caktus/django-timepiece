@@ -175,7 +175,7 @@ class PayrollTest(TimepieceDataTestCase):
 
     def testNoPermission(self):
         """
-        Regular users shouldn't be able to retrieve the payroll report 
+        Regular users shouldn't be able to retrieve the payroll report
         page.
 
         """

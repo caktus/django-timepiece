@@ -14,6 +14,7 @@ class ProjectLookup(ModelLookup):
     search_fields = ('name__icontains',)
 registry.register(ProjectLookup)
 
+
 class UserLookup(ModelLookup):
     model = auth_models.User
     search_fields = (
@@ -28,7 +29,8 @@ class UserLookup(ModelLookup):
         a more verbose display, used in the search results display.
         may contain html and multi-lines
         """
-        return u"<span class='%s'>%s</span>" % ('individual', user.get_full_name())
+        return u"<span class='%s'>%s</span>" % ('individual',
+            user.get_full_name())
 
     def get_item_label(self, user):
         return self.format_result(user)
@@ -59,7 +61,7 @@ class QuickLookup(LookupBase):
         request.user if needed
         """
         results = []
-        
+
         users = auth_models.User.objects.filter(
             Q(first_name__icontains=q) |
             Q(last_name__icontains=q) |
@@ -89,7 +91,7 @@ class QuickLookup(LookupBase):
             results.append(
                 SearchResult(business.pk, 'business', business.name)
             )
-        
+
         results.sort(lambda a, b: cmp(a.name, b.name))
         return results
 
