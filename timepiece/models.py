@@ -118,12 +118,12 @@ class RelationshipType(models.Model):
     name = models.CharField(max_length=255, unique=True)
     slug = models.CharField(max_length=255, unique=True, editable=False)
 
-    def save(self):
+    def save(self, *args, **kwargs):
         queryset = RelationshipType.objects.all()
         if self.id:
             queryset = queryset.exclude(id__exact=self.id)
         self.slug = utils.slugify_uniquely(self.name, queryset, 'slug')
-        super(RelationshipType, self).save()
+        super(RelationshipType, self).save(*args, **kwargs)
 
     def __unicode__(self):
         return self.name
@@ -509,9 +509,9 @@ class Entry(models.Model):
             raise ValidationError('Ending time must exceed the starting time')
         return True
 
-    def save(self, **kwargs):
+    def save(self, *args, **kwargs):
         self.hours = Decimal('%.2f' % round(self.total_hours, 2))
-        super(Entry, self).save(**kwargs)
+        super(Entry, self).save(*args, **kwargs)
 
     def get_seconds(self):
         """
