@@ -66,6 +66,12 @@
         <th>Description:</th>
         <td>{{ project.description|linebreaks }}</td>
     </tr>
+    {% if project.tracker_url %}
+    <tr>
+        <th>Tracker URL:</th>
+        <td>{{ project.tracker_url }}</td>
+    </tr>
+    {% endif %}
 </table>
 
 {% endblock %}
