@@ -247,13 +247,16 @@ def format_leave(leave):
     return leave_desc.items(), leave_hours
 
 
-def get_hour_summaries(total_dict):
+def get_hour_summaries(hours):
     """
-    Coerce totals dictionary into a list of ordered tuples with percentages
+    Coerce totals dictionary or list into a list of ordered tuples with %'s
     """
-    billable = total_dict.get('billable', 0)
-    non_billable = total_dict.get('non_billable', 0)
-    worked = total_dict.get('total', 0)
+    if hasattr(hours, 'get'):
+        billable = hours.get('billable', 0)
+        non_billable = hours.get('non_billable', 0)
+        worked = hours.get('total', 0)
+    else:
+        billable, non_billable, worked = hours
     if worked > 0:
         return [
             (billable, round(billable / worked * 100, 2)),
@@ -269,8 +272,8 @@ def user_date_totals(user_entries):
     date_dict = {}
     for date, date_entries in groupby(user_entries, lambda x: x['date']):
         d_entries = list(date_entries)
-        name = (d_entries[0]['user__last_name'],
-                d_entries[0]['user__first_name'])
+        name = ' '.join((d_entries[0]['user__first_name'],
+                        d_entries[0]['user__last_name']))
         hours = get_hours(d_entries)
         date_dict[date] = hours
     return name, date_dict
@@ -294,7 +297,6 @@ def project_totals(entries, date_headers, hour_type, overtime=False,
             dates.append(sum(dates))
         if overtime:
             dates.append(find_overtime(dates))
-        name = ' '.join((name[1], name[0]))
         dates = [date or '' for date in dates]
         rows.append((name, dates))
     if total_column:
@@ -307,10 +309,31 @@ def payroll_totals(entries, date, leave):
     """
     Yield totals for a month, grouped by user and billable status of each entry
     """
+    all_leave_hours = {}
+    all_paid_hours = 0
+    all_worked_hours = [0, 0, 0]
+
+    def construct_all_worked_hours(hours_dict, leave_hours):
+        """Helper for summing the worked hours list for all users"""
+        billable = hours_dict.get('billable', 0)
+        non_billable = hours_dict.get('non_billable', 0)
+        total_worked = hours_dict.get('total', 0)
+        worked_hours = [billable, non_billable, total_worked]
+        return map(sum, zip(worked_hours, all_worked_hours))
+
     date = datetime(month=date.month, day=date.day, year=date.year)
     for user, user_entries in groupby(entries, lambda x: x['user']):
         name, date_dict = user_date_totals(user_entries)
-        totals = get_hour_summaries(date_dict.get(date, {}))
+        hours_dict = date_dict.get(date, {})
+        worked_hours = get_hour_summaries(hours_dict)
         leave_desc, leave_hours = format_leave(leave.filter(user=user))
-        all_hours = totals[2] + leave_hours
-        yield (name, totals, leave_desc, all_hours)
+        paid_hours = worked_hours[2] + leave_hours
+        # Add totals for all users
+        all_worked_hours = construct_all_worked_hours(hours_dict, leave_hours)
+        for desc, hours in leave_desc:
+            all_leave_hours[desc] = all_leave_hours.get(desc, 0) + hours
+        all_paid_hours += paid_hours
+        yield (name, worked_hours, leave_desc, paid_hours)
+    nested_hours = get_hour_summaries(all_worked_hours)
+    if all_paid_hours:
+        yield ('Totals', nested_hours, all_leave_hours.items(), all_paid_hours)

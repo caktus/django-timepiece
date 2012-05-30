@@ -85,6 +85,7 @@ def view_entries(request):
     activity_entries = entries.values(
         'billable',
     ).annotate(sum=Sum('hours')).order_by('-sum')
+    current_total = entries.aggregate(sum=Sum('hours'))['sum']
     others_active_entries = timepiece.Entry.objects.filter(
         end_time__isnull=True,
     ).exclude(
@@ -122,6 +123,7 @@ def view_entries(request):
         'schedule': schedule,
         'project_entries': project_entries,
         'activity_entries': activity_entries,
+        'current_total': current_total,
         'others_active_entries': others_active_entries,
         'my_active_entries': my_active_entries,
     }
@@ -297,6 +299,37 @@ def create_edit_entry(request, entry_id=None):
         'form': form,
         'entry': entry,
     }
+
+
+@permission_required('timepiece.change_entry')
+def reject_entry(request, entry_id):
+    """
+    Admins can reject an entry that has been verified or approved but not
+    invoiced to set its status to 'unverified' for the user to fix.
+    """
+    return_url = request.REQUEST.get('next', reverse('timepiece-entries'))
+    try:
+        entry = timepiece.Entry.no_join.get(pk=entry_id)
+    except:
+        request.user.message_set.create(message='No such log entry.')
+        return redirect(return_url)
+
+    if entry.status == 'unverified' or entry.status == 'invoiced':
+        msg_text = 'This entry is unverified or is already invoiced'
+        request.user.message_set.create(message=msg_text)
+        return redirect(return_url)
+
+    if request.POST.get('Yes'):
+        entry.status = 'unverified'
+        entry.save()
+        msg_text = "The entry's status was set to unverified"
+        request.user.message_set.create(message=msg_text)
+        return redirect(return_url)
+    return render_to_response('timepiece/time-sheet/entry/reject_entry.html', {
+                                  'entry': entry,
+                                  'next': request.REQUEST.get('next'),
+                              },
+                              context_instance=RequestContext(request))
 
 
 @permission_required('timepiece.delete_entry')
@@ -480,8 +513,16 @@ def view_person_time_sheet(request, user_id):
     else:
         from_date = utils.get_month_start(datetime.datetime.today()).date()
         to_date = from_date + relativedelta(months=1)
-    entries_qs = timepiece.Entry.objects
-    entries_qs = entries_qs.timespan(from_date, span='month').filter(user=user)
+    entries_qs = timepiece.Entry.objects.filter(user=user)
+    month_qs = entries_qs.timespan(from_date, span='month')
+    month_entries = month_qs.date_trunc('month', True)
+    # For grouped entries, back date up to the start of the week.
+    first_week = utils.get_week_start(from_date)
+    grouped_qs = entries_qs.timespan(first_week, to_date=to_date)
+    grouped_totals = utils.grouped_totals(grouped_qs) if month_entries else ''
+    project_entries = month_qs.order_by().values(
+        'project__name').annotate(sum=Sum('hours')).order_by('-sum')
+    summary = timepiece.Entry.summary(user, from_date, to_date)
     show_approve = show_verify = False
     if request.user.has_perm('timepiece.change_entry') or \
         user == request.user:
@@ -494,11 +535,6 @@ def view_person_time_sheet(request, user_id):
     if request.user.has_perm('timepiece.change_entry'):
         show_approve = verified_count + approved_count == total_statuses \
         and verified_count > 0 and total_statuses != 0
-    month_entries = entries_qs.date_trunc('month', True)
-    grouped_totals = utils.grouped_totals(entries_qs) if month_entries else ''
-    project_entries = entries_qs.order_by().values(
-        'project__name').annotate(sum=Sum('hours')).order_by('-sum')
-    summary = timepiece.Entry.summary(user, from_date, to_date)
     context = {
         'year_month_form': year_month_form,
         'from_date': from_date,

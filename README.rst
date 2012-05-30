@@ -62,6 +62,10 @@ History
 
 0.4.1 - Unreleased
 ******************
+* Added the ability for payroll reviewers to reject an entry, which marks it as unverified.
+* Added a weekly total on the dashboard for all hours worked.
+* The hourly summary in "My Ledger" now shows the entire first week of the month.
+* Made payroll links to timesheets maintain the proper month and year.
 * Made URL's in entry comments display as HTML links
 * Fixed permissions checking for payroll and entry summary views.
 * Made project list page filterable by project status.

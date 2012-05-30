@@ -379,7 +379,7 @@ class TestHourlyReport(TimepieceDataTestCase):
 
     def testNoPermission(self):
         """
-        Regular users shouldn't be able to retrieve the hourly report 
+        Regular users shouldn't be able to retrieve the hourly report
         page.
 
         """
