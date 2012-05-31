@@ -150,9 +150,7 @@ class ClockInTest(TimepieceDataTestCase):
         }
 
     def testClockIn(self):
-        """
-        Test the simplest clock in scenario
-        """
+        """Test the simplest clock in scenario"""
         self.client.login(username='user', password='abc')
         data = self.clock_in_form
         response = self.client.post(self.url, data, follow=True)
@@ -190,6 +188,43 @@ class ClockInTest(TimepieceDataTestCase):
         self.assertEqual(closed_entry.end_time + datetime.timedelta(seconds=1),
                          current_entry.start_time)
 
+    def testClockInManyActive(self):
+        """
+        There should never be more than one active entry. If this happens,
+        there is not a clean way to auto-clock out. Redirect to dashboard.
+        """
+        self.client.login(username='user', password='abc')
+        entry1 = self.create_entry({
+            'start_time': self.ten_min_ago,
+        })
+        entry2 = self.create_entry({
+            'start_time': self.now - datetime.timedelta(minutes=20),
+        })
+        data = self.clock_in_form
+        data.update({
+            'start_time_0': self.now.strftime('%m/%d/%Y'),
+            'start_time_1': self.now.strftime('%H:%M:%S'),
+        })
+        response = self.client.post(self.url, data, follow=True)
+        self.assertRedirects(response, reverse('timepiece-entries'),
+                             status_code=302, target_status_code=200)
+        message = response.context['messages']._loaded_messages[0].message
+        self.assertTrue(message.startswith('You have more than one active'))
+
+    def testClockInCurrentStatus(self):
+        """Verify the status of the current entry shows what is expected"""
+        self.client.login(username='user', password='abc')
+        entry1 = self.create_entry({
+            'start_time': self.ten_min_ago,
+        })
+        data = self.clock_in_form
+        data.update({
+            'start_time_0': self.now.strftime('%m/%d/%Y'),
+            'start_time_1': self.now.strftime('%H:%M:%S'),
+        })
+        response = self.client.get(self.url, data)
+        self.assertEqual(response.context['active'], entry1)
+
     def testClockInPause(self):
         """
         Test that the user can clock in while the current entry is paused.
@@ -205,12 +240,14 @@ class ClockInTest(TimepieceDataTestCase):
         data.update({
             'start_time_0': self.now.strftime('%m/%d/%Y'),
             'start_time_1': self.now.strftime('%H:%M:%S'),
+            'active_comment': 'test comment',
         })
         response = self.client.post(self.url, data, follow=True)
         #obtain entry1 now that it is closed. The hours should be recorded
         e_id = timepiece.Entry.objects.get(pk=entry1.id)
         self.assertTrue(e_id.is_closed)
         self.assertTrue(e_id.hours)
+        self.assertEqual(e_id.comments, 'test comment')
 
     def testClockInBlock(self):
         """
@@ -298,6 +335,24 @@ class ClockInTest(TimepieceDataTestCase):
         self.assertFormError(response, 'form', 'start_time', \
             'The start time is on or before the current entry: ' + \
             '%(project)s - %(activity)s starting at %(st_str)s' % entry1_data)
+
+    def testClockInActiveTooLong(self):
+        """
+        Test that if the active entry is too long, the clock in form will
+        invalidate
+        """
+        self.client.login(username='user', password='abc')
+        entry1 = self.create_entry({
+            'start_time': self.now - datetime.timedelta(hours=13),
+        })
+        data = self.clock_in_form
+        data.update({
+            'start_time_0': self.now.strftime('%m/%d/%Y'),
+            'start_time_1': self.now.strftime('%H:%M:%S'),
+        })
+        response = self.client.post(self.url, data)
+        err_msg = 'Ending time exceeds starting time by 12 hours or more.'
+        self.assertFormError(response, 'form', None, err_msg)
 
     def testProjectListFiltered(self):
         self.client.login(username='user', password='abc')
@@ -496,6 +551,35 @@ class ClockOutTest(TimepieceDataTestCase):
             reverse('timepiece-clock-out', args=[backward_entry.pk]), data)
         self.assertFormError(response, 'form', None,
             'Ending time must exceed the starting time')
+
+    def testClockOutTooLong(self):
+        end_time = self.entry.start_time + datetime.timedelta(hours=13)
+        data = {
+            'start_time_0': self.entry.start_time.strftime('%m/%d/%Y'),
+            'start_time_1': self.entry.start_time.strftime('%H:%M:%S'),
+            'end_time_0': end_time.strftime('%m/%d/%Y'),
+            'end_time_1': end_time.strftime('%H:%M:%S'),
+            'location': self.location.pk,
+        }
+        response = self.client.post(self.url, data)
+        self.assertFormError(response, 'form', None,
+            'Ending time exceeds starting time by 12 hours or more.')
+
+    def testClockOutPauseTooLong(self):
+        paused_entry = self.entry
+        paused_entry.seconds_paused = 60 * 60 * 13
+        paused_entry.save()
+        data = {
+            'start_time_0': paused_entry.start_time.strftime('%m/%d/%Y'),
+            'start_time_1': paused_entry.start_time.strftime('%H:%M:%S'),
+            'end_time_0': self.default_end_time.strftime('%m/%d/%Y'),
+            'end_time_1': self.default_end_time.strftime('%H:%M:%S'),
+            'location': self.location.pk,
+        }
+        response = self.client.post(
+            reverse('timepiece-clock-out', args=[paused_entry.pk]), data)
+        self.assertFormError(response, 'form', None,
+            'Ending time exceeds starting time by 12 hours or more.')
 
     def testClockOutOverlap(self):
         """
@@ -763,6 +847,30 @@ class CreateEditEntry(TimepieceDataTestCase):
             'The times below conflict with the current entry: ' + \
             '%(project)s - %(activity)s starting at %(st_str)s' % \
             self.current_entry_data)
+
+    def testCreateTooLongEntry(self):
+        """
+        Test that the entry is blocked if the duration is too long.
+        """
+        long_entry = self.default_data
+        end_time = self.now + datetime.timedelta(hours=13)
+        long_entry.update({
+            'start_time_0': self.now.strftime('%m/%d/%Y'),
+            'start_time_1': self.now.strftime('%H:%M:%S'),
+            'end_time_0': end_time.strftime('%m/%d/%Y'),
+            'end_time_1': end_time.strftime('%H:%M:%S'),
+        })
+        response = self.client.post(self.create_url, long_entry, follow=True)
+        self.assertFormError(response, 'form', None, \
+            'Ending time exceeds starting time by 12 hours or more.')
+
+    def testCreateLongPauseEntry(self):
+        """
+        Test that the entry is blocked if the duration is too long.
+        """
+        long_pause = self.default_data
+        long_pause['seconds_paused'] = 60 * 60 * 13
+        response = self.client.post(self.create_url, long_pause, follow=True)
 
     def testProjectList(self):
         """

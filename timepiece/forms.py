@@ -157,12 +157,18 @@ class AddUserToProjectForm(forms.Form):
 
 
 class ClockInForm(forms.ModelForm):
+    active_comment = forms.CharField(label='Notes for the current entry',
+                                     widget=forms.Textarea, required=False)
+
     class Meta:
         model = timepiece.Entry
-        fields = ('location', 'project', 'activity', 'start_time',)
+        fields = (
+            'active_comment', 'location', 'project', 'activity', 'start_time',
+        )
 
     def __init__(self, *args, **kwargs):
         self.user = kwargs.pop('user')
+        self.active = kwargs.pop('active', None)
         initial = kwargs.get('initial', {})
         default_loc = getattr(
             settings,
@@ -195,13 +201,17 @@ class ClockInForm(forms.ModelForm):
             users=self.user, status__enable_timetracking=True,
             type__enable_timetracking=True
         )
+        if not self.active:
+            self.fields.pop('active_comment')
         self.instance.user = self.user
 
     def clean_start_time(self):
         """
         Make sure that the start time doesn't come before the active entry
         """
-        start = self.cleaned_data['start_time']
+        start = self.cleaned_data.get('start_time')
+        if not start:
+            return start
         active_entries = self.user.timepiece_entries.filter(
             start_time__gte=start, end_time__isnull=True)
         for entry in active_entries:
@@ -210,6 +220,19 @@ class ClockInForm(forms.ModelForm):
                 entry.start_time.strftime('%H:%M:%S'))
             raise forms.ValidationError(output)
         return start
+
+    def clean(self):
+        start_time = self.clean_start_time()
+        data = self.cleaned_data
+        if not start_time:
+            return data
+        if self.active:
+            self.active.unpause()
+            self.active.comments = data['active_comment']
+            self.active.end_time = start_time - timedelta(seconds=1)
+            if self.active.clean():
+                self.active.save()
+        return data
 
     def save(self, commit=True):
         entry = super(ClockInForm, self).save(commit=False)

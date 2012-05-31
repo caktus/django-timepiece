@@ -1,10 +1,14 @@
 {% extends 'timepiece/time-sheet/base.html' %}
-
+{% load timepiece_tags %}
 {% block title %}Clock In{% endblock %}
 
 {% block content %}
 <h2>Clock Into Project</h2>
 <br />
+{% if active %}
+    You currently have an active entry on {{ active.project.name }}. Switching to a new project below will clock out of this entry at {% get_active_hours active %} hours and start a new one.
+Please enter any notes about switching below:
+{% endif %}
 <form action="{% url timepiece-clock-in %}" method="post">
     {% csrf_token %}
     <table class='vertical'>
