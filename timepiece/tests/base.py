@@ -60,6 +60,7 @@ class TimepieceDataTestCase(TestCase):
             'name': name,
             'type': self.create_project_type(data={'billable': billable}),
             'status': self.create_project_status(data={'billable': billable}),
+            'tracker_url': self.random_string(25),
         }
         defaults.update(data)
         if 'business' not in defaults:
@@ -72,14 +73,24 @@ class TimepieceDataTestCase(TestCase):
             )
         return timepiece.Project.objects.create(**defaults)
 
-    def create_project_relationship(self, data={}):
+    def create_project_relationship(self, types=[], data={}):
         defaults = {}
         defaults.update(data)
         if 'user' not in defaults:
             defaults['user'] = self.create_person()
         if 'project' not in defaults:
             defaults['project'] = self.create_project()
-        return timepiece.ProjectRelationship.objects.create(**defaults)
+        relationship = timepiece.ProjectRelationship.objects.create(**defaults)
+        relationship.types.add(*types)
+        return relationship
+
+    def create_relationship_type(self, data={}):
+        defaults = {
+            'name': self.random_string(25),
+            'slug': self.random_string(25),
+        }
+        defaults.update(data)
+        return timepiece.RelationshipType.objects.create(**defaults)
 
     def create_activity(self, data={}):
         defaults = {
