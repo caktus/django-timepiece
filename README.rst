@@ -62,6 +62,10 @@ History
 
 0.4.1 - Unreleased
 ******************
+* Made projects' tracker URL's appear on the project detail view.
+* Added reasonable limits to the total time and pause length of entries.
+* Users can now comment on the active entry while clocking into a new one.
+* Fixed a bug with entries overlapping when clocking in while another entry is active.
 * Added the ability for payroll reviewers to reject an entry, which marks it as unverified.
 * Added a weekly total on the dashboard for all hours worked.
 * The hourly summary in "My Ledger" now shows the entire first week of the month.
