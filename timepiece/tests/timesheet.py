@@ -354,6 +354,41 @@ class ClockInTest(TimepieceDataTestCase):
         err_msg = 'Ending time exceeds starting time by 12 hours or more.'
         self.assertFormError(response, 'form', None, err_msg)
 
+    def test_clockin_with_active_entry(self):
+        """
+        If you have an active entry and clock in to another,
+        you should not be clocked out of the current active entry
+        if the clock in form contains errors
+        """
+        self.client.login(username='user', password='abc')
+
+        # Create a valid entry and follow the redirect to the homepage
+        response = self.client.post(self.url, self.clock_in_form, follow=True)
+        self.assertEquals(response.status_code, 200)
+        self.assertTrue(response.context['messages'])
+
+        data = self.clock_in_form
+        data.update({'start_time_0': None})
+        response = self.client.post(self.url, data)
+        
+        msg = 'Enter a valid date/time.'
+        self.assertFormError(response, 'form', 'start_time', msg)
+
+        active = timepiece.Entry.objects.get()
+        self.assertIsNone(active.end_time)
+
+        data = self.clock_in_form
+        start_time = self.now + datetime.timedelta(seconds=10)
+        data.update({
+            'start_time_0': start_time.strftime('%m/%d/%Y'),
+            'start_time_1': start_time.strftime('%H:%M:%S') 
+        })
+        response = self.client.post(self.url, data)
+
+        active = timepiece.Entry.objects.get(pk=active.pk)
+        self.assertIsNotNone(active.end_time)
+
+
     def testProjectListFiltered(self):
         self.client.login(username='user', password='abc')
         response = self.client.get(self.url)
