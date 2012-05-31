@@ -68,7 +68,8 @@ class Business(models.Model):
 
 class Project(models.Model):
     name = models.CharField(max_length=255)
-    tracker_url = models.CharField(max_length=255, blank=True, null=False, default="")
+    tracker_url = models.CharField(max_length=255, blank=True, null=False,
+        default="")
     business = models.ForeignKey(
         Business,
         related_name='new_business_projects',
@@ -118,12 +119,12 @@ class RelationshipType(models.Model):
     name = models.CharField(max_length=255, unique=True)
     slug = models.CharField(max_length=255, unique=True, editable=False)
 
-    def save(self):
+    def save(self, *args, **kwargs):
         queryset = RelationshipType.objects.all()
         if self.id:
             queryset = queryset.exclude(id__exact=self.id)
         self.slug = utils.slugify_uniquely(self.name, queryset, 'slug')
-        super(RelationshipType, self).save()
+        super(RelationshipType, self).save(*args, **kwargs)
 
     def __unicode__(self):
         return self.name
@@ -507,11 +508,17 @@ class Entry(models.Model):
             pass
         if end <= start:
             raise ValidationError('Ending time must exceed the starting time')
+        delta = (end - start)
+        delta_secs = (delta.seconds + delta.days * 24 * 60 * 60)
+        limit_secs = 60 * 60 * 12
+        if delta_secs > limit_secs or self.seconds_paused > limit_secs:
+            err_msg = 'Ending time exceeds starting time by 12 hours or more.'
+            raise ValidationError(err_msg)
         return True
 
-    def save(self, **kwargs):
+    def save(self, *args, **kwargs):
         self.hours = Decimal('%.2f' % round(self.total_hours, 2))
-        super(Entry, self).save(**kwargs)
+        super(Entry, self).save(*args, **kwargs)
 
     def get_seconds(self):
         """

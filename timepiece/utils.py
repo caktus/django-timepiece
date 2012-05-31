@@ -312,6 +312,7 @@ def payroll_totals(entries, date, leave):
     all_leave_hours = {}
     all_paid_hours = 0
     all_worked_hours = [0, 0, 0]
+
     def construct_all_worked_hours(hours_dict, leave_hours):
         """Helper for summing the worked hours list for all users"""
         billable = hours_dict.get('billable', 0)
