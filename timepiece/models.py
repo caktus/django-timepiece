@@ -512,7 +512,14 @@ class Entry(models.Model):
         delta_secs = (delta.seconds + delta.days * 24 * 60 * 60)
         limit_secs = 60 * 60 * 12
         if delta_secs > limit_secs or self.seconds_paused > limit_secs:
-            err_msg = 'Ending time exceeds starting time by 12 hours or more.'
+            err_msg = 'Ending time exceeds starting time by 12 hours or more '\
+                'for {0} on {1} at {2} to {3} at {4}.'.format(
+                    self.project.name,
+                    start.strftime('%m/%d/%Y'),
+                    start.strftime('%H:%M:%S'),
+                    end.strftime('%m/%d/%Y'),
+                    end.strftime('%H:%M:%S')
+                )
             raise ValidationError(err_msg)
         return True
 

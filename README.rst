@@ -60,7 +60,7 @@ Installation
 History
 -------
 
-0.4.1 - Unreleased
+0.4.1 (05-31-2012)
 ******************
 * Made projects' tracker URL's appear on the project detail view.
 * Added reasonable limits to the total time and pause length of entries.
