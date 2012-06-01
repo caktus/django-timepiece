@@ -618,8 +618,15 @@ class ClockOutTest(TimepieceDataTestCase):
             'location': self.location.pk,
         }
         response = self.client.post(self.url, data)
-        self.assertFormError(response, 'form', None,
-            'Ending time exceeds starting time by 12 hours or more.')
+        err_msg = 'Ending time exceeds starting time by 12 hours ' \
+            'or more for {0} on {1} at {2} to {3} at {4}.'.format(
+                self.entry.project.name,
+                self.entry.start_time.strftime('%m/%d/%Y'),
+                self.entry.start_time.strftime('%H:%M:%S'),
+                end_time.strftime('%m/%d/%Y'),
+                end_time.strftime('%H:%M:%S')
+            )
+        self.assertFormError(response, 'form', None, err_msg)
 
     def testClockOutPauseTooLong(self):
         paused_entry = self.entry
@@ -634,8 +641,15 @@ class ClockOutTest(TimepieceDataTestCase):
         }
         response = self.client.post(
             reverse('timepiece-clock-out', args=[paused_entry.pk]), data)
-        self.assertFormError(response, 'form', None,
-            'Ending time exceeds starting time by 12 hours or more.')
+        err_msg = 'Ending time exceeds starting time by 12 hours ' \
+            'or more for {0} on {1} at {2} to {3} at {4}.'.format(
+                self.entry.project.name,
+                paused_entry.start_time.strftime('%m/%d/%Y'),
+                paused_entry.start_time.strftime('%H:%M:%S'),
+                self.default_end_time.strftime('%m/%d/%Y'),
+                self.default_end_time.strftime('%H:%M:%S')
+            )
+        self.assertFormError(response, 'form', None, err_msg)
 
     def testClockOutOverlap(self):
         """
@@ -917,8 +931,15 @@ class CreateEditEntry(TimepieceDataTestCase):
             'end_time_1': end_time.strftime('%H:%M:%S'),
         })
         response = self.client.post(self.create_url, long_entry, follow=True)
-        self.assertFormError(response, 'form', None, \
-            'Ending time exceeds starting time by 12 hours or more.')
+        err_msg = 'Ending time exceeds starting time by 12 hours ' \
+            'or more for {0} on {1} at {2} to {3} at {4}.'.format(
+                self.project.name,
+                self.now.strftime('%m/%d/%Y'),
+                self.now.strftime('%H:%M:%S'),
+                end_time.strftime('%m/%d/%Y'),
+                end_time.strftime('%H:%M:%S')
+            )
+        self.assertFormError(response, 'form', None, err_msg)
 
     def testCreateLongPauseEntry(self):
         """
