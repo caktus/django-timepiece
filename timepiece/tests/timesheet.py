@@ -345,14 +345,70 @@ class ClockInTest(TimepieceDataTestCase):
         entry1 = self.create_entry({
             'start_time': self.now - datetime.timedelta(hours=13),
         })
+        end_time = self.now - datetime.timedelta(seconds=1)
         data = self.clock_in_form
         data.update({
             'start_time_0': self.now.strftime('%m/%d/%Y'),
             'start_time_1': self.now.strftime('%H:%M:%S'),
         })
         response = self.client.post(self.url, data)
-        err_msg = 'Ending time exceeds starting time by 12 hours or more.'
+        err_msg = 'Ending time exceeds starting time by 12 hours ' \
+            'or more for {0} on {1} at {2} to {3} at {4}.'.format(
+                entry1.project.name,
+                entry1.start_time.strftime('%m/%d/%Y'),
+                entry1.start_time.strftime('%H:%M:%S'),
+                end_time.strftime('%m/%d/%Y'),
+                end_time.strftime('%H:%M:%S')
+            )
         self.assertFormError(response, 'form', None, err_msg)
+
+    def test_clockin_error_active_entry(self):
+        """
+        If you have an active entry and clock in to another,
+        you should not be clocked out of the current active entry
+        if the clock in form contains errors
+        """
+        self.client.login(username='user', password='abc')
+
+        # Create a valid entry and follow the redirect to the homepage
+        response = self.client.post(self.url, self.clock_in_form, follow=True)
+        self.assertEquals(response.status_code, 200)
+        self.assertTrue(response.context['messages'])
+
+        data = self.clock_in_form
+        data.update({'start_time_0': None})
+        response = self.client.post(self.url, data)
+
+        msg = 'Enter a valid date/time.'
+        self.assertFormError(response, 'form', 'start_time', msg)
+
+        active = timepiece.Entry.objects.get()
+        self.assertIsNone(active.end_time)
+
+    def test_clockin_correct_active_entry(self):
+        """
+        If you clock in with an an active entry, that entry
+        should be clocked out
+        """
+        self.client.login(username='user', password='abc')
+
+        # Create a valid entry and follow the redirect to the homepage
+        response = self.client.post(self.url, self.clock_in_form, follow=True)
+        self.assertEquals(response.status_code, 200)
+        self.assertTrue(response.context['messages'])
+
+        active = timepiece.Entry.objects.get()
+
+        data = self.clock_in_form
+        start_time = self.now + datetime.timedelta(seconds=10)
+        data.update({
+            'start_time_0': start_time.strftime('%m/%d/%Y'),
+            'start_time_1': start_time.strftime('%H:%M:%S')
+        })
+        response = self.client.post(self.url, data)
+
+        active = timepiece.Entry.objects.get(pk=active.pk)
+        self.assertIsNotNone(active.end_time)
 
     def testProjectListFiltered(self):
         self.client.login(username='user', password='abc')
@@ -562,8 +618,15 @@ class ClockOutTest(TimepieceDataTestCase):
             'location': self.location.pk,
         }
         response = self.client.post(self.url, data)
-        self.assertFormError(response, 'form', None,
-            'Ending time exceeds starting time by 12 hours or more.')
+        err_msg = 'Ending time exceeds starting time by 12 hours ' \
+            'or more for {0} on {1} at {2} to {3} at {4}.'.format(
+                self.entry.project.name,
+                self.entry.start_time.strftime('%m/%d/%Y'),
+                self.entry.start_time.strftime('%H:%M:%S'),
+                end_time.strftime('%m/%d/%Y'),
+                end_time.strftime('%H:%M:%S')
+            )
+        self.assertFormError(response, 'form', None, err_msg)
 
     def testClockOutPauseTooLong(self):
         paused_entry = self.entry
@@ -578,8 +641,15 @@ class ClockOutTest(TimepieceDataTestCase):
         }
         response = self.client.post(
             reverse('timepiece-clock-out', args=[paused_entry.pk]), data)
-        self.assertFormError(response, 'form', None,
-            'Ending time exceeds starting time by 12 hours or more.')
+        err_msg = 'Ending time exceeds starting time by 12 hours ' \
+            'or more for {0} on {1} at {2} to {3} at {4}.'.format(
+                self.entry.project.name,
+                paused_entry.start_time.strftime('%m/%d/%Y'),
+                paused_entry.start_time.strftime('%H:%M:%S'),
+                self.default_end_time.strftime('%m/%d/%Y'),
+                self.default_end_time.strftime('%H:%M:%S')
+            )
+        self.assertFormError(response, 'form', None, err_msg)
 
     def testClockOutOverlap(self):
         """
@@ -861,8 +931,15 @@ class CreateEditEntry(TimepieceDataTestCase):
             'end_time_1': end_time.strftime('%H:%M:%S'),
         })
         response = self.client.post(self.create_url, long_entry, follow=True)
-        self.assertFormError(response, 'form', None, \
-            'Ending time exceeds starting time by 12 hours or more.')
+        err_msg = 'Ending time exceeds starting time by 12 hours ' \
+            'or more for {0} on {1} at {2} to {3} at {4}.'.format(
+                self.project.name,
+                self.now.strftime('%m/%d/%Y'),
+                self.now.strftime('%H:%M:%S'),
+                end_time.strftime('%m/%d/%Y'),
+                end_time.strftime('%H:%M:%S')
+            )
+        self.assertFormError(response, 'form', None, err_msg)
 
     def testCreateLongPauseEntry(self):
         """

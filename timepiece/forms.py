@@ -230,8 +230,8 @@ class ClockInForm(forms.ModelForm):
             self.active.unpause()
             self.active.comments = data['active_comment']
             self.active.end_time = start_time - timedelta(seconds=1)
-            if self.active.clean():
-                self.active.save()
+            if not self.active.clean():
+                raise forms.ValidationError(data)
         return data
 
     def save(self, commit=True):
@@ -240,6 +240,8 @@ class ClockInForm(forms.ModelForm):
         entry.clock_in(self.user, self.cleaned_data['project'])
         if commit:
             entry.save()
+            if self.active:
+                self.active.save()
         return entry
 
 
