@@ -345,13 +345,21 @@ class ClockInTest(TimepieceDataTestCase):
         entry1 = self.create_entry({
             'start_time': self.now - datetime.timedelta(hours=13),
         })
+        end_time = self.now - datetime.timedelta(seconds=1)
         data = self.clock_in_form
         data.update({
             'start_time_0': self.now.strftime('%m/%d/%Y'),
             'start_time_1': self.now.strftime('%H:%M:%S'),
         })
         response = self.client.post(self.url, data)
-        err_msg = 'Ending time exceeds starting time by 12 hours or more.'
+        err_msg = 'Ending time exceeds starting time by 12 hours ' \
+            'or more for {0} on {1} at {2} to {3} at {4}.'.format(
+                entry1.project.name,
+                entry1.start_time.strftime('%m/%d/%Y'),
+                entry1.start_time.strftime('%H:%M:%S'),
+                end_time.strftime('%m/%d/%Y'),
+                end_time.strftime('%H:%M:%S')
+            )
         self.assertFormError(response, 'form', None, err_msg)
 
     def test_clockin_error_active_entry(self):
@@ -370,7 +378,7 @@ class ClockInTest(TimepieceDataTestCase):
         data = self.clock_in_form
         data.update({'start_time_0': None})
         response = self.client.post(self.url, data)
-        
+
         msg = 'Enter a valid date/time.'
         self.assertFormError(response, 'form', 'start_time', msg)
 
@@ -395,13 +403,12 @@ class ClockInTest(TimepieceDataTestCase):
         start_time = self.now + datetime.timedelta(seconds=10)
         data.update({
             'start_time_0': start_time.strftime('%m/%d/%Y'),
-            'start_time_1': start_time.strftime('%H:%M:%S') 
+            'start_time_1': start_time.strftime('%H:%M:%S')
         })
         response = self.client.post(self.url, data)
 
         active = timepiece.Entry.objects.get(pk=active.pk)
         self.assertIsNotNone(active.end_time)
-
 
     def testProjectListFiltered(self):
         self.client.login(username='user', password='abc')
