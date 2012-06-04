@@ -402,11 +402,19 @@ class YearMonthForm(forms.Form):
         years = [(year, year) for year in xrange(first_year, this_year + 1)]
         self.fields['year'].choices = years
         initial = kwargs.get('initial')
+        user = None
         if initial:
             this_year = initial.get('year', this_year)
             this_month = initial.get('month', this_month)
+            user = initial.get('request_user', user)
         self.fields['year'].initial = this_year
         self.fields['month'].initial = this_month
+
+        if user and user.has_perm('timepiece.view_entry_summary'):
+            users = auth_models.User.objects.exclude(timepiece_entries=None) \
+                .order_by('first_name')
+            self.fields['user'] = UserModelChoiceField(label='',
+                queryset=users)
 
     def save(self):
         now = datetime.now()
@@ -416,30 +424,10 @@ class YearMonthForm(forms.Form):
         year = int(self.cleaned_data.get('year', this_year))
         from_date = datetime(year, month, 1)
         to_date = from_date + relativedelta(months=1)
-        return (from_date, to_date)
 
-
-class TimesheetUserForm(forms.Form):
-    user = UserModelChoiceField(queryset=None, label='')
-
-    def __init__(self, *args, **kwargs):
-        super(TimesheetUserForm, self).__init__(*args, **kwargs)
-
-        users = auth_models.User.objects.exclude(timepiece_entries=None) \
-            .order_by('first_name')
-        self.fields['user'].queryset = users
-
-    def clean_users(self):
         user = self.cleaned_data.get('user', None)
 
-        if user is None:
-            raise forms.ValidationError('')
-
-        return user
-
-    def save(self):
-        user = self.cleaned_data.get('user', None)
-        return user
+        return (from_date, to_date, user)
 
 
 class ProjectionForm(DateForm):

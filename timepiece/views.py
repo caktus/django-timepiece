@@ -499,18 +499,15 @@ def view_person_time_sheet(request, user_id):
     to_date = from_date + relativedelta(months=1)
     year_month_form_data = {
         'month': request.GET.get('month', from_date.month),
-        'year': request.GET.get('year', from_date.year)
-    }
-    year_month_form = timepiece_forms.YearMonthForm(year_month_form_data)
-    user_form_data = {
+        'year': request.GET.get('year', from_date.year),
         'user': request.GET.get('user', user_id),
     }
-    user_form = timepiece_forms.TimesheetUserForm(user_form_data)
+    year_month_form = timepiece_forms.YearMonthForm(year_month_form_data,
+        initial={'request_user': request.user})
     if request.GET and year_month_form.is_valid():
-        from_date, to_date = year_month_form.save()
+        from_date, to_date, user = year_month_form.save()
     have_user = request.GET.get('user', None)
-    if request.GET and have_user and user_form.is_valid():
-        user = user_form.save()
+    if request.GET and have_user:
         url = reverse('view_person_time_sheet', args=(user.pk,))
         # Do not use request.GET in urlencode in case it has the
         # user parameter (redirect loop otherwise)
@@ -539,8 +536,6 @@ def view_person_time_sheet(request, user_id):
         verified_count = statuses.count('verified')
         approved_count = statuses.count('approved')
         show_verify = unverified_count != 0
-    if not request.user.has_perm('timepiece.view_entry_summary'):
-        user_form = None
     if request.user.has_perm('timepiece.change_entry'):
         show_approve = verified_count + approved_count == total_statuses \
         and verified_count > 0 and total_statuses != 0
@@ -555,7 +550,6 @@ def view_person_time_sheet(request, user_id):
         'grouped_totals': grouped_totals,
         'project_entries': project_entries,
         'summary': summary,
-        'user_form': user_form,
     }
     return render_to_response('timepiece/time-sheet/people/view.html',
         context, context_instance=RequestContext(request))
