@@ -574,7 +574,7 @@ def change_person_time_sheet(request, action, user_id, from_date):
         return redirect(return_url)
     context = {
         'action': action,
-        'user': user,
+        'timesheet_user': user,
         'from_date': from_date,
         'to_date': to_date - datetime.timedelta(days=1),
         'return_url': return_url,
