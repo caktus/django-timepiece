@@ -54,6 +54,29 @@ class MyLedgerTest(TimepieceDataTestCase):
                            kwargs={'user_id': self.user.pk}
         )
 
+    def login_with_permissions(self):
+        view_entry_summary = Permission.objects.get(
+            codename='view_entry_summary')
+        user = User.objects.create_user('perm', 'e@e.com', 'abc')
+        user.user_permissions.add(view_entry_summary)
+        user.save()
+
+        self.client.login(username='perm', password='abc')
+
+    def test_timesheet_view_permission(self):
+        """A user with the correct permissions should see the menu"""
+        self.login_with_permissions()
+        response = self.client.get(self.url)
+        self.assertEquals(response.status_code, 200)
+        self.assertTrue('user' in response.context['year_month_form'].fields)
+
+    def test_timesheet_view_no_permission(self):
+        """A regular user should not see the user menu"""
+        self.client.login(username='user', password='abc')
+        response = self.client.get(self.url)
+        self.assertTrue(response.status_code, 200)
+        self.assertFalse('user' in response.context['year_month_form'].fields)
+
     def testEmptyTimeSheet(self):
         self.client.login(username='user', password='abc')
         response = self.client.get(self.url)
