@@ -3,10 +3,10 @@
 {% load url from future %}
 
 {% block title %}
-    {% if user.get_full_name %}
-        {{ user.get_full_name }}'s
+    {% if timesheet_user.get_full_name %}
+        {{ timesheet_user.get_full_name }}'s
     {% else %}
-        {{ user.username }}'s
+        {{ timesheet_user.username }}'s
     {% endif %}
     Time Sheet
 {% endblock %}
@@ -24,23 +24,23 @@
 
 {% block content %}
 <h2>
-    {% if user.get_full_name %}
-        {{ user.get_full_name }}'s
+    {% if timesheet_user.get_full_name %}
+        {{ timesheet_user.get_full_name }}'s
     {% else %}
-        {{ user.username }}'s
+        {{ timesheet_user.username }}'s
     {% endif %}
     TimeSheet
     ({{ from_date|date:"N j, Y" }} &mdash; {{ to_date|date:"N j, Y" }})
 </h2>
 <ul class='header-actions-left'>
     {% if perms.timepiece.view_user %}
-        <li><a href='{% url 'view_person' user.pk %}'>User Information</a></li>
+        <li><a href='{% url 'view_person' timesheet_user.pk %}'>User Information</a></li>
     {% endif %}
     {% if show_verify %}
-        <li><a href='{% url 'change_person_time_sheet' 'verify' user.id from_date|date:"Y-m-d" %}'>Verify Time Sheet</a></li>
+        <li><a href='{% url 'change_person_time_sheet' 'verify' timesheet_user.id from_date|date:"Y-m-d" %}'>Verify Time Sheet</a></li>
     {% endif %}
     {% if show_approve %}
-        <li><a href='{% url 'change_person_time_sheet' 'approve' user.id from_date|date:"Y-m-d" %}'>Approve Time Sheet</a></li>
+        <li><a href='{% url 'change_person_time_sheet' 'approve' timesheet_user.id from_date|date:"Y-m-d" %}'>Approve Time Sheet</a></li>
     {% endif %}
 </ul>
 
