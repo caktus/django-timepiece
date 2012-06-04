@@ -542,7 +542,7 @@ def view_person_time_sheet(request, user_id):
 @login_required
 def change_person_time_sheet(request, action, user_id, from_date):
     user = get_object_or_404(User, pk=user_id)
-    admin_verify = request.user.is_superuser
+    admin_verify = request.user.has_perm('timepiece.view_entry_summary')
     perm = True
 
     if not admin_verify and action == 'verify' and user != request.user:

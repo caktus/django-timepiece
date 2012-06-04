@@ -925,6 +925,15 @@ class StatusTest(TimepieceDataTestCase):
         self.admin.save()
         self.client.login(username='admin', password='abc')
 
+    def login_with_permission(self):
+        """Helper to login as a user with correct permissions"""
+        view_entry_summary = Permission.objects.get(
+            codename=('view_entry_summary'))
+        self.perm_user = User.objects.create_user('perm', 'e@e.com', 'abc')
+        self.perm_user.user_permissions.add(view_entry_summary)
+        self.perm_user.save()
+        self.client.login(username='perm', password='abc')
+
     def test_verify_other_user(self):
         """A user should not be able to verify another's timesheet"""
         entry = self.create_entry({
@@ -1036,7 +1045,7 @@ class StatusTest(TimepieceDataTestCase):
         self.assertEquals(entries[0].status, 'verified')
 
     def testApprovePage(self):
-        self.login_as_admin()
+        self.login_with_permission()
         entry = self.create_entry(data={
             'user': self.user,
             'start_time': datetime.datetime.now() - \
