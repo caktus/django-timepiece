@@ -17,7 +17,7 @@ from selectable import forms as selectable_forms
 from timepiece.lookups import ProjectLookup, QuickLookup, UserLookup
 
 from timepiece.models import Project, Entry, Activity, UserProfile, Attribute
-from timepiece.fields import PendulumDateTimeField
+from timepiece.fields import PendulumDateTimeField, UserModelChoiceField
 from timepiece.widgets import PendulumDateTimeWidget, SecondsToHoursWidget
 from timepiece import models as timepiece
 from timepiece import utils
@@ -417,6 +417,29 @@ class YearMonthForm(forms.Form):
         from_date = datetime(year, month, 1)
         to_date = from_date + relativedelta(months=1)
         return (from_date, to_date)
+
+
+class TimesheetUserForm(forms.Form):
+    user = UserModelChoiceField(queryset=None, label='')
+
+    def __init__(self, *args, **kwargs):
+        super(TimesheetUserForm, self).__init__(*args, **kwargs)
+
+        users = auth_models.User.objects.exclude(timepiece_entries=None) \
+            .order_by('first_name')
+        self.fields['user'].queryset = users
+
+    def clean_users(self):
+        user = self.cleaned_data.get('user', None)
+
+        if user is None:
+            raise forms.ValidationError('')
+
+        return user
+
+    def save(self):
+        user = self.cleaned_data.get('user', None)
+        return user
 
 
 class ProjectionForm(DateForm):

@@ -18,3 +18,8 @@ class PendulumDateTimeField(forms.SplitDateTimeField):
             forms.fields.TimeField(input_formats=time_formats))
         forms.MultiValueField.__init__(self, fields, help_text=help_text,
             *args, **kwargs)
+
+
+class UserModelChoiceField(forms.ModelChoiceField):
+    def label_from_instance(self, obj):
+        return obj.get_full_name()

@@ -48,6 +48,12 @@
     {{ year_month_form }}
     <input type='submit' name='yearmonth' value="Update" id='yearmonth'/>
 </form>
+{% if user_form %}
+    <form method="get" action="" id="user-filter">
+        {{ user_form }}
+        <input type="submit" name="userfilter" value="Update" />
+    </form>
+{% endif %}
 <br style='clear: both' />
 
 
