@@ -529,7 +529,7 @@ def view_person_time_sheet(request, user_id):
         'to_date': to_date - datetime.timedelta(days=1),
         'show_verify': show_verify,
         'show_approve': show_approve,
-        'user': user,
+        'timesheet_user': user,
         'entries': month_entries,
         'grouped_totals': grouped_totals,
         'project_entries': project_entries,
