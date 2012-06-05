@@ -20,7 +20,6 @@ django-timepiece uses Python 2.6
 
  * `python-dateutil <http://labix.org/python-dateutil>`_
  * `django-selectable <http://pypi.python.org/pypi/django-selectable>`_
- * `django-ajax-selects <http://pypi.python.org/pypi/django-ajax-selects>`_
  * `django-pagination <http://pypi.python.org/pypi/django-pagination>`_
 
 Installation
@@ -60,7 +59,7 @@ Installation
 History
 -------
 
-0.4.1 - Unreleased
+0.4.1 (06-04-2012)
 ******************
 * Made projects' tracker URL's appear on the project detail view.
 * Added reasonable limits to the total time and pause length of entries.

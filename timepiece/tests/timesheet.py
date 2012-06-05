@@ -368,14 +368,70 @@ class ClockInTest(TimepieceDataTestCase):
         entry1 = self.create_entry({
             'start_time': self.now - datetime.timedelta(hours=13),
         })
+        end_time = self.now - datetime.timedelta(seconds=1)
         data = self.clock_in_form
         data.update({
             'start_time_0': self.now.strftime('%m/%d/%Y'),
             'start_time_1': self.now.strftime('%H:%M:%S'),
         })
         response = self.client.post(self.url, data)
-        err_msg = 'Ending time exceeds starting time by 12 hours or more.'
+        err_msg = 'Ending time exceeds starting time by 12 hours ' \
+            'or more for {0} on {1} at {2} to {3} at {4}.'.format(
+                entry1.project.name,
+                entry1.start_time.strftime('%m/%d/%Y'),
+                entry1.start_time.strftime('%H:%M:%S'),
+                end_time.strftime('%m/%d/%Y'),
+                end_time.strftime('%H:%M:%S')
+            )
         self.assertFormError(response, 'form', None, err_msg)
+
+    def test_clockin_error_active_entry(self):
+        """
+        If you have an active entry and clock in to another,
+        you should not be clocked out of the current active entry
+        if the clock in form contains errors
+        """
+        self.client.login(username='user', password='abc')
+
+        # Create a valid entry and follow the redirect to the homepage
+        response = self.client.post(self.url, self.clock_in_form, follow=True)
+        self.assertEquals(response.status_code, 200)
+        self.assertTrue(response.context['messages'])
+
+        data = self.clock_in_form
+        data.update({'start_time_0': None})
+        response = self.client.post(self.url, data)
+
+        msg = 'Enter a valid date/time.'
+        self.assertFormError(response, 'form', 'start_time', msg)
+
+        active = timepiece.Entry.objects.get()
+        self.assertIsNone(active.end_time)
+
+    def test_clockin_correct_active_entry(self):
+        """
+        If you clock in with an an active entry, that entry
+        should be clocked out
+        """
+        self.client.login(username='user', password='abc')
+
+        # Create a valid entry and follow the redirect to the homepage
+        response = self.client.post(self.url, self.clock_in_form, follow=True)
+        self.assertEquals(response.status_code, 200)
+        self.assertTrue(response.context['messages'])
+
+        active = timepiece.Entry.objects.get()
+
+        data = self.clock_in_form
+        start_time = self.now + datetime.timedelta(seconds=10)
+        data.update({
+            'start_time_0': start_time.strftime('%m/%d/%Y'),
+            'start_time_1': start_time.strftime('%H:%M:%S')
+        })
+        response = self.client.post(self.url, data)
+
+        active = timepiece.Entry.objects.get(pk=active.pk)
+        self.assertIsNotNone(active.end_time)
 
     def testProjectListFiltered(self):
         self.client.login(username='user', password='abc')
@@ -585,8 +641,15 @@ class ClockOutTest(TimepieceDataTestCase):
             'location': self.location.pk,
         }
         response = self.client.post(self.url, data)
-        self.assertFormError(response, 'form', None,
-            'Ending time exceeds starting time by 12 hours or more.')
+        err_msg = 'Ending time exceeds starting time by 12 hours ' \
+            'or more for {0} on {1} at {2} to {3} at {4}.'.format(
+                self.entry.project.name,
+                self.entry.start_time.strftime('%m/%d/%Y'),
+                self.entry.start_time.strftime('%H:%M:%S'),
+                end_time.strftime('%m/%d/%Y'),
+                end_time.strftime('%H:%M:%S')
+            )
+        self.assertFormError(response, 'form', None, err_msg)
 
     def testClockOutPauseTooLong(self):
         paused_entry = self.entry
@@ -601,8 +664,15 @@ class ClockOutTest(TimepieceDataTestCase):
         }
         response = self.client.post(
             reverse('timepiece-clock-out', args=[paused_entry.pk]), data)
-        self.assertFormError(response, 'form', None,
-            'Ending time exceeds starting time by 12 hours or more.')
+        err_msg = 'Ending time exceeds starting time by 12 hours ' \
+            'or more for {0} on {1} at {2} to {3} at {4}.'.format(
+                self.entry.project.name,
+                paused_entry.start_time.strftime('%m/%d/%Y'),
+                paused_entry.start_time.strftime('%H:%M:%S'),
+                self.default_end_time.strftime('%m/%d/%Y'),
+                self.default_end_time.strftime('%H:%M:%S')
+            )
+        self.assertFormError(response, 'form', None, err_msg)
 
     def testClockOutOverlap(self):
         """
@@ -884,8 +954,15 @@ class CreateEditEntry(TimepieceDataTestCase):
             'end_time_1': end_time.strftime('%H:%M:%S'),
         })
         response = self.client.post(self.create_url, long_entry, follow=True)
-        self.assertFormError(response, 'form', None, \
-            'Ending time exceeds starting time by 12 hours or more.')
+        err_msg = 'Ending time exceeds starting time by 12 hours ' \
+            'or more for {0} on {1} at {2} to {3} at {4}.'.format(
+                self.project.name,
+                self.now.strftime('%m/%d/%Y'),
+                self.now.strftime('%H:%M:%S'),
+                end_time.strftime('%m/%d/%Y'),
+                end_time.strftime('%H:%M:%S')
+            )
+        self.assertFormError(response, 'form', None, err_msg)
 
     def testCreateLongPauseEntry(self):
         """
@@ -927,8 +1004,8 @@ class StatusTest(TimepieceDataTestCase):
     def setUp(self):
         super(StatusTest, self).setUp()
         self.client.login(username='user', password='abc')
-        now = datetime.datetime.now()
-        from_date = utils.get_month_start(now)
+        self.now = datetime.datetime.now()
+        from_date = utils.get_month_start(self.now)
         self.from_date = from_date
         self.sheet_url = reverse('view_person_time_sheet',
             args=[self.user.pk])
@@ -943,16 +1020,117 @@ class StatusTest(TimepieceDataTestCase):
 
     def login_as_admin(self):
         "Helper to login as an admin user"
-        edit_time_sheet = Permission.objects.get(codename='change_entry',
-            content_type__app_label='timepiece'
+        self.admin = User.objects.create_user('admin', 'e@e.com', 'abc')
+        self.admin.is_superuser = True
+        self.admin.save()
+        self.client.login(username='admin', password='abc')
+
+    def login_with_permission(self):
+        """Helper to login as a user with correct permissions"""
+        view_entry_summary = Permission.objects.get(
+            codename=('view_entry_summary'))
+        self.perm_user = User.objects.create_user('perm', 'e@e.com', 'abc')
+        self.perm_user.user_permissions.add(view_entry_summary)
+        self.perm_user.save()
+        self.client.login(username='perm', password='abc')
+
+    def test_verify_other_user(self):
+        """A user should not be able to verify another's timesheet"""
+        entry = self.create_entry({
+            'user': self.user2,
+            'start_time': self.now - datetime.timedelta(hours=1),
+            'end_time': self.now
+        })
+
+        url = reverse('change_person_time_sheet',
+            args=('verify', self.user2.pk,
+                self.from_date.strftime('%Y-%m-%d')
+            )
         )
-        self.user2.user_permissions.add(edit_time_sheet)
-        view_time_sheet = Permission.objects.get(
-            codename=('view_entry_summary')
+        response = self.client.get(url)
+
+        self.assertEquals(response.status_code, 403)
+        self.assertEquals(entry.status, 'unverified')
+
+        response = self.client.post(url, {'do_action': 'Yes'})
+        self.assertEquals(response.status_code, 403)
+        self.assertEquals(entry.status, 'unverified')
+
+    def test_approve_user(self):
+        """A regular user should not be able to approve their timesheet"""
+        entry = self.create_entry({
+            'user': self.user,
+            'start_time': self.now - datetime.timedelta(hours=1),
+            'end_time': self.now
+        })
+
+        response = self.client.get(self.approve_url)
+        self.assertEquals(response.status_code, 403)
+
+        response = self.client.post(self.approve_url, {'do_action': 'Yes'})
+        self.assertEquals(response.status_code, 403)
+        self.assertNotEquals(entry.status, 'approved')
+        self.assertContains(response,
+            'Forbidden: You cannot approve this timesheet',
+            status_code=403
         )
-        self.user2.user_permissions.add(view_time_sheet)
-        self.user2.save()
-        self.client.login(username='user2', password='abc')
+
+    def test_approve_other_user(self):
+        """A regular user should not be able to approve another's timesheet"""
+        entry = self.create_entry({
+            'user': self.user2,
+            'start_time': self.now - datetime.timedelta(hours=1),
+            'end_time': self.now
+        })
+
+        response = self.client.get(self.approve_url)
+        self.assertEquals(response.status_code, 403)
+
+        response = self.client.post(self.approve_url, {'do_action': 'Yes'})
+        self.assertEquals(response.status_code, 403)
+        self.assertNotEquals(entry.status, 'approved')
+        self.assertContains(response,
+            'Forbidden: You cannot approve this timesheet',
+            status_code=403
+        )
+
+    def test_verify_active_entry(self):
+        """
+        A user shouldnt be able to verify a timesheet if it contains
+        an active entry
+        """
+        self.login_as_admin()
+
+        entry1 = self.create_entry({
+            'user': self.user,
+            'start_time': self.now - datetime.timedelta(hours=5),
+            'end_time': self.now - datetime.timedelta(hours=4),
+            'status': 'unverified'
+        })
+        entry2 = self.create_entry({
+            'user': self.user,
+            'start_time': self.now - datetime.timedelta(hours=1),
+            'status': 'unverified'
+        })
+
+        response = self.client.get(self.verify_url)
+        self.assertEquals(response.status_code, 200)
+
+        messages = response.context['messages']
+        msg = 'You cannot verify/approve a timesheet while you have an active entry. '\
+            'Please close any active entries.'
+
+        self.assertEquals(messages._loaded_messages[0].message, msg)
+        self.assertEquals(entry1.status, 'unverified')
+        self.assertEquals(entry2.status, 'unverified')
+
+        response = self.client.post(self.verify_url)
+        self.assertEquals(response.status_code, 200)
+        messages = response.context['messages']
+
+        self.assertEquals(messages._loaded_messages[0].message, msg)
+        self.assertEquals(entry1.status, 'unverified')
+        self.assertEquals(entry2.status, 'unverified')
 
     def testVerifyButton(self):
         response = self.client.get(self.sheet_url)
@@ -1005,25 +1183,24 @@ class StatusTest(TimepieceDataTestCase):
         self.assertEquals(entries[0].status, 'verified')
 
     def testApprovePage(self):
-        self.login_as_admin()
+        self.login_with_permission()
         entry = self.create_entry(data={
             'user': self.user,
             'start_time': datetime.datetime.now() - \
                 datetime.timedelta(hours=1),
             'end_time':  datetime.datetime.now(),
         })
-        response = self.client.post(self.approve_url, {'do_action': 'Yes'})
-        entries = self.user.timepiece_entries.all()
-        self.assertEquals(entries[0].status, 'unverified')
+
+        self.assertEquals(entry.status, 'unverified')
         entry.status = 'verified'
         entry.save()
 
         response = self.client.get(self.approve_url,)
-        entries = self.user.timepiece_entries.all()
-        self.assertEquals(entries[0].status, 'verified')
+        self.assertEquals(entry.status, 'verified')
 
         response = self.client.post(self.approve_url, {'do_action': 'Yes'})
-        self.assertEquals(entries[0].status, 'approved')
+        entry = timepiece.Entry.objects.get(pk=entry.pk)
+        self.assertEquals(entry.status, 'approved')
 
     def testRejectPage(self):
         self.login_as_admin()

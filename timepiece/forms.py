@@ -17,8 +17,7 @@ from selectable import forms as selectable_forms
 from timepiece.lookups import ProjectLookup, QuickLookup, UserLookup
 
 from timepiece.models import Project, Entry, Activity, UserProfile, Attribute
-from timepiece.fields import PendulumDateTimeField, UserModelChoiceField
-from timepiece.widgets import PendulumDateTimeWidget, SecondsToHoursWidget
+from timepiece.fields import UserModelChoiceField
 from timepiece import models as timepiece
 from timepiece import utils
 
@@ -230,8 +229,8 @@ class ClockInForm(forms.ModelForm):
             self.active.unpause()
             self.active.comments = data['active_comment']
             self.active.end_time = start_time - timedelta(seconds=1)
-            if self.active.clean():
-                self.active.save()
+            if not self.active.clean():
+                raise forms.ValidationError(data)
         return data
 
     def save(self, commit=True):
@@ -240,6 +239,8 @@ class ClockInForm(forms.ModelForm):
         entry.clock_in(self.user, self.cleaned_data['project'])
         if commit:
             entry.save()
+            if self.active:
+                self.active.save()
         return entry
 
 

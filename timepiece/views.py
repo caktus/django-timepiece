@@ -544,7 +544,7 @@ def view_person_time_sheet(request, user_id):
         'to_date': to_date - datetime.timedelta(days=1),
         'show_verify': show_verify,
         'show_approve': show_approve,
-        'user': user,
+        'timesheet_user': user,
         'entries': month_entries,
         'grouped_totals': grouped_totals,
         'project_entries': project_entries,
@@ -557,9 +557,18 @@ def view_person_time_sheet(request, user_id):
 @login_required
 def change_person_time_sheet(request, action, user_id, from_date):
     user = get_object_or_404(User, pk=user_id)
-    admin_verify = request.user.has_perm('timepiece.change_entry')
-    if not admin_verify and user != request.user:
-        return HttpResponseForbidden('Forbidden')
+    admin_verify = request.user.has_perm('timepiece.view_entry_summary')
+    perm = True
+
+    if not admin_verify and action == 'verify' and user != request.user:
+        perm = False
+    if not admin_verify and action == 'approve':
+        perm = False
+
+    if not perm:
+        return HttpResponseForbidden('Forbidden: You cannot {0} this ' \
+            'timesheet'.format(action))
+
     try:
         from_date = datetime.datetime.strptime(from_date, '%Y-%m-%d')
     except (ValueError, OverflowError):
@@ -568,17 +577,30 @@ def change_person_time_sheet(request, action, user_id, from_date):
     entries = timepiece.Entry.no_join.filter(user=user_id,
                                              end_time__gte=from_date,
                                              end_time__lt=to_date)
+    active_entries = timepiece.Entry.no_join.filter(
+        user=user_id,
+        start_time__lt=to_date,
+        end_time=None,
+        status='unverified'
+    )
     filter_status = {
         'verify': 'unverified',
         'approve': 'verified',
     }
     entries = entries.filter(status=filter_status[action])
+
+    if active_entries:
+        messages.info(request,
+            'You cannot verify/approve a timesheet while you have an active ' \
+            'entry. Please close any active entries.')
     return_url = reverse('view_person_time_sheet', kwargs={'user_id': user_id})
     return_url += '?%s' % urllib.urlencode({
         'year': from_date.year,
         'month': from_date.month,
     })
     if request.POST and request.POST.get('do_action', 'No') == 'Yes':
+        if active_entries:
+            return redirect(return_url)
         update_status = {
             'verify': 'verified',
             'approve': 'approved',
@@ -589,7 +611,7 @@ def change_person_time_sheet(request, action, user_id, from_date):
         return redirect(return_url)
     context = {
         'action': action,
-        'user': user,
+        'timesheet_user': user,
         'from_date': from_date,
         'to_date': to_date - datetime.timedelta(days=1),
         'return_url': return_url,
@@ -602,7 +624,7 @@ def change_person_time_sheet(request, action, user_id, from_date):
 @login_required
 @transaction.commit_on_success
 def confirm_invoice_project(request, project_id, to_date, from_date=None):
-    if not request.user.has_perm('timepiece.change_entry'):
+    if not request.user.has_perm('timepiece.generate_project_invoice'):
         return HttpResponseForbidden('Forbidden')
     try:
         to_date = datetime.datetime.strptime(to_date, '%Y-%m-%d')
