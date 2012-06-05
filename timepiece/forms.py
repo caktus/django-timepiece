@@ -17,8 +17,6 @@ from selectable import forms as selectable_forms
 from timepiece.lookups import ProjectLookup, QuickLookup, UserLookup
 
 from timepiece.models import Project, Entry, Activity, UserProfile, Attribute
-from timepiece.fields import PendulumDateTimeField
-from timepiece.widgets import PendulumDateTimeWidget, SecondsToHoursWidget
 from timepiece import models as timepiece
 from timepiece import utils
 
