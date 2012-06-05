@@ -981,8 +981,8 @@ class StatusTest(TimepieceDataTestCase):
     def setUp(self):
         super(StatusTest, self).setUp()
         self.client.login(username='user', password='abc')
-        now = datetime.datetime.now()
-        from_date = utils.get_month_start(now)
+        self.now = datetime.datetime.now()
+        from_date = utils.get_month_start(self.now)
         self.from_date = from_date
         self.sheet_url = reverse('view_person_time_sheet',
             args=[self.user.pk])
@@ -997,16 +997,79 @@ class StatusTest(TimepieceDataTestCase):
 
     def login_as_admin(self):
         "Helper to login as an admin user"
-        edit_time_sheet = Permission.objects.get(codename='change_entry',
-            content_type__app_label='timepiece'
+        self.admin = User.objects.create_user('admin', 'e@e.com', 'abc')
+        self.admin.is_superuser = True
+        self.admin.save()
+        self.client.login(username='admin', password='abc')
+
+    def login_with_permission(self):
+        """Helper to login as a user with correct permissions"""
+        view_entry_summary = Permission.objects.get(
+            codename=('view_entry_summary'))
+        self.perm_user = User.objects.create_user('perm', 'e@e.com', 'abc')
+        self.perm_user.user_permissions.add(view_entry_summary)
+        self.perm_user.save()
+        self.client.login(username='perm', password='abc')
+
+    def test_verify_other_user(self):
+        """A user should not be able to verify another's timesheet"""
+        entry = self.create_entry({
+            'user': self.user2,
+            'start_time': self.now - datetime.timedelta(hours=1),
+            'end_time': self.now
+        })
+
+        url = reverse('change_person_time_sheet',
+            args=('verify', self.user2.pk,
+                self.from_date.strftime('%Y-%m-%d')
+            )
         )
-        self.user2.user_permissions.add(edit_time_sheet)
-        view_time_sheet = Permission.objects.get(
-            codename=('view_entry_summary')
+        response = self.client.get(url)
+
+        self.assertEquals(response.status_code, 403)
+        self.assertEquals(entry.status, 'unverified')
+
+        response = self.client.post(url, {'do_action': 'Yes'})
+        self.assertEquals(response.status_code, 403)
+        self.assertEquals(entry.status, 'unverified')
+
+    def test_approve_user(self):
+        """A regular user should not be able to approve their timesheet"""
+        entry = self.create_entry({
+            'user': self.user,
+            'start_time': self.now - datetime.timedelta(hours=1),
+            'end_time': self.now
+        })
+
+        response = self.client.get(self.approve_url)
+        self.assertEquals(response.status_code, 403)
+
+        response = self.client.post(self.approve_url, {'do_action': 'Yes'})
+        self.assertEquals(response.status_code, 403)
+        self.assertNotEquals(entry.status, 'approved')
+        self.assertContains(response,
+            'Forbidden: You cannot approve this timesheet',
+            status_code=403
         )
-        self.user2.user_permissions.add(view_time_sheet)
-        self.user2.save()
-        self.client.login(username='user2', password='abc')
+
+    def test_approve_other_user(self):
+        """A regular user should not be able to approve another's timesheet"""
+        entry = self.create_entry({
+            'user': self.user2,
+            'start_time': self.now - datetime.timedelta(hours=1),
+            'end_time': self.now
+        })
+
+        response = self.client.get(self.approve_url)
+        self.assertEquals(response.status_code, 403)
+
+        response = self.client.post(self.approve_url, {'do_action': 'Yes'})
+        self.assertEquals(response.status_code, 403)
+        self.assertNotEquals(entry.status, 'approved')
+        self.assertContains(response,
+            'Forbidden: You cannot approve this timesheet',
+            status_code=403
+        )
 
     def testVerifyButton(self):
         response = self.client.get(self.sheet_url)
@@ -1059,25 +1122,24 @@ class StatusTest(TimepieceDataTestCase):
         self.assertEquals(entries[0].status, 'verified')
 
     def testApprovePage(self):
-        self.login_as_admin()
+        self.login_with_permission()
         entry = self.create_entry(data={
             'user': self.user,
             'start_time': datetime.datetime.now() - \
                 datetime.timedelta(hours=1),
             'end_time':  datetime.datetime.now(),
         })
-        response = self.client.post(self.approve_url, {'do_action': 'Yes'})
-        entries = self.user.timepiece_entries.all()
-        self.assertEquals(entries[0].status, 'unverified')
+
+        self.assertEquals(entry.status, 'unverified')
         entry.status = 'verified'
         entry.save()
 
         response = self.client.get(self.approve_url,)
-        entries = self.user.timepiece_entries.all()
-        self.assertEquals(entries[0].status, 'verified')
+        self.assertEquals(entry.status, 'verified')
 
         response = self.client.post(self.approve_url, {'do_action': 'Yes'})
-        self.assertEquals(entries[0].status, 'approved')
+        entry = timepiece.Entry.objects.get(pk=entry.pk)
+        self.assertEquals(entry.status, 'approved')
 
     def testRejectPage(self):
         self.login_as_admin()

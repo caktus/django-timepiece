@@ -542,9 +542,18 @@ def view_person_time_sheet(request, user_id):
 @login_required
 def change_person_time_sheet(request, action, user_id, from_date):
     user = get_object_or_404(User, pk=user_id)
-    admin_verify = request.user.has_perm('timepiece.change_entry')
-    if not admin_verify and user != request.user:
-        return HttpResponseForbidden('Forbidden')
+    admin_verify = request.user.has_perm('timepiece.view_entry_summary')
+    perm = True
+
+    if not admin_verify and action == 'verify' and user != request.user:
+        perm = False
+    if not admin_verify and action == 'approve':
+        perm = False
+
+    if not perm:
+        return HttpResponseForbidden('Forbidden: You cannot {0} this ' \
+            'timesheet'.format(action))
+
     try:
         from_date = datetime.datetime.strptime(from_date, '%Y-%m-%d')
     except (ValueError, OverflowError):
