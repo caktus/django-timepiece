@@ -596,7 +596,7 @@ def change_person_time_sheet(request, action, user_id, from_date):
 @login_required
 @transaction.commit_on_success
 def confirm_invoice_project(request, project_id, to_date, from_date=None):
-    if not request.user.has_perm('timepiece.change_entry'):
+    if not request.user.has_perm('timepiece.generate_project_invoice'):
         return HttpResponseForbidden('Forbidden')
     try:
         to_date = datetime.datetime.strptime(to_date, '%Y-%m-%d')
