@@ -406,7 +406,7 @@ class YearMonthForm(forms.Form):
         if initial:
             this_year = initial.get('year', this_year)
             this_month = initial.get('month', this_month)
-            user = initial.get('request_user', user)
+            user = initial.get('request_user', None)
         self.fields['year'].initial = this_year
         self.fields['month'].initial = this_month
 
@@ -414,7 +414,7 @@ class YearMonthForm(forms.Form):
             users = auth_models.User.objects.exclude(timepiece_entries=None) \
                 .order_by('first_name')
             self.fields['user'] = UserModelChoiceField(label='',
-                queryset=users)
+                queryset=users, required=False)
 
     def save(self):
         now = datetime.now()

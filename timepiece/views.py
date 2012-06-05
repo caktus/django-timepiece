@@ -497,13 +497,12 @@ def view_person_time_sheet(request, user_id):
         return HttpResponseForbidden('Forbidden')
     from_date = utils.get_month_start(datetime.datetime.today()).date()
     to_date = from_date + relativedelta(months=1)
-    year_month_form_data = {
-        'month': request.GET.get('month', from_date.month),
-        'year': request.GET.get('year', from_date.year),
-        'user': request.GET.get('user', user_id),
+    initial = {
+        'request_user': request.user,
+        'user': request.GET.get('user', user_id)
     }
-    year_month_form = timepiece_forms.YearMonthForm(year_month_form_data,
-        initial={'request_user': request.user})
+    year_month_form = timepiece_forms.YearMonthForm(request.GET or None,
+        initial=initial)
     if request.GET and year_month_form.is_valid():
         from_date, to_date, form_user = year_month_form.save()
     have_user = request.GET.get('user', None)
