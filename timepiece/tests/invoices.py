@@ -2,6 +2,7 @@ import datetime
 import random
 
 from django.core.urlresolvers import reverse
+from django.contrib.auth.models import User, Permission
 
 from timepiece import models as timepiece
 from timepiece.tests.base import TimepieceDataTestCase
@@ -243,6 +244,14 @@ class InvoiceCreateTestCase(TimepieceDataTestCase):
             hg.activities.add(activity)
             hg.save()
 
+    def login_with_permission(self):
+        """Helper to login as user with correct permissions"""
+        generate_invoice = Permission.objects.get(
+            codename='generate_project_invoice')
+        user = User.objects.create_user('perm', 'e@e.com', 'abc')
+        user.user_permissions.add(generate_invoice)
+        user.save()
+
     def test_invoice_create(self):
         """
         Verify that only billable projects appear on the create invoice and
@@ -286,6 +295,33 @@ class InvoiceCreateTestCase(TimepieceDataTestCase):
         self.assertEquals(from_date_str, '2011 01 01')
         to_date_str = response.context['to_date'].strftime('%Y %m %d')
         self.assertEquals(to_date_str, '2011 01 31')
+
+    def test_invoice_confirm_view_user(self):
+        """A regular user should not be able to access this page"""
+        self.client.login(username='user2', password='abc')
+        to_date = datetime.datetime(2011, 1, 31)
+        url = reverse('confirm_invoice_project', args=(
+            self.project_billable.pk,
+            to_date.strftime('%Y-%m-%d'),
+        ))
+
+        response = self.client.get(url)
+        self.assertEquals(response.status_code, 403)
+
+    def test_invoice_confirm_view_permission(self):
+        """
+        If you have the correct permission, you should be
+        able to create an invoice
+        """
+        self.login_with_permission()
+        to_date = datetime.datetime(2011, 1, 31)
+        url = reverse('confirm_invoice_project', args=(
+            self.project_billable.pk,
+            to_date.strftime('%Y-%m-%d'),
+        ))
+
+        response = self.client.get(url)
+        self.assertEquals(response.status_code, 200)
 
     def test_invoice_confirm_view(self):
         to_date = datetime.datetime(2011, 1, 31)
