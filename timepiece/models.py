@@ -106,6 +106,7 @@ class Project(models.Model):
             ('email_project_report', 'Can email project report'),
             ('view_project_time_sheet', 'Can view project time sheet'),
             ('export_project_time_sheet', 'Can export project time sheet'),
+            ('generate_project_invoice', 'Can generate project invoice'),
         )
 
     def __unicode__(self):
