@@ -904,8 +904,8 @@ class StatusTest(TimepieceDataTestCase):
     def setUp(self):
         super(StatusTest, self).setUp()
         self.client.login(username='user', password='abc')
-        now = datetime.datetime.now()
-        from_date = utils.get_month_start(now)
+        self.now = datetime.datetime.now()
+        from_date = utils.get_month_start(self.now)
         self.from_date = from_date
         self.sheet_url = reverse('view_person_time_sheet',
             args=[self.user.pk])
@@ -930,6 +930,44 @@ class StatusTest(TimepieceDataTestCase):
         self.user2.user_permissions.add(view_time_sheet)
         self.user2.save()
         self.client.login(username='user2', password='abc')
+
+    def test_verify_active_entry(self):
+        """
+        A user shouldnt be able to verify a timesheet if it contains
+        an active entry
+        """
+        self.login_as_admin()
+
+        entry1 = self.create_entry({
+            'user': self.user,
+            'start_time': self.now - datetime.timedelta(hours=5),
+            'end_time': self.now - datetime.timedelta(hours=4),
+            'status': 'unverified'
+        })
+        entry2 = self.create_entry({
+            'user': self.user,
+            'start_time': self.now - datetime.timedelta(hours=1),
+            'status': 'unverified'
+        })
+
+        response = self.client.get(self.verify_url)
+        self.assertEquals(response.status_code, 200)
+
+        messages = response.context['messages']
+        msg = 'You cannot verify/approve a timesheet while you have an active entry. '\
+            'Please close any active entries.'
+
+        self.assertEquals(messages._loaded_messages[0].message, msg)
+        self.assertEquals(entry1.status, 'unverified')
+        self.assertEquals(entry2.status, 'unverified')
+
+        response = self.client.post(self.verify_url)
+        self.assertEquals(response.status_code, 200)
+        messages = response.context['messages']
+
+        self.assertEquals(messages._loaded_messages[0].message, msg)
+        self.assertEquals(entry1.status, 'unverified')
+        self.assertEquals(entry2.status, 'unverified')
 
     def testVerifyButton(self):
         response = self.client.get(self.sheet_url)
