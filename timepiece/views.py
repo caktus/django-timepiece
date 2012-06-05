@@ -296,7 +296,8 @@ def reject_entry(request, entry_id):
     invoiced to set its status to 'unverified' for the user to fix.
     """
     user = request.user
-    if not (user.is_superuser or user.has_perm('timepiece.view_payroll_summary')):
+    if not (user.is_superuser or \
+        user.has_perm('timepiece.view_payroll_summary')):
         return HttpResponseForbidden('You cannot reject timesheet entries')
     return_url = request.REQUEST.get('next', reverse('timepiece-entries'))
     try:
