@@ -1192,9 +1192,8 @@ class StatusTest(TimepieceDataTestCase):
         })
         url = self.get_reject_url(entry.pk)
 
-        response = self.client.post(url, {'Yes': 'yes'}, follow=True)
-        self.assertEquals(response.status_code, 200)
-        self.assertTemplateUsed(response, 'registration/login.html')
+        response = self.client.post(url, {'Yes': 'yes'})
+        self.assertEquals(entry.status, 'verified')
 
     def test_reject_other_user(self):
         """
@@ -1212,9 +1211,8 @@ class StatusTest(TimepieceDataTestCase):
         })
         url = self.get_reject_url(entry.pk)
 
-        response = self.client.post(url, {'Yes': 'yes'}, follow=True)
-        self.assertEquals(response.status_code, 200)
-        self.assertTemplateUsed(response, 'registration/login.html')
+        response = self.client.post(url, {'Yes': 'yes'})
+        self.assertEquals(entry.status, 'verified')
 
     def testRejectPage(self):
         self.login_as_admin()
