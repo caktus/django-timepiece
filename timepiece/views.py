@@ -506,7 +506,16 @@ def view_person_time_sheet(request, user_id):
     month_entries = month_qs.date_trunc('month', True)
     # For grouped entries, back date up to the start of the week.
     first_week = utils.get_week_start(from_date)
+    month_week = first_week + datetime.timedelta(weeks=1)
     grouped_qs = entries_qs.timespan(first_week, to_date=to_date)
+    intersection = grouped_qs.filter(start_time__lt=month_week,
+        start_time__gte=from_date)
+    # If the month of the first week starts in the previous
+    # month and we dont have entries in that previous ISO
+    # week, then update the first week to start at the first
+    # of the actual month
+    if not intersection and first_week.month < from_date.month:
+        grouped_qs = entries_qs.timespan(from_date, to_date=to_date)
     grouped_totals = utils.grouped_totals(grouped_qs) if month_entries else ''
     project_entries = month_qs.order_by().values(
         'project__name').annotate(sum=Sum('hours')).order_by('-sum')
