@@ -28,9 +28,7 @@ class BusinessTest(TimepieceDataTestCase):
         # They should be redirected to the login page
         self.assertEquals(response.status_code, 302)
 
-        response = self.client.post(self.url, data=self.data, follow=True)
-        self.assertEquals(response.status_code, 200)
-        self.assertTemplateUsed(response, 'registration/login.html')
+        response = self.client.post(self.url, data=self.data)
         self.assertEquals(timepiece.Business.objects.count(), 0)
 
     def test_user_create_business_permission(self):
@@ -42,6 +40,5 @@ class BusinessTest(TimepieceDataTestCase):
         self.assertTemplateUsed(response,
             'timepiece/business/create_edit.html')
 
-        response = self.client.post(self.url, data=self.data, follow=True)
-        self.assertEquals(response.status_code, 200)
+        response = self.client.post(self.url, data=self.data)
         self.assertEquals(timepiece.Business.objects.count(), 1)
