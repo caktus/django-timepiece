@@ -505,16 +505,16 @@ def view_person_time_sheet(request, user_id):
         initial=initial)
     if year_month_form.is_valid():
         from_date, to_date, form_user = year_month_form.save()
-    if request.GET and form_user:
-        url = reverse('view_person_time_sheet', args=(form_user.pk,))
-        # Do not use request.GET in urlencode in case it has the
-        # user parameter (redirect loop otherwise)
-        request_data = {
-            'month': request.GET.get('month', from_date.month),
-            'year': request.GET.get('year', from_date.year)
-        }
-        url += '?{0}'.format(urllib.urlencode(request_data))
-        return HttpResponseRedirect(url)
+        if form_user:
+            url = reverse('view_person_time_sheet', args=(form_user.pk,))
+            # Do not use request.GET in urlencode in case it has the
+            # user parameter (redirect loop otherwise)
+            request_data = {
+                'month': request.GET.get('month', from_date.month),
+                'year': request.GET.get('year', from_date.year)
+            }
+            url += '?{0}'.format(urllib.urlencode(request_data))
+            return HttpResponseRedirect(url)
     entries_qs = timepiece.Entry.objects.filter(user=user)
     month_qs = entries_qs.timespan(from_date, span='month')
     month_entries = month_qs.date_trunc('month', True)
