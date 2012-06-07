@@ -503,10 +503,9 @@ def view_person_time_sheet(request, user_id):
     }
     year_month_form = timepiece_forms.YearMonthForm(request.GET or None,
         initial=initial)
-    if request.GET and year_month_form.is_valid():
+    if year_month_form.is_valid():
         from_date, to_date, form_user = year_month_form.save()
-    have_user = request.GET.get('user', None)
-    if request.GET and have_user:
+    if request.GET and form_user:
         url = reverse('view_person_time_sheet', args=(form_user.pk,))
         # Do not use request.GET in urlencode in case it has the
         # user parameter (redirect loop otherwise)
