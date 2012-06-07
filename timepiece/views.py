@@ -421,7 +421,7 @@ class ProjectTimesheet(DetailView):
         year_month_form = timepiece_forms.YearMonthForm(self.request.GET or
                                                         None)
         if self.request.GET and year_month_form.is_valid():
-            from_date, to_date = year_month_form.save()
+            from_date, to_date, user = year_month_form.save()
         else:
             from_date = utils.get_month_start(datetime.datetime.today()).date()
             to_date = from_date + relativedelta(months=1)
@@ -496,12 +496,26 @@ def view_person_time_sheet(request, user_id):
     if not (request.user.has_perm('timepiece.view_entry_summary') or \
         user.pk == request.user.pk):
         return HttpResponseForbidden('Forbidden')
-    year_month_form = timepiece_forms.YearMonthForm(request.GET or None)
-    if request.GET and year_month_form.is_valid():
-        from_date, to_date = year_month_form.save()
-    else:
-        from_date = utils.get_month_start(datetime.datetime.today()).date()
-        to_date = from_date + relativedelta(months=1)
+    from_date = utils.get_month_start(datetime.datetime.today()).date()
+    to_date = from_date + relativedelta(months=1)
+    initial = {
+        'request_user': request.user,
+        'user': request.GET.get('user', user_id)
+    }
+    year_month_form = timepiece_forms.YearMonthForm(request.GET or None,
+        initial=initial)
+    if year_month_form.is_valid():
+        from_date, to_date, form_user = year_month_form.save()
+        if form_user:
+            url = reverse('view_person_time_sheet', args=(form_user.pk,))
+            # Do not use request.GET in urlencode in case it has the
+            # user parameter (redirect loop otherwise)
+            request_data = {
+                'month': request.GET.get('month', from_date.month),
+                'year': request.GET.get('year', from_date.year)
+            }
+            url += '?{0}'.format(urllib.urlencode(request_data))
+            return HttpResponseRedirect(url)
     entries_qs = timepiece.Entry.objects.filter(user=user)
     month_qs = entries_qs.timespan(from_date, span='month')
     month_entries = month_qs.date_trunc('month', True)
@@ -1144,7 +1158,7 @@ def create_edit_project(request, project_id=None):
 def payroll_summary(request):
     year_month_form = timepiece_forms.YearMonthForm(request.GET or None)
     if request.GET and year_month_form.is_valid():
-        from_date, to_date = year_month_form.save()
+        from_date, to_date, user = year_month_form.save()
     else:
         from_date = utils.get_month_start(datetime.datetime.today()).date()
         to_date = from_date + relativedelta(months=1)
