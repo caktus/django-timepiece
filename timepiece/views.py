@@ -874,6 +874,7 @@ def view_business(request, business):
     return context
 
 
+@permission_required('timepiece.add_business')
 @render_with('timepiece/business/create_edit.html')
 def create_edit_business(request, business=None):
     if business:
