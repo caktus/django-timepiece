@@ -1287,3 +1287,99 @@ class TestTotals(TimepieceDataTestCase):
                     if project == self.p4:
                         self.assertEqual(totals['billable'], 1)
                         self.assertEqual(totals['total'], 1)
+
+
+class HourlySummaryTest(TimepieceDataTestCase):
+    def setUp(self):
+        super(HourlySummaryTest, self).setUp()
+        self.now = datetime.datetime.now()
+        self.month = self.now.replace(day=1)
+        self.url = reverse('view_person_time_sheet', args=(self.user.pk,))
+        self.client.login(username='user', password='abc')
+
+    def create_month_entries(self):
+        """Create four entries, one for each week of the month"""
+        self.create_entry({
+            'user': self.user,
+            'start_time': self.month,
+            'end_time': self.month + datetime.timedelta(hours=1)
+        })
+        self.create_entry({
+            'user': self.user,
+            'start_time': self.month + datetime.timedelta(weeks=1),
+            'end_time': self.month + datetime.timedelta(weeks=1, hours=1)
+        })
+        self.create_entry({
+            'user': self.user,
+            'start_time': self.month + datetime.timedelta(weeks=2),
+            'end_time': self.month + datetime.timedelta(weeks=2, hours=1)
+        })
+        self.create_entry({
+            'user': self.user,
+            'start_time': self.month + datetime.timedelta(weeks=3),
+            'end_time': self.month + datetime.timedelta(weeks=3, hours=1)
+        })
+
+    def test_start_of_week(self):
+        """Test that the entries start being labled on the first week, ISO"""
+        self.create_month_entries()
+
+        response = self.client.get(self.url)
+        self.assertEquals(response.status_code, 200)
+
+        start_date = utils.get_week_start(self.month)
+        msg = 'Week of {0}'.format(start_date.strftime('%m/%d/%Y'))
+        self.assertContains(response, msg)
+
+    def test_contains_only_current_entries(self):
+        """
+        Only entries from the current month should be displayed
+        using default data from create_month_entries()
+        """
+        self.create_month_entries()
+        old_entry = self.create_entry({
+            'user': self.user,
+            'start_time': self.month - datetime.timedelta(days=1, hours=1),
+            'end_time': self.month - datetime.timedelta(days=1)
+        })
+
+        response = self.client.get(self.url)
+        self.assertEquals(response.status_code, 200)
+        self.assertFalse(old_entry in response.context['entries'])
+
+    def test_single_entry_in_week(self):
+        """
+        When there is a single entry at the end of an ISO week,
+        the view should show the entries from that entire week
+        even though they belong in the previous month.
+
+        This occurs in April 2012, so we are using that month
+        as the basis for out test case
+        """
+        april = datetime.datetime(month=4, day=1, year=2012)
+        march = datetime.datetime(month=3, day=26, year=2012)
+        self.create_entry({
+            'user': self.user,
+            'start_time': april,
+            'end_time': april + datetime.timedelta(hours=1)
+        })
+        self.create_entry({
+            'user': self.user,
+            'start_time': april + datetime.timedelta(weeks=1),
+            'end_time': april + datetime.timedelta(weeks=1, hours=1)
+        })
+        self.create_entry({
+            'user': self.user,
+            'start_time': march,
+            'end_time': march + datetime.timedelta(hours=1)
+        })
+
+        response = self.client.get(self.url + '?{0}'.format(
+            urllib.urlencode({'year': 2012, 'month': 4})
+        ))
+        self.assertEquals(response.status_code, 200)
+        # entries context object is a ValuesQuerySet
+        entries = timepiece.Entry.objects \
+            .timespan(april, span='month') \
+            .date_trunc('month', True)
+        self.assertEquals(list(entries), list(response.context['entries']))
