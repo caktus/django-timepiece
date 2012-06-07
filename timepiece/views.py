@@ -289,12 +289,13 @@ def create_edit_entry(request, entry_id=None):
     }
 
 
-@permission_required('timepiece.change_entry')
+@permission_required('timepiece.view_payroll_summary')
 def reject_entry(request, entry_id):
     """
     Admins can reject an entry that has been verified or approved but not
     invoiced to set its status to 'unverified' for the user to fix.
     """
+    user = request.user
     return_url = request.REQUEST.get('next', reverse('timepiece-entries'))
     try:
         entry = timepiece.Entry.no_join.get(pk=entry_id)

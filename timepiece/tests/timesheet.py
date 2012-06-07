@@ -1179,6 +1179,41 @@ class StatusTest(TimepieceDataTestCase):
         entry = timepiece.Entry.objects.get(pk=entry.pk)
         self.assertEquals(entry.status, 'approved')
 
+    def test_reject_user(self):
+        """A regular user should not be able to reject an entry"""
+        self.client.login(username='user', password='abc')
+
+        now = datetime.datetime.now()
+        entry = self.create_entry({
+            'user': self.user,
+            'start_time': now - datetime.timedelta(hours=1),
+            'end_time': now,
+            'status': 'verified'
+        })
+        url = self.get_reject_url(entry.pk)
+
+        response = self.client.post(url, {'Yes': 'yes'})
+        self.assertEquals(entry.status, 'verified')
+
+    def test_reject_other_user(self):
+        """
+        A regular user should not be able to reject
+        another users entry
+        """
+        self.client.login(username='user2', password='abc')
+
+        now = datetime.datetime.now()
+        entry = self.create_entry({
+            'user': self.user,
+            'start_time': now - datetime.timedelta(hours=1),
+            'end_time': now,
+            'status': 'verified'
+        })
+        url = self.get_reject_url(entry.pk)
+
+        response = self.client.post(url, {'Yes': 'yes'})
+        self.assertEquals(entry.status, 'verified')
+
     def testRejectPage(self):
         self.login_as_admin()
         entry = self.create_entry(data={
