@@ -289,6 +289,7 @@ def create_edit_entry(request, entry_id=None):
     }
 
 
+@permission_required('timepiece.view_payroll_summary')
 def reject_entry(request, entry_id):
     """
     Admins can reject an entry that has been verified or approved but not
@@ -301,10 +302,6 @@ def reject_entry(request, entry_id):
     except:
         request.user.message_set.create(message='No such log entry.')
         return redirect(return_url)
-    else:
-        if not user.has_perm('timepiece.view_payroll_summary') and \
-            user != entry.user:
-            return HttpResponseForbidden('You cannot reject timesheet entries')
 
     if entry.status == 'unverified' or entry.status == 'invoiced':
         msg_text = 'This entry is unverified or is already invoiced'
