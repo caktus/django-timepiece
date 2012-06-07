@@ -403,19 +403,11 @@ class YearMonthForm(forms.Form):
         years = [(year, year) for year in xrange(first_year, this_year + 1)]
         self.fields['year'].choices = years
         initial = kwargs.get('initial')
-        user = None
         if initial:
             this_year = initial.get('year', this_year)
             this_month = initial.get('month', this_month)
-            user = initial.get('request_user', None)
         self.fields['year'].initial = this_year
         self.fields['month'].initial = this_month
-
-        if user and user.has_perm('timepiece.view_entry_summary'):
-            users = auth_models.User.objects.exclude(timepiece_entries=None) \
-                .order_by('first_name')
-            self.fields['user'] = UserModelChoiceField(label='',
-                queryset=users, required=False)
 
     def save(self):
         now = datetime.now()
@@ -426,9 +418,16 @@ class YearMonthForm(forms.Form):
         from_date = datetime(year, month, 1)
         to_date = from_date + relativedelta(months=1)
 
-        user = self.cleaned_data.get('user', None)
+        return (from_date, to_date)
 
-        return (from_date, to_date, user)
+
+class UserYearMonthForm(YearMonthForm):
+    users = auth_models.User.objects.exclude(timepiece_entries=None) \
+        .order_by('first_name')
+    user = UserModelChoiceField(label='', queryset=users, required=False)
+
+    def save(self):
+        return self.cleaned_data.get('user', None)
 
 
 class ProjectionForm(DateForm):
