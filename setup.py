@@ -25,6 +25,6 @@ setup(
     install_requires = [
         "python-dateutil==1.5",
         "django-pagination==1.0.7",
-        "django-selectable==0.2.0",
+        "django-selectable==0.4.1",
     ],
 )

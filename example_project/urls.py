@@ -7,6 +7,5 @@ admin.autodiscover()
 urlpatterns = patterns('',
     url(r'^admin/', include(admin.site.urls)),
     url(r'^selectable/', include('selectable.urls')),
-    url(r'^ajax/', include('ajax_select.urls')),
     url(r'', include('timepiece.urls')),
 )
