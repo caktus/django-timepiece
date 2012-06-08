@@ -1,3 +1,4 @@
+import os
 import optparse
 
 from django.conf import settings
@@ -7,14 +8,14 @@ parser = optparse.OptionParser()
 opts, args = parser.parse_args()
 
 
-class TestRunner:
+class TestRunner(object):
     def __init__(self, *args, **kwargs):
         self.databases = {
             'default': {
                 'ENGINE': 'django.db.backends.postgresql_psycopg2',
-                'NAME': 'caktus',
-                'USER': 'omarestrella',
-                'PASSWORD': 'nothing',
+                'NAME': 'django_timepiece',
+                'USER': '',
+                'PASSWORD': '',
                 'HOST': '',
                 'PORT': '',
             }
@@ -31,7 +32,7 @@ class TestRunner:
         settings.INSTALLED_APPS += ('django_jenkins',)
         settings.PROJECT_APPS = self.project_apps
         settings.JENKINS_TASKS = self.jenkins_tasks
-
+        # import pdb; pdb.set_trace()
         kwargs = {
             'pep8-exclude': 'migrations',
             'pep8-select': '',
@@ -43,6 +44,7 @@ class TestRunner:
             'coverage_excludes': [],
             'coverage_measure_branch': False,
             'coverage_rcfile': '',
+            'output_dir': '%s/reports' % os.getcwd(),
         }
         call_command('jenkins', **kwargs)
 
