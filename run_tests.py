@@ -44,7 +44,7 @@ class TestRunner(object):
             'coverage_excludes': [],
             'coverage_measure_branch': False,
             'coverage_rcfile': '',
-            'output_dir': '%s/reports' % os.getcwd(),
+            'output_dir': 'reports/'
         }
         call_command('jenkins', **kwargs)
 
