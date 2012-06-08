@@ -10,6 +10,9 @@ opts, args = parser.parse_args()
 
 class TestRunner(object):
     def __init__(self, *args, **kwargs):
+        if not os.getenv('DJANGO_SETTING_MODULE'):
+            os.environ['DJANGO_SETTINGS_MODULE'] = 'example_project.settings'
+
         self.databases = {
             'default': {
                 'ENGINE': 'django.db.backends.postgresql_psycopg2',
@@ -32,7 +35,7 @@ class TestRunner(object):
         settings.INSTALLED_APPS += ('django_jenkins',)
         settings.PROJECT_APPS = self.project_apps
         settings.JENKINS_TASKS = self.jenkins_tasks
-        # import pdb; pdb.set_trace()
+
         kwargs = {
             'pep8-exclude': 'migrations',
             'pep8-select': '',
