@@ -16,7 +16,7 @@ Features
 Requirements
 ------------
 
-django-timepiece uses Python 2.6
+django-timepiece uses Python 2.6 and requires Django 1.3.1 or later
 
  * `python-dateutil <http://labix.org/python-dateutil>`_
  * `django-selectable <http://pypi.python.org/pypi/django-selectable>`_
@@ -74,10 +74,8 @@ django-timepiece inclues a Tox configuration file to run tests in a variety of e
 
  * `py26-jenkins` - Test using `django-jenkins`, Python 2.6, and Django 1.3.1
  * `py27-jenkins` - Test using `django-jenkins`, Python 2.7, and Django 1.3.1
- * `py26-1.2` - Test using Python 2.6 and Django 1.2.x
  * `py26-1.3` - Test using Python 2.6 and Django 1.3.x
  * `py26-1.4` - Test using Python 2.6 and Django 1.4.x
- * `py27-1.2` - Test using Python 2.7 and Django 1.2.x
  * `py27-1.3` - Test using Python 2.7 and Django 1.3.x
  * `py27-1.4` - Test using Python 2.7 and Django 1.4.x
 
