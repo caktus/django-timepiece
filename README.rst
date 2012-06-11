@@ -63,10 +63,17 @@ Installation
 Testing
 -------
 
-django-timepiece inclues a [Tox](http://tox.testrun.org/latest/) configuration file to run tests. Several environments were added for testing:
+django-timepiece includes several different alternatives for testing. Test can be run using the default django test runner, through [Tox](http://tox.testrun.org/latest/), or with [django-jenkins](https://github.com/kmmbvnr/django-jenkins). Tox and django-jenkins are not required to run the tests for django-timepiece, but it is possible to use them. In order to install them, you can use `pip`:
 
- * `py26-jenkins` - Test using `django-jenkins <https://github.com/kmmbvnr/django-jenkins>`_, Python 2.6, and Django 1.3.1
- * `py27-jenkins` - Test using `django-jenkins <https://github.com/kmmbvnr/django-jenkins>`_, Python 2.7, and Django 1.3.1
+    pip install tox
+    pip install django-jenkins
+
+A python module, `run_tests.py`, is included if you do not want to run tests using Tox. The tests are run through Django, using Django's default test runner. It accepts an optional argument, `run_tests.py jenkins`, that runs the tests using django-jenkins.
+
+django-timepiece inclues a Tox configuration file to run tests in a variety of environments:
+
+ * `py26-jenkins` - Test using `django-jenkins`, Python 2.6, and Django 1.3.1
+ * `py27-jenkins` - Test using `django-jenkins`, Python 2.7, and Django 1.3.1
  * `py26-1.2` - Test using Python 2.6 and Django 1.2.x
  * `py26-1.3` - Test using Python 2.6 and Django 1.3.x
  * `py26-1.4` - Test using Python 2.6 and Django 1.4.x
@@ -75,8 +82,6 @@ django-timepiece inclues a [Tox](http://tox.testrun.org/latest/) configuration f
  * `py27-1.4` - Test using Python 2.7 and Django 1.4.x
 
 You can run any of the environments listed above using: `tox -e name`
-
-A python module, `run_tests.py`, is also included if you do not want to run tests using Tox. The tests are run using Django's default test runner. It accepts an optional argument, `run_tests.py jenkins`, that runs the tests using django-jenkins.
 
 History
 -------
