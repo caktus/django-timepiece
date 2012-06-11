@@ -1,3 +1,5 @@
+#!/usr/bin/env python
+
 import os
 import sys
 import optparse
@@ -11,6 +13,10 @@ opts, args = parser.parse_args()
 directory = os.path.abspath('%s' % os.path.dirname(__file__))
 
 if not settings.configured:
+    jenkins = []
+    if 'jenkins' in args:
+        jenkins = ['jenkins']
+
     settings.configure(
         DATABASES={
             'default': {
@@ -22,7 +28,7 @@ if not settings.configured:
                 'PORT': '',
             }
         },
-        INSTALLED_APPS=(
+        INSTALLED_APPS=[
             'django.contrib.auth',
             'django.contrib.contenttypes',
             'django.contrib.sessions',
@@ -32,9 +38,8 @@ if not settings.configured:
             'django.contrib.admin',
             'django.contrib.markup',
             'timepiece',
-            'django_jenkins',
             'pagination',
-        ),
+        ] + jenkins,
         SITE_ID=1,
         ROOT_URLCONF='example_project.urls',
         PROJECT_APPS=('timepiece',),
