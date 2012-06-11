@@ -22,6 +22,10 @@ django-timepiece uses Python 2.6
  * `django-selectable <http://pypi.python.org/pypi/django-selectable>`_
  * `django-pagination <http://pypi.python.org/pypi/django-pagination>`_
 
+django-timepiece depends on PostgreSQL as the database backend
+
+ * `psycopg2 <http://initd.org/psycopg/>`_
+
 Installation
 ------------
 
@@ -56,8 +60,35 @@ Installation
         ...
     )
 
+Testing
+-------
+
+django-timepiece inclues a [Tox](http://tox.testrun.org/latest/) configuration file to run tests. Several environments were added for testing:
+
+ * `py26-jenkins` - Test using `django-jenkins <https://github.com/kmmbvnr/django-jenkins>`_, Python 2.6, and Django 1.3.1
+ * `py27-jenkins` - Test using `django-jenkins <https://github.com/kmmbvnr/django-jenkins>`_, Python 2.7, and Django 1.3.1
+ * `py26-1.2` - Test using Python 2.6 and Django 1.2.x
+ * `py26-1.3` - Test using Python 2.6 and Django 1.3.x
+ * `py26-1.4` - Test using Python 2.6 and Django 1.4.x
+ * `py27-1.2` - Test using Python 2.7 and Django 1.2.x
+ * `py27-1.3` - Test using Python 2.7 and Django 1.3.x
+ * `py27-1.4` - Test using Python 2.7 and Django 1.4.x
+
+You can run any of the environments listed above using: `tox -e name`
+
+A python module, `run_tests.py`, is also included if you do not want to run tests using Tox. The tests are run using Django's default test runner. It accepts an optional argument, `run_tests.py jenkins`, that runs the tests using django-jenkins.
+
 History
 -------
+
+0.4.2 (Work in Progress)
+************************
+* Fixed permissions for creating businesses.
+* Hourly reports in "My Ledger" display previous weeks of the month if an overlapping entry exists.
+* Fixed permissions for rejecting verifies entries.
+* Fixed a bug where you could verify entries while still clocked in.
+* Added user selection for payroll reviewers to switch between timesheets.
+* Fixed bug for where the incorrect email was shown in the header
 
 0.4.1 (06-04-2012)
 ******************
