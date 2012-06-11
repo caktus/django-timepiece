@@ -498,21 +498,22 @@ def view_person_time_sheet(request, user_id):
         return HttpResponseForbidden('Forbidden')
     from_date = utils.get_month_start(datetime.datetime.today()).date()
     to_date = from_date + relativedelta(months=1)
-    year_month_form = timepiece_forms.YearMonthForm(request.GET or None)
     if request.user and request.user.has_perm('timepiece.view_entry_summary'):
-        year_month_form = timepiece_forms.UserYearMonthForm(request.GET
-            or None)
+        form = timepiece_forms.UserYearMonthForm
+    else:
+        form = timepiece_forms.YearMonthForm
+    year_month_form = form(request.GET or None)
     if year_month_form.is_valid():
         if isinstance(year_month_form, timepiece_forms.UserYearMonthForm):
-            form_user = year_month_form.save()
+            from_date, to_date, form_user = year_month_form.save()
             is_update = request.GET.get('yearmonth', None)
             if form_user and is_update:
                 url = reverse('view_person_time_sheet', args=(form_user.pk,))
                 # Do not use request.GET in urlencode in case it has the
                 # yearmonth parameter (redirect loop otherwise)
                 request_data = {
-                    'month': request.GET.get('month', from_date.month),
-                    'year': request.GET.get('year', from_date.year),
+                    'month': from_date.month,
+                    'year': from_date.year,
                     'user': form_user.pk
                 }
                 url += '?{0}'.format(urllib.urlencode(request_data))

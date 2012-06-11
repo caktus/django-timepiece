@@ -427,7 +427,8 @@ class UserYearMonthForm(YearMonthForm):
     user = UserModelChoiceField(label='', queryset=users, required=False)
 
     def save(self):
-        return self.cleaned_data.get('user', None)
+        from_date, to_date = super(UserYearMonthForm, self).save()
+        return  (from_date, to_date, self.cleaned_data.get('user', None))
 
 
 class ProjectionForm(DateForm):
