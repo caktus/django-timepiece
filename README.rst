@@ -26,6 +26,11 @@ django-timepiece depends on PostgreSQL as the database backend
 
  * `psycopg2 <http://initd.org/psycopg/>`_
 
+django-timepiece uses Sphinx and RST for documentation. You can use Sphinx to build the documentation
+
+ * `docutils <http://docutils.sourceforge.net/>`_
+ * `Sphinx <http://sphinx.pocoo.org/>`_
+
 Installation
 ------------
 
