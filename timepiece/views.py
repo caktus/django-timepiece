@@ -498,13 +498,13 @@ def view_person_time_sheet(request, user_id):
         return HttpResponseForbidden('Forbidden')
     from_date = utils.get_month_start(datetime.datetime.today()).date()
     to_date = from_date + relativedelta(months=1)
-    if request.user and request.user.has_perm('timepiece.view_entry_summary'):
-        form = timepiece_forms.UserYearMonthForm
-    else:
-        form = timepiece_forms.YearMonthForm
+    can_view_summary = request.user and \
+        request.user.has_perm('timepiece.view_entry_summary')
+    form = timepiece_forms.UserYearMonthForm if can_view_summary else \
+        timepiece_forms.YearMonthForm
     year_month_form = form(request.GET or None)
     if year_month_form.is_valid():
-        if isinstance(year_month_form, timepiece_forms.UserYearMonthForm):
+        if can_view_summary:
             from_date, to_date, form_user = year_month_form.save()
             is_update = request.GET.get('yearmonth', None)
             if form_user and is_update:
