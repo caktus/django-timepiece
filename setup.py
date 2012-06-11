@@ -22,9 +22,16 @@ setup(
         'Development Status :: 4 - Beta',
         'Operating System :: OS Independent',
     ],
-    install_requires = [
+    tests_require=[
+        'django==1.3.1',
+        'python-dateutil==1.5',
+        'django-pagination==1.0.7',
+        'django-selectable==0.4.1',
+    ],
+    test_suite='run_tests.run',
+    install_requires=[
         "python-dateutil==1.5",
         "django-pagination==1.0.7",
-        "django-selectable==0.2.0",
+        "django-selectable==0.4.1",
     ],
 )
