@@ -21,6 +21,7 @@ django-timepiece uses Python 2.6 and requires Django 1.3.1 or later
  * `python-dateutil <http://labix.org/python-dateutil>`_
  * `django-selectable <http://pypi.python.org/pypi/django-selectable>`_
  * `django-pagination <http://pypi.python.org/pypi/django-pagination>`_
+ * `django-compressor <https://github.com/jezdez/django_compressor>`_
 
 django-timepiece depends on PostgreSQL as the database backend
 
