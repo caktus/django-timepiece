@@ -1,6 +1,22 @@
 // Includes
 @import "../../bootstrap/less/bootstrap.less";
 
+// Variables & Mixins
+@lightgray: #DDDDDD;
+
 body {
-    
+    &#dashboard {
+        ul.clockin {
+            li {
+                display: inline;
+                border-left: 1px solid @lightgray;
+                padding: 0px 10px;
+
+                &:first-child {
+                    padding-left: 0px;
+                    border-left: 0px;
+                }
+            }
+        }
+    }
 }
