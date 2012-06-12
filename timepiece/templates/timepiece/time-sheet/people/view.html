@@ -14,9 +14,9 @@
 
 {% block title %}
     {% if timesheet_user.get_full_name %}
-        {{ timesheet_user.get_full_name }}"s
+        {{ timesheet_user.get_full_name }}'s
     {% else %}
-        {{ timesheet_user.username }}"s
+        {{ timesheet_user.username }}'s
     {% endif %}
     Time Sheet
 {% endblock %}
