@@ -5,45 +5,53 @@
 {% block title %}Invoices{% endblock %}
 
 {% block content %}
-<h2>Invoice Summary</h2>
-<ul class='header-actions-left'>
-    <li>
-        <a href="{% url 'invoice_projects' %}">Create Invoice</a>
-    </li>
-    <li>
-        Previous Invoices
-    </li>
-</ul>
-<h3>Invoices</h3>
-{% if invoices %}
-    <table>
-        <tr>
-            <th>Invoice</th>
-            <th>Reference</th>
-            <th>Project</th>
-            <th>Status</th>
-            <th>Invoiced by</th>
-            <th>Created on</th>
-            <th>Starting on</th>
-            <th>Ending on</th>
-            <th>Comments</th>
-        </tr>
-        {% for invoice in invoices %}
-            <tr>
-                <td><a href="{% url 'view_invoice' invoice.pk %}">{{ invoice.pk }}</a></td>
-                <td>{{ invoice.number|default:'' }}</td>
-                <td>{{ invoice.project }}</td>
-                <td>{{ invoice.status|capfirst }}</td>
-                <td>{{ invoice.user.get_full_name }}</td>
-                <td>{{ invoice.created|date:"M d Y P" }}</td>
-                <td>{{ invoice.start|date:"M d Y" }}</td>
-                <td>{{ invoice.end|date:"M d Y" }}</td>
-                <td title="{{ invoice.comments }} ">{{ invoice.comments|truncatewords:12 }}</td>
-            </tr>
-        {% endfor %}
-    </table>
-{% else %}
-    <p>There are no invoices.</p>
-{% endif %}
+    <div class="row">
+        <div class="span12">
+            <h2>Invoice Summary</h2>
+            <ul class="unstyled subnav">
+                <li>
+                    <a href="{% url 'invoice_projects' %}">Create Invoice</a>
+                </li>
+                <li>
+                    Previous Invoices
+                </li>
+            </ul>
+        </div>
+    </div>
 
+    <div class="row">
+        <div class="span12">
+            <h3>Invoices</h3>
+            {% if invoices %}
+                <table>
+                    <tr>
+                        <th>Invoice</th>
+                        <th>Reference</th>
+                        <th>Project</th>
+                        <th>Status</th>
+                        <th>Invoiced by</th>
+                        <th>Created on</th>
+                        <th>Starting on</th>
+                        <th>Ending on</th>
+                        <th>Comments</th>
+                    </tr>
+                    {% for invoice in invoices %}
+                        <tr>
+                            <td><a href="{% url 'view_invoice' invoice.pk %}">{{ invoice.pk }}</a></td>
+                            <td>{{ invoice.number|default:'' }}</td>
+                            <td>{{ invoice.project }}</td>
+                            <td>{{ invoice.status|capfirst }}</td>
+                            <td>{{ invoice.user.get_full_name }}</td>
+                            <td>{{ invoice.created|date:"M d Y P" }}</td>
+                            <td>{{ invoice.start|date:"M d Y" }}</td>
+                            <td>{{ invoice.end|date:"M d Y" }}</td>
+                            <td title="{{ invoice.comments }} ">{{ invoice.comments|truncatewords:12 }}</td>
+                        </tr>
+                    {% endfor %}
+                </table>
+            {% else %}
+                <p>There are no invoices.</p>
+            {% endif %}
+        </div>
+    </div>
 {% endblock %}
