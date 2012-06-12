@@ -32,6 +32,8 @@ django-timepiece uses Sphinx and RST for documentation. You can use Sphinx to bu
  * `docutils <http://docutils.sourceforge.net/>`_
  * `Sphinx <http://sphinx.pocoo.org/>`_
 
+A makefile is included with the documentation so you can run `make html` in the `doc/` directory to build the documentation
+
 Installation
 ------------
 

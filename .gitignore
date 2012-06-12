@@ -3,3 +3,4 @@
 local_settings.py
 *.db
 dist/
+_build/
