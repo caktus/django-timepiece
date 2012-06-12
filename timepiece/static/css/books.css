@@ -883,7 +883,7 @@ img.icon {
 }
 
 /** pagination **/
-.pagination {
+/*.pagination {
 	padding: 1em;
 }
  
@@ -923,7 +923,7 @@ img.icon {
 	color: #000;
 	background-color: white;
 	border: 1px solid #98D0FD;
-}
+}*/
 
 #ui-datepicker-div {
 	font-size: 80%;

@@ -1,40 +1,47 @@
-{% extends "base.html" %}
+{% extends "timepiece/base.html" %}
 
 {% block title %}Businesses{% endblock %}
 
 {% block content %}
-<h2>Businesses</h2>
-<ul class='header-actions-left'>
-{% if perms.timepiece.add_business %}
-	<li><a href='{% url create_business %}'>Create Business</a></li>
-{% endif %}
-</ul>
+    <div class="row">
+        <div class="span12">
+            <h2>Businesses</h2>
+            <ul class="unstyled subnav">
+                {% if perms.timepiece.add_business %}
+                    <li><a href='{% url create_business %}'>Create Business</a></li>
+                {% endif %}
+            </ul>
+        </div>
+    </div>
 
-<form class='search' accept-charset='UTF-8' method='get' action=''>
-	<ul>
-		{{ form.as_ul }}
-		<li class='form-buttons'>
-			<input class='large-button' type='submit' name='submit' value='Search &rarr;' />
-		</li>
-	</ul>
-</form>
+    <div class="row">
+        <div class="span12">
+            <form class='search' accept-charset='UTF-8' method='get' action=''>
+                {{ form}}
+                <input class='large-button' type='submit' name='submit' value='Search &rarr;' />
+            </form>
+        </div>
+    </div>
 
-{% load pagination_tags %}
-{% autopaginate businesses %}
+    <div class="row">
+        <div class="span12">
+            {% load pagination_tags %}
+            {% autopaginate businesses %}
 
-{% paginate %}
-<table class='projects'>
-	<tr>
-		<th>Name</th>
-		<th>Description</th>
-	</tr>
-	{% for business in businesses %}
-	<tr>
-		<td><a href='{% url view_business business.pk %}'>{{ business.name }}</a></td>
-		<td>{{ business.description|truncatewords:8 }}</td>
-	</tr>
-	{% endfor %}
-</table>
-{% paginate %}
-
+            {% paginate %}
+            <table class='projects'>
+                <tr>
+                    <th>Name</th>
+                    <th>Description</th>
+                </tr>
+                {% for business in businesses %}
+                <tr>
+                    <td><a href='{% url view_business business.pk %}'>{{ business.name }}</a></td>
+                    <td>{{ business.description|truncatewords:8 }}</td>
+                </tr>
+                {% endfor %}
+            </table>
+            {% paginate %}
+        </div>
+    </div>
 {% endblock %}

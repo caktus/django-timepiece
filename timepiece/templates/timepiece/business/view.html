@@ -1,27 +1,36 @@
-{% extends "base.html" %}
+{% extends "timepiece/base.html" %}
 {% load timepiece_tags markup %}
 
 {% block title %}{{ business.name }}{% endblock %}
 
 {% block content %}
-<h2>{{ business.name }}</h2>
-<ul class='header-actions-left'>
-{% if perms.timepiece.change_business %}
-	<li><a href='{% url edit_business business.pk %}'>Edit business</a></li>
-{% endif %}
-</ul>
-<table class='vertical'>
-    <tr>
-        <th>Email:</th>
-        <td>{{ business.email }}</td>
-    </tr>
-    <tr>
-        <th>Description:</th>
-        <td>{{ business.description|linebreaks }}</td>
-    </tr>
-    <tr>
-        <th>Notes:</th>
-        <td>{{ business.notes|linebreaks }}</td>
-    </tr>
-</table>
+    <div class="row">
+        <div class="span12">
+            <h2>{{ business.name }}</h2>
+            <ul class="unstyled subnav">
+                {% if perms.timepiece.change_business %}
+                    <li><a href='{% url edit_business business.pk %}'>Edit business</a></li>
+                {% endif %}
+            </ul>
+        </div>
+    </div>
+
+    <div class="row">
+        <div class="span12">
+            <table class='vertical'>
+                <tr>
+                    <th>Email:</th>
+                    <td>{{ business.email }}</td>
+                </tr>
+                <tr>
+                    <th>Description:</th>
+                    <td>{{ business.description|linebreaks }}</td>
+                </tr>
+                <tr>
+                    <th>Notes:</th>
+                    <td>{{ business.notes|linebreaks }}</td>
+                </tr>
+            </table>
+        </div>
+    </div>
 {% endblock %}

@@ -5,108 +5,128 @@
 {% block title %}Payroll Summary{% endblock %}
 
 {% block content %}
+    <div class="row">
+        <div class="span12">
+            <h2>Reports</h2>
+            <ul class="unstyled subnav">
+                <li>
+                    {% if perms.timepiece.view_entry_summary %}
+                        <a href='{% url 'hourly_report' %}'>Hourly</a>
+                    {% endif %}
+                </li>
+                <li>
+                    {% if perms.timepiece.view_entry_summary %}
+                        <a href='{% url 'timepiece-summary' %}'>General Ledger</a>
+                    {% endif %}
+                </li>
+                <li>
+                    Payroll Report        
+                </li>
+            </ul>
+        </div>
+    </div>
 
+    <div class="row">
+        <div class="span12">
+            <form method="get" action="" id="date-filter" accept-charset="utf-8">
+                {{ year_month_form }}
+                <input type='submit' name='yearmonth' value="Update" id='yearmonth'/>
+            </form>
+        </div>
+    </div>
 
-<h2>Reports</h2>
-<ul class='header-actions-left'>
-    <li>
-        {% if perms.timepiece.view_entry_summary %}
-            <a href='{% url 'hourly_report' %}'>Hourly</a>
-        {% endif %}
-    </li>
-    <li>
-        {% if perms.timepiece.view_entry_summary %}
-            <a href='{% url 'timepiece-summary' %}'>General Ledger</a>
-        {% endif %}
-    </li>
-    <li>
-        Payroll Report        
-    </li>
-</ul>
-
-<form method="get" action="" id="date-filter" accept-charset="utf-8">
-    {{ year_month_form }}
-    <input type='submit' name='yearmonth' value="Update" id='yearmonth'/>
-</form>
-
-<div class="cal_wrapper" style='float: right;'>
-    <div class="cal left"> {% show_cal from_date -1 %} </div>
-    <div class="cal middle"> {% show_cal from_date 0 %} </div>
-</div>
-<br/>
-{% if unverified %}
-    <p><strong>Warning:</strong> The following users have <strong>unverified</strong> time during this period:</p>
-    <ul>
-        {% for pk, first, last in unverified %}            
-            <li><a href="{% url 'view_person_time_sheet' pk %}?month={{from_date|date:"n"}}&year={{from_date|date:"Y"}}">{{ first }} {{ last }}</a></li>
-        {% endfor %}
-    </ul>
-{% endif %}
-{% if unapproved %}
-    <p><strong>Warning:</strong> The following users have <strong>unapproved</strong> time during this period:</p>
-    <ul>
-        {% for pk, first, last in unapproved %}
-            <li><a href="{% url 'view_person_time_sheet' pk %}?month={{from_date|date:"n"}}&year={{from_date|date:"Y"}}">{{ first }} {{ last }}</a></li>
-        {% endfor %}
-    </ul>
-{% endif %}
-
-<h3>Weekly Summary</h3>
-{% if weekly_totals.0.0 %}
-    <table class='project'>
-        <tr class="header">
-            <th class='name_col'>Name</th>
-            {% for date in date_headers %}
-                <th>{{date|date:"M/d"}}</th>
-            {% endfor %}
-            <th>Overtime</th>
-        </tr>
-        {% for rows, totals in weekly_totals %}
-            {% for name, hours in rows %}
-                <tr class="{% cycle 'odd' 'even' %}">           
-                    <th class='name_col'>{{name}}</th>
-                    {% for num in hours %}
-                        <td class='hours' title='{{name}}'>{{num}}</td>
+    <div class="row">
+        <div class="span6">
+            {% if unverified %}
+                <p><strong>Warning:</strong> The following users have <strong>unverified</strong> time during this period:</p>
+                <ul>
+                    {% for pk, first, last in unverified %}            
+                        <li><a href="{% url 'view_person_time_sheet' pk %}?month={{from_date|date:"n"}}&year={{from_date|date:"Y"}}">{{ first }} {{ last }}</a></li>
                     {% endfor %}
-                </tr>                
-            {% endfor %}
-        {% endfor %}
-    </table>
-    {% else %}
-        <p>No entries found.</p>
-{% endif %}
+                </ul>
+            {% endif %}
+            {% if unapproved %}
+                <p><strong>Warning:</strong> The following users have <strong>unapproved</strong> time during this period:</p>
+                <ul>
+                    {% for pk, first, last in unapproved %}
+                        <li><a href="{% url 'view_person_time_sheet' pk %}?month={{from_date|date:"n"}}&year={{from_date|date:"Y"}}">{{ first }} {{ last }}</a></li>
+                    {% endfor %}
+                </ul>
+            {% endif %}
+            {% if not unverified and not unapproved %}
+                <p>All time verified and approved</p>
+            {% endif %}
+        </div>
 
-<h3>Hourly Summary</h3>
-{% if monthly_totals %}
-    <table>
-        <tr class="header">
-            <th>Name</th>
-            <th colspan="2">Billable</th>
-            <th colspan="2">Non-Billable</th>
-            <th>Total Worked</th>
-            <th style="text-align:right;">Paid Leave</th>
-            <th>Grand Total</th>
-        </tr>
-        {% for name, hours, descs, all in monthly_totals %}
-            <tr class="{% cycle 'odd' 'even' %}">           
-                <th class='name_col'>{{ name }}</th>
-                {% for num in hours|slice:"0:2" %}
-                    <td class="hours">{{num.0|default:""}}</td>
-                    <td class="hours">{% if num.1 %}({{num.1}}%){% endif %}</td>
-                {% endfor %}
-                <td class="hours">{{hours.2}}</td>
-                <td class="hours" style="width: 200px;">
-                {% for desc in descs %}
-                    {{desc.0}}:&nbsp;&nbsp;{{desc.1}}
-                {% endfor %}
-                </td>
-                <td class="hours">{{all}}</td>
-            </tr>
-        {% endfor %}
-    </table>
-{% else %}
-    <p> No entries found.</p>
-{% endif %}
+        <div class="span6">
+            <div class="cal_wrapper">
+                <div class="cal left"> {% show_cal from_date -1 %} </div>
+                <div class="cal middle"> {% show_cal from_date 0 %} </div>
+            </div>
+        </div>
+    </div>
 
+    <div class="row">
+        <div class="span8">
+            <h3>Hourly Summary</h3>
+            {% if monthly_totals %}
+                <table>
+                    <tr class="header">
+                        <th>Name</th>
+                        <th colspan="2">Billable</th>
+                        <th colspan="2">Non-Billable</th>
+                        <th>Total Worked</th>
+                        <th style="text-align:right;">Paid Leave</th>
+                        <th>Grand Total</th>
+                    </tr>
+                    {% for name, hours, descs, all in monthly_totals %}
+                        <tr class="{% cycle 'odd' 'even' %}">           
+                            <th class='name_col'>{{ name }}</th>
+                            {% for num in hours|slice:"0:2" %}
+                                <td class="hours">{{num.0|default:""}}</td>
+                                <td class="hours">{% if num.1 %}({{num.1}}%){% endif %}</td>
+                            {% endfor %}
+                            <td class="hours">{{hours.2}}</td>
+                            <td class="hours" style="width: 200px;">
+                            {% for desc in descs %}
+                                {{desc.0}}:&nbsp;&nbsp;{{desc.1}}
+                            {% endfor %}
+                            </td>
+                            <td class="hours">{{all}}</td>
+                        </tr>
+                    {% endfor %}
+                </table>
+            {% else %}
+                <p> No entries found.</p>
+            {% endif %}
+        </div>
+
+        <div class="span4">
+            <h3>Weekly Summary</h3>
+            {% if weekly_totals.0.0 %}
+                <table class='project'>
+                    <tr class="header">
+                        <th class='name_col'>Name</th>
+                        {% for date in date_headers %}
+                            <th>{{date|date:"M/d"}}</th>
+                        {% endfor %}
+                        <th>Overtime</th>
+                    </tr>
+                    {% for rows, totals in weekly_totals %}
+                        {% for name, hours in rows %}
+                            <tr class="{% cycle 'odd' 'even' %}">           
+                                <th class='name_col'>{{name}}</th>
+                                {% for num in hours %}
+                                    <td class='hours' title='{{name}}'>{{num}}</td>
+                                {% endfor %}
+                            </tr>                
+                        {% endfor %}
+                    {% endfor %}
+                </table>
+                {% else %}
+                    <p>No entries found.</p>
+            {% endif %}
+        </div>
+    </div>
 {% endblock %}
 
