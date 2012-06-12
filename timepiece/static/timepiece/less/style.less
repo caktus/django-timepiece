@@ -1,6 +1,35 @@
 // Includes
 @import "../../bootstrap/less/bootstrap.less";
 
+// Variables & Mixins
+@lightgray: #DDDDDD;
+
 body {
-    
+    ul.subnav {
+        li {
+            display: inline;
+            border-left: 1px solid @lightgray;
+            padding: 0px 10px;
+
+            &:first-child {
+                padding-left: 0px;
+                border-left: 0px;
+            }
+        }
+    }
+
+    div.pagination {
+        span {
+            float: left;
+            padding: 0 14px;
+            line-height: 34px;
+            text-decoration: none;
+            border: 1px solid #DDD;
+            border-left-width: 0;
+        }
+
+        span:first-child, a:first-child {
+            border-left-width: 1px;
+        }
+    }
 }
