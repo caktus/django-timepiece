@@ -3,24 +3,39 @@
 {% block title %}Clock In{% endblock %}
 
 {% block content %}
-<h2>Clock Into Project</h2>
-<br />
-{% if active %}
-    You currently have an active entry on {{ active.project.name }}. Switching to a new project below will clock out of this entry at {% get_active_hours active %} hours and start a new one.
-Please enter any notes about switching below:
-{% endif %}
-<form action="{% url timepiece-clock-in %}" method="post">
-    {% csrf_token %}
-    <table class='vertical'>
-        {{ form }}
-        <tr>
-            <td>&nbsp;</td>
-            <td class='submit'>
-                <input type='button' value='Cancel' onclick='history.go(-1)' />
-                &nbsp;
-                <input type='submit' name='submit' value='Clock In &rarr;' />
-            </td>
-        </tr>
-    </table>
-</form>
+    <div class="row">
+        <div class="span12">
+            <h2>Clock Into Project</h2>
+        </div>
+    </div>
+
+    {% if active %}
+    <div class="row">
+        <div class="span12">
+            <p>
+                You currently have an active entry on {{ active.project.name }}. Switching to a new project below will clock out of this entry at {% get_active_hours active %} hours and start a new one.
+                Please enter any notes about switching below:
+            </p>
+        </div>
+    </div>
+    {% endif %}
+
+    <div class="row">
+        <div class="span12">
+            <form action="{% url timepiece-clock-in %}" method="post">
+                {% csrf_token %}
+                <table class='vertical'>
+                    {{ form }}
+                    <tr>
+                        <td>&nbsp;</td>
+                        <td class='submit'>
+                            <input type='button' value='Cancel' onclick='history.go(-1)' />
+                            &nbsp;
+                            <input type='submit' name='submit' value='Clock In &rarr;' />
+                        </td>
+                    </tr>
+                </table>
+            </form>
+        </div>
+    </div>
 {% endblock %}
