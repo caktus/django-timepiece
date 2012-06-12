@@ -1,21 +1,50 @@
-{% extends 'base.html' %}
+<!doctype html>
+<html>
+<head>
+    <title>Timepiece: {% block title %}{% endblock %}</title>
+    <link rel="icon" type="image/png" href="{{ STATIC_URL }}images/icons/clock.png">
 
-{% block extracss %}
-{% endblock %}
+    {% block javascript %}
+        <script src="https://ajax.googleapis.com/ajax/libs/jquery/1.7.2/jquery.min.js"></script>
+        <script src="https://ajax.googleapis.com/ajax/libs/jqueryui/1.8.18/jquery-ui.min.js"></script>
+        <script src="{{ STATIC_URL }}timepiece/js/widgets.js"></script>
+    {% endblock javascript %}
 
-{% block staticfiles %}
-    {% load compress %}
-    {% if debug %}
-        <link rel="stylesheet/less" type="text/css" href="{{ STATIC_URL }}timepiece/less/style.less" />
-        <script src="{{ STATIC_URL }}timepiece/js/less-1.3.0.min.js"></script>
-    {% else %}
-        {% compress css %}
-            <link rel="stylesheet" type="text/less" href="{{ STATIC_URL }}timepiece/less/style.less" />
-        {% endcompress %}
-    {% endif %}
-{% endblock staticfiles %}
+    {% block extrajs %}
+    {% endblock extrajs %}
 
-{% block css %}
-<link rel="stylesheet" href="{{ STATIC_URL }}timepiece/css/style.css" type="text/css" />
-<link charset='UTF-8' rel="stylesheet" type="text/css" media="screen" href="{{ STATIC_URL }}css/books.css" />
-{% endblock %}
+    {% block css %}
+        <link type="text/css" rel="stylesheet" href="{{ STATIC_URL }}timepiece/css/jquery-ui.css" />
+        <link rel="stylesheet" href="{{ STATIC_URL }}timepiece/css/style.css" type="text/css" />
+        <link charset='UTF-8' rel="stylesheet" type="text/css" media="screen" href="{{ STATIC_URL }}css/books.css" />
+    {% endblock %}
+
+    {% block staticfiles %}
+        {% load compress %}
+        {% if debug %}
+            <link rel="stylesheet/less" type="text/css" href="{{ STATIC_URL }}timepiece/less/style.less" />
+            <script src="{{ STATIC_URL }}timepiece/js/less-1.3.0.min.js"></script>
+        {% else %}
+            {% compress css %}
+                <link rel="stylesheet" type="text/less" href="{{ STATIC_URL }}timepiece/less/style.less" />
+            {% endcompress %}
+        {% endif %}
+    {% endblock staticfiles %}
+
+    {% block extracss %}
+    {% endblock %}
+</head>
+
+<body id="{% block bodyid %}{% endblock bodyid %}">
+    {% block navigation %}
+    {% endblock navigation %}
+
+    <div class="container">
+        {% block content %}{% endblock content %}
+    </div>
+
+    {% block footer %}
+    {% endblock footer %}
+</body>
+
+</html>
