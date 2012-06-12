@@ -5,80 +5,94 @@
 {% block title %}{{ project }} Time Sheet{% endblock %}
 
 {% block content %}
-<h2>{{ project }} Time Sheet ({{ from_date|date:"N j" }} &mdash; {{ to_date|date:"N j" }})</h2>
-<ul class='header-actions-left'>
-    <li><a href='{% url 'view_project' project.id %}'>Project Information</a></li>
-</ul>
+    <div class="row">
+        <div class="span12">
+            <h2>{{ project }} Time Sheet ({{ from_date|date:"N j" }} &mdash; {{ to_date|date:"N j" }})</h2>
+            <ul class="unstyled subnav">
+                <li><a href='{% url 'view_project' project.id %}'>Project Information</a></li>
+            </ul>
+        </div>
+    </div>
 
-<form method="get" action="" id="date-filter" accept-charset="utf-8">
-    {{ year_month_form }}
-    <input type='submit' name='yearmonth' value="Update" id='yearmonth'/>
-    {% if perms.timepiece.export_project_time_sheet %}
-        <button type='submit' name='csv' value="csv" id='csv'>Download CSV</button>
-    {% endif %}
-</form>
-<br />
-<div id="totals">
-    {% if user_entries %}
-        <table id='person-summary'>
-            <caption>Person Summary</caption>
-        {% for entry in user_entries %}
-            <tr>
-                <td>{{ entry.user__first_name }} {{ entry.user__last_name }}</td>
-                <td>{{ entry.sum }}</td>
-            </tr>
-        {% endfor %}        
-        </table>
-    {% endif %}
+    <div class="row">
+        <div class="span12">
+            <form method="get" action="" id="date-filter" accept-charset="utf-8">
+                {{ year_month_form }}
+                <input type='submit' name='yearmonth' value="Update" id='yearmonth'/>
+                {% if perms.timepiece.export_project_time_sheet %}
+                    <button type='submit' name='csv' value="csv" id='csv'>Download CSV</button>
+                {% endif %}
+            </form>
+        </div>
+    </div>
 
-    {% if activity_entries %}
-        <table id='activity-summary'>
-            <caption>Activity Summary</caption>
-        {% for entry in activity_entries %}
-            <tr>
-                <td>{{ entry.activity__name }}</td>
-                <td>{{ entry.sum }}</td>
-            </tr>
-        {% endfor %}  
-        </table>
-    {% endif %}
-</div>
-<br style='clear: both' />
-{% if entries %}
-    <table>
-        <tr>
-            <th>Date</th>
-            <th>Person</th>
-            <th>Activity</th>
-            <th>Location</th>
-            <th>Time In</th>
-            <th>Time Out</th>
-            <th>Breaks</th>
-            <th>Hours</th>
-            <th>Comments</th>
-        </tr>
-        {% for entry in entries %}
-        <tr{% if entry.comments %} title='{{ entry.comments }}'{% endif %}>
-            <td>{{ entry.start_time|date:"m/d/Y (D)" }}</td>
-            <td>{{ entry.user__first_name }} {{ entry.user__last_name }}</td>
-            <td>{{ entry.activity__name }}</td>
-            <td>{{ entry.location__name }}</td>
-            <td>{{ entry.start_time|date:"P" }}</td>
-            <td>{{ entry.end_time|date:"P" }}</td>
-            <td>{{ entry.seconds_paused|seconds_to_hours }}</td>
-            <td>{{ entry.hours }}</td>
-            <td title="{{entry.comments}}">{{ entry.comments|truncatewords:12 }}</td>
-        </tr>
-        {% endfor %}
-        <tr>
-            <th colspan='7'>Total:</th>
-            <td>{{ total|floatformat:2 }}</td>
-        </tr>
-    </table>
-{% else %}
-    <p>No entries exist for this time sheet.</p>
-{% endif %}
+    <div class="row">
+        {% if user_entries %}
+            <div class="span3">
+                <table id='person-summary'>
+                    <caption>Person Summary</caption>
+                {% for entry in user_entries %}
+                    <tr>
+                        <td>{{ entry.user__first_name }} {{ entry.user__last_name }}</td>
+                        <td>{{ entry.sum }}</td>
+                    </tr>
+                {% endfor %}        
+                </table>
+            </div>
+        {% endif %}
+
+        {% if activity_entries %}
+            <div class="span3">
+                <table id='activity-summary'>
+                    <caption>Activity Summary</caption>
+                {% for entry in activity_entries %}
+                    <tr>
+                        <td>{{ entry.activity__name }}</td>
+                        <td>{{ entry.sum }}</td>
+                    </tr>
+                {% endfor %}  
+                </table>
+            </div>
+        {% endif %}
+    </div>
 
 
-
+    <div class="row">
+        <div class="span12">
+            {% if entries %}
+                <table>
+                    <tr>
+                        <th>Date</th>
+                        <th>Person</th>
+                        <th>Activity</th>
+                        <th>Location</th>
+                        <th>Time In</th>
+                        <th>Time Out</th>
+                        <th>Breaks</th>
+                        <th>Hours</th>
+                        <th>Comments</th>
+                    </tr>
+                    {% for entry in entries %}
+                    <tr{% if entry.comments %} title='{{ entry.comments }}'{% endif %}>
+                        <td>{{ entry.start_time|date:"m/d/Y (D)" }}</td>
+                        <td>{{ entry.user__first_name }} {{ entry.user__last_name }}</td>
+                        <td>{{ entry.activity__name }}</td>
+                        <td>{{ entry.location__name }}</td>
+                        <td>{{ entry.start_time|date:"P" }}</td>
+                        <td>{{ entry.end_time|date:"P" }}</td>
+                        <td>{{ entry.seconds_paused|seconds_to_hours }}</td>
+                        <td>{{ entry.hours }}</td>
+                        <td title="{{entry.comments}}">{{ entry.comments|truncatewords:12 }}</td>
+                    </tr>
+                    {% endfor %}
+                    <tr>
+                        <th colspan='7'>Total:</th>
+                        <td>{{ total|floatformat:2 }}</td>
+                    </tr>
+                </table>
+            {% else %}
+                <p>No entries exist for this time sheet.</p>
+            {% endif %}
+        </div>
+    </div>
 {% endblock %}
