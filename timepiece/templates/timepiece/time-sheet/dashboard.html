@@ -1,4 +1,4 @@
-{% extends 'timepiece/time-sheet/base.html' %}
+{% extends "timepiece/time-sheet/base.html" %}
 {% load timepiece_tags math_tags %}
 
 {% block title %}Timepiece Entries{% endblock title %}
@@ -9,7 +9,7 @@
     <div class="row">
         <div class="span12">
             <h2>My Time Sheet</h2>
-            <ul class="unstyled clockin">
+            <ul class="unstyled subnav">
                 <li><a href="{% url timepiece-clock-in %}">Clock In</a></li>
                 <li><a href="{% url timepiece-add %}">Add Entry</a></li>
             </ul>
@@ -19,20 +19,20 @@
     <div class="row">
         <div class="span12">
             <h3>My Projects</h3>
-            <table class='my-projects'>
+            <table class="my-projects">
             	<tr><th>Project</th><th>My Hours</th><th>Hours Worked</th><th>Hours Remaining</th><th>Due Date</th><th></th></tr>
             	{% regroup assignments by contract.project.type as type_list %}
             	{% for type in type_list %}
-                	<tr><th colspan='6'>{{ type.grouper }}s</th></tr>
+                	<tr><th colspan="6">{{ type.grouper }}s</th></tr>
                 	{% for assignment in type.list %}
                     	<tr>
                     	    <td><a href="{% url timepiece-clock-in %}?project={{ assignment.contract.project.pk }}">{{ assignment.contract.project }}</a></td>
-                            <td class='hours'>{{ assignment.num_hours }}</td>
-                            <td class='hours'>{{ assignment.hours_worked|floatformat:2 }} ({% widthratio assignment.hours_worked assignment.num_hours 100 %}%)</td>
-                            <td class='hours'>{{ assignment.hours_remaining|floatformat:2 }}</td>
+                            <td class="hours">{{ assignment.num_hours }}</td>
+                            <td class="hours">{{ assignment.hours_worked|floatformat:2 }} ({% widthratio assignment.hours_worked assignment.num_hours 100 %}%)</td>
+                            <td class="hours">{{ assignment.hours_remaining|floatformat:2 }}</td>
                             <td>{{ assignment.end_date }}</td>
                             <td>
-                    			<ul class='actions'>
+                    			<ul class="actions">
                                     <li><a href="{% url timepiece-add %}?project={{ assignment.contract.project.pk }}">Add Entry</a></li>
                                     <li><a href="{% url view_contract assignment.contract.pk %}">Report</a></li>
                     			</ul>
@@ -53,7 +53,7 @@
             </h3>
 
             {% with my_active_entries as entries %}
-            {% include 'timepiece/time-sheet/_entry_list.html' %}
+            {% include "timepiece/time-sheet/_entry_list.html" %}
             {% endwith %}
         </div>
     </div>
@@ -62,7 +62,7 @@
         {% if allocations or project_entries %}
             <div class="span12">
                 <h3>My Work This Week</h3>
-                <table class='my-week'>
+                <table class="my-week">
                     <tr><th>Project</th><th>Hours Worked</th></tr>
                     {% for assignment in allocations %}
                         <tr>
@@ -71,7 +71,7 @@
                                 {{ assignment.assignment.contract.project }}
                                 </a>
                             </td>
-                            <td class='hours'>
+                            <td class="hours">
                                 {% bar_graph assignment.assignment.contract.project assignment.hours_worked assignment.hours %}
                             </td>
                         </tr>
@@ -94,7 +94,7 @@
                             <td>
                                 {% if row.billable %}
                                     {% ifnotequal schedule.count 0 %}
-                                        {% bar_graph '' row.sum schedule.0.hours_per_week %}
+                                        {% bar_graph "" row.sum schedule.0.hours_per_week %}
                                     {% else %}
                                         {{ row.sum }}
                                     {% endifnotequal %}
@@ -123,7 +123,7 @@
 
     <div class="row">
         <div class="span12">
-            <table id='active-entries' class='timepiece-summary'>
+            <table id="active-entries" class="timepiece-summary">
                 {% if others_active_entries %}
                     <caption>Others are working on:</caption>
                     <tr>
@@ -133,7 +133,7 @@
                         <th>Since</th>
                     </tr>
                     {% for entry in others_active_entries %}
-                        <tr class='{% if entry.is_paused %}paused{% endif %}'>
+                        <tr class="{% if entry.is_paused %}paused{% endif %}">
                             <td>{{ entry.user.first_name }} {{ entry.user.last_name }}</td>
                             <td>{{ entry.project.name }}</td>
                             <td>{{ entry.activity.name }}</td>
@@ -145,7 +145,7 @@
         </div>
     </div>
 
-    <br style='clear: both;' />
+    <br style="clear: both;" />
 
     <div class="row">
         <div class="span12">
@@ -156,7 +156,7 @@
             </h3>
 
             {% with this_weeks_entries as entries %}
-                {% include 'timepiece/time-sheet/_entry_list.html' %}
+                {% include "timepiece/time-sheet/_entry_list.html" %}
             {% endwith %}
         </div>
     </div>

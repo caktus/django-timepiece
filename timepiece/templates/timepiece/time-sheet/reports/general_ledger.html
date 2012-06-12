@@ -1,4 +1,4 @@
-{% extends 'timepiece/time-sheet/base.html' %}
+{% extends "timepiece/time-sheet/base.html" %}
 {% load timepiece_tags %}
 
 {% block title %}General Ledger{% endblock %}
@@ -6,10 +6,10 @@
 {% block content %}
 
 <h2>Reports</h2>
-<ul class='header-actions-left'>
+<ul class="unstyled subnav">
     <li>
         {% if perms.timepiece.view_entry_summary %}
-            <a href='{% url hourly_report %}'>Hourly</a>
+            <a href="{% url hourly_report %}">Hourly</a>
         {% endif %}
     </li>
     <li>
@@ -17,19 +17,19 @@
     </li>
     <li>
         {% if perms.timepiece.view_payroll_summary %}
-            <a href='{% url payroll_summary %}'>Payroll Report</a>
+            <a href="{% url payroll_summary %}">Payroll Report</a>
         {% endif %}
     </li>
 </ul>
 
 <form method="get" action="" id="date-filter" accept-charset="utf-8">
-    <ul id='ledger-date-fieldlist'>
+    <ul id="ledger-date-fieldlist">
         {{ form.as_ul }}
         <li>
-            <input type='submit' name='submit' value='Update' id='id_date_form_submit_btn'/>
+            <input type="submit" name="submit" value="Update" id="id_date_form_submit_btn"/>
         </li>
         <li>
-            <input type='button' name='clear' value='Clear' id='id_date_form_clear_btn'/>
+            <input type="button" name="clear" value="Clear" id="id_date_form_clear_btn"/>
         </li>
     </ul>
 </form>
@@ -41,12 +41,12 @@
 <table>
     {% for entry in project_totals %}
     <tr>
-        <td><a href='{% url view_project entry.project__id %}'>{{ entry.project__name }}</a></td>
+        <td><a href="{% url view_project entry.project__id %}">{{ entry.project__name }}</a></td>
         <td>{{ entry.total_hours|floatformat:2 }}</td>
     </tr>
     {% endfor %}
     <tr>
-        <th colspan='2'>&nbsp;</th>
+        <th colspan="2">&nbsp;</th>
     </tr>
     <tr>
         <th>Total:</th>
@@ -65,7 +65,7 @@
     </tr>
     {% endfor %}
     <tr>
-        <th colspan='2'>&nbsp;</th>
+        <th colspan="2">&nbsp;</th>
     </tr>
 </table>
 </div>

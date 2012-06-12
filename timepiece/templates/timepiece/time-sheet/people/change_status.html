@@ -1,4 +1,4 @@
-{% extends 'timepiece/time-sheet/base.html' %}
+{% extends "timepiece/time-sheet/base.html" %}
 {% load timepiece_tags %}
 
 {% block title %}{{ action.capitalize }} Hours for Time Sheet{% endblock %}
@@ -6,10 +6,10 @@
 {% block content %}
     <h2>{{ action.capitalize }} Hours for Time Sheet</h2>
     <h3>
-    Are you sure you want to {{ action }} all of {{ timesheet_user.get_full_name }}'s timesheet,
+    Are you sure you want to {{ action }} all of {{ timesheet_user.get_full_name }}"s timesheet,
     from {{ from_date|date:"N j, Y" }} to {{ to_date|date:"N j, Y" }}, which includes a total of {{ hours }} hours?
     </h3>
-    {% if action == 'approve' %}
+    {% if action == "approve" %}
       <p>After entries have been approved they are ready to be submitted for payroll.</p>
     {% else %}
       <p>After entries are verified they cannot be changed.</p>
