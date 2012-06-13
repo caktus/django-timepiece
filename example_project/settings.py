@@ -130,6 +130,7 @@ INSTALLED_APPS = (
     'django.contrib.markup',
     'pagination',
     'timepiece',
+    'compressor'
 )
 
 # A sample logging configuration. The only tangible logging
