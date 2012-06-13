@@ -1117,8 +1117,9 @@ class StatusTest(TimepieceDataTestCase):
         self.assertEquals(response.status_code, 200)
 
         messages = response.context['messages']
-        msg = 'You cannot verify/approve a timesheet while you have an active entry. '\
-            'Please close any active entries.'
+        msg = 'You cannot verify/approve this timesheet while the user {0} ' \
+            'has an active entry. Please have them close any active ' \
+            'entries.'.format(self.user.get_full_name())
 
         self.assertEquals(messages._loaded_messages[0].message, msg)
         self.assertEquals(entry1.status, 'unverified')
