@@ -108,6 +108,7 @@ class QuickSearchForm(forms.Form):
         label='Quick Search',
         required=False
     )
+    quick_search.widget.attrs['placeholder'] = 'Search'
 
     def clean_quick_search(self):
         item = self.cleaned_data['quick_search']
