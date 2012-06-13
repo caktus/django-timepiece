@@ -5,29 +5,39 @@
 {% block title %}Invoice Detail{% endblock %}
 
 {% block content %}
-    {% invoice_subheaders 'detail' %}
-    {% include 'timepiece/time-sheet/invoice/_invoice_detail.html' %}
+    <div class="row">
+        <div class="span12">
+            {% invoice_subheaders 'detail' %}
+        </div>
+    </div>
 
-    {% if totals %}
-        <h3>Totals</h3>
-            <table>
-                <tr>
-                    <th>Activity Type</th>
-                    <th>Total Hours</th>
-                </tr>
-                {% for name, hours_activities in totals %}
-                    <tr class="ledger_header">
-                        <th>{{ name|title }}</th>
-                        <td class="hours"> {{ hours_activities.0 }} </td>
+    <div class="row">
+        <div class="span6">
+            {% include 'timepiece/time-sheet/invoice/_invoice_detail.html' %}
+        </div>
+
+        <div class="span6">
+            {% if totals %}
+                <h3>Totals</h3>
+                <table>
+                    <tr>
+                        <th>Activity Type</th>
+                        <th>Total Hours</th>
                     </tr>
-                    {% for name, hours in hours_activities.1 %}
-                        <tr>
-                            <td class="nested">{{ name|title }}</td>
-                            <td class="hours">{{ hours }} </td> 
+                    {% for name, hours_activities in totals %}
+                        <tr class="ledger_header">
+                            <th>{{ name|title }}</th>
+                            <td class="hours"> {{ hours_activities.0 }} </td>
                         </tr>
+                        {% for name, hours in hours_activities.1 %}
+                            <tr>
+                                <td class="nested">{{ name|title }}</td>
+                                <td class="hours">{{ hours }} </td> 
+                            </tr>
+                        {% endfor %}
                     {% endfor %}
-                {% endfor %}
-            </table>
-        <br />
-    {% endif %}
+                </table>
+            {% endif %}
+        </div>
+    </div>
 {% endblock %}

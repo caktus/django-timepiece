@@ -1,72 +1,79 @@
-{% extends 'timepiece/time-sheet/base.html' %}
+{% extends "timepiece/time-sheet/base.html" %}
 {% load timepiece_tags %}
 
 {% block title %}General Ledger{% endblock %}
 
 {% block content %}
+    <div class="row">
+        <div class="span12">
+            <h2>Reports</h2>
+            <ul class="unstyled subnav">
+                <li>
+                    {% if perms.timepiece.view_entry_summary %}
+                        <a href="{% url hourly_report %}">Hourly</a>
+                    {% endif %}
+                </li>
+                <li>
+                    General Ledger
+                </li>
+                <li>
+                    {% if perms.timepiece.view_payroll_summary %}
+                        <a href="{% url payroll_summary %}">Payroll Report</a>
+                    {% endif %}
+                </li>
+            </ul>
+        </div>
+    </div>
 
-<h2>Reports</h2>
-<ul class='header-actions-left'>
-    <li>
-        {% if perms.timepiece.view_entry_summary %}
-            <a href='{% url hourly_report %}'>Hourly</a>
-        {% endif %}
-    </li>
-    <li>
-        General Ledger
-    </li>
-    <li>
-        {% if perms.timepiece.view_payroll_summary %}
-            <a href='{% url payroll_summary %}'>Payroll Report</a>
-        {% endif %}
-    </li>
-</ul>
+    <div class="row">
+        <div class="span12">
+            <form method="get" action="" id="date-filter" accept-charset="utf-8">
+                <ul id="ledger-date-fieldlist">
+                    {{ form.as_ul }}
+                    <li>
+                        <input type="submit" name="submit" value="Update" id="id_date_form_submit_btn"/>
+                    </li>
+                    <li>
+                        <input type="button" name="clear" value="Clear" id="id_date_form_clear_btn"/>
+                    </li>
+                </ul>
+            </form>
+        </div>
+    </div>
 
-<form method="get" action="" id="date-filter" accept-charset="utf-8">
-    <ul id='ledger-date-fieldlist'>
-        {{ form.as_ul }}
-        <li>
-            <input type='submit' name='submit' value='Update' id='id_date_form_submit_btn'/>
-        </li>
-        <li>
-            <input type='button' name='clear' value='Clear' id='id_date_form_clear_btn'/>
-        </li>
-    </ul>
-</form>
+    <div class="row">
+        <div class="span6">
+            <h3>Hours by Project</h3>
+            <table>
+                {% for entry in project_totals %}
+                    <tr>
+                        <td><a href="{% url view_project entry.project__id %}">{{ entry.project__name }}</a></td>
+                        <td>{{ entry.total_hours|floatformat:2 }}</td>
+                    </tr>
+                {% endfor %}
+                <tr>
+                    <th colspan="2">&nbsp;</th>
+                </tr>
+                <tr>
+                    <th>Total:</th>
+                    <td>{{ total_hours|floatformat:2 }}</td>
+                </tr>
+            </table>
+        </div>
 
-<div style="float:left;padding:10px;">
-<h3>Hours by Project</h3>
-
-<br />
-<table>
-    {% for entry in project_totals %}
-    <tr>
-        <td><a href='{% url view_project entry.project__id %}'>{{ entry.project__name }}</a></td>
-        <td>{{ entry.total_hours|floatformat:2 }}</td>
-    </tr>
-    {% endfor %}
-    <tr>
-        <th colspan='2'>&nbsp;</th>
-    </tr>
-    <tr>
-        <th>Total:</th>
-        <td>{{ total_hours|floatformat:2 }}</td>
-    </tr>
-</table>
-</div>
-<div style="float:left;padding:10px;">
-<h3>Hours by People</h3>
-<br />
-<table>
-    {% for entry in people_totals %}
-    <tr>
-        <td>{{ entry.user__first_name}} {{ entry.user__last_name }}</td>
-        <td>{{ entry.total_hours|floatformat:2 }}</td>
-    </tr>
-    {% endfor %}
-    <tr>
-        <th colspan='2'>&nbsp;</th>
-    </tr>
-</table>
-</div>
+        <div class="span5 offset1">
+            <h3>Hours by People</h3>
+            <table>
+                {% for entry in people_totals %}
+                    <tr>
+                        <td>{{ entry.user__first_name}} {{ entry.user__last_name }}</td>
+                        <td>{{ entry.total_hours|floatformat:2 }}</td>
+                    </tr>
+                {% endfor %}
+                <tr>
+                    <th colspan="2">&nbsp;</th>
+                </tr>
+            </table>
+        </div>
+    </div>
 {% endblock %}
