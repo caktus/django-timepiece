@@ -8,6 +8,8 @@
     {{ pj_filters.media }}
 {% endblock extrajs %}
 
+{% block bodyid %}hourly-report{% endblock bodyid %} 
+
 {% block content %}
     <div class="row">
         <div class="span12">
@@ -38,43 +40,45 @@
 
 
     <div class="row">
-        <div class="span6">
+        <div class="span9">
             {% if project_totals %}
-                <table class='project'>
-                    <tr class="header">
-                        <th class='name_col'>Name</th>
-                        {% for date in date_headers %}
-                            {% if trunc == 'month' %}
-                                <th>{{date|date:"M 'Y"}}</th>
-                            {% else %}
-                                <th>{{date|date:"M/d/Y"}}</th>
-                            {% endif %}
-                        {% endfor %}
-                        <th>Total</th>
-                    </tr>
-                    {% for rows, totals in project_totals %}
-                        {% for name, hours in rows %}
-                            <tr class="{% cycle 'odd' 'even' %}">
-                                <th class='name_col'>{{name}}</td>
-                                {% for num in hours %}
-                                    <td class='hours' title='{{name}}'>{{num}}</td>
+                <div class="scroll">
+                    <table class='project'>
+                        <tr class="header">
+                            <th class='name_col'>Name</th>
+                            {% for date in date_headers %}
+                                {% if trunc == 'month' %}
+                                    <th>{{date|date:"M 'Y"}}</th>
+                                {% else %}
+                                    <th>{{date|date:"M/d/Y"}}</th>
+                                {% endif %}
+                            {% endfor %}
+                            <th>Total</th>
+                        </tr>
+                        {% for rows, totals in project_totals %}
+                            {% for name, hours in rows %}
+                                <tr class="{% cycle 'odd' 'even' %}">
+                                    <th class='name_col'>{{name}}</td>
+                                    {% for num in hours %}
+                                        <td class='hours' title='{{name}}'>{{num}}</td>
+                                    {% endfor %}
+                                </tr>
+                            {% endfor %}
+                            <tr class="total">
+                                <th class='name_col'>Total:</td>
+                                {% for total in totals %}
+                                    <td class='hours'>{{total}}</td>
                                 {% endfor %}
                             </tr>
                         {% endfor %}
-                        <tr class="total">
-                            <th class='name_col'>Total:</td>
-                            {% for total in totals %}
-                                <td class='hours'>{{total}}</td>
-                            {% endfor %}
-                        </tr>
-                    {% endfor %}
-                </table>
+                    </table>
+                </div>
             {% else %}
                 <p>No entries found.</p>
             {% endif %}
         </div>
 
-        <div class="span6">
+        <div class="span3">
             <form method="get" action="" id="pj_select" accept-charset="utf-8">
                 <ul id='ledger-date-fieldlist'>
                     {{ date_form.as_ul }}
