@@ -605,9 +605,10 @@ def change_person_time_sheet(request, action, user_id, from_date):
     entries = entries.filter(status=filter_status[action])
 
     if active_entries:
-        messages.info(request,
-            'You cannot verify/approve a timesheet while you have an active ' \
-            'entry. Please close any active entries.')
+        msg = 'You cannot verify/approve this timesheet while the user {0} ' \
+            'has an active entry. Please have them close any active ' \
+            'entries.'.format(user.get_full_name())
+        messages.info(request, msg)
     return_url = reverse('view_person_time_sheet', kwargs={'user_id': user_id})
     return_url += '?%s' % urllib.urlencode({
         'year': from_date.year,
