@@ -90,10 +90,10 @@ History
 ************************
 * Fixed permissions for creating businesses.
 * Hourly reports in "My Ledger" display previous weeks of the month if an overlapping entry exists.
-* Fixed permissions for rejecting verifies entries.
+* Fixed permissions for rejecting verified entries.
 * Fixed a bug where you could verify entries while still clocked in.
 * Added user selection for payroll reviewers to switch between timesheets.
-* Fixed bug for where the incorrect email was shown in the header
+* Fixed bug where the incorrect email was shown in the header.
 
 0.4.1 (06-04-2012)
 ******************
