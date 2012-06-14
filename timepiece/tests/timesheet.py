@@ -1034,6 +1034,33 @@ class StatusTest(TimepieceDataTestCase):
         self.perm_user.save()
         self.client.login(username='perm', password='abc')
 
+    def test_verify_link(self):
+        entry = self.create_entry({
+            'user': self.user,
+            'start_time': self.now - datetime.timedelta(hours=1),
+            'end_time': self.now
+        })
+
+        response = self.client.get(self.sheet_url)
+        self.assertTrue(response.status_code, 200)
+
+        self.assertTrue(response.context['show_verify'])
+        self.assertFalse(response.context['show_approve'])
+
+    def test_approve_link(self):
+        entry = self.create_entry({
+            'user': self.user,
+            'start_time': self.now - datetime.timedelta(hours=1),
+            'end_time': self.now,
+            'status': 'verified'
+        })
+
+        response = self.client.get(self.sheet_url)
+        self.assertTrue(response.status_code)
+
+        self.assertTrue(response.context['show_approve'])
+        self.assertFalse(response.context['show_verify'])
+
     def test_verify_other_user(self):
         """A user should not be able to verify another's timesheet"""
         entry = self.create_entry({
