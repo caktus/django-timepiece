@@ -1097,7 +1097,7 @@ class StatusTest(TimepieceDataTestCase):
     def test_verify_active_entry(self):
         """
         A user shouldnt be able to verify a timesheet if it contains
-        an active entry
+        an active entry and should be redirect back to the ledger
         """
         self.login_as_admin()
 
@@ -1113,7 +1113,7 @@ class StatusTest(TimepieceDataTestCase):
             'status': 'unverified'
         })
 
-        response = self.client.get(self.verify_url)
+        response = self.client.get(self.verify_url, follow=True)
         self.assertEquals(response.status_code, 200)
 
         messages = response.context['messages']
@@ -1125,7 +1125,7 @@ class StatusTest(TimepieceDataTestCase):
         self.assertEquals(entry1.status, 'unverified')
         self.assertEquals(entry2.status, 'unverified')
 
-        response = self.client.post(self.verify_url)
+        response = self.client.post(self.verify_url, follow=True)
         self.assertEquals(response.status_code, 200)
         messages = response.context['messages']
 

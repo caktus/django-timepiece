@@ -497,7 +497,8 @@ def view_person_time_sheet(request, user_id):
         user.pk == request.user.pk):
         return HttpResponseForbidden('Forbidden')
     today_reset = datetime.datetime.today()
-    today_reset = today_reset.replace(hour=0, minute=0, second=0, microsecond=0)
+    today_reset = today_reset.replace(hour=0, minute=0, second=0, \
+        microsecond=0)
     from_date = utils.get_month_start(today_reset)
     to_date = from_date + relativedelta(months=1)
     can_view_summary = request.user and \
