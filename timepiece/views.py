@@ -625,13 +625,18 @@ def change_person_time_sheet(request, action, user_id, from_date):
         messages.info(request,
             'Your entries have been %s' % update_status[action])
         return redirect(return_url)
+    hours = entries.all().aggregate(s=Sum('hours'))['s']
+    if not hours:
+        msg = 'You cannot verify/approve a timesheet with no hours'
+        messages.info(request, msg)
+        return redirect(return_url)
     context = {
         'action': action,
         'timesheet_user': user,
         'from_date': from_date,
         'to_date': to_date - datetime.timedelta(days=1),
         'return_url': return_url,
-        'hours': entries.all().aggregate(s=Sum('hours'))['s'],
+        'hours': hours,
     }
     return render_to_response('timepiece/time-sheet/people/change_status.html',
         context, context_instance=RequestContext(request))
