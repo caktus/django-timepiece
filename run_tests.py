@@ -5,7 +5,7 @@ import sys
 import optparse
 
 from django.conf import settings
-from django.core.management import call_command
+from django.core.management import call_command, setup_environ
 
 parser = optparse.OptionParser()
 opts, args = parser.parse_args()
@@ -15,7 +15,7 @@ directory = os.path.abspath('%s' % os.path.dirname(__file__))
 if not settings.configured:
     jenkins = []
     if 'jenkins' in args:
-        jenkins = ['jenkins']
+        jenkins = ['django_jenkins']
 
     settings.configure(
         DATABASES={
