@@ -545,7 +545,7 @@ def view_person_time_sheet(request, user_id):
     show_approve = show_verify = False
     if request.user.has_perm('timepiece.change_entry') or \
         user == request.user:
-        statuses = list(entries_qs.values_list('status', flat=True))
+        statuses = list(month_qs.values_list('status', flat=True))
         total_statuses = len(statuses)
         unverified_count = statuses.count('unverified')
         verified_count = statuses.count('verified')
