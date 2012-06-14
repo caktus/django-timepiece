@@ -1034,6 +1034,29 @@ class StatusTest(TimepieceDataTestCase):
         self.perm_user.save()
         self.client.login(username='perm', password='abc')
 
+    def test_no_hours_verify(self):
+        response = self.client.get(self.verify_url, follow=True)
+        self.assertEquals(response.status_code, 200)
+
+        msg = 'You cannot verify/approve a timesheet with no hours'
+        messages = response.context['messages']
+        self.assertEquals(messages._loaded_messages[0].message, msg)
+
+        response = self.client.post(self.verify_url, follow=True)
+        self.assertEquals(messages._loaded_messages[0].message, msg)
+
+    def test_no_hours_approve(self):
+        self.login_with_permission()
+        response = self.client.get(self.approve_url, follow=True)
+        self.assertEquals(response.status_code, 200)
+
+        msg = 'You cannot verify/approve a timesheet with no hours'
+        messages = response.context['messages']
+        self.assertEquals(messages._loaded_messages[0].message, msg)
+
+        response = self.client.post(self.approve_url, follow=True)
+        self.assertEquals(messages._loaded_messages[0].message, msg)
+
     def test_verify_other_user(self):
         """A user should not be able to verify another's timesheet"""
         entry = self.create_entry({
