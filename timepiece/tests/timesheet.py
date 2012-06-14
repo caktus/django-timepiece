@@ -1061,6 +1061,29 @@ class StatusTest(TimepieceDataTestCase):
         self.assertTrue(response.context['show_approve'])
         self.assertFalse(response.context['show_verify'])
 
+    def test_no_hours_verify(self):
+        response = self.client.get(self.verify_url, follow=True)
+        self.assertEquals(response.status_code, 200)
+
+        msg = 'You cannot verify/approve a timesheet with no hours'
+        messages = response.context['messages']
+        self.assertEquals(messages._loaded_messages[0].message, msg)
+
+        response = self.client.post(self.verify_url, follow=True)
+        self.assertEquals(messages._loaded_messages[0].message, msg)
+
+    def test_no_hours_approve(self):
+        self.login_with_permission()
+        response = self.client.get(self.approve_url, follow=True)
+        self.assertEquals(response.status_code, 200)
+
+        msg = 'You cannot verify/approve a timesheet with no hours'
+        messages = response.context['messages']
+        self.assertEquals(messages._loaded_messages[0].message, msg)
+
+        response = self.client.post(self.approve_url, follow=True)
+        self.assertEquals(messages._loaded_messages[0].message, msg)
+
     def test_verify_other_user(self):
         """A user should not be able to verify another's timesheet"""
         entry = self.create_entry({
@@ -1124,7 +1147,7 @@ class StatusTest(TimepieceDataTestCase):
     def test_verify_active_entry(self):
         """
         A user shouldnt be able to verify a timesheet if it contains
-        an active entry
+        an active entry and should be redirect back to the ledger
         """
         self.login_as_admin()
 
@@ -1140,7 +1163,7 @@ class StatusTest(TimepieceDataTestCase):
             'status': 'unverified'
         })
 
-        response = self.client.get(self.verify_url)
+        response = self.client.get(self.verify_url, follow=True)
         self.assertEquals(response.status_code, 200)
 
         messages = response.context['messages']
@@ -1152,7 +1175,7 @@ class StatusTest(TimepieceDataTestCase):
         self.assertEquals(entry1.status, 'unverified')
         self.assertEquals(entry2.status, 'unverified')
 
-        response = self.client.post(self.verify_url)
+        response = self.client.post(self.verify_url, follow=True)
         self.assertEquals(response.status_code, 200)
         messages = response.context['messages']
 

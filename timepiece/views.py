@@ -497,7 +497,8 @@ def view_person_time_sheet(request, user_id):
         user.pk == request.user.pk):
         return HttpResponseForbidden('Forbidden')
     today_reset = datetime.datetime.today()
-    today_reset = today_reset.replace(hour=0, minute=0, second=0, microsecond=0)
+    today_reset = today_reset.replace(hour=0, minute=0, second=0, \
+        microsecond=0)
     from_date = utils.get_month_start(today_reset)
     to_date = from_date + relativedelta(months=1)
     can_view_summary = request.user and \
@@ -604,19 +605,18 @@ def change_person_time_sheet(request, action, user_id, from_date):
     }
     entries = entries.filter(status=filter_status[action])
 
-    if active_entries:
-        msg = 'You cannot verify/approve this timesheet while the user {0} ' \
-            'has an active entry. Please have them close any active ' \
-            'entries.'.format(user.get_full_name())
-        messages.info(request, msg)
     return_url = reverse('view_person_time_sheet', kwargs={'user_id': user_id})
     return_url += '?%s' % urllib.urlencode({
         'year': from_date.year,
         'month': from_date.month,
     })
-    if request.POST and request.POST.get('do_action', 'No') == 'Yes':
-        if active_entries:
-            return redirect(return_url)
+    if active_entries:
+        msg = 'You cannot verify/approve this timesheet while the user {0} ' \
+            'has an active entry. Please have them close any active ' \
+            'entries.'.format(user.get_full_name())
+        messages.info(request, msg)
+        return redirect(return_url)
+    if request.POST.get('do_action') == 'Yes':
         update_status = {
             'verify': 'verified',
             'approve': 'approved',
@@ -625,13 +625,18 @@ def change_person_time_sheet(request, action, user_id, from_date):
         messages.info(request,
             'Your entries have been %s' % update_status[action])
         return redirect(return_url)
+    hours = entries.all().aggregate(s=Sum('hours'))['s']
+    if not hours:
+        msg = 'You cannot verify/approve a timesheet with no hours'
+        messages.info(request, msg)
+        return redirect(return_url)
     context = {
         'action': action,
         'timesheet_user': user,
         'from_date': from_date,
         'to_date': to_date - datetime.timedelta(days=1),
         'return_url': return_url,
-        'hours': entries.all().aggregate(s=Sum('hours'))['s'],
+        'hours': hours,
     }
     return render_to_response('timepiece/time-sheet/people/change_status.html',
         context, context_instance=RequestContext(request))
