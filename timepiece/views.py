@@ -301,12 +301,12 @@ def reject_entry(request, entry_id):
         entry = timepiece.Entry.no_join.get(pk=entry_id)
     except:
         message = 'No such log entry.'
-        messages.info(request, message)
+        messages.error(request, message)
         return redirect(return_url)
 
     if entry.status == 'unverified' or entry.status == 'invoiced':
         msg_text = 'This entry is unverified or is already invoiced'
-        messages.info(request, msg_text)
+        messages.error(request, msg_text)
         return redirect(return_url)
 
     if request.POST.get('Yes'):
