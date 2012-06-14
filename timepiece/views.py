@@ -140,7 +140,7 @@ def clock_in(request):
     if len(active_entry) > 1:
         err_msg = 'You have more than one active entry and must clock out ' \
                   'of these entries before clocking into another.'
-        request.user.message_set.create(message=err_msg)
+        messages.info(request, err_msg)
         return redirect('timepiece-entries')
     active_entry = active_entry[0] if active_entry else None
     initial = dict([(k, v) for k, v in request.GET.items()])
@@ -148,8 +148,8 @@ def clock_in(request):
                                        user=request.user, active=active_entry)
     if form.is_valid():
         entry = form.save()
-        request.user.message_set.create(
-            message='You have clocked into %s' % entry.project)
+        message = 'You have clocked into %s' % entry.project
+        messages.info(request, message)
         return HttpResponseRedirect(reverse('timepiece-entries'))
     return render_to_response('timepiece/time-sheet/entry/clock_in.html', {
             'form': form,
@@ -171,11 +171,12 @@ def clock_out(request, entry_id):
         form = timepiece_forms.ClockOutForm(request.POST, instance=entry)
         if form.is_valid():
             entry = form.save()
-            request.user.message_set.create(message="You've been clocked out.")
+            message = "You've been clocked out."
+            messages.info(request, message)
             return HttpResponseRedirect(reverse('timepiece-entries'))
         else:
-            request.user.message_set.create(
-                message='Please correct the errors below.')
+            message = 'Please correct the errors below.'
+            messages.info(request, message)
     else:
         form = timepiece_forms.ClockOutForm(instance=entry)
     context = {
@@ -205,8 +206,7 @@ def toggle_paused(request, entry_id):
                                   end_time__isnull=True)
     except:
         # create an error message for the user
-        request.user.message_set.create(
-            message='The entry could not be paused.  Please try again.')
+        message = 'The entry could not be paused.  Please try again.'
     else:
         # toggle the paused state
         entry.toggle_paused()
@@ -233,7 +233,7 @@ def toggle_paused(request, entry_id):
         message = 'The log entry has been %s. %s' % (action, duration)
 
         # create a message that can be displayed to the user
-        request.user.message_set.create(message=message)
+        messages.info(request, message)
 
     # redirect to the log entry list
     return HttpResponseRedirect(reverse('timepiece-entries'))
@@ -269,12 +269,11 @@ def create_edit_entry(request, entry_id=None):
                 message = 'The entry has been updated successfully.'
             else:
                 message = 'The entry has been created successfully.'
-            request.user.message_set.create(message=message)
+            messages.info(request, message)
             return HttpResponseRedirect(reverse('timepiece-entries'))
         else:
-            request.user.message_set.create(
-                message='Please fix the errors below.',
-            )
+            message = 'Please fix the errors below.'
+            messages.info(request, message)
     else:
         initial = dict([(k, request.GET[k]) for k in request.GET.keys()])
         form = timepiece_forms.AddUpdateEntryForm(
@@ -300,19 +299,20 @@ def reject_entry(request, entry_id):
     try:
         entry = timepiece.Entry.no_join.get(pk=entry_id)
     except:
-        request.user.message_set.create(message='No such log entry.')
+        message = 'No such log entry.'
+        messages.info(request, message)
         return redirect(return_url)
 
     if entry.status == 'unverified' or entry.status == 'invoiced':
         msg_text = 'This entry is unverified or is already invoiced'
-        request.user.message_set.create(message=msg_text)
+        messages.info(request, msg_text)
         return redirect(return_url)
 
     if request.POST.get('Yes'):
         entry.status = 'unverified'
         entry.save()
         msg_text = "The entry's status was set to unverified"
-        request.user.message_set.create(message=msg_text)
+        messages.info(request, msg_text)
         return redirect(return_url)
     return render_to_response('timepiece/time-sheet/entry/reject_entry.html', {
                                   'entry': entry,
@@ -336,18 +336,20 @@ def delete_entry(request, entry_id):
                                   user=request.user)
     except:
         # entry does not exist
-        request.user.message_set.create(message='No such log entry.')
+        message = 'No such log entry.'
+        messages.info(request, message)
         return HttpResponseRedirect(reverse('timepiece-entries'))
 
     if request.method == 'POST':
         key = request.POST.get('key', None)
         if key and key == entry.delete_key:
             entry.delete()
-            request.user.message_set.create(message='Entry deleted.')
+            message = 'Entry deleted.'
+            messages.info(request, message)
             return HttpResponseRedirect(reverse('timepiece-entries'))
         else:
-            request.user.message_set.create(
-                message='You are not authorized to delete this entry!')
+            message = 'You are not authorized to delete this entry!'
+            messages.info(request, message)
 
     return render_to_response('timepiece/time-sheet/entry/delete_entry.html',
                               {'entry': entry},
