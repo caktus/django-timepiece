@@ -140,7 +140,7 @@ def clock_in(request):
     if len(active_entry) > 1:
         err_msg = 'You have more than one active entry and must clock out ' \
                   'of these entries before clocking into another.'
-        messages.info(request, err_msg)
+        messages.error(request, err_msg)
         return redirect('timepiece-entries')
     active_entry = active_entry[0] if active_entry else None
     initial = dict([(k, v) for k, v in request.GET.items()])
@@ -176,7 +176,7 @@ def clock_out(request, entry_id):
             return HttpResponseRedirect(reverse('timepiece-entries'))
         else:
             message = 'Please correct the errors below.'
-            messages.info(request, message)
+            messages.error(request, message)
     else:
         form = timepiece_forms.ClockOutForm(instance=entry)
     context = {
@@ -207,6 +207,7 @@ def toggle_paused(request, entry_id):
     except:
         # create an error message for the user
         message = 'The entry could not be paused.  Please try again.'
+        messages.error(request, message)
     else:
         # toggle the paused state
         entry.toggle_paused()
@@ -273,7 +274,7 @@ def create_edit_entry(request, entry_id=None):
             return HttpResponseRedirect(reverse('timepiece-entries'))
         else:
             message = 'Please fix the errors below.'
-            messages.info(request, message)
+            messages.error(request, message)
     else:
         initial = dict([(k, request.GET[k]) for k in request.GET.keys()])
         form = timepiece_forms.AddUpdateEntryForm(
@@ -349,7 +350,7 @@ def delete_entry(request, entry_id):
             return HttpResponseRedirect(reverse('timepiece-entries'))
         else:
             message = 'You are not authorized to delete this entry!'
-            messages.info(request, message)
+            messages.error(request, message)
 
     return render_to_response('timepiece/time-sheet/entry/delete_entry.html',
                               {'entry': entry},
@@ -616,7 +617,7 @@ def change_person_time_sheet(request, action, user_id, from_date):
         msg = 'You cannot verify/approve this timesheet while the user {0} ' \
             'has an active entry. Please have them close any active ' \
             'entries.'.format(user.get_full_name())
-        messages.info(request, msg)
+        messages.error(request, msg)
         return redirect(return_url)
     if request.POST.get('do_action') == 'Yes':
         update_status = {
@@ -630,7 +631,7 @@ def change_person_time_sheet(request, action, user_id, from_date):
     hours = entries.all().aggregate(s=Sum('hours'))['s']
     if not hours:
         msg = 'You cannot verify/approve a timesheet with no hours'
-        messages.info(request, msg)
+        messages.error(request, msg)
         return redirect(return_url)
     context = {
         'action': action,
