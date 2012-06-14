@@ -23,7 +23,7 @@ django-timepiece uses Python 2.6 and requires Django 1.3.1 or later
  * `django-pagination <http://pypi.python.org/pypi/django-pagination>`_
  * `django-compressor <https://github.com/jezdez/django_compressor>`_
 
-django-timepiece depends on PostgreSQL as the database backend
+django-timepiece depends on PostgreSQL as the database backend. If you are using Django 1.3.1, you must install psycopg2 v2.4.1.
 
  * `psycopg2 <http://initd.org/psycopg/>`_
 
