@@ -16,9 +16,9 @@
 
     <div class="row">
         <div class="span12">
-            <form class='search' accept-charset='UTF-8' method='get' action=''>
+            <form class='form-inline' accept-charset='UTF-8' method='get' action=''>
                 {{ form}}
-                <input class='large-button' type='submit' name='submit' value='Search &rarr;' />
+                <button type='submit' name='submit'>Search</button>
             </form>
         </div>
     </div>
@@ -29,17 +29,21 @@
             {% autopaginate businesses %}
 
             {% paginate %}
-            <table class='projects'>
-                <tr>
-                    <th>Name</th>
-                    <th>Description</th>
-                </tr>
-                {% for business in businesses %}
-                <tr>
-                    <td><a href='{% url view_business business.pk %}'>{{ business.name }}</a></td>
-                    <td>{{ business.description|truncatewords:8 }}</td>
-                </tr>
-                {% endfor %}
+            <table class='table table-bordered table-striped'>
+                <thead>
+                    <tr>
+                        <th>Name</th>
+                        <th>Description</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for business in businesses %}
+                        <tr>
+                            <td><a href='{% url view_business business.pk %}'>{{ business.name }}</a></td>
+                            <td>{{ business.description|truncatewords:8 }}</td>
+                        </tr>
+                    {% endfor %}
+                </tbody>
             </table>
             {% paginate %}
         </div>

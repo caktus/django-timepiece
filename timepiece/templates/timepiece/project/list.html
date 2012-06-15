@@ -16,9 +16,9 @@
 
     <div class="row">
         <div class="span12">
-            <form class='search' accept-charset='UTF-8' method='get' action=''>
+            <form class='form-inline' accept-charset='UTF-8' method='get' action=''>
                 {{ form }}
-                <input class='large-button' type='submit' name='submit' value='Search &rarr;' />
+                <button type='submit' class="btn" name='submit'>Search</button>
             </form>
         </div>
     </div>
@@ -29,21 +29,25 @@
         <div class="span12">
             {% autopaginate projects %}
             {% paginate %}
-            <table class='projects'>
-                <tr>
-                    <th>Name</th>
-                    <th>Business</th>
-                    <th>Description</th>
-                    <th>Timesheet</th>
-                </tr>
-                {% for project in projects %}
-                <tr>
-                    <td><a href="{% url 'view_project' project_id=project.id %}">{{ project.name }}</a></td>
-                    <td>{{ project.business }}</td>
-                    <td>{{ project.description|truncatewords:8 }}</td>
-                    <td><a href="{% url 'project_time_sheet' project.id %}">Timesheet</a></td>
-                </tr>
-                {% endfor %}
+            <table class='table table-bordered table-styled'>
+                <thead>
+                    <tr>
+                        <th>Name</th>
+                        <th>Business</th>
+                        <th>Description</th>
+                        <th>Timesheet</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for project in projects %}
+                        <tr>
+                            <td><a href="{% url 'view_project' project_id=project.id %}">{{ project.name }}</a></td>
+                            <td>{{ project.business }}</td>
+                            <td>{{ project.description|truncatewords:8 }}</td>
+                            <td><a href="{% url 'project_time_sheet' project.id %}">Timesheet</a></td>
+                        </tr>
+                    {% endfor %}
+                </tbody>
             </table>
             {% paginate %}
         </div>

@@ -501,7 +501,8 @@ class InvoiceForm(forms.ModelForm):
 
 
 class SearchForm(forms.Form):
-    search = forms.CharField(required=False)
+    search = forms.CharField(required=False, label='')
+    search.widget.attrs = {'placeholder': 'Search'}
 
 
 class UserForm(forms.ModelForm):
@@ -524,7 +525,8 @@ class UserProfileForm(forms.ModelForm):
 
 
 class ProjectSearchForm(forms.Form):
-    search = forms.CharField(required=False)
+    search = forms.CharField(required=False, label='')
+    search.widget.attrs = {'placeholder': 'Search'}
     status = forms.ChoiceField(required=False, choices=[])
 
     def __init__(self, *args, **kwargs):
