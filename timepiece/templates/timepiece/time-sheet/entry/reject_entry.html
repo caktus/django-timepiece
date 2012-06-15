@@ -10,9 +10,9 @@
                 {% csrf_token %}
                 <h3>Are you sure you want to reject this entry?</h3>
                 <br />
-                <input type="submit" name="Yes" value="Yes" />
-                <input type="button" value="No" onclick="javascript:history.go(-1)" />
-                <input type="hidden" name="next" value="{{ next }}" />
+                <input class="btn" type="submit" name="Yes" value="Yes" />
+                <input class="btn" type="button" value="No" onclick="javascript:history.go(-1)" />
+                <input class="btn" type="hidden" name="next" value="{{ next }}" />
             </form>
         </div>
     </div>

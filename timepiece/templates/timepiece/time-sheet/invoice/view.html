@@ -19,7 +19,7 @@
         <div class="span6">
             {% if totals %}
                 <h3>Totals</h3>
-                <table>
+                <table class="table table-bordered">
                     <tr>
                         <th>Activity Type</th>
                         <th>Total Hours</th>
@@ -31,8 +31,8 @@
                         </tr>
                         {% for name, hours in hours_activities.1 %}
                             <tr>
-                                <td class="nested">{{ name|title }}</td>
-                                <td class="hours">{{ hours }} </td> 
+                                <td>{{ name|title }}</td>
+                                <td class="hours">{{ hours }} </td>
                             </tr>
                         {% endfor %}
                     {% endfor %}

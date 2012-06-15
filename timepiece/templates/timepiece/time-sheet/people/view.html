@@ -67,7 +67,7 @@
                 <div id="tabs-1">
                     {% if project_entries %}
                         <h3>Project Summary</h3>
-                        <table class="table table-bordered table-striped" id="person-summary">
+                        <table class="table table-bordered table-striped table-condensed">
                             <thead>
                                 <tr>
                                     <th>Project</th>
@@ -86,7 +86,7 @@
                     {% endif %}
                     {% if entries %}
                         <h3>Billable Summary</h3>
-                        <table class="table table-bordered table-striped">
+                        <table class="table table-bordered table-striped table-condensed">
                             <thead>
                                 <tr>
                                     <th>Category</th>
@@ -115,7 +115,7 @@
                 </div>
                 <div id="tabs-2">
                     {% if entries %}
-                        <table class="table table-bordered">
+                        <table class="table table-bordered table-condensed">
                             <thead>
                                 <tr>
                                     <th>Date</th>
@@ -174,7 +174,7 @@
                 </div>
                 <div id="tabs-3">
                     {% if grouped_totals %}
-                        <table class="table table-bordered">
+                        <table class="table table-bordered table-condensed">
                         {% for week, week_totals, days in grouped_totals %}
                                 <tr class="ledger_header">
                                     <th colspan="2">Week of {{ week|date:"m/d/Y (D)" }} </th>

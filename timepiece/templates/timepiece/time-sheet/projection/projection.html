@@ -18,23 +18,18 @@
 
     <div class="row">
         <div class="span4">
-            <form method="get" action="" id="date-filter" accept-charset="utf-8">
-                <ul id='ledger-date-fieldlist'>
-                    {{ form.as_ul }}
-                    <li>
-                        <input type='submit' name='submit' value='Update' id='id_date_form_submit_btn'/>
-                    </li>
-                    <li>
-                        <input type='button' name='clear' value='Clear' id='id_date_form_clear_btn'/>
-                    </li>
-                </ul>
+            <form class="form-vertical" method="get" action="" id="date-filter" accept-charset="utf-8">
+                {{ form }}
+                <br />
+                <input class="btn" type='submit' name='submit' value='Update' id='id_date_form_submit_btn'/>
+                <input class="btn" type='button' name='clear' value='Clear' id='id_date_form_clear_btn'/>
             </form>
         </div>
     </div>
 
     <div class="row">
         <div class="span12">
-            <table id='projection'>
+            <table class="table table-bordered table-condensed">
                 {% for contract in contracts %}
                     <tr>
                         <th colspan="{{ weeks.count }}" class='contract'>{{ contract }} (Due {{ contract.end_date|date:"n/j" }}) - Remaining: {{ contract.hours_remaining }}, Allocated: {{ contract.hours_allocated }}</th>
