@@ -76,6 +76,8 @@ django-timepiece includes several different alternatives for testing. Test can b
     pip install tox
     pip install django-jenkins
 
+Running the tests with django-jenkins also requires you to install `coverage <http://pypi.python.org/pypi/coverage>` and `pep8 <http://pypi.python.org/pypi/pep8/>`.
+
 A python module, `run_tests.py`, is included if you do not want to run tests using Tox. The tests are run through Django, using Django's default test runner. It accepts an optional argument, `run_tests.py jenkins`, that runs the tests using django-jenkins.
 
 django-timepiece inclues a Tox configuration file to run tests in a variety of environments:
@@ -87,4 +89,4 @@ django-timepiece inclues a Tox configuration file to run tests in a variety of e
  * `py27-1.3` - Test using Python 2.7 and Django 1.3.x
  * `py27-1.4` - Test using Python 2.7 and Django 1.4.x
 
-You can run any of the environments listed above using: `tox -e name`
+You can run any of the environments listed above using: ``tox -e name``
