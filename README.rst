@@ -77,8 +77,8 @@ You can run any of the environments listed above using: `tox -e name`
 History
 -------
 
-0.4.2 (Work in Progress)
-************************
+0.4.2 (06-15-2012)
+******************
 * Fixed permissions for creating businesses.
 * Hourly reports in "My Ledger" display previous weeks of the month if an overlapping entry exists.
 * Fixed permissions for rejecting verified entries.
