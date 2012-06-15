@@ -47,6 +47,7 @@ if not settings.configured:
             'django_jenkins.tasks.with_coverage',
             'django_jenkins.tasks.django_tests',
             'django_jenkins.tasks.run_pep8',
+            'django_jenkins.tasks.run_sloccount',
         ),
         MIDDLEWARE_CLASSES=(
             'django.middleware.common.CommonMiddleware',
@@ -92,7 +93,8 @@ def run_jenkins_tests():
         'coverage_excludes': [],
         'coverage_measure_branch': False,
         'coverage_rcfile': '',
-        'output_dir': 'reports/'
+        'output_dir': 'reports/',
+        'sloccount_with_migrations': False,
     }
     call_command('jenkins', **kwargs)
 
