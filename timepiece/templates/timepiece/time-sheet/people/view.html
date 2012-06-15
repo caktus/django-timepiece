@@ -3,13 +3,7 @@
 {% load url from future %}
 
 {% block extrajs %}
-    <script type="text/javascript">
-        $(document).ready(function() {
-            $(function() {
-                $("#tabs").tabs();
-            });
-        });
-    </script>
+    <script src="{{ STATIC_URL }}bootstrap/js/bootstrap-tab.js" type="text/javascript" charset="utf-8"></script>
 {% endblock %}
 
 {% block title %}
@@ -58,13 +52,13 @@
 
     <div class="row">
         <div class="span12">
-            <div id="tabs">
-                <ul class="actions">
-                    <li><a href="#tabs-1">Overview</a></li>
-                    <li><a href="#tabs-2">Full Timesheet</a></li>
-                    <li><a href="#tabs-3">Hourly Summary</a></li>
-                </ul>
-                <div id="tabs-1">
+            <ul class="nav nav-tabs">
+                <li class="active"><a href="#overview" data-toggle="tab">Overview</a></li>
+                <li><a href="#full-timesheet" data-toggle="tab">Full Timesheet</a></li>
+                <li><a href="#hourly-summary" data-toggle="tab">Hourly Summary</a></li>
+            </ul>
+            <div class="tab-content">
+                <div class="tab-pane active" id="overview">
                     {% if project_entries %}
                         <table id="person-summary">
                             <caption>Project Summary</caption>
@@ -97,7 +91,7 @@
                     {% endif %}
                     <br style="clear: both" />
                 </div>
-                <div id="tabs-2">
+                <div class="tab-pane" id="full-timesheet">
                     {% if entries %}
                         <table class="time-sheet">
                             <tr>
@@ -110,7 +104,7 @@
                                 <th>Breaks</th>
                                 <th>Hours</th>
                                 <th>Comments</th>
-                            </tr>            
+                            </tr>
                             {% for entry in entries %}
                                 {% ifchanged entry.start_time|date:"W" %}
                                     <tr class="ledger_header">
@@ -132,10 +126,10 @@
                                     <td class="hours">{{ entry.hours }}</td>
                                     <td title="{{entry.comments}}">{{ entry.comments|truncatewords:12|urlizetrunc:25|safe }}</td>
                                     {% if entry.status == "unverified" %}
-                                        <td><a href="{% url "timepiece-update" entry.id %}?next={{ request.get_full_path|urlencode }}#tabs-2">Edit</a></td>
+                                        <td><a href="{% url "timepiece-update" entry.id %}?next={{ request.get_full_path|urlencode }}#full-timesheet">Edit</a></td>
                                     {% endif %}
                                     {% if perms.timepiece.change_user and entry.status != "invoiced" and entry.status != "unverified" %}
-                                        <td><a href="{% url "timepiece-reject-entry" entry.id %}?next={{ request.get_full_path|urlencode }}#tabs-2">Reject</a></td>
+                                        <td><a href="{% url "timepiece-reject-entry" entry.id %}?next={{ request.get_full_path|urlencode }}#full-timesheet">Reject</a></td>
                                     {% endif %}
                                 </tr>
                             {% endfor %}
@@ -148,7 +142,7 @@
                         <p>No entries exist for this time sheet.</p>
                     {% endif %}
                 </div>
-                <div id="tabs-3">
+                <div class="tab-pane" id="hourly-summary">
                     {% if grouped_totals %}
                     <table>
                         {% for week, week_totals, days in grouped_totals %}
@@ -173,7 +167,7 @@
                                             <td class="hours">{{totals.non_billable}}</td>
                                             <td class="hours">{{totals.total}}</td>
                                         </tr>
-                                    {% endfor %}         
+                                    {% endfor %}
                                     <tr class="daily_total {% if day < from_date %}before_from_date{% endif %}">
                                         <td></td>
                                         <td class="hours"><strong>{{day|date:"D"}}:</strong></td>
@@ -198,7 +192,7 @@
                     {% else %}
                         <p>No entries exist for this time sheet.</p>
                     {% endif %}
-                </div> 
+                </div>
             </div>
         </div>
     </div>
