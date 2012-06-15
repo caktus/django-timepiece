@@ -94,7 +94,7 @@ def run_jenkins_tests():
         'coverage_excludes': [],
         'coverage_measure_branch': False,
         'coverage_rcfile': '',
-        'output_dir': 'reports/'
+        'output_dir': 'reports/',
     }
     call_command('jenkins', **kwargs)
 
