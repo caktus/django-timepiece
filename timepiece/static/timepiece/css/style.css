@@ -104,6 +104,7 @@ tr.weekly_total{
 }
 td.hours{
     text-align: right;
+    padding-right: 1em;
 }
 
 tr.before_from_date {
@@ -112,12 +113,12 @@ tr.before_from_date {
 
 td.nested {
     color: #006;
-    padding: 0px 50px;    
+    padding: 0px 50px;
 }
 
-button {
+/*button {
     margin: 10px;
-}
+}*/
 
 #cal_wrapper{
     width: 900px;
@@ -126,7 +127,7 @@ button {
 
 .cal{
     float: left;
-    padding: 24px;    
+    padding: 24px;
 }
 
 .cal.left, div.cal.right {
@@ -164,7 +165,7 @@ button {
     font-size: 90%;
 }
 /*th, td {
-    padding: 0.2em; 
+    padding: 0.2em;
 }
 
 table {
