@@ -17,17 +17,18 @@ if not settings.configured:
     db_name = 'django_timepiece'
     if 'jenkins' in args:
         jenkins = ['django_jenkins']
-        db_name = os.environ.get('TESTENV', db_name)
+        db_name = "timepiece_%s" % os.environ.get('TESTENV', db_name)
 
     settings.configure(
         DATABASES={
             'default': {
                 'ENGINE': 'django.db.backends.postgresql_psycopg2',
-                'NAME': db_name,
+                'NAME': 'django_timepiece',
                 'USER': '',
                 'PASSWORD': '',
                 'HOST': '',
                 'PORT': '',
+                'TEST_NAME': db_name,
             }
         },
         INSTALLED_APPS=[
