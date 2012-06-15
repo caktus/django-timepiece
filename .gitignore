@@ -3,6 +3,3 @@
 local_settings.py
 *.db
 dist/
-.tox/
-reports/
-*.swp
