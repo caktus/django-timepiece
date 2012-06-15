@@ -23,30 +23,30 @@
 
     <div class="row">
         <div class="span6">
-            <table class='vertical'>
+            <table class='table table-bordered table-striped'>
                 <tr>
-                    <th>Type:</th>
+                    <th>Type</th>
                     <td>{{ project.type }}</td>
                 </tr>
                 <tr>
-                    <th>Status:</th>
+                    <th>Status</th>
                     <td>{{ project.status }}</td>
                 </tr>
                 <tr>
-                    <th>Billable:</th>
+                    <th>Billable</th>
                     <td>{{ project.billable }}</td>
                 </tr>
                 <tr>
-                    <th>Point Person:</th>
+                    <th>Point Person</th>
                     <td>{{ project.point_person }}</td>
                 </tr>
                 <tr>
-                    <th>Description:</th>
+                    <th>Description</th>
                     <td>{{ project.description|linebreaks }}</td>
                 </tr>
                 {% if project.tracker_url %}
                 <tr>
-                    <th>Tracker URL:</th>
+                    <th>Tracker URL</th>
                     <td>{{ project.tracker_url }}</td>
                 </tr>
                 {% endif %}
@@ -71,11 +71,11 @@
             {% endifnotequal %}
             </ul>
             {% if perms.timepiece.add_projectrelationship %}
-            <form id="add-user" action='{% url add_user_to_project project_id=project.id %}?next={% url view_project project_id=project.id %}' method="post" accept-charset="utf-8">
+            <form class="form-inline" action='{% url add_user_to_project project_id=project.id %}?next={% url view_project project_id=project.id %}' method="post" accept-charset="utf-8">
                 {% csrf_token %}
                 <div class="field-wrapper">
                     {{ add_user_form }}
-                    <input type="submit" name="submit" value="Add" id="submit" />
+                    <button type="submit" name="submit" id="submit">Add</button>
                 </div>
             </form>
             {% endif %}
