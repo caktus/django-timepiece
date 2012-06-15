@@ -14,14 +14,16 @@ directory = os.path.abspath('%s' % os.path.dirname(__file__))
 
 if not settings.configured:
     jenkins = []
+    db_name = 'django_timepiece'
     if 'jenkins' in args:
         jenkins = ['django_jenkins']
+        db_name = os.environ.get('TESTENV', db_name)
 
     settings.configure(
         DATABASES={
             'default': {
                 'ENGINE': 'django.db.backends.postgresql_psycopg2',
-                'NAME': 'django_timepiece',
+                'NAME': db_name,
                 'USER': '',
                 'PASSWORD': '',
                 'HOST': '',
