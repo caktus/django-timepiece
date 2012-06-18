@@ -1,58 +1,61 @@
 {% load timepiece_tags %}
-<table>
-    <tr>
-        <th>Date</th>
-        <th>Project</th>
-        <th>Activity</th>
-        <th>Clock In</th>
-        <th>Clock Out</th>
-        <th>Breaks</th>
-        <th>Hours</th>
-        <th>Location</th>
-    </tr>
-    {% for entry in entries %}
-    <tr{% if entry.comments %} title='{{ entry.comments }}'{% endif %} class='{% if entry.is_paused %}paused{% endif %}{% if not entry.end_time %} active{% endif %} '>
-        <td>{{ entry.start_time|date:"m/d/Y (D)" }}</td>
-        <td>
-        {% if perms.timepiece.view_project %}
-        <a href='{% url view_project project_id=entry.project.id %}'>{{ entry.project }}</a>
-        {% else %}
-        {{ entry.project }}
-        {% endif %}
-        </td>
-        <td>{{ entry.activity }}</td>
-        <td>{{ entry.start_time|date:"P" }}</td>
-        <td>
-            {% if entry.end_time %}
-                {{ entry.end_time|date:"P" }}
+<table class="table table-striped table-bordered table-condensed">
+    <thead>
+        <tr>
+            <th>Date</th>
+            <th>Project</th>
+            <th>Activity</th>
+            <th>Clock In</th>
+            <th>Clock Out</th>
+            <th>Breaks</th>
+            <th>Hours</th>
+            <th>Location</th>
+            <th>Actions</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for entry in entries %}
+        <tr{% if entry.comments %} title='{{ entry.comments }}'{% endif %} class='{% if entry.is_paused %}paused{% endif %}{% if not entry.end_time %} active{% endif %} '>
+            <td>{{ entry.start_time|date:"m/d/Y (D)" }}</td>
+            <td>
+            {% if perms.timepiece.view_project %}
+            <a href='{% url view_project project_id=entry.project.id %}'>{{ entry.project }}</a>
             {% else %}
-                <a href="{% url timepiece-clock-out entry.id %}">Clock Out</a>
+            {{ entry.project }}
             {% endif %}
-        </td>
-        <td>
-            {{ entry.seconds_paused|seconds_to_hours|floatformat:2 }}
-            {% if not entry.end_time %}
-                {% if entry.is_paused %}
-                    <a href="{% url timepiece-toggle-paused entry.id %}">(Resume)</a>
+            </td>
+            <td>{{ entry.activity }}</td>
+            <td>{{ entry.start_time|date:"P" }}</td>
+            <td>
+                {% if entry.end_time %}
+                    {{ entry.end_time|date:"P" }}
                 {% else %}
-                    <a href="{% url timepiece-toggle-paused entry.id %}">(Pause)</a>
+                    <a href="{% url timepiece-clock-out entry.id %}">Clock Out</a>
                 {% endif %}
-            {% endif %}
-        </td>
-        <td>{% get_active_hours entry %}</td>
-        <td>{{ entry.location }}</td>
-        <td>
-            <ul class='actions'>
-                {% ifequal entry.status 'unverified' %}
-                <li><a href="{% url timepiece-update entry.id %}">Change</a></li>
-                <li><a href="{% url timepiece-delete entry.id %}">Remove</a></li>
-                {% endifequal %}
-            </ul>
-        </td>
-    </tr>
-    {% empty %}
-    <tr>
-        <td colspan='6'>You have no time logged for this period.</td>
-    </tr>
-    {% endfor %}
+            </td>
+            <td class="hours">
+                {{ entry.seconds_paused|seconds_to_hours|floatformat:2 }}
+                {% if not entry.end_time %}
+                    {% if entry.is_paused %}
+                        <a href="{% url timepiece-toggle-paused entry.id %}">(Resume)</a>
+                    {% else %}
+                        <a href="{% url timepiece-toggle-paused entry.id %}">(Pause)</a>
+                    {% endif %}
+                {% endif %}
+            </td>
+            <td class="hours">{% get_active_hours entry %}</td>
+            <td>{{ entry.location }}</td>
+            <td>
+                <ul class='actions'>
+                    {% ifequal entry.status 'unverified' %}
+                    <li><a href="{% url timepiece-update entry.id %}">Change</a></li>
+                    <li><a href="{% url timepiece-delete entry.id %}">Remove</a></li>
+                    {% endifequal %}
+                </ul>
+            </td>
+        </tr>
+        {% empty %}
+            <tr><td colspan='9'>You have no time logged for this period.</td></tr>
+        {% endfor %}
+    </tbody>
 </table>

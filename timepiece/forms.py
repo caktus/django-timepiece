@@ -146,12 +146,9 @@ class QuickSearchForm(forms.Form):
         raise forms.ValidationError('Must be a user, project, or business')
 
 
-class SearchForm(forms.Form):
-    search = forms.CharField(required=False)
-
-
 class AddUserToProjectForm(forms.Form):
-    user = selectable_forms.AutoCompleteSelectField(UserLookup)
+    user = selectable_forms.AutoCompleteSelectField(UserLookup, label="")
+    user.widget.attrs['placeholder'] = 'Add User'
 
     def save(self):
         return self.cleaned_data['user']
@@ -509,7 +506,8 @@ class InvoiceForm(forms.ModelForm):
 
 
 class SearchForm(forms.Form):
-    search = forms.CharField(required=False)
+    search = forms.CharField(required=False, label='')
+    search.widget.attrs['placeholder'] = 'Search'
 
 
 class UserForm(forms.ModelForm):
@@ -532,12 +530,13 @@ class UserProfileForm(forms.ModelForm):
 
 
 class ProjectSearchForm(forms.Form):
-    search = forms.CharField(required=False)
-    status = forms.ChoiceField(required=False, choices=[])
+    search = forms.CharField(required=False, label='')
+    search.widget.attrs['placeholder'] = 'Search'
+    status = forms.ChoiceField(required=False, choices=[], label='')
 
     def __init__(self, *args, **kwargs):
         super(ProjectSearchForm, self).__init__(*args, **kwargs)
-        PROJ_STATUS_CHOICES = [('', 'Any')]
+        PROJ_STATUS_CHOICES = [('', 'Any Status')]
         PROJ_STATUS_CHOICES.extend([(a.pk, a.label) for a
                 in Attribute.objects.all().filter(type="project-status")])
         self.fields['status'].choices = PROJ_STATUS_CHOICES
