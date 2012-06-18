@@ -8,14 +8,14 @@
 #
 #    minibooks is free software: you can redistribute it and/or modify
 #    it under the terms of the GNU Affero General Public License as
-#    published by the Free Software Foundation, either version 3 of 
+#    published by the Free Software Foundation, either version 3 of
 #    the License, or (at your option) any later version.
-#    
+#
 #    minibooks is distributed in the hope that it will be useful,
 #    but WITHOUT ANY WARRANTY; without even the implied warranty of
 #    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 #    GNU Affero General Public License for more details.
-#    
+#
 #    You should have received a copy of the GNU Affero General Public License
 #    along with minibooks.  If not, see <http://www.gnu.org/licenses/>.
 */
@@ -443,6 +443,7 @@ form.modify-pagelet textarea[name=content] {
 	height: 30em;
 }
 
+/*
 form#create-edit-business {
 	margin-top: 1em;
 }
@@ -475,6 +476,7 @@ form#create-edit-business li {
 	list-style-type: none;
 	list-style-position: outside;
 }
+*/
 
 form#create-edit-exchange table input.calendar {
 	width: 6em;
@@ -553,6 +555,7 @@ form#project-report-email {
 	margin-top: 1em;
 }
 
+/*
 form#create-edit-person table textarea#id_notes {
 	width: 30em;
 	height: 10em;
@@ -569,6 +572,7 @@ form#create-edit-person table input[name=last_name] {
 form#create-edit-person table input[name=email] {
 	width: 16em;
 }
+*/
 
 form#add-contact input[name=search] {
 	width: 16em;
@@ -632,10 +636,12 @@ form#create-edit-interaction textarea[name=memo] {
 	height: 15em;
 }
 
+/*
 form#create-edit-project textarea[name=description] {
 	width: 35em;
 	height: 15em;
 }
+*/
 
 form#create-edit-interaction input[name=search] {
 	margin: 1em 1em 0 0;
@@ -647,7 +653,7 @@ form#edit-project-relationship ul {
 
 form#edit-project-relationship ul li {
 	list-style: none;
-	
+
 }
 
 
@@ -751,7 +757,7 @@ TD.ledger:first-child {
 }
 
 TD.ledger.memo {
-	
+
 	white-space: nowrap;
 }
 
@@ -886,14 +892,14 @@ img.icon {
 /*.pagination {
 	padding: 1em;
 }
- 
+
 .pagination .disabled,
 .pagination .disabled {
 	color: #aaa;
 	padding: 0.3em;
 	border: 1px solid #aaa;
 }
- 
+
 .pagination a.prev, .pagination a:visited.prev,
 .pagination a.next, .pagination a:visited.next {
 	border: 1px solid #98D0FD;
@@ -901,7 +907,7 @@ img.icon {
 	color: #234f32;
 	padding: 0.3em;
 }
- 
+
 .pagination a.page, .pagination a:visited.page, .pagination .current {
 	padding: 0.25em;
 	margin: 0em 0.25em;
@@ -909,13 +915,13 @@ img.icon {
 	background-color: #D0E9FD;
 	color:#006000;
 }
- 
+
 .pagination .current {
 	font-size: 125%;
 	font-weight: bold;
 	color: black;
 }
- 
+
 .pagination a:hover.page,
 .pagination a:hover.curr,
 .pagination a:hover.prev,
