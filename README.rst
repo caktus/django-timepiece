@@ -22,6 +22,7 @@ django-timepiece is compatible with Python 2.{6,7} and Django 1.{3,4}. PostgreSQ
  * `django-selectable <http://pypi.python.org/pypi/django-selectable>`_
  * `django-pagination <http://pypi.python.org/pypi/django-pagination>`_
  * `django-compressor <https://github.com/jezdez/django_compressor>`_
+ * `django-bootstrap-toolkit <https://github.com/dyve/django-bootstrap-toolkit>`_
 
 django-timepiece uses Sphinx and RST for documentation. You can use Sphinx to build the documentation
 
