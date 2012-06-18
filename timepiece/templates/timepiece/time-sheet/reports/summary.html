@@ -20,7 +20,7 @@
                     {% endif %}
                 </li>
                 <li>
-                    Payroll Report        
+                    Payroll Report
                 </li>
             </ul>
         </div>
@@ -28,9 +28,9 @@
 
     <div class="row">
         <div class="span12">
-            <form method="get" action="" id="date-filter" accept-charset="utf-8">
+            <form class="form-inline" method="get" action="" id="date-filter" accept-charset="utf-8">
                 {{ year_month_form }}
-                <input type='submit' name='yearmonth' value="Update" id='yearmonth'/>
+                <input class="btn" type='submit' name='yearmonth' value="Update" id='yearmonth'/>
             </form>
         </div>
     </div>
@@ -40,7 +40,7 @@
             {% if unverified %}
                 <p><strong>Warning:</strong> The following users have <strong>unverified</strong> time during this period:</p>
                 <ul>
-                    {% for pk, first, last in unverified %}            
+                    {% for pk, first, last in unverified %}
                         <li><a href="{% url 'view_person_time_sheet' pk %}?month={{from_date|date:"n"}}&year={{from_date|date:"Y"}}">{{ first }} {{ last }}</a></li>
                     {% endfor %}
                 </ul>
@@ -70,31 +70,35 @@
         <div class="span8">
             <h3>Hourly Summary</h3>
             {% if monthly_totals %}
-                <table>
-                    <tr class="header">
-                        <th>Name</th>
-                        <th colspan="2">Billable</th>
-                        <th colspan="2">Non-Billable</th>
-                        <th>Total Worked</th>
-                        <th style="text-align:right;">Paid Leave</th>
-                        <th>Grand Total</th>
-                    </tr>
-                    {% for name, hours, descs, all in monthly_totals %}
-                        <tr class="{% cycle 'odd' 'even' %}">           
-                            <th class='name_col'>{{ name }}</th>
-                            {% for num in hours|slice:"0:2" %}
-                                <td class="hours">{{num.0|default:""}}</td>
-                                <td class="hours">{% if num.1 %}({{num.1}}%){% endif %}</td>
-                            {% endfor %}
-                            <td class="hours">{{hours.2}}</td>
-                            <td class="hours" style="width: 200px;">
-                            {% for desc in descs %}
-                                {{desc.0}}:&nbsp;&nbsp;{{desc.1}}
-                            {% endfor %}
-                            </td>
-                            <td class="hours">{{all}}</td>
+                <table class="table table-bordered table-striped table-condensed">
+                    <thead>
+                        <tr>
+                            <th>Name</th>
+                            <th colspan="2">Billable</th>
+                            <th colspan="2">Non-Billable</th>
+                            <th>Total Worked</th>
+                            <th>Paid Leave</th>
+                            <th>Grand Total</th>
                         </tr>
-                    {% endfor %}
+                    </thead>
+                    <tbody>
+                        {% for name, hours, descs, all in monthly_totals %}
+                            <tr>
+                                <th class='name_col'>{{ name }}</th>
+                                {% for num in hours|slice:"0:2" %}
+                                    <td class="hours">{{num.0|floatformat:2|default:""}}</td>
+                                    <td class="hours">{% if num.1 %}({{num.1|floatformat:2}}%){% endif %}</td>
+                                {% endfor %}
+                                <td class="hours">{{hours.2|floatformat:2}}</td>
+                                <td class="hours" style="width: 200px;">
+                                {% for desc in descs %}
+                                    {{desc.0}}:&nbsp;&nbsp;{{desc.1|floatformat:2}}
+                                {% endfor %}
+                                </td>
+                                <td class="hours">{{all|floatformat:2}}</td>
+                            </tr>
+                        {% endfor %}
+                    </tbody>
                 </table>
             {% else %}
                 <p> No entries found.</p>
@@ -104,24 +108,28 @@
         <div class="span4">
             <h3>Weekly Summary</h3>
             {% if weekly_totals.0.0 %}
-                <table class='project'>
-                    <tr class="header">
-                        <th class='name_col'>Name</th>
-                        {% for date in date_headers %}
-                            <th>{{date|date:"M/d"}}</th>
+                <table class='table table-striped table-bordered table-condensed'>
+                    <thead>
+                        <tr>
+                            <th class='name_col'>Name</th>
+                            {% for date in date_headers %}
+                                <th>{{date|date:"M/d"}}</th>
+                            {% endfor %}
+                            <th>Overtime</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for rows, totals in weekly_totals %}
+                            {% for name, hours in rows %}
+                                <tr>
+                                    <th class='name_col'>{{name}}</th>
+                                    {% for num in hours %}
+                                        <td class='hours' title='{{name}}'>{{num|floatformat:2}}</td>
+                                    {% endfor %}
+                                </tr>
+                            {% endfor %}
                         {% endfor %}
-                        <th>Overtime</th>
-                    </tr>
-                    {% for rows, totals in weekly_totals %}
-                        {% for name, hours in rows %}
-                            <tr class="{% cycle 'odd' 'even' %}">           
-                                <th class='name_col'>{{name}}</th>
-                                {% for num in hours %}
-                                    <td class='hours' title='{{name}}'>{{num}}</td>
-                                {% endfor %}
-                            </tr>                
-                        {% endfor %}
-                    {% endfor %}
+                    </tbody>
                 </table>
                 {% else %}
                     <p>No entries found.</p>

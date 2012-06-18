@@ -19,12 +19,6 @@
     {% block extrajs %}
     {% endblock extrajs %}
 
-    {% block css %}
-        <link type="text/css" rel="stylesheet" href="//ajax.googleapis.com/ajax/libs/jqueryui/1.8/themes/smoothness/jquery-ui.css" />
-        <link rel="stylesheet" href="{{ STATIC_URL }}timepiece/css/style.css" type="text/css" />
-        <link charset='UTF-8' rel="stylesheet" type="text/css" media="screen" href="{{ STATIC_URL }}css/books.css" />
-    {% endblock %}
-
     {% block staticfiles %}
         {% load compress %}
         {% if debug %}
@@ -36,6 +30,12 @@
             {% endcompress %}
         {% endif %}
     {% endblock staticfiles %}
+
+    {% block css %}
+        <link type="text/css" rel="stylesheet" href="//ajax.googleapis.com/ajax/libs/jqueryui/1.8/themes/smoothness/jquery-ui.css" />
+        <link rel="stylesheet" href="{{ STATIC_URL }}timepiece/css/style.css" type="text/css" />
+        <link charset='UTF-8' rel="stylesheet" type="text/css" media="screen" href="{{ STATIC_URL }}css/books.css" />
+    {% endblock %}
 
     {% block extracss %}
     {% endblock %}

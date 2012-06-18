@@ -522,6 +522,7 @@ form#quick-search-form table th label {
   color: #b9c3dc;
 }
 
+/*
 form.search ul {
 	height: 2em;
 }
@@ -544,6 +545,7 @@ form.search ul li input#id_search {
 form.search ul li.form-buttons input {
 	font-size: 105%;
 }
+*/
 
 form#exchange-email table textarea[name=memo],
 form#project-report-email table textarea[name=memo] {

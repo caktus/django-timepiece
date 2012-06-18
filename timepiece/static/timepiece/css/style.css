@@ -106,20 +106,21 @@ tr.weekly_total{
 }
 td.hours{
     text-align: right;
+    padding-right: 1em;
 }
 
 tr.before_from_date {
     color: #999;
 }
 
-td.nested {
+/*td.nested {
     color: #006;
     padding: 0px 50px;
-}
+}*/
 
-button {
+/*button {
     margin: 10px;
-}
+}*/
 
 #cal_wrapper{
     width: 900px;

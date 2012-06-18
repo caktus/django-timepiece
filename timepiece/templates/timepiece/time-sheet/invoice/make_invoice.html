@@ -29,9 +29,9 @@
 
     <div class="row">
         <div class="span4">
-            <form method="get" action="" id="date-filter" accept-charset="utf-8">
-                {{ date_form }}
-                <input type='submit' name='yearmonth' value="Update" id='yearmonth'/>
+            <form class="form-vertical" method="get" action="" id="date-filter" accept-charset="utf-8">
+                {{ date_form }}<br />
+                <input class="btn" type='submit' name='yearmonth' value="Update" id='yearmonth'/>
             </form>
         </div>
 
@@ -48,7 +48,7 @@
             {% regroup project_totals by project__type__label as type_list %}
             {% for type in type_list %}
                 <h3>Summary of {{ type.grouper }} Entries</h3>
-                <table>
+                <table class="table table-bordered table-condensed table-striped">
                     <tr>
                         <th>Project name</th>
                         <th>Status</th>
@@ -58,7 +58,7 @@
                     {% regroup type.list by project__name as project_list %}
                     {% for project in project_list %}
                         <tr>
-                            <th>{{ project.grouper }}</th>
+                            <td>{{ project.grouper }}</td>
                             <td>{{ project.list.0.project__status__label|title }}</td>
                             <td class="hours">{% get_uninvoiced_hours project.list %}</td>
                             <td>

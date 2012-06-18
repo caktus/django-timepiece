@@ -8,7 +8,7 @@
     {{ pj_filters.media }}
 {% endblock extrajs %}
 
-{% block bodyid %}hourly-report{% endblock bodyid %} 
+{% block bodyid %}hourly-report{% endblock bodyid %}
 
 {% block content %}
     <div class="row">
@@ -43,34 +43,38 @@
         <div class="span9">
             {% if project_totals %}
                 <div class="scroll">
-                    <table class='project'>
-                        <tr class="header">
-                            <th class='name_col'>Name</th>
-                            {% for date in date_headers %}
-                                {% if trunc == 'month' %}
-                                    <th>{{date|date:"M 'Y"}}</th>
-                                {% else %}
-                                    <th>{{date|date:"M/d/Y"}}</th>
-                                {% endif %}
-                            {% endfor %}
-                            <th>Total</th>
-                        </tr>
-                        {% for rows, totals in project_totals %}
-                            {% for name, hours in rows %}
-                                <tr class="{% cycle 'odd' 'even' %}">
-                                    <th class='name_col'>{{name}}</td>
-                                    {% for num in hours %}
-                                        <td class='hours' title='{{name}}'>{{num}}</td>
+                    <table class='table table-bordered table-striped table-condensed'>
+                        <thead>
+                            <tr>
+                                <th class='name_col'>Name</th>
+                                    {% for date in date_headers %}
+                                        {% if trunc == 'month' %}
+                                            <th>{{date|date:"M Y"}}</th>
+                                        {% else %}
+                                            <th>{{date|date:"M/d/Y"}}</th>
+                                        {% endif %}
+                                    {% endfor %}
+                                <th>Total</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for rows, totals in project_totals %}
+                                {% for name, hours in rows %}
+                                    <tr>
+                                        <th class='name_col'>{{name}}</td>
+                                        {% for num in hours %}
+                                            <td class='hours' title='{{name}}'>{{num|floatformat:2}}</td>
+                                        {% endfor %}
+                                    </tr>
+                                {% endfor %}
+                                <tr class="total">
+                                    <th class='name_col'>Total:</td>
+                                    {% for total in totals %}
+                                        <td class='hours'>{{total|floatformat:2}}</td>
                                     {% endfor %}
                                 </tr>
                             {% endfor %}
-                            <tr class="total">
-                                <th class='name_col'>Total:</td>
-                                {% for total in totals %}
-                                    <td class='hours'>{{total}}</td>
-                                {% endfor %}
-                            </tr>
-                        {% endfor %}
+                        </tbody>
                     </table>
                 </div>
             {% else %}
@@ -92,9 +96,9 @@
                         <li>{{ pj_filters.trunc.label }}{{ pj_filters.trunc}}</li>
                         <li>{{ pj_filters.pj_select.label }}{{ pj_filters.pj_select }}</li>
                     </ul>
-                    <input type='submit' name='ok' value="Apply Filters" id='billable'/>
+                    <button type='submit' class="btn" name='ok' id='billable'>Apply Filters</button>
                     {% if perms.timepiece.export_project_time_sheet %}
-                        <button type='submit' name='export' value="True">Export as CSV</button>
+                        <button type='submit' class="btn" name='export' value="True">Export as CSV</button>
                     {% endif %}
                 </div>
             </form>
