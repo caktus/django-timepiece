@@ -5,8 +5,20 @@
 @lightgray: #DDDDDD;
 
 body {
-    #content {
-        margin-top: 60px;
+    /*****************************************
+     * Start HTML entities
+     *****************************************/
+
+    h1, h2, h3, h4, h5, h6 {
+        margin: 1em 0 0 0;
+    }
+
+    h2 {
+        border-bottom: 1px solid #593E1A;
+    }
+
+    h2.skinny {
+        width: 60%;
     }
 
     ul.subnav {
@@ -22,8 +34,137 @@ body {
         }
     }
 
+    span {
+        &.individual {
+            background: url('../images/icons/user.png') no-repeat;
+            padding-left: 20px;
+        }
+
+        &.business {
+            background: url('../images/icons/building.png') no-repeat;
+            padding-left: 20px;
+        }
+
+        &.project {
+            background: url('../images/icons/report.png') no-repeat;
+            padding-left: 20px;
+        }
+    }
+
+    ul {
+        &.people {
+            li {
+                &.add {
+                    padding-top: 1em;
+                    list-style-image: url('../images/icons/user_add.png');
+                }
+
+                list-style-image: url('../images/icons/user.png');
+            }
+        }
+
+        &.businesses {
+            li {
+                list-style-image: url('../images/icons/building.png');
+                padding: 0.2em;
+            }
+        }
+
+        &.projects {
+            li {
+                list-style-image: url('../images/icons/report.png');
+                padding: 0.2em;
+            }
+        }
+    }
+
+    /*****************************************
+     * End HTML entities
+     *****************************************/
+
+
+    /*****************************************
+     * Start general site-wide classes/ids
+     *****************************************/
+
     .scroll {
         width: 100%;
         overflow-x: auto;
     }
+
+    #ui-datepicker-div {
+        font-size: 80%;
+    }
+
+    /*****************************************
+     * End general site-wide classes
+     *****************************************/
+
+
+    /*****************************************
+     * Start content
+     *****************************************/
+
+    #content {
+        margin-top: 60px;
+
+        /*****************************************
+         * Start forms
+         *****************************************/
+
+        form#date-filter table {
+            margin: 0;
+        }
+
+        form#date-filter input[name=from_date],
+        form#date-filter input[name=date],
+        form#date-filter input[name=to_date] {
+            width: 7em;
+        }
+
+        /*****************************************
+         * End forms
+         *****************************************/
+
+
+        /*****************************************
+         * Start lists
+         *****************************************/
+
+        ul.date-filters {
+            margin: 1em 0;
+        }
+
+        ul.date-filters li {
+            list-style-type: none;
+        }
+
+        ul.date-filters ul {
+            margin: 0.2em 0;
+            font-size: 93%;
+        }
+
+        ul.date-filters ul li {
+            display: inline;
+            border-left: 1px solid lightgray;
+            padding: 0 0.2em 0 0.5em;
+        }
+
+        ul.date-filters ul li:first-child {
+            padding: 0 0.2em 0 0;
+            border-left: none;
+        }
+
+        ul.date-filters ul li.label {
+            font-weight: bold;
+        }
+
+        /*****************************************
+         * End lists
+         *****************************************/
+    }
+
+    /*****************************************
+     * End content
+     *****************************************/
 }
