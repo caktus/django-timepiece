@@ -16,11 +16,11 @@
 
     <div class="row">
         <div class="span12">
-            <form method="get" action="" id="date-filter" accept-charset="utf-8">
+            <form class="form-inline" method="get" action="" id="date-filter" accept-charset="utf-8">
                 {{ year_month_form }}
-                <input type='submit' name='yearmonth' value="Update" id='yearmonth'/>
+                <input class="btn" type='submit' name='yearmonth' value="Update" id='yearmonth'/>
                 {% if perms.timepiece.export_project_time_sheet %}
-                    <button type='submit' name='csv' value="csv" id='csv'>Download CSV</button>
+                    <button class="btn" type='submit' name='csv' value="csv" id='csv'>Download CSV</button>
                 {% endif %}
             </form>
         </div>
@@ -29,28 +29,28 @@
     <div class="row">
         {% if user_entries %}
             <div class="span3">
-                <table id='person-summary'>
+                <table class='table table-bordered table-striped'>
                     <caption>Person Summary</caption>
                 {% for entry in user_entries %}
                     <tr>
                         <td>{{ entry.user__first_name }} {{ entry.user__last_name }}</td>
                         <td>{{ entry.sum }}</td>
                     </tr>
-                {% endfor %}        
+                {% endfor %}
                 </table>
             </div>
         {% endif %}
 
         {% if activity_entries %}
             <div class="span3">
-                <table id='activity-summary'>
+                <table class='table table-bordered table-striped'>
                     <caption>Activity Summary</caption>
                 {% for entry in activity_entries %}
                     <tr>
                         <td>{{ entry.activity__name }}</td>
                         <td>{{ entry.sum }}</td>
                     </tr>
-                {% endfor %}  
+                {% endfor %}
                 </table>
             </div>
         {% endif %}
@@ -60,7 +60,7 @@
     <div class="row">
         <div class="span12">
             {% if entries %}
-                <table>
+                <table class="table table-bordered table-striped">
                     <tr>
                         <th>Date</th>
                         <th>Person</th>
