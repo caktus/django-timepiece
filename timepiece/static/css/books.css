@@ -445,6 +445,7 @@ form.modify-pagelet textarea[name=content] {
 	height: 30em;
 }
 
+/*
 form#create-edit-business {
 	margin-top: 1em;
 }
@@ -477,6 +478,7 @@ form#create-edit-business li {
 	list-style-type: none;
 	list-style-position: outside;
 }
+*/
 
 form#create-edit-exchange table input.calendar {
 	width: 6em;
@@ -557,6 +559,7 @@ form#project-report-email {
 	margin-top: 1em;
 }
 
+/*
 form#create-edit-person table textarea#id_notes {
 	width: 30em;
 	height: 10em;
@@ -573,6 +576,7 @@ form#create-edit-person table input[name=last_name] {
 form#create-edit-person table input[name=email] {
 	width: 16em;
 }
+*/
 
 form#add-contact input[name=search] {
 	width: 16em;
@@ -636,10 +640,12 @@ form#create-edit-interaction textarea[name=memo] {
 	height: 15em;
 }
 
+/*
 form#create-edit-project textarea[name=description] {
 	width: 35em;
 	height: 15em;
 }
+*/
 
 form#create-edit-interaction input[name=search] {
 	margin: 1em 1em 0 0;

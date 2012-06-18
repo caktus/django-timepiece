@@ -1,4 +1,5 @@
 {% extends "timepiece/base.html" %}
+{% load bootstrap_toolkit %}
 {% block title %}My Settings{% endblock %}
 
 {% block content %}
@@ -6,17 +7,16 @@
         <div class="span12">
             <h2>My Settings</h2>
 
-            <form id="create-edit-person" action="" method="post" accept-charset="utf-8">
+            <br style="clear: both;" />
+
+            <form class="form-horizontal" id="create-edit-person" action="" method="post" accept-charset="utf-8">
                 {% csrf_token %}
-                <table class='vertical'>
-                    {{ user_form }}
-                    {{ profile_form }}
-                    <td>&nbsp;</td>
-                    <td class="submit">
-                        <input type="button" onclick="history.go(-1)" value="Cancel">
-                        <input type="submit" value="Save →" name="submit">
-                    </td>
-                </table>
+                {{ user_form|as_bootstrap:"horizontal" }}
+                {{ profile_form|as_bootstrap:"horizontal" }}
+                <div class="form-actions">
+                    <input class="btn btn-primary" type="submit" value="Save" name="submit">
+                    <input class="btn" type="button" onclick="history.go(-1)" value="Cancel">
+                </div>
             </form>
         </div>
     </div>
