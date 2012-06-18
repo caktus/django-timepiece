@@ -5,7 +5,7 @@ import sys
 import optparse
 
 from django.conf import settings
-from django.core.management import call_command
+from django.core.management import call_command, setup_environ
 
 parser = optparse.OptionParser()
 opts, args = parser.parse_args()
@@ -14,8 +14,10 @@ directory = os.path.abspath('%s' % os.path.dirname(__file__))
 
 if not settings.configured:
     jenkins = []
+    db_name = 'test_django_timepiece'
     if 'jenkins' in args:
-        jenkins = ['jenkins']
+        jenkins = ['django_jenkins']
+        db_name = "timepiece_%s" % os.environ.get('TESTENV', db_name)
 
     settings.configure(
         DATABASES={
@@ -26,6 +28,7 @@ if not settings.configured:
                 'PASSWORD': '',
                 'HOST': '',
                 'PORT': '',
+                'TEST_NAME': db_name,
             }
         },
         INSTALLED_APPS=[
@@ -92,7 +95,7 @@ def run_jenkins_tests():
         'coverage_excludes': [],
         'coverage_measure_branch': False,
         'coverage_rcfile': '',
-        'output_dir': 'reports/'
+        'output_dir': 'reports/',
     }
     call_command('jenkins', **kwargs)
 
