@@ -16,16 +16,12 @@ Features
 Requirements
 ------------
 
-django-timepiece uses Python 2.6 and requires Django 1.3.1 or later
+django-timepiece is compatible with Python 2.{6,7} and Django 1.{3,4}. PostgreSQL is the only offically supported database backend and, therefore, requires `psycopg2 <http://initd.org/psycopg/>`_. django-timepiece also depends on the following Django apps:
 
  * `python-dateutil <http://labix.org/python-dateutil>`_
  * `django-selectable <http://pypi.python.org/pypi/django-selectable>`_
  * `django-pagination <http://pypi.python.org/pypi/django-pagination>`_
  * `django-compressor <https://github.com/jezdez/django_compressor>`_
-
-django-timepiece depends on PostgreSQL as the database backend. If you are using Django 1.3.1, you must install psycopg2 v2.4.1.
-
- * `psycopg2 <http://initd.org/psycopg/>`_
 
 django-timepiece uses Sphinx and RST for documentation. You can use Sphinx to build the documentation
 
@@ -73,8 +69,7 @@ Testing
 
 django-timepiece includes several different alternatives for testing. Test can be run using the default django test runner, through `Tox <http://tox.testrun.org/latest/>`_, or with `django-jenkins <https://github.com/kmmbvnr/django-jenkins>`_. Tox and django-jenkins are not required to run the tests for django-timepiece, but it is possible to use them. In order to install them, you can use `pip`::
 
-    pip install tox
-    pip install django-jenkins
+    pip install --upgrade tox django-jenkins
 
 Running the tests with django-jenkins also requires you to install `coverage <http://pypi.python.org/pypi/coverage>` and `pep8 <http://pypi.python.org/pypi/pep8/>`.
 
@@ -82,11 +77,12 @@ A python module, `run_tests.py`, is included if you do not want to run tests usi
 
 django-timepiece inclues a Tox configuration file to run tests in a variety of environments:
 
- * `py26-jenkins` - Test using `django-jenkins`, Python 2.6, and Django 1.3.1
- * `py27-jenkins` - Test using `django-jenkins`, Python 2.7, and Django 1.3.1
  * `py26-1.3` - Test using Python 2.6 and Django 1.3.x
  * `py26-1.4` - Test using Python 2.6 and Django 1.4.x
  * `py27-1.3` - Test using Python 2.7 and Django 1.3.x
  * `py27-1.4` - Test using Python 2.7 and Django 1.4.x
 
 You can run any of the environments listed above using: ``tox -e name``
+
+Development sponsored by `Caktus Consulting Group, LLC
+<http://www.caktusgroup.com/services>`_.
