@@ -3,13 +3,7 @@
 {% load url from future %}
 
 {% block extrajs %}
-    <script type="text/javascript">
-        $(document).ready(function() {
-            $(function() {
-                $("#tabs").tabs();
-            });
-        });
-    </script>
+    <script src="{{ STATIC_URL }}bootstrap/js/bootstrap-tab.js" type="text/javascript" charset="utf-8"></script>
 {% endblock %}
 
 {% block title %}
@@ -58,13 +52,13 @@
 
     <div class="row">
         <div class="span12">
-            <div id="tabs">
-                <ul class="actions">
-                    <li><a href="#tabs-1">Overview</a></li>
-                    <li><a href="#tabs-2">Full Timesheet</a></li>
-                    <li><a href="#tabs-3">Hourly Summary</a></li>
-                </ul>
-                <div id="tabs-1">
+            <ul class="nav nav-tabs">
+                <li class="active"><a href="#overview" data-toggle="tab">Overview</a></li>
+                <li><a href="#full-timesheet" data-toggle="tab">Full Timesheet</a></li>
+                <li><a href="#hourly-summary" data-toggle="tab">Hourly Summary</a></li>
+            </ul>
+            <div class="tab-content">
+                <div class="tab-pane active" id="overview">
                     {% if project_entries %}
                         <h3>Project Summary</h3>
                         <table class="table table-bordered table-striped table-condensed">
@@ -113,7 +107,7 @@
                     {% endif %}
                     <br style="clear: both" />
                 </div>
-                <div id="tabs-2">
+                <div class="tab-pane" id="full-timesheet">
                     {% if entries %}
                         <table class="table table-bordered table-condensed">
                             <thead>
@@ -162,9 +156,10 @@
                                         </td>
                                     </tr>
                                 {% endfor %}
-                                <tr>
+                                <tr class="ledger_header">
                                     <th colspan="7">Overall total for the period:</th>
                                     <td class="hours">{{ summary.total|floatformat:2 }}</td>
+                                    <td colspan="2"></td>
                                 </tr>
                             </tbody>
                         </table>
@@ -172,7 +167,7 @@
                         <p>No activity entries exist for this time sheet.</p>
                     {% endif %}
                 </div>
-                <div id="tabs-3">
+                <div class="tab-pane" id="hourly-summary">
                     {% if grouped_totals %}
                         <table class="table table-bordered table-condensed">
                         {% for week, week_totals, days in grouped_totals %}
