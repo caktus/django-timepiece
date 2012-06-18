@@ -14,7 +14,7 @@ directory = os.path.abspath('%s' % os.path.dirname(__file__))
 
 if not settings.configured:
     jenkins = []
-    db_name = 'django_timepiece'
+    db_name = 'test_django_timepiece'
     if 'jenkins' in args:
         jenkins = ['django_jenkins']
         db_name = "timepiece_%s" % os.environ.get('TESTENV', db_name)
