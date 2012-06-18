@@ -122,6 +122,8 @@
     {% endblock navigation %}
 
     <div id="content" class="container">
+        {% include "timepiece/messages.html" %}
+
         {% block content %}
         {% endblock content %}
     </div>
