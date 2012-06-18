@@ -13,6 +13,7 @@
             {{ quick_search_form.media.js }}
             <script type="text/javascript" src="{{ STATIC_URL }}js/quicksearch.js"></script>
         {% endif %}
+        <script src="{{ STATIC_URL}}bootstrap/js/bootstrap-alert.js"></script>
     {% endblock javascript %}
 
     {% block extrajs %}
@@ -122,6 +123,8 @@
     {% endblock navigation %}
 
     <div id="content" class="container">
+        {% include "timepiece/messages.html" %}
+
         {% block content %}
         {% endblock content %}
     </div>

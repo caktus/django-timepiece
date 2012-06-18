@@ -132,6 +132,7 @@ INSTALLED_APPS = (
     'pagination',
     'timepiece',
     'compressor'
+    'bootstrap_toolkit',
 )
 
 # Compressor specific settings

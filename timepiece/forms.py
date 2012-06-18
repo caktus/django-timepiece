@@ -14,7 +14,8 @@ from django.core.exceptions import ValidationError, NON_FIELD_ERRORS
 
 from selectable import forms as selectable_forms
 
-from timepiece.lookups import ProjectLookup, QuickLookup, UserLookup
+from timepiece.lookups import ProjectLookup, QuickLookup
+from timepiece.lookups import UserLookup, BusinessLookup
 
 from timepiece.models import Project, Entry, Activity, UserProfile, Attribute
 from timepiece.fields import UserModelChoiceField
@@ -460,6 +461,13 @@ class ProjectForm(forms.ModelForm):
             'activity_group',
             'description',
         )
+
+    business = selectable_forms.AutoCompleteSelectField(
+        BusinessLookup,
+        label='Business',
+        required=False
+    )
+    business.widget.attrs['placeholder'] = 'Search'
 
     def __init__(self, *args, **kwargs):
         super(ProjectForm, self).__init__(*args, **kwargs)

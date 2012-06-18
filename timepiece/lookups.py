@@ -15,6 +15,16 @@ class ProjectLookup(ModelLookup):
 registry.register(ProjectLookup)
 
 
+class BusinessLookup(ModelLookup):
+    model = timepiece.Business
+    search_fields = ('name__icontains',)
+
+    def get_item_label(self, business):
+        return '<span class="business">%s</span>' % business.name
+
+registry.register(BusinessLookup)
+
+
 class UserLookup(ModelLookup):
     model = auth_models.User
     search_fields = (
