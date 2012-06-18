@@ -33,7 +33,7 @@
                     <a href="{% url timepiece-clock-out entry.id %}">Clock Out</a>
                 {% endif %}
             </td>
-            <td>
+            <td class="hours">
                 {{ entry.seconds_paused|seconds_to_hours|floatformat:2 }}
                 {% if not entry.end_time %}
                     {% if entry.is_paused %}
@@ -43,7 +43,7 @@
                     {% endif %}
                 {% endif %}
             </td>
-            <td>{% get_active_hours entry %}</td>
+            <td class="hours">{% get_active_hours entry %}</td>
             <td>{{ entry.location }}</td>
             <td>
                 <ul class='actions'>
