@@ -1,5 +1,7 @@
 {% extends "timepiece/base.html" %}
 {% load url from future %}
+{% load bootstrap_toolkit %}
+
 {% block title %}People{% endblock %}
 
 {% block content %}
@@ -17,7 +19,7 @@
     <div class="row">
         <div class="span12">
             <form class='form-inline' accept-charset='UTF-8' method='get' action=''>
-                {{ form }}
+                {{ form|as_bootstrap:"inline" }}
                 <button type='submit' name='submit' class="btn">Search</button>
             </form>
         </div>

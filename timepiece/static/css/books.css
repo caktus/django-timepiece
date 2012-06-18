@@ -8,14 +8,14 @@
 #
 #    minibooks is free software: you can redistribute it and/or modify
 #    it under the terms of the GNU Affero General Public License as
-#    published by the Free Software Foundation, either version 3 of 
+#    published by the Free Software Foundation, either version 3 of
 #    the License, or (at your option) any later version.
-#    
+#
 #    minibooks is distributed in the hope that it will be useful,
 #    but WITHOUT ANY WARRANTY; without even the implied warranty of
 #    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 #    GNU Affero General Public License for more details.
-#    
+#
 #    You should have received a copy of the GNU Affero General Public License
 #    along with minibooks.  If not, see <http://www.gnu.org/licenses/>.
 */
@@ -520,6 +520,7 @@ form#quick-search-form table th label {
   color: #b9c3dc;
 }
 
+/*
 form.search ul {
 	height: 2em;
 }
@@ -542,6 +543,7 @@ form.search ul li input#id_search {
 form.search ul li.form-buttons input {
 	font-size: 105%;
 }
+*/
 
 form#exchange-email table textarea[name=memo],
 form#project-report-email table textarea[name=memo] {
@@ -647,7 +649,7 @@ form#edit-project-relationship ul {
 
 form#edit-project-relationship ul li {
 	list-style: none;
-	
+
 }
 
 
@@ -751,7 +753,7 @@ TD.ledger:first-child {
 }
 
 TD.ledger.memo {
-	
+
 	white-space: nowrap;
 }
 
@@ -886,14 +888,14 @@ img.icon {
 /*.pagination {
 	padding: 1em;
 }
- 
+
 .pagination .disabled,
 .pagination .disabled {
 	color: #aaa;
 	padding: 0.3em;
 	border: 1px solid #aaa;
 }
- 
+
 .pagination a.prev, .pagination a:visited.prev,
 .pagination a.next, .pagination a:visited.next {
 	border: 1px solid #98D0FD;
@@ -901,7 +903,7 @@ img.icon {
 	color: #234f32;
 	padding: 0.3em;
 }
- 
+
 .pagination a.page, .pagination a:visited.page, .pagination .current {
 	padding: 0.25em;
 	margin: 0em 0.25em;
@@ -909,13 +911,13 @@ img.icon {
 	background-color: #D0E9FD;
 	color:#006000;
 }
- 
+
 .pagination .current {
 	font-size: 125%;
 	font-weight: bold;
 	color: black;
 }
- 
+
 .pagination a:hover.page,
 .pagination a:hover.curr,
 .pagination a:hover.prev,
