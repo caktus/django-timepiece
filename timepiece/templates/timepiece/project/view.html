@@ -1,5 +1,6 @@
 {% extends "timepiece/base.html" %}
 {% load timepiece_tags markup %}
+{% load bootstrap_toolkit %}
 
 {% block title %}{{ project }}{% endblock %}
 
@@ -73,10 +74,8 @@
             {% if perms.timepiece.add_projectrelationship %}
             <form class="form-inline" action='{% url add_user_to_project project_id=project.id %}?next={% url view_project project_id=project.id %}' method="post" accept-charset="utf-8">
                 {% csrf_token %}
-                <div class="field-wrapper">
-                    {{ add_user_form }}
-                    <button type="submit" name="submit" id="submit">Add</button>
-                </div>
+                {{ add_user_form|as_bootstrap:"inline" }}
+                <input class="btn" type="submit" name="submit" id="submit" value="Add" />
             </form>
             {% endif %}
         </div>
