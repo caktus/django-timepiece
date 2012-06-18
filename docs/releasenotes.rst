@@ -1,6 +1,16 @@
 Release Notes
 =========================================
 
+0.4.2 (Released 06-15-2012)
+------------------
+
+* Fixed permissions for creating businesses.
+* Hourly reports in "My Ledger" display previous weeks of the month if an overlapping entry exists.
+* Fixed permissions for rejecting verified entries.
+* Fixed a bug where you could verify entries while still clocked in.
+* Added user selection for payroll reviewers to switch between timesheets.
+* Fixed bug where the incorrect email was shown in the header.
+
 0.4.1 (Released 06-04-2012)
 ---------------------------
 
