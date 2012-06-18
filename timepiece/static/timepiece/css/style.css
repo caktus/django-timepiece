@@ -82,11 +82,13 @@ input[type='text'].timepiece-time {
 }
 
 /*Clock in form */
+/*
 #id_active_comment {
     width: 400px;
     height: 100px;
     margin: 5px 5px 50px 5px;
 }
+*/
 
 /*My ledger */
 tr.ledger_header{
@@ -112,7 +114,7 @@ tr.before_from_date {
 
 td.nested {
     color: #006;
-    padding: 0px 50px;    
+    padding: 0px 50px;
 }
 
 button {
@@ -126,7 +128,7 @@ button {
 
 .cal{
     float: left;
-    padding: 24px;    
+    padding: 24px;
 }
 
 .cal.left, div.cal.right {
@@ -164,7 +166,7 @@ button {
     font-size: 90%;
 }
 /*th, td {
-    padding: 0.2em; 
+    padding: 0.2em;
 }
 
 table {
