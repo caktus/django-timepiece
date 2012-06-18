@@ -82,11 +82,13 @@ input[type='text'].timepiece-time {
 }
 
 /*Clock in form */
+/*
 #id_active_comment {
     width: 400px;
     height: 100px;
     margin: 5px 5px 50px 5px;
 }
+*/
 
 /*My ledger */
 tr.ledger_header{
