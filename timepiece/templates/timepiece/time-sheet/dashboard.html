@@ -55,128 +55,138 @@
 {% endblock %}
 
 {% block content %}
+
+{% if view_entries %}
 <h2>My Time Sheet</h2>
 <ul class='header-actions-left'>
     <li><a href="{% url timepiece-clock-in %}">Clock In</a></li>
     <li><a href="{% url timepiece-add %}">Add Entry</a></li>
 </ul>
+{% endif %}
+
 <h3>My Projects</h3>
-<table class='my-projects'>
-	<tr><th>Project</th><th>My Hours</th><th>Hours Worked</th><th>Hours Remaining</th><th>Due Date</th><th></th></tr>
-	{% regroup assignments by contract.project.type as type_list %}
-	{% for type in type_list %}
-	<tr><th colspan='6'>{{ type.grouper }}s</th></tr>
-	{% for assignment in type.list %}
-	<tr>
-	   <td><a href="{% url timepiece-clock-in %}?project={{ assignment.contract.project.pk }}">{{ assignment.contract.project }}</a></td>
-       <td class='hours'>{{ assignment.num_hours }}</td>
-       <td class='hours'>{{ assignment.hours_worked|floatformat:2 }} ({% widthratio assignment.hours_worked assignment.num_hours 100 %}%)</td>
-       <td class='hours'>{{ assignment.hours_remaining|floatformat:2 }}</td>
-       <td>{{ assignment.end_date }}</td>
-       <td>
-			<ul class='actions'>
-                <li><a href="{% url timepiece-add %}?project={{ assignment.contract.project.pk }}">Add Entry</a></li>
-                <li><a href="{% url view_contract assignment.contract.pk %}">Report</a></li>
-			</ul>
-       </td>
-	</tr>
-	{% endfor %}
-	{% endfor %}
-</table>
-
-<h3>
-    {% with entries.count as num_entries %}
-        My Active Entries
-    {% endwith %}
-</h3>
-
-{% with my_active_entries as entries %}
-{% include 'timepiece/time-sheet/_entry_list.html' %}
-{% endwith %}
-
-{% if allocations or project_entries %}
-  <h3>My Work This Week</h3>
-  <table class='my-week'>
-	  <tr><th>Project</th><th>Hours Worked</th></tr>
-      {% for assignment in allocations %}
-          <tr>
-          <td>
-            <a href="{% url timepiece-clock-in %}?project={{ assignment.assignment.contract.project.pk }}">
-                {{ assignment.assignment.contract.project }}
-            </a>
-          </td>
-          <td class='hours'>
-              {% bar_graph assignment.assignment.contract.project assignment.hours_worked assignment.hours %}
-          </td>
-	    </tr>
-      {% endfor %}
-	  {% for entry in project_entries %}
-        <tr>
-            <td>
-                <a href="{% url timepiece-clock-in %}?project={{ entry.project__pk }}">
-                    {{ entry.project__name }}
-                </a>
-            </td>
-            <td>{{ entry.sum }}</td>
-        </tr>
-      {% endfor %}
-      
-      {% for row in activity_entries %}
-        <tr>
-            <th>Total {% if row.billable %}billable{% else %}non-billable{% endif %} time:</th>
-            <td>
-                {% if row.billable %}
-                    {% ifnotequal schedule.count 0 %}
-                        {% bar_graph '' row.sum schedule.0.hours_per_week %}
-                    {% else %}
-                        {{ row.sum }}
-                    {% endifnotequal %}
-                {% else %}
-                    {{ row.sum }}
-                {% endif %}
-            </td>
-        </tr>
-      {% endfor %}
-      <tr>
-          <th> Total time this week: </th>
-          <td>{{ current_total }}</td>
-      </tr>
+{% if assignments %}
+  <table class='my-projects'>
+  	<tr><th>Project</th><th>My Hours</th><th>Hours Worked</th><th>Hours Remaining</th><th>Due Date</th><th></th></tr>
+  	{% regroup assignments by contract.project.type as type_list %}
+  	{% for type in type_list %}
+  	<tr><th colspan='6'>{{ type.grouper }}s</th></tr>
+  	{% for assignment in type.list %}
+  	<tr>
+  	   <td><a href="{% url timepiece-clock-in %}?project={{ assignment.contract.project.pk }}">{{ assignment.contract.project }}</a></td>
+         <td class='hours'>{{ assignment.num_hours }}</td>
+         <td class='hours'>{{ assignment.hours_worked|floatformat:2 }} ({% widthratio assignment.hours_worked assignment.num_hours 100 %}%)</td>
+         <td class='hours'>{{ assignment.hours_remaining|floatformat:2 }}</td>
+         <td>{{ assignment.end_date }}</td>
+         <td>
+  			<ul class='actions'>
+                  <li><a href="{% url timepiece-add %}?project={{ assignment.contract.project.pk }}">Add Entry</a></li>
+                  <li><a href="{% url view_contract assignment.contract.pk %}">Report</a></li>
+  			</ul>
+         </td>
+  	</tr>
+  	{% endfor %}
+  	{% endfor %}
   </table>
-{% endif %}
-{% if allocations %}
-  <div style="height: 320px; width: 320px;" id="my-weekly-hours-chart"></div>
+{% else %}
+  <p>You currently have no projects</p>
 {% endif %}
 
-    <table id='active-entries' class='timepiece-summary'>
-{% if others_active_entries %}
-        <caption>Others are working on:</caption>
+{% if view_entries %}
+  <h3>
+      {% with entries.count as num_entries %}
+          My Active Entries
+      {% endwith %}
+  </h3>
+
+  {% with my_active_entries as entries %}
+  {% include 'timepiece/time-sheet/_entry_list.html' %}
+  {% endwith %}
+
+  {% if allocations or project_entries %}
+    <h3>My Work This Week</h3>
+    <table class='my-week'>
+  	  <tr><th>Project</th><th>Hours Worked</th></tr>
+        {% for assignment in allocations %}
+            <tr>
+            <td>
+              <a href="{% url timepiece-clock-in %}?project={{ assignment.assignment.contract.project.pk }}">
+                  {{ assignment.assignment.contract.project }}
+              </a>
+            </td>
+            <td class='hours'>
+                {% bar_graph assignment.assignment.contract.project assignment.hours_worked assignment.hours %}
+            </td>
+  	    </tr>
+        {% endfor %}
+  	  {% for entry in project_entries %}
+          <tr>
+              <td>
+                  <a href="{% url timepiece-clock-in %}?project={{ entry.project__pk }}">
+                      {{ entry.project__name }}
+                  </a>
+              </td>
+              <td>{{ entry.sum }}</td>
+          </tr>
+        {% endfor %}
+        
+        {% for row in activity_entries %}
+          <tr>
+              <th>Total {% if row.billable %}billable{% else %}non-billable{% endif %} time:</th>
+              <td>
+                  {% if row.billable %}
+                      {% ifnotequal schedule.count 0 %}
+                          {% bar_graph '' row.sum schedule.0.hours_per_week %}
+                      {% else %}
+                          {{ row.sum }}
+                      {% endifnotequal %}
+                  {% else %}
+                      {{ row.sum }}
+                  {% endif %}
+              </td>
+          </tr>
+        {% endfor %}
         <tr>
-            <th>Name</th>
-            <th>Project</th>
-            <th>Activity</th>
-            <th>Since</th>
+            <th> Total time this week: </th>
+            <td>{{ current_total }}</td>
         </tr>
-    {% for entry in others_active_entries %}
-        <tr class='{% if entry.is_paused %}paused{% endif %}'>
-            <td>{{ entry.user.first_name }} {{ entry.user.last_name }}</td>
-            <td>{{ entry.project.name }}</td>
-            <td>{{ entry.activity.name }}</td>
-            <td>{{ entry.start_time|date:"P" }}</td>
-        </tr>
-    {% endfor %}
     </table>
+  {% endif %}
+  {% if allocations %}
+    <div style="height: 320px; width: 320px;" id="my-weekly-hours-chart"></div>
+  {% endif %}
+
+      <table id='active-entries' class='timepiece-summary'>
+  {% if others_active_entries %}
+          <caption>Others are working on:</caption>
+          <tr>
+              <th>Name</th>
+              <th>Project</th>
+              <th>Activity</th>
+              <th>Since</th>
+          </tr>
+      {% for entry in others_active_entries %}
+          <tr class='{% if entry.is_paused %}paused{% endif %}'>
+              <td>{{ entry.user.first_name }} {{ entry.user.last_name }}</td>
+              <td>{{ entry.project.name }}</td>
+              <td>{{ entry.activity.name }}</td>
+              <td>{{ entry.start_time|date:"P" }}</td>
+          </tr>
+      {% endfor %}
+      </table>
+  {% endif %}
+
+  <br style='clear: both;' />
+
+  <h3>
+      {% with this_weeks_entries.count as num_entries %}
+          Time Detail This Week ({{ num_entries }} entr{{ num_entries|pluralize:"y,ies" }})
+      {% endwith %}
+  </h3>
+
+  {% with this_weeks_entries as entries %}
+  {% include 'timepiece/time-sheet/_entry_list.html' %}
+  {% endwith %}
 {% endif %}
-
-<br style='clear: both;' />
-
-<h3>
-    {% with this_weeks_entries.count as num_entries %}
-        Time Detail This Week ({{ num_entries }} entr{{ num_entries|pluralize:"y,ies" }})
-    {% endwith %}
-</h3>
-
-{% with this_weeks_entries as entries %}
-{% include 'timepiece/time-sheet/_entry_list.html' %}
-{% endwith %}
 
 {% endblock %}
