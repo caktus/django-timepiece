@@ -476,6 +476,22 @@ class ClockInTest(TimepieceDataTestCase):
         err_msg += 'choose among development, and Work'
         self.assertFormError(response, 'form', None, err_msg)
 
+    def test_clock_in_active_comments(self):
+        """
+        Comments left from editing the current active entry should appear
+        if you are clocking in
+        """
+        entry = self.create_entry({
+            'start_time': self.ten_min_ago
+        })
+        entry.comments = u'Some comments'
+        entry.save()
+
+        self.client.login(username='user', password='abc')
+
+        response = self.client.get(self.url)
+        self.assertContains(response, 'Some comments')
+
 
 class AutoActivityTest(TimepieceDataTestCase):
     """Test the initial value chosen for activity on clock in form"""
