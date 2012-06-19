@@ -174,8 +174,8 @@
                 </div>
                 <div class="tab-pane" id="hourly-summary">
                     {% if grouped_totals %}
-                        <table class="table table-bordered table-condensed">
                         {% for week, week_totals, days in grouped_totals %}
+                            <table class="table table-bordered table-condensed">
                                 <tr class="ledger_header">
                                     <th colspan="2">Week of {{ week|date:"m/d/Y (D)" }} </th>
                                     <th>Billable</th>
@@ -212,14 +212,14 @@
                                     <td class="hours">{{ week_totals.non_billable|floatformat:2 }}</td>
                                     <td class="hours">{{ week_totals.total|floatformat:2 }}</td>
                                 </tr>
-                                <tr><th colspan="5">&nbsp;</td><tr/>
+                            </table>
                         {% endfor %}
-                        <tr class="monthly_total">
-                            <th colspan="4">Overall total for the period:</th>
-                            <td class="hours">{{ summary.total|floatformat:2 }}</td>
-                        </tr>
-
-                    </table>
+                        <table class="table table-bordered table-condensed">
+                            <tr class="monthly_total">
+                                <th colspan="4">Overall total for the period:</th>
+                                <td class="hours">{{ summary.total|floatformat:2 }}</td>
+                            </tr>
+                        </table>
                     {% else %}
                         <p>No entries exist for this time sheet.</p>
                     {% endif %}
