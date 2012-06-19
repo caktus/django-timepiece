@@ -1,8 +1,13 @@
 Release Notes
 =========================================
 
+0.5.0 (Work in Progress)
+------------------------
+
+* Complete styling upgrade using `Twitter Bootstrap <http://twitter.github.com/bootstrap/>`_
+
 0.4.2 (Released 06-15-2012)
-------------------
+---------------------------
 
 * Fixed permissions for creating businesses.
 * Hourly reports in "My Ledger" display previous weeks of the month if an overlapping entry exists.
