@@ -1,20 +1,22 @@
-{% extends "base.html" %}
+{% extends "timepiece/base.html" %}
 {% block title %}{% if not person %}Create Person{% else %}Edit {{ person.get_full_name }}{% endif %}{% endblock %}
+{% load bootstrap_toolkit %}
 
 {% block content %}
+    <div class="row">
+        <div class="span12">
+            <h2>{% if not person %}Create Person{% else %}Edit {{ person.name }}{% endif %}</h2>
 
-<h2>{% if not person %}Create Person{% else %}Edit {{ person.name }}{% endif %}</h2>
+            <br style="clear: both;" />
 
-<form id="create-edit-person" action="" method="post" accept-charset="utf-8">
-    {% csrf_token %}
-    <table class='vertical'>
-    {{ person_form }}
-    <td>&nbsp;</td>
-    <td class="submit">
-    <input type="button" onclick="history.go(-1)" value="Cancel">
-    <input type="submit" value="Save →" name="submit">
-    </td>
-    </table>
-</form>
-
+            <form id="create-edit-person" class="form-horizontal" action="" method="post" accept-charset="utf-8">
+                {% csrf_token %}
+                {{ person_form|as_bootstrap:"horizontal" }}
+                <div class="form-actions">
+                    <input class="btn btn-primary" type="submit" value="Save" name="submit" />
+                    <input class="btn" type="button" onclick="history.go(-1)" value="Cancel" />
+                </div>
+            </form>
+        </div>
+    </div>
 {% endblock %}

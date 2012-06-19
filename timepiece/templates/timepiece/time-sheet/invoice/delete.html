@@ -5,23 +5,24 @@
 {% block title %}Invoice Hours for Time Sheet{% endblock %}
 
 {% block content %}
-  <h2>Delete the invoice for {{ project.name }} hours 
-      {% if from_date %}from {{ from_date }} to {{ to_date }}{% else %}through {{ to_date }}{% endif %}
-  </h2>
-  <br />
-  <p>Deleting this invoice will return all associated entries to "approved" status. Are you sure you want to do this?</p>
-  <form method="post">{% csrf_token %}
-      <table class='vertical'>
-        <tr>
-          <td class='submit'>
-            <input type='submit' value='Cancel' />
-            <input type='submit' name='delete' value='Delete Invoice &rarr;' />
-          </td>
-        </tr>
-      </table>
-  </form>
-<br />
+    <div class="row">
+        <div class="span12">
+            <h2>
+                Delete the invoice for {{ project.name }} hours {% if from_date %}from {{ from_date }} to {{ to_date }}{% else %}through {{ to_date }}{% endif %}
+            </h2>
+            <p>Deleting this invoice will return all associated entries to "approved" status. Are you sure you want to do this?</p>
 
-<h3>Selected Entries</h3>
-{% include 'timepiece/time-sheet/_weekly_entry_list.html' %}
+            <form class="form-inline" method="post">{% csrf_token %}
+                <input class="btn" type='submit' value='Cancel' />
+                <input class="btn" type='submit' name='delete' value='Delete Invoice &rarr;' />
+            </form>
+        </div>
+    </div>
+
+<div class="row">
+    <div class="span12">
+        <h3>Selected Entries</h3>
+        {% include 'timepiece/time-sheet/_weekly_entry_list.html' %}
+    </div>
+</div>
 {% endblock %}

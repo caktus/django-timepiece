@@ -42,7 +42,11 @@ def quick_search(request):
         form = timepiece_forms.QuickSearchForm(request.GET)
         if form.is_valid():
             return HttpResponseRedirect(form.save())
-    return HttpResponse(form.errors['quick_search'], status=500)
+    return render_to_response('timepiece/search_results.html', {
+            'form': form,
+        },
+        context_instance=RequestContext(request)
+    )
 
 
 class CSVMixin(object):

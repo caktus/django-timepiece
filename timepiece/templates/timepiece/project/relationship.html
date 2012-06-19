@@ -1,23 +1,23 @@
-{% extends "base.html" %}
+{% extends "timepiece/base.html" %}
+{% load bootstrap_toolkit %}
+
 {% block title %}Edit Project Relationship{% endblock %}
 
 {% block content %}
+    <div class="row">
+        <div class="span12">
+            <h2>Edit {{ user.get_full_name }}'s {{ project }} Relationship</h2>
 
-<h2>Edit {{ user.get_full_name }}'s {{ project }} Relationship</h2>
+            <br style="clear: both;" />
 
-<form id="edit-project-relationship" action="" method="post" accept-charset="utf-8">
-	{% csrf_token %}
-	<table class='vertical'>
-		{{ relationship_form }}
-		<tr>
-			<td>&nbsp;</td>
-			<td class='submit'>
-				<input type='button' value='Cancel' onclick='history.go(-1)' />
-				&nbsp;
-				<input type='submit' name='submit' value='Save &rarr;' />
-			</td>
-		</tr>
-	</table>
-</form>
-
+            <form class="form-horizontal" id="edit-project-relationship" action="" method="post" accept-charset="utf-8">
+                {% csrf_token %}
+                {{ relationship_form|as_bootstrap:"horizontal" }}
+                <div class="form-actions">
+                    <input class="btn btn-primary" type='submit' name='submit' value='Save' />
+                    <input class="btn" type='button' value='Cancel' onclick='history.go(-1)' />
+                </div>
+            </form>
+        </div>
+    </div>
 {% endblock %}

@@ -5,56 +5,74 @@
 {% block title %}Make Invoices{% endblock %}
 
 {% block content %}
-<h2>Outstanding Hours</h2>
-<ul class='header-actions-left'>
-    <li>
-        Create Invoice
-    </li>
-    <li>
-        {% if perms.timepiece.view_entry_group %}
-            <a href="{% url 'list_invoices' %}">Previous Invoices</a>
-        {% endif %}
-    </li>
-</ul>
-
-
-{% date_filters "months_no_range" %}
-<form method="get" action="" id="date-filter" accept-charset="utf-8">
-    {{ date_form }}
-    <input type='submit' name='yearmonth' value="Update" id='yearmonth'/>
-</form>
-
-<div class="cal_wrapper" style='float: right;'>
-    <div class="cal left"> {% show_cal to_date -1 %} </div>
-    <div class="cal middle"> {% show_cal to_date 0 %} </div>
-</div>
-
-{% regroup project_totals by project__type__label as type_list %}
-{% for type in type_list %}
-    <h3>Summary of {{ type.grouper }} Entries</h3>
-    <table>
-        <tr>
-            <th>Project name</th>
-            <th>Status</th>
-            <th>Uninvoiced Hours</th>
-            <th></th>
-        </tr>
-        {% regroup type.list by project__name as project_list %}
-        {% for project in project_list %}
-            <tr>
-                <th>{{ project.grouper }}</th>
-                <td>{{ project.list.0.project__status__label|title }}</td>
-                <td class="hours">{% get_uninvoiced_hours project.list %}</td>
-                <td>
-                    {% if from_date %}
-                        <a href="{% url 'confirm_invoice_project' project.list.0.project__pk to_date|date:'Y-m-d' from_date|date:'Y-m-d' %}">Make Invoice</a>
-                    {% else %}
-                        <a href="{% url 'confirm_invoice_project' project.list.0.project__pk to_date|date:'Y-m-d' %}">Make Invoice</a>
+    <div class="row">
+        <div class="span12">
+            <h2>Outstanding Hours</h2>
+            <ul class="unstyled subnav">
+                <li>
+                    Create Invoice
+                </li>
+                <li>
+                    {% if perms.timepiece.view_entry_group %}
+                        <a href="{% url 'list_invoices' %}">Previous Invoices</a>
                     {% endif %}
-                </td>
-            </tr>
-        {% endfor %}
-    </table>
-{% endfor %}
+                </li>
+            </ul>
+        </div>
+    </div>
+
+    <div class="row">
+        <div class="span12">
+            {% date_filters "months_no_range" %}
+        </div>
+    </div>
+
+    <div class="row">
+        <div class="span4">
+            <form class="form-vertical" method="get" action="" id="date-filter" accept-charset="utf-8">
+                {{ date_form }}<br />
+                <input class="btn" type='submit' name='yearmonth' value="Update" id='yearmonth'/>
+            </form>
+        </div>
+
+        <div class="span6 offset2">
+            <div class="cal_wrapper">
+                <div class="cal left"> {% show_cal to_date -1 %} </div>
+                <div class="cal middle"> {% show_cal to_date 0 %} </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row">
+        <div class="span12">
+            {% regroup project_totals by project__type__label as type_list %}
+            {% for type in type_list %}
+                <h3>Summary of {{ type.grouper }} Entries</h3>
+                <table class="table table-bordered table-condensed table-striped">
+                    <tr>
+                        <th>Project name</th>
+                        <th>Status</th>
+                        <th>Uninvoiced Hours</th>
+                        <th></th>
+                    </tr>
+                    {% regroup type.list by project__name as project_list %}
+                    {% for project in project_list %}
+                        <tr>
+                            <td>{{ project.grouper }}</td>
+                            <td>{{ project.list.0.project__status__label|title }}</td>
+                            <td class="hours">{% get_uninvoiced_hours project.list %}</td>
+                            <td>
+                                {% if from_date %}
+                                    <a href="{% url 'confirm_invoice_project' project.list.0.project__pk to_date|date:'Y-m-d' from_date|date:'Y-m-d' %}">Make Invoice</a>
+                                {% else %}
+                                    <a href="{% url 'confirm_invoice_project' project.list.0.project__pk to_date|date:'Y-m-d' %}">Make Invoice</a>
+                                {% endif %}
+                            </td>
+                        </tr>
+                    {% endfor %}
+                </table>
+            {% endfor %}
+        </div>
+    </div>
 {% endblock %}
 
