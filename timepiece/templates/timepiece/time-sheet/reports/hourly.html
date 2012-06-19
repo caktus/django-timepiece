@@ -1,4 +1,4 @@
-{% extends 'timepiece/time-sheet/base.html' %}
+{% extends "timepiece/time-sheet/base.html" %}
 {% load timepiece_tags %}
 {% load bootstrap_toolkit %}
 
@@ -21,12 +21,12 @@
                 </li>
                 <li>
                     {% if perms.timepiece.view_entry_summary %}
-                        <a href='{% url timepiece-summary %}'>General Ledger</a>
+                        <a href="{% url timepiece-summary %}">General Ledger</a>
                     {% endif %}
                 </li>
                 <li>
                     {% if perms.timepiece.view_payroll_summary %}
-                        <a href='{% url payroll_summary %}'>Payroll Report</a>
+                        <a href="{% url payroll_summary %}">Payroll Report</a>
                     {% endif %}
                 </li>
             </ul>
@@ -39,17 +39,51 @@
         </div>
     </div>
 
+    <div class="row">
+        <form class="span12" method="get" action="" id="pj_select" accept-charset="utf-8">
+            <div class="row">
+                <div class="span3">
+                    {{ date_form|as_bootstrap:"inline" }}
+                </div>
+                <div id="project_billable_form">
+                    <div class="span2">
+                        <ul class="parent unstyled">
+                            <li>{{ pj_filters.billable }}{{ pj_filters.billable.label_tag}}</li>
+                            <li>{{ pj_filters.non_billable }}{{ pj_filters.non_billable.label_tag}}</li>
+                            <li>{{ pj_filters.paid_leave }}{{ pj_filters.paid_leave.label_tag}}</li>
+                        </ul>
+                    </div>
+                    <div class="span2">
+                        <ul class="parent unstyled">
+                            <li>{{ pj_filters.trunc.label }}{{ pj_filters.trunc}}</li>
+                            <li>{{ pj_filters.pj_select.label }}{{ pj_filters.pj_select }}</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+
+            <div class="row">
+                <div class="span12">
+                    <button type="submit" class="btn" name="ok" id="billable">Apply Filters</button>
+                    {% if perms.timepiece.export_project_time_sheet %}
+                        <button type="submit" class="btn" name="export" value="True">Export as CSV</button>
+                    {% endif %}
+                </div>
+            </div>
+        </form>
+
+    </div>
 
     <div class="row">
-        <div class="span9">
+        <div class="span12">
             {% if project_totals %}
                 <div class="scroll">
-                    <table class='table table-bordered table-striped table-condensed'>
+                    <table class="table table-bordered table-striped table-condensed">
                         <thead>
                             <tr>
-                                <th class='name_col'>Name</th>
+                                <th class="name_col">Name</th>
                                     {% for date in date_headers %}
-                                        {% if trunc == 'month' %}
+                                        {% if trunc == "month" %}
                                             <th>{{date|date:"M Y"}}</th>
                                         {% else %}
                                             <th>{{date|date:"M/d/Y"}}</th>
@@ -62,16 +96,16 @@
                             {% for rows, totals in project_totals %}
                                 {% for name, hours in rows %}
                                     <tr>
-                                        <th class='name_col'>{{name}}</td>
+                                        <th class="name_col">{{name}}</td>
                                         {% for num in hours %}
-                                            <td class='hours' title='{{name}}'>{{num|floatformat:2}}</td>
+                                            <td class="hours" title="{{name}}">{{num|floatformat:2}}</td>
                                         {% endfor %}
                                     </tr>
                                 {% endfor %}
                                 <tr class="total">
-                                    <th class='name_col'>Total:</td>
+                                    <th class="name_col">Total:</td>
                                     {% for total in totals %}
-                                        <td class='hours'>{{total|floatformat:2}}</td>
+                                        <td class="hours">{{total|floatformat:2}}</td>
                                     {% endfor %}
                                 </tr>
                             {% endfor %}
@@ -81,26 +115,6 @@
             {% else %}
                 <p>No entries found.</p>
             {% endif %}
-        </div>
-
-        <div class="span3">
-            <form method="get" action="" id="pj_select" accept-charset="utf-8">
-                {{ date_form|as_bootstrap }}
-                <div id='project_billable_form'>
-                    <ul class="parent unstyled">
-                        <li>{{ pj_filters.billable }}{{ pj_filters.billable.label_tag}}</li>
-                        <li>{{ pj_filters.non_billable }}{{ pj_filters.non_billable.label_tag}}</li>
-                        <li>{{ pj_filters.paid_leave }}{{ pj_filters.paid_leave.label_tag}}</li>
-                        <br/>
-                        <li>{{ pj_filters.trunc.label }}{{ pj_filters.trunc}}</li>
-                        <li>{{ pj_filters.pj_select.label }}{{ pj_filters.pj_select }}</li>
-                    </ul>
-                    <button type='submit' class="btn" name='ok' id='billable'>Apply Filters</button>
-                    {% if perms.timepiece.export_project_time_sheet %}
-                        <button type='submit' class="btn" name='export' value="True">Export as CSV</button>
-                    {% endif %}
-                </div>
-            </form>
         </div>
     </div>
 {% endblock %}
