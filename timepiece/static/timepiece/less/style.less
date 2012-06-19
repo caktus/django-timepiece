@@ -4,21 +4,29 @@
 // Variables & Mixins
 @lightgray: #DDDDDD;
 
+.bg-icon(@icon) {
+    background: url('../../images/icons/@{icon}') no-repeat;
+}
+
+.list-icon(@icon) {
+    list-style-image: url('../../images/icons/@{icon}');
+}
+
 body {
     /*****************************************
      * Start HTML entities
      *****************************************/
 
     h1, h2, h3, h4, h5, h6 {
-        margin: 1em 0 0 0;
+        margin: 0px 0px 6px 0px;
     }
 
     h2 {
         border-bottom: 1px solid #593E1A;
-    }
 
-    h2.skinny {
-        width: 60%;
+        &.skinny {
+            width: 60%;
+        }
     }
 
     textarea {
@@ -26,8 +34,16 @@ body {
         height: 10em;
     }
 
+    img.icon {
+        padding-right: 0.5em;
+        height: 16px;
+        width: 16px;
+    }
+
     ul {
         &.subnav {
+            margin-top: 3px;
+
             li {
                 display: inline;
                 border-left: 1px solid @lightgray;
@@ -43,17 +59,17 @@ body {
 
     span {
         &.individual {
-            background: url('../images/icons/user.png') no-repeat;
+            .bg-icon('user.png');
             padding-left: 20px;
         }
 
         &.business {
-            background: url('../images/icons/building.png') no-repeat;
+            .bg-icon('building.png');
             padding-left: 20px;
         }
 
         &.project {
-            background: url('../images/icons/report.png') no-repeat;
+            .bg-icon('report.png');
             padding-left: 20px;
         }
     }
@@ -62,24 +78,24 @@ body {
         &.people {
             li {
                 &.add {
+                    .list-icon('user_add.png');
                     padding-top: 1em;
-                    list-style-image: url('../images/icons/user_add.png');
                 }
 
-                list-style-image: url('../images/icons/user.png');
+                .list-icon('user.png');
             }
         }
 
         &.businesses {
             li {
-                list-style-image: url('../images/icons/building.png');
+                .list-icon('building.png');
                 padding: 0.2em;
             }
         }
 
         &.projects {
             li {
-                list-style-image: url('../images/icons/report.png');
+                .list-icon('report.png');
                 padding: 0.2em;
             }
         }
@@ -116,7 +132,7 @@ body {
         margin-top: 60px;
 
         /*****************************************
-         * Start forms
+         * Start general content
          *****************************************/
 
         form#date-filter table {
@@ -129,14 +145,29 @@ body {
             width: 7em;
         }
 
-        /*****************************************
-         * End forms
-         *****************************************/
+        #cal_wrapper {
+            width: 900px;
+            margin: 10px 0px;
+        }
 
+        .cal_wrapper {
+            th {
+                padding-right: 4px;
+            }
 
-        /*****************************************
-         * Start lists
-         *****************************************/
+            .cal {
+                float: left;
+                padding: 18px;
+
+                &.left, &.right {
+                    background-color: #EDEDFF;
+                }
+
+                &.middle {
+                    background-color: #DFDFEF;
+                }
+            }
+        }
 
         ul.date-filters {
             margin: 1em 0;
@@ -163,12 +194,75 @@ body {
         }
 
         ul.date-filters ul li.label {
+            padding: 1px 3px;
             font-weight: bold;
         }
 
+        ul.actions {
+            margin: 0;
+            font-size: 93%;
+        }
+
+        ul.actions li {
+            display: inline;
+            border-left: 1px solid lightgray;
+            padding: 0 0.2em 0 0.5em;
+        }
+
+        ul.actions li:first-child {
+            padding: 0 0.2em 0 0;
+            border-left: none;
+        }
+
         /*****************************************
-         * End lists
+         * End general content
          *****************************************/
+
+        /*****************************************
+         * Start dashboard
+         *****************************************/
+
+        .active.paused, #active-entries .paused {
+            color: #999;
+        }
+
+        /*****************************************
+         * End dashboard
+         *****************************************/
+
+        /*****************************************
+         * Start My Ledger
+         *****************************************/
+        
+        .active {
+            color: inherit;
+        }
+
+        /*****************************************
+         * End My Ledger
+         *****************************************/
+
+        /*****************************************
+         * Start Reports
+         *****************************************/
+        
+        .row {
+            margin-top: 13px;
+        }
+
+        ul.reports {
+            font-size: 110%;
+        }
+
+        ul.reports li {
+            .list-icon('chart_bar.png');
+            margin-bottom: 0.2em;
+        }
+
+        /*****************************************
+         * End Reports
+         *****************************************/
+
     }
 
     /*****************************************
