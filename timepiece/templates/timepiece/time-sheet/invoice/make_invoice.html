@@ -1,5 +1,6 @@
 {% extends 'timepiece/time-sheet/base.html' %}
 {% load timepiece_tags %}
+{% load bootstrap_toolkit %}
 {% load url from future %}
 
 {% block title %}Make Invoices{% endblock %}
@@ -30,7 +31,7 @@
     <div class="row">
         <div class="span4">
             <form class="form-vertical" method="get" action="" id="date-filter" accept-charset="utf-8">
-                {{ date_form }}<br />
+                {{ date_form|as_bootstrap }}
                 <input class="btn" type='submit' name='yearmonth' value="Update" id='yearmonth'/>
             </form>
         </div>
