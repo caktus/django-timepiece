@@ -59,53 +59,58 @@
             </ul>
             <div class="tab-content">
                 <div class="tab-pane active" id="overview">
-                    {% if project_entries %}
-                        <h3>Project Summary</h3>
-                        <table class="table table-bordered table-striped table-condensed">
-                            <thead>
-                                <tr>
-                                    <th>Project</th>
-                                    <th>Hours</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                {% for entry in project_entries %}
-                                    <tr>
-                                        <td>{{ entry.project__name}} </td>
-                                        <td class="hours">{{ entry.sum|floatformat:2 }}</td>
-                                    </tr>
-                                {% endfor %}
-                            </tbody>
-                        </table>
-                    {% endif %}
-                    {% if entries %}
-                        <h3>Billable Summary</h3>
-                        <table class="table table-bordered table-striped table-condensed">
-                            <thead>
-                                <tr>
-                                    <th>Category</th>
-                                    <th>Hours</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                <tr>
-                                    <td>Billable</td><td class="hours">{{summary.billable|floatformat:2 }}</td>
-                                </tr>
-                                <tr>
-                                   <td>Non-billable</td><td class="hours">{{summary.non_billable|floatformat:2 }}</td>
-                                </tr>
-                                <tr>
-                                    <td>Invoiced</td><td class="hours">{{summary.invoiced|floatformat:2 }}</td>
-                                </tr>
-                                <tr>
-                                    <td>Uninvoiced</td><td class="hours">{{summary.uninvoiced|floatformat:2 }}</td>
-                                </tr>
-                            </tbody>
-                        </table>
-                    {% else %}
-                        <p>No activity entries exist for this time sheet.</p>
-                    {% endif %}
-                    <br style="clear: both" />
+                    <div class="row">
+                        {% if project_entries %}
+                            <div class="span6">
+                                <h3>Project Summary</h3>
+                                <table class="table table-bordered table-striped table-condensed">
+                                    <thead>
+                                        <tr>
+                                            <th>Project</th>
+                                            <th>Hours</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        {% for entry in project_entries %}
+                                            <tr>
+                                                <td>{{ entry.project__name}} </td>
+                                                <td class="hours">{{ entry.sum|floatformat:2 }}</td>
+                                            </tr>
+                                        {% endfor %}
+                                    </tbody>
+                                </table>
+                            </div>
+                        {% endif %}
+                        {% if entries %}
+                            <div class="span6">
+                                <h3>Billable Summary</h3>
+                                <table class="table table-bordered table-striped table-condensed">
+                                    <thead>
+                                        <tr>
+                                            <th>Category</th>
+                                            <th>Hours</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        <tr>
+                                            <td>Billable</td><td class="hours">{{summary.billable|floatformat:2 }}</td>
+                                        </tr>
+                                        <tr>
+                                           <td>Non-billable</td><td class="hours">{{summary.non_billable|floatformat:2 }}</td>
+                                        </tr>
+                                        <tr>
+                                            <td>Invoiced</td><td class="hours">{{summary.invoiced|floatformat:2 }}</td>
+                                        </tr>
+                                        <tr>
+                                            <td>Uninvoiced</td><td class="hours">{{summary.uninvoiced|floatformat:2 }}</td>
+                                        </tr>
+                                    </tbody>
+                                </table>
+                            </div>
+                        {% else %}
+                            <p>No activity entries exist for this time sheet.</p>
+                        {% endif %}
+                    </div>
                 </div>
                 <div class="tab-pane" id="full-timesheet">
                     {% if entries %}
