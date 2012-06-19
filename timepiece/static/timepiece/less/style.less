@@ -28,7 +28,7 @@ body {
             width: 60%;
         }
     }
-    
+
     textarea {
         width: 35em;
         height: 10em;
@@ -243,13 +243,22 @@ body {
          * Start Reports
          *****************************************/
 
-        ul.reports {
-            font-size: 110%;
-        }
+        ul {
+            &.reports {
+                font-size: 110%;
 
-        ul.reports li {
-            .list-icon('chart_bar.png');
-            margin-bottom: 0.2em;
+                li {
+                    .list-icon('chart_bar.png');
+                    margin-bottom: 0.2em;
+                    
+                }
+            }
+
+            &.parent {
+                ul {
+                    list-style-type: none;
+                }
+            }
         }
 
         /*****************************************

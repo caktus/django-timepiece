@@ -1,5 +1,6 @@
 {% extends 'timepiece/time-sheet/base.html' %}
 {% load timepiece_tags %}
+{% load bootstrap_toolkit %}
 
 {% block title %}Payroll Per Project{% endblock %}
 
@@ -84,11 +85,9 @@
 
         <div class="span3">
             <form method="get" action="" id="pj_select" accept-charset="utf-8">
-                <ul id='ledger-date-fieldlist'>
-                    {{ date_form.as_ul }}
-                </ul>
+                {{ date_form|as_bootstrap }}
                 <div id='project_billable_form'>
-                    <ul class="parent">
+                    <ul class="parent unstyled">
                         <li>{{ pj_filters.billable }}{{ pj_filters.billable.label_tag}}</li>
                         <li>{{ pj_filters.non_billable }}{{ pj_filters.non_billable.label_tag}}</li>
                         <li>{{ pj_filters.paid_leave }}{{ pj_filters.paid_leave.label_tag}}</li>
