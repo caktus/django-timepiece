@@ -20,8 +20,19 @@
 #    along with minibooks.  If not, see <http://www.gnu.org/licenses/>.
 */
 
+div#header-wrapper {
+	color: white;
+	background: url(../../images/header-background.png) repeat;
+	border-bottom: 1px solid #473014;
+	min-height: 80px;
+}
+
 div#header-wrapper div#header img#minibooks-logo {
     float: left;
+}
+
+div#header-wrapper div#header {
+text-align: left;
 }
 
 div#header div#header-sidebar {
@@ -41,6 +52,31 @@ div#header ul li {
 	display: inline;
 }
 
+div#menu-wrapper {
+	float: left;
+	width: 100%;
+	background-color: #593E1A;
+	border-bottom: 8px solid #4D669E;
+}
+
+div#menu-wrapper div#menu {
+	width: 90%;
+	margin: 0 auto;
+	white-space: nowrap;
+}
+
+div#menu-wrapper #menu ul {
+	border-left: 1px solid #473014;
+	margin: 0;
+	padding: 0;
+	list-style: none;
+	float: left;
+	width: 100%;
+}
+
+div#header-wrapper div#header a {
+	color: #FFD800;
+}
 
 div#content-wrapper {
 	border-left: 8px solid #4D669E;
@@ -61,6 +97,10 @@ div#footer-wrapper div#footer {
 	font-size: 85%;
 	text-align: right;
 	background-color: #4D669E;
+}
+
+div#footer-wrapper div#footer a {
+	color: #FFD800;
 }
 
 .right {
