@@ -1,5 +1,6 @@
 {% extends "timepiece/time-sheet/base.html" %}
 {% load timepiece_tags %}
+{% load bootstrap_toolkit %}
 {% load url from future %}
 
 {% block extrajs %}
@@ -44,8 +45,8 @@
     <div class="row">
         <div class="span12">
             <form class="form-inline" method="get" action="" accept-charset="utf-8">
-                {{ year_month_form }}
-                <button type="submit" class="btn">Update</button>
+                {{ year_month_form|as_bootstrap:"inline" }}
+                <input type="submit" name="yearmonth" class="btn" value="Update" />
             </form>
         </div class="span12">
     </div>
