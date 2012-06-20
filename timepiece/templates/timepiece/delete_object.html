@@ -7,7 +7,11 @@
 {% block content %}
     <div class="row">
         <div class="span12">
-            <h3>Are you sure you want to delete {{ object }}?</h3>
+            {% if object.get_full_name %}
+                <h3>Are you sure you want to delete {{ object.get_full_name }}?</h3>
+            {% else %}
+                <h3>Are you sure you want to delete {{ object }}?</h3>
+            {% endif %}
             <form method="post" action="">
                 {% csrf_token %}
                 <input type="hidden" name="delete" value="delete" />
