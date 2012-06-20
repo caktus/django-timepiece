@@ -1,9 +1,14 @@
-{% extends 'timepiece/time-sheet/base.html' %}
+{% extends 'timepiece/time-sheet/reports/base.html' %}
 {% load timepiece_tags %}
 {% load bootstrap_toolkit %}
 {% load url from future %}
 
 {% block title %}Payroll Summary{% endblock %}
+
+{% block crumbs %}
+    {{ block.super }}
+    <li><span class="divider">/</span> <a href="{% url 'payroll_summary' %}">Payroll Summary</a></li>
+{% endblock crumbs %}
 
 {% block content %}
     <div class="row">

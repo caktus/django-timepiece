@@ -1,4 +1,4 @@
-{% extends 'timepiece/time-sheet/base.html' %}
+{% extends 'timepiece/time-sheet/reports/base.html' %}
 {% load timepiece_tags %}
 {% load bootstrap_toolkit %}
 
@@ -10,6 +10,11 @@
 {% endblock extrajs %}
 
 {% block bodyid %}hourly-report{% endblock bodyid %}
+
+{% block crumbs %}
+    {{ block.super }}
+    <li><span class="divider">/</span> <a href="{% url hourly_report %}">Hourly Reports</a></li>
+{% endblock crumbs %}
 
 {% block content %}
     <div class="row">
