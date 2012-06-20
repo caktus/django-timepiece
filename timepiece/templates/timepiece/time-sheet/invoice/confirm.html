@@ -1,5 +1,5 @@
 {% extends 'timepiece/time-sheet/base.html' %}
-{% load timepiece_tags %}
+{% load timepiece_tags bootstrap_toolkit %}
 {% load url from future %}
 
 {% block title %}Invoice Hours for Time Sheet{% endblock %}
@@ -13,8 +13,9 @@
 
     <div class="row">
         <div class="span8">
-            <form class="form-inline" method="post">
+            <form class="form-horizontal" method="post">
                 {% csrf_token %}
+                {{ invoice_form|as_bootstrap:"horizontal" }}
                 <input class="btn" type='button' value='Cancel' onclick='history.go(-1)' />
                 <input class="btn" type='submit' name='submit' value='Create Invoice &rarr;' />
             </form>
