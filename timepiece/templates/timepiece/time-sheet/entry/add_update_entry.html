@@ -5,7 +5,11 @@
 
 {% block crumbs %}
     {{ block.super }}
-    <li><span class="divider">/</span> <a href="{% url timepiece-update entry.pk %}">Update Entry</a></li>
+    {% if entry %}
+        <li><span class="divider">/</span> <a href="{% url timepiece-update entry.pk %}">Update Entry</a></li>
+    {% else %}
+        <li><span class="divider">/</span> <a href="{% url timepiece-add %}">Create Entry</a></li>
+    {% endif %}
 {% endblock crumbs %}
 
 {% block content %}
