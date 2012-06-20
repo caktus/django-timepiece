@@ -1356,3 +1356,77 @@ class ContractList(ListView):
     @method_decorator(permission_required('timepiece.add_project_contract'))
     def dispatch(self, *args, **kwargs):
         return super(ContractList, self).dispatch(*args, **kwargs)
+
+
+@permission_required('timepiece.add_project')
+@permission_required('timepiece.change_project')
+@render_with('timepiece/delete_object.html')
+def delete_project(request, project_id=None):
+    project = get_object_or_404(timepiece.Project, pk=project_id) \
+        if project_id else None
+    form = timepiece_forms.DeleteForm(request.POST or None, instance=project)
+
+    if form.is_valid():
+        msg = '{0} could not be successfully deleted'.format(project.name)
+        deleted = form.save()
+
+        if deleted:
+            msg = '{0} was successfully deleted'.format(project.name)
+
+        messages.info(request, msg)
+        return HttpResponseRedirect(reverse('list_projects'))
+
+    context = {
+        'object': project,
+    }
+    return context
+
+
+@permission_required('timepiece.add_business')
+@render_with('timepiece/delete_object.html')
+def delete_business(request, business_id=None):
+    business = get_object_or_404(timepiece.Business, pk=business_id) \
+        if business_id else None
+    form = timepiece_forms.DeleteForm(request.POST or None, instance=business)
+
+    if form.is_valid():
+        msg = '{0} could not be successfully deleted'.format(business.name)
+        deleted = form.save()
+
+        if deleted:
+            msg = '{0} was successfully deleted'.format(business.name)
+
+        messages.info(request, msg)
+        return HttpResponseRedirect(reverse('list_businesses'))
+
+    context = {
+        'object': business,
+    }
+    return context
+
+
+@permission_required('auth.add_user')
+@permission_required('auth.change_user')
+@render_with('timepiece/delete_object.html')
+def delete_person(request, user_id=None):
+    user = get_object_or_404(User, pk=user_id) \
+        if user_id else None
+    form = timepiece_forms.DeleteForm(request.POST or None, instance=user)
+
+    if form.is_valid():
+        name = user.email
+        if user.get_full_name():
+            name = user.get_full_name()
+        msg = '{0} could not be successfully deleted'.format(name)
+        deleted = form.save()
+
+        if deleted:
+            msg = '{0} was successfully deleted'.format(name)
+
+        messages.info(request, msg)
+        return HttpResponseRedirect(reverse('list_people'))
+
+    context = {
+        'object': user,
+    }
+    return context

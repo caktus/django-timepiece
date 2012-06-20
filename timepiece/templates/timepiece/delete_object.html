@@ -1,0 +1,18 @@
+{% extends "timepiece/base.html" %}
+
+{% block title %}
+    Delete {{ object }}
+{% endblock title %}
+
+{% block content %}
+    <div class="row">
+        <div class="span12">
+            <h3>Are you sure you want to delete {{ object }}?</h3>
+            <form method="post" action="">
+                {% csrf_token %}
+                <input type="submit" class="btn btn-danger" value="Delete" />
+                <input type="button" class="btn" value="Do Not Delete" onclick="history.back(-1)" />
+            </form>
+        </div>
+    </div>
+{% endblock content %}
