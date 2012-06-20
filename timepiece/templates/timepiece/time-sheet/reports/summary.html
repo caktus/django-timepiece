@@ -9,7 +9,7 @@
     <div class="row">
         <div class="span12">
             <h2>Reports</h2>
-            <ul class="unstyled subnav">
+            <ul class="nav nav-pills">
                 <li>
                     {% if perms.timepiece.view_entry_summary %}
                         <a href='{% url 'hourly_report' %}'>Hourly</a>
@@ -20,8 +20,8 @@
                         <a href='{% url 'timepiece-summary' %}'>General Ledger</a>
                     {% endif %}
                 </li>
-                <li>
-                    Payroll Report
+                <li class="active">
+                    <a href="#">Payroll Report</a>
                 </li>
             </ul>
         </div>
