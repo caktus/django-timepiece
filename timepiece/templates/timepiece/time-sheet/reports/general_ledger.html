@@ -13,14 +13,14 @@
     <div class="row">
         <div class="span12">
             <h2>Reports</h2>
-            <ul class="unstyled subnav">
+            <ul class="nav nav-pills">
                 <li>
                     {% if perms.timepiece.view_entry_summary %}
                         <a href="{% url hourly_report %}">Hourly</a>
                     {% endif %}
                 </li>
-                <li>
-                    General Ledger
+                <li class="active">
+                    <a href="#">General Ledger</a>
                 </li>
                 <li>
                     {% if perms.timepiece.view_payroll_summary %}

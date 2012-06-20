@@ -18,7 +18,7 @@
                 {{ form|as_bootstrap:"horizontal" }}
                 <div class="form-actions">
                     <input class="btn btn-primary" type="submit" name="submit" value="Clock Out" />
-                    <input class="btn" type="button" value="Cancel" onclick="history.go(-1)" />
+                    <input class="btn" type="button" value="Cancel" onclick="window.location='{% url timepiece-entries %}'" />
                 </div>
             </form>
         </div>
