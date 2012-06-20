@@ -1,7 +1,9 @@
 {% extends 'timepiece/time-sheet/base.html' %}
 {% load timepiece_tags %}
-{% block title %}Clock In{% endblock %}
 {% load bootstrap_toolkit %}
+
+{% block title %}Clock In{% endblock %}
+
 
 {% block content %}
     <div class="row">
@@ -23,7 +25,7 @@
                 {{ form|as_bootstrap:"horizontal" }}
                 <div class="form-actions">
                     <input class="btn btn-primary" type="submit" name="submit" value="Clock In" />
-                    <input class="btn" type="button" value="Cancel" onclick="history.go(-1)" />
+                    <input class="btn cancel" type="button" value="Cancel" onclick="window.location='{% url timepiece-entries %}'" />
                 </div>
             </form>
         </div>

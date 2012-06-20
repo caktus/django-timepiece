@@ -15,7 +15,7 @@
                 <input type="hidden" name="key" value="{{ entry.delete_key }}" />
                 <div class="form-actions">
                     <input class="btn btn-primary" type="submit" value="Yes" />
-                    <input class="btn" type="button" value="No" onclick="javascript:history.go(-1)" />
+                    <input class="btn" type="button" value="No" onclick="window.location='{% url timepiece-entries %}'" />
                 </div>
             </form>
         </div>
