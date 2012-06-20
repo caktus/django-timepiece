@@ -60,9 +60,7 @@ class DeleteObjectsTest(TimepieceDataTestCase):
         """Delete urls should not be accessed by regular users"""
         self.client.login(username='user', password='abc')
 
-        url = reverse('delete_business', kwargs={
-            'business_id': self.business.pk,
-        })
+        url = reverse('delete_business', args=(self.business.pk,))
 
         response = self.client.get(url)
         self.assertEquals(response.status_code, 302)
@@ -76,9 +74,7 @@ class DeleteObjectsTest(TimepieceDataTestCase):
         self.client.login(username='user', password='abc')
 
         person = self.create_person()
-        url = reverse('delete_person', kwargs={
-            'user_id': person.pk,
-        })
+        url = reverse('delete_person', args=(person.pk,))
 
         response = self.client.get(url)
         self.assertEquals(response.status_code, 302)
@@ -91,9 +87,7 @@ class DeleteObjectsTest(TimepieceDataTestCase):
         """Delete urls should not be accessed by regular users"""
         self.client.login(username='user', password='abc')
 
-        url = reverse('delete_project', kwargs={
-            'project_id': self.project.pk,
-        })
+        url = reverse('delete_project', args=(self.project.pk,))
 
         response = self.client.get(url)
         self.assertEquals(response.status_code, 302)
@@ -104,9 +98,7 @@ class DeleteObjectsTest(TimepieceDataTestCase):
 
     def test_delete_business(self):
         """A superuser should be able to access the delete page"""
-        url = reverse('delete_business', kwargs={
-            'business_id': self.business.pk,
-        })
+        url = reverse('delete_business', args=(self.business.pk,))
 
         response = self.client.get(url)
         self.assertEquals(response.status_code, 200)
@@ -119,9 +111,7 @@ class DeleteObjectsTest(TimepieceDataTestCase):
     def test_delete_person(self):
         """A superuser should be able to access the delete page"""
         person = self.create_person()
-        url = reverse('delete_person', kwargs={
-            'user_id': person.pk,
-        })
+        url = reverse('delete_person', args=(person.pk,))
 
         response = self.client.get(url)
         self.assertEquals(response.status_code, 200)
@@ -133,9 +123,7 @@ class DeleteObjectsTest(TimepieceDataTestCase):
 
     def test_delete_project(self):
         """A superuser should be able to access the delete page"""
-        url = reverse('delete_project', kwargs={
-            'project_id': self.project.pk,
-        })
+        url = reverse('delete_project', args=(self.project.pk,))
 
         response = self.client.get(url)
         self.assertEquals(response.status_code, 200)

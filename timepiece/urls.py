@@ -86,18 +86,18 @@ urlpatterns = patterns('',
 
 
     url(
-        r'^project/(?P<project_id>\d+)/delete/$',
-        views.delete_project,
+        r'^project/(?P<pk>\d+)/delete/$',
+        views.DeleteProjectView.as_view(),
         name='delete_project',
     ),
     url(
-        r'^business/(?P<business_id>\d+)/delete/$',
-        views.delete_business,
+        r'^business/(?P<pk>\d+)/delete/$',
+        views.DeleteBusinessView.as_view(),
         name='delete_business',
     ),
     url(
-        r'^person/(?P<user_id>\d+)/delete/$',
-        views.delete_person,
+        r'^person/(?P<pk>\d+)/delete/$',
+        views.DeletePersonView.as_view(),
         name='delete_person',
     ),
 
