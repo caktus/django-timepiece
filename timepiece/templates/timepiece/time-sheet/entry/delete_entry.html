@@ -2,6 +2,11 @@
 
 {% block title %}Delete Entry{% endblock %}
 
+{% block crumbs %}
+    {{ block.super }}
+    <li><span class="divider">/</span> <a href="{% url timepiece-delete entry.pk %}">Delete Entry</a></li>
+{% endblock crumbs %}
+
 {% block content %}
     <div class="row">
         <div class="span12">

@@ -1,9 +1,14 @@
-{% extends 'timepiece/time-sheet/base.html' %}
+{% extends 'timepiece/time-sheet/invoice/base.html' %}
 {% load timepiece_tags %}
 {% load bootstrap_toolkit %}
 {% load url from future %}
 
 {% block title %}Make Invoices{% endblock %}
+
+{% block crumbs %}
+    {{ block.super }}
+    <li><span class="divider">/</span> <a href="{% url 'invoice_projects' %}">Outstanding</a></li>
+{% endblock crumbs %}
 
 {% block content %}
     <div class="row">

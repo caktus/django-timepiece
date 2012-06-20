@@ -1,8 +1,13 @@
-{% extends 'timepiece/time-sheet/base.html' %}
+{% extends 'timepiece/time-sheet/contract/base.html' %}
 {% load timepiece_tags %}
 {% load url from future %}
 
 {% block title %}{{ contract }} Report{% endblock %}
+
+{% block crumbs %}
+    {{ block.super }}
+    <li><span class="divider">/</span> <a href="{% url 'view_contract' contract.pk %}">Contract Detail</a></li>
+{% endblock crumbs %}
 
 {% block content %}
     <div class="row">

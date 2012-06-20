@@ -1,4 +1,4 @@
-{% extends "timepiece/time-sheet/base.html" %}
+{% extends "timepiece/time-sheet/people/base.html" %}
 {% load timepiece_tags %}
 {% load bootstrap_toolkit %}
 {% load url from future %}
@@ -6,6 +6,11 @@
 {% block extrajs %}
     <script src="{{ STATIC_URL }}bootstrap/js/bootstrap-tab.js" type="text/javascript" charset="utf-8"></script>
 {% endblock %}
+
+{% block crumbs %}
+    {{ block.super }}
+    <li><span class="divider">/</span> <a href="{% url 'view_person_time_sheet' user.pk %}">My Ledger</a></li>
+{% endblock crumbs %}
 
 {% block title %}
     {% if timesheet_user.get_full_name %}

@@ -4,6 +4,11 @@
 
 {% block title %}{{ project }} Time Sheet{% endblock %}
 
+{% block crumbs %}
+    {{ block.super }}
+    <li><span class="divider">/</span> <a href="{% url 'project_time_sheet' project.pk %}">Project Timesheet</a></li>
+{% endblock crumbs %}
+
 {% block content %}
     <div class="row">
         <div class="span12">
