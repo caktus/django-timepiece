@@ -547,3 +547,22 @@ class ProjectSearchForm(forms.Form):
         search = self.cleaned_data.get('search', '')
         status = self.cleaned_data.get('status', '')
         return (search, status)
+
+
+class DeleteForm(forms.Form):
+    """
+    Returns True if the object was deleted
+    """
+    def __init__(self, *args, **kwargs):
+        self.instance = kwargs.pop('instance', None)
+        super(DeleteForm, self).__init__(*args, **kwargs)
+
+    def save(self):
+        if self.instance:
+            try:
+                self.instance.delete()
+            except AssertionError:
+                return False
+            else:
+                return True
+        return False

@@ -10,6 +10,7 @@
             <ul class="unstyled subnav">
                 {% if perms.timepiece.change_business %}
                     <li><a href='{% url edit_business business.pk %}'>Edit business</a></li>
+                    <li><a href="{% url delete_business business.pk %}">Delete business</a></li>
                 {% endif %}
             </ul>
         </div>
