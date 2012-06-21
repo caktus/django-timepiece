@@ -132,3 +132,29 @@ class DeleteObjectsTest(TimepieceDataTestCase):
         self.assertEquals(timepiece.Project.objects.count(), 2)
         response = self.client.post(url, data={'delete': 'delete'})
         self.assertEquals(timepiece.Project.objects.count(), 1)
+
+
+class ProjectsTest(TimepieceDataTestCase):
+    def setUp(self):
+        super(ProjectsTest, self).setUp()
+        self.login_with_permission()
+        self.url = reverse('create_project')
+
+    def login_with_permission(self):
+        user = User.objects.create_user('admin', 'e@e.com', 'abc')
+        user.is_staff = True
+        user.is_superuser = True
+        user.save()
+        self.client.login(username='admin', password='abc')
+
+    def test_create_project_no_business(self):
+        """
+        If you try to create a project without a business
+        you should see the same page with error form
+        """
+        response = self.client.get(self.url)
+        self.assertEquals(response.status_code, 200)
+
+        response = self.client.post(self.url)
+        form = response.context['form']
+        self.assertTrue([f.error_messages for f in form.fields.values()])
