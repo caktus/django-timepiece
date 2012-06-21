@@ -5,6 +5,10 @@ Release Notes
 ------------------------
 
 * Complete styling upgrade using `Twitter Bootstrap <http://twitter.github.com/bootstrap/>`_
+* Added site-wide breadcrumbs
+* Fixed a bug where clients (unpriveleged users) had access to timepiece and timesheet internals
+* Fixed a bug where comments on active entries would not appear when clocking out of said entry
+* Added ability to run different tests simultaneously
 
 0.4.2 (Released 06-15-2012)
 ---------------------------
