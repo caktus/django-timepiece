@@ -10,3 +10,4 @@ from timepiece.tests.search import *
 from timepiece.tests.project_list import *
 from timepiece.tests.general_ledger import *
 from timepiece.tests.crmcontent import *
+from timepiece.tests.dashboard import *

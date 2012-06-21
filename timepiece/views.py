@@ -67,6 +67,9 @@ class CSVMixin(object):
 @login_required
 @render_with('timepiece/time-sheet/dashboard.html')
 def view_entries(request):
+    view_entries = False
+    if request.user.has_perm('timepiece.can_clock_in'):
+        view_entries = True
     week_start = utils.get_week_start()
     entries = timepiece.Entry.objects.select_related(
         'project__business',
@@ -126,6 +129,7 @@ def view_entries(request):
         'current_total': current_total,
         'others_active_entries': others_active_entries,
         'my_active_entries': my_active_entries,
+        'view_entries': view_entries,
     }
     return context
 

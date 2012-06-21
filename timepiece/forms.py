@@ -202,6 +202,8 @@ class ClockInForm(forms.ModelForm):
         )
         if not self.active:
             self.fields.pop('active_comment')
+        else:
+            self.fields['active_comment'].initial = self.active.comments
         self.instance.user = self.user
 
     def clean_start_time(self):
