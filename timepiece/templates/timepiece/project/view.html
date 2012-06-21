@@ -11,6 +11,7 @@
             <ul class="unstyled subnav">
                 {% if perms.timepiece.change_project %}
                     <li><a href='{% url edit_project project_id=project.id %}'>Edit project</a></li>
+                    <li><a href="{% url delete_project project.id %}">Delete project</a></li>
                 {% endif %}
                 {% if perms.timepiece.view_businesses %}
                     <li><a href='{% url view_business business=project.business.id %}'>Return to {{ project.business.name }}</a></li>

@@ -12,7 +12,10 @@ from django.template import RequestContext
 from django.template.defaultfilters import slugify
 from django.db.models import Sum
 from django.contrib.sites.models import Site
+from django.utils.functional import lazy
+from django.core.urlresolvers import reverse
 
+reverse_lazy = lazy(reverse, str)
 
 def slugify_uniquely(s, queryset=None, field='slug'):
     """
