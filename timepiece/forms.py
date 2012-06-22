@@ -66,7 +66,8 @@ class CreatePersonForm(auth_forms.UserCreationForm):
         model = auth_models.User
         fields = (
             "username", "first_name", "last_name",
-            "email", "is_active", "is_staff")
+            "email", "is_active", "is_staff"
+        )
 
 
 class EditPersonForm(auth_forms.UserChangeForm):
@@ -82,6 +83,10 @@ class EditPersonForm(auth_forms.UserChangeForm):
             "username", "first_name", "last_name",
             "email", "is_active", "is_staff"
         )
+
+    def clean_password(self):
+        password_one = self.cleaned_data.get('password_one', None)
+        return password_one
 
     def clean(self):
         super(EditPersonForm, self).clean()
