@@ -85,8 +85,7 @@ class EditPersonForm(auth_forms.UserChangeForm):
         )
 
     def clean_password(self):
-        password_one = self.cleaned_data.get('password_one', None)
-        return password_one
+        return self.cleaned_data.get('password_one', None)
 
     def clean(self):
         super(EditPersonForm, self).clean()
