@@ -1,7 +1,12 @@
-{% extends 'timepiece/time-sheet/base.html' %}
+{% extends 'timepiece/time-sheet/reports/base.html' %}
 {% load timepiece_tags %}
 
 {% block title %}Projection Summary{% endblock %}
+
+{% block crumbs %}
+    {{ block.super }}
+    <li><span class="divider">/</span> <a href="{% url projection_summary %}">Projection</a></li>
+{% endblock crumbs %}
 
 {% block content %}
     <div class="row">

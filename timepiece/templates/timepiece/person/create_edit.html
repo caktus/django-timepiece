@@ -1,6 +1,18 @@
-{% extends "timepiece/base.html" %}
+{% extends "timepiece/person/base.html" %}
 {% block title %}{% if not person %}Create Person{% else %}Edit {{ person.get_full_name }}{% endif %}{% endblock %}
 {% load bootstrap_toolkit %}
+
+{% block crumbs %}
+    {{ block.super }}
+    <li>
+        <span class="divider">/</span>
+        {% if not person %}
+            <a href="{% url create_person %}">Create Person</a>
+        {% else %}
+            <a href="{% url edit_person person.pk %}">Edit Person</a>
+        {% endif %}
+    </li>
+{% endblock crumbs %}
 
 {% block content %}
     <div class="row">

@@ -1,6 +1,11 @@
-{% extends "timepiece/base.html" %}
+{% extends "timepiece/person/base.html" %}
 {% load url from future %}
 {% load timepiece_tags markup %}
+
+{% block crumbs %}
+    {{ block.super }}
+    <li><span class="divider">/</span> <a href="{% url 'view_person' person.pk %}">Person Detail</a></li>
+{% endblock crumbs %}
 
 {% block title %}{{ person.first_name }} {{ person.last_name }}{% endblock %}
 

@@ -1,7 +1,12 @@
-{% extends "timepiece/time-sheet/base.html" %}
+{% extends "timepiece/base.html" %}
 {% load timepiece_tags %}
 
 {% block title %}{{ action.capitalize }} Hours for Time Sheet{% endblock %}
+
+{% block crumbs %}
+    {{ block.super }}
+    <li><span class="divider">/</span> <a href="{% url change_person_time_sheet action timesheet_user.id from_date|date:"Y-m-d" %}">{{ action.capitalize }} Timesheet</a></li>
+{% endblock crumbs %}
 
 {% block content %}
     <div class="row">

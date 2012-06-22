@@ -1,7 +1,12 @@
-{% extends "timepiece/base.html" %}
+{% extends "timepiece/business/base.html" %}
 {% load timepiece_tags markup %}
 
 {% block title %}{{ business.name }}{% endblock %}
+
+{% block crumbs %}
+    {{ block.super }}
+    <li><span class="divider">/</span> <a href="{% url view_business business.pk %}">Business Detail</a></li>
+{% endblock crumbs %}
 
 {% block content %}
     <div class="row">

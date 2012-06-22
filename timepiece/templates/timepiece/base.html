@@ -131,6 +131,16 @@
     <div id="content" class="container">
         {% include "timepiece/messages.html" %}
 
+        {% if user.is_authenticated %}
+            {% block breadcrumb %}
+                <ul class="breadcrumb">
+                    {% block crumbs %}
+                        <li><a href="{% url timepiece-entries %}">Home</a></li>
+                    {% endblock crumbs %}
+                </ul>
+            {% endblock breadcrumb %}
+        {% endif %}
+
         {% block content %}
         {% endblock content %}
     </div>
