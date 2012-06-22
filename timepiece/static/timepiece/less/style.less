@@ -2,7 +2,10 @@
 @import "../../bootstrap/less/bootstrap.less";
 
 // Variables & Mixins
+@white: #FFFFFF;
 @lightgray: #DDDDDD;
+@blue: #049CDB;
+@lightblue: lighten(@blue, 20%);
 
 .bg-icon(@icon) {
     background: url('../../images/icons/@{icon}') no-repeat;
@@ -97,6 +100,36 @@ body {
             li {
                 .list-icon('report.png');
                 padding: 0.2em;
+            }
+        }
+    }
+
+    table {
+        @blue: #BBBFDD;
+        @lightblue: #DFDFEF;
+        @lightgray: #AAAAAA;
+
+        tr {
+            &.ledger_header th {
+                background-color: @lightblue !important;
+            }
+
+            &.before_from_date {
+                color: @lightgray;
+            }
+
+            &.daily_total {
+                background-color: @lightblue !important;
+                border-color: @blue;
+
+                td {
+                    border-right-color: @blue;
+                    border-left-color: @blue;
+                }
+            }
+
+            &.weekly_total {
+                background-color: @blue !important;
             }
         }
     }
