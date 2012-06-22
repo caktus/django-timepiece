@@ -1,8 +1,13 @@
-{% extends 'timepiece/time-sheet/base.html' %}
+{% extends 'timepiece/time-sheet/invoice/base.html' %}
 {% load timepiece_tags %}
 {% load url from future %}
 
 {% block title %}Remove Entry from Invoice{% endblock %}
+
+{% block crumbs %}
+    {{ block.super }}
+    <li><span class="divider">/</span> <a href="{% url 'remove_invoice_entry' invoice.pk entry.pk %}">Remove Entry</a></li>
+{% endblock crumbs %}
 
 {% block content %}
     <div class="row">

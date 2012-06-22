@@ -3,6 +3,15 @@
 
 {% block title %}{% if entry %}Update{% else %}Create{% endif %} Entry{% endblock %}
 
+{% block crumbs %}
+    {{ block.super }}
+    {% if entry %}
+        <li><span class="divider">/</span> <a href="{% url timepiece-update entry.pk %}">Update Entry</a></li>
+    {% else %}
+        <li><span class="divider">/</span> <a href="{% url timepiece-add %}">Create Entry</a></li>
+    {% endif %}
+{% endblock crumbs %}
+
 {% block content %}
     <div class="row">
         <div class="span12">

@@ -3,6 +3,11 @@
 
 {% block title %}Edit Project Relationship{% endblock %}
 
+{% block crumbs %}
+    {{ block.super }}
+    <li><span class="divider">/</span> <a href="{% url edit_project_relationship project.pk user.pk %}">Edit Relationship</a></li>
+{% endblock crumbs %}
+
 {% block content %}
     <div class="row">
         <div class="span12">
