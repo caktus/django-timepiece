@@ -8,6 +8,7 @@ Release Notes
 * Added site-wide breadcrumbs
 * Fixed a bug where clients (unpriveleged users) had access to timepiece and timesheet internals
 * Fixed a bug where comments on active entries would not appear when clocking out of said entry
+* Fixed a bug where editing a user would throw an error instead of showing form errors
 * Added ability to run different tests simultaneously
 
 0.4.2 (Released 06-15-2012)
