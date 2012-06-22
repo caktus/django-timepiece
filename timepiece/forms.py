@@ -464,7 +464,7 @@ class ProjectForm(forms.ModelForm):
     business = selectable_forms.AutoCompleteSelectField(
         BusinessLookup,
         label='Business',
-        required=False
+        required=True
     )
     business.widget.attrs['placeholder'] = 'Search'
 
