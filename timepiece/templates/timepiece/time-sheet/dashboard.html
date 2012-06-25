@@ -6,7 +6,7 @@
 {% block bodyid %}dashboard{% endblock bodyid %}
 
 {% block content %}
-    <div class="row">
+    <div class="row-fluid">
         <div class="span12">
             <h2>My Time Sheet</h2>
             <ul class="unstyled subnav">
@@ -16,7 +16,7 @@
         </div>
     </div>
 
-    <div class="row">
+    <div class="row-fluid">
         <div class="span12">
             <h3>My Projects</h3>
             <table class="table table-striped table-bordered table-condensed">
@@ -57,7 +57,7 @@
         </div>
     </div>
 
-    <div class="row">
+    <div class="row-fluid">
         <div class="span12">
             <h3>
                 {% with entries.count as num_entries %}
@@ -71,7 +71,7 @@
         </div>
     </div>
 
-    <div class="row">
+    <div class="row-fluid">
         {% if allocations or project_entries %}
             <div class="span12">
                 <h3>My Work This Week</h3>
@@ -128,12 +128,12 @@
 
 
     {% if allocations %}
-        <div class="row">
+        <div class="row-fluid">
             <div style="height: 320px; width: 320px;" id="my-weekly-hours-chart"></div>
         </div>
     {% endif %}
 
-    <div class="row">
+    <div class="row-fluid">
         <div class="span12">
             <h3>Other Active Entries</h3>
             <table class="table table-striped table-bordered table-condensed">
@@ -163,7 +163,7 @@
 
     <br style="clear: both;" />
 
-    <div class="row">
+    <div class="row-fluid">
         <div class="span12">
             <h3>
                 {% with this_weeks_entries.count as num_entries %}

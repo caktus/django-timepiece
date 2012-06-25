@@ -11,7 +11,7 @@
 {% endblock crumbs %}
 
 {% block content %}
-    <div class="row">
+    <div class="row-fluid">
         <div class="span12">
             <h2>Outstanding Hours</h2>
             <ul class="unstyled subnav">
@@ -27,13 +27,13 @@
         </div>
     </div>
 
-    <div class="row">
+    <div class="row-fluid">
         <div class="span12">
             {% date_filters "months_no_range" %}
         </div>
     </div>
 
-    <div class="row">
+    <div class="row-fluid">
         <div class="span4">
             <form class="form-vertical" method="get" action="" id="date-filter" accept-charset="utf-8">
                 {{ date_form|as_bootstrap }}
@@ -49,7 +49,7 @@
         </div>
     </div>
 
-    <div class="row">
+    <div class="row-fluid">
         <div class="span12">
             {% regroup project_totals by project__type__label as type_list %}
             {% for type in type_list %}

@@ -10,7 +10,7 @@
 {% endblock crumbs %}
 
 {% block content %}
-    <div class="row">
+    <div class="row-fluid">
         <div class="span12">
             <h2>
                 Delete the invoice for {{ project.name }} hours {% if from_date %}from {{ from_date }} to {{ to_date }}{% else %}through {{ to_date }}{% endif %}
@@ -24,7 +24,7 @@
         </div>
     </div>
 
-<div class="row">
+<div class="row-fluid">
     <div class="span12">
         <h3>Selected Entries</h3>
         {% include 'timepiece/time-sheet/_weekly_entry_list.html' %}

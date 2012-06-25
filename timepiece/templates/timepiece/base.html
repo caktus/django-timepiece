@@ -44,7 +44,7 @@
     {% block navigation %}
         <div class="navbar navbar-fixed-top">
             <div class="navbar-inner">
-                <div class="container">
+                <div class="container-fluid">
                     {% block navbar-left %}
                         <ul class="nav pull-left">
                             <li class="active"><a class="brand" href="/">Timepiece</a></li>
@@ -128,7 +128,7 @@
         </div>
     {% endblock navigation %}
 
-    <div id="content" class="container">
+    <div id="content" class="container-fluid">
         {% include "timepiece/messages.html" %}
 
         {% if user.is_authenticated %}
@@ -147,7 +147,7 @@
 
     {% block footer %}
         <footer class="footer">
-            <div class="container">
+            <div class="container-fluid">
                 <p class="pull-right">
                     <a href="https://github.com/caktus/django-timepiece/">Source</a>
                     |

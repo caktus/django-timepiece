@@ -17,7 +17,7 @@
 {% endblock crumbs %}
 
 {% block content %}
-    <div class="row">
+    <div class="row-fluid">
         <div class="span12">
             <h2>Reports</h2>
             <ul class="nav nav-pills">
@@ -38,15 +38,15 @@
         </div>
     </div>
 
-    <div class="row">
+    <div class="row-fluid">
         <div class="span12">
             {% date_filters %}
         </div>
     </div>
 
-    <div class="row">
+    <div class="row-fluid">
         <form class="span12" method="get" action="" id="pj_select" accept-charset="utf-8">
-            <div class="row">
+            <div class="row-fluid">
                 <div class="span3">
                     {{ date_form|as_bootstrap:"inline" }}
                 </div>
@@ -67,7 +67,7 @@
                 </div>
             </div>
 
-            <div class="row">
+            <div class="row-fluid">
                 <div class="span12">
                     <button type="submit" class="btn" name="ok" id="billable">Apply Filters</button>
                     {% if perms.timepiece.export_project_time_sheet %}
@@ -79,7 +79,7 @@
 
     </div>
 
-    <div class="row">
+    <div class="row-fluid">
         <div class="span12">
             {% if project_totals %}
                 <div class="scroll">

@@ -11,7 +11,7 @@
 {% endblock crumbs %}
 
 {% block content %}
-    <div class="row">
+    <div class="row-fluid">
         <div class="span12">
             <h2>Reports</h2>
             <ul class="nav nav-pills">
@@ -32,7 +32,7 @@
         </div>
     </div>
 
-    <div class="row">
+    <div class="row-fluid">
         <div class="span12">
             <form class="form-inline" method="get" action="" id="date-filter" accept-charset="utf-8">
                 {{ year_month_form|as_bootstrap:"inline" }}
@@ -41,7 +41,7 @@
         </div>
     </div>
 
-    <div class="row">
+    <div class="row-fluid">
         <div class="span6">
             {% if unverified %}
                 <p><strong>Warning:</strong> The following users have <strong>unverified</strong> time during this period:</p>
@@ -65,7 +65,7 @@
         </div>
     </div>
 
-    <div class="row">
+    <div class="row-fluid">
         <div class="span12">
             <h3>Hourly Summary</h3>
             {% if monthly_totals %}
@@ -105,7 +105,7 @@
         </div>
     </div>
 
-    <div class="row">
+    <div class="row-fluid">
         <div class="span12">
             <h3>Weekly Summary</h3>
             {% if weekly_totals.0.0 %}
