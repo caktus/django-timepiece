@@ -102,6 +102,14 @@ You can run any of the environments listed above using: `tox -e name`
 History
 -------
 
+0.5.0 (Work in Progress)
+************************
+* Complete styling upgrade using `Twitter Bootstrap <http://twitter.github.com/bootstrap/>`_
+* Added site-wide breadcrumbs
+* Fixed a bug where clients (unpriveleged users) had access to timepiece and timesheet internals
+* Fixed a bug where comments on active entries would not appear when clocking out of said entry
+* Fixed a bug where editing a user would throw a KeyError (response code of 500) instead of showing form errors
+
 0.4.2 (06-15-2012)
 ******************
 * Fixed permissions for creating businesses.

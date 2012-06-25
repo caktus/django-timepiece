@@ -1,50 +1,61 @@
-{% extends 'timepiece/time-sheet/base.html' %}
-{% load timepiece_tags %}
+{% extends 'timepiece/time-sheet/invoice/base.html' %}
+{% load timepiece_tags bootstrap_toolkit %}
 {% load url from future %}
 
 {% block title %}Invoice Hours for Time Sheet{% endblock %}
 
+{% block crumbs %}
+    {{ block.super }}
+    <li><span class="divider">/</span> <a href="{% url 'confirm_invoice_project' project.pk to_date|date:'Y-m-d' %}">Confirm Invoice</a></li>
+{% endblock crumbs %}
+
 {% block content %}
-  <h2>Invoice {{ project.name }} Hours {% if from_date %}from {{ from_date.date }} to {{ to_date.date }}{% else %}through {{ to_date.date }}{% endif %}</h2>
-  <br />
-  <form method="post">{% csrf_token %}
-      <table class='vertical'>
-        {{ invoice_form }}
-        <tr>
-          <td>&nbsp;</td>
-          <td class='submit'>
-            <input type='button' value='Cancel' onclick='history.go(-1)' />
-            &nbsp;
-            <input type='submit' name='submit' value='Create Invoice &rarr;' />
-          </td>
-        </tr>
-      </table>
-  </form>
-<br />
-    {% if totals %}
-        <h3>Totals</h3>
-            <table>
-                <tr>
-                    <th>Activity Type</th>
-                    <th>Total Hours</th>
-                </tr>
-                {% for name, hours_activities in totals %}
-                    <tr class="ledger_header">
-                        <th>{{ name|title }}</th>
-                        <td class="hours"> {{ hours_activities.0 }} </td>
-                    </tr>
-                    {% for name, hours in hours_activities.1 %}
+    <div class="row">
+        <div class="span12">
+            <h2>Invoice {{ project.name }} Hours {% if from_date %}from {{ from_date.date }} to {{ to_date.date }}{% else %}through {{ to_date.date }}{% endif %}</h2>
+        </div>
+    </div>
+
+    <div class="row">
+        <div class="span8">
+            <form class="form-horizontal" method="post">
+                {% csrf_token %}
+                {{ invoice_form|as_bootstrap:"horizontal" }}
+                <input class="btn" type='button' value='Cancel' onclick='history.go(-1)' />
+                <input class="btn" type='submit' name='submit' value='Create Invoice &rarr;' />
+            </form>
+        </div>
+
+        <div class="span4">
+            {% if totals %}
+                <h3>Totals</h3>
+                    <table class="table table-bordered">
                         <tr>
-                            <td class="nested">{{ name|title }}</td>
-                            <td class="hours">{{ hours }} </td> 
+                            <th>Activity Type</th>
+                            <th>Total Hours</th>
                         </tr>
-                    {% endfor %}
-                {% endfor %}
-            </table>
-        <br />
-    {% endif %}
+                        {% for name, hours_activities in totals %}
+                            <tr class="ledger_header">
+                                <th>{{ name|title }}</th>
+                                <td class="hours"> {{ hours_activities.0 }} </td>
+                            </tr>
+                            {% for name, hours in hours_activities.1 %}
+                                <tr>
+                                    <td>{{ name|title }}</td>
+                                    <td class="hours">{{ hours }} </td>
+                                </tr>
+                            {% endfor %}
+                        {% endfor %}
+                    </table>
+                <br />
+            {% endif %}
+        </div>
+    </div>
 
-<h3>Selected Entries</h3>
-{% include 'timepiece/time-sheet/_weekly_entry_list.html' %}
-
+    <div class="row">
+        <div class="span12">
+            <h3>Selected Entries</h3>
+            {% include 'timepiece/time-sheet/_weekly_entry_list.html' %}
+        </div>
+    </div>
 {% endblock %}

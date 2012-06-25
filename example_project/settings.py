@@ -82,6 +82,7 @@ STATICFILES_FINDERS = (
     'django.contrib.staticfiles.finders.FileSystemFinder',
     'django.contrib.staticfiles.finders.AppDirectoriesFinder',
 #    'django.contrib.staticfiles.finders.DefaultStorageFinder',
+    'compressor.finders.CompressorFinder',
 )
 
 # Make this unique, and don't share it with anybody.
@@ -130,7 +131,18 @@ INSTALLED_APPS = (
     'django.contrib.markup',
     'pagination',
     'timepiece',
+    'compressor'
+    'bootstrap_toolkit',
 )
+
+# Compressor specific settings
+COMPRESS_PRECOMPILERS = (
+    ('text/less', 'lessc {infile} {outfile}'),
+)
+
+COMPRESS_ROOT = '%s/static/' % PROJECT_PATH
+
+
 
 # A sample logging configuration. The only tangible logging
 # performed by this configuration is to send an email to
