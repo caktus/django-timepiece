@@ -5,11 +5,13 @@ Release Notes
 ------------------------
 
 * Complete styling upgrade using `Twitter Bootstrap <http://twitter.github.com/bootstrap/>`_
-* Added site-wide breadcrumbs
-* Fixed a bug where clients (unpriveleged users) had access to timepiece and timesheet internals
-* Fixed a bug where comments on active entries would not appear when clocking out of said entry
-* Fixed a bug where editing a user would throw an error instead of showing form errors
-* Added ability to run different tests simultaneously
+* Fixed permissions for client users that can't clock in
+* Replaced deprecated message_set calls with new messages API calls
+* Added django-bootstrap-toolkit requirement
+* Included the top navigation bar inside of the app's templates.
+* Made the project edit form use selectables for searching for businesses.
+* Improved tox configuration of test database names
+* Added a makefile and /docs for building documentation with Sphinx
 
 0.4.2 (Released 06-15-2012)
 ---------------------------
