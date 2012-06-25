@@ -84,6 +84,23 @@ urlpatterns = patterns('',
         name='edit_project_relationship',
     ),
 
+
+    url(
+        r'^project/(?P<pk>\d+)/delete/$',
+        views.DeleteProjectView.as_view(),
+        name='delete_project',
+    ),
+    url(
+        r'^business/(?P<pk>\d+)/delete/$',
+        views.DeleteBusinessView.as_view(),
+        name='delete_business',
+    ),
+    url(
+        r'^person/(?P<pk>\d+)/delete/$',
+        views.DeletePersonView.as_view(),
+        name='delete_person',
+    ),
+
     ### time sheets ###
 
     # Reports

@@ -1,0 +1,6 @@
+{% extends "timepiece/time-sheet/base.html" %}
+
+{% block crumbs %}
+    {{ block.super }}
+    <li><span class="divider">/</span> <a href="{% url view_person_time_sheet user.pk %}">Timesheet</a></li>
+{% endblock crumbs %}

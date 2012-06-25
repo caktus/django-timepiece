@@ -25,10 +25,10 @@ from django.conf import settings
 from django.utils.datastructures import SortedDict
 from django.views.decorators.csrf import csrf_exempt
 from django.views.generic.base import TemplateView
-from django.views.generic import UpdateView, ListView, DetailView
+from django.views.generic import UpdateView, ListView, DetailView, View
 from django.utils.decorators import method_decorator
 
-from timepiece.utils import render_with
+from timepiece.utils import render_with, reverse_lazy
 
 from timepiece import models as timepiece
 from timepiece import utils
@@ -42,7 +42,11 @@ def quick_search(request):
         form = timepiece_forms.QuickSearchForm(request.GET)
         if form.is_valid():
             return HttpResponseRedirect(form.save())
-    return HttpResponse(form.errors['quick_search'], status=500)
+    return render_to_response('timepiece/search_results.html', {
+            'form': form,
+        },
+        context_instance=RequestContext(request)
+    )
 
 
 class CSVMixin(object):
@@ -1356,3 +1360,61 @@ class ContractList(ListView):
     @method_decorator(permission_required('timepiece.add_project_contract'))
     def dispatch(self, *args, **kwargs):
         return super(ContractList, self).dispatch(*args, **kwargs)
+
+
+class DeleteView(TemplateView):
+    model = None
+    url_name = None
+    permissions = None
+    form_class = timepiece_forms.DeleteForm
+    template_name = 'timepiece/delete_object.html'
+
+    def dispatch(self, request, *args, **kwargs):
+        for permission in self.permissions:
+            if not request.user.has_perm(permission):
+                messages.info(request, 'You do not have permission to access that')
+                return HttpResponseRedirect(reverse_lazy('timepiece-entries'))
+        return super(DeleteView, self).dispatch(request, *args, **kwargs)
+
+    def post(self, request, *args, **kwargs):
+        instance = self.get_queryset(**kwargs)
+        form = self.form_class(request.POST, instance=instance)
+        msg = '{0} could not be successfully deleted'.format(instance)
+
+        if form.is_valid():
+            if form.save():
+                msg = '{0} was successfully deleted'.format(instance)
+
+        messages.info(request, msg)
+        return HttpResponseRedirect(reverse_lazy(self.url_name))
+
+    def get(self, request, *args, **kwargs):
+        context = self.get_context_data(*args, **kwargs)
+        return self.render_to_response(context)
+
+    def get_queryset(self, **kwargs):
+        pk = kwargs.get('pk', None)
+        return get_object_or_404(self.model, pk=pk)
+
+    def get_context_data(self, *args, **kwargs):
+        context = super(DeleteView, self).get_context_data(*args, **kwargs)
+        context['object'] = self.get_queryset(**kwargs)
+        return context
+
+
+class DeletePersonView(DeleteView):
+    model = User
+    url_name = 'list_people'
+    permissions = ('auth.add_user', 'auth.change_user',)
+
+
+class DeleteBusinessView(DeleteView):
+    model = timepiece.Business
+    url_name = 'list_businesses'
+    permissions = ('timepiece.add_business',)
+
+
+class DeleteProjectView(DeleteView):
+    model = timepiece.Project
+    url_name = 'list_projects'
+    permissions = ('timepiece.add_project', 'timepiece.change_project',)

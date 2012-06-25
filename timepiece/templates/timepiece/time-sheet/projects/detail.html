@@ -5,7 +5,7 @@
 
 {% block css %}
     <link rel="stylesheet" href="https://ajax.googleapis.com/ajax/libs/jqueryui/1.8.13/themes/ui-lightness/jquery-ui.css" type="text/css" media="screen">
-    <!--From timepiece's base.html 
+    <!--From timepiece's base.html
         This is a mess, but it is temporarily needed until we move away from autocomplete
     -->
     <link rel="stylesheet" href="{{ STATIC_URL }}timepiece/css/style.css" type="text/css" />
@@ -59,9 +59,9 @@
                 {{field.label}} {{field}}
             {% endif %}
         {% endfor %}
-        <input type='submit' name='ok' value="Apply Filters" id='billable'/>
+        <input class="btn" type='submit' name='ok' value="Apply Filters" id='billable'/>
         {% if perms.timepiece.export_project_time_sheet %}
-            <button type='submit' name='export' value="True">Export as CSV</button>
+            <button class="btn" type='submit' name='export' value="True">Export as CSV</button>
         {% endif %}
     </div>
 </form>
@@ -69,32 +69,32 @@
 
 {% if project_totals %}
     <div id="scroll_box">
-        <table class='project'>
-            <tr class="header">
-                <th class='name_col'>Name</th>
-                {% for date in date_headers %}
-                    {% if trunc == 'month' %}
-                        <th>{{date|date:"M 'Y"}}</th>
-                    {% else %}
-                        <th>{{date|date:"M/d/Y"}}</th>
-                    {% endif %}
-                {% endfor %}
-            </tr>
-            {% for name, hours in project_totals %}
-                {% if name.0 != "Totals:" %}
-                    <tr class="{% cycle 'odd' 'even' %}">
-                {% else %}
-                    <tr class="total">
-                {% endif %}
+        <table class='table table-bordered table-striped'>
+            <thead>
+                <tr class="header">
+                    <th class='name_col'>Name</th>
+                    {% for date in date_headers %}
+                        {% if trunc == 'month' %}
+                            <th>{{date|date:"M 'Y"}}</th>
+                        {% else %}
+                            <th>{{date|date:"M/d/Y"}}</th>
+                        {% endif %}
+                    {% endfor %}
+                </tr>
+            </thead>
+            <tbody>
+                {% for name, hours in project_totals %}
+                    <tr {% if name.0 == "Totals:" %}class="total">
                         <th class='name_col'>{{name.1}} {{name.0}}</th>
                         {% for num in hours %}
-                        <td title='{{name.1}}'> {% if num %}{{num}}{% endif %}</td>
+                            <td title='{{name.1}}'> {% if num %}{{num}}{% endif %}</td>
                         {% endfor %}
-                    </tr>
-            {% endfor %}
+                     </tr>
+                {% endfor %}
+            </tbody>
         </table>
     </div>
-    {% else %}
+{% else %}
         <p>No entries found.</p>
 {% endif %}
 

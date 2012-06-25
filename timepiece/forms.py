@@ -14,7 +14,8 @@ from django.core.exceptions import ValidationError, NON_FIELD_ERRORS
 
 from selectable import forms as selectable_forms
 
-from timepiece.lookups import ProjectLookup, QuickLookup, UserLookup
+from timepiece.lookups import ProjectLookup, QuickLookup
+from timepiece.lookups import UserLookup, BusinessLookup
 
 from timepiece.models import Project, Entry, Activity, UserProfile, Attribute
 from timepiece.fields import UserModelChoiceField
@@ -65,7 +66,8 @@ class CreatePersonForm(auth_forms.UserCreationForm):
         model = auth_models.User
         fields = (
             "username", "first_name", "last_name",
-            "email", "is_active", "is_staff")
+            "email", "is_active", "is_staff"
+        )
 
 
 class EditPersonForm(auth_forms.UserChangeForm):
@@ -81,6 +83,9 @@ class EditPersonForm(auth_forms.UserChangeForm):
             "username", "first_name", "last_name",
             "email", "is_active", "is_staff"
         )
+
+    def clean_password(self):
+        return self.cleaned_data.get('password_one', None)
 
     def clean(self):
         super(EditPersonForm, self).clean()
@@ -108,6 +113,7 @@ class QuickSearchForm(forms.Form):
         label='Quick Search',
         required=False
     )
+    quick_search.widget.attrs['placeholder'] = 'Search'
 
     def clean_quick_search(self):
         item = self.cleaned_data['quick_search']
@@ -144,12 +150,9 @@ class QuickSearchForm(forms.Form):
         raise forms.ValidationError('Must be a user, project, or business')
 
 
-class SearchForm(forms.Form):
-    search = forms.CharField(required=False)
-
-
 class AddUserToProjectForm(forms.Form):
-    user = selectable_forms.AutoCompleteSelectField(UserLookup)
+    user = selectable_forms.AutoCompleteSelectField(UserLookup, label="")
+    user.widget.attrs['placeholder'] = 'Add User'
 
     def save(self):
         return self.cleaned_data['user']
@@ -462,6 +465,13 @@ class ProjectForm(forms.ModelForm):
             'description',
         )
 
+    business = selectable_forms.AutoCompleteSelectField(
+        BusinessLookup,
+        label='Business',
+        required=True
+    )
+    business.widget.attrs['placeholder'] = 'Search'
+
     def __init__(self, *args, **kwargs):
         super(ProjectForm, self).__init__(*args, **kwargs)
 
@@ -502,7 +512,8 @@ class InvoiceForm(forms.ModelForm):
 
 
 class SearchForm(forms.Form):
-    search = forms.CharField(required=False)
+    search = forms.CharField(required=False, label='')
+    search.widget.attrs['placeholder'] = 'Search'
 
 
 class UserForm(forms.ModelForm):
@@ -525,12 +536,13 @@ class UserProfileForm(forms.ModelForm):
 
 
 class ProjectSearchForm(forms.Form):
-    search = forms.CharField(required=False)
-    status = forms.ChoiceField(required=False, choices=[])
+    search = forms.CharField(required=False, label='')
+    search.widget.attrs['placeholder'] = 'Search'
+    status = forms.ChoiceField(required=False, choices=[], label='')
 
     def __init__(self, *args, **kwargs):
         super(ProjectSearchForm, self).__init__(*args, **kwargs)
-        PROJ_STATUS_CHOICES = [('', 'Any')]
+        PROJ_STATUS_CHOICES = [('', 'Any Status')]
         PROJ_STATUS_CHOICES.extend([(a.pk, a.label) for a
                 in Attribute.objects.all().filter(type="project-status")])
         self.fields['status'].choices = PROJ_STATUS_CHOICES
@@ -539,3 +551,22 @@ class ProjectSearchForm(forms.Form):
         search = self.cleaned_data.get('search', '')
         status = self.cleaned_data.get('status', '')
         return (search, status)
+
+
+class DeleteForm(forms.Form):
+    """
+    Returns True if the object was deleted
+    """
+    def __init__(self, *args, **kwargs):
+        self.instance = kwargs.pop('instance', None)
+        super(DeleteForm, self).__init__(*args, **kwargs)
+
+    def save(self):
+        if self.instance:
+            try:
+                self.instance.delete()
+            except AssertionError:
+                return False
+            else:
+                return True
+        return False
