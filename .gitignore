@@ -5,4 +5,4 @@ local_settings.py
 dist/
 _build/
 .tox/
-reports/
+/reports/
