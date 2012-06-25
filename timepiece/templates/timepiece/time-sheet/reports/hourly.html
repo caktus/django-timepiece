@@ -47,28 +47,9 @@
     <div class="row">
         <form class="span12" method="get" action="" id="pj_select" accept-charset="utf-8">
             <div class="row">
-                <div class="span3">
-                    {{ date_form|as_bootstrap:"inline" }}
-                </div>
-                <div id="project_billable_form">
-                    <div class="span2">
-                        <ul class="parent unstyled">
-                            <li>{{ pj_filters.billable }}{{ pj_filters.billable.label_tag}}</li>
-                            <li>{{ pj_filters.non_billable }}{{ pj_filters.non_billable.label_tag}}</li>
-                            <li>{{ pj_filters.paid_leave }}{{ pj_filters.paid_leave.label_tag}}</li>
-                        </ul>
-                    </div>
-                    <div class="span2">
-                        <ul class="parent unstyled">
-                            <li>{{ pj_filters.trunc.label }}{{ pj_filters.trunc}}</li>
-                            <li>{{ pj_filters.pj_select.label }}{{ pj_filters.pj_select }}</li>
-                        </ul>
-                    </div>
-                </div>
-            </div>
-
-            <div class="row">
-                <div class="span12">
+                <div class="span4">
+                    {{ date_form|as_bootstrap }}
+                    {{ pj_filters|as_bootstrap }}
                     <button type="submit" class="btn" name="ok" id="billable">Apply Filters</button>
                     {% if perms.timepiece.export_project_time_sheet %}
                         <button type="submit" class="btn" name="export" value="True">Export as CSV</button>
