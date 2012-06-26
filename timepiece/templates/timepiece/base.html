@@ -53,7 +53,7 @@
                                     <a href="#" class="dropdown-toggle" data-toggle="dropdown">Dashboard <b class="caret"></b></a>
                                     <ul class="dropdown-menu">
                                         <li><a href="{% url timepiece-entries %}">Time Tracking</a></li>
-                                        <li><a href="{% url view_person_time_sheet user.pk %}">My Ledger</a></li>
+                                        <li><a href="{% url view_person_time_sheet request.user.pk %}">My Ledger</a></li>
                                     </ul>
                                 </li>
                             {% endif %}
