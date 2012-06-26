@@ -237,6 +237,13 @@ def grouped_totals(entries):
                                                         'project__name')
     weeks = {}
     for week, week_entries in groupby(weekly, lambda x: x['date']):
+        try:
+            if timezone.is_naive(week):
+                week = timezone.make_aware(week,
+                    timezone.get_current_timezone())
+        except AttributeError:
+            week = datetime.combine(week,
+                timezone.get_current_timezone())
         weeks[week] = get_hours(week_entries)
     days = []
     last_week = None
