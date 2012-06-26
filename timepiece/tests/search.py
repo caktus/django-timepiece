@@ -46,33 +46,37 @@ class QuickSearchTest(TimepieceDataTestCase):
             'quick_search_1': 'individual'
         }, follow=True)
 
-        self.assertEquals(response.status_code, 500)
-        self.assertEquals(response.content,
-            'User, business, or project does not exist')
+        self.assertEquals(response.status_code, 200)
+        form = response.context['form']
+        self.assertEquals(form.errors['quick_search'],
+            ['User, business, or project does not exist'])
 
         response = self.client.get(url, data={
             'quick_search_0': '%s' % self.superuser.get_full_name(),
             'quick_search_1': ''
         }, follow=True)
 
-        self.assertEquals(response.status_code, 500)
-        self.assertEquals(response.content,
-            'User, business, or project does not exist')
+        self.assertEquals(response.status_code, 200)
+        form = response.context['form']
+        self.assertEquals(form.errors['quick_search'],
+            ['User, business, or project does not exist'])
 
         response = self.client.get(url, data={
             'quick_search_0': '%s' % self.superuser.get_full_name(),
             'quick_search_1': '-%d' % self.superuser.pk
         }, follow=True)
 
-        self.assertEquals(response.status_code, 500)
-        self.assertEquals(response.content,
-            'User, business, or project does not exist')
+        self.assertEquals(response.status_code, 200)
+        form = response.context['form']
+        self.assertEquals(form.errors['quick_search'],
+            ['User, business, or project does not exist'])
 
         response = self.client.get(url, data={
             'quick_search_0': '%s' % self.superuser.get_full_name(),
             'quick_search_1': '-'
         }, follow=True)
 
-        self.assertEquals(response.status_code, 500)
-        self.assertEquals(response.content,
-            'User, business, or project does not exist')
+        self.assertEquals(response.status_code, 200)
+        form = response.context['form']
+        self.assertEquals(form.errors['quick_search'],
+            ['User, business, or project does not exist'])
