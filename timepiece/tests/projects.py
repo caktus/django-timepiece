@@ -2,6 +2,7 @@ import datetime
 from decimal import Decimal
 
 from django.core.urlresolvers import reverse
+from django.utils import timezone
 
 from timepiece import models as timepiece
 from timepiece.tests.base import TimepieceDataTestCase
@@ -20,12 +21,13 @@ class ProjectTestCase(TimepieceDataTestCase):
         )
 
     def make_entries(self):
+        tz = timezone.get_current_timezone()
         days = [
-                datetime.datetime(2011, 1, 1),
-                datetime.datetime(2011, 1, 28),
-                datetime.datetime(2011, 1, 31),
-                datetime.datetime(2011, 2, 1),
-                datetime.datetime.now(),
+            timezone.make_aware(datetime.datetime(2011, 1, 1), tz),
+            timezone.make_aware(datetime.datetime(2011, 1, 28), tz),
+            timezone.make_aware(datetime.datetime(2011, 1, 31), tz),
+            timezone.make_aware(datetime.datetime(2011, 2, 1), tz),
+            timezone.now(),
         ]
         self.log_time(project=self.p1, start=days[0], delta=(1, 0))
         self.log_time(project=self.p2, start=days[0], delta=(1, 0))

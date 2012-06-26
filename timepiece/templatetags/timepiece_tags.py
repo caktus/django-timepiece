@@ -6,7 +6,7 @@ from decimal import Decimal
 
 from django import template
 from django.db.models import Sum
-
+from django.utils import timezone
 from django.core.urlresolvers import reverse
 
 from dateutil.relativedelta import relativedelta
@@ -189,7 +189,7 @@ def get_active_hours(entry):
         if entry.is_paused:
             entry.end_time = entry.pause_time
         else:
-            entry.end_time = datetime.datetime.now()
+            entry.end_time = timezone.now()
     return Decimal('%.2f' % round(entry.total_hours, 2))
 
 

@@ -10,6 +10,7 @@ from django.core.urlresolvers import reverse
 from django.contrib.auth.models import User, Permission
 from django.core.exceptions import ValidationError
 from django.forms import model_to_dict
+from django.utils import timezone
 
 from timepiece.tests.base import TimepieceDataTestCase
 
@@ -26,16 +27,16 @@ class EditableTest(TimepieceDataTestCase):
         self.entry = self.create_entry({
             'user': self.user,
             'project': self.project,
-            'start_time': datetime.datetime.now() - datetime.timedelta(days=6),
-            'end_time':  datetime.datetime.now() - datetime.timedelta(days=6),
+            'start_time': timezone.now() - datetime.timedelta(days=6),
+            'end_time':  timezone.now() - datetime.timedelta(days=6),
             'seconds_paused': 0,
             'status': 'verified',
         })
         self.entry2 = self.create_entry({
             'user': self.user,
             'project': self.project,
-            'start_time': datetime.datetime.now() - datetime.timedelta(days=2),
-            'end_time':  datetime.datetime.now() - datetime.timedelta(days=2),
+            'start_time': timezone.now() - datetime.timedelta(days=2),
+            'end_time':  timezone.now() - datetime.timedelta(days=2),
             'seconds_paused': 0,
             'status': 'unverified',
         })
@@ -85,7 +86,7 @@ class MyLedgerTest(TimepieceDataTestCase):
 
     def testEmptyHourlySummary(self):
         self.client.login(username='user', password='abc')
-        now = datetime.datetime.now()
+        now = timezone.now()
         empty_month = now + relativedelta(months=1)
         data = {
             'year': empty_month.year,
@@ -114,12 +115,13 @@ class MyLedgerTest(TimepieceDataTestCase):
         self.p2 = self.create_project(billable=False, name='2')
         self.p4 = self.create_project(billable=True, name='4')
         self.p3 = self.create_project(billable=False, name='1')
+        tz = timezone.get_current_timezone()
         days = [
-                datetime.datetime(2011, 1, 1),
-                datetime.datetime(2011, 1, 28),
-                datetime.datetime(2011, 1, 31),
-                datetime.datetime(2011, 2, 1),
-                datetime.datetime.now(),
+            timezone.make_aware(datetime.datetime(2011, 1, 1), tz),
+            timezone.make_aware(datetime.datetime(2011, 1, 28), tz),
+            timezone.make_aware(datetime.datetime(2011, 1, 31), tz),
+            timezone.make_aware(datetime.datetime(2011, 2, 1), tz),
+            timezone.now(),
         ]
         self.log_time(project=self.p1, start=days[0], delta=(1, 0))
         self.log_time(project=self.p2, start=days[0], delta=(1, 0))
@@ -162,7 +164,7 @@ class ClockInTest(TimepieceDataTestCase):
     def setUp(self):
         super(ClockInTest, self).setUp()
         self.url = reverse('timepiece-clock-in')
-        self.now = datetime.datetime.now()
+        self.now = timezone.now()
         self.ten_min_ago = self.now - datetime.timedelta(minutes=10)
         self.clock_in_form = {
             'project': self.project.pk,
@@ -520,7 +522,10 @@ class AutoActivityTest(TimepieceDataTestCase):
         """The worker has several entries on a project. Use the most recent"""
         self.client.login(username='user', password='abc')
         for day in xrange(0, 10):
-            this_day = datetime.datetime(2011, 1, 1)
+            this_day = timezone.make_aware(
+                datetime.datetime(2011, 1, 1),
+                timezone.get_current_timezone(),
+            )
             this_day += datetime.timedelta(days=day)
             activity = self.activity if day == 9 else self.devl_activity
             self.log_time(start=this_day, project=self.project,
@@ -535,7 +540,10 @@ class AutoActivityTest(TimepieceDataTestCase):
         project1 = self.project
         project2 = self.project2
         for day in xrange(0, 10):
-            this_day = datetime.datetime(2011, 1, 1)
+            this_day = timezone.make_aware(
+                datetime.datetime(2011, 1, 1),
+                timezone.get_current_timezone()
+            )
             this_day += datetime.timedelta(days=day)
             #Cycle through projects and activities
             project = project1 if day % 2 == 0 else project2
@@ -550,8 +558,8 @@ class ClockOutTest(TimepieceDataTestCase):
         super(ClockOutTest, self).setUp()
         self.client.login(username='user', password='abc')
         #create an open entry via clock in, so clock out tests don't have to
-        self.default_end_time = datetime.datetime.now()
-        back = datetime.datetime.now() - datetime.timedelta(hours=5)
+        self.default_end_time = timezone.now()
+        back = timezone.now() - datetime.timedelta(hours=5)
         entry = self.create_entry({
             'user': self.user,
             'start_time': back,
@@ -696,7 +704,7 @@ class ClockOutTest(TimepieceDataTestCase):
         existing entry
         """
         #Create a closed and valid entry
-        now = datetime.datetime.now() - datetime.timedelta(hours=5)
+        now = timezone.now() - datetime.timedelta(hours=5)
         entry1_data = ({
             'user': self.user,
             'project': self.project,
@@ -740,7 +748,7 @@ class CheckOverlap(TimepieceDataTestCase):
     def setUp(self):
         super(CheckOverlap, self).setUp()
         self.client.login(username='user', password='abc')
-        self.now = datetime.datetime.now()
+        self.now = timezone.now()
         #define start and end times to create valid entries
         self.start = self.now - datetime.timedelta(days=0, hours=8)
         self.end = self.now - datetime.timedelta(days=0)
@@ -808,7 +816,7 @@ class CreateEditEntry(TimepieceDataTestCase):
     def setUp(self):
         super(CreateEditEntry, self).setUp()
         self.client.login(username='user', password='abc')
-        self.now = datetime.datetime.now()
+        self.now = timezone.now()
         valid_start = self.now - datetime.timedelta(days=1)
         valid_end = valid_start + datetime.timedelta(hours=1)
         two_hour_ago = self.now - datetime.timedelta(hours=2)
@@ -1020,7 +1028,7 @@ class StatusTest(TimepieceDataTestCase):
     def setUp(self):
         super(StatusTest, self).setUp()
         self.client.login(username='user', password='abc')
-        self.now = datetime.datetime.now()
+        self.now = timezone.now()
         from_date = utils.get_month_start(self.now)
         self.from_date = from_date
         self.sheet_url = reverse('view_person_time_sheet',
@@ -1204,9 +1212,9 @@ class StatusTest(TimepieceDataTestCase):
         self.assertNotContains(response, self.verify_url)
         entry = self.create_entry(data={
             'user': self.user,
-            'start_time': datetime.datetime.now() - \
+            'start_time': timezone.now() - \
                 datetime.timedelta(hours=1),
-            'end_time':  datetime.datetime.now(),
+            'end_time':  timezone.now(),
         })
         response = self.client.get(self.sheet_url)
         self.assertTrue(response.context['show_verify'])
@@ -1221,9 +1229,9 @@ class StatusTest(TimepieceDataTestCase):
         self.assertFalse(response.context['show_approve'])
         entry = self.create_entry(data={
             'user': self.user,
-            'start_time': datetime.datetime.now() - \
+            'start_time': timezone.now() - \
                 datetime.timedelta(hours=1),
-            'end_time':  datetime.datetime.now(),
+            'end_time':  timezone.now(),
         })
         response = self.client.get(self.sheet_url)
         self.assertFalse(response.context['show_approve'])
@@ -1239,9 +1247,9 @@ class StatusTest(TimepieceDataTestCase):
     def testVerifyPage(self):
         entry = self.create_entry(data={
             'user': self.user,
-            'start_time': datetime.datetime.now() - \
+            'start_time': timezone.now() - \
                 datetime.timedelta(hours=1),
-            'end_time':  datetime.datetime.now(),
+            'end_time':  timezone.now(),
         })
         response = self.client.get(self.verify_url)
         entries = self.user.timepiece_entries.all()
@@ -1253,9 +1261,9 @@ class StatusTest(TimepieceDataTestCase):
         self.login_with_permission()
         entry = self.create_entry(data={
             'user': self.user,
-            'start_time': datetime.datetime.now() - \
+            'start_time': timezone.now() - \
                 datetime.timedelta(hours=1),
-            'end_time':  datetime.datetime.now(),
+            'end_time':  timezone.now(),
         })
 
         self.assertEquals(entry.status, 'unverified')
@@ -1273,7 +1281,7 @@ class StatusTest(TimepieceDataTestCase):
         """A regular user should not be able to reject an entry"""
         self.client.login(username='user', password='abc')
 
-        now = datetime.datetime.now()
+        now = timezone.now()
         entry = self.create_entry({
             'user': self.user,
             'start_time': now - datetime.timedelta(hours=1),
@@ -1292,7 +1300,7 @@ class StatusTest(TimepieceDataTestCase):
         """
         self.client.login(username='user2', password='abc')
 
-        now = datetime.datetime.now()
+        now = timezone.now()
         entry = self.create_entry({
             'user': self.user,
             'start_time': now - datetime.timedelta(hours=1),
@@ -1308,9 +1316,9 @@ class StatusTest(TimepieceDataTestCase):
         self.login_as_admin()
         entry = self.create_entry(data={
             'user': self.user,
-            'start_time': datetime.datetime.now() - \
+            'start_time': timezone.now() - \
                 datetime.timedelta(hours=1),
-            'end_time':  datetime.datetime.now(),
+            'end_time':  timezone.now(),
         })
         reject_url = self.get_reject_url(entry.id)
 
@@ -1332,9 +1340,9 @@ class StatusTest(TimepieceDataTestCase):
     def testNotAllowedToRejectTimesheet(self):
         entry = self.create_entry(data={
             'user': self.user,
-            'start_time': datetime.datetime.now() - \
+            'start_time': timezone.now() - \
                 datetime.timedelta(hours=1),
-            'end_time':  datetime.datetime.now(),
+            'end_time':  timezone.now(),
         })
         reject_url = self.get_reject_url(entry.id)
         response = self.client.get(reject_url)
@@ -1361,17 +1369,18 @@ class TestTotals(TimepieceDataTestCase):
 
     def testGroupedTotals(self):
         self.client.login(username='user', password='abc')
+        tz = timezone.get_current_timezone()
         days = [
-                datetime.datetime(2010, 12, 20),
-                datetime.datetime(2010, 12, 27),
-                datetime.datetime(2010, 12, 28),
-                datetime.datetime(2011, 1, 3),
-                datetime.datetime(2011, 1, 4),
-                datetime.datetime(2011, 1, 10),
-                datetime.datetime(2011, 1, 16),
-                datetime.datetime(2011, 1, 17),
-                datetime.datetime(2011, 1, 18),
-                datetime.datetime(2011, 2, 2),
+            timezone.make_aware(datetime.datetime(2010, 12, 20), tz),
+            timezone.make_aware(datetime.datetime(2010, 12, 27), tz),
+            timezone.make_aware(datetime.datetime(2010, 12, 28), tz),
+            timezone.make_aware(datetime.datetime(2011, 1, 3), tz),
+            timezone.make_aware(datetime.datetime(2011, 1, 4), tz),
+            timezone.make_aware(datetime.datetime(2011, 1, 10), tz),
+            timezone.make_aware(datetime.datetime(2011, 1, 16), tz),
+            timezone.make_aware(datetime.datetime(2011, 1, 17), tz),
+            timezone.make_aware(datetime.datetime(2011, 1, 18), tz),
+            timezone.make_aware(datetime.datetime(2011, 2, 2), tz)
         ]
         # Each week has two days of entries, except 12-20, and 2-2 but these
         # are excluded in the timespan queryset
@@ -1382,7 +1391,8 @@ class TestTotals(TimepieceDataTestCase):
                 self.log_time(project=self.p2, start=day, delta=(1, 0))
             else:
                 self.log_time(project=self.p3, start=day, delta=(1, 0))
-        from_date = utils.get_month_start(datetime.datetime(2011, 1, 19))
+        date = timezone.make_aware(datetime.datetime(2011, 1, 19), tz)
+        from_date = utils.get_month_start(date)
         to_date = from_date + relativedelta(months=1)
         first_week = utils.get_week_start(from_date)
         entries = timepiece.Entry.objects.timespan(first_week, to_date=to_date)
@@ -1417,7 +1427,7 @@ class TestTotals(TimepieceDataTestCase):
 class HourlySummaryTest(TimepieceDataTestCase):
     def setUp(self):
         super(HourlySummaryTest, self).setUp()
-        self.now = datetime.datetime.now()
+        self.now = timezone.now()
         self.month = self.now.replace(day=1)
         self.url = reverse('view_person_time_sheet', args=(self.user.pk,))
         self.client.login(username='user', password='abc')
@@ -1481,8 +1491,14 @@ class HourlySummaryTest(TimepieceDataTestCase):
         This occurs in April 2012, so we are using that month
         as the basis for out test case
         """
-        april = datetime.datetime(month=4, day=1, year=2012)
-        march = datetime.datetime(month=3, day=26, year=2012)
+        april = timezone.make_aware(
+            datetime.datetime(month=4, day=1, year=2012),
+            timezone.get_current_timezone(),
+        )
+        march = timezone.make_aware(
+            datetime.datetime(month=3, day=26, year=2012),
+            timezone.get_current_timezone(),
+        )
         self.create_entry({
             'user': self.user,
             'start_time': april,

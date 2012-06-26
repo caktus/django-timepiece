@@ -9,6 +9,7 @@ from django.contrib.auth import models as auth_models
 from django.db.models import Q
 from django.conf import settings
 from django.db import transaction
+from django.utils import timezone
 
 from timepiece import utils
 
@@ -151,16 +152,16 @@ For options type:
         days = kwargs.get('days', 0)
         #If no flags are True, set to the beginning of last billing window
         #to assure we catch all recent violations
-        start = datetime.datetime.now() - relativedelta(months=1, day=1)
+        start = timezone.now() - relativedelta(months=1, day=1)
         #Set the start date based on arguments provided through options
         if week:
             start = utils.get_week_start()
         if month:
-            start = datetime.datetime.now() - relativedelta(day=1)
+            start = timezone.now() - relativedelta(day=1)
         if year:
-            start = datetime.datetime.now() - relativedelta(day=1, month=1)
+            start = timezone.now() - relativedelta(day=1, month=1)
         if days:
-            start = datetime.datetime.now() - \
+            start = timezone.now() - \
             datetime.timedelta(days=days)
         start = start - relativedelta(
             hour=0, minute=0, second=0, microsecond=0)

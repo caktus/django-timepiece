@@ -14,6 +14,7 @@ from django.db.models import Sum
 from django.contrib.sites.models import Site
 from django.utils.functional import lazy
 from django.core.urlresolvers import reverse
+from django.utils import timezone
 
 reverse_lazy = lazy(reverse, str)
 
@@ -99,7 +100,8 @@ def parse_time(time_str, input_formats=None):
             continue
         else:
             # turn the time_struct into a datetime.time object
-            return time_obj(*value[3:6])
+            return timezone.make_aware(time_obj(*value[3:6]),
+                timezone.get_current_timezone())
 
     # return None if there's no matching format
     return None
@@ -120,6 +122,8 @@ def get_total_time(seconds):
 def get_month_start(from_day=None):
     if not from_day:
         from_day = date.today()
+    from_day = datetime.combine(from_day,
+        time_obj(tzinfo=timezone.get_current_timezone()))
     return from_day.replace(day=1)
 
 
@@ -129,6 +133,8 @@ def get_week_start(day=None):
     isoweekday = day.isoweekday()
     if isoweekday != 1:
         day = day - timedelta(days=isoweekday - 1)
+    day = datetime.combine(day,
+        time_obj(tzinfo=timezone.get_current_timezone()))
     return day
 
 
@@ -324,7 +330,10 @@ def payroll_totals(entries, date, leave):
         worked_hours = [billable, non_billable, total_worked]
         return map(sum, zip(worked_hours, all_worked_hours))
 
-    date = datetime(month=date.month, day=date.day, year=date.year)
+    date = timezone.make_aware(
+        datetime(month=date.month, day=date.day, year=date.year),
+        timezone.get_current_timezone()
+    )
     for user, user_entries in groupby(entries, lambda x: x['user']):
         name, date_dict = user_date_totals(user_entries)
         hours_dict = date_dict.get(date, {})

@@ -5,6 +5,7 @@ from dateutil.relativedelta import relativedelta
 from django.core.urlresolvers import reverse
 from django.contrib.auth.models import User, Permission
 from django.core.exceptions import ValidationError
+from django.utils import timezone
 
 from timepiece.tests.base import TimepieceDataTestCase
 
@@ -23,10 +24,10 @@ class CheckEntries(TimepieceDataTestCase):
             'seconds_paused': 0,
             'status': 'verified',
         }
-        self.good_start = datetime.now() - timedelta(days=0, hours=8)
-        self.good_end = datetime.now() - timedelta(days=0)
-        self.bad_start = datetime.now() - timedelta(days=1, hours=8)
-        self.bad_end = datetime.now() - timedelta(days=1)
+        self.good_start = timezone.now() - timedelta(days=0, hours=8)
+        self.good_end = timezone.now() - timedelta(days=0)
+        self.bad_start = timezone.now() - timedelta(days=1, hours=8)
+        self.bad_end = timezone.now() - timedelta(days=1)
         #Create users for the test
         self.user.first_name = 'first1'
         self.user.last_name = 'last1'
@@ -84,9 +85,9 @@ class CheckEntries(TimepieceDataTestCase):
             #Range uses 1 so that good_start/good_end use today as valid times.
             for day in range(1, days + 1):
                 self.default_data.update({
-                    'start_time': datetime.now() - \
+                    'start_time': timezone.now() - \
                                   timedelta(days=day, minutes=1),
-                    'end_time': datetime.now() - timedelta(days=day,)
+                    'end_time': timezone.now() - timedelta(days=day,)
                 })
                 self.create_entry(self.default_data)
 
@@ -96,7 +97,7 @@ class CheckEntries(TimepieceDataTestCase):
         With various kwargs, find_start should return the correct date
         """
         #Establish some datetimes
-        now = datetime.now()
+        now = timezone.now()
         today = now - relativedelta(
             hour=0, minute=0, second=0, microsecond=0)
         last_billing = today - relativedelta(months=1, day=1)
@@ -155,7 +156,7 @@ class CheckEntries(TimepieceDataTestCase):
         all_people = check_entries.Command().find_people()
         entries = check_entries.Command().find_entries(all_people, start)
         #Determine the number of days checked
-        today = datetime.now() - \
+        today = timezone.now() - \
             relativedelta(hour=0, minute=0, second=0, microsecond=0)
         diff = today - start
         days_checked = diff.days

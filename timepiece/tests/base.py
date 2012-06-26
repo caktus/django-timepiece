@@ -10,6 +10,7 @@ from django.template.defaultfilters import slugify
 from django.contrib.auth.models import User, Permission
 from django.contrib.contenttypes.models import ContentType
 from django.db.models import Q
+from django.utils import timezone
 
 from timepiece import models as timepiece
 
@@ -167,7 +168,7 @@ class TimepieceDataTestCase(TestCase):
             hours = 4
             minutes = 0
         if not start:
-            start = datetime.datetime.now() - relativedelta(hour=0)
+            start = timezone.now() - relativedelta(hour=0)
             #In case the default would fall off the end of the billing period
             if start.day >= 28:
                 start -= relativedelta(days=1)

@@ -6,6 +6,7 @@ from django.conf import settings
 from django.core.urlresolvers import reverse
 from django.db.models import Sum
 from django.contrib.auth.models import User
+from django.utils import timezone
 
 from timepiece import models as timepiece
 from timepiece import forms as timepiece_forms
@@ -30,7 +31,7 @@ class ProjectionTest(TimepieceDataTestCase):
             hours = 4
             minutes = 0
         if not start:
-            start = datetime.datetime.now()
+            start = timezone.now()
         elif not isinstance(start, datetime.datetime):
             start = datetime.datetime.combine(start, datetime.time())
         end = start + datetime.timedelta(hours=hours, minutes=minutes)
