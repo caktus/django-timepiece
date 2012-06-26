@@ -22,13 +22,14 @@ class PayrollTest(TimepieceDataTestCase):
         settings.TIMEPIECE_PROJECTS = {
             'sick': self.sick.pk, 'vacation': self.vacation.pk
         }
-        self.next = datetime.date(2011, 6, 1)
-        self.overtime_before = datetime.date(2011, 4, 29)
-        self.first = datetime.date(2011, 5, 1)
-        self.first_week = datetime.date(2011, 5, 2)
-        self.middle = datetime.datetime(2011, 5, 18)
-        self.last_billable = datetime.date(2011, 5, 28)
-        self.last = datetime.date(2011, 5, 31)
+        tz = timezone.get_current_timezone()
+        self.next = datetime.datetime(2011, 6, 1, tzinfo=tz)
+        self.overtime_before = datetime.datetime(2011, 4, 29, tzinfo=tz)
+        self.first = datetime.datetime(2011, 5, 1, tzinfo=tz)
+        self.first_week = datetime.datetime(2011, 5, 2, tzinfo=tz)
+        self.middle = datetime.datetime(2011, 5, 18, tzinfo=tz)
+        self.last_billable = datetime.datetime(2011, 5, 28, tzinfo=tz)
+        self.last = datetime.datetime(2011, 5, 31, tzinfo=tz)
         self.dates = [
             self.overtime_before, self.first, self.first_week, self.middle,
             self.last, self.last_billable, self.next
@@ -169,7 +170,6 @@ class PayrollTest(TimepieceDataTestCase):
         self.client.login(username='superuser', password='abc')
         response = self.client.get(self.url, self.args)
         monthly_totals = response.context['monthly_totals']
-        import ipdb; ipdb.set_trace()
         # Test the first entry
         self.assertEqual(monthly_totals[0][1],
                          [(Decimal('45.00'), 81.82),

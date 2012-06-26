@@ -46,7 +46,6 @@ class TestHourlyReport(TimepieceDataTestCase):
     def make_entries(self, user=None, projects=None, dates=None,
                      hours=1, minutes=0):
         """Make several entries to help with reports tests"""
-
         if not user:
             user = self.user
         if not projects:
@@ -73,9 +72,9 @@ class TestHourlyReport(TimepieceDataTestCase):
 
     def check_generate_dates(self, start, end, trunc, dates):
         for index, day in enumerate(utils.generate_dates(start, end, trunc)):
-            if isinstance(day, datetime):
+            if isinstance(day, datetime.datetime):
                 day = day.date()
-            self.assertEqual(day, dates[index])
+            self.assertEqual(day, dates[index].date())
 
     def testGenerateMonths(self):
         dates = [timezone.make_aware(datetime.datetime(2011, month, 1), \
@@ -361,8 +360,9 @@ class TestHourlyReport(TimepieceDataTestCase):
         self.checkTotals(args, data)
 
     def testForm_Month(self):
-        start = datetime.datetime(2011, 1, 4)
-        end = datetime.datetime(2011, 3, 28)
+        tz = timezone.get_current_timezone()
+        start = datetime.datetime(2011, 1, 4, tzinfo=tz)
+        end = datetime.datetime(2011, 3, 28, tzinfo=tz)
         args = {
             'billable': True,
             'non_billable': False,

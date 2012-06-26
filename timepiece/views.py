@@ -1301,13 +1301,26 @@ def edit_settings(request):
 @render_with('timepiece/time-sheet/reports/hourly.html')
 @utils.date_filter
 def hourly_report(request, date_form, from_date, to_date, status, activity):
+    tz = timezone.get_current_timezone()
     if not from_date:
-        date = timezone.make_aware(datetime.datetime.today(),
-            timezone.get_current_timezone())
-        from_date = utils.get_month_start(date).date()
+        from_date = utils.get_month_start(timezone.now())
+    else:
+        try:
+            from_date = timezone.make_aware(from_date, tz)
+        except AttributeError:
+            from_date = datetime.datetime.combine(from_date,
+                datetime.time(tzinfo=tz))
     if not to_date:
         to_date = from_date + relativedelta(months=1)
+    else:
+        try:
+            to_date = timezone.make_aware(to_date,
+                timezone.get_current_timezone())
+        except AttributeError:
+            to_date = datetime.datetime.combine(to_date,
+                datetime.time(tzinfo=tz))
     header_to = to_date - relativedelta(days=1)
+    # import ipdb; ipdb.set_trace()
     trunc = timepiece_forms.ProjectFiltersForm.DEFAULT_TRUNC
     query = Q(end_time__gt=utils.get_week_start(from_date),
               end_time__lt=to_date)

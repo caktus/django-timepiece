@@ -44,12 +44,12 @@ class ProjectionTest(TimepieceDataTestCase):
     def test_week_start(self):
         """ Test that all days Sun. through Sat. return the previous Monday"""
         monday = datetime.date(2011, 1, 10)
-        self.assertEqual(monday, utils.get_week_start(monday))
+        self.assertEqual(monday, utils.get_week_start(monday).date())
         sunday = datetime.date(2011, 1, 16)
-        self.assertEqual(monday, utils.get_week_start(sunday))
+        self.assertEqual(monday, utils.get_week_start(sunday).date())
         following_monday = datetime.date(2011, 1, 17)
         saturday = datetime.date(2011, 1, 22)
-        self.assertEqual(following_monday, utils.get_week_start(saturday))
+        self.assertEqual(following_monday, utils.get_week_start(saturday).date())
 
     def  test_month_start(self):
         """ Test that any day returns the first day of the month"""

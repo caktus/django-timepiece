@@ -1,4 +1,4 @@
-from datetime import date, datetime, timedelta, time as time_obj
+from datetime import date as date_obj, datetime, timedelta, time as time_obj
 from dateutil import rrule
 from dateutil.relativedelta import relativedelta
 from decimal import Decimal
@@ -121,7 +121,7 @@ def get_total_time(seconds):
 
 def get_month_start(from_day=None):
     if not from_day:
-        from_day = date.today()
+        from_day = date_obj.today()
     from_day = datetime.combine(from_day,
         time_obj(tzinfo=timezone.get_current_timezone()))
     return from_day.replace(day=1)
@@ -129,7 +129,7 @@ def get_month_start(from_day=None):
 
 def get_week_start(day=None):
     if not day:
-        day = date.today()
+        day = date_obj.today()
     isoweekday = day.isoweekday()
     if isoweekday != 1:
         day = day - timedelta(days=isoweekday - 1)
@@ -140,7 +140,7 @@ def get_week_start(day=None):
 
 def get_last_billable_day(day=None):
     if not day:
-        day = date.today()
+        day = date_obj.today()
     day += relativedelta(months=1)
     return get_week_start(day) - timedelta(days=1)
 
@@ -190,7 +190,7 @@ def date_filter(func):
                 raise Http404
         else:
             form = timepiece_forms.DateForm()
-            today = date.today()
+            today = date_obj.today()
             from_date = today.replace(day=1)
             to_date = from_date + relativedelta(months=1)
             status = activity = None
@@ -348,10 +348,7 @@ def payroll_totals(entries, date, leave):
         worked_hours = [billable, non_billable, total_worked]
         return map(sum, zip(worked_hours, all_worked_hours))
 
-    date = timezone.make_aware(
-        datetime(month=date.month, day=date.day, year=date.year),
-        timezone.get_current_timezone()
-    )
+    date = date_obj(month=date.month, day=date.day, year=date.year)
     for user, user_entries in groupby(entries, lambda x: x['user']):
         name, date_dict = user_date_totals(user_entries)
         hours_dict = date_dict.get(date, {})
