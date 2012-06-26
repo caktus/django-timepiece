@@ -53,15 +53,16 @@ class ProjectionTest(TimepieceDataTestCase):
 
     def  test_month_start(self):
         """ Test that any day returns the first day of the month"""
-        days = [datetime.date(2011, 1, 1),
-                datetime.date(2011, 1, 16),
-                datetime.date(2011, 1, 17),
-                datetime.date(2011, 1, 22),
-                datetime.date(2011, 1, 31),
-                ]
+        days = [
+            datetime.date(2011, 1, 1),
+            datetime.date(2011, 1, 16),
+            datetime.date(2011, 1, 17),
+            datetime.date(2011, 1, 22),
+            datetime.date(2011, 1, 31),
+        ]
+        date = datetime.datetime(2011, 1, 1, tzinfo=timezone.get_current_timezone())
         for day in days:
-            self.assertEqual(utils.get_month_start(day),
-                             datetime.date(2011, 1, 1))
+            self.assertEqual(utils.get_month_start(day), date)
 
     def test_generate_dates(self):
         """ Test generation of full date ranges """

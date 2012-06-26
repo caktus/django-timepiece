@@ -146,6 +146,20 @@ def get_last_billable_day(day=None):
 
 
 def generate_dates(start=None, end=None, by='week'):
+    try:
+        if not timezone.is_aware(start):
+            start = timezone.make_aware(start, timezone.get_current_timezone())
+    except AttributeError:
+        if start:
+            start = datetime.combine(start,
+                time_obj(tzinfo=timezone.get_current_timezone()))
+    try:
+        if not timezone.is_aware(end):
+            end = timezone.make_aware(end, timezone.get_current_timezone())
+    except AttributeError:
+        if end:
+            end = datetime.combine(end,
+                time_obj(tzinfo=timezone.get_current_timezone()))
     if by == 'month':
         start = get_month_start(start)
         return rrule.rrule(rrule.MONTHLY, dtstart=start, until=end)
@@ -280,6 +294,8 @@ def user_date_totals(user_entries):
     """Yield a user's name and a dictionary of their hours"""
     date_dict = {}
     for date, date_entries in groupby(user_entries, lambda x: x['date']):
+        if isinstance(date, datetime):
+            date = date.date()
         d_entries = list(date_entries)
         name = ' '.join((d_entries[0]['user__first_name'],
                         d_entries[0]['user__last_name']))
@@ -299,6 +315,8 @@ def project_totals(entries, date_headers, hour_type, overtime=False,
         name, date_dict = user_date_totals(user_entries)
         dates = []
         for index, day in enumerate(date_headers):
+            if isinstance(day, datetime):
+                day = day.date()
             total = date_dict.get(day, {}).get(hour_type, 0)
             totals[index] += total
             dates.append(total)

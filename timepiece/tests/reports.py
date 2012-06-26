@@ -73,19 +73,15 @@ class TestHourlyReport(TimepieceDataTestCase):
 
     def check_generate_dates(self, start, end, trunc, dates):
         for index, day in enumerate(utils.generate_dates(start, end, trunc)):
+            if isinstance(day, datetime):
+                day = day.date()
             self.assertEqual(day, dates[index])
 
     def testGenerateMonths(self):
         dates = [timezone.make_aware(datetime.datetime(2011, month, 1), \
             timezone.get_current_timezone()) for month in xrange(1, 13)]
-        start = timezone.make_aware(
-            datetime.datetime(2011, 1, 1),
-            timezone.get_current_timezone(),
-        )
-        end = timezone.make_aware(
-            datetime.datetime(2011, 12, 1),
-            timezone.get_current_timezone(),
-        )
+        start = datetime.date(2011, 1, 1)
+        end = datetime.date(2011, 12, 1)
         self.check_generate_dates(start, end, 'month', dates)
 
     def testGenerateWeeks(self):

@@ -910,11 +910,17 @@ class ContractAssignment(models.Model):
         """
         if not hasattr(self, '_priority_type'):
             weeks = utils.get_week_window(timezone.now())
-            if self.end_date < weeks[1].date() \
-            and self.end_date >= weeks[0].date():
+            try:
+                end_date = self.end_date.date()
+                start_date = self.start_date.date()
+            except:
+                end_date = self.end_date
+                start_date = self.start_date
+            if end_date < weeks[1].date() \
+            and end_date >= weeks[0].date():
                 self._priority_type = 0
-            elif self.start_date < weeks[1].date() \
-            and self.start_date >= weeks[0].date():
+            elif start_date < weeks[1].date() \
+            and start_date >= weeks[0].date():
                 self._priority_type = 1
             else:
                 self._priority_type = 2
