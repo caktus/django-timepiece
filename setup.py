@@ -10,7 +10,7 @@ setup(
     url='https://github.com/caktus/django-timepiece',
     license='BSD',
     long_description=open('README.rst').read(),
-    zip_safe=False, # because we're including media that Django needs
+    zip_safe=False,  # because we're including media that Django needs
     description="django-timepiece is a multi-user application for tracking "
                 "people's time on projects.",
     classifiers=[
@@ -25,15 +25,20 @@ setup(
         'Operating System :: OS Independent',
     ],
     tests_require=[
-        'django==1.3.1',
+        'django==1.4',
         'python-dateutil==1.5',
         'django-pagination==1.0.7',
         'django-selectable==0.4.1',
+        'django-bootstrap-toolkit==2.5.4',
+        'django-compressor==1.1.2',
     ],
     test_suite='run_tests.run',
     install_requires=[
-        "python-dateutil==1.5",
-        "django-pagination==1.0.7",
-        "django-selectable==0.4.1",
+        'psycopg2==2.4.1',
+        'python-dateutil==1.5',
+        'django-pagination==1.0.7',
+        'django-selectable==0.4.1',
+        'django-bootstrap-toolkit==2.5.4',
+        'django-compressor==1.1.2'
     ],
 )
