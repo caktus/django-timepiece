@@ -14,9 +14,14 @@ from django.db.models import Sum
 from django.contrib.sites.models import Site
 from django.utils.functional import lazy
 from django.core.urlresolvers import reverse
-from django.utils import timezone
+
+try:
+    from django.utils import timezone
+except ImportError:
+    from timepiece import timezone
 
 reverse_lazy = lazy(reverse, str)
+
 
 def slugify_uniquely(s, queryset=None, field='slug'):
     """

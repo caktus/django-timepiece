@@ -6,8 +6,12 @@ from decimal import Decimal
 
 from django import template
 from django.db.models import Sum
-from django.utils import timezone
 from django.core.urlresolvers import reverse
+
+try:
+    from django.utils import timezone
+except ImportError:
+    from timepiece import timezone
 
 from dateutil.relativedelta import relativedelta
 from dateutil import rrule

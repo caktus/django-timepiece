@@ -9,7 +9,11 @@ from django.contrib.auth import models as auth_models
 from django.db.models import Q
 from django.conf import settings
 from django.db import transaction
-from django.utils import timezone
+
+try:
+    from django.utils import timezone
+except ImportError:
+    from timepiece import timezone
 
 from timepiece import utils
 

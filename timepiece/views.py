@@ -27,7 +27,11 @@ from django.views.decorators.csrf import csrf_exempt
 from django.views.generic.base import TemplateView
 from django.views.generic import UpdateView, ListView, DetailView, View
 from django.utils.decorators import method_decorator
-from django.utils import timezone
+
+try:
+    from django.utils import timezone
+except ImportError:
+    from timepiece import timezone
 
 from timepiece.utils import render_with, reverse_lazy
 
@@ -1320,7 +1324,6 @@ def hourly_report(request, date_form, from_date, to_date, status, activity):
             to_date = datetime.datetime.combine(to_date,
                 datetime.time(tzinfo=tz))
     header_to = to_date - relativedelta(days=1)
-    # import ipdb; ipdb.set_trace()
     trunc = timepiece_forms.ProjectFiltersForm.DEFAULT_TRUNC
     query = Q(end_time__gt=utils.get_week_start(from_date),
               end_time__lt=to_date)

@@ -31,6 +31,7 @@ setup(
         'django-selectable==0.4.1',
         'django-bootstrap-toolkit==2.5.4',
         'django-compressor==1.1.2',
+        'pytz==2012c'
     ],
     test_suite='run_tests.run',
     install_requires=[
@@ -39,6 +40,7 @@ setup(
         'django-pagination==1.0.7',
         'django-selectable==0.4.1',
         'django-bootstrap-toolkit==2.5.4',
-        'django-compressor==1.1.2'
+        'django-compressor==1.1.2',
+        'pytz==2012c'
     ],
 )

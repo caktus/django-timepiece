@@ -4,7 +4,11 @@ from decimal import Decimal
 from django.conf import settings
 from django.core.urlresolvers import reverse
 from django.contrib.auth.models import Permission
-from django.utils import timezone
+
+try:
+    from django.utils import timezone
+except ImportError:
+    from timepiece import timezone
 
 from timepiece import models as timepiece
 from timepiece import forms as timepiece_forms

@@ -10,7 +10,11 @@ from django.template.defaultfilters import slugify
 from django.contrib.auth.models import User, Permission
 from django.contrib.contenttypes.models import ContentType
 from django.db.models import Q
-from django.utils import timezone
+
+try:
+    from django.utils import timezone
+except ImportError:
+    from timepiece import timezone
 
 from timepiece import models as timepiece
 

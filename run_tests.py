@@ -82,6 +82,7 @@ if not settings.configured:
         ),
         COMPRESS_ROOT='%s/timepiece/static/' % directory,
         STATIC_URL=static,
+        PASSWORD_HASHERS=['django.contrib.auth.hashers.MD5PasswordHasher']  # Increase speed in 1.4
     )
 
 

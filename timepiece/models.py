@@ -7,7 +7,11 @@ from django.db import models
 from django.db.models import Q, Avg, Sum, Max, Min
 from django.contrib.auth.models import User
 from django.core.exceptions import ValidationError, NON_FIELD_ERRORS
-from django.utils import timezone
+
+try:
+    from django.utils import timezone
+except ImportError:
+    from timepiece import timezone
 
 from timepiece import utils
 
