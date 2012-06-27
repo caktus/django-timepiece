@@ -44,7 +44,7 @@ if not settings.configured:
             'compressor',
         ] + jenkins,
         SITE_ID=1,
-        ROOT_URLCONF='example_project.example_project.urls',
+        ROOT_URLCONF='example_project.urls',
         PROJECT_APPS=('timepiece',),
         JENKINS_TASKS=(
             'django_jenkins.tasks.with_coverage',
@@ -73,7 +73,7 @@ if not settings.configured:
             'django.core.context_processors.request',
         ),
         TEMPLATE_DIRS=(
-            '%s/example_project/example_project/templates' % directory,
+            '%s/example_project/templates' % directory,
         ),
         DEBUG=True,
         INTERNAL_IPS=('127.0.0.1',),
