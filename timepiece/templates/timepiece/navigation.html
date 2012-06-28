@@ -1,6 +1,6 @@
 <div class="navbar navbar-fixed-top">
     <div class="navbar-inner">
-        <div class="container-fluid hidden-phone">
+        <div class="container-fluid visible-desktop">
             {% block navbar-left %}
                 <ul class="nav pull-left">
                     <li class="active"><a class="brand" href="/">Timepiece</a></li>
@@ -81,7 +81,7 @@
             {% endblock %}
         </div>
 
-        <div class="container-fluid visible-phone">
+        <div class="container-fluid hidden-desktop">
             <a class="brand" href="/">Timepiece</a>
 
             {% if user.is_authenticated %}
