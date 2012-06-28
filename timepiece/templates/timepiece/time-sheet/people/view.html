@@ -50,10 +50,16 @@
     <div class="row-fluid">
         <div class="span12">
             <form class="form-inline" method="get" action="" accept-charset="utf-8">
-                {{ year_month_form|as_bootstrap:"inline" }}
-                <input type="submit" name="yearmonth" class="btn" value="Update" />
+                <div class="visible-desktop">
+                    {{ year_month_form|as_bootstrap:"inline" }}
+                    <input type="submit" name="yearmonth" class="btn" value="Update" />
+                </div>
+                <div class="hidden-desktop">
+                    {{ year_month_form|as_bootstrap }}
+                    <input type="submit" name="yearmonth" class="btn" value="Update" />
+                </div>
             </form>
-        </div class="span12">
+        </div>
     </div>
 
     <div class="row-fluid">
@@ -93,8 +99,8 @@
                                 <table class="table table-bordered table-striped table-condensed">
                                     <thead>
                                         <tr>
-                                            <th>Category</th>
-                                            <th>Hours</th>
+                                            <th width="70%">Category</th>
+                                            <th width="30%">Hours</th>
                                         </tr>
                                     </thead>
                                     <tbody>
@@ -124,25 +130,26 @@
                     {% if entries %}
                         {% for entry in entries %}
                             {% ifchanged entry.start_time|date:"W" %}
-                                <table class="table table-bordered table-condensed table-striped">
-                                    <thead>
-                                        <tr>
-                                            <th>Date</th>
-                                            <th>Project</th>
-                                            <th>Activity</th>
-                                            <th>Location</th>
-                                            <th>Time In</th>
-                                            <th>Time Out</th>
-                                            <th>Breaks</th>
-                                            <th>Hours</th>
-                                            <th width="40%">Comments</th>
-                                            <th></th>
-                                        </tr>
-                                    </thead>
-                                    <tbody>
-                                        <tr class="ledger_header">
-                                            <th colspan="10">Week of {% week_start entry.start_time %} </th>
-                                        </tr>
+                                <div class="row-fluid">
+                                    <table id="entries" class="table table-bordered table-condensed table-striped">
+                                        <thead>
+                                            <tr>
+                                                <th>Date</th>
+                                                <th>Project</th>
+                                                <th>Activity</th>
+                                                <th>Location</th>
+                                                <th class="time">Time In</th>
+                                                <th class="time">Time Out</th>
+                                                <th class="time">Breaks</th>
+                                                <th class="time">Hours</th>
+                                                <th class="comments">Comments</th>
+                                                <th class="aux"></th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            <tr class="ledger_header">
+                                                <th colspan="10">Week of {% week_start entry.start_time %} </th>
+                                            </tr>
                             {% endifchanged %}
                             <tr>
                                 {% ifchanged entry.start_time|date %}
@@ -150,15 +157,15 @@
                                 {% else %}
                                 <td></td>
                                 {% endifchanged %}
-                                <td>{{ entry.project__name }}</td>
+                                <td class="break">{{ entry.project__name }}</td>
                                 <td>{{ entry.activity__name }}</td>
                                 <td>{{ entry.location__name }}</td>
-                                <td>{{ entry.start_time|date:"P" }}</td>
-                                <td>{{ entry.end_time|date:"P" }}</td>
-                                <td class="hours">{{ entry.seconds_paused|seconds_to_hours|floatformat:2 }}</td>
-                                <td class="hours">{{ entry.hours|floatformat:2 }}</td>
-                                <td title="{{entry.comments}}">{{ entry.comments|truncatewords:12|urlizetrunc:25|safe }}</td>
-                                <td>
+                                <td class="time break">{{ entry.start_time|date:"P" }}</td>
+                                <td class="time break">{{ entry.end_time|date:"P" }}</td>
+                                <td class="hours time">{{ entry.seconds_paused|seconds_to_hours|floatformat:2 }}</td>
+                                <td class="hours time">{{ entry.hours|floatformat:2 }}</td>
+                                <td class="comments" title="{{entry.comments}}">{{ entry.comments|truncatewords:12|urlizetrunc:25|safe }}</td>
+                                <td class="aux">
                                     {% if entry.status == "unverified" %}
                                         <a href="{% url "timepiece-update" entry.id %}?next={{ request.get_full_path|urlencode }}#full-timesheet">Edit</a>
                                     {% else %}
@@ -168,9 +175,10 @@
                                     {% endif %}
                                 </td>
                             </tr>
-                            {% if entry.start_time.weekday == 6 %}
-                                    </tbody>
-                                </table>
+                            {% if entry.start_time.weekday in "4,5,6"|make_list %}
+                                        </tbody>
+                                    </table>
+                                </div>
                             {% endif %}
                         {% endfor %}
                         <table class="table table-bordered table-condensed">
