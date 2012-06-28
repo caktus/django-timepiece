@@ -11,6 +11,7 @@ except ImportError:
 
 from timepiece import models as timepiece
 from timepiece.tests.base import TimepieceDataTestCase
+from timepiece import utils
 
 
 class InvoiceViewPreviousTestCase(TimepieceDataTestCase):
@@ -208,14 +209,10 @@ class InvoiceCreateTestCase(TimepieceDataTestCase):
         self.user.is_superuser = True
         self.user.save()
         self.client.login(username=self.user.username, password='abc')
-        start = timezone.make_aware(
-            datetime.datetime(2011, 1, 1, 8, 0, 0),
-            timezone.get_current_timezone()
-        )
-        end = timezone.make_aware(
-            datetime.datetime(2011, 1, 1, 12, 0, 0),
-            timezone.get_current_timezone()
-        )
+        start = datetime.datetime(2011, 1, 1, 8,
+            tzinfo=timezone.get_current_timezone())
+        end = datetime.datetime(2011, 1, 1, 12,
+            tzinfo=timezone.get_current_timezone())
         self.project_billable = self.create_project(billable=True)
         self.project_billable2 = self.create_project(billable=True)
         self.project_non_billable = self.create_project(billable=False)
@@ -385,14 +382,12 @@ class InvoiceCreateTestCase(TimepieceDataTestCase):
     def test_invoice_confirm_totals(self):
         """Verify that the per activity totals are valid."""
         # Make a few extra entries to test per activity totals
-        start = timezone.make_aware(
-            datetime.datetime(2011, 1, 1, 8, 0, 0),
-            timezone.get_current_timezone()
-        )
-        end = timezone.make_aware(
-            datetime.datetime(2011, 1, 1, 12, 0, 0),
-            timezone.get_current_timezone()
-        )
+        start = datetime.datetime(2011, 1, 1, 8,
+            tzinfo=timezone.get_current_timezone())
+        end = datetime.datetime(2011, 1, 1, 12,
+            tzinfo=timezone.get_current_timezone())
+        # start = datetime.datetime.now(timezone.get_current_timezone())
+        # end = start + datetime.timedelta(hours=4)
         activity = self.create_activity(data={'name': 'activity1'})
         for num in xrange(0, 4):
             new_entry = self.create_entry({
@@ -404,10 +399,7 @@ class InvoiceCreateTestCase(TimepieceDataTestCase):
                 'activity': activity,
             })
         self.make_hourgroups()
-        to_date = timezone.make_aware(
-            datetime.datetime(2011, 1, 31),
-            timezone.get_current_timezone()
-        )
+        to_date = datetime.datetime(2011, 1, 31)
         args = [self.project_billable.id, to_date.strftime('%Y-%m-%d')]
         url = reverse('confirm_invoice_project', args=args)
         response = self.client.get(url)
