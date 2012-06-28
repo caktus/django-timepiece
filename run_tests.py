@@ -11,6 +11,7 @@ parser = optparse.OptionParser()
 opts, args = parser.parse_args()
 
 directory = os.path.abspath('%s' % os.path.dirname(__file__))
+static = '%s/example_project/example_project/static/' % directory
 
 if not settings.configured:
     jenkins = []
@@ -35,13 +36,12 @@ if not settings.configured:
             'django.contrib.auth',
             'django.contrib.contenttypes',
             'django.contrib.sessions',
-            'django.contrib.sites',
             'django.contrib.messages',
-            'django.contrib.staticfiles',
-            'django.contrib.admin',
             'django.contrib.markup',
             'timepiece',
             'pagination',
+            'bootstrap_toolkit',
+            'compressor',
         ] + jenkins,
         SITE_ID=1,
         ROOT_URLCONF='example_project.urls',
@@ -76,10 +76,13 @@ if not settings.configured:
             '%s/example_project/templates' % directory,
         ),
         DEBUG=True,
-        STATICFILES_FINDERS=(
-            'django.contrib.staticfiles.finders.FileSystemFinder',
-            'django.contrib.staticfiles.finders.AppDirectoriesFinder',
-        )
+        INTERNAL_IPS=('127.0.0.1',),
+        COMPRESS_PRECOMPILERS=(
+            ('text/less', 'lessc {infile} {outfile}'),
+        ),
+        COMPRESS_ROOT='%s/timepiece/static/' % directory,
+        STATIC_URL=static,
+        PASSWORD_HASHERS=['django.contrib.auth.hashers.MD5PasswordHasher']  # Increase speed in 1.4
     )
 
 
