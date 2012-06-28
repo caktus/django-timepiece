@@ -147,7 +147,7 @@ def get_last_billable_day(day=None):
     if not day:
         day = date_obj.today()
     day += relativedelta(months=1)
-    return get_week_start(day) - timedelta(days=1)
+    return get_week_start(get_month_start(day)) - timedelta(days=1)
 
 
 def generate_dates(start=None, end=None, by='week'):
