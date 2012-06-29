@@ -130,26 +130,30 @@
                     {% if entries %}
                         {% for entry in entries %}
                             {% ifchanged entry.start_time|date:"W" %}
-                                <div class="row-fluid">
-                                    <table id="entries" class="table table-bordered table-condensed table-striped">
-                                        <thead>
-                                            <tr>
-                                                <th>Date</th>
-                                                <th>Project</th>
-                                                <th>Activity</th>
-                                                <th>Location</th>
-                                                <th class="time">Time In</th>
-                                                <th class="time">Time Out</th>
-                                                <th class="time">Breaks</th>
-                                                <th class="time">Hours</th>
-                                                <th class="comments">Comments</th>
-                                                <th class="aux"></th>
-                                            </tr>
-                                        </thead>
-                                        <tbody>
-                                            <tr class="ledger_header">
-                                                <th colspan="10">Week of {% week_start entry.start_time %} </th>
-                                            </tr>
+                                {# Close table before new table starts (ignore first table) #}
+                                {% if entry.start_time.weekday == 0 and not forloop.first %}
+                                        </tbody>
+                                    </table>
+                                {% endif %}
+                                <table id="entries" class="table table-bordered table-condensed table-striped">
+                                    <thead>
+                                        <tr>
+                                            <th>Date</th>
+                                            <th>Project</th>
+                                            <th>Activity</th>
+                                            <th>Location</th>
+                                            <th class="time">Time In</th>
+                                            <th class="time">Time Out</th>
+                                            <th class="time">Breaks</th>
+                                            <th class="time">Hours</th>
+                                            <th class="comments">Comments</th>
+                                            <th class="aux"></th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        <tr class="ledger_header">
+                                            <th colspan="10">Week of {% week_start entry.start_time %} </th>
+                                        </tr>
                             {% endifchanged %}
                             <tr>
                                 {% ifchanged entry.start_time|date %}
@@ -175,12 +179,13 @@
                                     {% endif %}
                                 </td>
                             </tr>
-                            {% if entry.start_time.weekday in "4,5,6"|make_list %}
-                                        </tbody>
-                                    </table>
-                                </div>
+                            {# Close the last table #}
+                            {% if forloop.last %}
+                                    </tbody>
+                                </table>
                             {% endif %}
                         {% endfor %}
+
                         <table class="table table-bordered table-condensed">
                             <tr class="monthly_total">
                                 <th colspan="4">Overall total for the period:</th>
