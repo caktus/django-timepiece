@@ -29,9 +29,8 @@
     {% block staticfiles %}
         {% load compress %}
         {% if debug %}
-            <!--<link rel="stylesheet/less" type="text/css" href="{{ STATIC_URL }}timepiece/less/style.less" />
-            <script src="{{ STATIC_URL }}timepiece/js/less-1.3.0.min.js"></script>-->
-            <link rel="stylesheet" type="text/css" href="{{ STATIC_URL }}timepiece/less/style.css" />
+            <link rel="stylesheet/less" type="text/css" href="{{ STATIC_URL }}timepiece/less/style.less" />
+            <script src="{{ STATIC_URL }}timepiece/js/less-1.3.0.min.js"></script>
         {% else %}
             {% compress css %}
                 <link rel="stylesheet" type="text/less" href="{{ STATIC_URL }}timepiece/less/style.less" />
