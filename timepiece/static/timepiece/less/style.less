@@ -21,6 +21,18 @@
     list-style-image: url('../../images/icons/@{icon}');
 }
 
+.word-wrap(@wrap) {
+    word-wrap: normal;
+    word-break: normal;
+    -ms-word-break: normal;
+}
+
+.word-wrap(@wrap) when (@wrap = true) {
+    word-wrap: break-word;
+    word-break: break-all;
+    -ms-word-break: break-all;
+}
+
 body {
     /*****************************************
      * Start HTML entities
@@ -119,9 +131,7 @@ body {
 
             td {
                 &.break {
-                    word-wrap: break-word;
-                    word-break: break-all;
-                    -ms-word-break: break-all;
+                    .word-wrap(true);
                 }
             }
 
@@ -297,21 +307,29 @@ body {
          *****************************************/
 
         #full-timesheet {
+            width: 100%;
+            min-width: 700px;
+
             table {
+                width: 100%;
+                table-layout: fixed;
+
                 &#entries {
                     th, td {
                         width: 10%;
+                        overflow-x: auto;
 
                         &.comments {
-                            width: 35%;
+                            width: 25%;
                         }
 
                         &.time {
-                            width: 5%;
+                            width: 7%;
+                            .word-wrap(false);
                         }
 
                         &.aux {
-                            width: auto;
+                            width: 5%;
                         }
                     }
                 }
