@@ -11,3 +11,4 @@ from timepiece.tests.project_list import *
 from timepiece.tests.general_ledger import *
 from timepiece.tests.crmcontent import *
 from timepiece.tests.dashboard import *
+from timepiece.tests.utils import *
