@@ -10,13 +10,13 @@
 {% endblock crumbs %}
 
 {% block content %}
-    <div class="row">
+    <div class="row-fluid">
         <div class="span12">
             {% invoice_subheaders 'detail' %}
         </div>
     </div>
 
-    <div class="row">
+    <div class="row-fluid">
         <div class="span6">
             {% include 'timepiece/time-sheet/invoice/_invoice_detail.html' %}
         </div>

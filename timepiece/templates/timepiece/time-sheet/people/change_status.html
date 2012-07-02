@@ -9,7 +9,7 @@
 {% endblock crumbs %}
 
 {% block content %}
-    <div class="row">
+    <div class="row-fluid">
         <div class="span12">
             <h2>{{ action.capitalize }} Hours for Time Sheet</h2>
             <h3>
@@ -24,7 +24,7 @@
         </div>
     </div>
 
-    <div class="row">
+    <div class="row-fluid">
         <div class="span12">
             <form method="post">
                 {% csrf_token %}

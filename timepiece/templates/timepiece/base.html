@@ -3,6 +3,7 @@
 <head>
     <title>Timepiece: {% block title %}{% endblock %}</title>
     <link rel="icon" type="image/png" href="{{ STATIC_URL }}images/icons/clock.png">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
 
     {% block javascript %}
         <script src="//ajax.googleapis.com/ajax/libs/jquery/1.7.2/jquery.min.js"></script>
@@ -13,7 +14,8 @@
             {{ quick_search_form.media.js }}
             <script type="text/javascript" src="{{ STATIC_URL }}js/quicksearch.js"></script>
         {% endif %}
-        <script src="{{ STATIC_URL}}bootstrap/js/bootstrap-alert.js"></script>
+        <script src="{{ STATIC_URL }}bootstrap/js/bootstrap-alert.js"></script>
+        <script src="{{ STATIC_URL }}bootstrap/js/bootstrap-collapse.js"></script>
     {% endblock javascript %}
 
     {% block extrajs %}
@@ -42,6 +44,9 @@
 
 <body id="{% block bodyid %}{% endblock bodyid %}">
     {% block navigation %}
+<<<<<<< HEAD
+        {% include "timepiece/navigation.html" %}
+=======
         <div class="navbar navbar-fixed-top">
             <div class="navbar-inner">
                 <div class="container">
@@ -126,9 +131,10 @@
                 </div>
             </div>
         </div>
+>>>>>>> develop
     {% endblock navigation %}
 
-    <div id="content" class="container">
+    <div id="content" class="container-fluid">
         {% include "timepiece/messages.html" %}
 
         {% if user.is_authenticated %}
@@ -147,7 +153,7 @@
 
     {% block footer %}
         <footer class="footer">
-            <div class="container">
+            <div class="container-fluid">
                 <p class="pull-right">
                     <a href="https://github.com/caktus/django-timepiece/">Source</a>
                     |
