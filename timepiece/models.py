@@ -285,6 +285,7 @@ class EntryQuerySet(models.query.QuerySet):
         }
         basic_values = (
             'user', 'date', 'user__first_name', 'user__last_name', 'billable',
+            'project__type__label',
         )
         extra_values = (
             'start_time', 'end_time', 'comments', 'seconds_paused', 'id',

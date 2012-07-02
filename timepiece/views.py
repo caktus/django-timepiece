@@ -1229,8 +1229,8 @@ def payroll_summary(request):
                                   ).values('user', 'hours', 'project__name')
     month_entries = timepiece.Entry.objects.date_trunc('month')
     month_entries_valid = month_entries.filter(monthQ, statusQ, workQ)
-    monthly_totals = list(utils.payroll_totals(month_entries_valid, from_date,
-                                               leave))
+    monthly_totals = list(utils.new_payroll_totals(month_entries_valid,
+            from_date, leave))
     # Unapproved and unverified hours
     entries = timepiece.Entry.objects.filter(monthQ)
     user_values = ['user__pk', 'user__first_name', 'user__last_name']

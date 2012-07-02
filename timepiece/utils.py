@@ -377,3 +377,50 @@ def payroll_totals(entries, date, leave):
     nested_hours = get_hour_summaries(all_worked_hours)
     if all_paid_hours:
         yield ('Totals', nested_hours, all_leave_hours.items(), all_paid_hours)
+
+def new_payroll_totals(month_entries, date, leave):
+    """Yields totals for a month, grouped by user."""
+
+    def _get_name(entries):
+        """Helper for getting the associated user's first and last name."""
+        fname = entries[0].get('user__first_name', '') if entries else ''
+        lname = entries[0].get('user__last_name', '') if entries else ''
+        name = '{0} {1}'.format(fname, lname)
+        return name
+
+    all_work_descs = {'billable': {}, 'nonbillable': {}}
+    all_work_hours = {'billable': 0, 'nonbillable': 0}
+    all_leave_descs = {}
+    all_grand_total = 0
+    for user, entries in groupby(month_entries, lambda e: e['user']):
+        entries = list(entries)
+        name = _get_name(entries)
+        work_descs = {'billable': {}, 'nonbillable': {}}
+        work_hours = {'billable': 0, 'nonbillable': 0}
+        for entry in entries:
+            key = 'billable' if entry['billable'] else 'nonbillable'
+            label = entry['project__type__label']
+            hours = entry['hours']
+            work_descs[key][label] = work_descs[key].get(label, 0) + hours
+            all_work_descs[key][label] = all_work_descs[key].get(label, 0) + hours
+            work_hours[key] += hours
+            all_work_hours[key] += hours
+        total_work_hours = sum(work_hours.values())
+        percent_billable = work_hours['billable']/total_work_hours * 100
+        percent_nonbillable = work_hours['nonbillable']/total_work_hours * 100
+        leave_descs, leave_hours = format_leave(leave.filter(user=user))
+        grand_total = total_work_hours + leave_hours
+        all_grand_total += grand_total
+        for desc, hours in leave_descs:
+            all_leave_descs[desc] = all_leave_descs.get(desc, 0) + hours
+        yield (name, work_descs['billable'], percent_billable,
+                work_descs['nonbillable'], percent_nonbillable,
+                total_work_hours, leave_descs, grand_total)
+
+    all_total_work_hours = sum(all_work_hours.values())
+    if all_total_work_hours:
+        all_percent_billable = all_work_hours['billable']/all_total_work_hours * 100
+        all_percent_nonbillable = all_work_hours['nonbillable']/all_total_work_hours * 100
+        yield ('Totals', all_work_descs['billable'], all_percent_billable,
+                all_work_descs['nonbillable'], all_percent_nonbillable,
+                all_total_work_hours, all_leave_descs, all_grand_total)

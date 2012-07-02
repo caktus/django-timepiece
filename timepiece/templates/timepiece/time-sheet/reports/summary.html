@@ -81,20 +81,31 @@
                         </tr>
                     </thead>
                     <tbody>
-                        {% for name, hours, descs, all in monthly_totals %}
+                        {% for name, billable_descs, billable_percentage, nonbillable_descs, nonbillable_percentage, total_work_hours, leave_descs, grand_total in monthly_totals %}
                             <tr>
                                 <th class='name_col'>{{ name }}</th>
-                                {% for num in hours|slice:"0:2" %}
-                                    <td class="hours">{{num.0|floatformat:2|default:""}}</td>
-                                    <td class="hours">{% if num.1 %}({{num.1|floatformat:2}}%){% endif %}</td>
-                                {% endfor %}
-                                <td class="hours">{{hours.2|floatformat:2}}</td>
-                                <td class="hours" style="width: 200px;">
-                                {% for desc in descs %}
-                                    {{desc.0}}:&nbsp;&nbsp;{{desc.1|floatformat:2}}
-                                {% endfor %}
+                                <td class='hours'>
+                                    {% for key in billable_descs %}
+                                        {{ key }}: {{ billable_descs.key|floatformat:2 }}
+                                        <br />
+                                    {% endfor %}
                                 </td>
-                                <td class="hours">{{all|floatformat:2}}</td>
+                                <td class='hours'>{{ billable_percentage|floatformat:2 }}%</td>
+                                <td class='hours'>
+                                    {% for key in nonbillable_descs %}
+                                        {{ key }}: {{ nonbillable_descs.key|floatformat:2 }}
+                                        <br />
+                                    {% endfor %}
+                                </td>
+                                <td class='hours'>{{ nonbillable_percentage|floatformat:2 }}%</td>
+                                <td class='hours'>{{ total_worked_hours|floatformat:2 }}</td>
+                                <td>
+                                    {% for desc in leave_descs %}
+                                        {{desc.0}}:&nbsp;&nbsp;{{desc.1|floatformat:2}}
+                                        <br />
+                                    {% endfor %}
+                                </td>
+                                <td class="hours">{{ grand_total|floatformat:2 }}</td>
                             </tr>
                         {% endfor %}
                     </tbody>
