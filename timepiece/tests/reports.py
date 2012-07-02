@@ -8,6 +8,11 @@ from django.core.urlresolvers import reverse
 from django.db.models import Q
 from django.contrib.auth.models import Permission
 
+try:
+    from django.utils import timezone
+except ImportError:
+    from timepiece import timezone
+
 from timepiece.tests.base import TimepieceDataTestCase
 
 from timepiece import models as timepiece
@@ -31,20 +36,20 @@ class TestHourlyReport(TimepieceDataTestCase):
         self.p3 = self.create_project(billable=False, name='1')
         self.p5 = self.create_project(billable=True, name='3')
         self.default_projects = [self.p1, self.p2, self.p3, self.p4, self.p5]
+        tz = timezone.get_current_timezone()
         self.default_dates = [
-                datetime.datetime(2011, 1, 3),
-                datetime.datetime(2011, 1, 4),
-                datetime.datetime(2011, 1, 10),
-                datetime.datetime(2011, 1, 16),
-                datetime.datetime(2011, 1, 17),
-                datetime.datetime(2011, 1, 18)
+            timezone.make_aware(datetime.datetime(2011, 1, 3), tz),
+            timezone.make_aware(datetime.datetime(2011, 1, 4), tz),
+            timezone.make_aware(datetime.datetime(2011, 1, 10), tz),
+            timezone.make_aware(datetime.datetime(2011, 1, 16), tz),
+            timezone.make_aware(datetime.datetime(2011, 1, 17), tz),
+            timezone.make_aware(datetime.datetime(2011, 1, 18), tz),
         ]
         self.url = reverse('hourly_report')
 
     def make_entries(self, user=None, projects=None, dates=None,
                      hours=1, minutes=0):
         """Make several entries to help with reports tests"""
-
         if not user:
             user = self.user
         if not projects:
@@ -58,6 +63,10 @@ class TestHourlyReport(TimepieceDataTestCase):
 
     def bulk_entries(self, start=datetime.datetime(2011, 1, 2),
                    end=datetime.datetime(2011, 1, 4)):
+        if not timezone.is_aware(start):
+            start = timezone.make_aware(start, timezone.get_current_timezone())
+        if not timezone.is_aware(end):
+            end = timezone.make_aware(end, timezone.get_current_timezone())
         dates = utils.generate_dates(start, end, 'day')
         projects = [self.p1, self.p2, self.p2, self.p4, self.p5, self.sick]
         self.make_entries(projects=projects, dates=dates,
@@ -67,31 +76,42 @@ class TestHourlyReport(TimepieceDataTestCase):
 
     def check_generate_dates(self, start, end, trunc, dates):
         for index, day in enumerate(utils.generate_dates(start, end, trunc)):
-            self.assertEqual(day, dates[index])
+            if isinstance(day, datetime.datetime):
+                day = day.date()
+            self.assertEqual(day, dates[index].date())
 
     def testGenerateMonths(self):
-        dates = [datetime.datetime(2011, month, 1) for month in xrange(1, 13)]
-        start = datetime.datetime(2011, 1, 1)
-        end = datetime.datetime(2011, 12, 1)
+        dates = [timezone.make_aware(datetime.datetime(2011, month, 1), \
+            timezone.get_current_timezone()) for month in xrange(1, 13)]
+        start = datetime.date(2011, 1, 1)
+        end = datetime.date(2011, 12, 1)
         self.check_generate_dates(start, end, 'month', dates)
 
     def testGenerateWeeks(self):
+        tz = timezone.get_current_timezone()
         dates = [
-            datetime.datetime(2010, 12, 27),
-            datetime.datetime(2011, 01, 03),
-            datetime.datetime(2011, 01, 10),
-            datetime.datetime(2011, 01, 17),
-            datetime.datetime(2011, 01, 24),
-            datetime.datetime(2011, 01, 31),
+            timezone.make_aware(datetime.datetime(2010, 12, 27), tz),
+            timezone.make_aware(datetime.datetime(2011, 01, 03), tz),
+            timezone.make_aware(datetime.datetime(2011, 01, 10), tz),
+            timezone.make_aware(datetime.datetime(2011, 01, 17), tz),
+            timezone.make_aware(datetime.datetime(2011, 01, 24), tz),
+            timezone.make_aware(datetime.datetime(2011, 01, 31), tz),
         ]
-        start = datetime.datetime(2011, 1, 1)
-        end = datetime.datetime(2011, 2, 1)
+        start = timezone.make_aware(datetime.datetime(2011, 1, 1), tz)
+        end = timezone.make_aware(datetime.datetime(2011, 2, 1), tz)
         self.check_generate_dates(start, end, 'week', dates)
 
     def testGenerateDays(self):
-        dates = [datetime.datetime(2011, 1, day) for day in xrange(1, 32)]
-        start = datetime.datetime(2011, 1, 1)
-        end = datetime.datetime(2011, 1, 31)
+        dates = [timezone.make_aware(datetime.datetime(2011, 1, day), \
+            timezone.get_current_timezone()) for day in xrange(1, 32)]
+        start = timezone.make_aware(
+            datetime.datetime(2011, 1, 1),
+            timezone.get_current_timezone(),
+        )
+        end = timezone.make_aware(
+            datetime.datetime(2011, 1, 31),
+            timezone.get_current_timezone(),
+        )
         self.check_generate_dates(start, end, 'day', dates)
 
     def check_truncs(self, trunc, billable, non_billable):
@@ -137,9 +157,18 @@ class TestHourlyReport(TimepieceDataTestCase):
                       user=self.user2)
 
     def testDailyTotal(self):
-        start = datetime.datetime(2011, 1, 1)
-        day2 = datetime.datetime(2011, 1, 2)
-        end = datetime.datetime(2011, 1, 3)
+        start = timezone.make_aware(
+            datetime.datetime(2011, 1, 1),
+            timezone.get_current_timezone(),
+        )
+        day2 = timezone.make_aware(
+            datetime.datetime(2011, 1, 2),
+            timezone.get_current_timezone(),
+        )
+        end = timezone.make_aware(
+            datetime.datetime(2011, 1, 3),
+            timezone.get_current_timezone(),
+        )
         self.log_daily(start, day2, end)
         trunc = 'day'
         date_headers = utils.generate_dates(start, end, trunc)
@@ -152,9 +181,18 @@ class TestHourlyReport(TimepieceDataTestCase):
                          [Decimal('1.00'), Decimal('4.50'), Decimal('2.00')])
 
     def testBillableNonBillable(self):
-        start = datetime.datetime(2011, 1, 1)
-        day2 = datetime.datetime(2011, 1, 2)
-        end = datetime.datetime(2011, 1, 3)
+        start = timezone.make_aware(
+            datetime.datetime(2011, 1, 1),
+            timezone.get_current_timezone(),
+        )
+        day2 = timezone.make_aware(
+            datetime.datetime(2011, 1, 2),
+            timezone.get_current_timezone(),
+        )
+        end = timezone.make_aware(
+            datetime.datetime(2011, 1, 3),
+            timezone.get_current_timezone(),
+        )
         self.log_daily(start, day2, end)
         trunc = 'day'
         billableQ = Q(project__type__billable=True)
@@ -172,8 +210,14 @@ class TestHourlyReport(TimepieceDataTestCase):
         self.assertEqual(list(pj_non_billable), list(pj_non_billable_q))
 
     def testWeeklyTotal(self):
-        start = datetime.datetime(2011, 1, 3)
-        end = datetime.datetime(2011, 1, 6)
+        start = timezone.make_aware(
+            datetime.datetime(2011, 1, 3),
+            timezone.get_current_timezone(),
+        )
+        end = timezone.make_aware(
+            datetime.datetime(2011, 1, 6),
+            timezone.get_current_timezone(),
+        )
         self.bulk_entries(start, end)
         trunc = 'week'
         date_headers = utils.generate_dates(start, end, trunc)
@@ -183,15 +227,24 @@ class TestHourlyReport(TimepieceDataTestCase):
         self.assertEqual(pj_totals[1], [72])
 
     def testMonthlyTotal(self):
-        start = datetime.datetime(2011, 1, 1)
-        end = datetime.datetime(2011, 3, 1)
+        start = timezone.make_aware(
+            datetime.datetime(2011, 1, 1),
+            timezone.get_current_timezone(),
+        )
+        end = timezone.make_aware(
+            datetime.datetime(2011, 3, 1),
+            timezone.get_current_timezone(),
+        )
         trunc = 'month'
         last_day = randint(5, 10)
         worked1 = randint(1, 3)
         worked2 = randint(1, 3)
         for month in xrange(1, 7):
             for day in xrange(1, last_day + 1):
-                day = datetime.datetime(2011, month, day)
+                day = timezone.make_aware(
+                    datetime.datetime(2011, month, day),
+                    timezone.get_current_timezone(),
+                )
                 self.log_time(start=day, delta=(worked1, 0), user=self.user)
                 self.log_time(start=day, delta=(worked2, 0), user=self.user2)
         date_headers = utils.generate_dates(start, end, trunc)
@@ -203,6 +256,10 @@ class TestHourlyReport(TimepieceDataTestCase):
 
     def argsHelper(self, args={}, start=datetime.datetime(2011, 1, 2),
                    end=datetime.datetime(2011, 1, 4)):
+        if not timezone.is_aware(start):
+            start = timezone.make_aware(start, timezone.get_current_timezone())
+        if not timezone.is_aware(end):
+            end = timezone.make_aware(end, timezone.get_current_timezone())
         args.update({
             'from_date': start.strftime('%m/%d/%Y'),
             'to_date': end.strftime('%m/%d/%Y'),
@@ -307,8 +364,9 @@ class TestHourlyReport(TimepieceDataTestCase):
         self.checkTotals(args, data)
 
     def testForm_Month(self):
-        start = datetime.datetime(2011, 1, 4)
-        end = datetime.datetime(2011, 3, 28)
+        tz = timezone.get_current_timezone()
+        start = datetime.datetime(2011, 1, 4, tzinfo=tz)
+        end = datetime.datetime(2011, 3, 28, tzinfo=tz)
         args = {
             'billable': True,
             'non_billable': False,

@@ -1,4 +1,4 @@
-from datetime import date, datetime, timedelta, time as time_obj
+import datetime
 from dateutil import rrule
 from dateutil.relativedelta import relativedelta
 from decimal import Decimal
@@ -15,7 +15,13 @@ from django.contrib.sites.models import Site
 from django.utils.functional import lazy
 from django.core.urlresolvers import reverse
 
+try:
+    from django.utils import timezone
+except ImportError:
+    from timepiece import timezone
+
 reverse_lazy = lazy(reverse, str)
+
 
 def slugify_uniquely(s, queryset=None, field='slug'):
     """
@@ -99,7 +105,8 @@ def parse_time(time_str, input_formats=None):
             continue
         else:
             # turn the time_struct into a datetime.time object
-            return time_obj(*value[3:6])
+            return timezone.make_aware(datetime.time(*value[3:6]),
+                timezone.get_current_timezone())
 
     # return None if there's no matching format
     return None
@@ -119,27 +126,46 @@ def get_total_time(seconds):
 
 def get_month_start(from_day=None):
     if not from_day:
-        from_day = date.today()
+        from_day = datetime.date.today()
+    from_day = datetime.datetime.combine(from_day,
+        datetime.time(tzinfo=timezone.get_current_timezone()))
     return from_day.replace(day=1)
 
 
 def get_week_start(day=None):
     if not day:
-        day = date.today()
+        day = datetime.date.today()
     isoweekday = day.isoweekday()
     if isoweekday != 1:
-        day = day - timedelta(days=isoweekday - 1)
+        day = day - datetime.timedelta(days=isoweekday - 1)
+    day = datetime.datetime.combine(day,
+        datetime.time(tzinfo=timezone.get_current_timezone()))
     return day
 
 
 def get_last_billable_day(day=None):
     if not day:
-        day = date.today()
+        day = datetime.date.today()
     day += relativedelta(months=1)
-    return get_week_start(day) - timedelta(days=1)
+    return get_week_start(get_month_start(day)) - \
+        datetime.timedelta(days=1)
 
 
 def generate_dates(start=None, end=None, by='week'):
+    try:
+        if not timezone.is_aware(start):
+            start = timezone.make_aware(start, timezone.get_current_timezone())
+    except AttributeError:
+        if start:
+            start = datetime.datetime.combine(start,
+                datetime.time(tzinfo=timezone.get_current_timezone()))
+    try:
+        if not timezone.is_aware(end):
+            end = timezone.make_aware(end, timezone.get_current_timezone())
+    except AttributeError:
+        if end:
+            end = datetime.datetime.combine(end,
+                datetime.time(tzinfo=timezone.get_current_timezone()))
     if by == 'month':
         start = get_month_start(start)
         return rrule.rrule(rrule.MONTHLY, dtstart=start, until=end)
@@ -152,7 +178,7 @@ def generate_dates(start=None, end=None, by='week'):
 
 def get_week_window(day):
     start = get_week_start(day)
-    end = start + timedelta(weeks=1)
+    end = start + datetime.timedelta(weeks=1)
     weeks = generate_dates(end=end, start=start, by='week')
     return list(weeks)
 
@@ -170,7 +196,7 @@ def date_filter(func):
                 raise Http404
         else:
             form = timepiece_forms.DateForm()
-            today = date.today()
+            today = datetime.date.today()
             from_date = today.replace(day=1)
             to_date = from_date + relativedelta(months=1)
             status = activity = None
@@ -217,6 +243,13 @@ def grouped_totals(entries):
                                                         'project__name')
     weeks = {}
     for week, week_entries in groupby(weekly, lambda x: x['date']):
+        try:
+            if timezone.is_naive(week):
+                week = timezone.make_aware(week,
+                    timezone.get_current_timezone())
+        except AttributeError:
+            week = datetime.datetime.combine(week,
+                timezone.get_current_timezone())
         weeks[week] = get_hours(week_entries)
     days = []
     last_week = None
@@ -274,6 +307,8 @@ def user_date_totals(user_entries):
     """Yield a user's name and a dictionary of their hours"""
     date_dict = {}
     for date, date_entries in groupby(user_entries, lambda x: x['date']):
+        if isinstance(date, datetime.datetime):
+            date = date.date()
         d_entries = list(date_entries)
         name = ' '.join((d_entries[0]['user__first_name'],
                         d_entries[0]['user__last_name']))
@@ -293,6 +328,8 @@ def project_totals(entries, date_headers, hour_type, overtime=False,
         name, date_dict = user_date_totals(user_entries)
         dates = []
         for index, day in enumerate(date_headers):
+            if isinstance(day, datetime.datetime):
+                day = day.date()
             total = date_dict.get(day, {}).get(hour_type, 0)
             totals[index] += total
             dates.append(total)
@@ -324,7 +361,7 @@ def payroll_totals(entries, date, leave):
         worked_hours = [billable, non_billable, total_worked]
         return map(sum, zip(worked_hours, all_worked_hours))
 
-    date = datetime(month=date.month, day=date.day, year=date.year)
+    date = datetime.date(month=date.month, day=date.day, year=date.year)
     for user, user_entries in groupby(entries, lambda x: x['user']):
         name, date_dict = user_date_totals(user_entries)
         hours_dict = date_dict.get(date, {})

@@ -5,6 +5,11 @@ from django.conf import settings
 from django.core.urlresolvers import reverse
 from django.contrib.auth.models import Permission
 
+try:
+    from django.utils import timezone
+except ImportError:
+    from timepiece import timezone
+
 from timepiece import models as timepiece
 from timepiece import forms as timepiece_forms
 from timepiece import utils
@@ -21,13 +26,14 @@ class PayrollTest(TimepieceDataTestCase):
         settings.TIMEPIECE_PROJECTS = {
             'sick': self.sick.pk, 'vacation': self.vacation.pk
         }
-        self.next = datetime.datetime(2011, 6, 1)
-        self.overtime_before = datetime.datetime(2011, 4, 29)
-        self.first = datetime.datetime(2011, 5, 1)
-        self.first_week = datetime.datetime(2011, 5, 2)
-        self.middle = datetime.datetime(2011, 5, 18)
-        self.last_billable = datetime.datetime(2011, 5, 28)
-        self.last = datetime.datetime(2011, 5, 31)
+        tz = timezone.get_current_timezone()
+        self.next = datetime.datetime(2011, 6, 1, tzinfo=tz)
+        self.overtime_before = datetime.datetime(2011, 4, 29, tzinfo=tz)
+        self.first = datetime.datetime(2011, 5, 1, tzinfo=tz)
+        self.first_week = datetime.datetime(2011, 5, 2, tzinfo=tz)
+        self.middle = datetime.datetime(2011, 5, 18, tzinfo=tz)
+        self.last_billable = datetime.datetime(2011, 5, 28, tzinfo=tz)
+        self.last = datetime.datetime(2011, 5, 31, tzinfo=tz)
         self.dates = [
             self.overtime_before, self.first, self.first_week, self.middle,
             self.last, self.last_billable, self.next
@@ -64,7 +70,8 @@ class PayrollTest(TimepieceDataTestCase):
     def testLastBillable(self):
         """Test the get_last_billable_day utility for validity"""
         months = range(1, 13)
-        first_days = [datetime.datetime(2011, month, 1) for month in months]
+        first_days = [timezone.make_aware(datetime.datetime(2011, month, 1), \
+            timezone.get_current_timezone()) for month in months]
         last_billable = [utils.get_last_billable_day(day).day \
                          for day in first_days]
         #should equal the last saturday of every month in 2011
@@ -121,9 +128,15 @@ class PayrollTest(TimepieceDataTestCase):
         """Date_trunc on week should result in correct overtime totals"""
         dates = self.dates
         for day_num in xrange(28, 31):
-            dates.append(datetime.datetime(2011, 4, day_num))
+            dates.append(timezone.make_aware(
+                datetime.datetime(2011, 4, day_num),
+                timezone.get_current_timezone()
+            ))
         for day_num in xrange(5, 9):
-            dates.append(datetime.datetime(2011, 5, day_num))
+            dates.append(timezone.make_aware(
+                datetime.datetime(2011, 5, day_num),
+                timezone.get_current_timezone()
+            ))
         for day in dates:
             self.make_logs(day)
 
@@ -137,13 +150,22 @@ class PayrollTest(TimepieceDataTestCase):
             self.assertEqual(weekly_totals[5], overtime)
         check_overtime()
         #Entry on following Monday doesn't add to week1 or overtime
-        self.make_logs(datetime.datetime(2011, 5, 9))
+        self.make_logs(timezone.make_aware(
+            datetime.datetime(2011, 5, 9),
+            timezone.get_current_timezone(),
+        ))
         check_overtime()
         #Entries in previous month before last_billable do not change overtime
-        self.make_logs(datetime.datetime(2011, 4, 24))
+        self.make_logs(timezone.make_aware(
+            datetime.datetime(2011, 4, 24),
+            timezone.get_current_timezone(),
+        ))
         check_overtime()
         #Entry in previous month after last_billable change week0 and overtime
-        self.make_logs(datetime.datetime(2011, 4, 25, 1, 0))
+        self.make_logs(timezone.make_aware(
+            datetime.datetime(2011, 4, 25, 1, 0),
+            timezone.get_current_timezone(),
+        ))
         check_overtime(Decimal('66.00'), Decimal('55.00'), Decimal('41.00'))
 
     def testMonthlyTotals(self):
