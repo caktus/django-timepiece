@@ -306,6 +306,22 @@ body {
          * Start Ledger
          *****************************************/
 
+        .totals {
+            border: 0px;
+            empty-cells: hide;
+            border-radius: 0px;
+            -webkit-border-radius: 0px;
+            -moz-border-radius: 0px;
+
+            td {
+                border-bottom: 1px solid #DDD;
+                empty-cells: show;
+                &:last-child {
+                    border-right: 1px solid #DDD;
+                }
+            }
+        }
+
         #full-timesheet {
             width: 100%;
             min-width: 700px;
@@ -314,23 +330,35 @@ body {
                 width: 100%;
                 table-layout: fixed;
 
-                &#entries {
-                    th, td {
-                        width: 10%;
-                        overflow-x: auto;
+                th, td {
+                    width: 10%;
+                    overflow-x: auto;
 
-                        &.comments {
-                            width: 25%;
-                        }
+                    &.comments {
+                        width: 25%;
+                    }
 
-                        &.time {
-                            width: 7%;
-                            .word-wrap(false);
-                        }
+                    &.time {
+                        width: 7%;
+                        .word-wrap(false);
+                    }
 
-                        &.aux {
-                            width: 5%;
-                        }
+                    &.aux {
+                        width: 5%;
+                    }
+                }
+            }
+        }
+
+        #hourly-summary {
+            table {
+                th, td {
+                    &.billable, &.non-billable {
+                        width: 20%;
+                    }
+
+                    &.total {
+                        width: 15%;
                     }
                 }
             }
