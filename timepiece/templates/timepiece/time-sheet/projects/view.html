@@ -11,7 +11,7 @@
 {% endblock crumbs %}
 
 {% block content %}
-    <div class="row">
+    <div class="row-fluid">
         <div class="span12">
             <h2>{{ project }} Time Sheet ({{ from_date|date:"N j" }} &mdash; {{ to_date|date:"N j" }})</h2>
             <ul class="unstyled subnav">
@@ -20,7 +20,7 @@
         </div>
     </div>
 
-    <div class="row">
+    <div class="row-fluid">
         <div class="span12">
             <form class="form-inline" method="get" action="" id="date-filter" accept-charset="utf-8">
                 {{ year_month_form }}
@@ -32,7 +32,7 @@
         </div>
     </div>
 
-    <div class="row">
+    <div class="row-fluid">
         {% if user_entries %}
             <div class="span3">
                 <table class='table table-bordered table-striped'>
@@ -63,7 +63,7 @@
     </div>
 
 
-    <div class="row">
+    <div class="row-fluid">
         <div class="span12">
             {% if entries %}
                 <table class="table table-bordered table-striped">
