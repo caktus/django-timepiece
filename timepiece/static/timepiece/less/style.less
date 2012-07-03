@@ -1,5 +1,11 @@
 // Includes
 @import "../../bootstrap/less/bootstrap.less";
+@import "../../bootstrap/less/responsive.less";
+
+// Replace the 2.0.4 mixin with the 2.1.0 WIP mixin
+// This gives us an offset for fluid layouts
+// ref: https://github.com/twitter/bootstrap/pull/3764/
+@import "fluidoffsetmixin.less"; 
 
 // Variables & Mixins
 @white: #FFFFFF;
@@ -13,6 +19,18 @@
 
 .list-icon(@icon) {
     list-style-image: url('../../images/icons/@{icon}');
+}
+
+.word-wrap(@wrap) {
+    word-wrap: normal;
+    word-break: normal;
+    -ms-word-break: normal;
+}
+
+.word-wrap(@wrap) when (@wrap = true) {
+    word-wrap: break-word;
+    word-break: break-all;
+    -ms-word-break: break-all;
 }
 
 body {
@@ -33,7 +51,7 @@ body {
     }
 
     textarea {
-        width: 30em;
+        width: 100%;
         height: 10em;
     }
 
@@ -110,6 +128,13 @@ body {
         @lightgray: #AAAAAA;
 
         tr {
+
+            td {
+                &.break {
+                    .word-wrap(true);
+                }
+            }
+
             &.ledger_header th {
                 background-color: @lightblue !important;
             }
@@ -286,6 +311,76 @@ body {
 
         /*****************************************
          * End general content
+         *****************************************/
+
+
+        /*****************************************
+         * Start Ledger
+         *****************************************/
+
+        .totals {
+            border: 0px;
+            empty-cells: hide;
+            border-radius: 0px;
+            -webkit-border-radius: 0px;
+            -moz-border-radius: 0px;
+
+            td {
+                border-bottom: 1px solid #DDD;
+                empty-cells: show;
+                &:last-child {
+                    border-right: 1px solid #DDD;
+                }
+            }
+        }
+
+        #full-timesheet {
+            width: 100%;
+            min-width: 700px;
+
+            table {
+                width: 100%;
+                table-layout: fixed;
+
+                th, td {
+                    width: 10%;
+                    overflow-x: auto;
+
+                    &.comments {
+                        width: 25%;
+                    }
+
+                    &.time {
+                        width: 7%;
+                        .word-wrap(false);
+                    }
+
+                    &.aux {
+                        width: 5%;
+                    }
+                }
+            }
+        }
+
+        #hourly-summary {
+            table {
+                width: 100%;
+                table-layout: fixed;
+                
+                th, td {
+                    &.billable, &.non-billable {
+                        width: 20%;
+                    }
+
+                    &.total {
+                        width: 15%;
+                    }
+                }
+            }
+        }
+
+        /*****************************************
+         * End Ledger
          *****************************************/
 
         /*****************************************
