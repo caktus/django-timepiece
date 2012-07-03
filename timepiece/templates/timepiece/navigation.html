@@ -1,3 +1,5 @@
+{% load timepiece_tags %}
+
 <div class="navbar navbar-fixed-top">
     <div class="navbar-inner">
         <div class="container-fluid visible-desktop">
@@ -48,6 +50,11 @@
                             </ul>
                         </li>
                     {% endif %}
+                    
+                    {% if extra_nav %}
+                        <li><a href="{% url create_paste_view %}">Paste Bin</a></li>
+                    {% endif %}
+
                 </ul>
             {% endblock %}
 
