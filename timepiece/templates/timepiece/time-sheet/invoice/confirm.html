@@ -10,13 +10,13 @@
 {% endblock crumbs %}
 
 {% block content %}
-    <div class="row">
+    <div class="row-fluid">
         <div class="span12">
             <h2>Invoice {{ project.name }} Hours {% if from_date %}from {{ from_date.date }} to {{ to_date.date }}{% else %}through {{ to_date.date }}{% endif %}</h2>
         </div>
     </div>
 
-    <div class="row">
+    <div class="row-fluid">
         <div class="span8">
             <form class="form-horizontal" method="post">
                 {% csrf_token %}
@@ -52,7 +52,7 @@
         </div>
     </div>
 
-    <div class="row">
+    <div class="row-fluid">
         <div class="span12">
             <h3>Selected Entries</h3>
             {% include 'timepiece/time-sheet/_weekly_entry_list.html' %}

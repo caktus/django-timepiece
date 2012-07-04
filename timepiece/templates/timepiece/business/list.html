@@ -4,7 +4,7 @@
 {% block title %}Businesses{% endblock %}
 
 {% block content %}
-    <div class="row">
+    <div class="row-fluid">
         <div class="span12">
             <h2>Businesses</h2>
             <ul class="unstyled subnav">
@@ -15,7 +15,7 @@
         </div>
     </div>
 
-    <div class="row">
+    <div class="row-fluid">
         <div class="span12">
             <form class='form-inline' accept-charset='UTF-8' method='get' action=''>
                 {{ form|as_bootstrap:"inline" }}
@@ -24,7 +24,7 @@
         </div>
     </div>
 
-    <div class="row">
+    <div class="row-fluid">
         <div class="span12">
             {% load pagination_tags %}
             {% autopaginate businesses %}
