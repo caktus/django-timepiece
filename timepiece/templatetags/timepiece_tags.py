@@ -5,8 +5,6 @@ import calendar
 from decimal import Decimal
 
 from django import template
-from django.template.loader import find_template
-from django.conf import settings
 from django.db.models import Sum
 from django.core.urlresolvers import reverse
 
