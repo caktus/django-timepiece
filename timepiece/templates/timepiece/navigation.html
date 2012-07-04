@@ -1,4 +1,5 @@
 {% load timepiece_tags %}
+{% load url from future %}
 
 <div class="navbar navbar-fixed-top">
     <div class="navbar-inner">
@@ -10,8 +11,8 @@
                         <li class="dropdown">
                             <a href="#" class="dropdown-toggle" data-toggle="dropdown">Dashboard <b class="caret"></b></a>
                             <ul class="dropdown-menu">
-                                <li><a href="{% url timepiece-entries %}">Time Tracking</a></li>
-                                <li><a href="{% url view_person_time_sheet request.user.pk %}">My Ledger</a></li>
+                                <li><a href="{% url 'timepiece-entries' %}">Time Tracking</a></li>
+                                <li><a href="{% url 'view_person_time_sheet' request.user.pk %}">My Ledger</a></li>
                             </ul>
                         </li>
                     {% endif %}
@@ -20,13 +21,13 @@
                             <a href="#" class="dropdown-toggle" data-toggle="dropdown">CRM <b class="caret"></b></a>
                             <ul class="dropdown-menu">
                                 {% if perms.timepiece.view_project %}
-                                    <li><a href="{% url list_projects %}">Projects</a></li>
+                                    <li><a href="{% url 'list_projects' %}">Projects</a></li>
                                 {% endif %}
                                 {% if perms.auth.view_user %}
-                                    <li><a href="{% url list_people %}">People</a></li>
+                                    <li><a href="{% url 'list_people' %}">People</a></li>
                                 {% endif %}
                                 {% if perms.timepiece.view_business %}
-                                    <li><a href="{% url list_businesses %}">Businesses</a></li>
+                                    <li><a href="{% url 'list_businesses' %}">Businesses</a></li>
                                 {% endif %}
                             </ul>
                         </li>
@@ -35,25 +36,25 @@
                         <li class="dropdown">
                             <a href="#" class="dropdown-toggle" data-toggle="dropdown">Reports <b class="caret"></b></a>
                             <ul class="dropdown-menu">
-                                <li><a href="{% url hourly_report %}">Hourly</a></li>
+                                <li><a href="{% url 'hourly_report' %}">Hourly</a></li>
                                 {% if perms.timepiece.view_payroll_summary %}
-                                    <li><a href="{% url payroll_summary %}">Payroll</a></li>
+                                    <li><a href="{% url 'payroll_summary' %}">Payroll</a></li>
                                 {% endif %}
                                 {% if perms.timepiece.add_project_contract %}
-                                    <li><a href="{% url list_contracts %}">Contracts</a></li>
+                                    <li><a href="{% url 'list_contracts' %}">Contracts</a></li>
                                 {% endif %}
-                                <li><a href="{% url timepiece-summary %}">General Ledger</a></li>
+                                <li><a href="{% url 'timepiece-summary' %}">General Ledger</a></li>
                                 <li class="divider"></li>
                                 {% if perms.timepiece.edit_person_time_sheet %}
-                                    <li><a href="{% url invoice_projects %}">Invoices</a></li>
+                                    <li><a href="{% url 'invoice_projects' %}">Invoices</a></li>
                                 {% endif %}
                             </ul>
                         </li>
                     {% endif %}
                     
-                    {% if extra_nav %}
-                        <li><a href="{% url create_paste_view %}">Paste Bin</a></li>
-                    {% endif %}
+                    {% for url_name, link_text in extra_nav %}
+                        <li><a href="{% url url_name %}">{{ link_text }}</a></li>
+                    {% endfor %}
 
                 </ul>
             {% endblock %}
@@ -65,22 +66,22 @@
                             <a href="" class="dropdown-toggle" data-toggle="dropdown">{{ user.email }} <b class="caret"></b></a>
                             <ul class="dropdown-menu">
                                 {% if user.is_staff %}
-                                    <li><a href="{% url admin:index %}">Admin</a></li>
+                                    <li><a href="{% url 'admin:index' %}">Admin</a></li>
                                 {% endif %}
-                                <li><a href="{% url edit_settings %}">Settings</a></li>
-                                <li><a href="{% url change_password %}">Change Password</a></li>
+                                <li><a href="{% url 'edit_settings' %}">Settings</a></li>
+                                <li><a href="{% url 'change_password' %}">Change Password</a></li>
                                 <li class="divider"></li>
-                                <li><a href="{% url auth_logout %}">Logout</a></li>
+                                <li><a href="{% url 'auth_logout' %}">Logout</a></li>
                             </ul>
                         </li>
                     </ul>
                 {% else %}
-                    <a class="btn btn-primary pull-right" href="{% url auth_login %}">Login</a>
+                    <a class="btn btn-primary pull-right" href="{% url 'auth_login' %}">Login</a>
                 {% endif %}
 
                 {% block quick-search %}
                     {% if perms.timepiece.view_business %}
-                        <form class="navbar-search pull-right" action="{% url quick_search %}" method="get" accept-charset="utf-8">
+                        <form class="navbar-search pull-right" action="{% url 'quick_search' %}" method="get" accept-charset="utf-8">
                             {{ quick_search_form.quick_search }}
                         </form>
                     {% endif %}
@@ -105,8 +106,8 @@
                         <li class="dropdown">
                             <a href="/" class="dropdown-toggle" data-toggle="dropdown">Dashboard</a>
                             <ul class="dropdown-menu">
-                                <li><a href="{% url timepiece-entries %}">Time Tracking</a></li>
-                                <li><a href="{% url view_person_time_sheet request.user.pk %}">My Ledger</a></li>
+                                <li><a href="{% url 'timepiece-entries' %}">Time Tracking</a></li>
+                                <li><a href="{% url 'view_person_time_sheet' request.user.pk %}">My Ledger</a></li>
                             </ul>
                         </li>
                     {% endif %}

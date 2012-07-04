@@ -16,3 +16,10 @@ def quick_search(request):
     return {
         'quick_search_form': QuickSearchForm(),
     }
+
+
+def extra_nav(request):
+    context = {
+        'extra_nav': getattr(settings, 'EXTRA_NAV', [])
+    }
+    return context
