@@ -1203,18 +1203,6 @@ def create_edit_project(request, project_id=None):
 @permission_required('timepiece.view_payroll_summary')
 @render_with('timepiece/time-sheet/reports/summary.html')
 def payroll_summary(request):
-
-    def _get_project_labels(billable):
-        """Returns label list for project types with given billable status."""
-        project_types = timepiece.Attribute.objects.filter(
-                type='project-type', billable=billable)
-        labels = project_types.values_list('label', flat=True)
-        return list(labels)
-
-    labels = {}
-    labels['billable'] = _get_project_labels(billable=True)
-    labels['nonbillable'] = _get_project_labels(billable=False)
-
     year_month_form = timepiece_forms.YearMonthForm(request.GET or None)
     if request.GET and year_month_form.is_valid():
         from_date, to_date = year_month_form.save()
@@ -1241,8 +1229,7 @@ def payroll_summary(request):
                                   ).values('user', 'hours', 'project__name')
     month_entries = timepiece.Entry.objects.date_trunc('month')
     month_entries_valid = month_entries.filter(monthQ, statusQ, workQ)
-    monthly_totals = list(utils.payroll_totals(month_entries_valid,
-            from_date, leave, labels))
+    labels, monthly_totals = utils.payroll_totals(month_entries_valid, leave)
     # Unapproved and unverified hours
     entries = timepiece.Entry.objects.filter(monthQ)
     user_values = ['user__pk', 'user__first_name', 'user__last_name']
