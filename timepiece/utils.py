@@ -436,5 +436,6 @@ def payroll_totals(month_work_entries, month_leave_entries):
         row['grand_total'] = row['work_total'] + row['leave']['total']
 
     _summarize_work(totals)
-    rows.append(totals)
+    if totals['grand_total']:
+        rows.append(totals)
     return labels, rows
