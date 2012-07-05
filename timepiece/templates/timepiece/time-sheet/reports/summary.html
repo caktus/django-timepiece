@@ -74,10 +74,10 @@
                         <tr>
                             <th rowspan="2">Name</th>
                             <th colspan="{{ billable_labels|length }}">Billable Projects</th>
-                            <th colspan="2" rowspan="2">Billable Total</th>
+                            <th colspan="2" rowspan="2">Total Billable Hours</th>
                             <th colspan="{{ nonbillable_labels|length }}">Non-Billable Projects</th>
-                            <th colspan="2" rowspan="2">Non-Billable Total</th>
-                            <th rowspan="2">Total Worked</th>
+                            <th colspan="2" rowspan="2">Total Non-Billable Hours</th>
+                            <th rowspan="2">Total Worked Hours</th>
                             <th rowspan="2">Paid Leave</th>
                             <th rowspan="2">Grand Total</th>
                         </tr>
@@ -110,7 +110,7 @@
                                         {{ label }}: {{ hours|floatformat:2 }}<br />
                                     {% endfor %}
                                 </td>
-                                <td class="hours">{{ row.grand_total }}</td>
+                                <td class="hours">{{ row.grand_total|floatformat:2 }}</td>
                             </tr>
                         {% endfor %}
                     </tbody>

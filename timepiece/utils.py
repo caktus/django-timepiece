@@ -365,7 +365,8 @@ def payroll_totals(month_entries, date, leave, labels):
         total_worked = sum(totals.values())
         percentages = {}
         for status in ['billable', 'nonbillable']:
-            percentages[status] = totals[status] / total_worked * 100
+            percentages[status] = (totals[status] / total_worked * 100
+                    if total_worked else None)
         return total_worked, percentages
 
     all = {'name': 'Totals'}
@@ -406,4 +407,5 @@ def payroll_totals(month_entries, date, leave, labels):
             all['work_totals'])
     all['grand_total'] = all['work_sum'] + all['leave_sum']
 
-    yield all
+    if all['grand_total']:
+        yield all
