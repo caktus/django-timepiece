@@ -173,6 +173,11 @@ body {
         overflow-x: auto;
     }
 
+    .paste:hover {
+        cursor: hand;
+        cursor: pointer;
+    }
+
     #ui-datepicker-div {
         font-size: 80%;
     }
@@ -182,7 +187,7 @@ body {
      *****************************************/
 
     /*****************************************
-     * Start dashboard
+     * Start specific body ids
      *****************************************/
 
     &#dashboard {
@@ -191,8 +196,20 @@ body {
         }
     }
 
+    &#paste {
+        pre {
+            white-space: pre;
+        }
+
+        textarea {
+            width: 100%;
+            height: 25em;
+            font-family: 'Monaco', 'Nimbus Mono L', 'DejaVu Sans Mono', 'Courier New';
+        }
+    }
+
     /*****************************************
-     * End dashboard
+     * End specific body ids
      *****************************************/
 
     /*****************************************
