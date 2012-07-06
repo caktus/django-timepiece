@@ -49,15 +49,14 @@
 
     <div class="row-fluid">
         <div class="span12">
-            <form class="form-inline" method="get" action="" accept-charset="utf-8">
-                <div class="visible-desktop">
-                    {{ year_month_form|as_bootstrap:"inline" }}
-                    <input type="submit" name="yearmonth" class="btn" value="Update" />
-                </div>
-                <div class="hidden-desktop">
-                    {{ year_month_form|as_bootstrap }}
-                    <input type="submit" name="yearmonth" class="btn" value="Update" />
-                </div>
+            {# We have to duplicate the form so the hidden fields are not in the same form #}
+            <form class="form-inline visible-desktop" method="get" action="" accept-charset="utf-8">
+                {{ year_month_form|as_bootstrap:"inline" }}
+                <input type="submit" name="yearmonth" class="btn" value="Update" />
+            </form>
+            <form class="hidden-desktop" method="get" action="" accept-charset="utf-8">
+                {{ year_month_form|as_bootstrap }}
+                <input type="submit" name="yearmonth" class="btn" value="Update" />
             </form>
         </div>
     </div>
