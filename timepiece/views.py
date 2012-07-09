@@ -113,9 +113,11 @@ def view_entries(request):
         user=request.user,
         end_time__isnull=True,
     )
-    for entry in my_active_entries:
-        active_hours = get_active_hours(entry)
-        current_total += active_hours
+
+    if current_total:
+        current_total += sum([get_active_hours(entry) \
+            for entry in my_active_entries]) or 0
+
 #     temporarily disabled until the allocations represent accurate goals
 #     -TM 6/27
     allocations = []
