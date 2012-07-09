@@ -27,10 +27,10 @@
             <td>{{ entry.activity }}</td>
             <td>{{ entry.start_time|date:"P" }}</td>
             <td>
-                {% if entry.end_time %}
-                    {{ entry.end_time|date:"P" }}
-                {% else %}
+                {% if active or not entry.end_time %}
                     <a href="{% url timepiece-clock-out entry.id %}">Clock Out</a>
+                {% else %}
+                    {{ entry.end_time|date:"P" }}
                 {% endif %}
             </td>
             <td class="hours">

@@ -72,7 +72,7 @@
                 </h3>
 
                 {% with my_active_entries as entries %}
-                    {% include "timepiece/time-sheet/_entry_list.html" %}
+                    {% include "timepiece/time-sheet/_entry_list.html" with active="True" %}
                 {% endwith %}
             </div>
         </div>
