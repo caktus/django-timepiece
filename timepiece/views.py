@@ -128,6 +128,7 @@ def view_entries(request):
 
     project_entries = entries.exclude(
         project__in=allocated_projects,
+        end_time__isnull=True
     ).values(
         'project__name', 'project__pk'
     ).annotate(sum=Sum('hours')).order_by('project__name')
