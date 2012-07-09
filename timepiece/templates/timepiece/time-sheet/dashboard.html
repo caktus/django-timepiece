@@ -72,7 +72,7 @@
                 </h3>
 
                 {% with my_active_entries as entries %}
-                {% include "timepiece/time-sheet/_entry_list.html" %}
+                    {% include "timepiece/time-sheet/_entry_list.html" %}
                 {% endwith %}
             </div>
         </div>
@@ -90,6 +90,19 @@
                         </tr>
                     </thead>
                     <tbody>
+                        {% if my_active_entries %}
+                            <tr class="ledger_header">
+                                <th colspan="2">Current Entry</th>
+                            </tr>
+
+                            {% for entry in my_active_entries %}
+                                <tr>
+                                    <td><a href="{% url timepiece-clock-in %}?project={{ entry.project__pk }}">{{ entry.project }}</a></td>
+                                    <td class="hours">{% get_active_hours entry %}</td>
+                                </tr>
+                            {% endfor %}
+                        {% endif %}
+
                         {% for assignment in allocations %}
                             <tr>
                                 <td><a href="{% url timepiece-clock-in %}?project={{ assignment.assignment.contract.project.pk }}">{{ assignment.assignment.contract.project }}</a></td>
@@ -99,12 +112,20 @@
                             </tr>
                         {% endfor %}
 
+                        <tr class="ledger_header">
+                            <th colspan="2">Past Entries</th>
+                        </tr>
+
                         {% for entry in project_entries %}
                             <tr>
                                 <td><a href="{% url timepiece-clock-in %}?project={{ entry.project__pk }}">{{ entry.project__name }}</a></td>
                                 <td class="hours">{{ entry.sum }}</td>
                             </tr>
                         {% endfor %}
+
+                        <tr class="ledger_header">
+                            <th colspan="2">Time Totals</th>
+                        </tr>
 
                         {% for row in activity_entries %}
                             <tr>

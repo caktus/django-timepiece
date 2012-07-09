@@ -39,6 +39,7 @@ from timepiece import models as timepiece
 from timepiece import utils
 from timepiece import forms as timepiece_forms
 from timepiece.templatetags.timepiece_tags import seconds_to_hours
+from timepiece.templatetags.timepiece_tags import get_active_hours
 
 
 @login_required
@@ -80,11 +81,12 @@ def view_entries(request):
     if request.user.has_perm('timepiece.can_clock_in'):
         view_entries = True
     week_start = utils.get_week_start()
+    time_q = Q(end_time__gte=week_start) | Q(end_time__isnull=True)
     entries = timepiece.Entry.objects.select_related(
         'project__business',
     ).filter(
-        user=request.user,
-        end_time__gte=week_start,
+        time_q,
+        user=request.user
     ).select_related('project', 'activity', 'location')
     today = datetime.date.today()
     assignments = timepiece.ContractAssignment.objects.filter(
@@ -111,6 +113,8 @@ def view_entries(request):
         user=request.user,
         end_time__isnull=True,
     )
+    active_hours = get_active_hours(my_active_entries.get())
+    current_total += active_hours
 #     temporarily disabled until the allocations represent accurate goals
 #     -TM 6/27
     allocations = []
