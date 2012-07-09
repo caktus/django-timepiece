@@ -26,10 +26,9 @@ def active_entries(request):
         user=request.user,
     ).select_related('user', 'project', 'activity')
 
-    context = {
+    return {
         'active_entries': active_entries,
     }
-    return context
 
 
 def extra_nav(request):
