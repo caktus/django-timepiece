@@ -348,17 +348,21 @@ def payroll_totals(month_work_entries, month_leave_entries):
     """Summarizes monthly work and leave totals, grouped by user.
 
     Returns (labels, rows).
-        labels -> {'billable': [status_label], 'nonbillable': [status_label]}
-        rows -> maps totals for user.
-            name:
-            billable, nonbillable: {
+        labels -> {'billable': [status_labels], 'nonbillable': [status_labels]}
+        rows -> [{
+            name: name of user,
+            billable: {
                 hours: [hours_for_label],
                 total: total hours for status,
                 percentage: percentage of work_total (out of 100),
-            }
-            work_total: sum of billable.total and nonbillable.total
-            leave: from format_leave
+            },
+            nonbillable: same as billable,
+            work_total: sum of billable.total and nonbillable.total,
+            leave: from format_leave,
             grand_total: sum of work_total and leave_total
+        }]
+
+    The last row contains sum totals for all other rows.
     """
     def _get_name(entries):
         """Helper for getting the associated user's first and last name."""
@@ -368,14 +372,14 @@ def payroll_totals(month_work_entries, month_leave_entries):
         return name
 
     def _get_index(status, label):
-        """Returns the index where label hours should be recorded.
+        """Returns the index where hours for status/label should be recorded.
 
-        If the label does not exist, then it is added to the labels listing.
-        Each row in rows, and the totals row, is updated accordingly.
+        If the label does not exist, then it is added to the labels list.
+        Each row and the totals row is updated accordingly.
         """
         if label in labels[status]:
             return labels[status].index(label)
-        # Update labels, rows, and totals to reflect the addition.
+        # Otherwise: update labels, rows, and totals to reflect the addition.
         labels[status].append(label)
         for row in rows:
             row[status]['hours'].append(Decimal())
@@ -383,9 +387,9 @@ def payroll_totals(month_work_entries, month_leave_entries):
         return len(labels[status]) - 1
 
     def _construct_row(name):
-        """Constructs an empty row."""
+        """Constructs an empty row for the given name."""
         row = {'name': name}
-        for status in ('billable', 'nonbillable'):
+        for status in labels.keys():
             row[status] = {
                 'hours': [Decimal()] * len(labels[status]),
                 'total': Decimal(),
@@ -398,8 +402,8 @@ def payroll_totals(month_work_entries, month_leave_entries):
 
     def _summarize_work(row):
         """Adds work_total and percentages for each status in row."""
-        row['work_total'] = (row['billable']['total'] +
-                row['nonbillable']['total'])
+        work_total = sum([row[status]['total'] for status in labels.keys()])
+        row['work_total'] = work_total
         if row['work_total']:
             for status in ('billable', 'nonbillable'):
                 percentage = row[status]['total'] / row['work_total'] * 100
@@ -421,21 +425,22 @@ def payroll_totals(month_work_entries, month_leave_entries):
             index = _get_index(status, label)
             hours = entry['hours']
             row[status]['hours'][index] += hours
-            totals[status]['hours'][index] += hours
             row[status]['total'] += hours
+            totals[status]['hours'][index] += hours
             totals[status]['total'] += hours
         _summarize_work(row)
 
         row['leave']['hours'], row['leave']['total'] = (
                 format_leave(leave_entries))
         for desc, hours in row['leave']['hours'].items():
-            new_hours = totals['leave']['hours'].get(desc, 0) + hours
-            totals['leave']['hours'][desc] = new_hours
+            new_total = totals['leave']['hours'].get(desc, 0) + hours
+            totals['leave']['hours'][desc] = new_total
         totals['leave']['total'] += row['leave']['total']
 
         row['grand_total'] = row['work_total'] + row['leave']['total']
 
     _summarize_work(totals)
+    totals['grand_total'] = totals['work_total'] + totals['leave']['total']
     if totals['grand_total']:
         rows.append(totals)
     return labels, rows

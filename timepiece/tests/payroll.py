@@ -19,6 +19,7 @@ from dateutil.relativedelta import relativedelta
 
 
 class PayrollTest(TimepieceDataTestCase):
+
     def setUp(self):
         super(PayrollTest, self).setUp()
         self.sick = self.create_project(name='sick')
@@ -49,23 +50,29 @@ class PayrollTest(TimepieceDataTestCase):
         self.log_time(start=start, delta=delta, user=user, status=status,
                       billable=billable, project=project)
 
-    def make_logs(self, day=None, user=None):
+    def make_logs(self, day=None, user=None, billable_project=None,
+            nonbillable_project=None):
         if not user:
             user = self.user
         if not day:
             day = self.first
-        billable = self.make_entry(user, day, (3, 30))
-        non_billable = self.make_entry(user, day, (2, 0), billable=False)
-        invoiced = self.make_entry(user, day, (5, 30), status='invoiced')
-        unapproved = self.make_entry(user, day, (6, 0), status='verified')
+        billable = self.make_entry(user, day, (3, 30),
+                project=billable_project)
+        non_billable = self.make_entry(user, day, (2, 0),
+                project=nonbillable_project)
+        invoiced = self.make_entry(user, day, (5, 30), status='invoiced',
+                project=billable_project)
+        unapproved = self.make_entry(user, day, (6, 0), status='verified',
+                project=billable_project)
         sick = self.make_entry(user, day, (8, 0), project=self.sick)
         vacation = self.make_entry(user, day, (4, 0), project=self.vacation)
 
-    def all_logs(self, user=None):
+    def all_logs(self, user=None, billable_project=None,
+            nonbillable_project=None):
         if not user:
             user = self.user
         for day in self.dates:
-            self.make_logs(day, user)
+            self.make_logs(day, user, billable_project, nonbillable_project)
 
     def testLastBillable(self):
         """Test the get_last_billable_day utility for validity"""
@@ -91,10 +98,11 @@ class PayrollTest(TimepieceDataTestCase):
         projects = getattr(settings, 'TIMEPIECE_PROJECTS', {})
         leave = timepiece.Entry.objects.filter(project__in=projects.values())
         leave = leave.values('user', 'hours', 'project__name')
-        desc, totals = utils.format_leave(leave)
-        self.assertEqual(desc[0], (u'vacation', Decimal('4.00')))
-        self.assertEqual(desc[1], (u'sick', Decimal('8.00')))
-        self.assertEqual(totals, Decimal('12.00'))
+        desc, total = utils.format_leave(leave)
+        self.assertEqual(desc[u'vacation'], Decimal('4.00'))
+        self.assertEqual(desc[u'sick'], Decimal('8.00'))
+        self.assertEqual(len(desc), 2)
+        self.assertEqual(total, Decimal('12.00'))
 
     def testGetHourSummaries(self):
         """
@@ -112,7 +120,7 @@ class PayrollTest(TimepieceDataTestCase):
                          [(0, 0), (0, 0), 0.0])
 
     def testWeeklyTotals(self):
-        self.all_logs()
+        self.all_logs(self.user)
         self.all_logs(self.user2)
         self.client.login(username='superuser', password='abc')
         response = self.client.get(self.url, self.args)
@@ -169,31 +177,60 @@ class PayrollTest(TimepieceDataTestCase):
         check_overtime(Decimal('66.00'), Decimal('55.00'), Decimal('41.00'))
 
     def testMonthlyTotals(self):
-        self.all_logs()
-        self.all_logs(self.user2)
+        """Test correctness of monthly totals in payroll summary view.
+            labels: maps {'billable_status': [project_type_label]}
+            rows: a list of maps of monthly totals to user.
+            totals: the last row should be a map of sum totals of all users.
+        """
+        billable_project = self.create_project(name="Billable", billable=True)
+        nonbillable_project = self.create_project(name="Nonbillable",
+                billable=False)
+        self.all_logs(self.user, billable_project, nonbillable_project)
+        self.all_logs(self.user2, billable_project, nonbillable_project)
         self.client.login(username='superuser', password='abc')
         response = self.client.get(self.url, self.args)
-        monthly_totals = response.context['monthly_totals']
-        # Test the first entry
-        self.assertEqual(monthly_totals[0][1],
-                         [(Decimal('45.00'), 81.82),
-                          (Decimal('10.00'), 18.18),
-                          Decimal('55.00')
-                         ])
-        self.assertEqual(monthly_totals[0][2],
-                         [(u'vacation', Decimal('20.00')),
-                          (u'sick', Decimal('40.00'))])
-        self.assertEqual(monthly_totals[0][3], Decimal('115.00'))
-        # Test the totals row at the bottom.
-        self.assertEqual(monthly_totals[-1][1],
-                         [(Decimal('90.00'), 81.82),
-                          (Decimal('20.00'), 18.18),
-                          Decimal('110.00')
-                         ])
-        self.assertEqual(monthly_totals[-1][2],
-                         [(u'vacation', Decimal('40.00')),
-                          (u'sick', Decimal('80.00'))])
-        self.assertEqual(monthly_totals[-1][3], Decimal('230.00'))
+        rows = response.context['monthly_totals']
+        labels = response.context['labels']
+
+        # Labels should contain all billable & nonbillable project type labels.
+        self.assertEquals(labels['billable'], [billable_project.type.label])
+        self.assertEquals(labels['nonbillable'],
+                [nonbillable_project.type.label])
+
+        # Rows should contain monthly totals mapping for each user.
+        self.assertEquals(len(rows), 2 + 1)  # 1 for each user, plus totals
+        for row in rows[:-1]:
+            self.assertEquals(row['billable']['hours'], [Decimal('45.00')])
+            self.assertEquals(row['billable']['total'], Decimal('45.00'))
+            self.assertEquals(row['billable']['percentage'],
+                    Decimal('45.00') / Decimal('55.00') * 100)
+            self.assertEquals(row['nonbillable']['hours'], [Decimal('10.00')])
+            self.assertEquals(row['nonbillable']['total'], Decimal('10.00'))
+            self.assertEquals(row['nonbillable']['percentage'],
+                    Decimal('10.00') / Decimal('55.00') * 100)
+            self.assertEquals(row['work_total'], Decimal('55.00'))
+            self.assertEquals(row['leave']['hours']['sick'], Decimal('40.00'))
+            self.assertEquals(row['leave']['hours']['vacation'],
+                    Decimal('20.00'))
+            self.assertEquals(row['leave']['total'], Decimal('60.00'))
+            self.assertEquals(row['grand_total'], Decimal('115.00'))
+
+        # Last row should contain summary totals over all users.
+        totals = rows[-1]
+        self.assertEquals(totals['billable']['hours'], [Decimal('90.00')])
+        self.assertEquals(totals['billable']['total'], Decimal('90.00'))
+        self.assertEquals(totals['billable']['percentage'],
+                Decimal('90.00') / Decimal('110.00') * 100)
+        self.assertEquals(totals['nonbillable']['hours'], [Decimal('20.00')])
+        self.assertEquals(totals['nonbillable']['total'], Decimal('20.00'))
+        self.assertEquals(totals['nonbillable']['percentage'],
+                Decimal('20.00') / Decimal('110.00') * 100)
+        self.assertEquals(totals['work_total'], Decimal('110.00'))
+        self.assertEquals(totals['leave']['hours']['sick'], Decimal('80.00'))
+        self.assertEquals(totals['leave']['hours']['vacation'],
+                Decimal('40.00'))
+        self.assertEquals(totals['leave']['total'], Decimal('120.00'))
+        self.assertEquals(totals['grand_total'], Decimal('230.00'))
 
     def testNoPermission(self):
         """

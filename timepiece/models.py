@@ -278,19 +278,14 @@ ENTRY_STATUS = (
 class EntryQuerySet(models.query.QuerySet):
     """QuerySet extension to provide filtering by billable status"""
 
-    def date_trunc(self, key='month', all_values=False):
+    def date_trunc(self, key='month', extra_values=()):
         select = {"day": {"date": """DATE_TRUNC('day', end_time)"""},
                   "week": {"date": """DATE_TRUNC('week', end_time)"""},
                   "month": {"date": """DATE_TRUNC('month', end_time)"""},
         }
         basic_values = (
             'user', 'date', 'user__first_name', 'user__last_name', 'billable',
-            'project__type__label',
         )
-        extra_values = (
-            'start_time', 'end_time', 'comments', 'seconds_paused', 'id',
-            'location__name', 'project__name', 'activity__name', 'status',
-        ) if all_values else ()
         qs = self.extra(select=select[key])
         qs = qs.values(*basic_values + extra_values)
         qs = qs.annotate(hours=Sum('hours')).order_by('user__last_name',
@@ -335,8 +330,8 @@ class EntryManager(models.Manager):
                                    'timepiece_attribute.billable'})
         return qs
 
-    def date_trunc(self, key='month', all_values=False):
-        return self.get_query_set().date_trunc(key, all_values)
+    def date_trunc(self, key='month', extra_values=()):
+        return self.get_query_set().date_trunc(key, extra_values)
 
     def timespan(self, from_date, to_date=None, span='month'):
         return self.get_query_set().timespan(from_date, to_date, span)
