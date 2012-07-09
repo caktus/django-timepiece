@@ -9,4 +9,19 @@ jQuery(function($) {
     $('[name*=date],#id_start_time_0,#id_end_time_0').datepicker({
         'dateFormat': 'mm/dd/yy'
     });
+
+    $('.popover-toggle').popover({
+        'title': function() {
+            var target = $(this).data('target');
+
+            return $(target).children('.popover-title').html();
+        },
+        'content': function() {
+            var target = $(this).data('target');
+
+            return $(target).children('.popover-content').html();
+        },
+        'placement': 'bottom',
+        'delay': { 'show': 0, 'hide': 100000 }
+    });
 });
