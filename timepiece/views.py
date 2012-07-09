@@ -113,8 +113,9 @@ def view_entries(request):
         user=request.user,
         end_time__isnull=True,
     )
-    active_hours = get_active_hours(my_active_entries.get())
-    current_total += active_hours
+    for entry in my_active_entries:
+        active_hours = get_active_hours(entry)
+        current_total += active_hours
 #     temporarily disabled until the allocations represent accurate goals
 #     -TM 6/27
     allocations = []
