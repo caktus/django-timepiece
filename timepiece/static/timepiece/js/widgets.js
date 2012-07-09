@@ -21,7 +21,6 @@ jQuery(function($) {
 
             return $(target).children('.popover-content').html();
         },
-        'placement': 'bottom',
-        'delay': { 'show': 0, 'hide': 100000 }
+        'placement': 'bottom'
     });
 });
