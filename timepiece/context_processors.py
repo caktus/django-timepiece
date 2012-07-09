@@ -1,5 +1,6 @@
 from django.conf import settings
 
+from timepiece import models as timepiece
 from timepiece.forms import QuickSearchForm
 
 
@@ -16,3 +17,22 @@ def quick_search(request):
     return {
         'quick_search_form': QuickSearchForm(),
     }
+
+
+def active_entries(request):
+    active_entries = timepiece.Entry.objects.filter(
+        end_time__isnull=True,
+    ).exclude(
+        user=request.user,
+    ).select_related('user', 'project', 'activity')
+
+    return {
+        'active_entries': active_entries,
+    }
+
+
+def extra_nav(request):
+    context = {
+        'extra_nav': getattr(settings, 'EXTRA_NAV', {})
+    }
+    return context
