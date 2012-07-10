@@ -278,7 +278,7 @@ ENTRY_STATUS = (
 class EntryQuerySet(models.query.QuerySet):
     """QuerySet extension to provide filtering by billable status"""
 
-    def date_trunc(self, key='month', extra_values=()):
+    def date_trunc(self, key='month', extra_values=None):
         select = {"day": {"date": """DATE_TRUNC('day', end_time)"""},
                   "week": {"date": """DATE_TRUNC('week', end_time)"""},
                   "month": {"date": """DATE_TRUNC('month', end_time)"""},
@@ -286,6 +286,7 @@ class EntryQuerySet(models.query.QuerySet):
         basic_values = (
             'user', 'date', 'user__first_name', 'user__last_name', 'billable',
         )
+        extra_values = extra_values or ()
         qs = self.extra(select=select[key])
         qs = qs.values(*basic_values + extra_values)
         qs = qs.annotate(hours=Sum('hours')).order_by('user__last_name',
