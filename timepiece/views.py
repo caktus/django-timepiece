@@ -99,7 +99,7 @@ def view_entries(request):
     activity_entries = entries.values(
         'billable',
     ).annotate(sum=Sum('hours')).order_by('-sum')
-    current_total = entries.aggregate(sum=Sum('hours'))['sum']
+    current_total = entries.aggregate(sum=Sum('hours'))['sum'] or 0
     others_active_entries = timepiece.Entry.objects.filter(
         end_time__isnull=True,
     ).exclude(
@@ -114,9 +114,8 @@ def view_entries(request):
         end_time__isnull=True,
     )
 
-    if current_total:
-        current_total += sum([get_active_hours(entry) \
-            for entry in my_active_entries]) or 0
+    current_total += sum([get_active_hours(entry)
+        for entry in my_active_entries]) or 0
 
 #     temporarily disabled until the allocations represent accurate goals
 #     -TM 6/27
