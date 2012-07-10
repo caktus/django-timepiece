@@ -372,10 +372,15 @@ def payroll_totals(month_work_entries, month_leave_entries):
         return name
 
     def _get_index(status, label):
-        """Returns the index where hours for status/label should be recorded.
+        """
+        Returns the index in row[status][hours] (where row is the row
+        corresponding to the current user) where hours for the label should be
+        recorded.
 
         If the label does not exist, then it is added to the labels list.
         Each row and the totals row is updated accordingly.
+
+        Requires that labels, rows, and totals are in scope.
         """
         if label in labels[status]:
             return labels[status].index(label)
