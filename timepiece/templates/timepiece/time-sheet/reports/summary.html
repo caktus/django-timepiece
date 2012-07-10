@@ -73,10 +73,14 @@
                     <thead>
                         <tr>
                             <th rowspan="2">Name</th>
-                            <th colspan="{{ labels.billable|length }}">Billable Projects</th>
-                            <th colspan="2" rowspan="2">Total Billable Hours</th>
-                            <th colspan="{{ labels.nonbillable|length }}">Non-Billable Projects</th>
-                            <th colspan="2" rowspan="2">Total Non-Billable Hours</th>
+                            {% if labels.billable %}
+                                <th colspan="{{ labels.billable|length }}">Billable Projects</th>
+                                <th colspan="2" rowspan="2">Total Billable Hours</th>
+                            {% endif %}
+                            {% if labels.nonbillable %}
+                                <th colspan="{{ labels.nonbillable|length }}">Non-Billable Projects</th>
+                                <th colspan="2" rowspan="2">Total Non-Billable Hours</th>
+                            {% endif %}
                             <th rowspan="2">Total Worked Hours</th>
                             <th rowspan="2">Paid Leave</th>
                             <th rowspan="2">Grand Total</th>
@@ -94,23 +98,31 @@
                         {% for row in monthly_totals %}
                             <tr>
                                 <th class='name_col'>{{ row.name }}</th>
-                                {% for hours in row.billable.hours %}
-                                    <td class="hours">{% if hours %}{{ hours|floatformat:2 }}{% endif %}</td>
-                                {% endfor %}
-                                <td class="hours">{% if row.billable.total %}{{ row.billable.total|floatformat:2 }}{% endif %}</td>
-                                <td class="hours">{% if row.billable.percentage %}{{ row.billable.percentage|floatformat:1 }}%{% endif %}</td>
-                                {% for hours in row.nonbillable.hours %}
-                                    <td class="hours">{% if hours %}{{ hours|floatformat:2 }}{% endif %}</td>
-                                {% endfor %}
-                                <td class="hours">{% if row.nonbillable.total %}{{ row.nonbillable.total|floatformat:2 }}{% endif %}</td>
-                                <td class="hours">{% if row.nonbillable.percentage %}{{ row.nonbillable.percentage|floatformat:1 }}%{% endif %}</td>
-                                <td class="hours">{% if row.work_total %}{{ row.work_total|floatformat:2 }}{% endif %}</td>
+                                {% if labels.billable %}
+                                    {% for hours in row.billable.hours %}
+                                        <td class="hours">{{ hours|floatformat:2 }}</td>
+                                    {% endfor %}
+                                    <td class="hours">{{ row.billable.total|floatformat:2 }}</td>
+                                    <td class="hours">{{ row.billable.percentage|floatformat:1 }}%</td>
+                                {% endif %}
+                                {% if labels.nonbillable %}
+                                    {% for hours in row.nonbillable.hours %}
+                                        <td class="hours">{{ hours|floatformat:2 }}</td>
+                                    {% endfor %}
+                                    <td class="hours">{{ row.nonbillable.total|floatformat:2 }}</td>
+                                    <td class="hours">{{ row.nonbillable.percentage|floatformat:1 }}%</td>
+                                {% endif %}
+                                <td class="hours">
+                                    {% if row.work_total %}{{ row.work_total|floatformat:2 }}{% endif %}
+                                </td>
                                 <td class="hours">
                                     {% for label, hours in row.leave.hours.items %}
                                         {{ label }}: {{ hours|floatformat:2 }}<br />
                                     {% endfor %}
                                 </td>
-                                <td class="hours">{% if row.grand_total %}{{ row.grand_total|floatformat:2 }}{% endif %}</td>
+                                <td class="hours">
+                                    {% if row.grand_total %}{{ row.grand_total|floatformat:2 }}{% endif %}
+                                </td>
                             </tr>
                         {% endfor %}
                     </tbody>
