@@ -20,11 +20,14 @@ def quick_search(request):
 
 
 def active_entries(request):
-    active_entries = timepiece.Entry.objects.filter(
-        end_time__isnull=True,
-    ).exclude(
-        user=request.user,
-    ).select_related('user', 'project', 'activity')
+    active_entries = None
+
+    if request.user.is_authenticated():
+        active_entries = timepiece.Entry.objects.filter(
+            end_time__isnull=True,
+        ).exclude(
+            user=request.user,
+        ).select_related('user', 'project', 'activity')
 
     return {
         'active_entries': active_entries,
