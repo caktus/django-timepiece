@@ -1,10 +1,24 @@
-{% extends 'timepiece/time-sheet/base.html' %}
+{% extends 'timepiece/time-sheet/invoice/base.html' %}
 {% load timepiece_tags %}
 {% load url from future %}
 
 {% block title %}Invoice Detail{% endblock %}
 
+{% block crumbs %}
+    {{ block.super }}
+    <li><span class="divider">/</span> <a href="{% url 'view_invoice_entries' invoice.pk %}">View Entries</a></li>
+{% endblock crumbs %}
+
 {% block content %}
-    {% invoice_subheaders 'entries' %}
-    {% include 'timepiece/time-sheet/_weekly_entry_list.html' %}
+    <div class="row">
+        <div class="span12">
+            {% invoice_subheaders 'entries' %}
+        </div>
+    </div>
+
+    <div class="row">
+        <div class="span12">
+            {% include 'timepiece/time-sheet/_weekly_entry_list.html' %}
+        </div>
+    </div>
 {% endblock %}

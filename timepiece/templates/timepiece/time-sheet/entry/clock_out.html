@@ -1,19 +1,26 @@
 {% extends 'timepiece/time-sheet/base.html' %}
+{% load bootstrap_toolkit %}
+
+{% block crumbs %}
+    {{ block.super }}
+    <li><span class="divider">/</span> <a href="{% url timepiece-clock-out entry.pk %}">Clock Out</a></li>
+{% endblock crumbs %}
 
 {% block content %}
-<h2>Clock Out of Project</h2>
-<form id="general-entry" action="" method="post" accept-charset="utf-8">
-    {% csrf_token %}
-    <table class='vertical'>
-        {{ form }}
-        <tr>
-            <td>&nbsp;</td>
-            <td class='submit'>
-                <input type='button' value='Cancel' onclick='history.go(-1)' />
-                &nbsp;
-                <input type='submit' name='submit' value='Clock Out &rarr;' />
-            </td>
-        </tr>
-    </table>
-</form>
+    <div class="row">
+        <div class="span12">
+            <h2>Clock Out of Project</h2>
+
+            <br style="clear: both;" />
+
+            <form class="form-horizontal" action="" method="post" accept-charset="utf-8">
+                {% csrf_token %}
+                {{ form|as_bootstrap:"horizontal" }}
+                <div class="form-actions">
+                    <input class="btn btn-primary" type="submit" name="submit" value="Clock Out" />
+                    <input class="btn" type="button" value="Cancel" onclick="window.location='{% url timepiece-entries %}'" />
+                </div>
+            </form>
+        </div>
+    </div>
 {% endblock %}
