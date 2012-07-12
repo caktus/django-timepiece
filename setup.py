@@ -29,11 +29,15 @@ setup(
         'python-dateutil==1.5',
         'django-pagination==1.0.7',
         'django-selectable==0.4.1',
+        'django-bootstrap-toolkit==2.5.4',
+        'django-compressor==1.1.2',
     ],
     test_suite='run_tests.run',
     install_requires=[
         "python-dateutil==1.5",
         "django-pagination==1.0.7",
         "django-selectable==0.4.1",
+        'django-bootstrap-toolkit==2.5.4',
+        'django-compressor==1.1.2',
     ],
 )
