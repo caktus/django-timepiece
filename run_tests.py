@@ -11,7 +11,7 @@ parser = optparse.OptionParser()
 opts, args = parser.parse_args()
 
 directory = os.path.abspath('%s' % os.path.dirname(__file__))
-static = '%s/example_project/example_project/static/' % directory
+static = '%s/example_project/static/' % directory
 
 if not settings.configured:
     jenkins = []

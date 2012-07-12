@@ -18,7 +18,6 @@
         </div>
     {% endif %}
 
-
     {% if assignments %}
         <div class="row-fluid">
             <div class="span12">
@@ -36,27 +35,29 @@
                             </tr>
                         </thead>
                         <tbody>
-                    	    {% regroup assignments by contract.project.type as type_list %}
-                    	    {% for type in type_list %}
-                        	    <tr class="ledger_header">
+                            {% regroup assignments by contract.project.type as type_list %}
+                            {% for type in type_list %}
+                                <tr class="ledger_header">
                                     <th colspan="6">{{ type.grouper }}s</th>
                                 </tr>
-                        	    {% for assignment in type.list %}
-                            	    <tr>
-                            	        <td><a href="{% url timepiece-clock-in %}?project={{ assignment.contract.project.pk }}">{{ assignment.contract.project }}</a></td>
+                                {% for assignment in type.list %}
+                                    <tr>
+                                        <td><a href="{% url timepiece-clock-in %}?project={{ assignment.contract.project.pk }}">{{ assignment.contract.project }}</a></td>
                                         <td class="hours">{{ assignment.num_hours }}</td>
                                         <td class="hours">{{ assignment.hours_worked|floatformat:2 }} ({% widthratio assignment.hours_worked assignment.num_hours 100 %}%)</td>
                                         <td class="hours">{{ assignment.hours_remaining|floatformat:2 }}</td>
                                         <td>{{ assignment.end_date }}</td>
                                         <td>
-                            			    <ul class="actions">
+                                            <ul class="actions">
                                                 <li><a href="{% url timepiece-add %}?project={{ assignment.contract.project.pk }}">Add Entry</a></li>
-                                                <li><a href="{% url view_contract assignment.contract.pk %}">Report</a></li>
-                            			    </ul>
+                                                {% if perms.timepiece.view_entry_summary %}
+                                                    <li><a href="{% url view_contract assignment.contract.pk %}">Report</a></li>
+                                                {% endif %}
+                                            </ul>
                                         </td>
-                            	    </tr>
-                        	    {% endfor %}
-                    	    {% endfor %}
+                                    </tr>
+                                {% endfor %}
+                            {% endfor %}
                         </tbody>
                     </table>
                 </div>

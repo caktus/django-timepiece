@@ -14,8 +14,8 @@ Release Notes
 * Added support for custom navigation through EXTRA_NAV setting
 * Across the board styling changes
 
-0.5.0 (Work in Progress)
-------------------------
+0.5.0 (Released 07-12-2012)
+---------------------------
 
 * Complete styling upgrade using `Twitter Bootstrap <http://twitter.github.com/bootstrap/>`_
 * Fixed permissions for client users that can't clock in
