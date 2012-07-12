@@ -1,7 +1,7 @@
 Release Notes
 =========================================
 
-0.5.0 (Released 07-11-2012)
+0.5.0 (Released 07-12-2012)
 ---------------------------
 
 * Complete styling upgrade using `Twitter Bootstrap <http://twitter.github.com/bootstrap/>`_
