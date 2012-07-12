@@ -49,7 +49,9 @@
                                     <td>
                         			    <ul class="actions">
                                             <li><a href="{% url timepiece-add %}?project={{ assignment.contract.project.pk }}">Add Entry</a></li>
-                                            <li><a href="{% url view_contract assignment.contract.pk %}">Report</a></li>
+                                            {% if perms.timepiece.view_entry_summary %}
+                                                <li><a href="{% url view_contract assignment.contract.pk %}">Report</a></li>
+                                            {% endif %}
                         			    </ul>
                                     </td>
                         	    </tr>
