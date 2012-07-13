@@ -1524,7 +1524,10 @@ class HourlySummaryTest(TimepieceDataTestCase):
         ))
         self.assertEquals(response.status_code, 200)
         # entries context object is a ValuesQuerySet
+        extra_values = ('start_time', 'end_time', 'comments', 'seconds_paused',
+                'id', 'location__name', 'project__name', 'activity__name',
+                'status')
         entries = timepiece.Entry.objects \
             .timespan(april, span='month') \
-            .date_trunc('month', True)
+            .date_trunc('month', extra_values)
         self.assertEquals(list(entries), list(response.context['entries']))
