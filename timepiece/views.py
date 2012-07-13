@@ -458,9 +458,11 @@ class ProjectTimesheet(DetailView):
         entries_qs = entries_qs.timespan(from_date, span='month').filter(
             project=project
         )
-        month_entries = entries_qs.date_trunc('month', True).order_by(
-            'start_time'
-        )
+        extra_values = ('start_time', 'end_time', 'comments', 'seconds_paused',
+                'id', 'location__name', 'project__name', 'activity__name',
+                'status')
+        month_entries = entries_qs.date_trunc('month',
+                extra_values).order_by('start_time')
         total = entries_qs.aggregate(hours=Sum('hours'))['hours']
         user_entries = entries_qs.order_by().values(
             'user__first_name', 'user__last_name').annotate(
@@ -557,7 +559,10 @@ def view_person_time_sheet(request, user_id):
             from_date, to_date = year_month_form.save()
     entries_qs = timepiece.Entry.objects.filter(user=user)
     month_qs = entries_qs.timespan(from_date, span='month')
-    month_entries = month_qs.date_trunc('month', True)
+    extra_values = ('start_time', 'end_time', 'comments', 'seconds_paused',
+            'id', 'location__name', 'project__name', 'activity__name',
+            'status')
+    month_entries = month_qs.date_trunc('month', extra_values)
     # For grouped entries, back date up to the start of the week.
     first_week = utils.get_week_start(from_date)
     month_week = first_week + datetime.timedelta(weeks=1)
@@ -1236,10 +1241,10 @@ def payroll_summary(request):
     # Monthly totals
     leave = timepiece.Entry.objects.filter(monthQ, ~workQ
                                   ).values('user', 'hours', 'project__name')
-    month_entries = timepiece.Entry.objects.date_trunc('month')
+    extra_values = ('project__type__label',)
+    month_entries = timepiece.Entry.objects.date_trunc('month', extra_values)
     month_entries_valid = month_entries.filter(monthQ, statusQ, workQ)
-    monthly_totals = list(utils.payroll_totals(month_entries_valid, from_date,
-                                               leave))
+    labels, monthly_totals = utils.payroll_totals(month_entries_valid, leave)
     # Unapproved and unverified hours
     entries = timepiece.Entry.objects.filter(monthQ)
     user_values = ['user__pk', 'user__first_name', 'user__last_name']
@@ -1254,6 +1259,7 @@ def payroll_summary(request):
         'monthly_totals': monthly_totals,
         'unverified': unverified.values_list(*user_values).distinct(),
         'unapproved': unapproved.values_list(*user_values).distinct(),
+        'labels': labels,
     }
 
 

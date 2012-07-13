@@ -1,5 +1,6 @@
 from django import template
 
+
 register = template.Library()
 
 
@@ -19,3 +20,10 @@ def sub(num, arg):
     num = float(num)
     arg = float(arg)
     return num - arg
+
+
+@register.filter
+def multiply(num, arg):
+    num = float(num)
+    arg = float(arg)
+    return num * arg
