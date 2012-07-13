@@ -101,14 +101,14 @@
                                 <th class='name_col'>{{ row.name }}</th>
                                 {% if labels.billable %}
                                     {% for entry in row.billable %}
-                                        <td class="hours">{{ entry.hours|floatformat:2 }}</td>
-                                        <td class="hours">{{ entry.percent|floatformat:1 }}%</td>
+                                        <td class="hours">{% if entry.hours %}{{ entry.hours|floatformat:2 }}{% endif %}</td>
+                                        <td class="hours">{% if entry.percent %}{{ entry.percent|floatformat:1 }}%{% endif %}</td>
                                     {% endfor %}
                                 {% endif %}
                                 {% if labels.nonbillable %}
                                     {% for entry in row.nonbillable %}
-                                        <td class="hours">{{ entry.hours|floatformat:2 }}</td>
-                                        <td class="hours">{{ entry.percent|floatformat:1 }}%</td>
+                                        <td class="hours">{% if entry.hours %}{{ entry.hours|floatformat:2 }}{% endif %}</td>
+                                        <td class="hours">{% if entry.percent %}{{ entry.percent|floatformat:1 }}%{% endif %}</td>
                                     {% endfor %}
                                 {% endif %}
                                 <td class="hours">
