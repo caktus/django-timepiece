@@ -102,7 +102,7 @@
 
                             {% for entry in my_active_entries %}
                                 <tr>
-                                    <td><a href="{% url timepiece-clock-in %}?project={{ entry.project__pk }}">{{ entry.project }}</a></td>
+                                    <td><a href="{% url timepiece-clock-in %}?project={{ entry.project_id }}">{{ entry.project }}</a></td>
                                     <td class="hours">{% get_active_hours entry %}</td>
                                 </tr>
                             {% endfor %}
