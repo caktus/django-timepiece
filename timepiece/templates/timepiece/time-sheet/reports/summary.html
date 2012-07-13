@@ -2,6 +2,7 @@
 {% load timepiece_tags %}
 {% load bootstrap_toolkit %}
 {% load url from future %}
+{% load math_tags %}
 
 {% block title %}Payroll Summary{% endblock %}
 
@@ -74,11 +75,11 @@
                         <tr>
                             <th rowspan="2">Name</th>
                             {% if labels.billable %}
-                                <th colspan="{{ labels.billable|length }}">Billable Projects</th>
+                                <th colspan="{{ labels.billable|length|multiply:'2' }}">Billable Projects</th>
                                 <th colspan="2" rowspan="2">Total Billable Hours</th>
                             {% endif %}
                             {% if labels.nonbillable %}
-                                <th colspan="{{ labels.nonbillable|length }}">Non-Billable Projects</th>
+                                <th colspan="{{ labels.nonbillable|length|multiply:'2' }}">Non-Billable Projects</th>
                                 <th colspan="2" rowspan="2">Total Non-Billable Hours</th>
                             {% endif %}
                             <th rowspan="2">Total Worked Hours</th>
@@ -87,10 +88,10 @@
                         </tr>
                         <tr>
                             {% for label in labels.billable %}
-                               <th>{{ label }}</th>
+                                <th colspan=2>{{ label }}</th>
                             {% endfor %}
                             {% for label in labels.nonbillable %}
-                                <th>{{ label }}</th>
+                                <th colspan=2>{{ label }}</th>
                             {% endfor %}
                         </tr>
                     </thead>
@@ -99,18 +100,16 @@
                             <tr>
                                 <th class='name_col'>{{ row.name }}</th>
                                 {% if labels.billable %}
-                                    {% for hours in row.billable.hours %}
-                                        <td class="hours">{{ hours|floatformat:2 }}</td>
+                                    {% for entry in row.billable %}
+                                        <td class="hours">{{ entry.hours|floatformat:2 }}</td>
+                                        <td class="hours">{{ entry.percent|floatformat:1 }}%</td>
                                     {% endfor %}
-                                    <td class="hours">{{ row.billable.total|floatformat:2 }}</td>
-                                    <td class="hours">{{ row.billable.percentage|floatformat:1 }}%</td>
                                 {% endif %}
                                 {% if labels.nonbillable %}
-                                    {% for hours in row.nonbillable.hours %}
-                                        <td class="hours">{{ hours|floatformat:2 }}</td>
+                                    {% for entry in row.nonbillable %}
+                                        <td class="hours">{{ entry.hours|floatformat:2 }}</td>
+                                        <td class="hours">{{ entry.percent|floatformat:1 }}%</td>
                                     {% endfor %}
-                                    <td class="hours">{{ row.nonbillable.total|floatformat:2 }}</td>
-                                    <td class="hours">{{ row.nonbillable.percentage|floatformat:1 }}%</td>
                                 {% endif %}
                                 <td class="hours">
                                     {% if row.work_total %}{{ row.work_total|floatformat:2 }}{% endif %}

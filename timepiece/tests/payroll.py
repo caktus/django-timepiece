@@ -200,14 +200,20 @@ class PayrollTest(TimepieceDataTestCase):
         # Rows should contain monthly totals mapping for each user.
         self.assertEquals(len(rows), 2 + 1)  # 1 for each user, plus totals
         for row in rows[:-1]:
-            self.assertEquals(row['billable']['hours'], [Decimal('45.00')])
-            self.assertEquals(row['billable']['total'], Decimal('45.00'))
-            self.assertEquals(row['billable']['percentage'],
+            self.assertEquals(row['billable'][0]['hours'], Decimal('45.00'))
+            self.assertEquals(row['billable'][0]['percent'],
                     Decimal('45.00') / Decimal('55.00') * 100)
-            self.assertEquals(row['nonbillable']['hours'], [Decimal('10.00')])
-            self.assertEquals(row['nonbillable']['total'], Decimal('10.00'))
-            self.assertEquals(row['nonbillable']['percentage'],
+            self.assertEquals(row['billable'][1]['hours'], Decimal('45.00'))
+            self.assertEquals(row['billable'][1]['percent'],
+                    Decimal('45.00') / Decimal('55.00') * 100)
+
+            self.assertEquals(row['nonbillable'][0]['hours'], Decimal('10.00'))
+            self.assertEquals(row['nonbillable'][0]['percent'],
                     Decimal('10.00') / Decimal('55.00') * 100)
+            self.assertEquals(row['nonbillable'][1]['hours'], Decimal('10.00'))
+            self.assertEquals(row['nonbillable'][1]['percent'],
+                    Decimal('10.00') / Decimal('55.00') * 100)
+
             self.assertEquals(row['work_total'], Decimal('55.00'))
             self.assertEquals(row['leave']['hours']['sick'], Decimal('40.00'))
             self.assertEquals(row['leave']['hours']['vacation'],
@@ -217,14 +223,20 @@ class PayrollTest(TimepieceDataTestCase):
 
         # Last row should contain summary totals over all users.
         totals = rows[-1]
-        self.assertEquals(totals['billable']['hours'], [Decimal('90.00')])
-        self.assertEquals(totals['billable']['total'], Decimal('90.00'))
-        self.assertEquals(totals['billable']['percentage'],
+        self.assertEquals(totals['billable'][0]['hours'], Decimal('90.00'))
+        self.assertEquals(totals['billable'][0]['percent'],
                 Decimal('90.00') / Decimal('110.00') * 100)
-        self.assertEquals(totals['nonbillable']['hours'], [Decimal('20.00')])
-        self.assertEquals(totals['nonbillable']['total'], Decimal('20.00'))
-        self.assertEquals(totals['nonbillable']['percentage'],
+        self.assertEquals(totals['billable'][1]['hours'], Decimal('90.00'))
+        self.assertEquals(totals['billable'][1]['percent'],
+                Decimal('90.00') / Decimal('110.00') * 100)
+
+        self.assertEquals(totals['nonbillable'][0]['hours'], Decimal('20.00'))
+        self.assertEquals(totals['nonbillable'][0]['percent'],
                 Decimal('20.00') / Decimal('110.00') * 100)
+        self.assertEquals(totals['nonbillable'][1]['hours'], Decimal('20.00'))
+        self.assertEquals(totals['nonbillable'][1]['percent'],
+                Decimal('20.00') / Decimal('110.00') * 100)
+
         self.assertEquals(totals['work_total'], Decimal('110.00'))
         self.assertEquals(totals['leave']['hours']['sick'], Decimal('80.00'))
         self.assertEquals(totals['leave']['hours']['vacation'],
