@@ -168,6 +168,18 @@ body {
      * Start general site-wide classes/ids
      *****************************************/
 
+    #content.container-fluid {
+        @media (max-width: 767px) {
+            margin: 20px auto;
+            width: 93%;
+        }
+
+        @media (min-width: 768px) and (max-width: 979px) {
+            margin: 20px auto;
+            width: 95%;
+        }
+    }
+
     .scroll {
         width: 100%;
         overflow-x: auto;
@@ -185,7 +197,6 @@ body {
             width: auto;
         }
     }
-    
 
     .popover-toggle:hover {
         cursor: hand;
@@ -361,7 +372,7 @@ body {
 
         #full-timesheet {
             width: 100%;
-            min-width: 700px;
+            min-width: 800px;
 
             table {
                 width: 100%;
@@ -382,6 +393,14 @@ body {
 
                     &.aux {
                         width: 5%;
+                    }
+
+                    &.project {
+                        width: 13%;
+                    }
+
+                    &.activity {
+                        width: 15%;
                     }
                 }
             }

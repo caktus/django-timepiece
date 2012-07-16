@@ -138,8 +138,8 @@
                                     <thead>
                                         <tr>
                                             <th>Date</th>
-                                            <th>Project</th>
-                                            <th>Activity</th>
+                                            <th class="project">Project</th>
+                                            <th class="activity">Activity</th>
                                             <th>Location</th>
                                             <th class="time">Time In</th>
                                             <th class="time">Time Out</th>
@@ -160,8 +160,8 @@
                                 {% else %}
                                 <td></td>
                                 {% endifchanged %}
-                                <td class="break">{{ entry.project__name }}</td>
-                                <td class="break">{{ entry.activity__name }}</td>
+                                <td class="project">{{ entry.project__name }}</td>
+                                <td class="activity">{{ entry.activity__name }}</td>
                                 <td>{{ entry.location__name }}</td>
                                 <td class="time break">{{ entry.start_time|date:"P" }}</td>
                                 <td class="time break">{{ entry.end_time|date:"P" }}</td>
