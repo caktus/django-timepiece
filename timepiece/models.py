@@ -6,8 +6,7 @@ from django.conf import settings
 from django.contrib.auth.models import User
 from django.core.exceptions import ValidationError, NON_FIELD_ERRORS
 from django.db import models
-from django.db.models import Q, Avg, Sum, Max, Min, signals
-from django.dispatch import receiver
+from django.db.models import Q, Avg, Sum, Max, Min
 
 try:
     from django.utils import timezone
