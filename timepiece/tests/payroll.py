@@ -190,8 +190,9 @@ class PayrollTest(TimepieceDataTestCase):
                 [self.billable_project.type.label])
         self.assertEquals(self.labels['nonbillable'],
                 [self.nonbillable_project.type.label])
-        self.assertEquals(self.labels['leave'],
-                [self.sick.name, self.vacation.name])
+        self.assertEquals(len(self.labels['leave']), 2)
+        self.assertTrue(self.sick.name in self.labels['leave'])
+        self.assertTrue(self.vacation.name in self.labels['leave'])
 
     def testMonthlyPayrollRows(self):
         """Rows should contain monthly totals mapping for each user."""
