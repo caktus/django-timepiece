@@ -4,8 +4,14 @@ import random
 from django.core.urlresolvers import reverse
 from django.contrib.auth.models import User, Permission
 
+try:
+    from django.utils import timezone
+except ImportError:
+    from timepiece import timezone
+
 from timepiece import models as timepiece
 from timepiece.tests.base import TimepieceDataTestCase
+from timepiece import utils
 
 
 class InvoiceViewPreviousTestCase(TimepieceDataTestCase):
@@ -25,7 +31,8 @@ class InvoiceViewPreviousTestCase(TimepieceDataTestCase):
         self.project2 = self.create_project(billable=True)
         projects = (self.project, self.project2)
         project = self.project2
-        start = datetime.datetime(2011, 1, 1, 0, 0, 0)
+        start = timezone.make_aware(datetime.datetime(2011, 1, 1, 0, 0, 0),
+            timezone.get_current_timezone())
         for index in xrange(0, self.num_entries):
             start += datetime.timedelta(hours=(5 * index))
             # Alternate projects
@@ -38,7 +45,10 @@ class InvoiceViewPreviousTestCase(TimepieceDataTestCase):
     def create_invoice(self, project=None, status='invoiced'):
         if not project:
             project = self.project
-        to_date = datetime.datetime(2011, 1, 31)
+        to_date = timezone.make_aware(
+            datetime.datetime(2011, 1, 31),
+            timezone.get_current_timezone()
+        )
         args = [project.id, to_date.strftime('%Y-%m-%d')]
         url = reverse('confirm_invoice_project', args=args)
         params = {
@@ -199,8 +209,10 @@ class InvoiceCreateTestCase(TimepieceDataTestCase):
         self.user.is_superuser = True
         self.user.save()
         self.client.login(username=self.user.username, password='abc')
-        start = datetime.datetime(2011, 1, 1, 8, 0, 0)
-        end = datetime.datetime(2011, 1, 1, 12, 0, 0)
+        start = datetime.datetime(2011, 1, 1, 8,
+            tzinfo=timezone.get_current_timezone())
+        end = datetime.datetime(2011, 1, 1, 12,
+            tzinfo=timezone.get_current_timezone())
         self.project_billable = self.create_project(billable=True)
         self.project_billable2 = self.create_project(billable=True)
         self.project_non_billable = self.create_project(billable=False)
@@ -258,7 +270,10 @@ class InvoiceCreateTestCase(TimepieceDataTestCase):
         that the links have accurate date information
         """
         url = reverse('invoice_projects')
-        to_date = datetime.datetime(2011, 1, 31, 0, 0, 0)
+        to_date = timezone.make_aware(
+            datetime.datetime(2011, 1, 31, 0, 0, 0),
+            timezone.get_current_timezone()
+        )
         params = {'to_date': to_date.strftime('%m/%d/%Y')}
         response = self.client.get(url, params)
         # The number of projects should be 2 because entry4 has billable=False
@@ -280,8 +295,14 @@ class InvoiceCreateTestCase(TimepieceDataTestCase):
     def test_invoice_create_with_from(self):
         # Add another entry and make sure from filters it out
         url = reverse('invoice_projects')
-        from_date = datetime.datetime(2011, 1, 1, 0, 0, 0)
-        to_date = datetime.datetime(2011, 1, 31, 0, 0, 0)
+        from_date = timezone.make_aware(
+            datetime.datetime(2011, 1, 1, 0, 0, 0),
+            timezone.get_current_timezone()
+        )
+        to_date = timezone.make_aware(
+            datetime.datetime(2011, 1, 31, 0, 0, 0),
+            timezone.get_current_timezone()
+        )
         params = {
             'from_date': from_date.strftime('%m/%d/%Y'),
             'to_date': to_date.strftime('%m/%d/%Y'),
@@ -299,7 +320,10 @@ class InvoiceCreateTestCase(TimepieceDataTestCase):
     def test_invoice_confirm_view_user(self):
         """A regular user should not be able to access this page"""
         self.client.login(username='user2', password='abc')
-        to_date = datetime.datetime(2011, 1, 31)
+        to_date = timezone.make_aware(
+            datetime.datetime(2011, 1, 31),
+            timezone.get_current_timezone()
+        )
         url = reverse('confirm_invoice_project', args=(
             self.project_billable.pk,
             to_date.strftime('%Y-%m-%d'),
@@ -314,7 +338,10 @@ class InvoiceCreateTestCase(TimepieceDataTestCase):
         able to create an invoice
         """
         self.login_with_permission()
-        to_date = datetime.datetime(2011, 1, 31)
+        to_date = timezone.make_aware(
+            datetime.datetime(2011, 1, 31),
+            timezone.get_current_timezone()
+        )
         url = reverse('confirm_invoice_project', args=(
             self.project_billable.pk,
             to_date.strftime('%Y-%m-%d'),
@@ -324,7 +351,10 @@ class InvoiceCreateTestCase(TimepieceDataTestCase):
         self.assertEquals(response.status_code, 200)
 
     def test_invoice_confirm_view(self):
-        to_date = datetime.datetime(2011, 1, 31)
+        to_date = timezone.make_aware(
+            datetime.datetime(2011, 1, 31),
+            timezone.get_current_timezone()
+        )
         args = [self.project_billable.id, to_date.strftime('%Y-%m-%d')]
         url = reverse('confirm_invoice_project', args=args)
         response = self.client.get(url)
@@ -332,7 +362,10 @@ class InvoiceCreateTestCase(TimepieceDataTestCase):
         to_date_str = response.context['to_date'].strftime('%Y %m %d')
         self.assertEqual(to_date_str, '2011 01 31')
         # View can also take from date
-        from_date = datetime.datetime(2011, 1, 1)
+        from_date = timezone.make_aware(
+            datetime.datetime(2011, 1, 1),
+            timezone.get_current_timezone()
+        )
         args = [
             self.project_billable.id,
             to_date.strftime('%Y-%m-%d'),
@@ -349,8 +382,12 @@ class InvoiceCreateTestCase(TimepieceDataTestCase):
     def test_invoice_confirm_totals(self):
         """Verify that the per activity totals are valid."""
         # Make a few extra entries to test per activity totals
-        start = datetime.datetime(2011, 1, 1, 8, 0, 0)
-        end = datetime.datetime(2011, 1, 1, 12, 0, 0)
+        start = datetime.datetime(2011, 1, 1, 8,
+            tzinfo=timezone.get_current_timezone())
+        end = datetime.datetime(2011, 1, 1, 12,
+            tzinfo=timezone.get_current_timezone())
+        # start = datetime.datetime.now(timezone.get_current_timezone())
+        # end = start + datetime.timedelta(hours=4)
         activity = self.create_activity(data={'name': 'activity1'})
         for num in xrange(0, 4):
             new_entry = self.create_entry({
@@ -394,7 +431,10 @@ class InvoiceCreateTestCase(TimepieceDataTestCase):
         self.assertEqual(response.status_code, 404)
 
     def test_make_invoice(self):
-        to_date = datetime.datetime(2011, 1, 31)
+        to_date = timezone.make_aware(
+            datetime.datetime(2011, 1, 31),
+            timezone.get_current_timezone()
+        )
         args = [self.project_billable.id, to_date.strftime('%Y-%m-%d')]
         url = reverse('confirm_invoice_project', args=args)
         response = self.client.post(url, {'number': '3', 'status': 'invoiced'})
@@ -416,9 +456,18 @@ class InvoiceCreateTestCase(TimepieceDataTestCase):
         self.assertEqual(approved[0].entry_group_id, None)
 
     def test_make_invoice_with_from_uninvoiced(self):
-        from_date = datetime.datetime(2011, 1, 1)
-        to_date = datetime.datetime(2011, 1, 31)
-        from_date = datetime.datetime(2011, 1, 1)
+        from_date = timezone.make_aware(
+            datetime.datetime(2011, 1, 1),
+            timezone.get_current_timezone()
+        )
+        to_date = timezone.make_aware(
+            datetime.datetime(2011, 1, 31),
+            timezone.get_current_timezone()
+        )
+        from_date = timezone.make_aware(
+            datetime.datetime(2011, 1, 1),
+            timezone.get_current_timezone()
+        )
         args = [
             self.project_billable.id,
             to_date.strftime('%Y-%m-%d'),

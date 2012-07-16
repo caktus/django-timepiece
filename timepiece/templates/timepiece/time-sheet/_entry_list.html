@@ -4,38 +4,38 @@
         <tr>
             <th>Date</th>
             <th>Project</th>
-            <th>Activity</th>
-            <th>Clock In</th>
-            <th>Clock Out</th>
-            <th>Breaks</th>
+            <th class="visible-desktop">Activity</th>
+            <th class="visible-desktop">Clock In</th>
+            <th class="{% if not active %}visible-desktop{% endif %}">Clock Out</th>
+            <th class="visible-desktop">Breaks</th>
             <th>Hours</th>
-            <th>Location</th>
+            <th class="visible-desktop">Location</th>
             <th>Actions</th>
         </tr>
     </thead>
     <tbody>
         {% for entry in entries %}
         <tr{% if entry.comments %} title='{{ entry.comments }}'{% endif %} class='{% if entry.is_paused %}paused{% endif %}{% if not entry.end_time %} active{% endif %} '>
-            <td>{{ entry.start_time|date:"m/d/Y (D)" }}</td>
+            <td>{{ entry.start_time|date:"m/d | D" }}</td>
             <td>
-            {% if perms.timepiece.view_project %}
-            <a href='{% url view_project project_id=entry.project.id %}'>{{ entry.project }}</a>
-            {% else %}
-            {{ entry.project }}
-            {% endif %}
-            </td>
-            <td>{{ entry.activity }}</td>
-            <td>{{ entry.start_time|date:"P" }}</td>
-            <td>
-                {% if entry.end_time %}
-                    {{ entry.end_time|date:"P" }}
+                {% if perms.timepiece.view_project %}
+                    <a href='{% url view_project project_id=entry.project.id %}'>{{ entry.project }}</a>
                 {% else %}
-                    <a href="{% url timepiece-clock-out entry.id %}">Clock Out</a>
+                    {{ entry.project }}
                 {% endif %}
             </td>
-            <td class="hours">
+            <td class="visible-desktop">{{ entry.activity }}</td>
+            <td class="visible-desktop">{{ entry.start_time|date:"P" }}</td>
+            <td class="{% if not active %}visible-desktop{% endif %}">
+                {% if active or not entry.end_time %}
+                    <a href="{% url timepiece-clock-out entry.id %}">Clock Out</a>
+                {% else %}
+                    {{ entry.end_time|date:"P" }}
+                {% endif %}
+            </td>
+            <td class="hours visible-desktop">
                 {{ entry.seconds_paused|seconds_to_hours|floatformat:2 }}
-                {% if not entry.end_time %}
+                {% if active or not entry.end_time %}
                     {% if entry.is_paused %}
                         <a href="{% url timepiece-toggle-paused entry.id %}">(Resume)</a>
                     {% else %}
@@ -44,7 +44,7 @@
                 {% endif %}
             </td>
             <td class="hours">{% get_active_hours entry %}</td>
-            <td>{{ entry.location }}</td>
+            <td class="visible-desktop">{{ entry.location }}</td>
             <td>
                 <ul class='actions'>
                     {% ifequal entry.status 'unverified' %}

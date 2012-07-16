@@ -9,19 +9,19 @@
 {% endblock crumbs %}
 
 {% block content %}
-    <div class="row">
+    <div class="row-fluid">
         <div class="span12">
             <h2>Projection Summary</h2>
         </div>
     </div>
 
-    <div class="row">
+    <div class="row-fluid">
         <div class="span12">
             {% date_filters "months" %}
         </div>
     </div>
 
-    <div class="row">
+    <div class="row-fluid">
         <div class="span4">
             <form class="form-vertical" method="get" action="" id="date-filter" accept-charset="utf-8">
                 {{ form }}
@@ -32,7 +32,7 @@
         </div>
     </div>
 
-    <div class="row">
+    <div class="row-fluid">
         <div class="span12">
             <table class="table table-bordered table-condensed">
                 {% for contract in contracts %}
