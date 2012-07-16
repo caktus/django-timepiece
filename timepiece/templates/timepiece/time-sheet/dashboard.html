@@ -18,6 +18,24 @@
         </div>
     {% endif %}
 
+    {% if view_entries %}
+        <div class="row-fluid hidden-desktop">
+            <div class="span12">
+                <h3>
+                    {% with entries.count as num_entries %}
+                        My Active Entries
+                    {% endwith %}
+                </h3>
+
+                {% with my_active_entries as entries %}
+                    <div class="scroll">
+                        {% include "timepiece/time-sheet/_entry_list.html" with active="True" %}
+                    </div>
+                {% endwith %}
+            </div>
+        </div>
+    {% endif %}
+
     {% if assignments %}
         <div class="row-fluid">
             <div class="span12">
@@ -66,7 +84,7 @@
     {% endif %}
 
     {% if view_entries %}
-        <div class="row-fluid">
+        <div class="row-fluid visible-desktop">
             <div class="span12">
                 <h3>
                     {% with entries.count as num_entries %}
