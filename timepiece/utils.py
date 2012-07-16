@@ -135,9 +135,9 @@ def get_month_start(from_day=None):
 def get_week_start(day=None):
     if not day:
         day = datetime.date.today()
-    isoweekday = day.isoweekday()
-    if isoweekday != 1:
-        day = day - datetime.timedelta(days=isoweekday - 1)
+    days_since_monday = day.weekday()
+    if days_since_monday != 0:
+        day = day - datetime.timedelta(days=days_since_monday)
     day = datetime.datetime.combine(day,
         datetime.time(tzinfo=timezone.get_current_timezone()))
     return day

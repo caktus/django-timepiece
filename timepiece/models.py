@@ -1100,8 +1100,7 @@ class ProjectHours(models.Model):
 
     def save(self, *args, **kwargs):
         # Ensure that week_start is the Monday of a given week.
-        days_since_monday = -1 * self.week_start.weekday()  # Monday = 0
-        self.week_start = self.week_start + timedelta(days=days_since_monday)
+        self.week_start = utils.get_week_start(self.week_start)
         super(ProjectHours, self).save(*args, **kwargs)
 
     class Meta:
