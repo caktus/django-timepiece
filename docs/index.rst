@@ -5,6 +5,7 @@ Contents:
 .. toctree::
    :maxdepth: 2
 
+   settings
    releasenotes
 
 Indices and tables

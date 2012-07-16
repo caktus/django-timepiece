@@ -28,12 +28,18 @@ from django.views.generic.base import TemplateView
 from django.views.generic import UpdateView, ListView, DetailView, View
 from django.utils.decorators import method_decorator
 
+try:
+    from django.utils import timezone
+except ImportError:
+    from timepiece import timezone
+
 from timepiece.utils import render_with, reverse_lazy
 
 from timepiece import models as timepiece
 from timepiece import utils
 from timepiece import forms as timepiece_forms
 from timepiece.templatetags.timepiece_tags import seconds_to_hours
+from timepiece.templatetags.timepiece_tags import get_active_hours
 
 
 @login_required
@@ -75,11 +81,12 @@ def view_entries(request):
     if request.user.has_perm('timepiece.can_clock_in'):
         view_entries = True
     week_start = utils.get_week_start()
+    time_q = Q(end_time__gte=week_start) | Q(end_time__isnull=True)
     entries = timepiece.Entry.objects.select_related(
         'project__business',
     ).filter(
-        user=request.user,
-        end_time__gte=week_start,
+        time_q,
+        user=request.user
     ).select_related('project', 'activity', 'location')
     today = datetime.date.today()
     assignments = timepiece.ContractAssignment.objects.filter(
@@ -92,7 +99,7 @@ def view_entries(request):
     activity_entries = entries.values(
         'billable',
     ).annotate(sum=Sum('hours')).order_by('-sum')
-    current_total = entries.aggregate(sum=Sum('hours'))['sum']
+    current_total = entries.aggregate(sum=Sum('hours'))['sum'] or 0
     others_active_entries = timepiece.Entry.objects.filter(
         end_time__isnull=True,
     ).exclude(
@@ -106,6 +113,10 @@ def view_entries(request):
         user=request.user,
         end_time__isnull=True,
     )
+
+    current_total += sum([get_active_hours(entry)
+        for entry in my_active_entries]) or 0
+
 #     temporarily disabled until the allocations represent accurate goals
 #     -TM 6/27
     allocations = []
@@ -118,13 +129,16 @@ def view_entries(request):
 
     project_entries = entries.exclude(
         project__in=allocated_projects,
+        end_time__isnull=True
     ).values(
         'project__name', 'project__pk'
     ).annotate(sum=Sum('hours')).order_by('project__name')
     schedule = timepiece.PersonSchedule.objects.filter(
                                     user=request.user)
+    this_weeks_entries = entries.order_by('-start_time'). \
+        filter(end_time__gte=week_start)
     context = {
-        'this_weeks_entries': entries.order_by('-start_time'),
+        'this_weeks_entries': this_weeks_entries,
         'assignments': assignments,
         'allocations': allocations,
         'schedule': schedule,
@@ -228,7 +242,7 @@ def toggle_paused(request, entry_id):
         else:
             action = 'resumed'
 
-        delta = datetime.datetime.now() - entry.start_time
+        delta = timezone.now() - entry.start_time
         seconds = delta.seconds - entry.seconds_paused
         seconds += delta.days * 86400
 
@@ -434,15 +448,21 @@ class ProjectTimesheet(DetailView):
         if self.request.GET and year_month_form.is_valid():
             from_date, to_date = year_month_form.save()
         else:
-            from_date = utils.get_month_start(datetime.datetime.today()).date()
+            date = timezone.make_aware(
+                datetime.datetime.today(),
+                timezone.get_current_timezone()
+            )
+            from_date = utils.get_month_start(date).date()
             to_date = from_date + relativedelta(months=1)
         entries_qs = timepiece.Entry.objects
         entries_qs = entries_qs.timespan(from_date, span='month').filter(
             project=project
         )
-        month_entries = entries_qs.date_trunc('month', True).order_by(
-            'start_time'
-        )
+        extra_values = ('start_time', 'end_time', 'comments', 'seconds_paused',
+                'id', 'location__name', 'project__name', 'activity__name',
+                'status')
+        month_entries = entries_qs.date_trunc('month',
+                extra_values).order_by('start_time')
         total = entries_qs.aggregate(hours=Sum('hours'))['hours']
         user_entries = entries_qs.order_by().values(
             'user__first_name', 'user__last_name').annotate(
@@ -507,7 +527,10 @@ def view_person_time_sheet(request, user_id):
     if not (request.user.has_perm('timepiece.view_entry_summary') or \
         user.pk == request.user.pk):
         return HttpResponseForbidden('Forbidden')
-    today_reset = datetime.datetime.today()
+    today_reset = timezone.make_aware(
+        datetime.datetime.today(),
+        timezone.get_current_timezone(),
+    )
     today_reset = today_reset.replace(hour=0, minute=0, second=0, \
         microsecond=0)
     from_date = utils.get_month_start(today_reset)
@@ -536,7 +559,10 @@ def view_person_time_sheet(request, user_id):
             from_date, to_date = year_month_form.save()
     entries_qs = timepiece.Entry.objects.filter(user=user)
     month_qs = entries_qs.timespan(from_date, span='month')
-    month_entries = month_qs.date_trunc('month', True)
+    extra_values = ('start_time', 'end_time', 'comments', 'seconds_paused',
+            'id', 'location__name', 'project__name', 'activity__name',
+            'status')
+    month_entries = month_qs.date_trunc('month', extra_values)
     # For grouped entries, back date up to the start of the week.
     first_week = utils.get_week_start(from_date)
     month_week = first_week + datetime.timedelta(weeks=1)
@@ -597,7 +623,10 @@ def change_person_time_sheet(request, action, user_id, from_date):
             'timesheet'.format(action))
 
     try:
-        from_date = datetime.datetime.strptime(from_date, '%Y-%m-%d')
+        from_date = timezone.make_aware(
+            datetime.datetime.strptime(from_date, '%Y-%m-%d'),
+            timezone.get_current_timezone(),
+        )
     except (ValueError, OverflowError):
         raise Http404
     to_date = from_date + relativedelta(months=1)
@@ -659,9 +688,16 @@ def confirm_invoice_project(request, project_id, to_date, from_date=None):
     if not request.user.has_perm('timepiece.generate_project_invoice'):
         return HttpResponseForbidden('Forbidden')
     try:
-        to_date = datetime.datetime.strptime(to_date, '%Y-%m-%d')
+        to_date = timezone.make_aware(
+            datetime.datetime.strptime(to_date, '%Y-%m-%d'),
+            timezone.get_current_timezone(),
+        )
         if from_date:
-            from_date = datetime.datetime.strptime(from_date, '%Y-%m-%d')
+            from_date = timezone.make_aware(
+                datetime.datetime.strptime(from_date, '%Y-%m-%d'),
+                timezone.get_current_timezone(),
+            )
+
         else:
             from_date = None
     except (ValueError, OverflowError):
@@ -707,7 +743,9 @@ def confirm_invoice_project(request, project_id, to_date, from_date=None):
 
 @permission_required('timepiece.change_entrygroup')
 def invoice_projects(request):
-    to_date = utils.get_month_start(datetime.datetime.today()).date()
+    date = timezone.make_aware(datetime.datetime.today(),
+        timezone.get_current_timezone())
+    to_date = utils.get_month_start(date).date()
     from_date = None
     defaults = {
         'to_date': (to_date - relativedelta(days=1)).strftime('%m/%d/%Y'),
@@ -1183,7 +1221,9 @@ def payroll_summary(request):
     if request.GET and year_month_form.is_valid():
         from_date, to_date = year_month_form.save()
     else:
-        from_date = utils.get_month_start(datetime.datetime.today()).date()
+        date = timezone.make_aware(datetime.datetime.today(),
+            timezone.get_current_timezone())
+        from_date = utils.get_month_start(date).date()
         to_date = from_date + relativedelta(months=1)
     last_billable = utils.get_last_billable_day(from_date)
     projects = getattr(settings, 'TIMEPIECE_PROJECTS', {})
@@ -1201,10 +1241,10 @@ def payroll_summary(request):
     # Monthly totals
     leave = timepiece.Entry.objects.filter(monthQ, ~workQ
                                   ).values('user', 'hours', 'project__name')
-    month_entries = timepiece.Entry.objects.date_trunc('month')
+    extra_values = ('project__type__label',)
+    month_entries = timepiece.Entry.objects.date_trunc('month', extra_values)
     month_entries_valid = month_entries.filter(monthQ, statusQ, workQ)
-    monthly_totals = list(utils.payroll_totals(month_entries_valid, from_date,
-                                               leave))
+    labels, monthly_totals = utils.payroll_totals(month_entries_valid, leave)
     # Unapproved and unverified hours
     entries = timepiece.Entry.objects.filter(monthQ)
     user_values = ['user__pk', 'user__first_name', 'user__last_name']
@@ -1219,6 +1259,7 @@ def payroll_summary(request):
         'monthly_totals': monthly_totals,
         'unverified': unverified.values_list(*user_values).distinct(),
         'unapproved': unapproved.values_list(*user_values).distinct(),
+        'labels': labels,
     }
 
 
@@ -1279,10 +1320,24 @@ def edit_settings(request):
 @render_with('timepiece/time-sheet/reports/hourly.html')
 @utils.date_filter
 def hourly_report(request, date_form, from_date, to_date, status, activity):
+    tz = timezone.get_current_timezone()
     if not from_date:
-        from_date = utils.get_month_start(datetime.datetime.today()).date()
+        from_date = utils.get_month_start(timezone.now())
+    else:
+        try:
+            from_date = timezone.make_aware(from_date, tz)
+        except AttributeError:
+            from_date = datetime.datetime.combine(from_date,
+                datetime.time(tzinfo=tz))
     if not to_date:
         to_date = from_date + relativedelta(months=1)
+    else:
+        try:
+            to_date = timezone.make_aware(to_date,
+                timezone.get_current_timezone())
+        except AttributeError:
+            to_date = datetime.datetime.combine(to_date,
+                datetime.time(tzinfo=tz))
     header_to = to_date - relativedelta(days=1)
     trunc = timepiece_forms.ProjectFiltersForm.DEFAULT_TRUNC
     query = Q(end_time__gt=utils.get_week_start(from_date),

@@ -10,20 +10,20 @@
 {% endblock crumbs %}
 
 {% block content %}
-    <div class="row">
+    <div class="row-fluid">
         <div class="span12">
             <h2>Are you sure you want to remove this entry from the current invoice?</h2>
         </div>
     </div>
 
-    <div class="row">
+    <div class="row-fluid">
         <div class="span12">
             <h3>Invoice</h3>
             {% include 'timepiece/time-sheet/invoice/_invoice_detail.html' %}
         </div>
     </div>
 
-    <div class="row">
+    <div class="row-fluid">
         <div class="span12">
             <h3>Entry</h3>
             <table class="table table-bordered">
@@ -53,7 +53,7 @@
         </div>
     </div>
 
-    <div class="row">
+    <div class="row-fluid">
         <div class="span6">
             <form class="form-inline" method="post">
                 {% csrf_token %}

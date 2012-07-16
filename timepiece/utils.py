@@ -1,4 +1,4 @@
-from datetime import date, datetime, timedelta, time as time_obj
+import datetime
 from dateutil import rrule
 from dateutil.relativedelta import relativedelta
 from decimal import Decimal
@@ -10,12 +10,18 @@ from django.http import HttpResponse, HttpResponseRedirect, Http404
 from django.shortcuts import render_to_response
 from django.template import RequestContext
 from django.template.defaultfilters import slugify
-from django.db.models import Sum
+from django.db.models import Sum, get_model
 from django.contrib.sites.models import Site
 from django.utils.functional import lazy
 from django.core.urlresolvers import reverse
 
+try:
+    from django.utils import timezone
+except ImportError:
+    from timepiece import timezone
+
 reverse_lazy = lazy(reverse, str)
+
 
 def slugify_uniquely(s, queryset=None, field='slug'):
     """
@@ -99,7 +105,8 @@ def parse_time(time_str, input_formats=None):
             continue
         else:
             # turn the time_struct into a datetime.time object
-            return time_obj(*value[3:6])
+            return timezone.make_aware(datetime.time(*value[3:6]),
+                timezone.get_current_timezone())
 
     # return None if there's no matching format
     return None
@@ -119,27 +126,46 @@ def get_total_time(seconds):
 
 def get_month_start(from_day=None):
     if not from_day:
-        from_day = date.today()
+        from_day = datetime.date.today()
+    from_day = datetime.datetime.combine(from_day,
+        datetime.time(tzinfo=timezone.get_current_timezone()))
     return from_day.replace(day=1)
 
 
 def get_week_start(day=None):
     if not day:
-        day = date.today()
+        day = datetime.date.today()
     isoweekday = day.isoweekday()
     if isoweekday != 1:
-        day = day - timedelta(days=isoweekday - 1)
+        day = day - datetime.timedelta(days=isoweekday - 1)
+    day = datetime.datetime.combine(day,
+        datetime.time(tzinfo=timezone.get_current_timezone()))
     return day
 
 
 def get_last_billable_day(day=None):
     if not day:
-        day = date.today()
+        day = datetime.date.today()
     day += relativedelta(months=1)
-    return get_week_start(day) - timedelta(days=1)
+    return get_week_start(get_month_start(day)) - \
+        datetime.timedelta(days=1)
 
 
 def generate_dates(start=None, end=None, by='week'):
+    try:
+        if not timezone.is_aware(start):
+            start = timezone.make_aware(start, timezone.get_current_timezone())
+    except AttributeError:
+        if start:
+            start = datetime.datetime.combine(start,
+                datetime.time(tzinfo=timezone.get_current_timezone()))
+    try:
+        if not timezone.is_aware(end):
+            end = timezone.make_aware(end, timezone.get_current_timezone())
+    except AttributeError:
+        if end:
+            end = datetime.datetime.combine(end,
+                datetime.time(tzinfo=timezone.get_current_timezone()))
     if by == 'month':
         start = get_month_start(start)
         return rrule.rrule(rrule.MONTHLY, dtstart=start, until=end)
@@ -152,7 +178,7 @@ def generate_dates(start=None, end=None, by='week'):
 
 def get_week_window(day):
     start = get_week_start(day)
-    end = start + timedelta(weeks=1)
+    end = start + datetime.timedelta(weeks=1)
     weeks = generate_dates(end=end, start=start, by='week')
     return list(weeks)
 
@@ -170,7 +196,7 @@ def date_filter(func):
                 raise Http404
         else:
             form = timepiece_forms.DateForm()
-            today = date.today()
+            today = datetime.date.today()
             from_date = today.replace(day=1)
             to_date = from_date + relativedelta(months=1)
             status = activity = None
@@ -217,6 +243,13 @@ def grouped_totals(entries):
                                                         'project__name')
     weeks = {}
     for week, week_entries in groupby(weekly, lambda x: x['date']):
+        try:
+            if timezone.is_naive(week):
+                week = timezone.make_aware(week,
+                    timezone.get_current_timezone())
+        except AttributeError:
+            week = datetime.datetime.combine(week,
+                timezone.get_current_timezone())
         weeks[week] = get_hours(week_entries)
     days = []
     last_week = None
@@ -233,21 +266,6 @@ def grouped_totals(entries):
 def find_overtime(dates):
     """Given a list of weekly summaries, return the overtime for each week"""
     return sum([day - 40 for day in dates if day > 40])
-
-
-def format_leave(leave):
-    """
-    Formats leave time to ([(project name, hours)], total hours)
-    """
-    leave_hours = 0
-    leave_desc = {}
-    for entry in leave:
-        pj = entry.get('project__name')
-        pj_hours = entry.get('hours')
-        old = leave_desc.get(pj, 0)
-        leave_desc[pj] = pj_hours + old
-        leave_hours += pj_hours
-    return leave_desc.items(), leave_hours
 
 
 def get_hour_summaries(hours):
@@ -274,6 +292,8 @@ def user_date_totals(user_entries):
     """Yield a user's name and a dictionary of their hours"""
     date_dict = {}
     for date, date_entries in groupby(user_entries, lambda x: x['date']):
+        if isinstance(date, datetime.datetime):
+            date = date.date()
         d_entries = list(date_entries)
         name = ' '.join((d_entries[0]['user__first_name'],
                         d_entries[0]['user__last_name']))
@@ -293,6 +313,8 @@ def project_totals(entries, date_headers, hour_type, overtime=False,
         name, date_dict = user_date_totals(user_entries)
         dates = []
         for index, day in enumerate(date_headers):
+            if isinstance(day, datetime.datetime):
+                day = day.date()
             total = date_dict.get(day, {}).get(hour_type, 0)
             totals[index] += total
             dates.append(total)
@@ -308,35 +330,117 @@ def project_totals(entries, date_headers, hour_type, overtime=False,
     yield (rows, totals)
 
 
-def payroll_totals(entries, date, leave):
-    """
-    Yield totals for a month, grouped by user and billable status of each entry
-    """
-    all_leave_hours = {}
-    all_paid_hours = 0
-    all_worked_hours = [0, 0, 0]
+def payroll_totals(month_work_entries, month_leave_entries):
+    """Summarizes monthly work and leave totals, grouped by user.
 
-    def construct_all_worked_hours(hours_dict, leave_hours):
-        """Helper for summing the worked hours list for all users"""
-        billable = hours_dict.get('billable', 0)
-        non_billable = hours_dict.get('non_billable', 0)
-        total_worked = hours_dict.get('total', 0)
-        worked_hours = [billable, non_billable, total_worked]
-        return map(sum, zip(worked_hours, all_worked_hours))
+    Returns (labels, rows).
+        labels -> {'billable': [proj_labels], 'nonbillable': [proj_labels]}
+        rows -> [{
+            name: name of user,
+            billable, nonbillable, leave: [
+                {'hours': hours for label, 'percent': % of work or leave total}
+            ],
+            work_total: sum of billable and nonbillable hours,
+            leave_total: sum of leave hours
+            grand_total: sum of work_total and leave_total
+        }]
 
-    date = datetime(month=date.month, day=date.day, year=date.year)
-    for user, user_entries in groupby(entries, lambda x: x['user']):
-        name, date_dict = user_date_totals(user_entries)
-        hours_dict = date_dict.get(date, {})
-        worked_hours = get_hour_summaries(hours_dict)
-        leave_desc, leave_hours = format_leave(leave.filter(user=user))
-        paid_hours = worked_hours[2] + leave_hours
-        # Add totals for all users
-        all_worked_hours = construct_all_worked_hours(hours_dict, leave_hours)
-        for desc, hours in leave_desc:
-            all_leave_hours[desc] = all_leave_hours.get(desc, 0) + hours
-        all_paid_hours += paid_hours
-        yield (name, worked_hours, leave_desc, paid_hours)
-    nested_hours = get_hour_summaries(all_worked_hours)
-    if all_paid_hours:
-        yield ('Totals', nested_hours, all_leave_hours.items(), all_paid_hours)
+    The last entry in each of the billable/nonbillable/leave lists contains a
+    summary of the status. The last row contains sum totals for all other rows.
+    """
+    def _get_name(entries):
+        """Helper for getting the associated user's first and last name."""
+        fname = entries[0].get('user__first_name', '') if entries else ''
+        lname = entries[0].get('user__last_name', '') if entries else ''
+        name = '{0} {1}'.format(fname, lname).strip()
+        return name
+
+    def _get_index(status, label):
+        """
+        Returns the index in row[status] (where row is the row corresponding
+        to the current user) where hours for the project label should be
+        recorded.
+
+        If the label does not exist, then it is added to the labels list.
+        Each row and the totals row is updated accordingly.
+
+        Requires that labels, rows, and totals are in scope.
+        """
+        if label in labels[status]:
+            return labels[status].index(label)
+        # Otherwise: update labels, rows, and totals to reflect the addition.
+        labels[status].append(label)
+        for row in rows:
+            row[status].insert(-1, {'hours': Decimal(), 'percent': Decimal()})
+        totals[status].insert(-1, {'hours': Decimal(), 'percent': Decimal()})
+        return len(labels[status]) - 1
+
+    def _construct_row(name):
+        """Constructs an empty row for the given name."""
+        row = {'name': name}
+        for status in labels.keys():
+            # Include an extra entry for summary.
+            row[status] = [{'hours': Decimal(), 'percent': Decimal()}
+                    for i in range(len(labels[status])+1)]
+        row['work_total'] = Decimal()
+        row['grand_total'] = Decimal()
+        return row
+
+    def _add_percentages(row, statuses, total):
+        """For each entry in each status, percent = hours / total"""
+        if total:
+            for status in statuses:
+                for i in range(len(row[status])):
+                    p = row[status][i]['hours'] / total * 100
+                    row[status][i]['percent'] = p
+
+    def _get_sum(row, statuses):
+        """Sum the number of hours worked in given statuses."""
+        return sum([row[status][-1]['hours'] for status in statuses])
+
+    work_statuses = ('billable', 'nonbillable')
+    leave_statuses = ('leave', )
+    labels = dict([(status, []) for status in work_statuses + leave_statuses])
+    rows = []
+    totals = _construct_row('Totals')
+    for user, work_entries in groupby(month_work_entries, lambda e: e['user']):
+
+        work_entries = list(work_entries)
+        row = _construct_row(_get_name(work_entries))
+        rows.append(row)
+        for entry in work_entries:
+            status = 'billable' if entry['billable'] else 'nonbillable'
+            label = entry['project__type__label']
+            index = _get_index(status, label)
+            hours = entry['hours']
+            row[status][index]['hours'] += hours
+            row[status][-1]['hours'] += hours
+            totals[status][index]['hours'] += hours
+            totals[status][-1]['hours'] += hours
+
+        leave_entries = month_leave_entries.filter(user=user)
+        status = 'leave'
+        for entry in leave_entries:
+            label = entry.get('project__name')
+            index = _get_index(status, label)
+            hours = entry.get('hours')
+            row[status][index]['hours'] += hours
+            row[status][-1]['hours'] += hours
+            totals[status][index]['hours'] += hours
+            totals[status][-1]['hours'] += hours
+
+        row['work_total'] = _get_sum(row, work_statuses)
+        _add_percentages(row, work_statuses, row['work_total'])
+        row['leave_total'] = _get_sum(row, leave_statuses)
+        _add_percentages(row, leave_statuses, row['leave_total'])
+        row['grand_total'] = row['work_total'] + row['leave_total']
+
+    totals['work_total'] = _get_sum(totals, work_statuses)
+    _add_percentages(totals, work_statuses, totals['work_total'])
+    totals['leave_total'] = _get_sum(totals, leave_statuses)
+    _add_percentages(totals, leave_statuses, totals['leave_total'])
+    totals['grand_total'] = totals['work_total'] + totals['leave_total']
+
+    if rows:
+        rows.append(totals)
+    return labels, rows

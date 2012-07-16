@@ -8,6 +8,11 @@ from django.db.models import Q, Avg, Sum, Max, Min
 from django.contrib.auth.models import User
 from django.core.exceptions import ValidationError, NON_FIELD_ERRORS
 
+try:
+    from django.utils import timezone
+except ImportError:
+    from timepiece import timezone
+
 from timepiece import utils
 
 from dateutil.relativedelta import relativedelta
@@ -273,7 +278,7 @@ ENTRY_STATUS = (
 class EntryQuerySet(models.query.QuerySet):
     """QuerySet extension to provide filtering by billable status"""
 
-    def date_trunc(self, key='month', all_values=False):
+    def date_trunc(self, key='month', extra_values=None):
         select = {"day": {"date": """DATE_TRUNC('day', end_time)"""},
                   "week": {"date": """DATE_TRUNC('week', end_time)"""},
                   "month": {"date": """DATE_TRUNC('month', end_time)"""},
@@ -281,10 +286,7 @@ class EntryQuerySet(models.query.QuerySet):
         basic_values = (
             'user', 'date', 'user__first_name', 'user__last_name', 'billable',
         )
-        extra_values = (
-            'start_time', 'end_time', 'comments', 'seconds_paused', 'id',
-            'location__name', 'project__name', 'activity__name', 'status',
-        ) if all_values else ()
+        extra_values = extra_values or ()
         qs = self.extra(select=select[key])
         qs = qs.values(*basic_values + extra_values)
         qs = qs.annotate(hours=Sum('hours')).order_by('user__last_name',
@@ -307,6 +309,7 @@ class EntryQuerySet(models.query.QuerySet):
                 diff = relativedelta(days=1)
             if diff is not None:
                 to_date = from_date + diff
+
         datesQ = Q()
         datesQ &= Q(end_time__gte=from_date)
         datesQ &= Q(end_time__lt=to_date) if to_date else Q()
@@ -317,16 +320,19 @@ class EntryManager(models.Manager):
     def get_query_set(self):
         qs = EntryQuerySet(self.model)
         qs = qs.select_related('activity', 'project__type')
+
         # ensure our select_related are added.  Without this line later calls
         # to select_related will void ours (not sure why - probably a bug
         # in Django)
-        foo = str(qs.query)
+        # in other words: do not remove!
+        str(qs.query)
+
         qs = qs.extra({'billable': 'timepiece_activity.billable AND '
                                    'timepiece_attribute.billable'})
         return qs
 
-    def date_trunc(self, key='month', all_values=False):
-        return self.get_query_set().date_trunc(key, all_values)
+    def date_trunc(self, key='month', extra_values=()):
+        return self.get_query_set().date_trunc(key, extra_values)
 
     def timespan(self, from_date, to_date=None, span='month'):
         return self.get_query_set().timespan(from_date, to_date, span)
@@ -566,7 +572,7 @@ class Entry(models.Model):
         If this entry is not paused, pause it.
         """
         if not self.is_paused:
-            self.pause_time = datetime.datetime.now()
+            self.pause_time = timezone.now()
 
     def pause_all(self):
         """
@@ -581,7 +587,7 @@ class Entry(models.Model):
     def unpause(self, date=None):
         if self.is_paused:
             if not date:
-                date = datetime.datetime.now()
+                date = timezone.now()
             delta = date - self.pause_time
             self.seconds_paused += delta.seconds
             self.pause_time = None
@@ -611,7 +617,7 @@ class Entry(models.Model):
             self.user = user
             self.project = project
             if not self.start_time:
-                self.start_time = datetime.datetime.now()
+                self.start_time = timezone.now()
 
     def __is_editable(self):
         return self.status == 'unverified'
@@ -904,12 +910,18 @@ class ContractAssignment(models.Model):
         outside the range will be listed as ongoing instead of befor or after.
         """
         if not hasattr(self, '_priority_type'):
-            weeks = utils.get_week_window(datetime.datetime.now())
-            if self.end_date < weeks[1].date() \
-            and self.end_date >= weeks[0].date():
+            weeks = utils.get_week_window(timezone.now())
+            try:
+                end_date = self.end_date.date()
+                start_date = self.start_date.date()
+            except:
+                end_date = self.end_date
+                start_date = self.start_date
+            if end_date < weeks[1].date() \
+            and end_date >= weeks[0].date():
                 self._priority_type = 0
-            elif self.start_date < weeks[1].date() \
-            and self.start_date >= weeks[0].date():
+            elif start_date < weeks[1].date() \
+            and start_date >= weeks[0].date():
                 self._priority_type = 1
             else:
                 self._priority_type = 2
@@ -1060,7 +1072,7 @@ class PersonSchedule(models.Model):
     def hours_scheduled(self):
         if not hasattr(self, '_hours_scheduled'):
             self._hours_scheduled = 0
-            now = datetime.datetime.now()
+            now = timezone.now()
             for assignment in self.user.assignments.filter(end_date__gte=now):
                 self._hours_scheduled += assignment.hours_remaining
         return self._hours_scheduled

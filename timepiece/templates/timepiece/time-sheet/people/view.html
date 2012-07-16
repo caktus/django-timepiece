@@ -22,7 +22,7 @@
 {% endblock %}
 
 {% block content %}
-    <div class="row">
+    <div class="row-fluid">
         <div class="span12">
             <h2>
                 {% if timesheet_user.get_full_name %}
@@ -47,16 +47,21 @@
         </div>
     </div>
 
-    <div class="row">
+    <div class="row-fluid">
         <div class="span12">
-            <form class="form-inline" method="get" action="" accept-charset="utf-8">
+            {# We have to duplicate the form so the hidden fields are not in the same form #}
+            <form class="form-inline visible-desktop" method="get" action="" accept-charset="utf-8">
                 {{ year_month_form|as_bootstrap:"inline" }}
                 <input type="submit" name="yearmonth" class="btn" value="Update" />
             </form>
-        </div class="span12">
+            <form class="hidden-desktop" method="get" action="" accept-charset="utf-8">
+                {{ year_month_form|as_bootstrap }}
+                <input type="submit" name="yearmonth" class="btn" value="Update" />
+            </form>
+        </div>
     </div>
 
-    <div class="row">
+    <div class="row-fluid">
         <div class="span12">
             <ul class="nav nav-tabs">
                 <li class="active"><a href="#overview" data-toggle="tab">Overview</a></li>
@@ -65,7 +70,7 @@
             </ul>
             <div class="tab-content">
                 <div class="tab-pane active" id="overview">
-                    <div class="row">
+                    <div class="row-fluid">
                         {% if project_entries %}
                             <div class="span6">
                                 <h3>Project Summary</h3>
@@ -93,8 +98,8 @@
                                 <table class="table table-bordered table-striped table-condensed">
                                     <thead>
                                         <tr>
-                                            <th>Category</th>
-                                            <th>Hours</th>
+                                            <th width="70%">Category</th>
+                                            <th width="30%">Hours</th>
                                         </tr>
                                     </thead>
                                     <tbody>
@@ -124,19 +129,24 @@
                     {% if entries %}
                         {% for entry in entries %}
                             {% ifchanged entry.start_time|date:"W" %}
-                                <table class="table table-bordered table-condensed table-striped">
+                                {# Close table before new table starts (ignore first table) #}
+                                {% if entry.start_time.weekday == 0 and not forloop.first %}
+                                        </tbody>
+                                    </table>
+                                {% endif %}
+                                <table id="entries" class="table table-bordered table-condensed table-striped">
                                     <thead>
                                         <tr>
                                             <th>Date</th>
                                             <th>Project</th>
                                             <th>Activity</th>
                                             <th>Location</th>
-                                            <th>Time In</th>
-                                            <th>Time Out</th>
-                                            <th>Breaks</th>
-                                            <th>Hours</th>
-                                            <th width="40%">Comments</th>
-                                            <th></th>
+                                            <th class="time">Time In</th>
+                                            <th class="time">Time Out</th>
+                                            <th class="time">Breaks</th>
+                                            <th class="time">Hours</th>
+                                            <th class="comments">Comments</th>
+                                            <th class="aux"></th>
                                         </tr>
                                     </thead>
                                     <tbody>
@@ -150,15 +160,15 @@
                                 {% else %}
                                 <td></td>
                                 {% endifchanged %}
-                                <td>{{ entry.project__name }}</td>
-                                <td>{{ entry.activity__name }}</td>
+                                <td class="break">{{ entry.project__name }}</td>
+                                <td class="break">{{ entry.activity__name }}</td>
                                 <td>{{ entry.location__name }}</td>
-                                <td>{{ entry.start_time|date:"P" }}</td>
-                                <td>{{ entry.end_time|date:"P" }}</td>
-                                <td class="hours">{{ entry.seconds_paused|seconds_to_hours|floatformat:2 }}</td>
-                                <td class="hours">{{ entry.hours|floatformat:2 }}</td>
-                                <td title="{{entry.comments}}">{{ entry.comments|truncatewords:12|urlizetrunc:25|safe }}</td>
-                                <td>
+                                <td class="time break">{{ entry.start_time|date:"P" }}</td>
+                                <td class="time break">{{ entry.end_time|date:"P" }}</td>
+                                <td class="hours time">{{ entry.seconds_paused|seconds_to_hours|floatformat:2 }}</td>
+                                <td class="hours time">{{ entry.hours|floatformat:2 }}</td>
+                                <td class="comments" title="{{entry.comments}}">{{ entry.comments|truncatewords:12|urlizetrunc:25|safe }}</td>
+                                <td class="aux">
                                     {% if entry.status == "unverified" %}
                                         <a href="{% url "timepiece-update" entry.id %}?next={{ request.get_full_path|urlencode }}#full-timesheet">Edit</a>
                                     {% else %}
@@ -168,15 +178,32 @@
                                     {% endif %}
                                 </td>
                             </tr>
-                            {% if entry.start_time.weekday == 6 %}
+                            {# Close the last table #}
+                            {% if forloop.last %}
                                     </tbody>
                                 </table>
                             {% endif %}
                         {% endfor %}
-                        <table class="table table-bordered table-condensed">
-                            <tr class="monthly_total">
-                                <th colspan="4">Overall total for the period:</th>
+
+                        <table class="table table-bordered table-condensed totals">
+                            <thead>
+                                <tr>
+                                    <th></th>
+                                    <th></th>
+                                    <th></th>
+                                    <th></th>
+                                    <th class="time"></th>
+                                    <th class="time"></th>
+                                    <th class="time"></th>
+                                    <th class="time"></th>
+                                    <th class="comments"></th>
+                                    <th class="aux"></th>
+                                </tr>
+                            </thead>
+                            <tr >
+                                <td colspan="7"><strong>Overall total for the period:</strong></td>
                                 <td class="hours">{{ summary.total|floatformat:2 }}</td>
+                                <td colspan="2"></td>
                             </tr>
                         </table>
                     {% else %}
@@ -189,9 +216,9 @@
                             <table class="table table-bordered table-condensed">
                                 <tr class="ledger_header">
                                     <th colspan="2">Week of {{ week|date:"m/d/Y (D)" }} </th>
-                                    <th>Billable</th>
-                                    <th>Non Billable</th>
-                                    <th>Total</th>
+                                    <th class="billable">Billable</th>
+                                    <th class="non-billable">Non Billable</th>
+                                    <th class="total">Total</th>
                                 </tr>
                                 {% for day, projects in days %}
                                     {% for project, totals in projects.1.iteritems %}
@@ -225,9 +252,18 @@
                                 </tr>
                             </table>
                         {% endfor %}
-                        <table class="table table-bordered table-condensed">
-                            <tr class="monthly_total">
-                                <th colspan="4">Overall total for the period:</th>
+                        <table class="table table-bordered table-condensed totals">
+                            <thead>
+                                <tr>
+                                    <th></th>
+                                    <th></th>
+                                    <th class="billable"></th>
+                                    <th class="non-billable"></th>
+                                    <th class="total"></th>
+                                </tr>
+                            </thead>
+                            <tr>
+                                <td colspan="4"><strong>Overall total for the period:</strong></th>
                                 <td class="hours">{{ summary.total|floatformat:2 }}</td>
                             </tr>
                         </table>

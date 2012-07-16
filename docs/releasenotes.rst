@@ -1,6 +1,19 @@
 Release Notes
 =========================================
 
+0.5.1 (Work in Progress)
+------------------------
+
+* Added compatability with Django 1.4 and timezone support
+* Added mobile support for the dashboard (clocking in/out, ledger, etc.)
+* Fixed a bug where the last billable day was calculated incorrectly
+* Payroll report now lists types of projects under billable and non-billable columns
+* Moved the "Others Are Working On" table to a popover in the navigation
+* Work total table now includes the active entry
+* Comment field available when clocking in to a project
+* Added support for custom navigation through EXTRA_NAV setting
+* Across the board styling changes
+
 0.5.0 (Released 07-12-2012)
 ---------------------------
 
