@@ -46,7 +46,7 @@ Installation
         ...
     )
 
-#. Add `django.core.context_processors.request` to TEMPLATE_CONTEXT_PROCESSORS::
+#. Add `django.core.context_processors.request` and django-timepiece context processors to TEMPLATE_CONTEXT_PROCESSORS::
 
     TEMPLATE_CONTEXT_PROCESSORS = (
         "django.contrib.auth.context_processors.auth",
@@ -55,6 +55,8 @@ Installation
         "django.core.context_processors.media",
         "django.contrib.messages.context_processors.messages",
         "django.core.context_processors.request", # <----
+        "timepiece.context_processors.extra_nav", # <----
+        "timepiece.context_processors.active_entries", # <----
     )
 
 #. Add the timepiece URLs to urls.py, e.g.::

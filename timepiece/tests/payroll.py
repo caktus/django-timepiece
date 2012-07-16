@@ -5,6 +5,11 @@ from django.conf import settings
 from django.core.urlresolvers import reverse
 from django.contrib.auth.models import Permission
 
+try:
+    from django.utils import timezone
+except ImportError:
+    from timepiece import timezone
+
 from timepiece import models as timepiece
 from timepiece import forms as timepiece_forms
 from timepiece import utils
@@ -14,6 +19,7 @@ from dateutil.relativedelta import relativedelta
 
 
 class PayrollTest(TimepieceDataTestCase):
+
     def setUp(self):
         super(PayrollTest, self).setUp()
         self.sick = self.create_project(name='sick')
@@ -21,13 +27,14 @@ class PayrollTest(TimepieceDataTestCase):
         settings.TIMEPIECE_PROJECTS = {
             'sick': self.sick.pk, 'vacation': self.vacation.pk
         }
-        self.next = datetime.datetime(2011, 6, 1)
-        self.overtime_before = datetime.datetime(2011, 4, 29)
-        self.first = datetime.datetime(2011, 5, 1)
-        self.first_week = datetime.datetime(2011, 5, 2)
-        self.middle = datetime.datetime(2011, 5, 18)
-        self.last_billable = datetime.datetime(2011, 5, 28)
-        self.last = datetime.datetime(2011, 5, 31)
+        tz = timezone.get_current_timezone()
+        self.next = datetime.datetime(2011, 6, 1, tzinfo=tz)
+        self.overtime_before = datetime.datetime(2011, 4, 29, tzinfo=tz)
+        self.first = datetime.datetime(2011, 5, 1, tzinfo=tz)
+        self.first_week = datetime.datetime(2011, 5, 2, tzinfo=tz)
+        self.middle = datetime.datetime(2011, 5, 18, tzinfo=tz)
+        self.last_billable = datetime.datetime(2011, 5, 28, tzinfo=tz)
+        self.last = datetime.datetime(2011, 5, 31, tzinfo=tz)
         self.dates = [
             self.overtime_before, self.first, self.first_week, self.middle,
             self.last, self.last_billable, self.next
@@ -43,28 +50,35 @@ class PayrollTest(TimepieceDataTestCase):
         self.log_time(start=start, delta=delta, user=user, status=status,
                       billable=billable, project=project)
 
-    def make_logs(self, day=None, user=None):
+    def make_logs(self, day=None, user=None, billable_project=None,
+            nonbillable_project=None):
         if not user:
             user = self.user
         if not day:
             day = self.first
-        billable = self.make_entry(user, day, (3, 30))
-        non_billable = self.make_entry(user, day, (2, 0), billable=False)
-        invoiced = self.make_entry(user, day, (5, 30), status='invoiced')
-        unapproved = self.make_entry(user, day, (6, 0), status='verified')
+        billable = self.make_entry(user, day, (3, 30),
+                project=billable_project)
+        non_billable = self.make_entry(user, day, (2, 0),
+                project=nonbillable_project)
+        invoiced = self.make_entry(user, day, (5, 30), status='invoiced',
+                project=billable_project)
+        unapproved = self.make_entry(user, day, (6, 0), status='verified',
+                project=billable_project)
         sick = self.make_entry(user, day, (8, 0), project=self.sick)
         vacation = self.make_entry(user, day, (4, 0), project=self.vacation)
 
-    def all_logs(self, user=None):
+    def all_logs(self, user=None, billable_project=None,
+            nonbillable_project=None):
         if not user:
             user = self.user
         for day in self.dates:
-            self.make_logs(day, user)
+            self.make_logs(day, user, billable_project, nonbillable_project)
 
     def testLastBillable(self):
         """Test the get_last_billable_day utility for validity"""
         months = range(1, 13)
-        first_days = [datetime.datetime(2011, month, 1) for month in months]
+        first_days = [timezone.make_aware(datetime.datetime(2011, month, 1), \
+            timezone.get_current_timezone()) for month in months]
         last_billable = [utils.get_last_billable_day(day).day \
                          for day in first_days]
         #should equal the last saturday of every month in 2011
@@ -75,19 +89,6 @@ class PayrollTest(TimepieceDataTestCase):
         """Test the find_overtime utility for accuracy"""
         self.assertEqual(round(utils.find_overtime([0, 40, 40.01, 41, 40]), 2),
                          1.01)
-
-    def testFormatLeave(self):
-        """
-        format_leave formats leave time to (list of descriptions, total hours)
-        """
-        self.make_logs()
-        projects = getattr(settings, 'TIMEPIECE_PROJECTS', {})
-        leave = timepiece.Entry.objects.filter(project__in=projects.values())
-        leave = leave.values('user', 'hours', 'project__name')
-        desc, totals = utils.format_leave(leave)
-        self.assertEqual(desc[0], (u'vacation', Decimal('4.00')))
-        self.assertEqual(desc[1], (u'sick', Decimal('8.00')))
-        self.assertEqual(totals, Decimal('12.00'))
 
     def testGetHourSummaries(self):
         """
@@ -105,7 +106,7 @@ class PayrollTest(TimepieceDataTestCase):
                          [(0, 0), (0, 0), 0.0])
 
     def testWeeklyTotals(self):
-        self.all_logs()
+        self.all_logs(self.user)
         self.all_logs(self.user2)
         self.client.login(username='superuser', password='abc')
         response = self.client.get(self.url, self.args)
@@ -121,9 +122,15 @@ class PayrollTest(TimepieceDataTestCase):
         """Date_trunc on week should result in correct overtime totals"""
         dates = self.dates
         for day_num in xrange(28, 31):
-            dates.append(datetime.datetime(2011, 4, day_num))
+            dates.append(timezone.make_aware(
+                datetime.datetime(2011, 4, day_num),
+                timezone.get_current_timezone()
+            ))
         for day_num in xrange(5, 9):
-            dates.append(datetime.datetime(2011, 5, day_num))
+            dates.append(timezone.make_aware(
+                datetime.datetime(2011, 5, day_num),
+                timezone.get_current_timezone()
+            ))
         for day in dates:
             self.make_logs(day)
 
@@ -137,41 +144,131 @@ class PayrollTest(TimepieceDataTestCase):
             self.assertEqual(weekly_totals[5], overtime)
         check_overtime()
         #Entry on following Monday doesn't add to week1 or overtime
-        self.make_logs(datetime.datetime(2011, 5, 9))
+        self.make_logs(timezone.make_aware(
+            datetime.datetime(2011, 5, 9),
+            timezone.get_current_timezone(),
+        ))
         check_overtime()
         #Entries in previous month before last_billable do not change overtime
-        self.make_logs(datetime.datetime(2011, 4, 24))
+        self.make_logs(timezone.make_aware(
+            datetime.datetime(2011, 4, 24),
+            timezone.get_current_timezone(),
+        ))
         check_overtime()
         #Entry in previous month after last_billable change week0 and overtime
-        self.make_logs(datetime.datetime(2011, 4, 25, 1, 0))
+        self.make_logs(timezone.make_aware(
+            datetime.datetime(2011, 4, 25, 1, 0),
+            timezone.get_current_timezone(),
+        ))
         check_overtime(Decimal('66.00'), Decimal('55.00'), Decimal('41.00'))
 
-    def testMonthlyTotals(self):
-        self.all_logs()
-        self.all_logs(self.user2)
+    def _setupMonthlyTotals(self):
+        """
+        Helps set up environment for testing aspects of the monthly payroll
+        summary.
+        """
+        self.billable_project = self.create_project(name="Billable",
+                billable=True)
+        self.nonbillable_project = self.create_project(name="Nonbillable",
+                billable=False)
+        self.all_logs(self.user, self.billable_project,
+                self.nonbillable_project)
+        self.all_logs(self.user2, self.billable_project,
+                self.nonbillable_project)
         self.client.login(username='superuser', password='abc')
-        response = self.client.get(self.url, self.args)
-        monthly_totals = response.context['monthly_totals']
-        # Test the first entry
-        self.assertEqual(monthly_totals[0][1],
-                         [(Decimal('45.00'), 81.82),
-                          (Decimal('10.00'), 18.18),
-                          Decimal('55.00')
-                         ])
-        self.assertEqual(monthly_totals[0][2],
-                         [(u'vacation', Decimal('20.00')),
-                          (u'sick', Decimal('40.00'))])
-        self.assertEqual(monthly_totals[0][3], Decimal('115.00'))
-        # Test the totals row at the bottom.
-        self.assertEqual(monthly_totals[-1][1],
-                         [(Decimal('90.00'), 81.82),
-                          (Decimal('20.00'), 18.18),
-                          Decimal('110.00')
-                         ])
-        self.assertEqual(monthly_totals[-1][2],
-                         [(u'vacation', Decimal('40.00')),
-                          (u'sick', Decimal('80.00'))])
-        self.assertEqual(monthly_totals[-1][3], Decimal('230.00'))
+        self.response = self.client.get(self.url, self.args)
+        self.rows = self.response.context['monthly_totals']
+        self.labels = self.response.context['labels']
+
+    def testMonthlyPayrollLabels(self):
+        """
+        Labels should contain all billable & nonbillable project type labels
+        as well as all leave project names.
+        """
+        self._setupMonthlyTotals()
+        self.assertEquals(self.labels['billable'],
+                [self.billable_project.type.label])
+        self.assertEquals(self.labels['nonbillable'],
+                [self.nonbillable_project.type.label])
+        self.assertEquals(self.labels['leave'],
+                [self.sick.name, self.vacation.name])
+
+    def testMonthlyPayrollRows(self):
+        """Rows should contain monthly totals mapping for each user."""
+        self._setupMonthlyTotals()
+
+        # 1 row for each user, plus totals row.
+        self.assertEquals(len(self.rows), 2 + 1)
+
+        for row in self.rows[:-1]:  # Exclude totals row.
+            work_total = Decimal('55.00')
+            self.assertEquals(row['work_total'], work_total)
+
+            # Last entry is summary of status.
+            self.assertEquals(len(row['billable']), 1 + 1)
+            for entry in row['billable']:
+                self.assertEquals(entry['hours'], Decimal('45.00'))
+                self.assertEquals(entry['percent'],
+                        Decimal('45.00') / work_total * 100)
+
+            # Last entry is summary of status.
+            self.assertEquals(len(row['nonbillable']), 1 + 1)
+            for entry in row['nonbillable']:
+                self.assertEquals(entry['hours'], Decimal('10.00'))
+                self.assertEquals(entry['percent'],
+                        Decimal('10.00') / work_total * 100)
+
+            self.assertEquals(len(row['leave']), 2 + 1)
+            sick_index = self.labels['leave'].index(self.sick.name)
+            vacation_index = self.labels['leave'].index(self.vacation.name)
+            self.assertEquals(row['leave'][sick_index]['hours'],
+                    Decimal('40.00'))
+            self.assertEquals(row['leave'][sick_index]['percent'],
+                    Decimal('40.00') / Decimal('60.00') * 100)
+            self.assertEquals(row['leave'][vacation_index]['hours'],
+                    Decimal('20.00'))
+            self.assertEquals(row['leave'][vacation_index]['percent'],
+                    Decimal('20.00') / Decimal('60.00') * 100)
+            self.assertEquals(row['leave'][-1]['hours'], Decimal('60.00'))
+            self.assertEquals(row['leave'][-1]['percent'], Decimal('100.00'))
+
+            self.assertEquals(row['grand_total'], Decimal('115.00'))
+
+    def testMonthlyPayrollTotals(self):
+        """Last row should contain summary totals over all users."""
+        self._setupMonthlyTotals()
+        totals = self.rows[-1]
+
+        work_total = Decimal('110.00')
+        self.assertEquals(totals['work_total'], work_total)
+
+        self.assertEquals(len(totals['billable']), 1 + 1)
+        for entry in totals['billable']:
+            self.assertEquals(entry['hours'], Decimal('90.00'))
+            self.assertEquals(entry['percent'],
+                    Decimal('90.00') / work_total * 100)
+
+        self.assertEquals(len(totals['nonbillable']), 1 + 1)
+        for entry in totals['nonbillable']:
+            self.assertEquals(entry['hours'], Decimal('20.00'))
+            self.assertEquals(entry['percent'],
+                    Decimal('20.00') / work_total * 100)
+
+        self.assertEquals(len(totals['leave']), 2 + 1)
+        sick_index = self.labels['leave'].index(self.sick.name)
+        vacation_index = self.labels['leave'].index(self.vacation.name)
+        self.assertEquals(totals['leave'][sick_index]['hours'],
+                Decimal('80.00'))
+        self.assertEquals(totals['leave'][sick_index]['percent'],
+                Decimal('80.00') / Decimal('120.00') * 100)
+        self.assertEquals(totals['leave'][vacation_index]['hours'],
+                Decimal('40.00'))
+        self.assertEquals(totals['leave'][vacation_index]['percent'],
+                Decimal('40.00') / Decimal('120.00') * 100)
+        self.assertEquals(totals['leave'][-1]['hours'], Decimal('120.00'))
+        self.assertEquals(totals['leave'][-1]['percent'], Decimal('100.00'))
+
+        self.assertEquals(totals['grand_total'], Decimal('230.00'))
 
     def testNoPermission(self):
         """
