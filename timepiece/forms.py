@@ -77,12 +77,12 @@ class EditPersonForm(auth_forms.UserChangeForm):
         label=_(u'Repeat Password'),
         widget=forms.PasswordInput(render_value=False))
 
-    class Meta:
-        model = auth_models.User
-        fields = (
-            "username", "first_name", "last_name",
-            "email", "is_active", "is_staff"
-        )
+    def __init__(self, *args, **kwargs):
+        super(EditPersonForm, self).__init__(*args, **kwargs)
+
+        # In 1.4 this field is created even if it is excluded in Meta.
+        if 'password' in self.fields:
+            del(self.fields['password'])
 
     def clean_password(self):
         return self.cleaned_data.get('password_one', None)
@@ -105,6 +105,11 @@ class EditPersonForm(auth_forms.UserChangeForm):
         if commit:
             instance.save()
         return instance
+
+    class Meta:
+        model = auth_models.User
+        fields = ('username', 'first_name', 'last_name', 'email', 'is_active',
+                'is_staff')
 
 
 class QuickSearchForm(forms.Form):
