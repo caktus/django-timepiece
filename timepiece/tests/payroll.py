@@ -90,20 +90,6 @@ class PayrollTest(TimepieceDataTestCase):
         self.assertEqual(round(utils.find_overtime([0, 40, 40.01, 41, 40]), 2),
                          1.01)
 
-    def testFormatLeave(self):
-        """
-        format_leave formats leave time to (list of descriptions, total hours)
-        """
-        self.make_logs()
-        projects = getattr(settings, 'TIMEPIECE_PROJECTS', {})
-        leave = timepiece.Entry.objects.filter(project__in=projects.values())
-        leave = leave.values('user', 'hours', 'project__name')
-        desc, total = utils.format_leave(leave)
-        self.assertEqual(desc[u'vacation'], Decimal('4.00'))
-        self.assertEqual(desc[u'sick'], Decimal('8.00'))
-        self.assertEqual(len(desc), 2)
-        self.assertEqual(total, Decimal('12.00'))
-
     def testGetHourSummaries(self):
         """
         Given dictionaries of hours, return the format for payroll summary
@@ -176,72 +162,112 @@ class PayrollTest(TimepieceDataTestCase):
         ))
         check_overtime(Decimal('66.00'), Decimal('55.00'), Decimal('41.00'))
 
-    def testMonthlyTotals(self):
-        """Test correctness of monthly totals in payroll summary view.
-            labels: maps {'billable_status': [project_type_label]}
-            rows: a list of maps of monthly totals to user.
-            totals: the last row should be a map of sum totals of all users.
+    def _setupMonthlyTotals(self):
         """
-        billable_project = self.create_project(name="Billable", billable=True)
-        nonbillable_project = self.create_project(name="Nonbillable",
+        Helps set up environment for testing aspects of the monthly payroll
+        summary.
+        """
+        self.billable_project = self.create_project(name="Billable",
+                billable=True)
+        self.nonbillable_project = self.create_project(name="Nonbillable",
                 billable=False)
-        self.all_logs(self.user, billable_project, nonbillable_project)
-        self.all_logs(self.user2, billable_project, nonbillable_project)
+        self.all_logs(self.user, self.billable_project,
+                self.nonbillable_project)
+        self.all_logs(self.user2, self.billable_project,
+                self.nonbillable_project)
         self.client.login(username='superuser', password='abc')
-        response = self.client.get(self.url, self.args)
-        rows = response.context['monthly_totals']
-        labels = response.context['labels']
+        self.response = self.client.get(self.url, self.args)
+        self.rows = self.response.context['monthly_totals']
+        self.labels = self.response.context['labels']
 
-        # Labels should contain all billable & nonbillable project type labels.
-        self.assertEquals(labels['billable'], [billable_project.type.label])
-        self.assertEquals(labels['nonbillable'],
-                [nonbillable_project.type.label])
+    def testMonthlyPayrollLabels(self):
+        """
+        Labels should contain all billable & nonbillable project type labels
+        as well as all leave project names.
+        """
+        self._setupMonthlyTotals()
+        self.assertEquals(self.labels['billable'],
+                [self.billable_project.type.label])
+        self.assertEquals(self.labels['nonbillable'],
+                [self.nonbillable_project.type.label])
+        self.assertEquals(self.labels['leave'],
+                [self.sick.name, self.vacation.name])
 
-        # Rows should contain monthly totals mapping for each user.
-        self.assertEquals(len(rows), 2 + 1)  # 1 for each user, plus totals
-        for row in rows[:-1]:
-            self.assertEquals(row['billable'][0]['hours'], Decimal('45.00'))
-            self.assertEquals(row['billable'][0]['percent'],
-                    Decimal('45.00') / Decimal('55.00') * 100)
-            self.assertEquals(row['billable'][1]['hours'], Decimal('45.00'))
-            self.assertEquals(row['billable'][1]['percent'],
-                    Decimal('45.00') / Decimal('55.00') * 100)
+    def testMonthlyPayrollRows(self):
+        """Rows should contain monthly totals mapping for each user."""
+        self._setupMonthlyTotals()
 
-            self.assertEquals(row['nonbillable'][0]['hours'], Decimal('10.00'))
-            self.assertEquals(row['nonbillable'][0]['percent'],
-                    Decimal('10.00') / Decimal('55.00') * 100)
-            self.assertEquals(row['nonbillable'][1]['hours'], Decimal('10.00'))
-            self.assertEquals(row['nonbillable'][1]['percent'],
-                    Decimal('10.00') / Decimal('55.00') * 100)
+        # 1 row for each user, plus totals row.
+        self.assertEquals(len(self.rows), 2 + 1)
 
-            self.assertEquals(row['work_total'], Decimal('55.00'))
-            self.assertEquals(row['leave']['hours']['sick'], Decimal('40.00'))
-            self.assertEquals(row['leave']['hours']['vacation'],
+        for row in self.rows[:-1]:  # Exclude totals row.
+            work_total = Decimal('55.00')
+            self.assertEquals(row['work_total'], work_total)
+
+            # Last entry is summary of status.
+            self.assertEquals(len(row['billable']), 1 + 1)
+            for entry in row['billable']:
+                self.assertEquals(entry['hours'], Decimal('45.00'))
+                self.assertEquals(entry['percent'],
+                        Decimal('45.00') / work_total * 100)
+
+            # Last entry is summary of status.
+            self.assertEquals(len(row['nonbillable']), 1 + 1)
+            for entry in row['nonbillable']:
+                self.assertEquals(entry['hours'], Decimal('10.00'))
+                self.assertEquals(entry['percent'],
+                        Decimal('10.00') / work_total * 100)
+
+            self.assertEquals(len(row['leave']), 2 + 1)
+            sick_index = self.labels['leave'].index(self.sick.name)
+            vacation_index = self.labels['leave'].index(self.vacation.name)
+            self.assertEquals(row['leave'][sick_index]['hours'],
+                    Decimal('40.00'))
+            self.assertEquals(row['leave'][sick_index]['percent'],
+                    Decimal('40.00') / Decimal('60.00') * 100)
+            self.assertEquals(row['leave'][vacation_index]['hours'],
                     Decimal('20.00'))
-            self.assertEquals(row['leave']['total'], Decimal('60.00'))
+            self.assertEquals(row['leave'][vacation_index]['percent'],
+                    Decimal('20.00') / Decimal('60.00') * 100)
+            self.assertEquals(row['leave'][-1]['hours'], Decimal('60.00'))
+            self.assertEquals(row['leave'][-1]['percent'], Decimal('100.00'))
+
             self.assertEquals(row['grand_total'], Decimal('115.00'))
 
-        # Last row should contain summary totals over all users.
-        totals = rows[-1]
-        self.assertEquals(totals['billable'][0]['hours'], Decimal('90.00'))
-        self.assertEquals(totals['billable'][0]['percent'],
-                Decimal('90.00') / Decimal('110.00') * 100)
-        self.assertEquals(totals['billable'][1]['hours'], Decimal('90.00'))
-        self.assertEquals(totals['billable'][1]['percent'],
-                Decimal('90.00') / Decimal('110.00') * 100)
+    def testMonthlyPayrollTotals(self):
+        """Last row should contain summary totals over all users."""
+        self._setupMonthlyTotals()
+        totals = self.rows[-1]
 
-        self.assertEquals(totals['nonbillable'][0]['hours'], Decimal('20.00'))
-        self.assertEquals(totals['nonbillable'][0]['percent'],
-                Decimal('20.00') / Decimal('110.00') * 100)
-        self.assertEquals(totals['nonbillable'][1]['hours'], Decimal('20.00'))
-        self.assertEquals(totals['nonbillable'][1]['percent'],
-                Decimal('20.00') / Decimal('110.00') * 100)
+        work_total = Decimal('110.00')
+        self.assertEquals(totals['work_total'], work_total)
 
-        self.assertEquals(totals['work_total'], Decimal('110.00'))
-        self.assertEquals(totals['leave']['hours']['sick'], Decimal('80.00'))
-        self.assertEquals(totals['leave']['hours']['vacation'],
+        self.assertEquals(len(totals['billable']), 1 + 1)
+        for entry in totals['billable']:
+            self.assertEquals(entry['hours'], Decimal('90.00'))
+            self.assertEquals(entry['percent'],
+                    Decimal('90.00') / work_total * 100)
+
+        self.assertEquals(len(totals['nonbillable']), 1 + 1)
+        for entry in totals['nonbillable']:
+            self.assertEquals(entry['hours'], Decimal('20.00'))
+            self.assertEquals(entry['percent'],
+                    Decimal('20.00') / work_total * 100)
+
+        self.assertEquals(len(totals['leave']), 2 + 1)
+        sick_index = self.labels['leave'].index(self.sick.name)
+        vacation_index = self.labels['leave'].index(self.vacation.name)
+        self.assertEquals(totals['leave'][sick_index]['hours'],
+                Decimal('80.00'))
+        self.assertEquals(totals['leave'][sick_index]['percent'],
+                Decimal('80.00') / Decimal('120.00') * 100)
+        self.assertEquals(totals['leave'][vacation_index]['hours'],
                 Decimal('40.00'))
-        self.assertEquals(totals['leave']['total'], Decimal('120.00'))
+        self.assertEquals(totals['leave'][vacation_index]['percent'],
+                Decimal('40.00') / Decimal('120.00') * 100)
+        self.assertEquals(totals['leave'][-1]['hours'], Decimal('120.00'))
+        self.assertEquals(totals['leave'][-1]['percent'], Decimal('100.00'))
+
         self.assertEquals(totals['grand_total'], Decimal('230.00'))
 
     def testNoPermission(self):
