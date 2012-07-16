@@ -268,20 +268,6 @@ def find_overtime(dates):
     return sum([day - 40 for day in dates if day > 40])
 
 
-def format_leave(leave):
-    """
-    Formats leave time to ({project name: hours}, total hours)
-    """
-    leave_hours = 0
-    leave_desc = {}
-    for entry in leave:
-        proj = entry.get('project__name')
-        proj_hours = entry.get('hours')
-        leave_desc[proj] = leave_desc.get(proj, 0) + proj_hours
-        leave_hours += proj_hours
-    return leave_desc, leave_hours
-
-
 def get_hour_summaries(hours):
     """
     Coerce totals dictionary or list into a list of ordered tuples with %'s
@@ -351,16 +337,16 @@ def payroll_totals(month_work_entries, month_leave_entries):
         labels -> {'billable': [proj_labels], 'nonbillable': [proj_labels]}
         rows -> [{
             name: name of user,
-            billable, nonbillable: [
-                {'hours': hours_for_label, 'percent': percent_of_work_total}
+            billable, nonbillable, leave: [
+                {'hours': hours for label, 'percent': % of work or leave total}
             ],
             work_total: sum of billable and nonbillable hours,
-            leave: from format_leave,
+            leave_total: sum of leave hours
             grand_total: sum of work_total and leave_total
         }]
 
-    The last entry in each billable/nonbillable list contains a summary of the
-    status. The last row contains sum totals for all other rows.
+    The last entry in each of the billable/nonbillable/leave lists contains a
+    summary of the status. The last row contains sum totals for all other rows.
     """
     def _get_name(entries):
         """Helper for getting the associated user's first and last name."""
@@ -393,34 +379,35 @@ def payroll_totals(month_work_entries, month_leave_entries):
         """Constructs an empty row for the given name."""
         row = {'name': name}
         for status in labels.keys():
-            # Include one entry for status summary
+            # Include an extra entry for summary.
             row[status] = [{'hours': Decimal(), 'percent': Decimal()}
                     for i in range(len(labels[status])+1)]
         row['work_total'] = Decimal()
-        row['leave'] = {'hours': {}, 'total': Decimal()}
         row['grand_total'] = Decimal()
         return row
 
-    def _summarize_work(row):
-        """Adds work_total and percentages for each status in row."""
-        row['work_total'] = sum([row[status][-1]['hours']
-                for status in labels.keys()])
-        if row['work_total']:
-            for status in labels.keys():
+    def _add_percentages(row, statuses, total):
+        """For each entry in each status, percent = hours / total"""
+        if total:
+            for status in statuses:
                 for i in range(len(row[status])):
-                    p = row[status][i]['hours'] / row['work_total'] * 100
+                    p = row[status][i]['hours'] / total * 100
                     row[status][i]['percent'] = p
 
-    labels = dict([(status, []) for status in ('billable', 'nonbillable')])
+    def _get_sum(row, statuses):
+        """Sum the number of hours worked in given statuses."""
+        return sum([row[status][-1]['hours'] for status in statuses])
+
+    work_statuses = ('billable', 'nonbillable')
+    leave_statuses = ('leave', )
+    labels = dict([(status, []) for status in work_statuses + leave_statuses])
     rows = []
     totals = _construct_row('Totals')
     for user, work_entries in groupby(month_work_entries, lambda e: e['user']):
-        work_entries = list(work_entries)
-        leave_entries = month_leave_entries.filter(user=user)
-        name = _get_name(work_entries)
-        row = _construct_row(name)
-        rows.append(row)
 
+        work_entries = list(work_entries)
+        row = _construct_row(_get_name(work_entries))
+        rows.append(row)
         for entry in work_entries:
             status = 'billable' if entry['billable'] else 'nonbillable'
             label = entry['project__type__label']
@@ -430,19 +417,30 @@ def payroll_totals(month_work_entries, month_leave_entries):
             row[status][-1]['hours'] += hours
             totals[status][index]['hours'] += hours
             totals[status][-1]['hours'] += hours
-        _summarize_work(row)
 
-        row['leave']['hours'], row['leave']['total'] = (
-                format_leave(leave_entries))
-        for desc, hours in row['leave']['hours'].items():
-            new_total = totals['leave']['hours'].get(desc, 0) + hours
-            totals['leave']['hours'][desc] = new_total
-        totals['leave']['total'] += row['leave']['total']
+        leave_entries = month_leave_entries.filter(user=user)
+        status = 'leave'
+        for entry in leave_entries:
+            label = entry.get('project__name')
+            index = _get_index(status, label)
+            hours = entry.get('hours')
+            row[status][index]['hours'] += hours
+            row[status][-1]['hours'] += hours
+            totals[status][index]['hours'] += hours
+            totals[status][-1]['hours'] += hours
 
-        row['grand_total'] = row['work_total'] + row['leave']['total']
+        row['work_total'] = _get_sum(row, work_statuses)
+        _add_percentages(row, work_statuses, row['work_total'])
+        row['leave_total'] = _get_sum(row, leave_statuses)
+        _add_percentages(row, leave_statuses, row['leave_total'])
+        row['grand_total'] = row['work_total'] + row['leave_total']
 
-    _summarize_work(totals)
-    totals['grand_total'] = totals['work_total'] + totals['leave']['total']
-    if totals['grand_total']:
+    totals['work_total'] = _get_sum(totals, work_statuses)
+    _add_percentages(totals, work_statuses, totals['work_total'])
+    totals['leave_total'] = _get_sum(totals, leave_statuses)
+    _add_percentages(totals, leave_statuses, totals['leave_total'])
+    totals['grand_total'] = totals['work_total'] + totals['leave_total']
+
+    if rows:
         rows.append(totals)
     return labels, rows

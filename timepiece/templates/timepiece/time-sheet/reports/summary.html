@@ -83,7 +83,10 @@
                                 <th colspan="2" rowspan="2">Total Non-Billable Hours</th>
                             {% endif %}
                             <th rowspan="2">Total Worked Hours</th>
-                            <th rowspan="2">Paid Leave</th>
+                            {% if labels.leave %}
+                                <th colspan="{{ labels.leave|length }}">Paid Leave</th>
+                                <th rowspan="2">Total Leave Hours</th>
+                            {% endif %}
                             <th rowspan="2">Grand Total</th>
                         </tr>
                         <tr>
@@ -92,6 +95,9 @@
                             {% endfor %}
                             {% for label in labels.nonbillable %}
                                 <th colspan=2>{{ label }}</th>
+                            {% endfor %}
+                            {% for label in labels.leave %}
+                                <th>{{ label }}</th>
                             {% endfor %}
                         </tr>
                     </thead>
@@ -114,11 +120,11 @@
                                 <td class="hours">
                                     {% if row.work_total %}{{ row.work_total|floatformat:2 }}{% endif %}
                                 </td>
-                                <td class="hours">
-                                    {% for label, hours in row.leave.hours.items %}
-                                        {{ label }}: {{ hours|floatformat:2 }}<br />
+                                {% if labels.leave %}
+                                    {% for entry in row.leave %}
+                                        <td class="hours">{% if entry.hours %}{{ entry.hours|floatformat:2 }}{% endif %}</td>
                                     {% endfor %}
-                                </td>
+                                {% endif %}
                                 <td class="hours">
                                     {% if row.grand_total %}{{ row.grand_total|floatformat:2 }}{% endif %}
                                 </td>
