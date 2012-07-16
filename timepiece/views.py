@@ -1,13 +1,13 @@
-import urllib
+import calendar
 import csv
 import datetime
-import calendar
 import math
 import urllib
 
 from decimal import Decimal
 from dateutil.relativedelta import relativedelta
 from dateutil import rrule
+from itertools import groupby
 
 from django.contrib import messages
 from django.template import RequestContext
@@ -33,7 +33,7 @@ try:
 except ImportError:
     from timepiece import timezone
 
-from timepiece.utils import render_with, reverse_lazy
+from timepiece.utils import render_with, reverse_lazy, get_week_start
 
 from timepiece import models as timepiece
 from timepiece import utils
@@ -1212,6 +1212,35 @@ def create_edit_project(request, project_id=None):
         'project_form': form,
     }
     return context
+
+
+@render_with('timepiece/hours/list.html')
+def project_hours_list(request):
+    form = timepiece_forms.ProjectHoursSearchForm(data=request.GET)
+    if 'submit' in request.GET and form.is_valid():
+        week_start = form.cleaned_data['week_start']
+    else:
+        week_start = utils.get_week_start()
+    week_end = week_start + relativedelta(days=7)
+
+    project_hours = utils.get_project_hours_for_week(week_start, week_end)
+    people = utils.get_people_from_project_hours(project_hours)
+    id_list = [person[0] for person in people]
+    projects = []
+    for project, entries in groupby(project_hours, lambda o: o['project__id']):
+        entries = list(entries)
+        name = entries[0]['project__name']
+        row = [Decimal() for i in range(len(id_list))]
+        for entry in entries:
+            index = id_list.index(entry['user__id'])
+            row[index] += entry['hours']
+        projects.append((name, row))
+    return {
+        'form': form,
+        'week': week_start,
+        'people': people,
+        'projects': projects,
+    }
 
 
 @permission_required('timepiece.view_payroll_summary')

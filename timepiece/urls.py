@@ -204,4 +204,10 @@ urlpatterns = patterns('',
         views.ContractList.as_view(),
         name='list_contracts',
     ),
+    # project hours
+    url(
+        r'^hours/list/$',
+        views.project_hours_list,
+        name='project_hours_list',
+    ),
 )

@@ -576,3 +576,11 @@ class DeleteForm(forms.Form):
             else:
                 return True
         return False
+
+
+class ProjectHoursSearchForm(forms.Form):
+    week_start = forms.DateField(label='Week of', required=False)
+
+    def clean_week(self):
+        week = self.cleaned_data.get('week', None)
+        return utils.get_week_start(week) if week else None
