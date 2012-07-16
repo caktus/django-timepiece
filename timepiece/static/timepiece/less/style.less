@@ -168,6 +168,18 @@ body {
      * Start general site-wide classes/ids
      *****************************************/
 
+    #content.container-fluid {
+        @media (max-width: 767px) {
+            margin: 20px auto;
+            width: 93%;
+        }
+
+        @media (min-width: 768px) and (max-width: 979px) {
+            margin: 20px auto;
+            width: 95%;
+        }
+    }
+
     .scroll {
         width: 100%;
         overflow-x: auto;
@@ -185,7 +197,6 @@ body {
             width: auto;
         }
     }
-    
 
     .popover-toggle:hover {
         cursor: hand;
