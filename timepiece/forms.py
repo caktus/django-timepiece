@@ -585,4 +585,4 @@ class ProjectHoursSearchForm(forms.Form):
 
     def clean_week_start(self):
         week_start = self.cleaned_data.get('week_start', None)
-        return utils.get_week_start(week_start) if week_start else None
+        return utils.get_week_start(week_start, False) if week_start else None

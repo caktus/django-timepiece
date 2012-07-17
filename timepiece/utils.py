@@ -132,14 +132,15 @@ def get_month_start(from_day=None):
     return from_day.replace(day=1)
 
 
-def get_week_start(day=None):
+def get_week_start(day=None, add_tzinfo=True):
     if not day:
         day = datetime.date.today()
     days_since_monday = day.weekday()
     if days_since_monday != 0:
         day = day - datetime.timedelta(days=days_since_monday)
-    day = datetime.datetime.combine(day,
-        datetime.time(tzinfo=timezone.get_current_timezone()))
+    if add_tzinfo:
+        day = datetime.datetime.combine(day,
+            datetime.time(tzinfo=timezone.get_current_timezone()))
     return day
 
 

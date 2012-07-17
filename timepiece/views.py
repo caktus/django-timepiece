@@ -1220,8 +1220,8 @@ def project_hours_list(request):
     if 'submit' in request.GET and form.is_valid():
         week_start = form.cleaned_data['week_start']
     else:
-        week_start = utils.get_week_start()
-        initial = {'week_start': utils.get_week_start()}
+        week_start = utils.get_week_start(add_tzinfo=False)
+        initial = {'week_start': week_start}
         form = timepiece_forms.ProjectHoursSearchForm(initial=initial)
 
     project_hours = utils.get_project_hours_for_week(week_start)

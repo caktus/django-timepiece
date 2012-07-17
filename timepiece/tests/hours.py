@@ -72,21 +72,23 @@ class ProjectHoursModelTestCase(ProjectHoursTestCase):
 
     def test_week_start(self):
         """week_start should always save to Monday of the given week."""
-        monday = datetime.datetime(2012, 07, 16,
-                tzinfo=timezone.get_current_timezone())
+        monday = datetime.date(2012, 07, 16)
         for i in range(7):
             date = monday + relativedelta(days=i)
             entry = timepiece.ProjectHours.objects.create(
-                week_start=date, project=self.tracked_project, user=self.user)
+                    week_start=date, project=self.tracked_project,
+                    user=self.user)
             self.assertEquals(entry.week_start, monday)
+            timepiece.ProjectHours.objects.all().delete()
 
 
 class ProjectHoursListViewTestCase(ProjectHoursTestCase):
 
     def setUp(self):
         super(ProjectHoursListViewTestCase, self).setUp()
-        self.past_week = utils.get_week_start(datetime.datetime(2012, 4, 1))
-        self.current_week = utils.get_week_start()
+        self.past_week = utils.get_week_start(datetime.date(2012, 4, 1),
+                False)
+        self.current_week = utils.get_week_start(add_tzinfo=False)
         for i in range(5):
             self.create_project_hours_entry(self.past_week)
             self.create_project_hours_entry(self.current_week)
@@ -135,7 +137,7 @@ class ProjectHoursListViewTestCase(ProjectHoursTestCase):
     def test_week_filter_midweek(self):
         """Filter corrects mid-week date to Monday of specified week."""
         wednesday = datetime.date(2012, 7, 4)
-        monday = utils.get_week_start(wednesday)
+        monday = utils.get_week_start(wednesday, False)
         data = {
             'week_start': wednesday.strftime(self.date_format),
             'submit': '',
@@ -144,7 +146,7 @@ class ProjectHoursListViewTestCase(ProjectHoursTestCase):
         self.assertEquals(response.context['week'], monday)
 
     def test_no_entries(self):
-        date = utils.get_week_start(datetime.datetime(2012, 3, 15))
+        date = utils.get_week_start(datetime.date(2012, 3, 15), False)
         data = {
             'week_start': date.strftime('%m/%d/%Y'),
             'submit': '',
