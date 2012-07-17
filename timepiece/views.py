@@ -1230,12 +1230,14 @@ def project_hours_list(request):
     projects = []
     for project, entries in groupby(project_hours, lambda o: o['project__id']):
         entries = list(entries)
+        proj_id = entries[0]['project__id']
         name = entries[0]['project__name']
-        row = [Decimal() for i in range(len(id_list))]
+        row = [None for i in range(len(id_list))]
         for entry in entries:
             index = id_list.index(entry['user__id'])
-            row[index] += entry['hours']
-        projects.append((name, row))
+            hours = entry['hours']
+            row[index] = row[index] + hours if row[index] else hours
+        projects.append((proj_id, name, row))
     return {
         'form': form,
         'week': week_start,

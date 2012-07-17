@@ -3,6 +3,7 @@ import random
 import string
 
 from dateutil.relativedelta import relativedelta
+from decimal import Decimal
 
 from django.test import TestCase
 from django.core.urlresolvers import reverse
@@ -97,14 +98,18 @@ class TimepieceDataTestCase(TestCase):
         defaults.update(data)
         return timepiece.RelationshipType.objects.create(**defaults)
 
-    def create_activity(self, data={}):
+    def create_activity(self, activity_groups=[], data={}):
         defaults = {
             'code': self.random_string(5, extra_chars=' '),
             'name': self.random_string(50, extra_chars=' '),
             'billable': False
         }
         defaults.update(data)
-        return timepiece.Activity.objects.create(**defaults)
+        activity = timepiece.Activity.objects.create(**defaults)
+        if activity_groups:
+            activity.activity_group.add(*activity_groups)
+            activity.save()
+        return activity
 
     def create_location(self, data={}):
         defaults = {
@@ -198,6 +203,33 @@ class TimepieceDataTestCase(TestCase):
             data['status'] = status
         return self.create_entry(data)
 
+    def create_user(self, username=None, email=None, password=None,
+            is_superuser=False):
+        username = self.random_string(25) if not username else username
+        email = self.random_string(10) + "@example.com" if not email else email
+        password = self.random_string(25) if not password else password
+        user = User.objects.create_user(username, email, password)
+        if is_superuser:
+            user.is_superuser = True
+            user.save()
+        return user
+
+    def create_activity_group(self, name=None, data={}):
+        defaults = {
+            'name': name or self.random_string(25),
+        }
+        defaults.update(data)
+        return timepiece.ActivityGroup.objects.create(**defaults)
+
+    def create_project_hours_entry(self, week_start=None, project=None,
+                user=None, hours=None):
+        week_start = utils.get_week_start() if not week_start else week_start
+        project = self.create_project() if not project else project
+        user = self.create_user() if not user else user
+        hours = Decimal(str(random.random() * 20)) if not hours else hours
+        return timepiece.ProjectHours.objects.create(week_start=week_start,
+                project=project, user=user, hours=hours)
+
     def setUp(self):
         self.user = User.objects.create_user('user', 'u@abc.com', 'abc')
         self.user.last_name = 'Jones'
@@ -216,7 +248,6 @@ class TimepieceDataTestCase(TestCase):
         self.superuser.save()
         self.user.save()
         self.user2.save()
-        self.user = self.user
         self.activity = timepiece.Activity.objects.create(
             code="WRK",
             name="Work",

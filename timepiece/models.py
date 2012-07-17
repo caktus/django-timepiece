@@ -1089,9 +1089,10 @@ class UserProfile(models.Model):
 
 
 class ProjectHours(models.Model):
-    user = models.ForeignKey(User)
+    week_start = models.DateField(verbose_name='start of week',
+            default=utils.get_week_start)
     project = models.ForeignKey(Project)
-    week_start = models.DateField(verbose_name='start of week')
+    user = models.ForeignKey(User)
     hours = models.DecimalField(max_digits=8, decimal_places=2, default=0)
 
     def __unicode__(self):
