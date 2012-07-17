@@ -206,8 +206,8 @@ urlpatterns = patterns('',
     ),
     # project hours
     url(
-        r'^hours/list/$',
-        views.project_hours_list,
-        name='project_hours_list',
+        r'^project-hours/$',
+        views.project_hours,
+        name='project_hours',
     ),
 )

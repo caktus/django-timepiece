@@ -92,19 +92,22 @@ class ProjectHoursListViewTestCase(ProjectHoursTestCase):
         for i in range(5):
             self.create_project_hours_entry(self.past_week)
             self.create_project_hours_entry(self.current_week)
-        self.url = reverse('project_hours_list')
+        self.url = reverse('project_hours')
         self.client.login(username='user', password='abc')
         self.date_format = '%m/%d/%Y'
 
     def test_no_permission(self):
-        """Permissions are required to view the page."""
-        # TODO
-        pass
+        """User must have permission timepiece.can_clock_in to view page."""
+        basic_user = self.create_user('basic', 'b@e.com', 'abc')
+        self.client.login(username='basic', password='abc')
+        response = self.client.get(self.url)
+        self.assertEquals(response.status_code, 302)
 
     def test_permission(self):
-        """Permissions are required to view the page."""
-        # TODO
-        pass
+        """User must have permission timepiece.can_clock_in to view page."""
+        self.assertTrue(self.user.has_perm('timepiece.can_clock_in'))
+        response = self.client.get(self.url)
+        self.assertEquals(response.status_code, 200)
 
     def test_default_filter(self):
         """Page shows project hours entries from the current week."""

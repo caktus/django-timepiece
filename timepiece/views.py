@@ -1214,8 +1214,9 @@ def create_edit_project(request, project_id=None):
     return context
 
 
+@permission_required('timepiece.can_clock_in')
 @render_with('timepiece/hours/list.html')
-def project_hours_list(request):
+def project_hours(request):
     form = timepiece_forms.ProjectHoursSearchForm(data=request.GET)
     if 'submit' in request.GET and form.is_valid():
         week_start = form.cleaned_data['week_start']
