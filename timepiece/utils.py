@@ -446,16 +446,27 @@ def payroll_totals(month_work_entries, month_leave_entries):
     return labels, rows
 
 
-def get_project_hours_for_week(week_start, week_end):
+def get_project_hours_for_week(week_start):
+    """
+    Gets all ProjectHours entries in the 7-day period beginning on week_start.
+
+    Returns a values set, ordered by the project id.
+    """
+    week_end = week_start + relativedelta(days=7)
     ProjectHours = get_model('timepiece', 'ProjectHours')
     qs = ProjectHours.objects.filter(week_start__gte=week_start,
             week_start__lt=week_end)
-    values = qs.values('project__id', 'project__name', 'user__id',
+    qs = qs.values('project__id', 'project__name', 'user__id',
             'user__first_name', 'user__last_name', 'hours')
-    return values
+    qs = qs.order_by('project__id')
+    return qs
 
 
 def get_people_from_project_hours(project_hours):
+    """
+    Gets a list of the distinct people included in the project hours entries,
+    ordered by name.
+    """
     people = project_hours.values_list('user__id', 'user__first_name',
             'user__last_name').distinct().order_by('user__last_name',
             'user__first_name')
