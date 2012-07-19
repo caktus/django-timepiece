@@ -1517,7 +1517,14 @@ class JSONEncoder(json.JSONEncoder):
         return super(JSONEncoder, self)._iterencode(obj, markers)
 
 
-class EditProjectHoursView(TemplateView):
+class EditProjectHoursMixin(object):
+    @method_decorator(permission_required('timepiece.add_projecthours'))
+    def dispatch(self, request, *args, **kwargs):
+        return super(EditProjectHoursMixin, self) \
+            .dispatch(request, *args, **kwargs)
+
+
+class EditProjectHoursView(EditProjectHoursMixin, TemplateView):
     template_name = 'timepiece/hours/edit.html'
 
     def get_context_data(self, **kwargs):
@@ -1526,7 +1533,7 @@ class EditProjectHoursView(TemplateView):
         return context
 
 
-class ProjectHoursView(View):
+class ProjectHoursAjaxView(EditProjectHoursMixin, View):
     def get_hours_for_week(self, week_of):
         date = datetime.datetime.strptime(week_of, '%Y-%m-%d').date() \
             if week_of else datetime.date.today()

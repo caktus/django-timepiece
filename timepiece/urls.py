@@ -219,7 +219,7 @@ urlpatterns = patterns('',
     # ajax views
     url(
         r'^ajax/hours/$',
-        views.ProjectHoursView.as_view(),
-        name='ajax_project_hours_view',
+        views.ProjectHoursAjaxView.as_view(),
+        name='project_hours_ajax_view',
     ),
 )

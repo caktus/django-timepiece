@@ -6,14 +6,10 @@ from django.contrib.auth.models import Permission
 from django.contrib.contenttypes.models import ContentType
 from django.core.urlresolvers import reverse
 
-try:
-    from django.utils import timezone
-except ImportError:
-    from timepiece import timezone
-
 from timepiece import models as timepiece
 from timepiece import utils
 from timepiece.tests.base import TimepieceDataTestCase
+
 
 class ProjectHoursTestCase(TimepieceDataTestCase):
 
@@ -166,3 +162,28 @@ class ProjectHoursListViewTestCase(ProjectHoursTestCase):
 
         for proj_id, name, entries in projects:
             self.assertEquals(len(entries), len(people))
+
+
+class ProjectHoursEditTestCase(ProjectHoursTestCase):
+    def setUp(self):
+        super(ProjectHoursEditTestCase, self).setUp()
+        self.permission = Permission.objects.filter(codename='add_projecthours')
+        self.manager = self.create_user('manager', 'e@e.com', 'abc')
+        self.manager.user_permissions = self.permission
+        self.url = reverse('edit_project_hours')
+
+    def test_permission_view_page(self):
+        """You must have the permission to view the edit page"""
+        self.client.login(username='manager', password='abc')
+
+        response = self.client.get(self.url)
+        self.assertEquals(response.status_code, 200)
+
+    def test_no_permission_view_page(self):
+        """
+        If you are a regular user, you shouldnt be able to view the edit page
+        """
+        self.client.login(username='basic', password='abc')
+
+        response = self.client.get(self.url)
+        self.assertEquals(response.status_code, 302)
