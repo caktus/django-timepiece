@@ -140,6 +140,26 @@ $(function() {
 
         enterBeginsEditing: true,
 
+        legend: [
+            {   // Match the first row and bold it
+                match: function(row, col, data) {
+                    return (row === 0);
+                },
+                style: {
+                    fontWeight: 'bold'
+                }
+            },
+            {   // Match the cells with content
+                match: function(row, col, data) {
+                    return (row > 0 && col > 0 && data()[row][col] !== '');
+                },
+                style: {
+                    color: 'white',
+                    backgroundColor: 'green'
+                }
+            }
+        ],
+
         onBeforeChange: function(changes) {
             // todo
         },
