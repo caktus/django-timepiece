@@ -218,7 +218,7 @@ class ProjectHoursEditTestCase(ProjectHoursTestCase):
         response = self.client.get(self.ajax_url)
         self.assertEquals(response.status_code, 302)
 
-    def test_default_empty_ajax_call(self):
+    def test_empty_ajax_call(self):
         """
         An ajax call should return empty data sets when project hours
         do not exist
@@ -233,15 +233,7 @@ class ProjectHoursEditTestCase(ProjectHoursTestCase):
         self.assertEquals(data['project_hours'], [])
         self.assertEquals(data['projects'], [])
 
-    def test_default_ajax_call(self):
-        """
-        An ajax call without any parameters should return the current
-        weeks data
-        """
-        self.client.login(username='manager', password='abc')
-        self.create_project_hours()
-
-        response = self.client.get(self.ajax_url)
+    def process_default_call(self, response):
         self.assertEquals(response.status_code, 200)
 
         data = json.loads(response.content)
@@ -251,6 +243,32 @@ class ProjectHoursEditTestCase(ProjectHoursTestCase):
 
         self.assertEquals(data['project_hours'][0]['hours'], 25.0)
         self.assertEquals(data['project_hours'][1]['hours'], 5.0)
+
+    def test_default_ajax_call(self):
+        """
+        An ajax call without any parameters should return the current
+        weeks data
+        """
+        self.client.login(username='manager', password='abc')
+        self.create_project_hours()
+
+        response = self.client.get(self.ajax_url)
+
+        self.process_default_call(response)
+
+    def test_default_empty_ajax_call(self):
+        """
+        An ajax call with the parameter present, but empty value, should
+        return the same as a call with no parameter
+        """
+        self.client.login(username='manager', password='abc')
+        self.create_project_hours()
+
+        response = self.client.get(self.ajax_url, data={
+            'week_start': ''
+        })
+
+        self.process_default_call(response)
 
     def test_ajax_call_date(self):
         """
@@ -262,7 +280,7 @@ class ProjectHoursEditTestCase(ProjectHoursTestCase):
 
         date = datetime.datetime.now() + relativedelta(days=7)
         response = self.client.get(self.ajax_url, data={
-            'week_of': date.strftime('%Y-%m-%d')
+            'week_start': date.strftime('%Y-%m-%d')
         })
         self.assertEquals(response.status_code, 200)
 

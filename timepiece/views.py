@@ -1520,7 +1520,7 @@ class JSONEncoder(json.JSONEncoder):
 class EditProjectHoursMixin(object):
     @method_decorator(permission_required('timepiece.add_projecthours'))
     def dispatch(self, request, *args, **kwargs):
-        if request.GET:
+        if request.method == 'GET':
             # Since we use get param in multiple places, attach it to the class
             default_week = datetime.date.today().strftime('%Y-%m-%d')
             self.week_start = request.GET.get('week_start', default_week)
