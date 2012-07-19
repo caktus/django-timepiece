@@ -3,6 +3,7 @@ import csv
 import datetime
 import math
 import urllib
+import json
 
 from decimal import Decimal
 from dateutil.relativedelta import relativedelta
@@ -27,6 +28,7 @@ from django.views.decorators.csrf import csrf_exempt
 from django.views.generic.base import TemplateView
 from django.views.generic import UpdateView, ListView, DetailView, View
 from django.utils.decorators import method_decorator
+from django.core import serializers
 
 try:
     from django.utils import timezone
@@ -1506,3 +1508,44 @@ class DeleteProjectView(DeleteView):
     model = timepiece.Project
     url_name = 'list_projects'
     permissions = ('timepiece.add_project', 'timepiece.change_project',)
+
+
+class JSONEncoder(json.JSONEncoder):
+    def _iterencode(self, obj, markers=None):
+        if isinstance(obj, Decimal):
+            return (str(obj) for obj in [obj])
+        return super(JSONEncoder, self)._iterencode(obj, markers)
+
+
+class EditProjectHoursView(TemplateView):
+    template_name = 'timepiece/hours/edit.html'
+
+    def get_context_data(self, **kwargs):
+        context = super(EditProjectHoursView, self).get_context_data(**kwargs)
+        context['form'] = timepiece_forms.ProjectHoursSearchForm()
+        return context
+
+
+class ProjectHoursView(View):
+    def get_hours_for_week(self, week_of):
+        date = datetime.datetime.strptime(week_of, '%Y-%m-%d').date() \
+            if week_of else datetime.date.today()
+        week_start = utils.get_week_start(date)
+        week_end = week_start + relativedelta(days=7)
+
+        return timepiece.ProjectHours.objects.filter(week_start__gte=week_start,
+            week_start__lt=week_end)
+
+    def get(self, request, *args, **kwargs):
+        # user = request.GET.get('user', None)
+        week_of = request.GET.get('week_of', None)
+        project_hours = self.get_hours_for_week(week_of) \
+            .values('id', 'user', 'user__first_name', 'user__last_name', 'project', 'hours')
+        inner_qs = project_hours.values_list('project', flat=True)
+        projects = timepiece.Project.objects.filter(pk__in=inner_qs).values()
+
+        data = {
+            'project_hours': list(project_hours),
+            'projects': list(projects)
+        }
+        return HttpResponse(json.dumps(data, cls=JSONEncoder), mimetype='application/json')

@@ -210,4 +210,16 @@ urlpatterns = patterns('',
         views.project_hours,
         name='project_hours',
     ),
+    url(
+        r'^project-hours/edit/$',
+        views.EditProjectHoursView.as_view(),
+        name='edit_project_hours'
+    ),
+
+    # ajax views
+    url(
+        r'^ajax/hours/$',
+        views.ProjectHoursView.as_view(),
+        name='ajax_project_hours_view',
+    ),
 )
