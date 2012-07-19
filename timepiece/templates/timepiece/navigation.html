@@ -57,7 +57,13 @@
                     {% endif %}
                     {% if perms.timepiece.can_clock_in %}
                         <li class="dropdown">
-                            <a href="{% url 'project_hours' %}" class="dropdown-toggle" data-toggle="dropdown">Project Hours</a>
+                            <a href="#" class="dropdown-toggle" data-toggle="dropdown">Project Hours <b class="caret"></b></a>
+                            <ul class="dropdown-menu">
+                                <li><a href="{% url 'project_hours' %}">View Project Hours</a></li>
+                                {% if perms.timepiece.add_projecthours %}
+                                <li><a href="{% url 'edit_project_hours' %}">Edit Project Hours</a></li>
+                                {% endif %}
+                            </ul>
                         </li>
                     {% endif %}
 
