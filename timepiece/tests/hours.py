@@ -1,3 +1,4 @@
+import json
 import datetime
 
 from dateutil.relativedelta import relativedelta
@@ -170,20 +171,105 @@ class ProjectHoursEditTestCase(ProjectHoursTestCase):
         self.permission = Permission.objects.filter(codename='add_projecthours')
         self.manager = self.create_user('manager', 'e@e.com', 'abc')
         self.manager.user_permissions = self.permission
-        self.url = reverse('edit_project_hours')
+        self.view_url = reverse('edit_project_hours')
+        self.ajax_url = reverse('project_hours_ajax_view')
 
-    def test_permission_view_page(self):
-        """You must have the permission to view the edit page"""
+    def create_project_hours(self):
+        """Create project hours data"""
+        week_start = utils.get_week_start(datetime.date.today())
+        timepiece.ProjectHours.objects.create(
+            week_start=week_start, project=self.tracked_project,
+            user=self.user, hours="25.0")
+        timepiece.ProjectHours.objects.create(
+            week_start=week_start, project=self.tracked_project,
+            user=self.manager, hours="5.0")
+
+        week_start = week_start + relativedelta(days=7)
+        timepiece.ProjectHours.objects.create(
+            week_start=week_start, project=self.tracked_project,
+            user=self.user, hours="15.0")
+        timepiece.ProjectHours.objects.create(
+            week_start=week_start, project=self.tracked_project,
+            user=self.manager, hours="2.0")
+
+    def test_permission_access(self):
+        """
+        You must have the permission to view the edit page or
+        the ajax page
+        """
         self.client.login(username='manager', password='abc')
 
-        response = self.client.get(self.url)
+        response = self.client.get(self.view_url)
         self.assertEquals(response.status_code, 200)
 
-    def test_no_permission_view_page(self):
+        response = self.client.get(self.ajax_url)
+        self.assertEquals(response.status_code, 200)
+
+    def test_no_permission_access(self):
         """
         If you are a regular user, you shouldnt be able to view the edit page
+        or request any ajax data
         """
         self.client.login(username='basic', password='abc')
 
-        response = self.client.get(self.url)
+        response = self.client.get(self.view_url)
         self.assertEquals(response.status_code, 302)
+
+        response = self.client.get(self.ajax_url)
+        self.assertEquals(response.status_code, 302)
+
+    def test_default_empty_ajax_call(self):
+        """
+        An ajax call should return empty data sets when project hours
+        do not exist
+        """
+        self.client.login(username='manager', password='abc')
+
+        response = self.client.get(self.ajax_url)
+        self.assertEquals(response.status_code, 200)
+
+        data = json.loads(response.content)
+
+        self.assertEquals(data['project_hours'], [])
+        self.assertEquals(data['projects'], [])
+
+    def test_default_ajax_call(self):
+        """
+        An ajax call without any parameters should return the current
+        weeks data
+        """
+        self.client.login(username='manager', password='abc')
+        self.create_project_hours()
+
+        response = self.client.get(self.ajax_url)
+        self.assertEquals(response.status_code, 200)
+
+        data = json.loads(response.content)
+
+        self.assertEquals(len(data['project_hours']), 2)
+        self.assertEquals(len(data['projects']), 1)
+
+        self.assertEquals(data['project_hours'][0]['hours'], 25.0)
+        self.assertEquals(data['project_hours'][1]['hours'], 5.0)
+
+    def test_ajax_call_date(self):
+        """
+        An ajax call with the 'week_of' parameter should return
+        the data for that week
+        """
+        self.client.login(username='manager', password='abc')
+        self.create_project_hours()
+
+        date = datetime.datetime.now() + relativedelta(days=7)
+        response = self.client.get(self.ajax_url, data={
+            'week_of': date.strftime('%Y-%m-%d')
+        })
+        self.assertEquals(response.status_code, 200)
+
+        data = json.loads(response.content)
+
+        self.assertEquals(len(data['project_hours']), 2)
+        self.assertEquals(len(data['projects']), 1)
+
+        self.assertEquals(data['project_hours'][0]['hours'], 15.0)
+        self.assertEquals(data['project_hours'][1]['hours'], 2.0)
