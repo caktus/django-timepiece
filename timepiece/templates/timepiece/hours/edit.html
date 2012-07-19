@@ -16,15 +16,15 @@
 {% block content %}
     <div class="row-fluid">
         <div class="span12">
-            <h2>Project Hours for the Week of {{ week|date:'F j, Y' }}</h2>
+            <h2 data-date="{{ week|date:'Y-m-d' }}">Project Hours for the Week of {{ week|date:'F j, Y' }}</h2>
         </div>
     </div>
 
     <div class="row-fluid">
         <div class="span12">
-            <form class="form-inline" accept-charset="UTF-8" method="get" action="">
+            <form class="form-inline" method="get">
                 {{ form|as_bootstrap:"inline" }}
-                <button type="submit" class="btn" name="submit">Update</button>
+                <button type="submit" class="btn">Update</button>
             </form>
         </div>
     </div>

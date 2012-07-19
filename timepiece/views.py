@@ -1520,6 +1520,15 @@ class JSONEncoder(json.JSONEncoder):
 class EditProjectHoursMixin(object):
     @method_decorator(permission_required('timepiece.add_projecthours'))
     def dispatch(self, request, *args, **kwargs):
+        if request.GET:
+            # Since we use get param in multiple places, attach it to the class
+            default_week = datetime.date.today().strftime('%Y-%m-%d')
+            self.week_start = request.GET.get('week_start', default_week)
+
+            # Account for an empty string
+            if self.week_start == '':
+                self.week_start = default_week
+
         return super(EditProjectHoursMixin, self) \
             .dispatch(request, *args, **kwargs)
 
@@ -1529,14 +1538,20 @@ class EditProjectHoursView(EditProjectHoursMixin, TemplateView):
 
     def get_context_data(self, **kwargs):
         context = super(EditProjectHoursView, self).get_context_data(**kwargs)
-        context['form'] = timepiece_forms.ProjectHoursSearchForm()
+
+        form = timepiece_forms.ProjectHoursSearchForm(initial={
+            'week_start': self.week_start
+        })
+        context['form'] = form
+        context['week'] = utils.get_week_start(
+            datetime.datetime.strptime(self.week_start, '%Y-%m-%d')
+        )
         return context
 
 
 class ProjectHoursAjaxView(EditProjectHoursMixin, View):
-    def get_hours_for_week(self, week_of):
-        date = datetime.datetime.strptime(week_of, '%Y-%m-%d').date() \
-            if week_of else datetime.date.today()
+    def get_hours_for_week(self):
+        date = datetime.datetime.strptime(self.week_start, '%Y-%m-%d').date()
         week_start = utils.get_week_start(date)
         week_end = week_start + relativedelta(days=7)
 
@@ -1544,9 +1559,7 @@ class ProjectHoursAjaxView(EditProjectHoursMixin, View):
             week_start__lt=week_end)
 
     def get(self, request, *args, **kwargs):
-        # user = request.GET.get('user', None)
-        week_of = request.GET.get('week_of', None)
-        project_hours = self.get_hours_for_week(week_of) \
+        project_hours = self.get_hours_for_week() \
             .values('id', 'user', 'user__first_name', 'user__last_name', 'project', 'hours')
         inner_qs = project_hours.values_list('project', flat=True)
         projects = timepiece.Project.objects.filter(pk__in=inner_qs).values()

@@ -127,6 +127,17 @@ function processData(data) {
     $('.dataTable').handsontable('loadData', dataTable);
 }
 
+function getData(week_start) {
+    if(!week_start) {
+        var d = new Date();
+        week_start = d.getFullYear() + '-' + (d.getMonth() + 1) + '-' + d.getDate();
+    }
+
+    $.getJSON('/timepiece/ajax/hours/', { week_start: week_start }, function(data, status, xhr) {
+        processData(data);
+    });
+}
+
 $(function() {
     var table = $('.dataTable').handsontable({
         rows: 16,
@@ -168,11 +179,10 @@ $(function() {
         }
     });
 
-    var d = new Date();
-    var week_of = d.getFullYear() + '-' + (d.getMonth() + 1) + '-' + d.getDate();
-
     // Load initial data
-    $.getJSON('/timepiece/ajax/hours/', { week_of: week_of }, function(data, status, xhr) {
-        processData(data);
-    });
+    getData($('h2[data-date]').data('date'));
+
+    // Make sure the datepicker uses the correct format we expect
+    $('.hasDatepicker').datepicker('option', 'dateFormat', 'yy-mm-dd' )
+        .datepicker('setDate', $('h2[data-date]').data('date'));
 });
