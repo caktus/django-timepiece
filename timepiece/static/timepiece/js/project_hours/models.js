@@ -85,6 +85,18 @@ Collection.prototype.get_by_name = function(name) {
     return null;
 };
 
+Collection.prototype.get_by_key = function(key, item) {
+    var array = [];
+
+    for(var i = 0; i < this.collection.length; i++) {
+        if(this.collection[i][key] == item) {
+            array.push(this.collection[i]);
+        }
+    }
+
+    return array;
+};
+
 Collection.prototype.index = function(item) {
     for(var i = 0; i < this.collection.length; i++) {
         if(this.collection[i].id === item.id) {
@@ -152,14 +164,16 @@ ProjectHoursCollection.prototype.get_by_row_col = function(row, col) {
     return null;
 };
 
-ProjectHoursCollection.prototype.get_by_key = function(key, item) {
-    var array = [];
-
-    for(var i = 0; i < this.collection.length; i++) {
-        if(this.collection[i][key] == item) {
-            array.push(this.collection[i]);
-        }
-    }
-
-    return array;
-};
+// For testing in node
+if(typeof module !== 'undefined') {
+    module.exports = {
+        'Model': Model,
+        'Project': Project,
+        'User': User,
+        'ProjectHours': ProjectHours,
+        'Collection': Collection,
+        'ProjectCollection': ProjectCollection,
+        'UserCollection': UserCollection,
+        'ProjectHoursCollection': ProjectHoursCollection
+    };
+}
