@@ -38,6 +38,16 @@ ProjectCollection.prototype.get_by_name = function(name) {
     return null;
 };
 
+ProjectCollection.prototype.get_by_row = function(row) {
+    for(var i = 0; i < this.collection.length; i++) {
+        if(this.collection[i].row === row) {
+            return this.collection[i].row;
+        }
+    }
+
+    return null;
+};
+
 var projects = new ProjectCollection();
 var all_projects = new ProjectCollection();
 
@@ -64,6 +74,8 @@ ProjectHoursCollection.prototype.get_by_row_col = function(row, col) {
             return this.collection[i];
         }
     }
+
+    return null;
 };
 
 ProjectHoursCollection.prototype.get_by_key = function(key, item) {
@@ -115,6 +127,16 @@ UserCollection.prototype.get_by_name = function(name) {
             return this.collection[i];
         }
     }
+};
+
+UserCollection.prototype.get_by_col = function(col) {
+    for(var i = 0; i < this.collection.length; i++) {
+        if(this.collection[i].col === col) {
+            return this.collection[i];
+        }
+    }
+
+    return null;
 };
 
 var users = new UserCollection();
@@ -295,7 +317,7 @@ $(function() {
                 col = changes[1],
                 before = changes[2],
                 after = changes[3],
-                project, user;
+                project, user, hours;
             
             if(row === 0) {
                 if(!users.get_by_name(after)) {
@@ -317,6 +339,35 @@ $(function() {
                     projects.add(project);
                 } else {
                     $('.alert').show().html('Project already listed').alert();
+
+                    return false;
+                }
+            } else if(row >= 1 && col >= 1) {
+                var time = parseInt(after, 10);
+                hours = project_hours.get_by_row_col(row, col);
+
+                if(hours) {
+                    if(time) {
+                        hours.hours = time;
+                    } else {
+                        project_hours.remove(hours);
+                    }
+                } else if(time && !hours) {
+                    project = projects.get_by_row(row);
+                    user = users.get_by_col(col);
+
+                    if(project && user) {
+                        hours = new ProjectHours(0, project, time);
+                        hours.user = user;
+                        
+                        project_hours.add(hours);
+                    } else {
+                        $('.alert').show().html('Project hours must be associated with a project and user').alert();
+
+                    return false;
+                    }
+                } else {
+                    $('.alert').show().html('Project hours must be integers').alert();
 
                     return false;
                 }
@@ -361,6 +412,8 @@ $(function() {
 
                     $('.dataTable').handsontable('alter', 'remove_row', project.row);
                 }
+            } else if(row >= 1 && col >= 1) {
+                
             } else {
                 return;
             }
