@@ -5,12 +5,12 @@ function Project(id, name) {
 }
 
 function ProjectCollection() {
-    this.projects = [];
+    this.collection = [];
 }
 
 ProjectCollection.prototype.add = function(project) {
     if(!this.get_by_id(project.id)) {
-        this.projects.push(project);
+        this.collection.push(project);
 
         return true;
     }
@@ -19,9 +19,19 @@ ProjectCollection.prototype.add = function(project) {
 };
 
 ProjectCollection.prototype.get_by_id = function(id) {
-    for(var i = 0; i < this.projects.length; i++) {
-        if(this.projects[i].id === id) {
-            return this.projects[i];
+    for(var i = 0; i < this.collection.length; i++) {
+        if(this.collection[i].id === id) {
+            return this.collection[i];
+        }
+    }
+
+    return null;
+};
+
+ProjectCollection.prototype.get_by_name = function(name) {
+    for(var i = 0; i < this.collection.length; i++) {
+        if(this.collection[i].name === name) {
+            return this.collection[i];
         }
     }
 
@@ -41,53 +51,119 @@ function ProjectHours(id, hours, project) {
 }
 
 function ProjectHoursCollection() {
-    this.project_hours = [];
+    this.collection = [];
 }
 
-ProjectHoursCollection.prototype.add = function(project_hours) {
-    this.project_hours.push(project_hours);
+ProjectHoursCollection.prototype.add = function(collection) {
+    this.collection.push(collection);
 };
 
 ProjectHoursCollection.prototype.get_by_row_col = function(row, col) {
-    for(var i = 0; i < this.project_hours.length; i++) {
-        if(this.project_hours[i].row === row && this.project_hours[i].col === col) {
-            return this.project_hours[i];
+    for(var i = 0; i < this.collection.length; i++) {
+        if(this.collection[i].row === row && this.collection[i].col === col) {
+            return this.collection[i];
         }
     }
+};
+
+ProjectHoursCollection.prototype.get_by_key = function(key, item) {
+    var array = [];
+
+    for(var i = 0; i < this.collection.length; i++) {
+        if(this.collection[i][key] == item) {
+            array.push(this.collection[i]);
+        }
+    }
+
+    return array;
 };
 
 var project_hours = new ProjectHoursCollection();
 
-function User(id, display_name) {
+function User(id, name) {
     this.id = id;
-    this.display_name = display_name;
+    this.name = name;
     this.col = 0;
 }
 
 function UserCollection() {
-    this.users = [];
+    this.collection = [];
 }
 
 UserCollection.prototype.add = function(user) {
-    for(var i = 0; i < this.users.length; i++) {
-        if(this.users[i].id === user.id) {
+    for(var i = 0; i < this.collection.length; i++) {
+        if(this.collection[i].id === user.id) {
             return false;
         }
     }
 
-    this.users.push(user);
+    this.collection.push(user);
     return true;
 };
 
 UserCollection.prototype.get_by_id = function(id) {
-    for(var i = 0; i < this.users.length; i++) {
-        if(this.users[i].id === id) {
-            return this.users[i];
+    for(var i = 0; i < this.collection.length; i++) {
+        if(this.collection[i].id === id) {
+            return this.collection[i];
+        }
+    }
+};
+
+UserCollection.prototype.get_by_name = function(name) {
+    for(var i = 0; i < this.collection.length; i++) {
+        if(this.collection[i].name === name) {
+            return this.collection[i];
         }
     }
 };
 
 var users = new UserCollection();
+var all_users = new UserCollection();
+
+// Bootstrap's typeahead completion plugin expects strings, so we wrap the functions around the name
+var model_prototype = {
+    toLowerCase: function() {
+        return this.name.toLowerCase();
+    },
+
+    indexOf: function(expr) {
+        return this.name.indexOf(expr);
+    },
+
+    replace: function(regex, match) {
+        return this.name.replace(regex, match);
+    },
+
+    toString: function() {
+        return this.name;
+    }
+};
+
+var collection_prototype = {
+    index: function(item) {
+        for(var i = 0; i < this.collection.length; i++) {
+            if(this.collection[i].id === item.id) {
+                return i;
+            }
+        }
+
+        return -1;
+    },
+
+    remove: function(item) {
+        var index = this.index(item);
+
+        this.collection.splice(index, 1);
+    }
+};
+
+
+$.extend(User.prototype, model_prototype);
+$.extend(Project.prototype, model_prototype);
+
+$.extend(UserCollection.prototype, collection_prototype);
+$.extend(ProjectCollection.prototype, collection_prototype);
+$.extend(ProjectHoursCollection.prototype, collection_prototype);
 
 function processData(data) {
     var projects = data.projects,
@@ -98,10 +174,17 @@ function processData(data) {
     
 
     for(var i = 0; i < all_projects.length; i++) {
-        var p = all_projects[i],
-            proj = new Project(p.id, p.name);
+        var p = all_projects[i];
 
-        this.all_projects.add(proj);
+        this.all_projects.add(new Project(p.id, p.name));
+    }
+
+    for(i = 0; i < all_users.length; i++) {
+        var u = all_users[i];
+
+        this.all_users.add(
+            new User(u.id, u.first_name + ' ' + u.last_name)
+        );
     }
 
     for(i = 0; i < project_hours.length; i++) {
@@ -115,13 +198,13 @@ function processData(data) {
         if(added) {
             dataTable.push([project.name]);
         }
-        
+
         var hours = new ProjectHours(ph.id, ph.hours, project);
         hours.row = project.row;
 
-        var user = new User(ph.user, ph.user__first_name + ' ' + ph.user__last_name);
+        var user = this.all_users.get_by_id(ph.user);
         if(users.add(user)) {
-            dataTable[0].push(user.display_name);
+            dataTable[0].push(user.name);
             user.col = dataTable[0].length - 1;
         } else {
             user = users.get_by_id(user.id);
@@ -187,11 +270,100 @@ $(function() {
             }
         ],
 
+        autoComplete: [
+            {
+                match: function(row, col, data) {
+                    return (col === 0);
+                },
+                source: function() {
+                    return all_projects.collection;
+                }
+            },
+            {
+                match: function(row, col, data) {
+                    return (row === 0 && col !== 0);
+                },
+                source: function() {
+                    return all_users.collection;
+                }
+            }
+        ],
+
         onBeforeChange: function(changes) {
-            // todo
+            if(changes.length > 4) { return; }
+            var row = changes[0],
+                col = changes[1],
+                before = changes[2],
+                after = changes[3],
+                project, user;
+            
+            if(row === 0) {
+                if(!users.get_by_name(after)) {
+                    user = all_users.get_by_name(after);
+                    
+                    user.col = col;
+                    users.add(user);
+                } else {
+                    $('.alert').show().html('User already listed').alert();
+
+                    return false;
+                }
+            } else if(col === 0) {
+                if(!projects.get_by_name(after)) {
+                    // Adding project
+                    project = all_projects.get_by_name(after);
+
+                    project.row = row;
+                    projects.add(project);
+                } else {
+                    $('.alert').show().html('Project already listed').alert();
+
+                    return false;
+                }
+            } else {
+                return;
+            }
         },
+
         onChange: function(changes) {
-            // todo
+            if(changes.length > 1) { return; }
+            var row = changes[0][0],
+                col = changes[0][1],
+                before = changes[0][2],
+                after = changes[0][3],
+                project, user, hours, i;
+
+            if(row === 0) {
+                user = users.get_by_name(before);
+
+                if(user && after === '') {
+                    users.remove(user);
+
+                    hours = project_hours.get_by_key('user', user);
+
+                    for(i = 0; i < hours.length; i++) {
+                        project_hours.remove(hours[i]);
+                    }
+
+                    $('.dataTable').handsontable('alter', 'remove_col', user.col);
+                }
+            } else if(col === 0) {
+                project = projects.get_by_name(before);
+
+                if(project && after === '') {
+                    projects.remove(project);
+
+                    hours = project_hours.get_by_key('project', project);
+
+                    for(i = 0; i < hours.length; i++) {
+                        project_hours.remove(hours[i]);
+                    }
+
+                    $('.dataTable').handsontable('alter', 'remove_row', project.row);
+                }
+            } else {
+                return;
+            }
         }
     });
 
