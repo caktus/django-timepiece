@@ -1,191 +1,10 @@
-function Project(id, name) {
-    this.id = id;
-    this.name = name;
-    this.row = 0;
-}
-
-function ProjectCollection() {
-    this.collection = [];
-}
-
-ProjectCollection.prototype.add = function(project) {
-    if(!this.get_by_id(project.id)) {
-        this.collection.push(project);
-
-        return true;
-    }
-
-    return false;
-};
-
-ProjectCollection.prototype.get_by_id = function(id) {
-    for(var i = 0; i < this.collection.length; i++) {
-        if(this.collection[i].id === id) {
-            return this.collection[i];
-        }
-    }
-
-    return null;
-};
-
-ProjectCollection.prototype.get_by_name = function(name) {
-    for(var i = 0; i < this.collection.length; i++) {
-        if(this.collection[i].name === name) {
-            return this.collection[i];
-        }
-    }
-
-    return null;
-};
-
-ProjectCollection.prototype.get_by_row = function(row) {
-    for(var i = 0; i < this.collection.length; i++) {
-        if(this.collection[i].row === row) {
-            return this.collection[i].row;
-        }
-    }
-
-    return null;
-};
-
 var projects = new ProjectCollection();
 var all_projects = new ProjectCollection();
-
-function ProjectHours(id, hours, project) {
-    this.id = id;
-    this.hours = hours;
-    this.project = project;
-    this.user = null;
-    this.row = 0;
-    this.col = 0;
-}
-
-function ProjectHoursCollection() {
-    this.collection = [];
-}
-
-ProjectHoursCollection.prototype.add = function(collection) {
-    this.collection.push(collection);
-};
-
-ProjectHoursCollection.prototype.get_by_row_col = function(row, col) {
-    for(var i = 0; i < this.collection.length; i++) {
-        if(this.collection[i].row === row && this.collection[i].col === col) {
-            return this.collection[i];
-        }
-    }
-
-    return null;
-};
-
-ProjectHoursCollection.prototype.get_by_key = function(key, item) {
-    var array = [];
-
-    for(var i = 0; i < this.collection.length; i++) {
-        if(this.collection[i][key] == item) {
-            array.push(this.collection[i]);
-        }
-    }
-
-    return array;
-};
-
-var project_hours = new ProjectHoursCollection();
-
-function User(id, name) {
-    this.id = id;
-    this.name = name;
-    this.col = 0;
-}
-
-function UserCollection() {
-    this.collection = [];
-}
-
-UserCollection.prototype.add = function(user) {
-    for(var i = 0; i < this.collection.length; i++) {
-        if(this.collection[i].id === user.id) {
-            return false;
-        }
-    }
-
-    this.collection.push(user);
-    return true;
-};
-
-UserCollection.prototype.get_by_id = function(id) {
-    for(var i = 0; i < this.collection.length; i++) {
-        if(this.collection[i].id === id) {
-            return this.collection[i];
-        }
-    }
-};
-
-UserCollection.prototype.get_by_name = function(name) {
-    for(var i = 0; i < this.collection.length; i++) {
-        if(this.collection[i].name === name) {
-            return this.collection[i];
-        }
-    }
-};
-
-UserCollection.prototype.get_by_col = function(col) {
-    for(var i = 0; i < this.collection.length; i++) {
-        if(this.collection[i].col === col) {
-            return this.collection[i];
-        }
-    }
-
-    return null;
-};
 
 var users = new UserCollection();
 var all_users = new UserCollection();
 
-// Bootstrap's typeahead completion plugin expects strings, so we wrap the functions around the name
-var model_prototype = {
-    toLowerCase: function() {
-        return this.name.toLowerCase();
-    },
-
-    indexOf: function(expr) {
-        return this.name.indexOf(expr);
-    },
-
-    replace: function(regex, match) {
-        return this.name.replace(regex, match);
-    },
-
-    toString: function() {
-        return this.name;
-    }
-};
-
-var collection_prototype = {
-    index: function(item) {
-        for(var i = 0; i < this.collection.length; i++) {
-            if(this.collection[i].id === item.id) {
-                return i;
-            }
-        }
-
-        return -1;
-    },
-
-    remove: function(item) {
-        var index = this.index(item);
-
-        this.collection.splice(index, 1);
-    }
-};
-
-
-$.extend(User.prototype, model_prototype);
-$.extend(Project.prototype, model_prototype);
-
-$.extend(UserCollection.prototype, collection_prototype);
-$.extend(ProjectCollection.prototype, collection_prototype);
-$.extend(ProjectHoursCollection.prototype, collection_prototype);
+var project_hours = new ProjectHoursCollection();
 
 function processData(data) {
     var projects = data.projects,
@@ -313,6 +132,7 @@ $(function() {
 
         onBeforeChange: function(changes) {
             if(changes.length > 4) { return; }
+            
             var row = changes[0],
                 col = changes[1],
                 before = changes[2],
@@ -378,6 +198,7 @@ $(function() {
 
         onChange: function(changes) {
             if(changes.length > 1) { return; }
+
             var row = changes[0][0],
                 col = changes[0][1],
                 before = changes[0][2],
