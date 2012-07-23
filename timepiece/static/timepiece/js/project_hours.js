@@ -9,11 +9,13 @@ function ProjectCollection() {
 }
 
 ProjectCollection.prototype.add = function(project) {
-    if(this.projects.indexOf(project) < 0) {
+    if(!this.get_by_id(project.id)) {
         this.projects.push(project);
-    } else {
-        console.warn('Project already added');
+
+        return true;
     }
+
+    return false;
 };
 
 ProjectCollection.prototype.get_by_id = function(id) {
@@ -22,9 +24,12 @@ ProjectCollection.prototype.get_by_id = function(id) {
             return this.projects[i];
         }
     }
+
+    return null;
 };
 
 var projects = new ProjectCollection();
+var all_projects = new ProjectCollection();
 
 function ProjectHours(id, hours, project) {
     this.id = id;
@@ -87,28 +92,34 @@ var users = new UserCollection();
 function processData(data) {
     var projects = data.projects,
         project_hours = data.project_hours,
+        all_projects = data.all_projects,
+        all_users = data.all_users,
         dataTable = [['']];
     
 
-    for(var i = 0; i < projects.length; i++) {
-        var p = projects[i],
+    for(var i = 0; i < all_projects.length; i++) {
+        var p = all_projects[i],
             proj = new Project(p.id, p.name);
 
-        proj.row = i + 1;
-
-        this.projects.add(proj);
-
-        dataTable.push([proj.name]);
+        this.all_projects.add(proj);
     }
 
     for(i = 0; i < project_hours.length; i++) {
         var ph = project_hours[i],
-            project = this.projects.get_by_id(ph.project);
+            project = this.all_projects.get_by_id(ph.project);
+        
+        project.row = project.row || dataTable.length;
 
+        var added = this.projects.add(project);
+
+        if(added) {
+            dataTable.push([project.name]);
+        }
+        
         var hours = new ProjectHours(ph.id, ph.hours, project);
         hours.row = project.row;
 
-        var user = new User(ph.user, ph.user__first_name);
+        var user = new User(ph.user, ph.user__first_name + ' ' + ph.user__last_name);
         if(users.add(user)) {
             dataTable[0].push(user.display_name);
             user.col = dataTable[0].length - 1;
@@ -118,6 +129,11 @@ function processData(data) {
 
         hours.user = user;
         hours.col = user.col;
+
+        if(!dataTable[hours.row]) {
+            dataTable[hours.row] = [];
+        }
+
         dataTable[hours.row][hours.col] = hours.hours;
 
 

@@ -1563,9 +1563,13 @@ class ProjectHoursAjaxView(EditProjectHoursMixin, View):
             .values('id', 'user', 'user__first_name', 'user__last_name', 'project', 'hours')
         inner_qs = project_hours.values_list('project', flat=True)
         projects = timepiece.Project.objects.filter(pk__in=inner_qs).values()
+        all_projects = timepiece.Project.objects.values('id', 'name')
+        all_users = auth_models.User.objects.values('id', 'first_name', 'last_name')
 
         data = {
             'project_hours': list(project_hours),
-            'projects': list(projects)
+            'projects': list(projects),
+            'all_projects': list(all_projects),
+            'all_users': list(all_users)
         }
         return HttpResponse(json.dumps(data, cls=JSONEncoder), mimetype='application/json')
