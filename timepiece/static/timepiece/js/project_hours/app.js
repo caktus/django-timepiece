@@ -164,8 +164,8 @@ $(function() {
                 project, user, hours;
             
             if(row === 0) {
-                if(!users.get_by_name(after)) {
-                    user = all_users.get_by_name(after);
+                if(!users.get_by_display_name(after)) {
+                    user = all_users.get_by_display_name(after);
                     
                     user.col = col;
                     users.add(user);
