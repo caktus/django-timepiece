@@ -191,9 +191,11 @@ $(function() {
                 hours = project_hours.get_by_row_col(row, col);
 
                 if(time && hours) {
-                    $.put('/timepiece/ajax/hours/' + hours.id + '/', {
-                        'pk': hours.id,
-                        'hours': time
+                    $.post('/timepiece/ajax/hours/', {
+                        'project': hours.project.id,
+                        'user': hours.user.id,
+                        'hours': time,
+                        'week_start': $('h2[data-date]').data('date')
                     }, function(data, status, xhr) {
                         hours.hours = time;
                         $('.dataTable').handsontable('setDataAtCell', row, col, time);
@@ -207,8 +209,8 @@ $(function() {
 
                     if(project && user && before === '') {
                         $.post('/timepiece/ajax/hours/', {
-                            'user_pk': user.id,
-                            'project_pk': project.id,
+                            'user': user.id,
+                            'project': project.id,
                             'hours': time,
                             'week_start': $('h2[data-date]').data('date')
                         }, function(data, status, xhr) {

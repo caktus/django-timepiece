@@ -1559,6 +1559,18 @@ class ProjectHoursAjaxView(EditProjectHoursMixin, View):
         return timepiece.ProjectHours.objects.filter(week_start__gte=week_start,
             week_start__lt=week_end)
 
+    def get_instance(self, data):
+        user = auth_models.User.objects.get(pk=data.get('user', None))
+        project = timepiece.Project.objects.get(pk=data.get('project', None))
+        hours = data.get('hours', None)
+        week_start = data.get('week_start', None)
+        week = datetime.datetime.strptime(week_start, '%Y-%m-%d').date()
+
+        ph = timepiece.ProjectHours.objects.get(user=user, project=project,
+            week_start=week)
+        ph.hours = Decimal(hours)
+        return ph
+
     def get(self, request, *args, **kwargs):
         """
         Returns the data as a JSON object made up of the following key/value
@@ -1594,38 +1606,17 @@ class ProjectHoursAjaxView(EditProjectHoursMixin, View):
         """
         Create or update an hour entry for a particular use and project
         """
-        hours = request.POST.get('hours', None)
-        user_pk = request.POST.get('user_pk', None)
-        project_pk = request.POST.get('project_pk', None)
-        week_start = request.POST.get('week_start', self.week_start)
-        date = utils.get_week_start(
-            datetime.datetime.strptime(week_start, '%Y-%m-%d').date()
-        )
+        instance = self.get_instance(request.POST)
+        form = timepiece_forms.ProjectHoursForm(request.POST, instance=instance)
 
-        if hours and user_pk and project_pk:
-            user = auth_models.User.objects.get(pk=user_pk)
-            project = timepiece.Project.objects.get(pk=project_pk)
-            ph = timepiece.ProjectHours.objects.create(user=user,
-                project=project, hours=Decimal(hours), week_start=date)
+        if form.is_valid():
+            ph = form.save()
             return HttpResponse(ph.pk, mimetype='text/plain')
 
         return HttpResponse('', status=500)
 
 
 class ProjectHoursDetailView(EditProjectHoursMixin, View):
-    def put(self, request, *args, **kwargs):
-        data = dict(urlparse.parse_qsl(request.read()))
-        pk = kwargs.get('pk', None)
-        hours = data.get('hours', None)
-
-        if pk and hours:
-            ph = timepiece.ProjectHours.objects.get(pk=pk)
-            ph.hours = Decimal(hours)
-            ph.save()
-            return HttpResponse(ph.pk, mimetype='text/plain')
-
-        return HttpResponse('', status=500)
-
     def delete(self, request, *args, **kwargs):
         """
         Remove a project from the database
