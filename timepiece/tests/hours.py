@@ -175,6 +175,7 @@ class ProjectHoursEditTestCase(ProjectHoursTestCase):
         self.manager.user_permissions = self.permission
         self.view_url = reverse('edit_project_hours')
         self.ajax_url = reverse('project_hours_ajax_view')
+        self.week_start = utils.get_week_start(datetime.date.today())
 
     def create_project_hours(self):
         """Create project hours data"""
@@ -193,6 +194,40 @@ class ProjectHoursEditTestCase(ProjectHoursTestCase):
         timepiece.ProjectHours.objects.create(
             week_start=week_start, project=self.tracked_project,
             user=self.manager, hours="2.0")
+
+    def ajax_posts(self):
+        response = self.client.post(self.ajax_url, data={
+            'hours': 5
+        })
+        self.assertEquals(response.status_code, 500)
+
+        response = self.client.post(self.ajax_url, data={
+            'hours': 5,
+            'project': self.tracked_project.pk
+        })
+        self.assertEquals(response.status_code, 500)
+
+        response = self.client.post(self.ajax_url, data={
+            'project': self.tracked_project.pk
+        })
+        self.assertEquals(response.status_code, 500)
+
+        response = self.client.post(self.ajax_url, data={
+            'project': self.tracked_project.pk,
+            'user': self.manager.pk
+        })
+        self.assertEquals(response.status_code, 500)
+
+        response = self.client.post(self.ajax_url, data={
+            'user': self.manager.pk
+        })
+        self.assertEquals(response.status_code, 500)
+
+        response = self.client.post(self.ajax_url, data={
+            'hours': 5,
+            'user': self.manager.pk
+        })
+        self.assertEquals(response.status_code, 500)
 
     def test_permission_access(self):
         """
@@ -305,8 +340,9 @@ class ProjectHoursEditTestCase(ProjectHoursTestCase):
 
         data = {
             'hours': 5,
-            'user_pk': self.manager.pk,
-            'project_pk': self.tracked_project.pk,
+            'user': self.manager.pk,
+            'project': self.tracked_project.pk,
+            'week_start': self.week_start.strftime('%Y-%m-%d')
         }
         response = self.client.post(self.ajax_url, data=data)
         self.assertEquals(response.status_code, 200)
@@ -325,38 +361,7 @@ class ProjectHoursEditTestCase(ProjectHoursTestCase):
 
         self.assertEquals(timepiece.ProjectHours.objects.count(), 0)
 
-        response = self.client.post(self.ajax_url, data={
-            'hours': 5
-        })
-        self.assertEquals(response.status_code, 500)
-
-        response = self.client.post(self.ajax_url, data={
-            'hours': 5,
-            'project_pk': self.tracked_project.pk
-        })
-        self.assertEquals(response.status_code, 500)
-
-        response = self.client.post(self.ajax_url, data={
-            'project_pk': self.tracked_project.pk
-        })
-        self.assertEquals(response.status_code, 500)
-
-        response = self.client.post(self.ajax_url, data={
-            'project_pk': self.tracked_project.pk,
-            'user_pk': self.manager.pk
-        })
-        self.assertEquals(response.status_code, 500)
-
-        response = self.client.post(self.ajax_url, data={
-            'user_pk': self.manager.pk
-        })
-        self.assertEquals(response.status_code, 500)
-
-        response = self.client.post(self.ajax_url, data={
-            'hours': 5,
-            'user_pk': self.manager.pk
-        })
-        self.assertEquals(response.status_code, 500)
+        self.ajax_posts()
 
         self.assertEquals(timepiece.ProjectHours.objects.count(), 0)
 
@@ -373,11 +378,12 @@ class ProjectHoursEditTestCase(ProjectHoursTestCase):
             user=self.manager
         )
 
-        url = reverse('project_hours_detail_view', args=(ph.pk,))
-
-        response = self.client.put(url, data=urllib.urlencode({
-            'hours': 10
-        }), content_type='application/x-www-form-urlencoded')
+        response = self.client.post(self.ajax_url, data={
+            'project': self.tracked_project.pk,
+            'user': self.manager.pk,
+            'hours': 10,
+            'week_start': self.week_start.strftime('%Y-%m-%d')
+        })
         self.assertEquals(response.status_code, 200)
 
         ph = timepiece.ProjectHours.objects.get()
@@ -396,12 +402,7 @@ class ProjectHoursEditTestCase(ProjectHoursTestCase):
             user=self.manager
         )
 
-        url = reverse('project_hours_detail_view', args=(ph.pk,))
-
-        response = self.client.put(url, data=urllib.urlencode({
-            'hours': ''
-        }), content_type='application/x-www-form-urlencoded')
-        self.assertEquals(response.status_code, 500)
+        self.ajax_posts()
 
         self.assertEquals(timepiece.ProjectHours.objects.count(), 1)
         self.assertEquals(ph.hours, Decimal('10.0'))

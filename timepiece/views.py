@@ -29,7 +29,7 @@ from django.views.decorators.csrf import csrf_exempt
 from django.views.generic.base import TemplateView
 from django.views.generic import UpdateView, ListView, DetailView, View
 from django.utils.decorators import method_decorator
-from django.core import serializers
+from django.core import serializers, exceptions
 from django.contrib.contenttypes.models import ContentType
 
 try:
@@ -1560,15 +1560,19 @@ class ProjectHoursAjaxView(EditProjectHoursMixin, View):
             week_start__lt=week_end)
 
     def get_instance(self, data):
-        user = auth_models.User.objects.get(pk=data.get('user', None))
-        project = timepiece.Project.objects.get(pk=data.get('project', None))
-        hours = data.get('hours', None)
-        week_start = data.get('week_start', None)
-        week = datetime.datetime.strptime(week_start, '%Y-%m-%d').date()
+        try:
+            user = auth_models.User.objects.get(pk=data.get('user', None))
+            project = timepiece.Project.objects.get(pk=data.get('project', None))
+            hours = data.get('hours', None)
+            week_start = data.get('week_start', None)
+            week = datetime.datetime.strptime(week_start, '%Y-%m-%d').date()
 
-        ph = timepiece.ProjectHours.objects.get(user=user, project=project,
-            week_start=week)
-        ph.hours = Decimal(hours)
+            ph = timepiece.ProjectHours.objects.get(user=user, project=project,
+                week_start=week)
+            ph.hours = Decimal(hours)
+        except (exceptions.ObjectDoesNotExist, TypeError):
+            ph = None
+
         return ph
 
     def get(self, request, *args, **kwargs):
@@ -1604,7 +1608,12 @@ class ProjectHoursAjaxView(EditProjectHoursMixin, View):
 
     def post(self, request, *args, **kwargs):
         """
-        Create or update an hour entry for a particular use and project
+        Create or update an hour entry for a particular use and project. This
+        function expects the following values:
+            user: the user pk for the hours
+            project: the project pk for the hours
+            hours: the actual hours to store
+            week_start: the start of the week for the hours
         """
         instance = self.get_instance(request.POST)
         form = timepiece_forms.ProjectHoursForm(request.POST, instance=instance)
