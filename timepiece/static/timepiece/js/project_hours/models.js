@@ -15,6 +15,10 @@ Model.prototype.replace = function(regex, match) {
 };
 
 Model.prototype.toString = function() {
+    if(this.display_name) {
+        return this.display_name;
+    }
+
     return this.name;
 };
 
@@ -28,10 +32,11 @@ function Project(id, name) {
 Project.prototype = new Model();
 Project.prototype.constructor = Project;
 
-function User(id, name) {
+function User(id, name, display_name) {
     Model.call(this, id);
 
     this.name = name;
+    this.display_name = display_name;
     this.col = 0;
 }
 
@@ -78,6 +83,16 @@ Collection.prototype.get_by_id = function(id) {
 Collection.prototype.get_by_name = function(name) {
     for(var i = 0; i < this.collection.length; i++) {
         if(this.collection[i].name === name) {
+            return this.collection[i];
+        }
+    }
+
+    return null;
+};
+
+Collection.prototype.get_by_display_name = function(name) {
+    for(var i = 0; i < this.collection.length; i++) {
+        if(this.collection[i].display_name === name) {
             return this.collection[i];
         }
     }

@@ -1,5 +1,7 @@
 import json
 import datetime
+import urllib
+from decimal import Decimal
 
 from dateutil.relativedelta import relativedelta
 
@@ -291,3 +293,135 @@ class ProjectHoursEditTestCase(ProjectHoursTestCase):
 
         self.assertEquals(data['project_hours'][0]['hours'], 15.0)
         self.assertEquals(data['project_hours'][1]['hours'], 2.0)
+
+    def test_ajax_create_successful(self):
+        """
+        A post request on the ajax url should create a new project
+        hour entry and return the entry's pk
+        """
+        self.client.login(username='manager', password='abc')
+
+        self.assertEquals(timepiece.ProjectHours.objects.count(), 0)
+
+        data = {
+            'hours': 5,
+            'user_pk': self.manager.pk,
+            'project_pk': self.tracked_project.pk,
+        }
+        response = self.client.post(self.ajax_url, data=data)
+        self.assertEquals(response.status_code, 200)
+
+        ph = timepiece.ProjectHours.objects.get()
+        self.assertEquals(timepiece.ProjectHours.objects.count(), 1)
+        self.assertEquals(int(response.content), ph.pk)
+        self.assertEquals(ph.hours, Decimal("5.0"))
+
+    def test_ajax_create_unsuccessful(self):
+        """
+        If any of the data is missing, the server response should
+        be a 500 error
+        """
+        self.client.login(username='manager', password='abc')
+
+        self.assertEquals(timepiece.ProjectHours.objects.count(), 0)
+
+        response = self.client.post(self.ajax_url, data={
+            'hours': 5
+        })
+        self.assertEquals(response.status_code, 500)
+
+        response = self.client.post(self.ajax_url, data={
+            'hours': 5,
+            'project_pk': self.tracked_project.pk
+        })
+        self.assertEquals(response.status_code, 500)
+
+        response = self.client.post(self.ajax_url, data={
+            'project_pk': self.tracked_project.pk
+        })
+        self.assertEquals(response.status_code, 500)
+
+        response = self.client.post(self.ajax_url, data={
+            'project_pk': self.tracked_project.pk,
+            'user_pk': self.manager.pk
+        })
+        self.assertEquals(response.status_code, 500)
+
+        response = self.client.post(self.ajax_url, data={
+            'user_pk': self.manager.pk
+        })
+        self.assertEquals(response.status_code, 500)
+
+        response = self.client.post(self.ajax_url, data={
+            'hours': 5,
+            'user_pk': self.manager.pk
+        })
+        self.assertEquals(response.status_code, 500)
+
+        self.assertEquals(timepiece.ProjectHours.objects.count(), 0)
+
+    def test_ajax_update_successful(self):
+        """
+        A put request to the url with the correct data should update
+        an existing project hour entry
+        """
+        self.client.login(username='manager', password='abc')
+
+        ph = timepiece.ProjectHours.objects.create(
+            hours=Decimal('5.0'),
+            project=self.tracked_project,
+            user=self.manager
+        )
+
+        url = reverse('project_hours_detail_view', args=(ph.pk,))
+
+        response = self.client.put(url, data=urllib.urlencode({
+            'hours': 10
+        }), content_type='application/x-www-form-urlencoded')
+        self.assertEquals(response.status_code, 200)
+
+        ph = timepiece.ProjectHours.objects.get()
+        self.assertEquals(ph.hours, Decimal("10"))
+
+    def test_ajax_update_unsuccessful(self):
+        """
+        If the request to update is missing data, the server should respond
+        with a 500 error
+        """
+        self.client.login(username='manager', password='abc')
+
+        ph = timepiece.ProjectHours.objects.create(
+            hours=Decimal('10.0'),
+            project=self.untracked_project,
+            user=self.manager
+        )
+
+        url = reverse('project_hours_detail_view', args=(ph.pk,))
+
+        response = self.client.put(url, data=urllib.urlencode({
+            'hours': ''
+        }), content_type='application/x-www-form-urlencoded')
+        self.assertEquals(response.status_code, 500)
+
+        self.assertEquals(timepiece.ProjectHours.objects.count(), 1)
+        self.assertEquals(ph.hours, Decimal('10.0'))
+
+    def test_ajax_delete_successful(self):
+        """
+        A delete request with a valid pk should delete the project
+        hours entry from the database
+        """
+        self.client.login(username='manager', password='abc')
+
+        ph = timepiece.ProjectHours.objects.create(
+            hours=Decimal('5.0'),
+            project=self.tracked_project,
+            user=self.manager
+        )
+
+        url = reverse('project_hours_detail_view', args=(ph.pk,))
+
+        response = self.client.delete(url)
+        self.assertEquals(response.status_code, 200)
+
+        self.assertEquals(timepiece.ProjectHours.objects.count(), 0)

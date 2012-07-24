@@ -1598,10 +1598,11 @@ class ProjectHoursAjaxView(EditProjectHoursMixin, View):
 
         return HttpResponse('', status=500)
 
+
+class ProjectHoursDetailView(EditProjectHoursMixin, View):
     def put(self, request, *args, **kwargs):
-        # import ipdb; ipdb.set_trace()
         data = dict(urlparse.parse_qsl(request.read()))
-        pk = data.get('pk', None)
+        pk = kwargs.get('pk', None)
         hours = data.get('hours', None)
 
         if pk and hours:
@@ -1613,12 +1614,15 @@ class ProjectHoursAjaxView(EditProjectHoursMixin, View):
         return HttpResponse('', status=500)
 
     def delete(self, request, *args, **kwargs):
-        data = dict(urlparse.parse_qsl(request.read()))
-        pk = data.get('pk', None)
+        pk = kwargs.get('pk', None)
 
         if pk:
-            ph = timepiece.ProjectHours.objects.get(pk=pk)
-            ph.delete()
-            return HttpResponse('', mimetype='text/plain')
+            try:
+                ph = timepiece.ProjectHours.objects.get(pk=pk)
+            except timepiece.ProjectHours.DoesNotExist:
+                return HttpResponse('', status=500)
+            else:
+                ph.delete()
+                return HttpResponse('ok', mimetype='text/plain')
 
         return HttpResponse('', status=500)

@@ -24,7 +24,7 @@ function processData(data) {
         var u = all_users[i];
 
         this.all_users.add(
-            new User(u.id, u.first_name + ' ' + u.last_name)
+            new User(u.id, u.first_name + ' ' + u.last_name, u.first_name)
         );
     }
 
@@ -45,7 +45,7 @@ function processData(data) {
 
         var user = this.all_users.get_by_id(ph.user);
         if(users.add(user)) {
-            dataTable[0].push(user.name);
+            dataTable[0].push(user.display_name);
             user.col = dataTable[0].length - 1;
         } else {
             user = users.get_by_id(user.id);
@@ -98,8 +98,8 @@ $.put = function(url, data, success, error) {
     ajax(url, data, success, error, 'PUT');
 };
 
-$.del = function(url, data, success, error) {
-    ajax(url, data, success, error, 'DELETE');
+$.del = function(url, success, error) {
+    ajax(url, { }, success, error, 'DELETE');
 };
 
 $(function() {
@@ -190,21 +190,17 @@ $(function() {
                 var time = parseInt(after, 10);
                 hours = project_hours.get_by_row_col(row, col);
 
-                if(hours) {
-                    if(time) {
-                        $.put('/timepiece/ajax/hours/', {
-                            'pk': hours.id,
-                            'hours': time
-                        }, function(data, status, xhr) {
-                            hours.hours = time;
-                            $('.dataTable').handsontable('setDataAtCell', row, col, time);
-                        }, function(xhr, status, error) {
-                            $('.dataTable').handsontable('setDataAtCell', row, col, before);
-                            $('.alert').show().html('Could not save the project hours. Please notify an administrator.').alert();
-                        });
-                    } else {
-                        project_hours.remove(hours);
-                    }
+                if(time && hours) {
+                    $.put('/timepiece/ajax/hours/' + hours.id + '/', {
+                        'pk': hours.id,
+                        'hours': time
+                    }, function(data, status, xhr) {
+                        hours.hours = time;
+                        $('.dataTable').handsontable('setDataAtCell', row, col, time);
+                    }, function(xhr, status, error) {
+                        $('.dataTable').handsontable('setDataAtCell', row, col, before);
+                        $('.alert').show().html('Could not save the project hours. Please notify an administrator.').alert();
+                    });
                 } else if(time && !hours) {
                     project = projects.get_by_row(row);
                     user = users.get_by_col(col);
@@ -279,13 +275,11 @@ $(function() {
                 hours = project_hours.get_by_row_col(row, col);
 
                 if(hours && after === '') {
-                    $.del('/timepiece/ajax/hours/', {
-                        'pk': hours.id
-                    }, function(data, status, xhr) {
+                    $.del('/timepiece/ajax/hours/' + hours.id + '/', function(data, status, xhr) {
                         project_hours.remove(hours);
                     }, function(xhr, status, error) {
                         $('.dataTable').handsontable('setDataAtCell', row, col, before);
-                        $('.alert').show().html('Could not save the project hours. Please notify an administrator.').alert();
+                        $('.alert').show().html('Could not delete the project hours. Please notify an administrator.').alert();
                     });
                 }
             } else {

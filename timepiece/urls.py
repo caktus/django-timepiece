@@ -222,4 +222,9 @@ urlpatterns = patterns('',
         views.ProjectHoursAjaxView.as_view(),
         name='project_hours_ajax_view',
     ),
+    url(
+        r'^ajax/hours/(?P<pk>\d+)/$',
+        views.ProjectHoursDetailView.as_view(),
+        name='project_hours_detail_view',
+    ),
 )
