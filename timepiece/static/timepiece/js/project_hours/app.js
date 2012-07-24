@@ -78,15 +78,28 @@ function getData(week_start) {
     });
 }
 
-// Override post to take an error callback
-$.post = function(url, data, success, error) {
+function ajax(url, data, success, error, type) {
     $.ajax({
-        type: 'POST',
+        type: type,
         url: url,
         data: data,
         success: success,
         error: error
     });
+}
+
+// Override post to take an error callback
+$.post = function(url, data, success, error) {
+    ajax(url, data, success, error, 'POST');
+};
+
+// Add wrappers for put and delete
+$.put = function(url, data, success, error) {
+    ajax(url, data, success, error, 'PUT');
+};
+
+$.del = function(url, data, success, error) {
+    ajax(url, data, success, error, 'DELETE');
 };
 
 $(function() {
@@ -179,7 +192,16 @@ $(function() {
 
                 if(hours) {
                     if(time) {
-                        hours.hours = time;
+                        $.put('/timepiece/ajax/hours/', {
+                            'pk': hours.id,
+                            'hours': time
+                        }, function(data, status, xhr) {
+                            hours.hours = time;
+                            $('.dataTable').handsontable('setDataAtCell', row, col, time);
+                        }, function(xhr, status, error) {
+                            $('.dataTable').handsontable('setDataAtCell', row, col, before);
+                            $('.alert').show().html('Could not save the project hours. Please notify an administrator.').alert();
+                        });
                     } else {
                         project_hours.remove(hours);
                     }
@@ -187,11 +209,12 @@ $(function() {
                     project = projects.get_by_row(row);
                     user = users.get_by_col(col);
 
-                    if(project && user) {
+                    if(project && user && before === '') {
                         $.post('/timepiece/ajax/hours/', {
                             'user_pk': user.id,
                             'project_pk': project.id,
-                            'hours': time
+                            'hours': time,
+                            'week_start': $('h2[data-date]').data('date')
                         }, function(data, status, xhr) {
                             hours = new ProjectHours(parseInt(data, 10), project, time);
                             hours.user = user;
@@ -253,7 +276,18 @@ $(function() {
                     $('.dataTable').handsontable('alter', 'remove_row', project.row);
                 }
             } else if(row >= 1 && col >= 1) {
-                
+                hours = project_hours.get_by_row_col(row, col);
+
+                if(hours && after === '') {
+                    $.del('/timepiece/ajax/hours/', {
+                        'pk': hours.id
+                    }, function(data, status, xhr) {
+                        project_hours.remove(hours);
+                    }, function(xhr, status, error) {
+                        $('.dataTable').handsontable('setDataAtCell', row, col, before);
+                        $('.alert').show().html('Could not save the project hours. Please notify an administrator.').alert();
+                    });
+                }
             } else {
                 return;
             }

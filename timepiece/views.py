@@ -4,6 +4,7 @@ import datetime
 import math
 import urllib
 import json
+import urlparse
 
 from decimal import Decimal
 from dateutil.relativedelta import relativedelta
@@ -1521,17 +1522,16 @@ class JSONEncoder(json.JSONEncoder):
 class EditProjectHoursMixin(object):
     @method_decorator(permission_required('timepiece.add_projecthours'))
     def dispatch(self, request, *args, **kwargs):
-        if request.method == 'GET':
-            # Since we use get param in multiple places, attach it to the class
-            default_week = datetime.date.today().strftime('%Y-%m-%d')
-            self.week_start = request.GET.get('week_start', default_week)
+        # Since we use get param in multiple places, attach it to the class
+        default_week = datetime.date.today().strftime('%Y-%m-%d')
+        self.week_start = request.GET.get('week_start', default_week)
 
-            # Account for an empty string
-            if self.week_start == '':
-                self.week_start = default_week
+        # Account for an empty string
+        if self.week_start == '':
+            self.week_start = default_week
 
-        return super(EditProjectHoursMixin, self) \
-            .dispatch(request, *args, **kwargs)
+        return super(EditProjectHoursMixin, self).dispatch(request, *args,
+            **kwargs)
 
 
 class EditProjectHoursView(EditProjectHoursMixin, TemplateView):
@@ -1581,23 +1581,44 @@ class ProjectHoursAjaxView(EditProjectHoursMixin, View):
         return HttpResponse(json.dumps(data, cls=JSONEncoder), mimetype='application/json')
 
     def post(self, request, *args, **kwargs):
-        pk = request.POST.get('id', None)
         hours = request.POST.get('hours', None)
         user_pk = request.POST.get('user_pk', None)
         project_pk = request.POST.get('project_pk', None)
+        week_start = request.POST.get('week_start', self.week_start)
+        date = utils.get_week_start(
+            datetime.datetime.strptime(week_start, '%Y-%m-%d').date()
+        )
 
-        # If id is present, we are updating an existing project hour
-        # If the other values are present, we are adding a new project hour
+        if hours and user_pk and project_pk:
+            user = auth_models.User.objects.get(pk=user_pk)
+            project = timepiece.Project.objects.get(pk=project_pk)
+            ph = timepiece.ProjectHours.objects.create(user=user,
+                project=project, hours=Decimal(hours), week_start=date)
+            return HttpResponse(ph.pk, mimetype='text/plain')
+
+        return HttpResponse('', status=500)
+
+    def put(self, request, *args, **kwargs):
+        # import ipdb; ipdb.set_trace()
+        data = dict(urlparse.parse_qsl(request.read()))
+        pk = data.get('pk', None)
+        hours = data.get('hours', None)
+
         if pk and hours:
             ph = timepiece.ProjectHours.objects.get(pk=pk)
             ph.hours = Decimal(hours)
             ph.save()
             return HttpResponse(ph.pk, mimetype='text/plain')
-        elif hours and user_pk and project_pk:
-            user = auth_models.User.objects.get(pk=user_pk)
-            project = timepiece.Project.objects.get(pk=project_pk)
-            ph = timepiece.ProjectHours.objects.create(user=user,
-                project=project, hours=Decimal(hours))
-            return HttpResponse(ph.pk, mimetype='text/plain')
+
+        return HttpResponse('', status=500)
+
+    def delete(self, request, *args, **kwargs):
+        data = dict(urlparse.parse_qsl(request.read()))
+        pk = data.get('pk', None)
+
+        if pk:
+            ph = timepiece.ProjectHours.objects.get(pk=pk)
+            ph.delete()
+            return HttpResponse('', mimetype='text/plain')
 
         return HttpResponse('', status=500)
