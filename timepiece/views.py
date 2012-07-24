@@ -1560,14 +1560,24 @@ class ProjectHoursAjaxView(EditProjectHoursMixin, View):
             week_start__lt=week_end)
 
     def get(self, request, *args, **kwargs):
+        """
+        Returns the data as a JSON object made up of the following key/value
+        pairs:
+            project_hours: the current project hours for the week
+            projects: the projects that have hours for the week
+            all_projects: all of the projects; used for autocomplete
+            all_users: all users that can clock in; used for completion
+        """
         perm = auth_models.Permission.objects.filter(
             content_type=ContentType.objects.get_for_model(timepiece.Entry),
             codename='can_clock_in'
         )
         project_hours = self.get_hours_for_week() \
-            .values('id', 'user', 'user__first_name', 'user__last_name', 'project', 'hours')
+            .values('id', 'user', 'user__first_name', 'user__last_name',
+                'project', 'hours')
         inner_qs = project_hours.values_list('project', flat=True)
-        projects = timepiece.Project.objects.filter(pk__in=inner_qs).values()
+        projects = timepiece.Project.objects.filter(pk__in=inner_qs).values() \
+            .order_by('name')
         all_projects = timepiece.Project.objects.values('id', 'name')
         all_users = auth_models.User.objects.filter(groups__permissions=perm) \
             .values('id', 'first_name', 'last_name')
@@ -1581,6 +1591,9 @@ class ProjectHoursAjaxView(EditProjectHoursMixin, View):
         return HttpResponse(json.dumps(data, cls=JSONEncoder), mimetype='application/json')
 
     def post(self, request, *args, **kwargs):
+        """
+        Create or update an hour entry for a particular use and project
+        """
         hours = request.POST.get('hours', None)
         user_pk = request.POST.get('user_pk', None)
         project_pk = request.POST.get('project_pk', None)
@@ -1614,6 +1627,9 @@ class ProjectHoursDetailView(EditProjectHoursMixin, View):
         return HttpResponse('', status=500)
 
     def delete(self, request, *args, **kwargs):
+        """
+        Remove a project from the database
+        """
         pk = kwargs.get('pk', None)
 
         if pk:
