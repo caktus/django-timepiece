@@ -123,7 +123,7 @@ ProjectCollection.prototype.constructor = ProjectCollection;
 ProjectCollection.prototype.get_by_row = function(row) {
     for(var i = 0; i < this.collection.length; i++) {
         if(this.collection[i].row === row) {
-            return this.collection[i].row;
+            return this.collection[i];
         }
     }
 

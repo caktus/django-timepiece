@@ -29,6 +29,7 @@ from django.views.generic.base import TemplateView
 from django.views.generic import UpdateView, ListView, DetailView, View
 from django.utils.decorators import method_decorator
 from django.core import serializers
+from django.contrib.contenttypes.models import ContentType
 
 try:
     from django.utils import timezone
@@ -1518,7 +1519,7 @@ class JSONEncoder(json.JSONEncoder):
 
 
 class EditProjectHoursMixin(object):
-    # @method_decorator(permission_required('timepiece.add_projecthours'))
+    @method_decorator(permission_required('timepiece.add_projecthours'))
     def dispatch(self, request, *args, **kwargs):
         if request.method == 'GET':
             # Since we use get param in multiple places, attach it to the class
@@ -1559,12 +1560,17 @@ class ProjectHoursAjaxView(EditProjectHoursMixin, View):
             week_start__lt=week_end)
 
     def get(self, request, *args, **kwargs):
+        perm = auth_models.Permission.objects.filter(
+            content_type=ContentType.objects.get_for_model(timepiece.Entry),
+            codename='can_clock_in'
+        )
         project_hours = self.get_hours_for_week() \
             .values('id', 'user', 'user__first_name', 'user__last_name', 'project', 'hours')
         inner_qs = project_hours.values_list('project', flat=True)
         projects = timepiece.Project.objects.filter(pk__in=inner_qs).values()
         all_projects = timepiece.Project.objects.values('id', 'name')
-        all_users = auth_models.User.objects.values('id', 'first_name', 'last_name')
+        all_users = auth_models.User.objects.filter(groups__permissions=perm) \
+            .values('id', 'first_name', 'last_name')
 
         data = {
             'project_hours': list(project_hours),
@@ -1573,3 +1579,25 @@ class ProjectHoursAjaxView(EditProjectHoursMixin, View):
             'all_users': list(all_users)
         }
         return HttpResponse(json.dumps(data, cls=JSONEncoder), mimetype='application/json')
+
+    def post(self, request, *args, **kwargs):
+        pk = request.POST.get('id', None)
+        hours = request.POST.get('hours', None)
+        user_pk = request.POST.get('user_pk', None)
+        project_pk = request.POST.get('project_pk', None)
+
+        # If id is present, we are updating an existing project hour
+        # If the other values are present, we are adding a new project hour
+        if pk and hours:
+            ph = timepiece.ProjectHours.objects.get(pk=pk)
+            ph.hours = Decimal(hours)
+            ph.save()
+            return HttpResponse(ph.pk, mimetype='text/plain')
+        elif hours and user_pk and project_pk:
+            user = auth_models.User.objects.get(pk=user_pk)
+            project = timepiece.Project.objects.get(pk=project_pk)
+            ph = timepiece.ProjectHours.objects.create(user=user,
+                project=project, hours=Decimal(hours))
+            return HttpResponse(ph.pk, mimetype='text/plain')
+
+        return HttpResponse('', status=500)

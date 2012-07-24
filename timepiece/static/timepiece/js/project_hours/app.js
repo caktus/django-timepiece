@@ -78,6 +78,17 @@ function getData(week_start) {
     });
 }
 
+// Override post to take an error callback
+$.post = function(url, data, success, error) {
+    $.ajax({
+        type: 'POST',
+        url: url,
+        data: data,
+        success: success,
+        error: error
+    });
+};
+
 $(function() {
     var table = $('.dataTable').handsontable({
         rows: 16,
@@ -177,14 +188,22 @@ $(function() {
                     user = users.get_by_col(col);
 
                     if(project && user) {
-                        hours = new ProjectHours(0, project, time);
-                        hours.user = user;
-                        
-                        project_hours.add(hours);
+                        $.post('/timepiece/ajax/hours/', {
+                            'user_pk': user.id,
+                            'project_pk': project.id,
+                            'hours': time
+                        }, function(data, status, xhr) {
+                            hours = new ProjectHours(parseInt(data, 10), project, time);
+                            hours.user = user;
+                            project_hours.add(hours);
+                        }, function(xhr, status, error) {
+                            $('.dataTable').handsontable('setDataAtCell', row, col, '');
+                            $('.alert').show().html('Could not save the project hours. Please notify an administrator.').alert();
+                        });
                     } else {
                         $('.alert').show().html('Project hours must be associated with a project and user').alert();
 
-                    return false;
+                        return false;
                     }
                 } else {
                     $('.alert').show().html('Project hours must be integers').alert();
