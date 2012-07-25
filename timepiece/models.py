@@ -317,6 +317,7 @@ class EntryQuerySet(models.query.QuerySet):
 
 
 class EntryManager(models.Manager):
+
     def get_query_set(self):
         qs = EntryQuerySet(self.model)
         qs = qs.select_related('activity', 'project__type')
@@ -339,6 +340,7 @@ class EntryManager(models.Manager):
 
 
 class EntryWorkedManager(models.Manager):
+
     def get_query_set(self):
         qs = EntryQuerySet(self.model)
         projects = getattr(settings, 'TIMEPIECE_PROJECTS', {})
@@ -843,6 +845,7 @@ class ContractMilestone(models.Model):
 
 
 class AssignmentManager(models.Manager):
+
     def active_during_week(self, week, next_week):
         q = Q(contract__end_date__gte=week, contract__end_date__lt=next_week)
         q |= Q(contract__start_date__gte=week,
@@ -1012,6 +1015,7 @@ class ContractAssignment(models.Model):
 
 
 class AllocationManager(models.Manager):
+
     def during_this_week(self, user, day=None):
         week = utils.get_week_start(day=day)
         return self.get_query_set().filter(

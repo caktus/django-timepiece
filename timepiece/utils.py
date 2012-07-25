@@ -88,6 +88,25 @@ DEFAULT_TIME_FORMATS = [
 ]
 
 
+def add_timezone(value, tz=None):
+    """If the value is naive, then the timezone is added to it.  
+
+    If no timezone is given, timezone.get_current_timezone() is used.
+    """   
+    if tz == None:
+        tz = timezone.get_current_timezone()
+    try:
+        if timezone.is_naive(value):
+            return timezone.make_aware(value, tz)
+    except AttributeError:  # 'datetime.date' object has no attribute 'tzinfo'
+        dt = datetime.datetime.combine(value, datetime.time())
+        if hasattr(tz, 'localize'):
+            return tz.localize(dt, is_dst=None)
+        else:
+            return dt.replace(tzinfo=tz)
+    return value
+
+
 def parse_time(time_str, input_formats=None):
     """
     This function will take a string with some sort of representation of time
@@ -105,8 +124,7 @@ def parse_time(time_str, input_formats=None):
             continue
         else:
             # turn the time_struct into a datetime.time object
-            return timezone.make_aware(datetime.time(*value[3:6]),
-                timezone.get_current_timezone())
+            return add_timezone(datetime.time(*value[3:6]))
 
     # return None if there's no matching format
     return None
@@ -127,8 +145,7 @@ def get_total_time(seconds):
 def get_month_start(from_day=None):
     if not from_day:
         from_day = datetime.date.today()
-    from_day = datetime.datetime.combine(from_day,
-        datetime.time(tzinfo=timezone.get_current_timezone()))
+    from_day = add_timezone(from_day)
     return from_day.replace(day=1)
 
 
@@ -138,8 +155,7 @@ def get_week_start(day=None):
     isoweekday = day.isoweekday()
     if isoweekday != 1:
         day = day - datetime.timedelta(days=isoweekday - 1)
-    day = datetime.datetime.combine(day,
-        datetime.time(tzinfo=timezone.get_current_timezone()))
+    day = add_timezone(day)
     return day
 
 
@@ -152,20 +168,10 @@ def get_last_billable_day(day=None):
 
 
 def generate_dates(start=None, end=None, by='week'):
-    try:
-        if not timezone.is_aware(start):
-            start = timezone.make_aware(start, timezone.get_current_timezone())
-    except AttributeError:
-        if start:
-            start = datetime.datetime.combine(start,
-                datetime.time(tzinfo=timezone.get_current_timezone()))
-    try:
-        if not timezone.is_aware(end):
-            end = timezone.make_aware(end, timezone.get_current_timezone())
-    except AttributeError:
-        if end:
-            end = datetime.datetime.combine(end,
-                datetime.time(tzinfo=timezone.get_current_timezone()))
+    if start:
+        start = add_timezone(start)
+    if end:
+        end = add_timezone(end)
     if by == 'month':
         start = get_month_start(start)
         return rrule.rrule(rrule.MONTHLY, dtstart=start, until=end)
@@ -243,13 +249,7 @@ def grouped_totals(entries):
                                                         'project__name')
     weeks = {}
     for week, week_entries in groupby(weekly, lambda x: x['date']):
-        try:
-            if timezone.is_naive(week):
-                week = timezone.make_aware(week,
-                    timezone.get_current_timezone())
-        except AttributeError:
-            week = datetime.datetime.combine(week,
-                timezone.get_current_timezone())
+        week = add_timezone(week)
         weeks[week] = get_hours(week_entries)
     days = []
     last_week = None
