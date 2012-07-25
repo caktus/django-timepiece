@@ -108,13 +108,15 @@ $.del = function(url, success, error) {
 $(function() {
     var table = $('.dataTable').handsontable({
         rows: 16,
-        cols: 20,
+        // cols: 19,
 
         rowHeaders: true,
         colHeaders: true,
 
         minSpareRows: 1,
         minSpareCols: 1,
+
+        minWidth: $('div#content').width() - 20, // -20 is to account for padding
 
         enterBeginsEditing: true,
 
