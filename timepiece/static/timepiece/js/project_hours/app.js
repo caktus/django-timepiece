@@ -170,7 +170,7 @@ $(function() {
                     user.col = col;
                     users.add(user);
                 } else {
-                    $('.alert').show().html('User already listed').alert();
+                    $('.error').show().html('User already listed').alert();
 
                     return false;
                 }
@@ -182,7 +182,7 @@ $(function() {
                     project.row = row;
                     projects.add(project);
                 } else {
-                    $('.alert').show().html('Project already listed').alert();
+                    $('.error').show().html('Project already listed').alert();
 
                     return false;
                 }
@@ -201,7 +201,7 @@ $(function() {
                         $('.dataTable').handsontable('setDataAtCell', row, col, time);
                     }, function(xhr, status, error) {
                         $('.dataTable').handsontable('setDataAtCell', row, col, before);
-                        $('.alert').show().html('Could not save the project hours. Please notify an administrator.').alert();
+                        $('.error').show().html('Could not save the project hours. Please notify an administrator.').alert();
                     });
                 } else if(time && !hours) {
                     project = projects.get_by_row(row);
@@ -219,15 +219,15 @@ $(function() {
                             project_hours.add(hours);
                         }, function(xhr, status, error) {
                             $('.dataTable').handsontable('setDataAtCell', row, col, '');
-                            $('.alert').show().html('Could not save the project hours. Please notify an administrator.').alert();
+                            $('.error').show().html('Could not save the project hours. Please notify an administrator.').alert();
                         });
                     } else {
-                        $('.alert').show().html('Project hours must be associated with a project and user').alert();
+                        $('.error').show().html('Project hours must be associated with a project and user').alert();
 
                         return false;
                     }
                 } else {
-                    $('.alert').show().html('Project hours must be integers').alert();
+                    $('.error').show().html('Project hours must be integers').alert();
 
                     return false;
                 }
@@ -281,7 +281,7 @@ $(function() {
                         project_hours.remove(hours);
                     }, function(xhr, status, error) {
                         $('.dataTable').handsontable('setDataAtCell', row, col, before);
-                        $('.alert').show().html('Could not delete the project hours. Please notify an administrator.').alert();
+                        $('.error').show().html('Could not delete the project hours. Please notify an administrator.').alert();
                     });
                 }
             } else {
