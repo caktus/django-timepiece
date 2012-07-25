@@ -196,38 +196,68 @@ class ProjectHoursEditTestCase(ProjectHoursTestCase):
             user=self.manager, hours="2.0")
 
     def ajax_posts(self):
-        response = self.client.post(self.ajax_url, data={
-            'hours': 5
-        })
-        self.assertEquals(response.status_code, 500)
+        date_msg = 'Parameter week_start must be a date in the format ' \
+            'yyyy-mm-dd'
+        msg = 'The request must contain values for user, project, and hours'
 
         response = self.client.post(self.ajax_url, data={
             'hours': 5,
-            'project': self.tracked_project.pk
+            'week_start': '2012-07-23'
         })
         self.assertEquals(response.status_code, 500)
+        self.assertEquals(response.content, msg)
 
         response = self.client.post(self.ajax_url, data={
-            'project': self.tracked_project.pk
+            'hours': 5,
+            'project': self.tracked_project.pk,
+            'week_start': '2012-07-23'
         })
         self.assertEquals(response.status_code, 500)
+        self.assertEquals(response.content, msg)
 
         response = self.client.post(self.ajax_url, data={
             'project': self.tracked_project.pk,
-            'user': self.manager.pk
+            'week_start': '2012-07-23'
         })
         self.assertEquals(response.status_code, 500)
+        self.assertEquals(response.content, msg)
 
         response = self.client.post(self.ajax_url, data={
-            'user': self.manager.pk
+            'project': self.tracked_project.pk,
+            'user': self.manager.pk,
+            'week_start': '2012-07-23'
         })
         self.assertEquals(response.status_code, 500)
+        self.assertEquals(response.content, msg)
+
+        response = self.client.post(self.ajax_url, data={
+            'user': self.manager.pk,
+            'week_start': '2012-07-23'
+        })
+        self.assertEquals(response.status_code, 500)
+        self.assertEquals(response.content, msg)
 
         response = self.client.post(self.ajax_url, data={
             'hours': 5,
-            'user': self.manager.pk
+            'user': self.manager.pk,
+            'week_start': '2012-07-23'
         })
         self.assertEquals(response.status_code, 500)
+        self.assertEquals(response.content, msg)
+
+        response = self.client.post(self.ajax_url, data={
+            'week_start': '2012-07-23'
+        })
+        self.assertEquals(response.status_code, 500)
+        self.assertEquals(response.content, msg)
+
+        response = self.client.post(self.ajax_url, data={
+            'hours': 5,
+            'user': self.manager.pk,
+            'project': self.tracked_project.pk
+        })
+        self.assertEquals(response.status_code, 500)
+        self.assertEquals(response.content, date_msg)
 
     def test_permission_access(self):
         """

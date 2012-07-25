@@ -1570,7 +1570,7 @@ class ProjectHoursAjaxView(EditProjectHoursMixin, View):
             ph = timepiece.ProjectHours.objects.get(user=user, project=project,
                 week_start=week)
             ph.hours = Decimal(hours)
-        except (exceptions.ObjectDoesNotExist, TypeError):
+        except (exceptions.ObjectDoesNotExist):
             ph = None
 
         return ph
@@ -1615,14 +1615,21 @@ class ProjectHoursAjaxView(EditProjectHoursMixin, View):
             hours: the actual hours to store
             week_start: the start of the week for the hours
         """
-        instance = self.get_instance(request.POST)
+        try:
+            instance = self.get_instance(request.POST)
+        except TypeError:
+            msg = 'Parameter week_start must be a date in the format ' \
+                'yyyy-mm-dd'
+            return HttpResponse(msg, status=500)
+
         form = timepiece_forms.ProjectHoursForm(request.POST, instance=instance)
 
         if form.is_valid():
             ph = form.save()
             return HttpResponse(ph.pk, mimetype='text/plain')
 
-        return HttpResponse('', status=500)
+        msg = 'The request must contain values for user, project, and hours'
+        return HttpResponse(msg, status=500)
 
 
 class ProjectHoursDetailView(EditProjectHoursMixin, View):
