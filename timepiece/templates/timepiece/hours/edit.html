@@ -5,6 +5,10 @@
 {% block title %}Project Hours for the Week of {{ week|date:'F j, Y' }}{% endblock %}
 
 {% block extrajs %}
+    <script type="text/javascript">
+        var ajax_url = '{{ ajax_url }}';
+    </script>
+
     <script type="text/javascript" src="{{ STATIC_URL }}bootstrap/js/bootstrap-typeahead.js"></script>
     <script type="text/javascript" src="{{ STATIC_URL }}timepiece/js/handsontable/jquery.handsontable.js"></script>
     <script type="text/javascript" src="{{ STATIC_URL }}timepiece/js/ajax.js"></script>

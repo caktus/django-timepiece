@@ -12,7 +12,10 @@ function processData(data) {
         all_projects = data.all_projects,
         all_users = data.all_users,
         dataTable = [['']];
-    
+
+    if(typeof ajax_url === 'undefined') {
+        ajax_url = data.ajax_url;
+    }
 
     for(var i = 0; i < all_projects.length; i++) {
         var p = all_projects[i];
@@ -73,7 +76,7 @@ function getData(week_start) {
         week_start = d.getFullYear() + '-' + (d.getMonth() + 1) + '-' + d.getDate();
     }
 
-    $.getJSON('/timepiece/ajax/hours/', { week_start: week_start }, function(data, status, xhr) {
+    $.getJSON(ajax_url, { week_start: week_start }, function(data, status, xhr) {
         processData(data);
     });
 }
@@ -191,7 +194,7 @@ $(function() {
                 hours = project_hours.get_by_row_col(row, col);
 
                 if(time && hours) {
-                    $.post('/timepiece/ajax/hours/', {
+                    $.post(ajax_url, {
                         'project': hours.project.id,
                         'user': hours.user.id,
                         'hours': time,
@@ -208,7 +211,7 @@ $(function() {
                     user = users.get_by_col(col);
 
                     if(project && user && before === '') {
-                        $.post('/timepiece/ajax/hours/', {
+                        $.post(ajax_url, {
                             'user': user.id,
                             'project': project.id,
                             'hours': time,
@@ -277,7 +280,7 @@ $(function() {
                 hours = project_hours.get_by_row_col(row, col);
 
                 if(hours && after === '') {
-                    $.del('/timepiece/ajax/hours/' + hours.id + '/', function(data, status, xhr) {
+                    $.del(ajax_url + hours.id + '/', function(data, status, xhr) {
                         project_hours.remove(hours);
                     }, function(xhr, status, error) {
                         $('.dataTable').handsontable('setDataAtCell', row, col, before);

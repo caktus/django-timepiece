@@ -1549,6 +1549,7 @@ class EditProjectHoursView(EditProjectHoursMixin, TemplateView):
         context['week'] = utils.get_week_start(
             datetime.datetime.strptime(self.week_start, '%Y-%m-%d')
         )
+        context['ajax_url'] = reverse('project_hours_ajax_view')
         return context
 
 
@@ -1610,7 +1611,8 @@ class ProjectHoursAjaxView(EditProjectHoursMixin, View):
             'project_hours': list(project_hours),
             'projects': list(projects),
             'all_projects': list(all_projects),
-            'all_users': list(all_users)
+            'all_users': list(all_users),
+            'ajax_url': reverse('project_hours_ajax_view'),
         }
         return HttpResponse(json.dumps(data, cls=JSONEncoder), mimetype='application/json')
 
