@@ -77,8 +77,8 @@ class PayrollTest(TimepieceDataTestCase):
     def testLastBillable(self):
         """Test the get_last_billable_day utility for validity"""
         months = range(1, 13)
-        first_days = [timezone.make_aware(datetime.datetime(2011, month, 1), \
-            timezone.get_current_timezone()) for month in months]
+        first_days = [utils.add_timezone(datetime.datetime(2011, month, 1))
+            for month in months]
         last_billable = [utils.get_last_billable_day(day).day \
                          for day in first_days]
         #should equal the last saturday of every month in 2011
@@ -122,14 +122,12 @@ class PayrollTest(TimepieceDataTestCase):
         """Date_trunc on week should result in correct overtime totals"""
         dates = self.dates
         for day_num in xrange(28, 31):
-            dates.append(timezone.make_aware(
-                datetime.datetime(2011, 4, day_num),
-                timezone.get_current_timezone()
+            dates.append(utils.add_timezone(
+                datetime.datetime(2011, 4, day_num)
             ))
         for day_num in xrange(5, 9):
-            dates.append(timezone.make_aware(
-                datetime.datetime(2011, 5, day_num),
-                timezone.get_current_timezone()
+            dates.append(utils.add_timezone(
+                datetime.datetime(2011, 5, day_num)
             ))
         for day in dates:
             self.make_logs(day)
@@ -144,21 +142,14 @@ class PayrollTest(TimepieceDataTestCase):
             self.assertEqual(weekly_totals[5], overtime)
         check_overtime()
         #Entry on following Monday doesn't add to week1 or overtime
-        self.make_logs(timezone.make_aware(
-            datetime.datetime(2011, 5, 9),
-            timezone.get_current_timezone(),
-        ))
+        self.make_logs(utils.add_timezone(datetime.datetime(2011, 5, 9)))
         check_overtime()
         #Entries in previous month before last_billable do not change overtime
-        self.make_logs(timezone.make_aware(
-            datetime.datetime(2011, 4, 24),
-            timezone.get_current_timezone(),
-        ))
+        self.make_logs(utils.add_timezone(datetime.datetime(2011, 4, 24)))
         check_overtime()
         #Entry in previous month after last_billable change week0 and overtime
-        self.make_logs(timezone.make_aware(
-            datetime.datetime(2011, 4, 25, 1, 0),
-            timezone.get_current_timezone(),
+        self.make_logs(utils.add_timezone(
+            datetime.datetime(2011, 4, 25, 1, 0)
         ))
         check_overtime(Decimal('66.00'), Decimal('55.00'), Decimal('41.00'))
 
