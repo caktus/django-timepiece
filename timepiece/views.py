@@ -1597,9 +1597,10 @@ class ProjectHoursAjaxView(EditProjectHoursMixin, View):
             content_type=ContentType.objects.get_for_model(timepiece.Entry),
             codename='can_clock_in'
         )
-        project_hours = self.get_hours_for_week() \
-            .values('id', 'user', 'user__first_name', 'user__last_name',
-                'project', 'hours')
+        project_hours = self.get_hours_for_week().values(
+            'id', 'user', 'user__first_name', 'user__last_name',
+            'project', 'hours'
+        ).order_by('-project__type__billable', 'project__name')
         inner_qs = project_hours.values_list('project', flat=True)
         projects = timepiece.Project.objects.filter(pk__in=inner_qs).values() \
             .order_by('name')
