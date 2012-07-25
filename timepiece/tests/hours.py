@@ -176,23 +176,23 @@ class ProjectHoursEditTestCase(ProjectHoursTestCase):
         self.view_url = reverse('edit_project_hours')
         self.ajax_url = reverse('project_hours_ajax_view')
         self.week_start = utils.get_week_start(datetime.date.today())
+        self.next_week = self.week_start + relativedelta(days=7)
+        self.future = self.week_start + relativedelta(days=14)
 
     def create_project_hours(self):
         """Create project hours data"""
-        week_start = utils.get_week_start(datetime.date.today())
         timepiece.ProjectHours.objects.create(
-            week_start=week_start, project=self.tracked_project,
+            week_start=self.week_start, project=self.tracked_project,
             user=self.user, hours="25.0")
         timepiece.ProjectHours.objects.create(
-            week_start=week_start, project=self.tracked_project,
+            week_start=self.week_start, project=self.tracked_project,
             user=self.manager, hours="5.0")
 
-        week_start = week_start + relativedelta(days=7)
         timepiece.ProjectHours.objects.create(
-            week_start=week_start, project=self.tracked_project,
+            week_start=self.next_week, project=self.tracked_project,
             user=self.user, hours="15.0")
         timepiece.ProjectHours.objects.create(
-            week_start=week_start, project=self.tracked_project,
+            week_start=self.next_week, project=self.tracked_project,
             user=self.manager, hours="2.0")
 
     def ajax_posts(self):
@@ -259,6 +259,17 @@ class ProjectHoursEditTestCase(ProjectHoursTestCase):
         self.assertEquals(response.status_code, 500)
         self.assertEquals(response.content, date_msg)
 
+    def process_default_call(self, response):
+        self.assertEquals(response.status_code, 200)
+
+        data = json.loads(response.content)
+
+        self.assertEquals(len(data['project_hours']), 2)
+        self.assertEquals(len(data['projects']), 1)
+
+        self.assertEquals(data['project_hours'][0]['hours'], 25.0)
+        self.assertEquals(data['project_hours'][1]['hours'], 5.0)
+
     def test_permission_access(self):
         """
         You must have the permission to view the edit page or
@@ -299,17 +310,6 @@ class ProjectHoursEditTestCase(ProjectHoursTestCase):
 
         self.assertEquals(data['project_hours'], [])
         self.assertEquals(data['projects'], [])
-
-    def process_default_call(self, response):
-        self.assertEquals(response.status_code, 200)
-
-        data = json.loads(response.content)
-
-        self.assertEquals(len(data['project_hours']), 2)
-        self.assertEquals(len(data['projects']), 1)
-
-        self.assertEquals(data['project_hours'][0]['hours'], 25.0)
-        self.assertEquals(data['project_hours'][1]['hours'], 5.0)
 
     def test_default_ajax_call(self):
         """
@@ -456,3 +456,77 @@ class ProjectHoursEditTestCase(ProjectHoursTestCase):
         self.assertEquals(response.status_code, 200)
 
         self.assertEquals(timepiece.ProjectHours.objects.count(), 0)
+
+    def test_duplicate_successful(self):
+        """
+        You can copy hours from the previous week to the currently
+        active week. A request with the duplicate key present will
+        start the duplication process
+        """
+        self.client.login(username='manager', password='abc')
+        self.create_project_hours()
+
+        msg = 'Project hours were copied'
+
+        response = self.client.post(self.ajax_url, data={
+            'week_start': self.future.strftime('%Y-%m-%d'),
+            'duplicate': 'duplicate'
+        }, follow=True)
+        self.assertEquals(response.status_code, 200)
+
+        messages = response.context['messages']
+        self.assertEquals(messages._loaded_messages[0].message, msg)
+
+        ph = timepiece.ProjectHours.objects.all()
+        self.assertEquals(ph.count(), 6)
+        self.assertEquals(ph.filter(week_start__gte=self.future).count(), 2)
+
+    def test_duplicate_unsuccessful_params(self):
+        """
+        Both week_start and duplicate must be present if hours
+        duplication is to take place
+        """
+        self.client.login(username='manager', password='abc')
+        self.create_project_hours()
+
+        response = self.client.post(self.ajax_url, data={
+            'week_start': self.future.strftime('%Y-%m-%d')
+        }, follow=True)
+        self.assertEquals(response.status_code, 500)
+
+        response = self.client.post(self.ajax_url, data={
+            'duplicate': 'duplicate'
+        }, follow=True)
+        self.assertEquals(response.status_code, 500)
+
+        self.assertEquals(timepiece.ProjectHours.objects.count(), 4)
+
+    def test_duplicate_unsuccessful_dates(self):
+        """
+        If you specify a week and hours current exist for that week,
+        the previous weeks hours will not be copied over
+        """
+        self.client.login(username='manager', password='abc')
+        self.create_project_hours()
+
+        msg = 'Project hours already exist for this week'
+
+        response = self.client.post(self.ajax_url, data={
+            'week_start': self.week_start.strftime('%Y-%m-%d'),
+            'duplicate': 'duplicate'
+        }, follow=True)
+        self.assertEquals(response.status_code, 200)
+
+        messages = response.context['messages']
+        self.assertEquals(messages._loaded_messages[0].message, msg)
+
+        response = self.client.post(self.ajax_url, data={
+            'week_start': self.next_week.strftime('%Y-%m-%d'),
+            'duplicate': 'duplicate'
+        }, follow=True)
+        self.assertEquals(response.status_code, 200)
+
+        messages = response.context['messages']
+        self.assertEquals(messages._loaded_messages[0].message, msg)
+
+        self.assertEquals(timepiece.ProjectHours.objects.count(), 4)
