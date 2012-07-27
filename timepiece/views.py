@@ -1526,11 +1526,10 @@ class EditProjectHoursMixin(object):
     def dispatch(self, request, *args, **kwargs):
         # Since we use get param in multiple places, attach it to the class
         default_week = datetime.date.today().strftime('%Y-%m-%d')
-        self.week_start = request.GET.get('week_start', default_week)
+        week_start = request.GET.get('week_start', '')
 
         # Account for an empty string
-        if self.week_start == '':
-            self.week_start = default_week
+        self.week_start = default_week if week_start == '' else week_start
 
         return super(EditProjectHoursMixin, self).dispatch(request, *args,
             **kwargs)
@@ -1545,11 +1544,14 @@ class EditProjectHoursView(EditProjectHoursMixin, TemplateView):
         form = timepiece_forms.ProjectHoursSearchForm(initial={
             'week_start': self.week_start
         })
-        context['form'] = form
-        context['week'] = utils.get_week_start(
-            datetime.datetime.strptime(self.week_start, '%Y-%m-%d')
-        )
-        context['ajax_url'] = reverse('project_hours_ajax_view')
+
+        context.update({
+            'form': form,
+            'week': utils.get_week_start(
+                datetime.datetime.strptime(self.week_start, '%Y-%m-%d')
+            ),
+            'ajax_url': reverse('project_hours_ajax_view')
+        })
         return context
 
 
@@ -1617,6 +1619,53 @@ class ProjectHoursAjaxView(EditProjectHoursMixin, View):
         }
         return HttpResponse(json.dumps(data, cls=JSONEncoder), mimetype='application/json')
 
+    def duplicate_entries(self, duplicate, week_update):
+        date = datetime.datetime.strptime(week_update, '%Y-%m-%d').date()
+        prev_week = date - relativedelta(days=7)
+        week_has_hours = self.get_hours_for_week(date).exists()
+
+        param = {
+            'week_start': week_update
+        }
+        url = '?'.join((reverse('edit_project_hours'),
+            urllib.urlencode(param),))
+
+        if not week_has_hours:
+            qs = self.get_hours_for_week(prev_week)
+            try:
+                timepiece.ProjectHours.objects.bulk_create(
+                    self.duplicate_builder(qs)
+                )
+            except DatabaseError:
+                msg = 'An error occurred and hours could not be duplicated'
+                messages.error(self.request, msg)
+                return HttpResponseRedirect(url)
+        else:
+            msg = 'Project hours already exist for this week'
+            messages.error(self.request, msg)
+            return HttpResponseRedirect(url)
+
+        messages.info(self.request, 'Project hours were copied')
+        return HttpResponseRedirect(url)
+
+    def update_week(self, week_start):
+        try:
+            instance = self.get_instance(self.request.POST, week_start)
+        except TypeError:
+            msg = 'Parameter week_start must be a date in the format ' \
+                'yyyy-mm-dd'
+            return HttpResponse(msg, status=500)
+
+        form = timepiece_forms.ProjectHoursForm(self.request.POST,
+            instance=instance)
+
+        if form.is_valid():
+            ph = form.save()
+            return HttpResponse(ph.pk, mimetype='text/plain')
+
+        msg = 'The request must contain values for user, project, and hours'
+        return HttpResponse(msg, status=500)
+
     def post(self, request, *args, **kwargs):
         """
         Create or update an hour entry for a particular use and project. This
@@ -1626,58 +1675,17 @@ class ProjectHoursAjaxView(EditProjectHoursMixin, View):
             hours: the actual hours to store
             week_start: the start of the week for the hours
 
-        If the duplicate key is present along with week_start, then items
-        will be duplicated from week_start to the current week
+        If the duplicate key is present along with week_update, then items
+        will be duplicated from week_update to the current week
         """
         duplicate = request.POST.get('duplicate', None)
+        week_update = request.POST.get('week_update', None)
         week_start = request.POST.get('week_start', None)
 
-        if duplicate and week_start:
-            date = datetime.datetime.strptime(week_start, '%Y-%m-%d').date()
-            prev_week = date - relativedelta(days=7)
-            this_week_qs = self.get_hours_for_week(date)
+        if duplicate and week_update:
+            return self.duplicate_entries(duplicate, week_update)
 
-            param = {
-                'week_start': week_start
-            }
-            url = '?'.join((reverse('edit_project_hours'),
-                urllib.urlencode(param),))
-
-            if not this_week_qs.exists():
-                qs = self.get_hours_for_week(prev_week)
-                try:
-                    timepiece.ProjectHours.objects.bulk_create(
-                        self.duplicate_builder(qs)
-                    )
-                except DatabaseError:
-                    msg = 'An error occurred and hours could not be duplicated'
-                    messages.error(request, msg)
-                    return HttpResponseRedirect(url)
-            else:
-                msg = 'Project hours already exist for this week'
-                messages.error(request, msg)
-                return HttpResponseRedirect(url)
-
-            messages.info(request, 'Project hours were copied')
-            return HttpResponseRedirect(url)
-        else:
-            try:
-                instance = self.get_instance(request.POST, week_start)
-            except TypeError:
-                msg = 'Parameter week_start must be a date in the format ' \
-                    'yyyy-mm-dd'
-                return HttpResponse(msg, status=500)
-
-            form = timepiece_forms.ProjectHoursForm(request.POST, instance=instance)
-
-            if form.is_valid():
-                ph = form.save()
-                return HttpResponse(ph.pk, mimetype='text/plain')
-
-            msg = 'The request must contain values for user, project, and hours'
-            return HttpResponse(msg, status=500)
-
-        return HttpResponseRedirect(reverse('edit_project_hours'))
+        return self.update_week(week_start)
 
 
 class ProjectHoursDetailView(EditProjectHoursMixin, View):
@@ -1691,7 +1699,7 @@ class ProjectHoursDetailView(EditProjectHoursMixin, View):
             try:
                 ph = timepiece.ProjectHours.objects.get(pk=pk)
             except timepiece.ProjectHours.DoesNotExist:
-                return HttpResponse('', status=500)
+                pass
             else:
                 ph.delete()
                 return HttpResponse('ok', mimetype='text/plain')

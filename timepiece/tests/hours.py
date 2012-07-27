@@ -469,7 +469,7 @@ class ProjectHoursEditTestCase(ProjectHoursTestCase):
         msg = 'Project hours were copied'
 
         response = self.client.post(self.ajax_url, data={
-            'week_start': self.future.strftime('%Y-%m-%d'),
+            'week_update': self.future.strftime('%Y-%m-%d'),
             'duplicate': 'duplicate'
         }, follow=True)
         self.assertEquals(response.status_code, 200)
@@ -483,14 +483,14 @@ class ProjectHoursEditTestCase(ProjectHoursTestCase):
 
     def test_duplicate_unsuccessful_params(self):
         """
-        Both week_start and duplicate must be present if hours
+        Both week_update and duplicate must be present if hours
         duplication is to take place
         """
         self.client.login(username='manager', password='abc')
         self.create_project_hours()
 
         response = self.client.post(self.ajax_url, data={
-            'week_start': self.future.strftime('%Y-%m-%d')
+            'week_update': self.future.strftime('%Y-%m-%d')
         }, follow=True)
         self.assertEquals(response.status_code, 500)
 
@@ -512,7 +512,7 @@ class ProjectHoursEditTestCase(ProjectHoursTestCase):
         msg = 'Project hours already exist for this week'
 
         response = self.client.post(self.ajax_url, data={
-            'week_start': self.week_start.strftime('%Y-%m-%d'),
+            'week_update': self.week_start.strftime('%Y-%m-%d'),
             'duplicate': 'duplicate'
         }, follow=True)
         self.assertEquals(response.status_code, 200)
@@ -521,7 +521,7 @@ class ProjectHoursEditTestCase(ProjectHoursTestCase):
         self.assertEquals(messages._loaded_messages[0].message, msg)
 
         response = self.client.post(self.ajax_url, data={
-            'week_start': self.next_week.strftime('%Y-%m-%d'),
+            'week_update': self.next_week.strftime('%Y-%m-%d'),
             'duplicate': 'duplicate'
         }, follow=True)
         self.assertEquals(response.status_code, 200)
