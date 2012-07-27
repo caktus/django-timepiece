@@ -1402,80 +1402,6 @@ class DeleteProjectView(DeleteView):
     permissions = ('timepiece.add_project', 'timepiece.change_project',)
 
 
-@permission_required('timepiece.view_entry_summary')
-@render_with('timepiece/time-sheet/reports/hourly.html')
-@utils.date_filter
-def hourly_report(request, date_form, from_date, to_date, status, activity):
-    tz = timezone.get_current_timezone()
-    if not from_date:
-        from_date = utils.get_month_start(timezone.now())
-    else:
-        try:
-            from_date = timezone.make_aware(from_date, tz)
-        except AttributeError:
-            from_date = datetime.datetime.combine(from_date,
-                datetime.time(tzinfo=tz))
-    if not to_date:
-        to_date = from_date + relativedelta(months=1)
-    else:
-        try:
-            to_date = timezone.make_aware(to_date,
-                timezone.get_current_timezone())
-        except AttributeError:
-            to_date = datetime.datetime.combine(to_date,
-                datetime.time(tzinfo=tz))
-    header_to = to_date - relativedelta(days=1)
-    trunc = timepiece_forms.ProjectFiltersForm.DEFAULT_TRUNC
-    query = Q(end_time__gt=utils.get_week_start(from_date),
-              end_time__lt=to_date)
-    if 'ok' in request.GET or 'export' in request.GET:
-        form = timepiece_forms.ProjectFiltersForm(request.GET)
-        if form.is_valid():
-            trunc = form.cleaned_data['trunc']
-            if not form.cleaned_data['paid_leave']:
-                projects = getattr(settings, 'TIMEPIECE_PROJECTS', {})
-                query &= ~Q(project__in=projects.values())
-            if form.cleaned_data['pj_select']:
-                query &= Q(project__in=form.cleaned_data['pj_select'])
-    else:
-        form = timepiece_forms.ProjectFiltersForm()
-    hour_type = form.get_hour_type()
-    entries = timepiece.Entry.objects.date_trunc(trunc).filter(query)
-    date_headers = utils.generate_dates(from_date, header_to, by=trunc)
-    project_totals = utils.project_totals(entries, date_headers, hour_type,
-                                          total_column=True) if entries else ''
-    if not request.GET.get('export', False):
-        return {
-            'date_form': date_form,
-            'from_date': from_date,
-            'date_headers': date_headers,
-            'pj_filters': form,
-            'trunc': trunc,
-            'project_totals': project_totals,
-        }
-    else:
-        from_date_str = from_date.strftime('%m-%d')
-        to_date_str = to_date.strftime('%m-%d')
-        response = HttpResponse(mimetype='text/csv')
-        response['Content-Disposition'] = \
-            'attachment; filename="%s_hours_%s_to_%s_by_%s.csv"' % (
-            hour_type, from_date_str, to_date_str, trunc)
-        writer = csv.writer(response)
-        headers = ['Name']
-        headers.extend([date.strftime('%m/%d/%Y') for date in date_headers])
-        headers.append('Total')
-        writer.writerow(headers)
-        for rows, totals in project_totals:
-            for name, hours in rows:
-                data = [name]
-                data.extend(hours)
-                writer.writerow(data)
-            total = ['Totals']
-            total.extend(totals)
-            writer.writerow(total)
-        return response
-
-
 class JSONEncoder(json.JSONEncoder):
     def _iterencode(self, obj, markers=None):
         if isinstance(obj, Decimal):
@@ -1533,7 +1459,6 @@ class ReportMixin(object):
         else:
             project_form = timepiece_forms.ProjectFiltersForm()
 
-        hour_type = project_form.get_hour_type()
         entries = timepiece.Entry.objects.date_trunc(trunc).filter(query)
         date_headers = utils.generate_dates(from_date, header_to, by=trunc)
 
@@ -1544,6 +1469,60 @@ class ReportMixin(object):
             'pj_filters': project_form,
             'trunc': trunc,
             'entries': entries,
+        })
+        return context
+
+
+class HourlyReport(ReportMixin, CSVMixin, TemplateView):
+    template_name = 'timepiece/time-sheet/reports/hourly.html'
+
+    def get(self, request, *args, **kwargs):
+        export = request.GET.get('export', False)
+        context = self.get_context_data()
+
+        if export:
+            return CSVMixin.render_to_response(self, context)
+        else:
+            return TemplateView.render_to_response(self, context)
+
+    def get_filename(self, context):
+        request = self.request.GET.copy()
+        from_date = request.get('from_date')
+        to_date = request.get('to_date')
+        return 'hours_{0}_to_{1}_by_{2}.csv'.format(from_date, to_date,
+            context['trunc'])
+
+    def convert_context_to_csv(self, context):
+        "Convert the context dictionary into a CSV file"
+        content = []
+        date_headers = context['date_headers']
+
+        headers = ['Name']
+        headers.extend([date.strftime('%m/%d/%Y') for date in date_headers])
+        headers.append('Total')
+        content.append(headers)
+
+        for rows, totals in context['project_totals']:
+            for name, hours in rows:
+                data = [name]
+                data.extend(hours)
+                content.append(data)
+            total = ['Totals']
+            total.extend(totals)
+            content.append(total)
+
+        return content
+
+    def get_context_data(self, **kwargs):
+        context = super(HourlyReport, self).get_context_data(**kwargs)
+        entries = context['entries']
+        date_headers = context['date_headers']
+        hour_type = context['pj_filters'].get_hour_type()
+
+        project_totals = utils.project_totals(entries, date_headers, hour_type,
+                                          total_column=True) if entries else ''
+        context.update({
+            'project_totals': project_totals
         })
         return context
 
