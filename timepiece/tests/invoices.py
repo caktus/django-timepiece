@@ -31,8 +31,7 @@ class InvoiceViewPreviousTestCase(TimepieceDataTestCase):
         self.project2 = self.create_project(billable=True)
         projects = (self.project, self.project2)
         project = self.project2
-        start = timezone.make_aware(datetime.datetime(2011, 1, 1, 0, 0, 0),
-            timezone.get_current_timezone())
+        start = utils.add_timezone(datetime.datetime(2011, 1, 1, 0, 0, 0))
         for index in xrange(0, self.num_entries):
             start += datetime.timedelta(hours=(5 * index))
             # Alternate projects
@@ -45,10 +44,7 @@ class InvoiceViewPreviousTestCase(TimepieceDataTestCase):
     def create_invoice(self, project=None, status='invoiced'):
         if not project:
             project = self.project
-        to_date = timezone.make_aware(
-            datetime.datetime(2011, 1, 31),
-            timezone.get_current_timezone()
-        )
+        to_date = utils.add_timezone(datetime.datetime(2011, 1, 31))
         args = [project.id, to_date.strftime('%Y-%m-%d')]
         url = reverse('confirm_invoice_project', args=args)
         params = {
@@ -270,10 +266,7 @@ class InvoiceCreateTestCase(TimepieceDataTestCase):
         that the links have accurate date information
         """
         url = reverse('invoice_projects')
-        to_date = timezone.make_aware(
-            datetime.datetime(2011, 1, 31, 0, 0, 0),
-            timezone.get_current_timezone()
-        )
+        to_date = utils.add_timezone(datetime.datetime(2011, 1, 31, 0, 0, 0))
         params = {'to_date': to_date.strftime('%m/%d/%Y')}
         response = self.client.get(url, params)
         # The number of projects should be 2 because entry4 has billable=False
@@ -295,14 +288,8 @@ class InvoiceCreateTestCase(TimepieceDataTestCase):
     def test_invoice_create_with_from(self):
         # Add another entry and make sure from filters it out
         url = reverse('invoice_projects')
-        from_date = timezone.make_aware(
-            datetime.datetime(2011, 1, 1, 0, 0, 0),
-            timezone.get_current_timezone()
-        )
-        to_date = timezone.make_aware(
-            datetime.datetime(2011, 1, 31, 0, 0, 0),
-            timezone.get_current_timezone()
-        )
+        from_date = utils.add_timezone(datetime.datetime(2011, 1, 1, 0, 0, 0))
+        to_date = utils.add_timezone(datetime.datetime(2011, 1, 31, 0, 0, 0))
         params = {
             'from_date': from_date.strftime('%m/%d/%Y'),
             'to_date': to_date.strftime('%m/%d/%Y'),
@@ -320,10 +307,7 @@ class InvoiceCreateTestCase(TimepieceDataTestCase):
     def test_invoice_confirm_view_user(self):
         """A regular user should not be able to access this page"""
         self.client.login(username='user2', password='abc')
-        to_date = timezone.make_aware(
-            datetime.datetime(2011, 1, 31),
-            timezone.get_current_timezone()
-        )
+        to_date = utils.add_timezone(datetime.datetime(2011, 1, 31))
         url = reverse('confirm_invoice_project', args=(
             self.project_billable.pk,
             to_date.strftime('%Y-%m-%d'),
@@ -338,10 +322,7 @@ class InvoiceCreateTestCase(TimepieceDataTestCase):
         able to create an invoice
         """
         self.login_with_permission()
-        to_date = timezone.make_aware(
-            datetime.datetime(2011, 1, 31),
-            timezone.get_current_timezone()
-        )
+        to_date = utils.add_timezone(datetime.datetime(2011, 1, 31))
         url = reverse('confirm_invoice_project', args=(
             self.project_billable.pk,
             to_date.strftime('%Y-%m-%d'),
@@ -351,10 +332,7 @@ class InvoiceCreateTestCase(TimepieceDataTestCase):
         self.assertEquals(response.status_code, 200)
 
     def test_invoice_confirm_view(self):
-        to_date = timezone.make_aware(
-            datetime.datetime(2011, 1, 31),
-            timezone.get_current_timezone()
-        )
+        to_date = utils.add_timezone(datetime.datetime(2011, 1, 31))
         args = [self.project_billable.id, to_date.strftime('%Y-%m-%d')]
         url = reverse('confirm_invoice_project', args=args)
         response = self.client.get(url)
@@ -362,10 +340,7 @@ class InvoiceCreateTestCase(TimepieceDataTestCase):
         to_date_str = response.context['to_date'].strftime('%Y %m %d')
         self.assertEqual(to_date_str, '2011 01 31')
         # View can also take from date
-        from_date = timezone.make_aware(
-            datetime.datetime(2011, 1, 1),
-            timezone.get_current_timezone()
-        )
+        from_date = utils.add_timezone(datetime.datetime(2011, 1, 1))
         args = [
             self.project_billable.id,
             to_date.strftime('%Y-%m-%d'),
@@ -431,10 +406,7 @@ class InvoiceCreateTestCase(TimepieceDataTestCase):
         self.assertEqual(response.status_code, 404)
 
     def test_make_invoice(self):
-        to_date = timezone.make_aware(
-            datetime.datetime(2011, 1, 31),
-            timezone.get_current_timezone()
-        )
+        to_date = utils.add_timezone(datetime.datetime(2011, 1, 31))
         args = [self.project_billable.id, to_date.strftime('%Y-%m-%d')]
         url = reverse('confirm_invoice_project', args=args)
         response = self.client.post(url, {'number': '3', 'status': 'invoiced'})
@@ -456,18 +428,8 @@ class InvoiceCreateTestCase(TimepieceDataTestCase):
         self.assertEqual(approved[0].entry_group_id, None)
 
     def test_make_invoice_with_from_uninvoiced(self):
-        from_date = timezone.make_aware(
-            datetime.datetime(2011, 1, 1),
-            timezone.get_current_timezone()
-        )
-        to_date = timezone.make_aware(
-            datetime.datetime(2011, 1, 31),
-            timezone.get_current_timezone()
-        )
-        from_date = timezone.make_aware(
-            datetime.datetime(2011, 1, 1),
-            timezone.get_current_timezone()
-        )
+        from_date = utils.add_timezone(datetime.datetime(2011, 1, 1))
+        to_date = utils.add_timezone(datetime.datetime(2011, 1, 31))
         args = [
             self.project_billable.id,
             to_date.strftime('%Y-%m-%d'),

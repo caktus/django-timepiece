@@ -4,12 +4,14 @@ import pytz
 from django.conf import settings
 
 
-def make_aware(date, tz):
+def make_aware(value, tz):
     """
     Make a date/datetime timezone aware using a given timezone
     """
-    time = datetime.time(tzinfo=tz)
-    return datetime.datetime.combine(date, time)
+    if hasattr(tz, 'localize'):
+        return tz.localize(value, is_dst=None)
+    else:
+        return value.replace(tzinfo=tz)
 
 
 def now():
