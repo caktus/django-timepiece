@@ -27,14 +27,13 @@ class PayrollTest(TimepieceDataTestCase):
         settings.TIMEPIECE_PROJECTS = {
             'sick': self.sick.pk, 'vacation': self.vacation.pk
         }
-        tz = timezone.get_current_timezone()
-        self.next = datetime.datetime(2011, 6, 1, tzinfo=tz)
-        self.overtime_before = datetime.datetime(2011, 4, 29, tzinfo=tz)
-        self.first = datetime.datetime(2011, 5, 1, tzinfo=tz)
-        self.first_week = datetime.datetime(2011, 5, 2, tzinfo=tz)
-        self.middle = datetime.datetime(2011, 5, 18, tzinfo=tz)
-        self.last_billable = datetime.datetime(2011, 5, 28, tzinfo=tz)
-        self.last = datetime.datetime(2011, 5, 31, tzinfo=tz)
+        self.next = utils.add_timezone(datetime.datetime(2011, 6, 1))
+        self.overtime_before = utils.add_timezone(datetime.datetime(2011, 4, 29))
+        self.first = utils.add_timezone(datetime.datetime(2011, 5, 1))
+        self.first_week = utils.add_timezone(datetime.datetime(2011, 5, 2))
+        self.middle = utils.add_timezone(datetime.datetime(2011, 5, 18))
+        self.last_billable = utils.add_timezone(datetime.datetime(2011, 5, 28))
+        self.last = utils.add_timezone(datetime.datetime(2011, 5, 31))
         self.dates = [
             self.overtime_before, self.first, self.first_week, self.middle,
             self.last, self.last_billable, self.next

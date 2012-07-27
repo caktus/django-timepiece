@@ -8,7 +8,7 @@ from dateutil import rrule
 from dateutil import relativedelta
 
 from timepiece import models as timepiece
-from timepiece.utils import get_week_start, generate_dates
+from timepiece.utils import generate_dates
 
 
 logger = logging.getLogger('timepiece.projection')

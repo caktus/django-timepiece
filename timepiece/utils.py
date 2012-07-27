@@ -20,6 +20,7 @@ try:
 except ImportError:
     from timepiece import timezone
 
+
 reverse_lazy = lazy(reverse, str)
 
 
@@ -100,10 +101,7 @@ def add_timezone(value, tz=None):
             return timezone.make_aware(value, tz)
     except AttributeError:  # 'datetime.date' object has no attribute 'tzinfo'
         dt = datetime.datetime.combine(value, datetime.time())
-        if hasattr(tz, 'localize'):
-            return tz.localize(dt, is_dst=None)
-        else:
-            return dt.replace(tzinfo=tz)
+        return timezone.make_aware(dt, tz)
     return value
 
 
@@ -163,8 +161,7 @@ def get_last_billable_day(day=None):
     if not day:
         day = datetime.date.today()
     day += relativedelta(months=1)
-    return get_week_start(get_month_start(day)) - \
-        datetime.timedelta(days=1)
+    return get_week_start(get_month_start(day)) - datetime.timedelta(days=1)
 
 
 def generate_dates(start=None, end=None, by='week'):
@@ -225,8 +222,7 @@ def get_hours(entries):
 def daily_summary(day_entries):
     projects = {}
     all_day = {}
-    for name, entries in groupby(day_entries,
-                                           lambda x: x['project__name']):
+    for name, entries in groupby(day_entries, lambda x: x['project__name']):
         hours = get_hours(entries)
         projects[name] = hours
         for key in hours.keys():
