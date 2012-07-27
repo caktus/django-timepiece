@@ -1444,8 +1444,7 @@ class ReportMixin(object):
             status = activity = None
 
         header_to = to_date - relativedelta(days=1)
-        trunc = 'week'
-        # trunc = timepiece_forms.ProjectFiltersForm.DEFAULT_TRUNC
+        trunc = timepiece_forms.ProjectFiltersForm.DEFAULT_TRUNC
         query = Q(end_time__gt=utils.get_week_start(from_date),
                   end_time__lt=to_date)
 

@@ -29,7 +29,7 @@ class ProjectFiltersForm(forms.Form):
         ('week', 'Week'),
         ('month', 'Month'),
     ]
-    DEFAULT_TRUNC = TRUNC_CHOICES[2][0]
+    DEFAULT_TRUNC = TRUNC_CHOICES[1][0]
     billable = forms.BooleanField(initial=True, required=False)
     non_billable = forms.BooleanField(label='Non-Billable', initial=True,
                                       required=False)

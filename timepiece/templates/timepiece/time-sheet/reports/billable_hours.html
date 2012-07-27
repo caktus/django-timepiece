@@ -38,8 +38,10 @@
         </div>
 
         <div class="span5">
-            <form class="form-inline" method="get">
+            <form class="form-inline date-form" method="get">
                 {{ date_form|as_bootstrap:"inline" }}
+                <input type="hidden" name="trunc" value="week" />
+                <input class="btn" type="submit" value="Update" />
             </form>
         </div>
     </div>
