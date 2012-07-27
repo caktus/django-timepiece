@@ -206,12 +206,12 @@ urlpatterns = patterns('',
     ),
     # project hours
     url(
-        r'^project-hours/$',
+        r'^schedule/$',
         views.project_hours,
         name='project_hours',
     ),
     url(
-        r'^project-hours/edit/$',
+        r'^schedule/edit/$',
         views.EditProjectHoursView.as_view(),
         name='edit_project_hours'
     ),

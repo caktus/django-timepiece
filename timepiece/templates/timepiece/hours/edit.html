@@ -2,7 +2,7 @@
 {% load url from future %}
 {% load bootstrap_toolkit %}
 
-{% block title %}Project Hours for the Week of {{ week|date:'F j, Y' }}{% endblock %}
+{% block title %}Schedule for the Week of {{ week|date:'F j, Y' }}{% endblock %}
 
 {% block extrajs %}
     <script type="text/javascript">
@@ -28,7 +28,7 @@
 
     <div class="row-fluid">
         <div class="span12">
-            <h2 data-date="{{ week|date:'Y-m-d' }}">Project Hours for the Week of {{ week|date:'F j, Y' }}</h2>
+            <h2 data-date="{{ week|date:'Y-m-d' }}">Schedule for the Week of {{ week|date:'F j, Y' }}</h2>
         </div>
     </div>
 
@@ -45,7 +45,7 @@
                 {% csrf_token %}
                 <input type="hidden" name="duplicate" value="duplicate" />
                 <input type="hidden" name="week_update" value="{{ week|date:'Y-m-d' }}" />
-                <button type="submit" class="btn">Copy hours from previous week</button>
+                <button type="submit" class="btn">Copy previous week</button>
             </form>
         </div>
     </div>

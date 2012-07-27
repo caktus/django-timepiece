@@ -12,6 +12,8 @@
 @lightgray: #DDDDDD;
 @blue: #049CDB;
 @lightblue: lighten(@blue, 20%);
+@tableBackgroundAccent: #E6E6E6;
+@tableBorder: #DDDDDD;
 
 .bg-icon(@icon) {
     background: url('../../images/icons/@{icon}') no-repeat;
@@ -155,6 +157,25 @@ body {
 
             &.weekly_total {
                 background-color: @blue !important;
+            }
+        }
+
+        &.table-striped-vertical {
+            th, td {
+                border-bottom: 1px solid @tableBorder;
+            }
+
+            // Double border in the body
+            tbody {
+                tr:last-child {
+                    th, td {
+                        border-bottom: 0px;
+                    }
+                }
+            }
+
+            th:nth-child(even), td:nth-child(even) {
+                background-color: @tableBackgroundAccent;
             }
         }
     }
