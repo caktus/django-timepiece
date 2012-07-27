@@ -111,6 +111,7 @@ urlpatterns = patterns('',
     url(r'^reports/$', views.hourly_report, name='hourly_report'),
     url(r'^reports/summary/$', views.summary, name='timepiece-summary'),
     url(r'^reports/payroll/$', views.payroll_summary, name='payroll_summary',),
+    url(r'^reports/billable/$', views.BillableHours.as_view(), name='billable_hours'),
     # People
     url(
         r'time-sheet/people/(?P<user_id>\d+)/$',

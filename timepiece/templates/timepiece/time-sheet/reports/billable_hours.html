@@ -1,0 +1,73 @@
+{% extends "timepiece/base.html" %}
+{% load timepiece_tags %}
+
+{% block title %}Billable Hours{% endblock title %}
+
+{% block content %}
+    <div class="row-fluid">
+        {# {{ billable_data }}<br /><br /> #}
+        {# {{ nonbillable_data }}<br /><br /> #}
+        <div class="span12">
+            <h2>Reports</h2>
+            <ul class="nav nav-pills">
+                <li>
+                    {% if perms.timepiece.view_entry_summary %}
+                        <a href="{% url hourly_report %}">Hourly</a>
+                    {% endif %}
+                </li>
+                <li>
+                    {% if perms.timepiece.view_entry_summary %}
+                        <a href="{% url timepiece-summary %}">General Ledger</a>
+                    {% endif %}
+                </li>
+                <li>
+                    {% if perms.timepiece.view_payroll_summary %}
+                        <a href="{% url payroll_summary %}">Payroll Report</a>
+                    {% endif %}
+                </li>
+                <li class="active">
+                    <a href="#">Billable Hours</a>
+                </li>
+            </ul>
+        </div>
+    </div>
+
+    <div class="row-fluid">
+        <div class="span7">
+            {% date_filters %}
+        </div>
+
+        <div class="span5">
+            <form class="form-inline" method="get">
+                Calendar filter
+            </form>
+        </div>
+    </div>
+
+    <div class="row-fluid">
+        <div class="span2">
+            <div class="filter people">
+                <h3>People</h3>
+                <form class="form-horizontal">
+                    {% for person in people %}
+                        <label class="checkbox" for="{{ person }}">
+                            <input id="{{ person }}" type="checkbox" checked="checked" /> {{ person }}
+                        </label>
+                    {% endfor %}
+                </form>
+            </div>
+
+            <div class="filter">
+                <h3>Activities</h3>
+                Activity list
+            </div>
+        </div>
+
+        <div class="span10">
+            <div id="chart" class="chart"></div>
+        </div>
+    </div>
+
+    <script type="text/javascript" src="https://www.google.com/jsapi"></script>
+    <script type="text/javascript" src="{{ STATIC_URL }}timepiece/js/chart/chart.js" data-billable="{{ billable_data }}" data-nonbillable="{{ nonbillable_data }}"></script>
+{% endblock content %}

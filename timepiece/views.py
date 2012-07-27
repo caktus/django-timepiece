@@ -4,6 +4,7 @@ import datetime
 import calendar
 import math
 import urllib
+import json
 
 from decimal import Decimal
 from dateutil.relativedelta import relativedelta
@@ -1316,80 +1317,6 @@ def edit_settings(request):
     return {'profile_form': profile_form, 'user_form': user_form}
 
 
-@permission_required('timepiece.view_entry_summary')
-@render_with('timepiece/time-sheet/reports/hourly.html')
-@utils.date_filter
-def hourly_report(request, date_form, from_date, to_date, status, activity):
-    tz = timezone.get_current_timezone()
-    if not from_date:
-        from_date = utils.get_month_start(timezone.now())
-    else:
-        try:
-            from_date = timezone.make_aware(from_date, tz)
-        except AttributeError:
-            from_date = datetime.datetime.combine(from_date,
-                datetime.time(tzinfo=tz))
-    if not to_date:
-        to_date = from_date + relativedelta(months=1)
-    else:
-        try:
-            to_date = timezone.make_aware(to_date,
-                timezone.get_current_timezone())
-        except AttributeError:
-            to_date = datetime.datetime.combine(to_date,
-                datetime.time(tzinfo=tz))
-    header_to = to_date - relativedelta(days=1)
-    trunc = timepiece_forms.ProjectFiltersForm.DEFAULT_TRUNC
-    query = Q(end_time__gt=utils.get_week_start(from_date),
-              end_time__lt=to_date)
-    if 'ok' in request.GET or 'export' in request.GET:
-        form = timepiece_forms.ProjectFiltersForm(request.GET)
-        if form.is_valid():
-            trunc = form.cleaned_data['trunc']
-            if not form.cleaned_data['paid_leave']:
-                projects = getattr(settings, 'TIMEPIECE_PROJECTS', {})
-                query &= ~Q(project__in=projects.values())
-            if form.cleaned_data['pj_select']:
-                query &= Q(project__in=form.cleaned_data['pj_select'])
-    else:
-        form = timepiece_forms.ProjectFiltersForm()
-    hour_type = form.get_hour_type()
-    entries = timepiece.Entry.objects.date_trunc(trunc).filter(query)
-    date_headers = utils.generate_dates(from_date, header_to, by=trunc)
-    project_totals = utils.project_totals(entries, date_headers, hour_type,
-                                          total_column=True) if entries else ''
-    if not request.GET.get('export', False):
-        return {
-            'date_form': date_form,
-            'from_date': from_date,
-            'date_headers': date_headers,
-            'pj_filters': form,
-            'trunc': trunc,
-            'project_totals': project_totals,
-        }
-    else:
-        from_date_str = from_date.strftime('%m-%d')
-        to_date_str = to_date.strftime('%m-%d')
-        response = HttpResponse(mimetype='text/csv')
-        response['Content-Disposition'] = \
-            'attachment; filename="%s_hours_%s_to_%s_by_%s.csv"' % (
-            hour_type, from_date_str, to_date_str, trunc)
-        writer = csv.writer(response)
-        headers = ['Name']
-        headers.extend([date.strftime('%m/%d/%Y') for date in date_headers])
-        headers.append('Total')
-        writer.writerow(headers)
-        for rows, totals in project_totals:
-            for name, hours in rows:
-                data = [name]
-                data.extend(hours)
-                writer.writerow(data)
-            total = ['Totals']
-            total.extend(totals)
-            writer.writerow(total)
-        return response
-
-
 class ContractDetail(DetailView):
     template_name = 'timepiece/time-sheet/contract/view.html'
     model = timepiece.ProjectContract
@@ -1473,3 +1400,209 @@ class DeleteProjectView(DeleteView):
     model = timepiece.Project
     url_name = 'list_projects'
     permissions = ('timepiece.add_project', 'timepiece.change_project',)
+
+
+@permission_required('timepiece.view_entry_summary')
+@render_with('timepiece/time-sheet/reports/hourly.html')
+@utils.date_filter
+def hourly_report(request, date_form, from_date, to_date, status, activity):
+    tz = timezone.get_current_timezone()
+    if not from_date:
+        from_date = utils.get_month_start(timezone.now())
+    else:
+        try:
+            from_date = timezone.make_aware(from_date, tz)
+        except AttributeError:
+            from_date = datetime.datetime.combine(from_date,
+                datetime.time(tzinfo=tz))
+    if not to_date:
+        to_date = from_date + relativedelta(months=1)
+    else:
+        try:
+            to_date = timezone.make_aware(to_date,
+                timezone.get_current_timezone())
+        except AttributeError:
+            to_date = datetime.datetime.combine(to_date,
+                datetime.time(tzinfo=tz))
+    header_to = to_date - relativedelta(days=1)
+    trunc = timepiece_forms.ProjectFiltersForm.DEFAULT_TRUNC
+    query = Q(end_time__gt=utils.get_week_start(from_date),
+              end_time__lt=to_date)
+    if 'ok' in request.GET or 'export' in request.GET:
+        form = timepiece_forms.ProjectFiltersForm(request.GET)
+        if form.is_valid():
+            trunc = form.cleaned_data['trunc']
+            if not form.cleaned_data['paid_leave']:
+                projects = getattr(settings, 'TIMEPIECE_PROJECTS', {})
+                query &= ~Q(project__in=projects.values())
+            if form.cleaned_data['pj_select']:
+                query &= Q(project__in=form.cleaned_data['pj_select'])
+    else:
+        form = timepiece_forms.ProjectFiltersForm()
+    hour_type = form.get_hour_type()
+    entries = timepiece.Entry.objects.date_trunc(trunc).filter(query)
+    date_headers = utils.generate_dates(from_date, header_to, by=trunc)
+    project_totals = utils.project_totals(entries, date_headers, hour_type,
+                                          total_column=True) if entries else ''
+    if not request.GET.get('export', False):
+        return {
+            'date_form': date_form,
+            'from_date': from_date,
+            'date_headers': date_headers,
+            'pj_filters': form,
+            'trunc': trunc,
+            'project_totals': project_totals,
+        }
+    else:
+        from_date_str = from_date.strftime('%m-%d')
+        to_date_str = to_date.strftime('%m-%d')
+        response = HttpResponse(mimetype='text/csv')
+        response['Content-Disposition'] = \
+            'attachment; filename="%s_hours_%s_to_%s_by_%s.csv"' % (
+            hour_type, from_date_str, to_date_str, trunc)
+        writer = csv.writer(response)
+        headers = ['Name']
+        headers.extend([date.strftime('%m/%d/%Y') for date in date_headers])
+        headers.append('Total')
+        writer.writerow(headers)
+        for rows, totals in project_totals:
+            for name, hours in rows:
+                data = [name]
+                data.extend(hours)
+                writer.writerow(data)
+            total = ['Totals']
+            total.extend(totals)
+            writer.writerow(total)
+        return response
+
+
+class JSONEncoder(json.JSONEncoder):
+    def _iterencode(self, obj, markers=None):
+        if isinstance(obj, Decimal):
+            return (str(obj) for obj in [obj])
+        return super(JSONEncoder, self)._iterencode(obj, markers)
+
+
+class ReportMixin(object):
+    @method_decorator(permission_required('timepiece.view_entry_summary'))
+    def dispatch(self, request, *args, **kwargs):
+        return super(ReportMixin, self).dispatch(request, *args, **kwargs)
+
+    def get_context_data(self, **kwargs):
+        context = super(ReportMixin, self).get_context_data(**kwargs)
+        request = self.request.GET.copy()
+
+        from_date = request.get('from_date', None)
+        to_date = request.get('to_date', None)
+
+        if from_date:
+            from_date = datetime.datetime.strptime(from_date,
+                '%m/%d/%Y')
+        else:
+            from_date = timezone.now()
+
+        if to_date:
+            to_date = datetime.datetime.strptime(to_date,
+                '%m/%d/%Y')
+            date_form = timepiece_forms.DateForm(request)
+
+            if date_form.is_valid():
+                from_date, to_date = date_form.save()
+                status = date_form.cleaned_data.get('status')
+                activity = date_form.cleaned_data.get('activity')
+            else:
+                raise Http404
+        else:
+            to_date = timezone.now()
+            date_form = timepiece_forms.DateForm()
+            status = activity = None
+
+        header_to = to_date - relativedelta(days=1)
+        trunc = timepiece_forms.ProjectFiltersForm.DEFAULT_TRUNC
+        query = Q(end_time__gt=utils.get_week_start(from_date),
+                  end_time__lt=to_date)
+
+        project_form = timepiece_forms.ProjectFiltersForm(request)
+        if project_form.is_valid():
+            trunc = project_form.cleaned_data['trunc']
+            if not project_form.cleaned_data['paid_leave']:
+                projects = getattr(settings, 'TIMEPIECE_PROJECTS', {})
+                query &= ~Q(project__in=projects.values())
+            if project_form.cleaned_data['pj_select']:
+                query &= Q(project__in=project_form.cleaned_data['pj_select'])
+        else:
+            project_form = timepiece_forms.ProjectFiltersForm()
+
+        hour_type = project_form.get_hour_type()
+        entries = timepiece.Entry.objects.date_trunc(trunc).filter(query)
+        date_headers = utils.generate_dates(from_date, header_to, by=trunc)
+
+        context.update({
+            'date_form': date_form,
+            'from_date': from_date,
+            'date_headers': date_headers,
+            'pj_filters': project_form,
+            'trunc': trunc,
+            'entries': entries,
+        })
+        return context
+
+
+class BillableHours(ReportMixin, TemplateView):
+    template_name = 'timepiece/time-sheet/reports/billable_hours.html'
+
+    def get_context_data(self, **kwargs):
+        context = super(BillableHours, self).get_context_data(**kwargs)
+        entries = context['entries']
+        date_headers = context['date_headers']
+
+        project_billable = utils.project_totals(entries, date_headers, 'billable',
+                total_column=False) if entries else ''
+        project_nonbillable = utils.project_totals(entries, date_headers,
+            'non_billable', total_column=False) if entries else ''
+
+        people = []
+
+        billable_data = {}
+        for rows, totals in project_billable:
+            billable_data['total'] = 0
+
+            for name, hours in rows:
+                total_hours = 0
+                for num in hours:
+                    if num != '':
+                        total_hours += num
+                billable_data[name] = total_hours
+
+                if name not in people:
+                    people.append(name)
+
+            for total in totals:
+                if total != '':
+                    billable_data['total'] += total
+
+        nonbillable_data = {}
+        for rows, totals in project_nonbillable:
+            nonbillable_data['total'] = 0
+
+            for name, hours in rows:
+                total_hours = 0
+                for num in hours:
+                    if num != '':
+                        total_hours += num
+                nonbillable_data[name] = total_hours
+
+                if name not in people:
+                    people.append(name)
+
+            for total in totals:
+                if total != '':
+                    nonbillable_data['total'] += total
+
+        context.update({
+            'billable_data': json.dumps(billable_data, cls=JSONEncoder),
+            'nonbillable_data': json.dumps(nonbillable_data, cls=JSONEncoder),
+            'people': people
+        })
+
+        return context
