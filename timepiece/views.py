@@ -96,10 +96,9 @@ def view_entries(request):
         contract__status='current',
     ).order_by('contract__project__type', 'end_date')
     assignments = assignments.select_related('user', 'contract__project__type')
-    activity_entries = entries.values(
+    activity_entries = list(entries.values(
         'billable',
-    ).annotate(sum=Sum('hours')).order_by('-sum')
-    current_total = entries.aggregate(sum=Sum('hours'))['sum'] or 0
+    ).annotate(sum=Sum('hours')).order_by('-sum'))
     others_active_entries = timepiece.Entry.objects.filter(
         end_time__isnull=True,
     ).exclude(
@@ -114,8 +113,12 @@ def view_entries(request):
         end_time__isnull=True,
     )
 
-    current_total += sum([get_active_hours(entry)
-        for entry in my_active_entries]) or 0
+    for current_entry in my_active_entries:
+        for activity_entry in activity_entries:
+            if current_entry.billable == activity_entry['billable']:
+                activity_entry['sum'] += get_active_hours(current_entry)
+                break
+    current_total = sum([entry['sum'] for entry in activity_entries])
 
 #     temporarily disabled until the allocations represent accurate goals
 #     -TM 6/27

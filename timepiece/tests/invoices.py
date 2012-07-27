@@ -205,10 +205,8 @@ class InvoiceCreateTestCase(TimepieceDataTestCase):
         self.user.is_superuser = True
         self.user.save()
         self.client.login(username=self.user.username, password='abc')
-        start = datetime.datetime(2011, 1, 1, 8,
-            tzinfo=timezone.get_current_timezone())
-        end = datetime.datetime(2011, 1, 1, 12,
-            tzinfo=timezone.get_current_timezone())
+        start = utils.add_timezone(datetime.datetime(2011, 1, 1, 8))
+        end = utils.add_timezone(datetime.datetime(2011, 1, 1, 12))
         self.project_billable = self.create_project(billable=True)
         self.project_billable2 = self.create_project(billable=True)
         self.project_non_billable = self.create_project(billable=False)
@@ -357,11 +355,9 @@ class InvoiceCreateTestCase(TimepieceDataTestCase):
     def test_invoice_confirm_totals(self):
         """Verify that the per activity totals are valid."""
         # Make a few extra entries to test per activity totals
-        start = datetime.datetime(2011, 1, 1, 8,
-            tzinfo=timezone.get_current_timezone())
-        end = datetime.datetime(2011, 1, 1, 12,
-            tzinfo=timezone.get_current_timezone())
-        # start = datetime.datetime.now(timezone.get_current_timezone())
+        start = utils.add_timezone(datetime.datetime(2011, 1, 1, 8))
+        end = utils.add_timezone(datetime.datetime(2011, 1, 1, 12))
+        # start = utils.add_timezone(datetime.datetime.now())
         # end = start + datetime.timedelta(hours=4)
         activity = self.create_activity(data={'name': 'activity1'})
         for num in xrange(0, 4):

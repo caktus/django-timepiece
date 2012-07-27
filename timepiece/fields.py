@@ -1,5 +1,4 @@
 from django import forms
-from timepiece.utils import DEFAULT_TIME_FORMATS
 
 
 class UserModelChoiceField(forms.ModelChoiceField):
