@@ -156,22 +156,20 @@
                             <tr>
                                 <th>Total {% if row.billable %}billable{% else %}non-billable{% endif %} time:</th>
                                 <td class="hours">
-                                    {% if row.billable %}
-                                        {% ifnotequal schedule.count 0 %}
-                                            {% bar_graph "" row.sum schedule.0.hours_per_week %}
-                                        {% else %}
-                                            {{ row.sum }}
-                                        {% endifnotequal %}
-                                    {% else %}
-                                        {{ row.sum }}
-                                    {% endif %}
+                                    {{ row.sum }}
                                 </td>
                             </tr>
                         {% endfor %}
 
                         <tr>
                             <th> Total time this week: </th>
-                            <td class="hours">{{ current_total }}</td>
+                            <td class="hours">
+                                {% ifnotequal schedule.count 0 %}
+                                    {% bar_graph "" current_total schedule.0.hours_per_week %}
+                                {% else %}
+                                    {{ current_total }}
+                                {% endifnotequal %}
+                            </td>
                         </tr>
                     </tbody>
                 </table>

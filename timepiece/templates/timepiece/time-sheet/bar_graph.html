@@ -1,7 +1,5 @@
-{% load math_tags %}
-
 <div class="bar-graph">
-{%if error %}
+{% if error %}
     <div class="error">{{ error|safe }}</div>
 {% else %}
     {% ifnotequal worked 0 %}
@@ -11,12 +9,12 @@
     {% endifnotequal %}
     {% ifnotequal left 0 %}
     <div title="{{ left }}">
-        <span>{{ left }} hours remaining</span>
+        <span>({{ left }} hours remaining)</span>
     </div>
     {% endifnotequal %}
     {% ifnotequal over 0 %}
     <div title="{{ over }}">
-        <span>{{ over }} hours over</span>
+        <span>({{ over }} hours over)</span>
     </div>
     {% endifnotequal %}
 {% endif %}
