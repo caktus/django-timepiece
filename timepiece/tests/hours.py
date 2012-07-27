@@ -530,3 +530,21 @@ class ProjectHoursEditTestCase(ProjectHoursTestCase):
         self.assertEquals(messages._loaded_messages[0].message, msg)
 
         self.assertEquals(timepiece.ProjectHours.objects.count(), 4)
+
+    def test_no_hours_to_copy(self):
+        """
+        You should be notified if there are no hours to copy
+        from the previous week
+        """
+        self.client.login(username='manager', password='abc')
+
+        msg = 'There are no hours to copy'
+
+        response = self.client.post(self.ajax_url, data={
+            'week_update': self.week_start.strftime('%Y-%m-%d'),
+            'duplicate': 'duplicate'
+        }, follow=True)
+        self.assertEquals(response.status_code, 200)
+
+        messages = response.context['messages']
+        self.assertEquals(messages._loaded_messages[0].message, msg)
