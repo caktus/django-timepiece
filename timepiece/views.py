@@ -1444,7 +1444,8 @@ class ReportMixin(object):
             status = activity = None
 
         header_to = to_date - relativedelta(days=1)
-        trunc = timepiece_forms.ProjectFiltersForm.DEFAULT_TRUNC
+        trunc = 'week'
+        # trunc = timepiece_forms.ProjectFiltersForm.DEFAULT_TRUNC
         query = Q(end_time__gt=utils.get_week_start(from_date),
                   end_time__lt=to_date)
 
@@ -1520,7 +1521,7 @@ class HourlyReport(ReportMixin, CSVMixin, TemplateView):
         hour_type = context['pj_filters'].get_hour_type()
 
         project_totals = utils.project_totals(entries, date_headers, hour_type,
-                                          total_column=True) if entries else ''
+            total_column=True) if entries else ''
         context.update({
             'project_totals': project_totals
         })
@@ -1535,53 +1536,36 @@ class BillableHours(ReportMixin, TemplateView):
         entries = context['entries']
         date_headers = context['date_headers']
 
-        project_billable = utils.project_totals(entries, date_headers, 'billable',
-                total_column=False) if entries else ''
-        project_nonbillable = utils.project_totals(entries, date_headers,
-            'non_billable', total_column=False) if entries else ''
+        project_data = utils.project_totals(entries, date_headers,
+            total_column=False)
+        project_data = [(row, totals) for row, totals in project_data]
 
         people = []
+        data = {}
+        data['dates'] = []
 
-        billable_data = {}
-        for rows, totals in project_billable:
-            billable_data['total'] = 0
-
+        for rows, totals in project_data:
             for name, hours in rows:
-                total_hours = 0
-                for num in hours:
-                    if num != '':
-                        total_hours += num
-                billable_data[name] = total_hours
+                people.append(name)
 
-                if name not in people:
-                    people.append(name)
+                if not data.get(name):
+                    data[name] = []
 
-            for total in totals:
-                if total != '':
-                    billable_data['total'] += total
+                for hour in hours:
+                    date = hour['day'].strftime('%m/%d/%Y')
+                    if date not in data['dates']:
+                        data['dates'].append(date)
 
-        nonbillable_data = {}
-        for rows, totals in project_nonbillable:
-            nonbillable_data['total'] = 0
-
-            for name, hours in rows:
-                total_hours = 0
-                for num in hours:
-                    if num != '':
-                        total_hours += num
-                nonbillable_data[name] = total_hours
-
-                if name not in people:
-                    people.append(name)
-
-            for total in totals:
-                if total != '':
-                    nonbillable_data['total'] += total
+                    data[name].append({
+                        'date': date,
+                        'billable': hour['billable'],
+                        'nonbillable': hour['nonbillable'],
+                        'total': hour['total']
+                    })
 
         context.update({
-            'billable_data': json.dumps(billable_data, cls=JSONEncoder),
-            'nonbillable_data': json.dumps(nonbillable_data, cls=JSONEncoder),
-            'people': people
+            'people': people,
+            'data': json.dumps(data, cls=JSONEncoder)
         })
 
         return context
