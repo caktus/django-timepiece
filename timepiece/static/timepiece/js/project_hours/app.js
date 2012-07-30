@@ -312,4 +312,18 @@ $(function() {
 
     // Load initial data
     getData($('h2[data-date]').data('date'));
+
+    // Make sure the datepicker uses the correct format we expect
+    $('.hasDatepicker').datepicker('setDate', $('h2[data-date]').data('date'));
+
+    // Make sure they really want to copy project hours
+    $('#copy').click(function(e) {
+        var copy = confirm('This will overwrite a person\'s project hours if they exist. Are you sure you want to do this?');
+        
+        if(copy) {
+            return true;
+        }
+        
+        return false;
+    });
 });

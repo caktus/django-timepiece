@@ -502,24 +502,24 @@ class ProjectHoursEditTestCase(ProjectHoursTestCase):
 
         self.assertEquals(timepiece.ProjectHours.objects.count(), 4)
 
-    def test_duplicate_unsuccessful_dates(self):
+    def test_duplicate_dates(self):
         """
         If you specify a week and hours current exist for that week,
-        the previous weeks hours will not be copied over
+        the previous weeks hours will be copied over the current entries
         """
         self.client.login(username='manager', password='abc')
         self.create_project_hours()
 
-        msg = 'Project hours already exist for this week'
+        msg = 'Project hours were copied'
 
-        response = self.client.post(self.ajax_url, data={
-            'week_update': self.week_start.strftime('%Y-%m-%d'),
-            'duplicate': 'duplicate'
-        }, follow=True)
-        self.assertEquals(response.status_code, 200)
+        # response = self.client.post(self.ajax_url, data={
+        #     'week_update': self.week_start.strftime('%Y-%m-%d'),
+        #     'duplicate': 'duplicate'
+        # }, follow=True)
+        # self.assertEquals(response.status_code, 200)
 
-        messages = response.context['messages']
-        self.assertEquals(messages._loaded_messages[0].message, msg)
+        # messages = response.context['messages']
+        # self.assertEquals(messages._loaded_messages[0].message, msg)
 
         response = self.client.post(self.ajax_url, data={
             'week_update': self.next_week.strftime('%Y-%m-%d'),
@@ -530,7 +530,19 @@ class ProjectHoursEditTestCase(ProjectHoursTestCase):
         messages = response.context['messages']
         self.assertEquals(messages._loaded_messages[0].message, msg)
 
+        this_week_qs = timepiece.ProjectHours.objects.filter(
+            week_start=self.week_start
+        ).values_list('hours', flat=True)
+        next_week_qs = timepiece.ProjectHours.objects.filter(
+            week_start=self.next_week
+        ).values_list('hours', flat=True)
+
+        # Decimals do not like being compared...
+        this_week_qs = [str(hours) for hours in this_week_qs]
+        next_week_qs = [str(hours) for hours in next_week_qs]
+
         self.assertEquals(timepiece.ProjectHours.objects.count(), 4)
+        self.assertEquals(this_week_qs, next_week_qs)
 
     def test_no_hours_to_copy(self):
         """

@@ -1613,13 +1613,6 @@ class ProjectHoursAjaxView(ProjectHoursMixin, View):
 
         return ph
 
-    def duplicate_builder(self, queryset):
-        for instance in queryset:
-            duplicate = deepcopy(instance)
-            duplicate.id = None
-            duplicate.week_start += datetime.timedelta(days=7)
-            yield duplicate
-
     def get(self, request, *args, **kwargs):
         """
         Returns the data as a JSON object made up of the following key/value
@@ -1654,27 +1647,17 @@ class ProjectHoursAjaxView(ProjectHoursMixin, View):
         return HttpResponse(json.dumps(data, cls=JSONEncoder), mimetype='application/json')
 
     def duplicate_entries(self, duplicate, week_update):
-        date = datetime.datetime.strptime(week_update, '%Y-%m-%d').date()
-        prev_week = date - relativedelta(days=7)
-        prev_week_qs = self.get_hours_for_week(prev_week)
-        week_has_hours = self.get_hours_for_week(date).exists()
+        def duplicate_builder(queryset):
+            for instance in queryset:
+                duplicate = deepcopy(instance)
+                duplicate.id = None
+                duplicate.week_start += datetime.timedelta(days=7)
+                yield duplicate
 
-        param = {
-            'week_start': week_update
-        }
-        url = '?'.join((reverse('edit_project_hours'),
-            urllib.urlencode(param),))
-
-        if week_has_hours:
-            msg = 'Project hours already exist for this week'
-            messages.error(self.request, msg)
-        elif not prev_week_qs.exists():
-            msg = 'There are no hours to copy'
-            messages.warning(self.request, msg)
-        else:
+        def duplicate_helper():
             try:
                 timepiece.ProjectHours.objects.bulk_create(
-                    self.duplicate_builder(prev_week_qs)
+                    duplicate_builder(prev_week_qs)
                 )
             except DatabaseError:
                 msg = 'An error occurred and hours could not be duplicated'
@@ -1682,6 +1665,37 @@ class ProjectHoursAjaxView(ProjectHoursMixin, View):
             else:
                 msg = 'Project hours were copied'
                 messages.info(self.request, msg)
+
+        date = datetime.datetime.strptime(week_update, '%Y-%m-%d').date()
+        prev_week = date - relativedelta(days=7)
+        prev_week_qs = self.get_hours_for_week(prev_week)
+        week_qs = self.get_hours_for_week(date)
+
+        param = {
+            'week_start': week_update
+        }
+        url = '?'.join((reverse('edit_project_hours'),
+            urllib.urlencode(param),))
+
+        if week_qs.exists():
+            inner_qs = week_qs.filter(project__in=prev_week_qs.values_list('project'),
+                user__in=prev_week_qs.values_list('user'))
+
+            if inner_qs.exists():
+                for ph in inner_qs:
+                    prev_ph = prev_week_qs.get(project=ph.project,
+                        user=ph.user)
+                    ph.hours = prev_ph.hours
+                    ph.save()
+                msg = 'Project hours were copied'
+                messages.info(self.request, msg)
+            else:
+                duplicate_helper()
+        elif not prev_week_qs.exists():
+            msg = 'There are no hours to copy'
+            messages.warning(self.request, msg)
+        else:
+            duplicate_helper()
 
         return HttpResponseRedirect(url)
 
