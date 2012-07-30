@@ -108,10 +108,8 @@ $.del = function(url, success, error) {
 $(function() {
     var table = $('.dataTable').handsontable({
         rows: 16,
-        // cols: 19,
-
-        rowHeaders: true,
-        colHeaders: true,
+        
+        fillHandle: false,
 
         minSpareRows: 1,
         minSpareCols: 1,
