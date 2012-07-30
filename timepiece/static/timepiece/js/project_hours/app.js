@@ -24,11 +24,11 @@ function processData(data) {
     }
 
     for(i = 0; i < all_users.length; i++) {
-        var u = all_users[i];
+        var u = all_users[i],
+            name = u.first_name + ' ' + u.last_name,
+            display_name = u.first_name + ' ' + u.last_name[0] + '.';
 
-        this.all_users.add(
-            new User(u.id, u.first_name + ' ' + u.last_name, u.first_name)
-        );
+        this.all_users.add(new User(u.id, name, display_name));
     }
 
     for(i = 0; i < project_hours.length; i++) {
