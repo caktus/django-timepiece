@@ -1,4 +1,4 @@
-{% extends 'timepiece/base.html' %}
+{% extends 'timepiece/hours/base.html' %}
 {% load url from future %}
 {% load bootstrap_toolkit %}
 
@@ -20,6 +20,11 @@
 {% block extracss %}
     <link type="text/css" rel="stylesheet" href="{{ STATIC_URL }}timepiece/js/handsontable/jquery.handsontable.css" />
 {% endblock extracss %}
+
+{% block crumbs %}
+    {{ block.super }}
+    <li><span class="divider">/</span> <a href="{% url 'edit_project_hours' %}?week_start={{ week|date:'Y-m-d' }}"> Edit Weekly Schedule</a></li>
+{% endblock crumbs %}
 
 {% block bodyid %}project-hours{% endblock bodyid %}
 
