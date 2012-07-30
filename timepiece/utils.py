@@ -459,7 +459,7 @@ def get_project_hours_for_week(week_start):
             week_start__lt=week_end)
     qs = qs.values('project__id', 'project__name', 'user__id',
             'user__first_name', 'user__last_name', 'hours')
-    qs = qs.order_by('project__id')
+    qs = qs.order_by('-project__type__billable', 'project__name',)
     return qs
 
 
@@ -469,6 +469,6 @@ def get_people_from_project_hours(project_hours):
     ordered by name.
     """
     people = project_hours.values_list('user__id', 'user__first_name',
-            'user__last_name').distinct().order_by('user__last_name',
-            'user__first_name')
+            'user__last_name').distinct().order_by('user__first_name',
+            'user__last_name')
     return people

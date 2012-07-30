@@ -45,8 +45,8 @@
             </form>
 
         </div>
-        <div class="span3">
-            <form class="form-inline" method="post" action="/timepiece/ajax/hours/">
+        <div class="span3 offset5">
+            <form class="form-inline right" method="post" action="/timepiece/ajax/hours/">
                 {% csrf_token %}
                 <input type="hidden" name="duplicate" value="duplicate" />
                 <input type="hidden" name="week_update" value="{{ week|date:'Y-m-d' }}" />
