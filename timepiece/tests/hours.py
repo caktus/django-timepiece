@@ -537,9 +537,9 @@ class ProjectHoursEditTestCase(ProjectHoursTestCase):
             week_start=self.next_week
         ).values_list('hours', flat=True)
 
-        # Decimals do not like being compared...
-        this_week_qs = [str(hours) for hours in this_week_qs]
-        next_week_qs = [str(hours) for hours in next_week_qs]
+        # ValueQuerySets do not like being compared...
+        this_week_qs = list(this_week_qs)
+        next_week_qs = list(next_week_qs)
 
         self.assertEquals(timepiece.ProjectHours.objects.count(), 4)
         self.assertEquals(this_week_qs, next_week_qs)
