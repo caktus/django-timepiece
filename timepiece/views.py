@@ -1224,7 +1224,7 @@ def create_edit_project(request, project_id=None):
 @render_with('timepiece/hours/list.html')
 def project_hours(request):
     form = timepiece_forms.ProjectHoursSearchForm(data=request.GET)
-    if 'submit' in request.GET and form.is_valid():
+    if 'week_start' in request.GET and form.is_valid():
         week_start = form.cleaned_data['week_start']
     else:
         week_start = utils.get_week_start(add_tzinfo=False)
@@ -1248,6 +1248,8 @@ def project_hours(request):
     return {
         'form': form,
         'week': week_start,
+        'prev_week': week_start - relativedelta(days=7),
+        'next_week': week_start + relativedelta(days=7),
         'people': people,
         'projects': projects,
     }
