@@ -1231,7 +1231,8 @@ def project_hours(request):
         initial = {'week_start': week_start}
         form = timepiece_forms.ProjectHoursSearchForm(initial=initial)
 
-    project_hours = utils.get_project_hours_for_week(week_start)
+    project_hours = utils.get_project_hours_for_week(week_start) \
+        .filter(published=True)
     people = utils.get_people_from_project_hours(project_hours)
     id_list = [person[0] for person in people]
     projects = []
@@ -1536,6 +1537,14 @@ class EditProjectHoursMixin(object):
         return super(EditProjectHoursMixin, self).dispatch(request, *args,
             **kwargs)
 
+    def get_hours_for_week(self, start=None):
+        date = datetime.datetime.strptime(self.week_start, '%Y-%m-%d').date()
+        week_start = start if start else utils.get_week_start(date)
+        week_end = week_start + relativedelta(days=7)
+
+        return timepiece.ProjectHours.objects.filter(week_start__gte=week_start,
+            week_start__lt=week_end)
+
 
 class EditProjectHoursView(EditProjectHoursMixin, TemplateView):
     template_name = 'timepiece/hours/edit.html'
@@ -1556,16 +1565,27 @@ class EditProjectHoursView(EditProjectHoursMixin, TemplateView):
         })
         return context
 
+    def post(self, request, *args, **kwargs):
+        ph = self.get_hours_for_week().filter(published=False)
+
+        if ph.exists():
+            ph.update(published=True)
+            msg = 'Unpublished project hours are now published'
+        else:
+            msg = 'There were no hours to publish'
+
+        messages.info(request, msg)
+
+        param = {
+            'week_start': self.week_start
+        }
+        url = '?'.join((reverse('edit_project_hours'),
+            urllib.urlencode(param),))
+
+        return HttpResponseRedirect(url)
+
 
 class ProjectHoursAjaxView(EditProjectHoursMixin, View):
-    def get_hours_for_week(self, start=None):
-        date = datetime.datetime.strptime(self.week_start, '%Y-%m-%d').date()
-        week_start = start if start else utils.get_week_start(date)
-        week_end = week_start + relativedelta(days=7)
-
-        return timepiece.ProjectHours.objects.filter(week_start__gte=week_start,
-            week_start__lt=week_end)
-
     def get_instance(self, data, week_start):
         try:
             user = auth_models.User.objects.get(pk=data.get('user', None))
@@ -1603,7 +1623,7 @@ class ProjectHoursAjaxView(EditProjectHoursMixin, View):
         )
         project_hours = self.get_hours_for_week().values(
             'id', 'user', 'user__first_name', 'user__last_name',
-            'project', 'hours'
+            'project', 'hours', 'published'
         ).order_by('-project__type__billable', 'project__name')
         inner_qs = project_hours.values_list('project', flat=True)
         projects = timepiece.Project.objects.filter(pk__in=inner_qs).values() \

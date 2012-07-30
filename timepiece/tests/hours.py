@@ -267,8 +267,8 @@ class ProjectHoursEditTestCase(ProjectHoursTestCase):
         self.assertEquals(len(data['project_hours']), 2)
         self.assertEquals(len(data['projects']), 1)
 
-        self.assertEquals(data['project_hours'][0]['hours'], 25.0)
-        self.assertEquals(data['project_hours'][1]['hours'], 5.0)
+        self.assertEquals(data['project_hours'][0]['hours'], 5.0)
+        self.assertEquals(data['project_hours'][1]['hours'], 25.0)
 
     def test_permission_access(self):
         """
@@ -356,8 +356,8 @@ class ProjectHoursEditTestCase(ProjectHoursTestCase):
         self.assertEquals(len(data['project_hours']), 2)
         self.assertEquals(len(data['projects']), 1)
 
-        self.assertEquals(data['project_hours'][0]['hours'], 15.0)
-        self.assertEquals(data['project_hours'][1]['hours'], 2.0)
+        self.assertEquals(data['project_hours'][0]['hours'], 2.0)
+        self.assertEquals(data['project_hours'][1]['hours'], 15.0)
 
     def test_ajax_create_successful(self):
         """
@@ -548,3 +548,49 @@ class ProjectHoursEditTestCase(ProjectHoursTestCase):
 
         messages = response.context['messages']
         self.assertEquals(messages._loaded_messages[0].message, msg)
+
+    def test_publish_hours(self):
+        """
+        If you post to the edit view, you can publish the hours for
+        the given week
+        """
+        self.client.login(username='manager', password='abc')
+        self.create_project_hours()
+
+        msg = 'Unpublished project hours are now published'
+
+        ph = timepiece.ProjectHours.objects.filter(published=True)
+        self.assertEquals(ph.count(), 0)
+
+        response = self.client.post(self.view_url, follow=True)
+        self.assertEquals(response.status_code, 200)
+
+        messages = response.context['messages']
+        self.assertEquals(messages._loaded_messages[0].message, msg)
+
+        ph = timepiece.ProjectHours.objects.filter(published=True)
+        self.assertEquals(ph.count(), 2)
+
+        for p in ph:
+            self.assertEquals(p.week_start, self.week_start.today())
+
+    def test_publish_hours_unsuccessful(self):
+        """
+        If you post to the edit view and there are no hours to
+        publish, you are told so
+        """
+        self.client.login(username='manager', password='abc')
+        self.create_project_hours()
+
+        msg = 'There were no hours to publish'
+
+        timepiece.ProjectHours.objects.update(published=True)
+
+        response = self.client.post(self.view_url, follow=True)
+        self.assertEquals(response.status_code, 200)
+
+        messages = response.context['messages']
+        self.assertEquals(messages._loaded_messages[0].message, msg)
+
+        ph = timepiece.ProjectHours.objects.filter(published=True)
+        self.assertEquals(ph.count(), 4)

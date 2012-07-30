@@ -1093,6 +1093,7 @@ class ProjectHours(models.Model):
     project = models.ForeignKey(Project)
     user = models.ForeignKey(User)
     hours = models.DecimalField(max_digits=8, decimal_places=2, default=0)
+    published = models.BooleanField(default=False)
 
     def __unicode__(self):
         return "{0} on {1} for Week of {2}".format(self.user.get_full_name(),

@@ -43,7 +43,7 @@ function processData(data) {
             dataTable.push([project.name]);
         }
 
-        var hours = new ProjectHours(ph.id, ph.hours, project);
+        var hours = new ProjectHours(ph.id, ph.hours, project, ph.published);
         hours.row = project.row;
 
         var user = this.all_users.get_by_id(ph.user);
@@ -129,7 +129,13 @@ $(function() {
             },
             {   // Match the cells with content
                 match: function(row, col, data) {
-                    return (row > 0 && col > 0 && data()[row][col] !== '');
+                    var ph = project_hours.get_by_row_col(row, col);
+
+                    if(ph && ph.published) {
+                        return (row > 0 && col > 0 && data()[row][col] !== '');
+                    }
+
+                    return false;
                 },
                 style: {
                     color: 'white',

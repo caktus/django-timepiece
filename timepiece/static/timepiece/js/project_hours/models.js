@@ -43,7 +43,7 @@ function User(id, name, display_name) {
 User.prototype = new Model();
 User.prototype.constructor = User;
 
-function ProjectHours(id, hours, project) {
+function ProjectHours(id, hours, project, published) {
     Model.call(this, id);
 
     this.hours = hours;
@@ -51,6 +51,7 @@ function ProjectHours(id, hours, project) {
     this.user = null;
     this.row = 0;
     this.col = 0;
+    this.published = published;
 }
 
 ProjectHours.prototype = new Model();

@@ -209,9 +209,25 @@ body {
     .dataTable {
         width: 100%;
 
+        td {
+            background-color: #FF0000;
+            color: #FFFFFF;
+        }
+
+        td:empty {
+            background-color: #FFFFFF;
+        }
+
+        td:first-child {
+            background-color: #FFFFFF;
+            color: #000000;
+        }
+
         tr:first-child {
             td {
                 min-width: 75px;
+                color: #000000;
+                background-color: #FFFFFF;
             }
         }
     }
@@ -275,6 +291,10 @@ body {
     }
 
     &#project-hours {
+        form.right {
+            margin-left: 10px;
+        }
+
         .error {
             display: none;
         }
