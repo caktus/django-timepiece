@@ -1102,11 +1102,6 @@ class ProjectHours(models.Model):
         return "{0} on {1} for Week of {2}".format(self.user.get_full_name(),
                 self.project, self.week_start.strftime('%B %d, %Y'))
 
-#    def clean(self):
-#        super(ProjectHours, self).clean()
-#        # Ensure that week_start is the Monday of a given week.
-#        self.week_start = utils.get_week_start(self.week_start).date()
-
     def save(self, *args, **kwargs):
         # Ensure that week_start is the Monday of a given week.
         self.week_start = utils.get_week_start(self.week_start)
