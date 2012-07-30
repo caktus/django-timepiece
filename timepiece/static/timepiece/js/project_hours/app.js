@@ -6,6 +6,14 @@ var all_users = new UserCollection();
 
 var project_hours = new ProjectHoursCollection();
 
+function showError(msg) {
+    var html = '<div class="alert alert-error">' + msg +
+        '<a class="close" data-dismiss="alert" href="#">&times;</a></div>';
+    
+    $('#alerts').append(html);
+    $('.alert').alert();
+}
+
 function processData(data) {
     var projects = data.projects,
         project_hours = data.project_hours,
@@ -107,7 +115,7 @@ $.del = function(url, success, error) {
 
 $(function() {
     var table = $('.dataTable').handsontable({
-        rows: 16,
+        rows: 2,
         
         fillHandle: false,
 
@@ -179,7 +187,7 @@ $(function() {
                     user.col = col;
                     users.add(user);
                 } else {
-                    $('.error').show().html('User already listed').alert();
+                    showError('User already listed');
 
                     return false;
                 }
@@ -191,7 +199,7 @@ $(function() {
                     project.row = row;
                     projects.add(project);
                 } else {
-                    $('.error').show().html('Project already listed').alert();
+                    showError('Project already listed');
 
                     return false;
                 }
@@ -207,10 +215,11 @@ $(function() {
                         'week_start': $('h2[data-date]').data('date')
                     }, function(data, status, xhr) {
                         hours.hours = time;
+                        hours.published = false;
                         $('.dataTable').handsontable('setDataAtCell', row, col, time);
                     }, function(xhr, status, error) {
                         $('.dataTable').handsontable('setDataAtCell', row, col, before);
-                        $('.error').show().html('Could not save the project hours. Please notify an administrator.').alert();
+                        showError('Could not save the project hours. Please notify an administrator.');
                     });
                 } else if(time && !hours) {
                     project = projects.get_by_row(row);
@@ -228,17 +237,18 @@ $(function() {
                             project_hours.add(hours);
                         }, function(xhr, status, error) {
                             $('.dataTable').handsontable('setDataAtCell', row, col, '');
-                            $('.error').show().html('Could not save the project hours. Please notify an administrator.').alert();
+                            showError('Could not save the project hours. Please notify an administrator.');
                         });
                     } else {
-                        $('.error').show().html('Project hours must be associated with a project and user').alert();
+                        showError('Project hours must be associated with a project and user');
 
                         return false;
                     }
                 } else {
-                    $('.error').show().html('Project hours must be integers').alert();
-
-                    return false;
+                    if(after !== '' && !hours) {
+                        showError('Project hours must be integers');
+                        return false;
+                    }
                 }
             } else {
                 return;
@@ -288,9 +298,10 @@ $(function() {
                 if(hours && after === '') {
                     $.del(ajax_url + hours.id + '/', function(data, status, xhr) {
                         project_hours.remove(hours);
+                        $('.dataTable').handsontable('setDataAtCell', row, col, after);
                     }, function(xhr, status, error) {
                         $('.dataTable').handsontable('setDataAtCell', row, col, before);
-                        $('.error').show().html('Could not delete the project hours. Please notify an administrator.').alert();
+                        showError('Could not delete the project hours. Please notify an administrator.');
                     });
                 }
             } else {
