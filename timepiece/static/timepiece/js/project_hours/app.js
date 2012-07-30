@@ -312,8 +312,4 @@ $(function() {
 
     // Load initial data
     getData($('h2[data-date]').data('date'));
-
-    // Make sure the datepicker uses the correct format we expect
-    $('.hasDatepicker').datepicker('option', 'dateFormat', 'yy-mm-dd' )
-        .datepicker('setDate', $('h2[data-date]').data('date'));
 });

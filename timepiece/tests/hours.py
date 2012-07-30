@@ -89,11 +89,11 @@ class ProjectHoursListViewTestCase(ProjectHoursTestCase):
                 False)
         self.current_week = utils.get_week_start(add_tzinfo=False)
         for i in range(5):
-            self.create_project_hours_entry(self.past_week)
-            self.create_project_hours_entry(self.current_week)
+            self.create_project_hours_entry(self.past_week, published=True)
+            self.create_project_hours_entry(self.current_week, published=True)
         self.url = reverse('project_hours')
         self.client.login(username='user', password='abc')
-        self.date_format = '%m/%d/%Y'
+        self.date_format = '%Y-%m-%d'
 
     def test_no_permission(self):
         """User must have permission timepiece.can_clock_in to view page."""
@@ -121,12 +121,13 @@ class ProjectHoursListViewTestCase(ProjectHoursTestCase):
             'submit': '',
         }
         response = self.client.get(self.url, data)
-        self.assertEquals(response.context['week'], self.past_week)
+        self.assertEquals(response.context['week'].date(), self.past_week)
 
         all_entries = utils.get_project_hours_for_week(self.past_week)
         people = response.context['people']
         projects = response.context['projects']
         count = 0
+
         for proj_id, name, entries in projects:
             for i in range(len(entries)):
                 entry = entries[i]
@@ -145,12 +146,12 @@ class ProjectHoursListViewTestCase(ProjectHoursTestCase):
             'submit': '',
         }
         response = self.client.get(self.url, data)
-        self.assertEquals(response.context['week'], monday)
+        self.assertEquals(response.context['week'].date(), monday)
 
     def test_no_entries(self):
         date = utils.get_week_start(datetime.date(2012, 3, 15), False)
         data = {
-            'week_start': date.strftime('%m/%d/%Y'),
+            'week_start': date.strftime('%Y-%m-%d'),
             'submit': '',
         }
         response = self.client.get(self.url, data)
@@ -572,7 +573,7 @@ class ProjectHoursEditTestCase(ProjectHoursTestCase):
         self.assertEquals(ph.count(), 2)
 
         for p in ph:
-            self.assertEquals(p.week_start, self.week_start.today())
+            self.assertEquals(p.week_start, self.week_start.date())
 
     def test_publish_hours_unsuccessful(self):
         """

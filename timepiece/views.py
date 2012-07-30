@@ -1220,42 +1220,6 @@ def create_edit_project(request, project_id=None):
     return context
 
 
-@permission_required('timepiece.can_clock_in')
-@render_with('timepiece/hours/list.html')
-def project_hours(request):
-    form = timepiece_forms.ProjectHoursSearchForm(data=request.GET)
-    if 'week_start' in request.GET and form.is_valid():
-        week_start = form.cleaned_data['week_start']
-    else:
-        week_start = utils.get_week_start(add_tzinfo=False)
-        initial = {'week_start': week_start}
-        form = timepiece_forms.ProjectHoursSearchForm(initial=initial)
-
-    project_hours = utils.get_project_hours_for_week(week_start) \
-        .filter(published=True)
-    people = utils.get_people_from_project_hours(project_hours)
-    id_list = [person[0] for person in people]
-    projects = []
-    for project, entries in groupby(project_hours, lambda o: o['project__id']):
-        entries = list(entries)
-        proj_id = entries[0]['project__id']
-        name = entries[0]['project__name']
-        row = [None for i in range(len(id_list))]
-        for entry in entries:
-            index = id_list.index(entry['user__id'])
-            hours = entry['hours']
-            row[index] = row[index] + hours if row[index] else hours
-        projects.append((proj_id, name, row))
-    return {
-        'form': form,
-        'week': week_start,
-        'prev_week': week_start - relativedelta(days=7),
-        'next_week': week_start + relativedelta(days=7),
-        'people': people,
-        'projects': projects,
-    }
-
-
 @permission_required('timepiece.view_payroll_summary')
 @render_with('timepiece/time-sheet/reports/summary.html')
 def payroll_summary(request):
@@ -1524,30 +1488,78 @@ class JSONEncoder(json.JSONEncoder):
         return super(JSONEncoder, self)._iterencode(obj, markers)
 
 
-class EditProjectHoursMixin(object):
-    @method_decorator(permission_required('timepiece.add_projecthours'))
+class ProjectHoursMixin(object):
+    permissions = None
+
     def dispatch(self, request, *args, **kwargs):
+        for perm in self.permissions:
+            if not request.user.has_perm(perm):
+                return HttpResponseRedirect(reverse('auth_login'))
+
         # Since we use get param in multiple places, attach it to the class
-        default_week = datetime.date.today().strftime('%Y-%m-%d')
-        week_start = request.GET.get('week_start', '')
+        default_week = utils.get_week_start(datetime.date.today()).date()
+        week_start_str = request.GET.get('week_start', '')
 
         # Account for an empty string
-        self.week_start = default_week if week_start == '' else week_start
+        self.week_start = default_week if week_start_str == '' \
+            else utils.get_week_start(datetime.datetime.strptime(week_start_str,
+                '%Y-%m-%d').date())
 
-        return super(EditProjectHoursMixin, self).dispatch(request, *args,
+        return super(ProjectHoursMixin, self).dispatch(request, *args,
             **kwargs)
 
     def get_hours_for_week(self, start=None):
-        date = datetime.datetime.strptime(self.week_start, '%Y-%m-%d').date()
-        week_start = start if start else utils.get_week_start(date)
+        week_start = start if start else self.week_start
         week_end = week_start + relativedelta(days=7)
 
         return timepiece.ProjectHours.objects.filter(week_start__gte=week_start,
             week_start__lt=week_end)
 
 
-class EditProjectHoursView(EditProjectHoursMixin, TemplateView):
+class ProjectHoursView(ProjectHoursMixin, TemplateView):
+    template_name = 'timepiece/hours/list.html'
+    permissions = ('timepiece.can_clock_in',)
+
+    def get_context_data(self, **kwargs):
+        context = super(ProjectHoursView, self).get_context_data(**kwargs)
+
+        form = timepiece_forms.ProjectHoursSearchForm(initial={
+            'week_start': self.week_start
+        })
+
+        project_hours = utils.get_project_hours_for_week(self.week_start) \
+            .filter(published=True)
+        people = utils.get_people_from_project_hours(project_hours)
+        id_list = [person[0] for person in people]
+        projects = []
+
+        for project, entries in groupby(project_hours, lambda o: o['project__id']):
+            entries = list(entries)
+            proj_id = entries[0]['project__id']
+            name = entries[0]['project__name']
+            row = [None for i in range(len(id_list))]
+            for entry in entries:
+                index = id_list.index(entry['user__id'])
+                hours = entry['hours']
+                row[index] = row[index] + hours if row[index] else hours
+            projects.append((proj_id, name, row))
+
+        context.update({
+            'form': form,
+            'week': self.week_start,
+            'prev_week': self.week_start - relativedelta(days=7),
+            'next_week': self.week_start + relativedelta(days=7),
+            'people': people,
+            'project_hours': project_hours,
+            'projects': projects
+        })
+
+        return context
+
+
+class EditProjectHoursView(ProjectHoursMixin, TemplateView):
     template_name = 'timepiece/hours/edit.html'
+    permissions = ('timepiece.add_projecthours',)
 
     def get_context_data(self, **kwargs):
         context = super(EditProjectHoursView, self).get_context_data(**kwargs)
@@ -1558,9 +1570,7 @@ class EditProjectHoursView(EditProjectHoursMixin, TemplateView):
 
         context.update({
             'form': form,
-            'week': utils.get_week_start(
-                datetime.datetime.strptime(self.week_start, '%Y-%m-%d')
-            ),
+            'week': self.week_start,
             'ajax_url': reverse('project_hours_ajax_view')
         })
         return context
@@ -1585,7 +1595,9 @@ class EditProjectHoursView(EditProjectHoursMixin, TemplateView):
         return HttpResponseRedirect(url)
 
 
-class ProjectHoursAjaxView(EditProjectHoursMixin, View):
+class ProjectHoursAjaxView(ProjectHoursMixin, View):
+    permissions = ('timepiece.add_projecthours',)
+
     def get_instance(self, data, week_start):
         try:
             user = auth_models.User.objects.get(pk=data.get('user', None))
@@ -1713,7 +1725,9 @@ class ProjectHoursAjaxView(EditProjectHoursMixin, View):
         return self.update_week(week_start)
 
 
-class ProjectHoursDetailView(EditProjectHoursMixin, View):
+class ProjectHoursDetailView(ProjectHoursMixin, View):
+    permissions = ('timepiece.add_projecthours',)
+
     def delete(self, request, *args, **kwargs):
         """
         Remove a project from the database

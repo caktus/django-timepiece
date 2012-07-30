@@ -207,7 +207,7 @@ urlpatterns = patterns('',
     # project hours
     url(
         r'^schedule/$',
-        views.project_hours,
+        views.ProjectHoursView.as_view(),
         name='project_hours',
     ),
     url(

@@ -222,14 +222,15 @@ class TimepieceDataTestCase(TestCase):
         return timepiece.ActivityGroup.objects.create(**defaults)
 
     def create_project_hours_entry(self, week_start=None, project=None,
-                user=None, hours=None):
+                user=None, hours=None, published=None):
         week_start = (utils.get_week_start(add_tzinfo=False)
                 if not week_start else week_start)
         project = self.create_project() if not project else project
         user = self.create_user() if not user else user
         hours = Decimal(str(random.random() * 20)) if not hours else hours
         return timepiece.ProjectHours.objects.create(week_start=week_start,
-                project=project, user=user, hours=hours)
+                project=project, user=user, hours=hours,
+                published=published or False)
 
     def setUp(self):
         self.user = User.objects.create_user('user', 'u@abc.com', 'abc')
