@@ -165,10 +165,8 @@ For options type:
         if year:
             start = timezone.now() - relativedelta(day=1, month=1)
         if days:
-            start = timezone.now() - \
-            datetime.timedelta(days=days)
-        start = start - relativedelta(
-            hour=0, minute=0, second=0, microsecond=0)
+            start = timezone.now() - datetime.timedelta(days=days)
+        start -= relativedelta(hour=0, minute=0, second=0, microsecond=0)
         return start
 
     def find_people(self, *args):

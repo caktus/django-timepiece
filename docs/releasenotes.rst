@@ -1,8 +1,8 @@
 Release Notes
 =========================================
 
-0.5.1 (Work in Progress)
-------------------------
+0.5.1 (Released 07-20-2012)
+---------------------------
 
 * Added compatability with Django 1.4 and timezone support
 * Added mobile support for the dashboard (clocking in/out, ledger, etc.)

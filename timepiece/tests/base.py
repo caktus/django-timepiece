@@ -223,7 +223,7 @@ class TimepieceDataTestCase(TestCase):
 
     def create_project_hours_entry(self, week_start=None, project=None,
                 user=None, hours=None):
-        week_start = (utils.get_week_start(add_tzinfo=False)
+        week_start = (utils.get_week_start()
                 if not week_start else week_start)
         project = self.create_project() if not project else project
         user = self.create_user() if not user else user

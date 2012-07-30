@@ -5,7 +5,7 @@ django-timepiece is a multi-user application for tracking people's time on proje
 __version_info__ = {
     'major': 0,
     'minor': 5,
-    'micro': 0,
+    'micro': 1,
     'releaselevel': 'final',
 }
 

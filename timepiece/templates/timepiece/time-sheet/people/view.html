@@ -216,17 +216,17 @@
                             <table class="table table-bordered table-condensed">
                                 <tr class="ledger_header">
                                     <th colspan="2">Week of {{ week|date:"m/d/Y (D)" }} </th>
-                                    <th class="billable">Billable</th>
-                                    <th class="non-billable">Non Billable</th>
-                                    <th class="total">Total</th>
+                                    <th>Billable</th>
+                                    <th>Non Billable</th>
+                                    <th>Total</th>
                                 </tr>
                                 {% for day, projects in days %}
                                     {% for project, totals in projects.1.iteritems %}
                                         <tr class="{% if day < from_date %}before_from_date{% endif %}">
                                             <td>
-                                            {% if forloop.counter == 1 %}
-                                                {{day|date:"m/d/Y (D)"}}
-                                            {% endif %}
+                                                {% if forloop.counter == 1 %}
+                                                    {{day|date:"m/d/Y (D)"}}
+                                                {% endif %}
                                             </td>
                                             <td>
                                                 {{project}}

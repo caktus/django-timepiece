@@ -64,7 +64,7 @@ class ProjectionTest(TimepieceDataTestCase):
             datetime.date(2011, 1, 22),
             datetime.date(2011, 1, 31),
         ]
-        date = datetime.datetime(2011, 1, 1, tzinfo=timezone.get_current_timezone())
+        date = utils.add_timezone(datetime.datetime(2011, 1, 1))
         for day in days:
             self.assertEqual(utils.get_month_start(day), date)
 

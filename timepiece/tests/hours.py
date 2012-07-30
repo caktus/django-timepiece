@@ -78,7 +78,7 @@ class ProjectHoursModelTestCase(ProjectHoursTestCase):
             entry = timepiece.ProjectHours.objects.create(
                     week_start=date, project=self.tracked_project,
                     user=self.user)
-            self.assertEquals(entry.week_start, monday)
+            self.assertEquals(entry.week_start.date(), monday)
             timepiece.ProjectHours.objects.all().delete()
 
 
@@ -86,9 +86,8 @@ class ProjectHoursListViewTestCase(ProjectHoursTestCase):
 
     def setUp(self):
         super(ProjectHoursListViewTestCase, self).setUp()
-        self.past_week = utils.get_week_start(datetime.date(2012, 4, 1),
-                False)
-        self.current_week = utils.get_week_start(add_tzinfo=False)
+        self.past_week = utils.get_week_start(datetime.date(2012, 4, 1))
+        self.current_week = utils.get_week_start()
         for i in range(5):
             self.create_project_hours_entry(self.past_week)
             self.create_project_hours_entry(self.current_week)
@@ -140,7 +139,7 @@ class ProjectHoursListViewTestCase(ProjectHoursTestCase):
     def test_week_filter_midweek(self):
         """Filter corrects mid-week date to Monday of specified week."""
         wednesday = datetime.date(2012, 7, 4)
-        monday = utils.get_week_start(wednesday, False)
+        monday = utils.get_week_start(wednesday)
         data = {
             'week_start': wednesday.strftime(self.date_format),
             'submit': '',
@@ -149,7 +148,7 @@ class ProjectHoursListViewTestCase(ProjectHoursTestCase):
         self.assertEquals(response.context['week'], monday)
 
     def test_no_entries(self):
-        date = utils.get_week_start(datetime.date(2012, 3, 15), False)
+        date = utils.get_week_start(datetime.date(2012, 3, 15))
         data = {
             'week_start': date.strftime('%m/%d/%Y'),
             'submit': '',
