@@ -75,7 +75,38 @@ function processData(data) {
         this.project_hours.add(hours);
     }
 
+    var totals = ['Totals'], j;
+
+    for(i = 1; i < dataTable.length; i++) {
+        var row = dataTable[i];
+
+        for(j = 1; j < row.length; j++) {
+            if(!totals[j]) {
+                totals[j] = 0;
+            }
+
+            if(row[j]) {
+                totals[j] += row[j];
+            }
+        }
+    }
+
+    dataTable.push([], [], totals);
+
     $('.dataTable').handsontable('loadData', dataTable);
+}
+
+function updateTotals(col, data) {
+    var dataTable = $('.dataTable').handsontable('getData'),
+        row = dataTable.length - 2,
+        totals = dataTable[row];
+
+    if(data !== '') {
+        var current = parseInt(totals[col], 10);
+        current += data;
+
+        $('.dataTable').handsontable('setDataAtCell', row, col, current);
+    }
 }
 
 function getData(week_start) {
@@ -115,7 +146,7 @@ $.del = function(url, success, error) {
 
 $(function() {
     var table = $('.dataTable').handsontable({
-        rows: 2,
+        rows: 3,
         
         fillHandle: false,
 
@@ -198,6 +229,9 @@ $(function() {
 
                     project.row = row;
                     projects.add(project);
+
+                    // Keep rows in between projects and totals
+                    $('.dataTable').handsontable('alter', 'insert_row', row + 1);
                 } else {
                     showError('Project already listed');
 
@@ -214,6 +248,9 @@ $(function() {
                         'hours': time,
                         'week_start': $('h2[data-date]').data('date')
                     }, function(data, status, xhr) {
+                        var diff = time - hours.hours;
+                        updateTotals(col, diff);
+
                         hours.hours = time;
                         hours.published = false;
                         $('.dataTable').handsontable('setDataAtCell', row, col, time);
@@ -235,6 +272,8 @@ $(function() {
                             hours = new ProjectHours(parseInt(data, 10), project, time);
                             hours.user = user;
                             project_hours.add(hours);
+
+                            updateTotals(col, time);
                         }, function(xhr, status, error) {
                             $('.dataTable').handsontable('setDataAtCell', row, col, '');
                             showError('Could not save the project hours. Please notify an administrator.');
@@ -297,6 +336,8 @@ $(function() {
 
                 if(hours && after === '') {
                     $.del(ajax_url + hours.id + '/', function(data, status, xhr) {
+                        updateTotals(col, -hours.hours);
+
                         project_hours.remove(hours);
                         $('.dataTable').handsontable('setDataAtCell', row, col, after);
                     }, function(xhr, status, error) {
