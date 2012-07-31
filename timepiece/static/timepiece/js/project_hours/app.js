@@ -300,7 +300,7 @@ $(function() {
                     }
                 } else {
                     if(after !== '' && !hours) {
-                        showError('Project hours must be integers');
+                        showError('Project hours must be integers greater than zero');
                         return false;
                     }
                 }

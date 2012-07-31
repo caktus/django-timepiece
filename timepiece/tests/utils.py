@@ -13,22 +13,21 @@ from timepiece import utils
 class UtilityFunctionsTest(TestCase):
     def setUp(self):
         # Setup last billable days
-        tz = timezone.get_current_timezone()
         self.last_billable = [
-            datetime.datetime(2012, 3, 25, tzinfo=tz),
-            datetime.datetime(2012, 4, 29, tzinfo=tz),
-            datetime.datetime(2012, 5, 27, tzinfo=tz),
-            datetime.datetime(2012, 6, 24, tzinfo=tz),
-            datetime.datetime(2012, 7, 29, tzinfo=tz),
-            datetime.datetime(2012, 8, 26, tzinfo=tz),
+            utils.add_timezone(datetime.datetime(2012, 3, 25)),
+            utils.add_timezone(datetime.datetime(2012, 4, 29)),
+            utils.add_timezone(datetime.datetime(2012, 5, 27)),
+            utils.add_timezone(datetime.datetime(2012, 6, 24)),
+            utils.add_timezone(datetime.datetime(2012, 7, 29)),
+            utils.add_timezone(datetime.datetime(2012, 8, 26)),
         ]
         self.dates = [
-            datetime.datetime(2012, 3, 12, tzinfo=tz),
-            datetime.datetime(2012, 4, 3, tzinfo=tz),
-            datetime.datetime(2012, 5, 18, tzinfo=tz),
-            datetime.datetime(2012, 6, 20, tzinfo=tz),
-            datetime.datetime(2012, 7, 1, tzinfo=tz),
-            datetime.datetime(2012, 8, 25, tzinfo=tz),
+            utils.add_timezone(datetime.datetime(2012, 3, 12)),
+            utils.add_timezone(datetime.datetime(2012, 4, 3)),
+            utils.add_timezone(datetime.datetime(2012, 5, 18)),
+            utils.add_timezone(datetime.datetime(2012, 6, 20)),
+            utils.add_timezone(datetime.datetime(2012, 7, 1)),
+            utils.add_timezone(datetime.datetime(2012, 8, 25)),
         ]
 
     def test_get_last_billable_day(self):

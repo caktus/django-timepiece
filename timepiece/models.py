@@ -317,6 +317,7 @@ class EntryQuerySet(models.query.QuerySet):
 
 
 class EntryManager(models.Manager):
+
     def get_query_set(self):
         qs = EntryQuerySet(self.model)
         qs = qs.select_related('activity', 'project__type')
@@ -339,6 +340,7 @@ class EntryManager(models.Manager):
 
 
 class EntryWorkedManager(models.Manager):
+
     def get_query_set(self):
         qs = EntryQuerySet(self.model)
         projects = getattr(settings, 'TIMEPIECE_PROJECTS', {})
@@ -843,6 +845,7 @@ class ContractMilestone(models.Model):
 
 
 class AssignmentManager(models.Manager):
+
     def active_during_week(self, week, next_week):
         q = Q(contract__end_date__gte=week, contract__end_date__lt=next_week)
         q |= Q(contract__start_date__gte=week,
@@ -1012,6 +1015,7 @@ class ContractAssignment(models.Model):
 
 
 class AllocationManager(models.Manager):
+
     def during_this_week(self, user, day=None):
         week = utils.get_week_start(day=day)
         return self.get_query_set().filter(
@@ -1099,14 +1103,9 @@ class ProjectHours(models.Model):
         return "{0} on {1} for Week of {2}".format(self.user.get_full_name(),
                 self.project, self.week_start.strftime('%B %d, %Y'))
 
-    def clean(self):
-        super(ProjectHours, self).clean()
-        # Ensure that week_start is the Monday of a given week.
-        self.week_start = utils.get_week_start(self.week_start, False)
-
     def save(self, *args, **kwargs):
         # Ensure that week_start is the Monday of a given week.
-        self.week_start = utils.get_week_start(self.week_start, False)
+        self.week_start = utils.get_week_start(self.week_start)
         return super(ProjectHours, self).save(*args, **kwargs)
 
     class Meta:
