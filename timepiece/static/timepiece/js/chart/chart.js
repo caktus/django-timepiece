@@ -1,21 +1,20 @@
 var scripts = document.getElementsByTagName('script'),
     script = scripts[scripts.length - 1];
 
-var billable = JSON.parse(script.getAttribute('data-billable')),
-    nonbillable = JSON.parse(script.getAttribute('data-nonbillable')),
-    hours = JSON.parse(script.getAttribute('data-hours'));
+var hours = JSON.parse(script.getAttribute('data-hours'));
 
 google.load('visualization', '1.0', {'packages':['corechart']});
 google.setOnLoadCallback(drawChart);
 
-var wrapper;
+var wrapper,
+    dataTable;
 
 function drawChart() {
-    var data = processData();
+    dataTable = processData();
 
     wrapper = new google.visualization.ChartWrapper({
-        chartType: 'ColumnChart',
-        dataTable: google.visualization.arrayToDataTable(data),
+        chartType: 'LineChart',
+        dataTable: google.visualization.arrayToDataTable(dataTable),
         options: {
             chartArea: {
                 width: '70%',
@@ -28,18 +27,18 @@ function drawChart() {
     wrapper.draw();
 }
 
+function getIndexOfDate(data, date) {
+    for(i = 1; i < data.length; i++) {
+        if(data[i][0] === date) {
+            return i;
+        }
+    }
+}
+
 function processData() {
     var data = [
         ['Date', 'Billable', 'Non-billable']
     ], i;
-
-    function getIndexOfDate(date) {
-        for(i = 1; i < data.length; i++) {
-            if(data[i][0] === date) {
-                return i;
-            }
-        }
-    }
 
     function round(x) {
         return Math.round((x * 100)) / 100;
@@ -58,7 +57,7 @@ function processData() {
             dates = hours[user];
 
         for(var date in dates) {
-            index = getIndexOfDate(dates[date].date);
+            index = getIndexOfDate(data, dates[date].date);
 
             data[index][1] += dates[date].billable;
             data[index][2] += dates[date].nonbillable;
@@ -75,15 +74,28 @@ function processData() {
 
 $(function() {
     $('.people input[type="checkbox"]').click(function() {
+        var user = hours[$(this).attr('id')],
+            date, data, index;
+
         if($(this).attr('checked') === 'checked') {
-            data[1][1] += billable[$(this).attr('id')];
-            data[1][2] += nonbillable[$(this).attr('id')];
+            for(date in user) {
+                data = user[date];
+                index = getIndexOfDate(dataTable, data.date);
+
+                dataTable[index][1] += data.billable;
+                dataTable[index][2] += data.nonbillable;
+            }
         } else {
-            data[1][1] -= billable[$(this).attr('id')];
-            data[1][2] -= nonbillable[$(this).attr('id')];
+            for(date in user) {
+                data = user[date];
+                index = getIndexOfDate(dataTable, data.date);
+
+                dataTable[index][1] -= data.billable;
+                dataTable[index][2] -= data.nonbillable;
+            }
         }
 
-        wrapper.setDataTable(google.visualization.arrayToDataTable(data));
+        wrapper.setDataTable(google.visualization.arrayToDataTable(dataTable));
         wrapper.draw();
     });
 });
