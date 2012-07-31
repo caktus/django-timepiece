@@ -349,6 +349,16 @@ $(function() {
                         $('.dataTable').handsontable('setDataAtCell', row, col, before);
                         showError('Could not delete the project hours. Please notify an administrator.');
                     });
+                } else if(hours && after == '0') {
+                    $.del(ajax_url + hours.id + '/', function(data, status, xhr) {
+                        updateTotals(col, -hours.hours);
+
+                        project_hours.remove(hours);
+                        $('.dataTable').handsontable('setDataAtCell', row, col, '');
+                    }, function(xhr, status, error) {
+                        $('.dataTable').handsontable('setDataAtCell', row, col, before);
+                        showError('Could not delete the project hours. Please notify an administrator.');
+                    });
                 }
             } else {
                 return;
