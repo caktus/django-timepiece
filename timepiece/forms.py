@@ -581,8 +581,8 @@ class DeleteForm(forms.Form):
 
 class ProjectHoursSearchForm(forms.Form):
     week_start = forms.DateField(label='Week of', required=False,
-            input_formats=('%Y-%d-%m',),
-            widget=forms.DateInput(format='%Y-%d-%m'))
+            input_formats=('%Y-%m-%d',),
+            widget=forms.DateInput(format='%Y-%m-%d'))
 
     def clean_week_start(self):
         week_start = self.cleaned_data.get('week_start', None)

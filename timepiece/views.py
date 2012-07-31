@@ -1629,7 +1629,8 @@ class ProjectHoursAjaxView(ProjectHoursMixin, View):
         project_hours = self.get_hours_for_week().values(
             'id', 'user', 'user__first_name', 'user__last_name',
             'project', 'hours', 'published'
-        ).order_by('-project__type__billable', 'project__name')
+        ).order_by('-project__type__billable', 'project__name',
+            'user__first_name', 'user__last_name')
         inner_qs = project_hours.values_list('project', flat=True)
         projects = timepiece.Project.objects.filter(pk__in=inner_qs).values() \
             .order_by('name')

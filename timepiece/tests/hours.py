@@ -512,15 +512,6 @@ class ProjectHoursEditTestCase(ProjectHoursTestCase):
 
         msg = 'Project hours were copied'
 
-        # response = self.client.post(self.ajax_url, data={
-        #     'week_update': self.week_start.strftime('%Y-%m-%d'),
-        #     'duplicate': 'duplicate'
-        # }, follow=True)
-        # self.assertEquals(response.status_code, 200)
-
-        # messages = response.context['messages']
-        # self.assertEquals(messages._loaded_messages[0].message, msg)
-
         response = self.client.post(self.ajax_url, data={
             'week_update': self.next_week.strftime('%Y-%m-%d'),
             'duplicate': 'duplicate'
