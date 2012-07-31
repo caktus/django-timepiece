@@ -4,6 +4,8 @@
 
 {% block title %}Schedule for the Week of {{ week|date:'F j, Y' }}{% endblock %}
 
+{% block bodyid %}project-hours{% endblock bodyid %}
+
 {% block content %}
     <div class="row-fluid">
         <div class="span12">
@@ -45,7 +47,7 @@
                                 <td><strong>{{ name }}</strong></td>
                                 {% for entry in entries %}
                                     <td class="hours">
-                                        {% if entry %}{{ entry|floatformat:2 }}{% endif %}
+                                        {% if entry %}{{ entry|floatformat:0 }}{% endif %}
                                     </td>
                                 {% endfor %}
                             </tr>
