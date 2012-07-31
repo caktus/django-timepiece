@@ -3,5 +3,5 @@
 
 {% block crumbs %}
     {{ block.super }}
-    <li><span class="divider">/</span> <a href="{% url 'project_hours' %}">Weekly Schedule</a></li>
+    <li><span class="divider">/</span> <a href="{% url 'project_hours' %}?week_start={{ week|date:'Y-m-d' }}">Weekly Schedule</a></li>
 {% endblock crumbs %}

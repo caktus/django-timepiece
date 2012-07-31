@@ -225,13 +225,13 @@ $(function() {
             
             if(row === 0) {
                 if(!users.get_by_display_name(after)) {
+                    // Adding a user
                     user = all_users.get_by_display_name(after);
                     
                     user.col = col;
                     users.add(user);
                 } else {
                     showError('User already listed');
-
                     return false;
                 }
             } else if(col === 0) {
@@ -246,7 +246,6 @@ $(function() {
                     $('.dataTable').handsontable('alter', 'insert_row', row + 1);
                 } else {
                     showError('Project already listed');
-
                     return false;
                 }
             } else if(row >= 1 && col >= 1) {
@@ -254,6 +253,7 @@ $(function() {
                 hours = project_hours.get_by_row_col(row, col);
 
                 if(time && hours) {
+                    // If we have times and hours in the row/col, then update the current hours
                     $.post(ajax_url, {
                         'project': hours.project.id,
                         'user': hours.user.id,
@@ -271,6 +271,8 @@ $(function() {
                         showError('Could not save the project hours. Please notify an administrator.');
                     });
                 } else if(time && !hours) {
+                    // If the user entered a valid time, but the hours do not exist
+                    // in a row/col, create them
                     project = projects.get_by_row(row);
                     user = users.get_by_col(col);
 
@@ -294,7 +296,6 @@ $(function() {
                         });
                     } else {
                         showError('Project hours must be associated with a project and user');
-
                         return false;
                     }
                 } else {
@@ -346,19 +347,7 @@ $(function() {
                     $('.dataTable').handsontable('alter', 'remove_row', project.row);
                 }
             } else if(row >= 1 && col >= 1) {
-                hours = project_hours.get_by_row_col(row, col);
-
-                if(hours && after === '') {
-                    $.del(ajax_url + hours.id + '/', function(data, status, xhr) {
-                        updateTotals(col, -hours.hours);
-
-                        project_hours.remove(hours);
-                        $('.dataTable').handsontable('setDataAtCell', row, col, after);
-                    }, function(xhr, status, error) {
-                        $('.dataTable').handsontable('setDataAtCell', row, col, before);
-                        showError('Could not delete the project hours. Please notify an administrator.');
-                    });
-                } else if(hours && after == '0') {
+                function deleteHours() {
                     $.del(ajax_url + hours.id + '/', function(data, status, xhr) {
                         updateTotals(col, -hours.hours);
 
@@ -368,6 +357,18 @@ $(function() {
                         $('.dataTable').handsontable('setDataAtCell', row, col, before);
                         showError('Could not delete the project hours. Please notify an administrator.');
                     });
+                }
+
+                hours = project_hours.get_by_row_col(row, col);
+
+                if(hours && after === '') {
+                    // If the hours have been removed from the table, delete from
+                    // the database
+                    deleteHours();
+                } else if(hours && after == '0') {
+                    // If the hours have been zeroed out in the table, delete from
+                    // the database
+                    deleteHours();
                 }
             } else {
                 return;

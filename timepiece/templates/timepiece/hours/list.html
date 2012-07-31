@@ -25,7 +25,7 @@
             </form>
         </div>
         <div class="span2">
-            <a class="btn right" href="{% url 'edit_project_hours' %}">Edit Schedule</a>
+            <a class="btn right" href="{% url 'edit_project_hours' %}?week_start={{ week|date:'Y-m-d' }}">Edit Schedule</a>
         </div>
     </div>
 
