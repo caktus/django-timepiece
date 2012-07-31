@@ -15,6 +15,9 @@
                         <a href="{% url hourly_report %}">Hourly</a>
                     {% endif %}
                 </li>
+                <li class="active">
+                    <a href="#">Billable Hours</a>
+                </li>
                 <li>
                     {% if perms.timepiece.view_entry_summary %}
                         <a href="{% url timepiece-summary %}">General Ledger</a>
@@ -24,9 +27,6 @@
                     {% if perms.timepiece.view_payroll_summary %}
                         <a href="{% url payroll_summary %}">Payroll Report</a>
                     {% endif %}
-                </li>
-                <li class="active">
-                    <a href="#">Billable Hours</a>
                 </li>
             </ul>
         </div>

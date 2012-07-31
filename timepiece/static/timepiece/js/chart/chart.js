@@ -35,14 +35,14 @@ function getIndexOfDate(data, date) {
     }
 }
 
+function round(x) {
+    return Math.round((x * 100)) / 100;
+}
+
 function processData() {
     var data = [
         ['Date', 'Billable', 'Non-billable']
     ], i;
-
-    function round(x) {
-        return Math.round((x * 100)) / 100;
-    }
    
     for(i = 0; i < hours.dates.length; i++) {
         data.push([hours.dates[i], 0, 0]);
@@ -84,6 +84,10 @@ $(function() {
 
                 dataTable[index][1] += data.billable;
                 dataTable[index][2] += data.nonbillable;
+
+                // Need to round the results...
+                dataTable[index][1] = round(dataTable[index][1]);
+                dataTable[index][2] = round(dataTable[index][2]);
             }
         } else {
             for(date in user) {
@@ -92,6 +96,10 @@ $(function() {
 
                 dataTable[index][1] -= data.billable;
                 dataTable[index][2] -= data.nonbillable;
+
+                // Need to round the results...
+                dataTable[index][1] = round(dataTable[index][1]);
+                dataTable[index][2] = round(dataTable[index][2]);
             }
         }
 
