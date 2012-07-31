@@ -25,12 +25,14 @@ function processData(data) {
         ajax_url = data.ajax_url;
     }
 
+    // Store all projects for autocomplete
     for(var i = 0; i < all_projects.length; i++) {
         var p = all_projects[i];
 
         this.all_projects.add(new Project(p.id, p.name));
     }
 
+    // Store all users for autocomplete
     for(i = 0; i < all_users.length; i++) {
         var u = all_users[i],
             name = u.first_name + ' ' + u.last_name,
@@ -39,21 +41,23 @@ function processData(data) {
         this.all_users.add(new User(u.id, name, display_name));
     }
 
+    // Process all project hours to add to the table
     for(i = 0; i < project_hours.length; i++) {
         var ph = project_hours[i],
             project = this.all_projects.get_by_id(ph.project);
         
         project.row = project.row || dataTable.length;
 
-        var added = this.projects.add(project);
-
-        if(added) {
+        // Add project to table if it doesnt already exist
+        if(this.projects.add(project)) {
             dataTable.push([project.name]);
         }
 
         var hours = new ProjectHours(ph.id, ph.hours, project, ph.published);
         hours.row = project.row;
 
+        // Get from global users and add to datatable and adjust column
+        // if the user isnt already in the table
         var user = this.all_users.get_by_id(ph.user);
         if(users.add(user)) {
             dataTable[0].push(user.display_name);
@@ -75,6 +79,7 @@ function processData(data) {
         this.project_hours.add(hours);
     }
 
+    // Populate the totals row after weve gone through all the data
     var totals = ['Totals'], j;
 
     for(i = 1; i < dataTable.length; i++) {
@@ -96,6 +101,7 @@ function processData(data) {
     $('.dataTable').handsontable('loadData', dataTable);
 }
 
+// Helper for updating totals after any change
 function updateTotals(col, data) {
     var dataTable = $('.dataTable').handsontable('getData'),
         row = dataTable.length - 2,
@@ -114,6 +120,7 @@ function updateTotals(col, data) {
     }
 }
 
+// Entry point to load all data into the table
 function getData(week_start) {
     if(!week_start) {
         var d = new Date();
@@ -274,8 +281,10 @@ $(function() {
                             'hours': time,
                             'week_start': $('h2[data-date]').data('date')
                         }, function(data, status, xhr) {
-                            hours = new ProjectHours(parseInt(data, 10), project, time);
+                            hours = new ProjectHours(parseInt(data, 10), time, project, false);
                             hours.user = user;
+                            hours.row = project.row;
+                            hours.col = user.col;
                             project_hours.add(hours);
 
                             updateTotals(col, time);
