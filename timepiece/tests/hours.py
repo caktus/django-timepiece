@@ -267,8 +267,8 @@ class ProjectHoursEditTestCase(ProjectHoursTestCase):
         self.assertEquals(len(data['project_hours']), 2)
         self.assertEquals(len(data['projects']), 1)
 
-        self.assertEquals(data['project_hours'][0]['hours'], 5.0)
-        self.assertEquals(data['project_hours'][1]['hours'], 25.0)
+        self.assertEquals(data['project_hours'][0]['hours'], 25.0)
+        self.assertEquals(data['project_hours'][1]['hours'], 5.0)
 
     def test_permission_access(self):
         """
@@ -356,8 +356,8 @@ class ProjectHoursEditTestCase(ProjectHoursTestCase):
         self.assertEquals(len(data['project_hours']), 2)
         self.assertEquals(len(data['projects']), 1)
 
-        self.assertEquals(data['project_hours'][0]['hours'], 2.0)
-        self.assertEquals(data['project_hours'][1]['hours'], 15.0)
+        self.assertEquals(data['project_hours'][0]['hours'], 15.0)
+        self.assertEquals(data['project_hours'][1]['hours'], 2.0)
 
     def test_ajax_create_successful(self):
         """
