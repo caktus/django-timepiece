@@ -1498,7 +1498,11 @@ class ProjectHoursMixin(object):
 
         # Since we use get param in multiple places, attach it to the class
         default_week = utils.get_week_start(datetime.date.today()).date()
-        week_start_str = request.GET.get('week_start', '')
+
+        if request.method == 'GET':
+            week_start_str = request.GET.get('week_start', '')
+        else:
+            week_start_str = request.POST.get('week_start', '')
 
         # Account for an empty string
         self.week_start = default_week if week_start_str == '' \
@@ -1576,7 +1580,7 @@ class EditProjectHoursView(ProjectHoursMixin, TemplateView):
         return context
 
     def post(self, request, *args, **kwargs):
-        ph = self.get_hours_for_week().filter(published=False)
+        ph = self.get_hours_for_week(self.week_start).filter(published=False)
 
         if ph.exists():
             ph.update(published=True)
@@ -1587,7 +1591,7 @@ class EditProjectHoursView(ProjectHoursMixin, TemplateView):
         messages.info(request, msg)
 
         param = {
-            'week_start': self.week_start
+            'week_start': self.week_start.strftime('%Y-%m-%d')
         }
         url = '?'.join((reverse('edit_project_hours'),
             urllib.urlencode(param),))
@@ -1652,6 +1656,7 @@ class ProjectHoursAjaxView(ProjectHoursMixin, View):
             for instance in queryset:
                 duplicate = deepcopy(instance)
                 duplicate.id = None
+                duplicate.published = False
                 duplicate.week_start += datetime.timedelta(days=7)
                 yield duplicate
 
@@ -1687,6 +1692,7 @@ class ProjectHoursAjaxView(ProjectHoursMixin, View):
                     prev_ph = prev_week_qs.get(project=ph.project,
                         user=ph.user)
                     ph.hours = prev_ph.hours
+                    ph.published = False
                     ph.save()
                 msg = 'Project hours were copied'
                 messages.info(self.request, msg)

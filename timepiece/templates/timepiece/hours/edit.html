@@ -54,6 +54,7 @@
             </form>
             <form class="form-inline right" method="post" action="{% url 'edit_project_hours' %}">
                 {% csrf_token %}
+                <input type="hidden" name="week_start" value="{{ week|date:'Y-m-d' }}" />
                 <button type="submit" class="btn">Publish hours</button>
             </form>
         </div>
