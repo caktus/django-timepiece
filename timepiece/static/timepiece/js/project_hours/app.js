@@ -103,7 +103,12 @@ function updateTotals(col, data) {
 
     if(data !== '') {
         var current = parseInt(totals[col], 10);
-        current += data;
+
+        if(current) {
+            current += data;
+        } else {
+            current = data;
+        }
 
         $('.dataTable').handsontable('setDataAtCell', row, col, current);
     }
