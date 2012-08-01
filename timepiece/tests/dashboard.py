@@ -62,24 +62,24 @@ class DashboardTestCase(TimepieceDataTestCase):
             'start_time': self.now + datetime.timedelta(minutes=5),
             'end_time': self.now + datetime.timedelta(minutes=20),
             'project': projects[0],
-            'activity': self.create_activity({'billable': True}),
+            'activity': self.create_activity(data={'billable': True}),
         }))
         past.append(self.create_entry({  # 15 minutes
             'start_time': self.now + datetime.timedelta(minutes=25),
             'end_time': self.now + datetime.timedelta(minutes=40),
             'project': projects[0],
-            'activity': self.create_activity({'billable': True}),
+            'activity': self.create_activity(data={'billable': True}),
         }))
         past.append(self.create_entry({  # 60 minutes
             'start_time': self.now + datetime.timedelta(minutes=45),
             'end_time': self.now + datetime.timedelta(minutes=105),
             'project': projects[1],
-            'activity': self.create_activity({'billable': False}),
+            'activity': self.create_activity(data={'billable': False}),
         }))
         current = self.create_entry({  # 30 minutes
             'start_time': self.now - datetime.timedelta(minutes=30),
             'project': projects[0],
-            'activity': self.create_activity({'billable': True}),
+            'activity': self.create_activity(data={'billable': True}),
         })
         current_hours = get_active_hours(current)
         total_hours = sum([p.hours for p in past]) + current_hours
