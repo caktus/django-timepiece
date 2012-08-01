@@ -3,6 +3,9 @@ import csv
 import datetime
 import math
 import urllib
+import json
+import urlparse
+from copy import deepcopy
 
 from decimal import Decimal
 from dateutil.relativedelta import relativedelta
@@ -21,12 +24,15 @@ from django.contrib.auth.models import User
 from django.contrib.auth import models as auth_models
 from django.db.models import Sum, Count, Q, F
 from django.db import transaction
+from django.db import DatabaseError
 from django.conf import settings
 from django.utils.datastructures import SortedDict
 from django.views.decorators.csrf import csrf_exempt
 from django.views.generic.base import TemplateView
 from django.views.generic import UpdateView, ListView, DetailView, View
 from django.utils.decorators import method_decorator
+from django.core import serializers, exceptions
+from django.contrib.contenttypes.models import ContentType
 
 try:
     from django.utils import timezone
@@ -1203,39 +1209,6 @@ def create_edit_project(request, project_id=None):
     return context
 
 
-@permission_required('timepiece.can_clock_in')
-@render_with('timepiece/hours/list.html')
-def project_hours(request):
-    form = timepiece_forms.ProjectHoursSearchForm(data=request.GET)
-    if 'submit' in request.GET and form.is_valid():
-        week_start = form.cleaned_data['week_start']
-    else:
-        week_start = utils.get_week_start()
-        initial = {'week_start': week_start}
-        form = timepiece_forms.ProjectHoursSearchForm(initial=initial)
-
-    project_hours = utils.get_project_hours_for_week(week_start)
-    people = utils.get_people_from_project_hours(project_hours)
-    id_list = [person[0] for person in people]
-    projects = []
-    for project, entries in groupby(project_hours, lambda o: o['project__id']):
-        entries = list(entries)
-        proj_id = entries[0]['project__id']
-        name = entries[0]['project__name']
-        row = [None for i in range(len(id_list))]
-        for entry in entries:
-            index = id_list.index(entry['user__id'])
-            hours = entry['hours']
-            row[index] = row[index] + hours if row[index] else hours
-        projects.append((proj_id, name, row))
-    return {
-        'form': form,
-        'week': week_start,
-        'people': people,
-        'projects': projects,
-    }
-
-
 @permission_required('timepiece.view_payroll_summary')
 @render_with('timepiece/time-sheet/reports/summary.html')
 def payroll_summary(request):
@@ -1484,3 +1457,289 @@ class DeleteProjectView(DeleteView):
     model = timepiece.Project
     url_name = 'list_projects'
     permissions = ('timepiece.add_project', 'timepiece.change_project',)
+
+
+class JSONEncoder(json.JSONEncoder):
+    def _iterencode(self, obj, markers=None):
+        if isinstance(obj, Decimal):
+            return (str(obj) for obj in [obj])
+        return super(JSONEncoder, self)._iterencode(obj, markers)
+
+
+class ProjectHoursMixin(object):
+    permissions = None
+
+    def dispatch(self, request, *args, **kwargs):
+        for perm in self.permissions:
+            if not request.user.has_perm(perm):
+                return HttpResponseRedirect(reverse('auth_login'))
+
+        # Since we use get param in multiple places, attach it to the class
+        default_week = utils.get_week_start(datetime.date.today()).date()
+
+        if request.method == 'GET':
+            week_start_str = request.GET.get('week_start', '')
+        else:
+            week_start_str = request.POST.get('week_start', '')
+
+        # Account for an empty string
+        self.week_start = default_week if week_start_str == '' \
+            else utils.get_week_start(datetime.datetime.strptime(week_start_str,
+                '%Y-%m-%d').date())
+
+        return super(ProjectHoursMixin, self).dispatch(request, *args,
+            **kwargs)
+
+    def get_hours_for_week(self, start=None):
+        week_start = start if start else self.week_start
+        week_end = week_start + relativedelta(days=7)
+
+        return timepiece.ProjectHours.objects.filter(week_start__gte=week_start,
+            week_start__lt=week_end)
+
+
+class ProjectHoursView(ProjectHoursMixin, TemplateView):
+    template_name = 'timepiece/hours/list.html'
+    permissions = ('timepiece.can_clock_in',)
+
+    def get_context_data(self, **kwargs):
+        context = super(ProjectHoursView, self).get_context_data(**kwargs)
+
+        form = timepiece_forms.ProjectHoursSearchForm(initial={
+            'week_start': self.week_start
+        })
+
+        project_hours = utils.get_project_hours_for_week(self.week_start) \
+            .filter(published=True)
+        people = utils.get_people_from_project_hours(project_hours)
+        id_list = [person[0] for person in people]
+        projects = []
+
+        for project, entries in groupby(project_hours, lambda o: o['project__id']):
+            entries = list(entries)
+            proj_id = entries[0]['project__id']
+            name = entries[0]['project__name']
+            row = [None for i in range(len(id_list))]
+            for entry in entries:
+                index = id_list.index(entry['user__id'])
+                hours = entry['hours']
+                row[index] = row[index] + hours if row[index] else hours
+            projects.append((proj_id, name, row))
+
+        context.update({
+            'form': form,
+            'week': self.week_start,
+            'prev_week': self.week_start - relativedelta(days=7),
+            'next_week': self.week_start + relativedelta(days=7),
+            'people': people,
+            'project_hours': project_hours,
+            'projects': projects
+        })
+
+        return context
+
+
+class EditProjectHoursView(ProjectHoursMixin, TemplateView):
+    template_name = 'timepiece/hours/edit.html'
+    permissions = ('timepiece.add_projecthours',)
+
+    def get_context_data(self, **kwargs):
+        context = super(EditProjectHoursView, self).get_context_data(**kwargs)
+
+        form = timepiece_forms.ProjectHoursSearchForm(initial={
+            'week_start': self.week_start
+        })
+
+        context.update({
+            'form': form,
+            'week': self.week_start,
+            'ajax_url': reverse('project_hours_ajax_view')
+        })
+        return context
+
+    def post(self, request, *args, **kwargs):
+        ph = self.get_hours_for_week(self.week_start).filter(published=False)
+
+        if ph.exists():
+            ph.update(published=True)
+            msg = 'Unpublished project hours are now published'
+        else:
+            msg = 'There were no hours to publish'
+
+        messages.info(request, msg)
+
+        param = {
+            'week_start': self.week_start.strftime('%Y-%m-%d')
+        }
+        url = '?'.join((reverse('edit_project_hours'),
+            urllib.urlencode(param),))
+
+        return HttpResponseRedirect(url)
+
+
+class ProjectHoursAjaxView(ProjectHoursMixin, View):
+    permissions = ('timepiece.add_projecthours',)
+
+    def get_instance(self, data, week_start):
+        try:
+            user = auth_models.User.objects.get(pk=data.get('user', None))
+            project = timepiece.Project.objects.get(pk=data.get('project', None))
+            hours = data.get('hours', None)
+            week = datetime.datetime.strptime(week_start, '%Y-%m-%d').date()
+
+            ph = timepiece.ProjectHours.objects.get(user=user, project=project,
+                week_start=week)
+            ph.hours = Decimal(hours)
+        except (exceptions.ObjectDoesNotExist):
+            ph = None
+
+        return ph
+
+    def get(self, request, *args, **kwargs):
+        """
+        Returns the data as a JSON object made up of the following key/value
+        pairs:
+            project_hours: the current project hours for the week
+            projects: the projects that have hours for the week
+            all_projects: all of the projects; used for autocomplete
+            all_users: all users that can clock in; used for completion
+        """
+        perm = auth_models.Permission.objects.filter(
+            content_type=ContentType.objects.get_for_model(timepiece.Entry),
+            codename='can_clock_in'
+        )
+        project_hours = self.get_hours_for_week().values(
+            'id', 'user', 'user__first_name', 'user__last_name',
+            'project', 'hours', 'published'
+        ).order_by('-project__type__billable', 'project__name',
+            'user__first_name', 'user__last_name')
+        inner_qs = project_hours.values_list('project', flat=True)
+        projects = timepiece.Project.objects.filter(pk__in=inner_qs).values() \
+            .order_by('name')
+        all_projects = timepiece.Project.objects.values('id', 'name')
+        all_users = auth_models.User.objects.filter(groups__permissions=perm) \
+            .values('id', 'first_name', 'last_name')
+
+        data = {
+            'project_hours': list(project_hours),
+            'projects': list(projects),
+            'all_projects': list(all_projects),
+            'all_users': list(all_users),
+            'ajax_url': reverse('project_hours_ajax_view'),
+        }
+        return HttpResponse(json.dumps(data, cls=JSONEncoder), mimetype='application/json')
+
+    def duplicate_entries(self, duplicate, week_update):
+        def duplicate_builder(queryset):
+            for instance in queryset:
+                duplicate = deepcopy(instance)
+                duplicate.id = None
+                duplicate.published = False
+                duplicate.week_start += datetime.timedelta(days=7)
+                yield duplicate
+
+        def duplicate_helper():
+            try:
+                timepiece.ProjectHours.objects.bulk_create(
+                    duplicate_builder(prev_week_qs)
+                )
+            except DatabaseError:
+                msg = 'An error occurred and hours could not be duplicated'
+                messages.error(self.request, msg)
+            else:
+                msg = 'Project hours were copied'
+                messages.info(self.request, msg)
+
+        date = datetime.datetime.strptime(week_update, '%Y-%m-%d').date()
+        prev_week = date - relativedelta(days=7)
+        prev_week_qs = self.get_hours_for_week(prev_week)
+        week_qs = self.get_hours_for_week(date)
+
+        param = {
+            'week_start': week_update
+        }
+        url = '?'.join((reverse('edit_project_hours'),
+            urllib.urlencode(param),))
+
+        if week_qs.exists():
+            inner_qs = week_qs.filter(project__in=prev_week_qs.values_list('project'),
+                user__in=prev_week_qs.values_list('user'))
+
+            if inner_qs.exists():
+                for ph in inner_qs:
+                    prev_ph = prev_week_qs.get(project=ph.project,
+                        user=ph.user)
+                    ph.hours = prev_ph.hours
+                    ph.published = False
+                    ph.save()
+                msg = 'Project hours were copied'
+                messages.info(self.request, msg)
+            else:
+                duplicate_helper()
+        elif not prev_week_qs.exists():
+            msg = 'There are no hours to copy'
+            messages.warning(self.request, msg)
+        else:
+            duplicate_helper()
+
+        return HttpResponseRedirect(url)
+
+    def update_week(self, week_start):
+        try:
+            instance = self.get_instance(self.request.POST, week_start)
+        except TypeError:
+            msg = 'Parameter week_start must be a date in the format ' \
+                'yyyy-mm-dd'
+            return HttpResponse(msg, status=500)
+
+        form = timepiece_forms.ProjectHoursForm(self.request.POST,
+            instance=instance)
+
+        if form.is_valid():
+            ph = form.save()
+            return HttpResponse(ph.pk, mimetype='text/plain')
+
+        msg = 'The request must contain values for user, project, and hours'
+        return HttpResponse(msg, status=500)
+
+    def post(self, request, *args, **kwargs):
+        """
+        Create or update an hour entry for a particular use and project. This
+        function expects the following values:
+            user: the user pk for the hours
+            project: the project pk for the hours
+            hours: the actual hours to store
+            week_start: the start of the week for the hours
+
+        If the duplicate key is present along with week_update, then items
+        will be duplicated from week_update to the current week
+        """
+        duplicate = request.POST.get('duplicate', None)
+        week_update = request.POST.get('week_update', None)
+        week_start = request.POST.get('week_start', None)
+
+        if duplicate and week_update:
+            return self.duplicate_entries(duplicate, week_update)
+
+        return self.update_week(week_start)
+
+
+class ProjectHoursDetailView(ProjectHoursMixin, View):
+    permissions = ('timepiece.add_projecthours',)
+
+    def delete(self, request, *args, **kwargs):
+        """
+        Remove a project from the database
+        """
+        pk = kwargs.get('pk', None)
+
+        if pk:
+            try:
+                ph = timepiece.ProjectHours.objects.get(pk=pk)
+            except timepiece.ProjectHours.DoesNotExist:
+                pass
+            else:
+                ph.delete()
+                return HttpResponse('ok', mimetype='text/plain')
+
+        return HttpResponse('', status=500)

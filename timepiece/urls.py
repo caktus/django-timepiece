@@ -206,8 +206,25 @@ urlpatterns = patterns('',
     ),
     # project hours
     url(
-        r'^project-hours/$',
-        views.project_hours,
+        r'^schedule/$',
+        views.ProjectHoursView.as_view(),
         name='project_hours',
+    ),
+    url(
+        r'^schedule/edit/$',
+        views.EditProjectHoursView.as_view(),
+        name='edit_project_hours'
+    ),
+
+    # ajax views
+    url(
+        r'^ajax/hours/$',
+        views.ProjectHoursAjaxView.as_view(),
+        name='project_hours_ajax_view',
+    ),
+    url(
+        r'^ajax/hours/(?P<pk>\d+)/$',
+        views.ProjectHoursDetailView.as_view(),
+        name='project_hours_detail_view',
     ),
 )

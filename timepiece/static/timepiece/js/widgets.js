@@ -6,8 +6,12 @@ jQuery(function($) {
     /* use jQuery-UI to apply a date picker to all crm-date-fields.  If you
      * wish, substitute your JavaScript library of choice.
      */
-    $('[name*=date],#id_start_time_0,#id_end_time_0,#id_week_start').datepicker({
+    $('[name*=date][name!=week_update],#id_start_time_0,#id_end_time_0').datepicker({
         'dateFormat': 'mm/dd/yy'
+    });
+
+    $('#id_week_start').datepicker({
+        'dateFormat': 'yy-mm-dd'
     });
 
     $('.popover-toggle').popover({

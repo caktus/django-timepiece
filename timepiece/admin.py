@@ -187,7 +187,7 @@ admin.site.register(timepiece.AssignmentAllocation, AllocationAdmin)
 
 
 class ProjectHoursAdmin(admin.ModelAdmin):
-    list_display = ('_person', 'project', 'week_start', 'hours')
+    list_display = ('_person', 'project', 'week_start', 'hours', 'published')
 
     def _person(self, obj):
         return obj.user.get_full_name()
