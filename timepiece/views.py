@@ -1459,11 +1459,11 @@ class DeleteProjectView(DeleteView):
     permissions = ('timepiece.add_project', 'timepiece.change_project',)
 
 
-class JSONEncoder(json.JSONEncoder):
-    def _iterencode(self, obj, markers=None):
+class DecimalEncoder(json.JSONEncoder):
+    def default(self, obj):
         if isinstance(obj, Decimal):
-            return (str(obj) for obj in [obj])
-        return super(JSONEncoder, self)._iterencode(obj, markers)
+            return float(obj)
+        return super(DecimalEncoder, self).default(obj)
 
 
 class ProjectHoursMixin(object):
@@ -1627,7 +1627,8 @@ class ProjectHoursAjaxView(ProjectHoursMixin, View):
             'all_users': list(all_users),
             'ajax_url': reverse('project_hours_ajax_view'),
         }
-        return HttpResponse(json.dumps(data, cls=JSONEncoder), mimetype='application/json')
+        return HttpResponse(json.dumps(data, cls=DecimalEncoder),
+            mimetype='application/json')
 
     def duplicate_entries(self, duplicate, week_update):
         def duplicate_builder(queryset):
@@ -1640,9 +1641,13 @@ class ProjectHoursAjaxView(ProjectHoursMixin, View):
 
         def duplicate_helper():
             try:
-                timepiece.ProjectHours.objects.bulk_create(
-                    duplicate_builder(prev_week_qs)
-                )
+                try:
+                    bulk_create = getattr(timepiece.ProjectHours.objects,
+                        'bulk_create')
+                    bulk_create(duplicate_builder(prev_week_qs))
+                except AttributeError:
+                    for entry in duplicate_builder(prev_week_qs):
+                        entry.save()
             except DatabaseError:
                 msg = 'An error occurred and hours could not be duplicated'
                 messages.error(self.request, msg)
@@ -1697,7 +1702,7 @@ class ProjectHoursAjaxView(ProjectHoursMixin, View):
 
         if form.is_valid():
             ph = form.save()
-            return HttpResponse(ph.pk, mimetype='text/plain')
+            return HttpResponse(str(ph.pk), mimetype='text/plain')
 
         msg = 'The request must contain values for user, project, and hours'
         return HttpResponse(msg, status=500)
