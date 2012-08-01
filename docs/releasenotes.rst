@@ -1,6 +1,14 @@
 Release Notes
 =========================================
 
+0.5.2 (Released 08-01-2012)
+
+* Added "Project Hours" views, which allow managers to assign project hours to users in a spreadsheet-like interface.
+* Simplified implementation of timezone support.
+* Fixed a bug that was preventing the weekly totals in "Hourly Summary" of "My Ledger" from being displayed.
+* Removed the display of "hours out of" in the "billable time" section of "My Work This Week" and added it to the "total time this week" section.
+
+
 0.5.1 (Released 07-20-2012)
 ---------------------------
 
