@@ -18,6 +18,7 @@ from timepiece.lookups import ProjectLookup, QuickLookup
 from timepiece.lookups import UserLookup, BusinessLookup
 
 from timepiece.models import Project, Entry, Activity, UserProfile, Attribute
+from timepiece.models import ProjectHours
 from timepiece.fields import UserModelChoiceField
 from timepiece import models as timepiece
 from timepiece import utils
@@ -580,9 +581,17 @@ class DeleteForm(forms.Form):
 
 class ProjectHoursSearchForm(forms.Form):
     week_start = forms.DateField(label='Week of', required=False,
-            input_formats=('%m/%d/%Y',),
-            widget=forms.DateInput(format='%m/%d/%Y'))
+            input_formats=('%Y-%m-%d',),
+            widget=forms.DateInput(format='%Y-%m-%d'))
 
     def clean_week_start(self):
         week_start = self.cleaned_data.get('week_start', None)
-        return utils.get_week_start(week_start) if week_start else None
+        return utils.get_week_start(week_start, False) if week_start else None
+
+
+class ProjectHoursForm(forms.ModelForm):
+    def __init__(self, *args, **kwargs):
+        super(ProjectHoursForm, self).__init__(*args, **kwargs)
+
+    class Meta:
+        model = ProjectHours
