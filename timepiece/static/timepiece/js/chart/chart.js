@@ -12,19 +12,21 @@ var wrapper,
 function drawChart() {
     dataTable = processData();
 
-    wrapper = new google.visualization.ChartWrapper({
-        chartType: 'LineChart',
-        dataTable: google.visualization.arrayToDataTable(dataTable),
-        options: {
-            chartArea: {
-                width: '70%',
-                left: '5%'
-            }
-        },
-        containerId: 'chart'
-    });
+    if(dataTable.length > 1) {
+        wrapper = new google.visualization.ChartWrapper({
+            chartType: 'LineChart',
+            dataTable: google.visualization.arrayToDataTable(dataTable),
+            options: {
+                chartArea: {
+                    width: '70%',
+                    left: '5%'
+                }
+            },
+            containerId: 'chart'
+        });
 
-    wrapper.draw();
+        wrapper.draw();
+    }
 }
 
 function getIndexOfDate(data, date) {

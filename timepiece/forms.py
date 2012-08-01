@@ -363,8 +363,14 @@ STATUS_CHOICES.extend(timepiece.ENTRY_STATUS)
 
 
 class DateForm(forms.Form):
-    from_date = forms.DateField(label="From", required=False)
-    to_date = forms.DateField(label="To", required=False)
+    DATE_FORMAT = '%m/%d/%Y'
+
+    from_date = forms.DateField(label="From", required=True,
+        input_formats=(DATE_FORMAT,),
+        widget=forms.DateInput(format=DATE_FORMAT))
+    to_date = forms.DateField(label="To", required=True,
+        input_formats=(DATE_FORMAT,),
+        widget=forms.DateInput(format=DATE_FORMAT))
     status = forms.ChoiceField(choices=STATUS_CHOICES,
         widget=forms.HiddenInput(), required=False)
     activity = forms.ModelChoiceField(
@@ -576,3 +582,30 @@ class DeleteForm(forms.Form):
             else:
                 return True
         return False
+
+
+class BillableHoursForm(forms.Form):
+    activity_qs = timepiece.Activity.objects.all()
+    type_qs = timepiece.Attribute.objects.all()
+
+    people = forms.MultipleChoiceField(widget=forms.CheckboxSelectMultiple,
+        required=False)
+    activities = forms.MultipleChoiceField(widget=forms.CheckboxSelectMultiple,
+        choices=activity_qs.values_list('pk', 'name'),
+        required=False,
+        initial=activity_qs.values_list('pk', flat=True))
+    project_types = forms.MultipleChoiceField(
+        widget=forms.CheckboxSelectMultiple,
+        choices=type_qs.values_list('pk', 'label'),
+        required=False,
+        initial=type_qs.values_list('label', flat=True))
+
+    def __init__(self, *args, **kwargs):
+        instance = kwargs.pop('instance', None)
+        super(BillableHoursForm, self).__init__(*args, **kwargs)
+
+        if instance:
+            people = instance.get('people', [])
+            if people:
+                self.fields['people'].choices = people
+                self.fields['people'].initial = [p[0] for p in people]

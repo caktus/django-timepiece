@@ -1421,34 +1421,30 @@ class ReportMixin(object):
         from_date = request.get('from_date', None)
         to_date = request.get('to_date', None)
 
-        if from_date:
-            from_date = datetime.datetime.strptime(from_date,
-                '%m/%d/%Y')
-        else:
-            from_date = timezone.now()
+        from_date = datetime.datetime.strptime(from_date, '%m/%d/%Y') \
+            if from_date else timezone.now() - relativedelta(months=1)
+        to_date = datetime.datetime.strptime(to_date, '%m/%d/%Y') \
+            if to_date else timezone.now()
 
-        if to_date:
-            to_date = datetime.datetime.strptime(to_date,
-                '%m/%d/%Y')
-            date_form = timepiece_forms.DateForm(request)
+        date_form = timepiece_forms.DateForm(request or None)
 
-            if date_form.is_valid():
-                from_date, to_date = date_form.save()
-                status = date_form.cleaned_data.get('status')
-                activity = date_form.cleaned_data.get('activity')
-            else:
-                raise Http404
+        if date_form.is_valid():
+            from_date, to_date = date_form.save()
+            status = date_form.cleaned_data.get('status')
+            activity = date_form.cleaned_data.get('activity')
         else:
-            to_date = timezone.now()
             date_form = timepiece_forms.DateForm()
-            status = activity = None
 
         header_to = to_date - relativedelta(days=1)
         trunc = timepiece_forms.ProjectFiltersForm.DEFAULT_TRUNC
         query = Q(end_time__gt=utils.get_week_start(from_date),
                   end_time__lt=to_date)
 
-        project_form = timepiece_forms.ProjectFiltersForm(request)
+        query = Q(end_time__gt=utils.get_week_start(from_date),
+            end_time__lt=to_date)
+
+        project_form = timepiece_forms.ProjectFiltersForm(self.request.GET)
+
         if project_form.is_valid():
             trunc = project_form.cleaned_data['trunc']
             if not project_form.cleaned_data['paid_leave']:
@@ -1459,16 +1455,18 @@ class ReportMixin(object):
         else:
             project_form = timepiece_forms.ProjectFiltersForm()
 
-        entries = timepiece.Entry.objects.date_trunc(trunc).filter(query)
+        entries = timepiece.Entry.objects.date_trunc(trunc,
+            extra_values=('activity', 'project__status')).filter(query)
         date_headers = utils.generate_dates(from_date, header_to, by=trunc)
 
         context.update({
             'date_form': date_form,
             'from_date': from_date,
+            'to_date': to_date,
             'date_headers': date_headers,
-            'pj_filters': project_form,
             'trunc': trunc,
             'entries': entries,
+            'pj_filters': project_form
         })
         return context
 
@@ -1521,31 +1519,36 @@ class HourlyReport(ReportMixin, CSVMixin, TemplateView):
 
         project_totals = utils.project_totals(entries, date_headers, hour_type,
             total_column=True) if entries else ''
+
         context.update({
-            'project_totals': project_totals
+            'project_totals': project_totals,
         })
+
         return context
 
 
 class BillableHours(ReportMixin, TemplateView):
     template_name = 'timepiece/time-sheet/reports/billable_hours.html'
 
-    def get_context_data(self, **kwargs):
-        context = super(BillableHours, self).get_context_data(**kwargs)
+    def get_hours_data(self, context):
         entries = context['entries']
         date_headers = context['date_headers']
+        request = dict(self.request.GET.copy())
 
-        project_data = utils.project_totals(entries, date_headers,
+        filtered_entries = entries.filter(user__in=request.get('people', []),
+            activity__in=request.get('activities', []),
+            project__status__in=request.get('project_types', []))
+
+        project_data = utils.project_totals(filtered_entries, date_headers,
             total_column=False)
         project_data = [(row, totals) for row, totals in project_data]
 
-        people = []
         data = {}
         data['dates'] = []
 
         for rows, totals in project_data:
-            for name, hours in rows:
-                people.append(name)
+            for user, hours in rows:
+                name = user
 
                 if not data.get(name):
                     data[name] = []
@@ -1559,12 +1562,30 @@ class BillableHours(ReportMixin, TemplateView):
                         'date': date,
                         'billable': hour['billable'],
                         'nonbillable': hour['nonbillable'],
-                        'total': hour['total']
+                        'total': hour['total'],
                     })
 
+        return data
+
+    def get_context_data(self, **kwargs):
+        context = super(BillableHours, self).get_context_data(**kwargs)
+        request = self.request.GET.copy()
+        data = self.get_hours_data(context)
+        people = []
+
+        for e in context['entries']:
+            name = ' '.join([e['user__first_name'], e['user__last_name']])
+            person = (e['user'], name,)
+            if person not in people:
+                people.append(person)
+
+        billable_form = timepiece_forms.BillableHoursForm(request, instance={
+            'people': people
+        })
+
         context.update({
-            'people': people,
-            'data': json.dumps(data, cls=JSONEncoder)
+            'billable_form': billable_form,
+            'data': json.dumps(data, cls=JSONEncoder),
         })
 
         return context
