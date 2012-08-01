@@ -252,7 +252,7 @@ $(function() {
                 var time = parseInt(after, 10);
                 hours = project_hours.get_by_row_col(row, col);
 
-                if(time && hours) {
+                if(time && hours && time > 0) {
                     // If we have times and hours in the row/col, then update the current hours
                     $.post(ajax_url, {
                         'project': hours.project.id,
@@ -270,7 +270,7 @@ $(function() {
                         $('.dataTable').handsontable('setDataAtCell', row, col, before);
                         showError('Could not save the project hours. Please notify an administrator.');
                     });
-                } else if(time && !hours) {
+                } else if(time && !hours && time > 0) {
                     // If the user entered a valid time, but the hours do not exist
                     // in a row/col, create them
                     project = projects.get_by_row(row);
@@ -299,7 +299,7 @@ $(function() {
                         return false;
                     }
                 } else {
-                    if(after !== '' && !hours) {
+                    if(after !== '' && !hours || time <= 0) {
                         showError('Project hours must be integers greater than zero');
                         return false;
                     }
