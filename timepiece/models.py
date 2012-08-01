@@ -3,10 +3,10 @@ import logging
 from decimal import Decimal
 
 from django.conf import settings
-from django.db import models
-from django.db.models import Q, Avg, Sum, Max, Min
 from django.contrib.auth.models import User
 from django.core.exceptions import ValidationError, NON_FIELD_ERRORS
+from django.db import models
+from django.db.models import Q, Avg, Sum, Max, Min
 
 try:
     from django.utils import timezone
@@ -1090,3 +1090,25 @@ class UserProfile(models.Model):
 
     def __unicode__(self):
         return unicode(self.user)
+
+
+class ProjectHours(models.Model):
+    week_start = models.DateField(verbose_name='start of week')
+    project = models.ForeignKey(Project)
+    user = models.ForeignKey(User)
+    hours = models.DecimalField(max_digits=8, decimal_places=2, default=0)
+    published = models.BooleanField(default=False)
+
+    def __unicode__(self):
+        return "{0} on {1} for Week of {2}".format(self.user.get_full_name(),
+                self.project, self.week_start.strftime('%B %d, %Y'))
+
+    def save(self, *args, **kwargs):
+        # Ensure that week_start is the Monday of a given week.
+        self.week_start = utils.get_week_start(self.week_start)
+        return super(ProjectHours, self).save(*args, **kwargs)
+
+    class Meta:
+        verbose_name = 'project hours entry'
+        verbose_name_plural = 'project hours entries'
+        unique_together = ('week_start', 'project', 'user')

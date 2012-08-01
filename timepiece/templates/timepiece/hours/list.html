@@ -1,0 +1,62 @@
+{% extends 'timepiece/hours/base.html' %}
+{% load url from future %}
+{% load bootstrap_toolkit %}
+
+{% block title %}Schedule for the Week of {{ week|date:'F j, Y' }}{% endblock %}
+
+{% block bodyid %}project-hours{% endblock bodyid %}
+
+{% block content %}
+    <div class="row-fluid">
+        <div class="span12">
+            <h2>Schedule for the Week of {{ week|date:'F j, Y' }}</h2>
+            <ul class="unstyled subnav">
+                <li><a href="{% url 'project_hours' %}?week_start={{ prev_week|date:'Y-m-d' }}">Prev. Week</a></li>
+                <li><a href="{% url 'project_hours' %}?week_start={{ next_week|date:'Y-m-d' }}">Next Week</a></li>
+            </ul>
+        </div>
+    </div>
+
+    <div class="row-fluid">
+        <div class="span10">
+            <form class="form-inline" accept-charset="UTF-8" method="get" action="">
+                {{ form|as_bootstrap:"inline" }}
+                <button type="submit" class="btn" name="submit">Update</button>
+            </form>
+        </div>
+        <div class="span2">
+            <a class="btn right" href="{% url 'edit_project_hours' %}?week_start={{ week|date:'Y-m-d' }}">Edit Schedule</a>
+        </div>
+    </div>
+
+    <div class="row-fluid">
+        <div class="span12">
+            {% if projects %}
+                <table class="table-striped-vertical table-bordered table-condensed">
+                    <thead>
+                        <tr>
+                            <th>Project</th>
+                            {% for id, first_name, last_name in people %}
+                                <th>{{ first_name }} {{ last_name|first }}.</th>
+                            {% endfor %}
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for id, name, entries in projects %}
+                            <tr>
+                                <td><strong>{{ name }}</strong></td>
+                                {% for entry in entries %}
+                                    <td class="hours">
+                                        {% if entry %}{{ entry|floatformat:0 }}{% endif %}
+                                    </td>
+                                {% endfor %}
+                            </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            {% else %}
+                <p>There are no entries this week.</p>
+            {% endif %}
+        </div>
+    </div>
+{% endblock content %}
