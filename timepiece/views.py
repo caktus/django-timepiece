@@ -391,13 +391,18 @@ def delete_entry(request, entry_id):
 @permission_required('timepiece.view_entry_summary')
 @render_with('timepiece/time-sheet/reports/general_ledger.html')
 def summary(request, username=None):
-    if request.GET:
-        form = timepiece_forms.DateForm(request.GET)
-        if form.is_valid():
-            from_date, to_date = form.save()
-    else:
-        form = timepiece_forms.DateForm()
-        from_date, to_date = None, None
+    date = timezone.now() - relativedelta(months=1)
+    from_date = utils.get_month_start(date).date()
+    to_date = from_date + relativedelta(months=1)
+
+    form = timepiece_forms.YearMonthForm(request.GET or None, initial={
+        'month': from_date.month,
+        'year': from_date.year
+    })
+
+    if form.is_valid():
+        from_date, to_date = form.save()
+
     entries = timepiece.Entry.no_join.values(
         'project__id',
         'project__business__id',
@@ -426,6 +431,7 @@ def summary(request, username=None):
         'project_totals': project_totals,
         'total_hours': total_hours,
         'people_totals': people_totals,
+        'from_date': from_date
     }
     return context
 
