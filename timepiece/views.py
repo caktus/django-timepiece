@@ -1218,13 +1218,17 @@ def create_edit_project(request, project_id=None):
 @permission_required('timepiece.view_payroll_summary')
 @render_with('timepiece/time-sheet/reports/summary.html')
 def payroll_summary(request):
-    year_month_form = timepiece_forms.YearMonthForm(request.GET or None)
-    if request.GET and year_month_form.is_valid():
+    date = timezone.now() - relativedelta(months=1)
+    from_date = utils.get_month_start(date).date()
+    to_date = from_date + relativedelta(months=1)
+
+    year_month_form = timepiece_forms.YearMonthForm(request.GET or None, initial={
+        'month': from_date.month,
+        'year': from_date.year
+    })
+
+    if year_month_form.is_valid():
         from_date, to_date = year_month_form.save()
-    else:
-        date = utils.add_timezone(datetime.datetime.today())
-        from_date = utils.get_month_start(date).date()
-        to_date = from_date + relativedelta(months=1)
     last_billable = utils.get_last_billable_day(from_date)
     projects = getattr(settings, 'TIMEPIECE_PROJECTS', {})
     weekQ = Q(end_time__gt=utils.get_week_start(from_date),

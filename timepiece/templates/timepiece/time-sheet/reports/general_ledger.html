@@ -48,7 +48,7 @@
                 <tbody>
                     {% for entry in project_totals %}
                         <tr>
-                            <td><a href="{% url project_time_sheet entry.project__id %}?month={{ from_date|date:'n'}}&amp;year={{ from_date|date:'Y' }}">{{ entry.project__name }}</a></td>
+                            <td><a href="{% timesheet_url 'project' entry.project__id from_date.month from_date.year %}">{{ entry.project__name }}</a></td>
                             <td class="hours">{{ entry.total_hours|floatformat:2 }}</td>
                         </tr>
                     {% endfor %}
@@ -70,7 +70,7 @@
                     {% for entry in people_totals %}
                         <tr>
                             <td>
-                                <a href="{% url view_person_time_sheet entry.user %}?month={{ from_date|date:'n'}}&amp;year={{ from_date|date:'Y' }}">
+                                <a href="{% timesheet_url 'user' entry.user from_date.month from_date.year %}">
                                     {{ entry.user__first_name}} {{ entry.user__last_name }}
                                 </a>
                             </td>
