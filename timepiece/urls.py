@@ -205,4 +205,27 @@ urlpatterns = patterns('',
         views.ContractList.as_view(),
         name='list_contracts',
     ),
+    # project hours
+    url(
+        r'^schedule/$',
+        views.ProjectHoursView.as_view(),
+        name='project_hours',
+    ),
+    url(
+        r'^schedule/edit/$',
+        views.EditProjectHoursView.as_view(),
+        name='edit_project_hours'
+    ),
+
+    # ajax views
+    url(
+        r'^ajax/hours/$',
+        views.ProjectHoursAjaxView.as_view(),
+        name='project_hours_ajax_view',
+    ),
+    url(
+        r'^ajax/hours/(?P<pk>\d+)/$',
+        views.ProjectHoursDetailView.as_view(),
+        name='project_hours_detail_view',
+    ),
 )

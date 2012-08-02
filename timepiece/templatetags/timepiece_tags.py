@@ -44,7 +44,6 @@ def bar_graph(context, name, worked, total, width=None, suffix=None):
     if left < 0:
         over = abs(left)
         left = 0
-        worked = total
         total = over + total
     return {
         'name': name, 'worked': worked,

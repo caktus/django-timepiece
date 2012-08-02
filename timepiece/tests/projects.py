@@ -10,6 +10,7 @@ except ImportError:
 
 from timepiece import models as timepiece
 from timepiece.tests.base import TimepieceDataTestCase
+from timepiece import utils
 
 
 class ProjectTestCase(TimepieceDataTestCase):
@@ -25,12 +26,11 @@ class ProjectTestCase(TimepieceDataTestCase):
         )
 
     def make_entries(self):
-        tz = timezone.get_current_timezone()
         days = [
-            timezone.make_aware(datetime.datetime(2011, 1, 1), tz),
-            timezone.make_aware(datetime.datetime(2011, 1, 28), tz),
-            timezone.make_aware(datetime.datetime(2011, 1, 31), tz),
-            timezone.make_aware(datetime.datetime(2011, 2, 1), tz),
+            utils.add_timezone(datetime.datetime(2011, 1, 1)),
+            utils.add_timezone(datetime.datetime(2011, 1, 28)),
+            utils.add_timezone(datetime.datetime(2011, 1, 31)),
+            utils.add_timezone(datetime.datetime(2011, 2, 1)),
             timezone.now(),
         ]
         self.log_time(project=self.p1, start=days[0], delta=(1, 0))

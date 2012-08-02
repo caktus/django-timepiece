@@ -12,6 +12,8 @@
 @lightgray: #DDDDDD;
 @blue: #049CDB;
 @lightblue: lighten(@blue, 20%);
+@tableBackgroundAccent: #E6E6E6;
+@tableBorder: #DDDDDD;
 
 .bg-icon(@icon) {
     background: url('../../images/icons/@{icon}') no-repeat;
@@ -157,6 +159,25 @@ body {
                 background-color: @blue !important;
             }
         }
+
+        &.table-striped-vertical {
+            th, td {
+                border-bottom: 1px solid @tableBorder;
+            }
+
+            // Double border in the body
+            tbody {
+                tr:last-child {
+                    th, td {
+                        border-bottom: 0px;
+                    }
+                }
+            }
+
+            th:nth-child(even), td:nth-child(even) {
+                background-color: @tableBackgroundAccent;
+            }
+        }
     }
 
     /*****************************************
@@ -170,7 +191,7 @@ body {
 
     #content.container-fluid {
         width: 92%;
-        margin: 0 auto;
+        margin: 60px auto;
 
         @media (max-width: 979px) {
             margin: 20px auto;
@@ -181,6 +202,37 @@ body {
     .scroll {
         width: 100%;
         overflow-x: auto;
+    }
+
+    .dataTable {
+        width: 100%;
+
+        td {
+            background-color: #FF0000;
+            color: #FFFFFF;
+        }
+
+        td:empty {
+            background-color: #FFFFFF;
+        }
+
+        td:first-child {
+            background-color: #FFFFFF;
+            color: #000000;
+            min-width: 170px;
+        }
+
+        tr:first-child, tr:nth-last-child(2) {
+            td {
+                min-width: 75px;
+                color: #000000;
+                background-color: #FFFFFF;
+            }
+        }
+    }
+
+    .inline {
+        display: inline;
     }
 
     .paste:hover {
@@ -259,6 +311,16 @@ body {
                 width: 100px;
                 margin: 0px 10px 0px 0px;
             }
+        }
+    }
+
+    &#project-hours {
+        form.right {
+            margin-left: 10px;
+        }
+
+        .hours {
+            text-align: center !important;
         }
     }
 

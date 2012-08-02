@@ -11,9 +11,11 @@ except ImportError:
 
 from timepiece.templatetags.timepiece_tags import get_active_hours
 from timepiece.tests.base import TimepieceDataTestCase
+from timepiece import utils
 
 
 class DashboardTestCase(TimepieceDataTestCase):
+
     def setUp(self):
         super(DashboardTestCase, self).setUp()
         self.unpriveleged_user = User.objects.create_user(
@@ -49,25 +51,56 @@ class DashboardTestCase(TimepieceDataTestCase):
 
     def test_work_this_week(self):
         """
-        Entries, including the active one, should show up
-        in the Work This Week table.
+        Work This Week table should contain hours worked on projects this week,
+        including from active entries.
         """
-        self.create_entry({
-            'start_time': self.now,
-            'end_time': self.now + datetime.timedelta(hours=1),
+        projects = []
+        projects.append(self.create_project(billable=True))
+        projects.append(self.create_project(billable=False))
+        past = []
+        past.append(self.create_entry({  # 15 minutes
+            'start_time': self.now + datetime.timedelta(minutes=5),
+            'end_time': self.now + datetime.timedelta(minutes=20),
+            'project': projects[0],
+            'activity': self.create_activity(data={'billable': True}),
+        }))
+        past.append(self.create_entry({  # 15 minutes
+            'start_time': self.now + datetime.timedelta(minutes=25),
+            'end_time': self.now + datetime.timedelta(minutes=40),
+            'project': projects[0],
+            'activity': self.create_activity(data={'billable': True}),
+        }))
+        past.append(self.create_entry({  # 60 minutes
+            'start_time': self.now + datetime.timedelta(minutes=45),
+            'end_time': self.now + datetime.timedelta(minutes=105),
+            'project': projects[1],
+            'activity': self.create_activity(data={'billable': False}),
+        }))
+        current = self.create_entry({  # 30 minutes
+            'start_time': self.now - datetime.timedelta(minutes=30),
+            'project': projects[0],
+            'activity': self.create_activity(data={'billable': True}),
         })
-        entry = self.create_entry({
-            'start_time': self.now + datetime.timedelta(hours=2),
-            'project': self.create_project(billable=True)
-        })
-        hours = get_active_hours(entry)
-        total_hours = Decimal('%.2f' % 1.0) + hours
+        current_hours = get_active_hours(current)
+        total_hours = sum([p.hours for p in past]) + current_hours
 
         self.client.login(username='user', password='abc')
-
         response = self.client.get(self.url)
         context = response.context
+        self.assertEquals(len(context['my_active_entries']), 1)
+        self.assertEquals(get_active_hours(context['my_active_entries'][0]), 
+                current_hours)
+        self.assertEquals(len(context['project_entries']), 2)
+        for entry in context['project_entries']:
+            if entry['project__pk'] == projects[0].pk:
+                self.assertEquals(entry['sum'], Decimal('0.50'))
+            else:
+                self.assertEquals(entry['sum'], Decimal('1.00'))
+        self.assertEquals(len(context['activity_entries']), 2)
+        for entry in context['activity_entries']:
+            self.assertEquals(entry['sum'], Decimal('1.00'))
         self.assertEquals(context['current_total'], total_hours)
+        
 
     def test_time_detail(self):
         """

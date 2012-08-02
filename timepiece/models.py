@@ -3,10 +3,10 @@ import logging
 from decimal import Decimal
 
 from django.conf import settings
-from django.db import models
-from django.db.models import Q, Avg, Sum, Max, Min
 from django.contrib.auth.models import User
 from django.core.exceptions import ValidationError, NON_FIELD_ERRORS
+from django.db import models
+from django.db.models import Q, Avg, Sum, Max, Min
 
 try:
     from django.utils import timezone
@@ -317,6 +317,7 @@ class EntryQuerySet(models.query.QuerySet):
 
 
 class EntryManager(models.Manager):
+
     def get_query_set(self):
         qs = EntryQuerySet(self.model)
         qs = qs.select_related('activity', 'project__type')
@@ -339,6 +340,7 @@ class EntryManager(models.Manager):
 
 
 class EntryWorkedManager(models.Manager):
+
     def get_query_set(self):
         qs = EntryQuerySet(self.model)
         projects = getattr(settings, 'TIMEPIECE_PROJECTS', {})
@@ -843,6 +845,7 @@ class ContractMilestone(models.Model):
 
 
 class AssignmentManager(models.Manager):
+
     def active_during_week(self, week, next_week):
         q = Q(contract__end_date__gte=week, contract__end_date__lt=next_week)
         q |= Q(contract__start_date__gte=week,
@@ -1012,6 +1015,7 @@ class ContractAssignment(models.Model):
 
 
 class AllocationManager(models.Manager):
+
     def during_this_week(self, user, day=None):
         week = utils.get_week_start(day=day)
         return self.get_query_set().filter(
@@ -1086,3 +1090,25 @@ class UserProfile(models.Model):
 
     def __unicode__(self):
         return unicode(self.user)
+
+
+class ProjectHours(models.Model):
+    week_start = models.DateField(verbose_name='start of week')
+    project = models.ForeignKey(Project)
+    user = models.ForeignKey(User)
+    hours = models.DecimalField(max_digits=8, decimal_places=2, default=0)
+    published = models.BooleanField(default=False)
+
+    def __unicode__(self):
+        return "{0} on {1} for Week of {2}".format(self.user.get_full_name(),
+                self.project, self.week_start.strftime('%B %d, %Y'))
+
+    def save(self, *args, **kwargs):
+        # Ensure that week_start is the Monday of a given week.
+        self.week_start = utils.get_week_start(self.week_start)
+        return super(ProjectHours, self).save(*args, **kwargs)
+
+    class Meta:
+        verbose_name = 'project hours entry'
+        verbose_name_plural = 'project hours entries'
+        unique_together = ('week_start', 'project', 'user')

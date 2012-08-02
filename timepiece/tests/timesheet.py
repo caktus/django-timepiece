@@ -119,12 +119,11 @@ class MyLedgerTest(TimepieceDataTestCase):
         self.p2 = self.create_project(billable=False, name='2')
         self.p4 = self.create_project(billable=True, name='4')
         self.p3 = self.create_project(billable=False, name='1')
-        tz = timezone.get_current_timezone()
         days = [
-            timezone.make_aware(datetime.datetime(2011, 1, 1), tz),
-            timezone.make_aware(datetime.datetime(2011, 1, 28), tz),
-            timezone.make_aware(datetime.datetime(2011, 1, 31), tz),
-            timezone.make_aware(datetime.datetime(2011, 2, 1), tz),
+            utils.add_timezone(datetime.datetime(2011, 1, 1)),
+            utils.add_timezone(datetime.datetime(2011, 1, 28)),
+            utils.add_timezone(datetime.datetime(2011, 1, 31)),
+            utils.add_timezone(datetime.datetime(2011, 2, 1)),
             timezone.now(),
         ]
         self.log_time(project=self.p1, start=days[0], delta=(1, 0))
@@ -526,10 +525,7 @@ class AutoActivityTest(TimepieceDataTestCase):
         """The worker has several entries on a project. Use the most recent"""
         self.client.login(username='user', password='abc')
         for day in xrange(0, 10):
-            this_day = timezone.make_aware(
-                datetime.datetime(2011, 1, 1),
-                timezone.get_current_timezone(),
-            )
+            this_day = utils.add_timezone(datetime.datetime(2011, 1, 1))
             this_day += datetime.timedelta(days=day)
             activity = self.activity if day == 9 else self.devl_activity
             self.log_time(start=this_day, project=self.project,
@@ -544,10 +540,7 @@ class AutoActivityTest(TimepieceDataTestCase):
         project1 = self.project
         project2 = self.project2
         for day in xrange(0, 10):
-            this_day = timezone.make_aware(
-                datetime.datetime(2011, 1, 1),
-                timezone.get_current_timezone()
-            )
+            this_day = utils.add_timezone(datetime.datetime(2011, 1, 1))
             this_day += datetime.timedelta(days=day)
             #Cycle through projects and activities
             project = project1 if day % 2 == 0 else project2
@@ -1373,18 +1366,17 @@ class TestTotals(TimepieceDataTestCase):
 
     def testGroupedTotals(self):
         self.client.login(username='user', password='abc')
-        tz = timezone.get_current_timezone()
         days = [
-            timezone.make_aware(datetime.datetime(2010, 12, 20), tz),
-            timezone.make_aware(datetime.datetime(2010, 12, 27), tz),
-            timezone.make_aware(datetime.datetime(2010, 12, 28), tz),
-            timezone.make_aware(datetime.datetime(2011, 1, 3), tz),
-            timezone.make_aware(datetime.datetime(2011, 1, 4), tz),
-            timezone.make_aware(datetime.datetime(2011, 1, 10), tz),
-            timezone.make_aware(datetime.datetime(2011, 1, 16), tz),
-            timezone.make_aware(datetime.datetime(2011, 1, 17), tz),
-            timezone.make_aware(datetime.datetime(2011, 1, 18), tz),
-            timezone.make_aware(datetime.datetime(2011, 2, 2), tz)
+            utils.add_timezone(datetime.datetime(2010, 12, 20)),
+            utils.add_timezone(datetime.datetime(2010, 12, 27)),
+            utils.add_timezone(datetime.datetime(2010, 12, 28)),
+            utils.add_timezone(datetime.datetime(2011, 1, 3)),
+            utils.add_timezone(datetime.datetime(2011, 1, 4)),
+            utils.add_timezone(datetime.datetime(2011, 1, 10)),
+            utils.add_timezone(datetime.datetime(2011, 1, 16)),
+            utils.add_timezone(datetime.datetime(2011, 1, 17)),
+            utils.add_timezone(datetime.datetime(2011, 1, 18)),
+            utils.add_timezone(datetime.datetime(2011, 2, 2))
         ]
         # Each week has two days of entries, except 12-20, and 2-2 but these
         # are excluded in the timespan queryset
@@ -1395,7 +1387,7 @@ class TestTotals(TimepieceDataTestCase):
                 self.log_time(project=self.p2, start=day, delta=(1, 0))
             else:
                 self.log_time(project=self.p3, start=day, delta=(1, 0))
-        date = timezone.make_aware(datetime.datetime(2011, 1, 19), tz)
+        date = utils.add_timezone(datetime.datetime(2011, 1, 19))
         from_date = utils.get_month_start(date)
         to_date = from_date + relativedelta(months=1)
         first_week = utils.get_week_start(from_date)
@@ -1495,13 +1487,11 @@ class HourlySummaryTest(TimepieceDataTestCase):
         This occurs in April 2012, so we are using that month
         as the basis for out test case
         """
-        april = timezone.make_aware(
-            datetime.datetime(month=4, day=1, year=2012),
-            timezone.get_current_timezone(),
+        april = utils.add_timezone(
+            datetime.datetime(month=4, day=1, year=2012)
         )
-        march = timezone.make_aware(
-            datetime.datetime(month=3, day=26, year=2012),
-            timezone.get_current_timezone(),
+        march = utils.add_timezone(
+            datetime.datetime(month=3, day=26, year=2012)
         )
         self.create_entry({
             'user': self.user,

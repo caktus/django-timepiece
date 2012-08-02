@@ -50,7 +50,9 @@
     {% endblock navigation %}
 
     <div id="content" class="container-fluid">
-        {% include "timepiece/messages.html" %}
+        {% block messages %}
+            {% include "timepiece/messages.html" %}
+        {% endblock messages %}
 
         {% if user.is_authenticated %}
             {% block breadcrumb %}

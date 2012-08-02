@@ -20,6 +20,7 @@ try:
 except ImportError:
     from timepiece import timezone
 
+
 reverse_lazy = lazy(reverse, str)
 
 
@@ -88,6 +89,22 @@ DEFAULT_TIME_FORMATS = [
 ]
 
 
+def add_timezone(value, tz=None):
+    """If the value is naive, then the timezone is added to it.  
+
+    If no timezone is given, timezone.get_current_timezone() is used.
+    """   
+    if tz == None:
+        tz = timezone.get_current_timezone()
+    try:
+        if timezone.is_naive(value):
+            return timezone.make_aware(value, tz)
+    except AttributeError:  # 'datetime.date' object has no attribute 'tzinfo'
+        dt = datetime.datetime.combine(value, datetime.time())
+        return timezone.make_aware(dt, tz)
+    return value
+
+
 def parse_time(time_str, input_formats=None):
     """
     This function will take a string with some sort of representation of time
@@ -105,8 +122,7 @@ def parse_time(time_str, input_formats=None):
             continue
         else:
             # turn the time_struct into a datetime.time object
-            return timezone.make_aware(datetime.time(*value[3:6]),
-                timezone.get_current_timezone())
+            return add_timezone(datetime.time(*value[3:6]))
 
     # return None if there's no matching format
     return None
@@ -127,19 +143,17 @@ def get_total_time(seconds):
 def get_month_start(from_day=None):
     if not from_day:
         from_day = datetime.date.today()
-    from_day = datetime.datetime.combine(from_day,
-        datetime.time(tzinfo=timezone.get_current_timezone()))
+    from_day = add_timezone(from_day)
     return from_day.replace(day=1)
 
 
 def get_week_start(day=None):
     if not day:
         day = datetime.date.today()
-    isoweekday = day.isoweekday()
-    if isoweekday != 1:
-        day = day - datetime.timedelta(days=isoweekday - 1)
-    day = datetime.datetime.combine(day,
-        datetime.time(tzinfo=timezone.get_current_timezone()))
+    days_since_monday = day.weekday()
+    if days_since_monday != 0:
+        day = day - datetime.timedelta(days=days_since_monday)
+    day = add_timezone(day)
     return day
 
 
@@ -147,25 +161,14 @@ def get_last_billable_day(day=None):
     if not day:
         day = datetime.date.today()
     day += relativedelta(months=1)
-    return get_week_start(get_month_start(day)) - \
-        datetime.timedelta(days=1)
+    return get_week_start(get_month_start(day)) - datetime.timedelta(days=1)
 
 
 def generate_dates(start=None, end=None, by='week'):
-    try:
-        if not timezone.is_aware(start):
-            start = timezone.make_aware(start, timezone.get_current_timezone())
-    except AttributeError:
-        if start:
-            start = datetime.datetime.combine(start,
-                datetime.time(tzinfo=timezone.get_current_timezone()))
-    try:
-        if not timezone.is_aware(end):
-            end = timezone.make_aware(end, timezone.get_current_timezone())
-    except AttributeError:
-        if end:
-            end = datetime.datetime.combine(end,
-                datetime.time(tzinfo=timezone.get_current_timezone()))
+    if start:
+        start = add_timezone(start)
+    if end:
+        end = add_timezone(end)
     if by == 'month':
         start = get_month_start(start)
         return rrule.rrule(rrule.MONTHLY, dtstart=start, until=end)
@@ -223,8 +226,7 @@ def get_hours(entries):
 def daily_summary(day_entries):
     projects = {}
     all_day = {}
-    for name, entries in groupby(day_entries,
-                                           lambda x: x['project__name']):
+    for name, entries in groupby(day_entries, lambda x: x['project__name']):
         hours = get_hours(entries)
         projects[name] = hours
         for key in hours.keys():
@@ -247,13 +249,7 @@ def grouped_totals(entries):
                                                         'project__name')
     weeks = {}
     for week, week_entries in groupby(weekly, lambda x: x['date']):
-        try:
-            if timezone.is_naive(week):
-                week = timezone.make_aware(week,
-                    timezone.get_current_timezone())
-        except AttributeError:
-            week = datetime.datetime.combine(week,
-                timezone.get_current_timezone())
+        week = add_timezone(week)
         weeks[week] = get_hours(week_entries)
     days = []
     last_week = None
@@ -459,3 +455,30 @@ def payroll_totals(month_work_entries, month_leave_entries):
     if rows:
         rows.append(totals)
     return labels, rows
+
+
+def get_project_hours_for_week(week_start):
+    """
+    Gets all ProjectHours entries in the 7-day period beginning on week_start.
+
+    Returns a values set, ordered by the project id.
+    """
+    week_end = week_start + relativedelta(days=7)
+    ProjectHours = get_model('timepiece', 'ProjectHours')
+    qs = ProjectHours.objects.filter(week_start__gte=week_start,
+            week_start__lt=week_end)
+    qs = qs.values('project__id', 'project__name', 'user__id',
+            'user__first_name', 'user__last_name', 'hours')
+    qs = qs.order_by('-project__type__billable', 'project__name',)
+    return qs
+
+
+def get_people_from_project_hours(project_hours):
+    """
+    Gets a list of the distinct people included in the project hours entries,
+    ordered by name.
+    """
+    people = project_hours.values_list('user__id', 'user__first_name',
+            'user__last_name').distinct().order_by('user__first_name',
+            'user__last_name')
+    return people

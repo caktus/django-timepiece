@@ -184,3 +184,14 @@ admin.site.register(timepiece.Location, LocationAdmin)
 class AllocationAdmin(admin.ModelAdmin):
     list_display = ('date', 'hours', 'hours_worked', 'hours_left',)
 admin.site.register(timepiece.AssignmentAllocation, AllocationAdmin)
+
+
+class ProjectHoursAdmin(admin.ModelAdmin):
+    list_display = ('_person', 'project', 'week_start', 'hours', 'published')
+
+    def _person(self, obj):
+        return obj.user.get_full_name()
+    _person.short_description = 'Person'
+    _person.admin_order_field = 'user__last_name'
+
+admin.site.register(timepiece.ProjectHours, ProjectHoursAdmin)
