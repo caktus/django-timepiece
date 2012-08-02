@@ -366,10 +366,10 @@ STATUS_CHOICES.extend(timepiece.ENTRY_STATUS)
 class DateForm(forms.Form):
     DATE_FORMAT = '%m/%d/%Y'
 
-    from_date = forms.DateField(label="From", required=True,
+    from_date = forms.DateField(label="From", required=False,
         input_formats=(DATE_FORMAT,),
         widget=forms.DateInput(format=DATE_FORMAT))
-    to_date = forms.DateField(label="To", required=True,
+    to_date = forms.DateField(label="To", required=False,
         input_formats=(DATE_FORMAT,),
         widget=forms.DateInput(format=DATE_FORMAT))
     status = forms.ChoiceField(choices=STATUS_CHOICES,
