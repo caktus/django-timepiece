@@ -206,13 +206,17 @@ def date_filter(func):
 
 
 def get_hours(entries):
-    hours = {'total': 0}
+    hours = {
+        'total': 0,
+        'billable': 0,
+        'non_billable': 0
+    }
     for entry in entries:
         hours['total'] += entry['hours']
         if entry['billable']:
-            hours['billable'] = entry['hours']
+            hours['billable'] += entry['hours']
         else:
-            hours['non_billable'] = entry['hours']
+            hours['non_billable'] += entry['hours']
     return hours
 
 
