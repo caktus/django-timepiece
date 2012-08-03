@@ -482,3 +482,19 @@ def get_people_from_project_hours(project_hours):
             'user__last_name').distinct().order_by('user__first_name',
             'user__last_name')
     return people
+
+
+def process_dates(dates, start=None, end=None):
+    """
+    A helper function to grab date strings from a dictionary
+    or set detaults
+    """
+    from_date = dates.get('from_date', None)
+    to_date = dates.get('to_date', None)
+
+    from_date = datetime.datetime.strptime(from_date, '%m/%d/%Y') \
+        if from_date else start
+    to_date = datetime.datetime.strptime(to_date, '%m/%d/%Y') \
+        if to_date else end
+
+    return from_date, to_date

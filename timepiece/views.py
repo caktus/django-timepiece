@@ -1409,37 +1409,20 @@ class ReportMixin(object):
 
     def get_context_data(self, **kwargs):
         context = super(ReportMixin, self).get_context_data(**kwargs)
-        request = self.request.GET.copy()
 
-        from_date = request.get('from_date', None)
-        to_date = request.get('to_date', None)
+        end = utils.get_month_start(timezone.now())
+        from_date, to_date = utils.process_dates(self.request.GET,
+            end - relativedelta(months=1), end)
 
-        from_date = datetime.datetime.strptime(from_date, '%m/%d/%Y') \
-            if from_date else timezone.now() - relativedelta(months=1)
-        to_date = datetime.datetime.strptime(to_date, '%m/%d/%Y') \
-            if to_date else timezone.now()
-
-        initial = {
+        date_form = timepiece_forms.DateForm({
             'from_date': from_date,
             'to_date': to_date,
-        }
-
-        date_form = timepiece_forms.DateForm(initial)
-
-        if date_form.is_valid():
-            from_date, to_date = date_form.save()
-            status = date_form.cleaned_data.get('status')
-            activity = date_form.cleaned_data.get('activity')
-        else:
-            date_form = timepiece_forms.DateForm()
+        })
 
         header_to = to_date - relativedelta(days=1)
         trunc = timepiece_forms.ProjectFiltersForm.DEFAULT_TRUNC
         query = Q(end_time__gt=utils.get_week_start(from_date),
                   end_time__lt=to_date)
-
-        query = Q(end_time__gt=utils.get_week_start(from_date),
-            end_time__lt=to_date)
 
         project_form = timepiece_forms.ProjectFiltersForm(self.request.GET)
 
@@ -1450,8 +1433,6 @@ class ReportMixin(object):
                 query &= ~Q(project__in=projects.values())
             if project_form.cleaned_data['pj_select']:
                 query &= Q(project__in=project_form.cleaned_data['pj_select'])
-        else:
-            project_form = timepiece_forms.ProjectFiltersForm()
 
         entries = timepiece.Entry.objects.date_trunc(trunc,
             extra_values=('activity', 'project__status')).filter(query)
@@ -1476,10 +1457,8 @@ class HourlyReport(ReportMixin, CSVMixin, TemplateView):
         export = request.GET.get('export', False)
         context = self.get_context_data()
 
-        if export:
-            return CSVMixin.render_to_response(self, context)
-        else:
-            return TemplateView.render_to_response(self, context)
+        kls = CSVMixin if export else TemplateView
+        return kls.render_to_response(self, context)
 
     def get_filename(self, context):
         request = self.request.GET.copy()

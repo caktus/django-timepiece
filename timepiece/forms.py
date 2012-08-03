@@ -395,6 +395,7 @@ class DateForm(forms.Form):
     def save(self):
         from_date = self.cleaned_data.get('from_date', '')
         to_date = self.cleaned_data.get('to_date', '')
+
         if to_date:
             to_date += timedelta(days=1)
         return (from_date, to_date)

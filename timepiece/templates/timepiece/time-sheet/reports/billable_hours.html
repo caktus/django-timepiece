@@ -40,6 +40,9 @@
         <div class="span5">
             <form class="form-inline date-form" method="get">
                 {{ date_form|as_bootstrap:"inline" }}
+                <div class="hidden">
+                    {{ billable_form }}
+                </div>
                 <input type="hidden" name="trunc" value="week" />
                 <input class="btn" type="submit" value="Update" />
             </form>
@@ -50,8 +53,9 @@
         <div class="span3">
             <form class="form-vertical filter" method="get">
                 {{ billable_form|as_bootstrap }}
-                <input type="hidden" name="to_date" value="{{ to_date|date:'m/d/Y' }}" />
-                <input type="hidden" name="from_date" value="{{ from_date|date:'m/d/Y' }}" />
+                <div class="hidden">
+                    {{ date_form }}
+                </div>
                 <input class="btn" type="submit" name="submit" value="Update" />
             </form>
         </div>
