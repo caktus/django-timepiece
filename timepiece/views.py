@@ -1519,24 +1519,19 @@ class BillableHours(ReportMixin, TemplateView):
 
         project_data = utils.project_totals(filtered_entries, date_headers,
             total_column=False)
-        project_data = [(row, totals) for row, totals in project_data]
 
-        hours_data = {}
-        hours_data['dates'] = []
+        hours_data = {'dates': []}
 
         for rows, totals in project_data:
             for user, hours in rows:
-                name = user
-
-                if not hours_data.get(name):
-                    hours_data[name] = []
+                hours_data[user] = []
 
                 for hour in hours:
                     date = hour['day'].strftime('%m/%d/%Y')
                     if date not in hours_data['dates']:
                         hours_data['dates'].append(date)
 
-                    hours_data[name].append({
+                    hours_data.get(user, []).append({
                         'date': date,
                         'billable': hour['billable'],
                         'nonbillable': hour['nonbillable'],
