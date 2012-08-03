@@ -590,10 +590,12 @@ class BillableHoursForm(forms.Form):
     people = forms.MultipleChoiceField(required=False)
     activities = forms.ModelMultipleChoiceField(
         queryset=timepiece.Activity.objects.all(),
-        required=False)
+        required=False,
+        initial=timepiece.Activity.objects.all())
     project_types = forms.ModelMultipleChoiceField(
         queryset=timepiece.Attribute.objects.all(),
-        required=False)
+        required=False,
+        initial=timepiece.Attribute.objects.all())
 
     def __init__(self, *args, **kwargs):
         choices = kwargs.pop('choices', None)
@@ -603,6 +605,7 @@ class BillableHoursForm(forms.Form):
             people = choices.get('people', [])
             if people:
                 self.fields['people'].choices = people
+                self.fields['people'].initial = [p[0] for p in people]
 
     def save(self):
         return {

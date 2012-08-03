@@ -1508,11 +1508,14 @@ class BillableHours(ReportMixin, TemplateView):
     template_name = 'timepiece/time-sheet/reports/billable_hours.html'
 
     def get_hours_data(self, data, entries, date_headers):
-        users = data.get('people', entries.values_list('user', flat=True))
-        activities = data.get('activities',
-            timepiece.Activity.objects.values_list('pk', flat=True))
-        types = data.get('project_types',
-            timepiece.Attribute.objects.values_list('pk', flat=True))
+        users = data.get('people', '') or entries.order_by('user') \
+            .values_list('user', flat=True)
+
+        activities = data.get('activities', '') or \
+            timepiece.Activity.objects.values_list('pk', flat=True)
+
+        types = data.get('project_types', '') or \
+            timepiece.Attribute.objects.values_list('pk', flat=True)
 
         filtered_entries = entries.filter(user__in=users,
             activity__in=activities, project__status__in=types)
@@ -1552,7 +1555,7 @@ class BillableHours(ReportMixin, TemplateView):
             if person not in people:
                 people.append(person)
 
-        form = timepiece_forms.BillableHoursForm(self.request.GET,
+        form = timepiece_forms.BillableHoursForm(self.request.GET or None,
             choices={'people': people})
 
         form_data = form.save() if form.is_valid() else {}
