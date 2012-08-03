@@ -49,7 +49,7 @@
                 <ul>
                     {% for pk, first, last in unverified %}
                         <li>
-                            <a href="{% timesheet_url 'user' pk from_date.month from_date.year %}">{{ first }} {{ last }}</a>
+                            <a href="{% timesheet_url 'user' pk from_date %}">{{ first }} {{ last }}</a>
                         </li>
                     {% endfor %}
                 </ul>
@@ -59,7 +59,7 @@
                 <ul>
                     {% for pk, first, last in unapproved %}
                         <li>
-                            <a href="{% timesheet_url 'user' pk from_date.month from_date.year %}">{{ first }} {{ last }}</a>
+                            <a href="{% timesheet_url 'user' pk from_date %}">{{ first }} {{ last }}</a>
                         </li>
                     {% endfor %}
                 </ul>

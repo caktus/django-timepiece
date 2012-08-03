@@ -222,7 +222,7 @@ def work_days(end):
 
 
 @register.simple_tag
-def timesheet_url(type, pk, month, year):
+def timesheet_url(type, pk, date):
     if type == 'project':
         name = 'project_time_sheet'
     elif type == 'user':
@@ -230,8 +230,8 @@ def timesheet_url(type, pk, month, year):
 
     url = reverse(name, args=(pk,))
     params = {
-        'month': month,
-        'year': year
+        'month': date.month,
+        'year': date.year
     }
 
     return '?'.join((url, urllib.urlencode(params),))
