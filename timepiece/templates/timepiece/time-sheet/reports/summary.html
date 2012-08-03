@@ -48,7 +48,9 @@
                 <p><strong>Warning:</strong> The following users have <strong>unverified</strong> time during this period:</p>
                 <ul>
                     {% for pk, first, last in unverified %}
-                        <li><a href="{% url 'view_person_time_sheet' pk %}?month={{from_date|date:"n"}}&year={{from_date|date:"Y"}}">{{ first }} {{ last }}</a></li>
+                        <li>
+                            <a href="{% timesheet_url 'user' pk from_date %}">{{ first }} {{ last }}</a>
+                        </li>
                     {% endfor %}
                 </ul>
             {% endif %}
@@ -56,7 +58,9 @@
                 <p><strong>Warning:</strong> The following users have <strong>unapproved</strong> time during this period:</p>
                 <ul>
                     {% for pk, first, last in unapproved %}
-                        <li><a href="{% url 'view_person_time_sheet' pk %}?month={{from_date|date:"n"}}&year={{from_date|date:"Y"}}">{{ first }} {{ last }}</a></li>
+                        <li>
+                            <a href="{% timesheet_url 'user' pk from_date %}">{{ first }} {{ last }}</a>
+                        </li>
                     {% endfor %}
                 </ul>
             {% endif %}
