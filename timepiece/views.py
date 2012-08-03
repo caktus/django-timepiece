@@ -1419,7 +1419,12 @@ class ReportMixin(object):
         to_date = datetime.datetime.strptime(to_date, '%m/%d/%Y') \
             if to_date else timezone.now()
 
-        date_form = timepiece_forms.DateForm(request or None)
+        initial = {
+            'from_date': from_date,
+            'to_date': to_date,
+        }
+
+        date_form = timepiece_forms.DateForm(initial)
 
         if date_form.is_valid():
             from_date, to_date = date_form.save()
@@ -1523,62 +1528,65 @@ class HourlyReport(ReportMixin, CSVMixin, TemplateView):
 class BillableHours(ReportMixin, TemplateView):
     template_name = 'timepiece/time-sheet/reports/billable_hours.html'
 
-    def get_hours_data(self, context):
-        entries = context['entries']
-        date_headers = context['date_headers']
-        request = dict(self.request.GET.copy())
+    def get_hours_data(self, data, entries, date_headers):
+        users = data.get('people', entries.values_list('user', flat=True))
+        activities = data.get('activities',
+            timepiece.Activity.objects.values_list('pk', flat=True))
+        types = data.get('project_types',
+            timepiece.Attribute.objects.values_list('pk', flat=True))
 
-        filtered_entries = entries.filter(user__in=request.get('people', []),
-            activity__in=request.get('activities', []),
-            project__status__in=request.get('project_types', []))
+        filtered_entries = entries.filter(user__in=users,
+            activity__in=activities, project__status__in=types)
 
         project_data = utils.project_totals(filtered_entries, date_headers,
             total_column=False)
         project_data = [(row, totals) for row, totals in project_data]
 
-        data = {}
-        data['dates'] = []
+        hours_data = {}
+        hours_data['dates'] = []
 
         for rows, totals in project_data:
             for user, hours in rows:
                 name = user
 
-                if not data.get(name):
-                    data[name] = []
+                if not hours_data.get(name):
+                    hours_data[name] = []
 
                 for hour in hours:
                     date = hour['day'].strftime('%m/%d/%Y')
-                    if date not in data['dates']:
-                        data['dates'].append(date)
+                    if date not in hours_data['dates']:
+                        hours_data['dates'].append(date)
 
-                    data[name].append({
+                    hours_data[name].append({
                         'date': date,
                         'billable': hour['billable'],
                         'nonbillable': hour['nonbillable'],
                         'total': hour['total'],
                     })
 
-        return data
+        return hours_data
 
     def get_context_data(self, **kwargs):
         context = super(BillableHours, self).get_context_data(**kwargs)
-        request = self.request.GET.copy()
-        data = self.get_hours_data(context)
+        entries = context['entries']
+        date_headers = context['date_headers']
         people = []
 
-        for e in context['entries']:
+        for e in entries:
             name = ' '.join([e['user__first_name'], e['user__last_name']])
             person = (e['user'], name,)
             if person not in people:
                 people.append(person)
 
-        billable_form = timepiece_forms.BillableHoursForm(request, instance={
-            'people': people
-        })
+        form = timepiece_forms.BillableHoursForm(self.request.GET,
+            choices={'people': people})
+
+        form_data = form.save() if form.is_valid() else {}
+        hours_data = self.get_hours_data(form_data, entries, date_headers)
 
         context.update({
-            'billable_form': billable_form,
-            'data': json.dumps(data, cls=DecimalEncoder),
+            'billable_form': form,
+            'data': json.dumps(hours_data, cls=DecimalEncoder),
         })
 
         return context

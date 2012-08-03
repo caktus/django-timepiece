@@ -586,30 +586,29 @@ class DeleteForm(forms.Form):
 
 
 class BillableHoursForm(forms.Form):
-    activity_qs = timepiece.Activity.objects.all()
-    type_qs = timepiece.Attribute.objects.all()
-
-    people = forms.MultipleChoiceField(widget=forms.CheckboxSelectMultiple,
+    people = forms.MultipleChoiceField(required=False)
+    activities = forms.ModelMultipleChoiceField(
+        queryset=timepiece.Activity.objects.all(),
         required=False)
-    activities = forms.MultipleChoiceField(widget=forms.CheckboxSelectMultiple,
-        choices=activity_qs.values_list('pk', 'name'),
-        required=False,
-        initial=activity_qs.values_list('pk', flat=True))
-    project_types = forms.MultipleChoiceField(
-        widget=forms.CheckboxSelectMultiple,
-        choices=type_qs.values_list('pk', 'label'),
-        required=False,
-        initial=type_qs.values_list('label', flat=True))
+    project_types = forms.ModelMultipleChoiceField(
+        queryset=timepiece.Attribute.objects.all(),
+        required=False)
 
     def __init__(self, *args, **kwargs):
-        instance = kwargs.pop('instance', None)
+        choices = kwargs.pop('choices', None)
         super(BillableHoursForm, self).__init__(*args, **kwargs)
 
-        if instance:
-            people = instance.get('people', [])
+        if choices:
+            people = choices.get('people', [])
             if people:
                 self.fields['people'].choices = people
-                self.fields['people'].initial = [p[0] for p in people]
+
+    def save(self):
+        return {
+            'people': self.cleaned_data['people'],
+            'activities': self.cleaned_data['activities'],
+            'project_types': self.cleaned_data['project_types']
+        }
 
 
 class ProjectHoursSearchForm(forms.Form):
