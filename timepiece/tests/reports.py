@@ -1,7 +1,8 @@
 import datetime
-from dateutil import relativedelta
+from dateutil.relativedelta import relativedelta
 from decimal import Decimal
 from random import randint
+import json
 
 from django.conf import settings
 from django.core.urlresolvers import reverse
@@ -20,9 +21,9 @@ from timepiece import forms as timepiece_forms
 from timepiece import utils
 
 
-class TestHourlyReport(TimepieceDataTestCase):
+class ReportsHelperBase(TimepieceDataTestCase):
     def setUp(self):
-        super(TestHourlyReport, self).setUp()
+        super(ReportsHelperBase, self).setUp()
         self.sick = self.create_project()
         self.vacation = self.create_project()
         settings.TIMEPIECE_PROJECTS = {
@@ -44,10 +45,9 @@ class TestHourlyReport(TimepieceDataTestCase):
             utils.add_timezone(datetime.datetime(2011, 1, 17)),
             utils.add_timezone(datetime.datetime(2011, 1, 18)),
         ]
-        self.url = reverse('hourly_report')
 
     def make_entries(self, user=None, projects=None, dates=None,
-                     hours=1, minutes=0):
+                 hours=1, minutes=0):
         """Make several entries to help with reports tests"""
         if not user:
             user = self.user
@@ -77,8 +77,14 @@ class TestHourlyReport(TimepieceDataTestCase):
                 day = day.date()
             self.assertEqual(day, dates[index].date())
 
+
+class TestHourlyReport(ReportsHelperBase):
+    def setUp(self):
+        super(TestHourlyReport, self).setUp()
+        self.url = reverse('hourly_report')
+
     def testGenerateMonths(self):
-        dates = [utils.add_timezone(datetime.datetime(2011, month, 1)) 
+        dates = [utils.add_timezone(datetime.datetime(2011, month, 1))
             for month in xrange(1, 13)]
         start = datetime.date(2011, 1, 1)
         end = datetime.date(2011, 12, 1)
@@ -418,3 +424,67 @@ class TestHourlyReport(TimepieceDataTestCase):
         self.user.save()
         response = self.client.get(self.url)
         self.assertEqual(response.status_code, 200)
+
+
+class TestBillableHours(ReportsHelperBase):
+    def setUp(self):
+        super(TestBillableHours, self).setUp()
+        self.url = reverse('billable_hours')
+        self.permission = Permission.objects.filter(
+            codename='view_entry_summary'
+        )
+        self.admin = self.create_user('admin', 'e@e.com', 'abc')
+        self.admin.user_permissions = self.permission
+        self.from_date = datetime.datetime(2011, 1, 2)
+        self.to_date = datetime.datetime(2011, 1, 4)
+        self.dates_data = ['12/27/2010', '01/03/2011']
+
+    def get_entries_data(self):
+        projects = getattr(settings, 'TIMEPIECE_PROJECTS', {})
+        query = Q(end_time__gt=utils.get_week_start(self.from_date),
+            end_time__lt=self.to_date)
+        query &= ~Q(project__in=projects.values())
+        entries = timepiece.Entry.objects.date_trunc('week',
+            extra_values=('activity', 'project__status')).filter(query)
+        return entries
+
+    def test_access_permission(self):
+        """
+        You should be able to access the page if you have the
+        correct permissions
+        """
+        self.client.login(username='admin', password='abc')
+
+        response = self.client.get(self.url)
+        self.assertEqual(response.status_code, 200)
+
+    def test_access_no_permission(self):
+        """A regular should have no access to the page"""
+        self.client.login(username='user', password='abc')
+
+        response = self.client.get(self.url)
+        self.assertEqual(response.status_code, 302)
+
+    def test_response_data(self):
+        """Test that the data returned is correct"""
+        self.bulk_entries()
+        self.client.login(username='admin', password='abc')
+
+        response = self.client.get(self.url, data={
+            'from_date': self.from_date.strftime('%m/%d/%Y'),
+            'to_date': self.to_date.strftime('%m/%d/%Y')
+        })
+        self.assertEqual(response.status_code, 200)
+
+        entries_data = self.get_entries_data().order_by('user', 'date')
+        response_data = json.loads(response.context['data'])
+        dates = json.loads(response.context['dates'])
+
+        self.assertEqual(dates, self.dates_data)
+
+        for user, data in response_data.iteritems():
+            last_name = user.strip()
+            entries_total = sum([float(e['hours']) for e in
+                entries_data.filter(user__last_name=last_name)])
+            response_total = sum(e['total'] for e in data)
+            self.assertEqual(entries_total, response_total)
