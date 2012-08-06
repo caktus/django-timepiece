@@ -1,7 +1,8 @@
 var scripts = document.getElementsByTagName('script'),
     script = scripts[scripts.length - 1];
 
-var hours = JSON.parse(script.getAttribute('data-hours'));
+var hours = JSON.parse(script.getAttribute('data-hours')),
+    dates = JSON.parse(script.getAttribute('data-dates'));
 
 google.load('visualization', '1.0', {'packages':['corechart']});
 google.setOnLoadCallback(drawChart);
@@ -46,23 +47,19 @@ function processData() {
         ['Date', 'Billable', 'Non-billable']
     ], i;
    
-    for(i = 0; i < hours.dates.length; i++) {
-        data.push([hours.dates[i], 0, 0]);
+    for(i = 0; i < dates.length; i++) {
+        data.push([dates[i], 0, 0]);
     }
     
     for(var user in hours) {
-        if(user === 'dates') {
-            continue;
-        }
-
         var index = 0,
-            dates = hours[user];
+            user_hours = hours[user];
 
-        for(var date in dates) {
-            index = getIndexOfDate(data, dates[date].date);
+        for(var date in user_hours) {
+            index = getIndexOfDate(data, user_hours[date].date);
 
-            data[index][1] += dates[date].billable;
-            data[index][2] += dates[date].nonbillable;
+            data[index][1] += user_hours[date].billable;
+            data[index][2] += user_hours[date].nonbillable;
         }
     }
 

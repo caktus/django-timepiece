@@ -1523,7 +1523,8 @@ class BillableHours(ReportMixin, TemplateView):
         project_data = utils.project_totals(filtered_entries, date_headers,
             total_column=False)
 
-        hours_data = {'dates': []}
+        hours_data = {}
+        dates = []
 
         for rows, totals in project_data:
             for user, hours in rows:
@@ -1531,8 +1532,8 @@ class BillableHours(ReportMixin, TemplateView):
 
                 for hour in hours:
                     date = hour['day'].strftime('%m/%d/%Y')
-                    if date not in hours_data['dates']:
-                        hours_data['dates'].append(date)
+                    if date not in dates:
+                        dates.append(date)
 
                     hours_data.get(user, []).append({
                         'date': date,
@@ -1541,7 +1542,7 @@ class BillableHours(ReportMixin, TemplateView):
                         'total': hour['total'],
                     })
 
-        return hours_data
+        return dates, hours_data
 
     def get_context_data(self, **kwargs):
         context = super(BillableHours, self).get_context_data(**kwargs)
@@ -1559,11 +1560,13 @@ class BillableHours(ReportMixin, TemplateView):
             choices={'people': people})
 
         form_data = form.save() if form.is_valid() else {}
-        hours_data = self.get_hours_data(form_data, entries, date_headers)
+        dates, hours_data = self.get_hours_data(form_data, entries,
+            date_headers)
 
         context.update({
             'billable_form': form,
             'data': json.dumps(hours_data, cls=DecimalEncoder),
+            'dates': json.dumps(dates),
         })
 
         return context
