@@ -539,7 +539,7 @@ class Entry(models.Model):
         )
         if entries.exists():
             msg = 'You cannot add entries after a timesheet has been ' \
-                'approved. Please correct the start and end times.'
+                'approved or invoiced. Please correct the start and end times.'
             raise ValidationError(msg)
         return True
 

@@ -1020,6 +1020,17 @@ class CreateEditEntry(TimepieceDataTestCase):
         err_msg += 'choose among development, and Work'
         self.assertFormError(response, 'form', None, err_msg)
 
+    def add_entry_test_helper(self):
+        self.client.login(username='user', password='abc')
+
+        response = self.client.post(self.create_url, data=self.default_data,
+            follow=True)
+        self.assertEqual(response.status_code, 200)
+
+        msg = 'You cannot add entries after a timesheet has been approved ' \
+            'or invoiced. Please correct the start and end times.'
+        self.assertEqual([msg], response.context['form'].non_field_errors())
+
     def test_add_approved_entries(self):
         """
         If your entries have been verified and then approved, you should
@@ -1032,15 +1043,21 @@ class CreateEditEntry(TimepieceDataTestCase):
         entry.status = 'approved'
         entry.save()
 
-        self.client.login(username='user', password='abc')
+        self.add_entry_test_helper()
 
-        response = self.client.post(self.create_url, data=self.default_data,
-            follow=True)
-        self.assertEqual(response.status_code, 200)
+    def test_add_invoiced_entries(self):
+        """
+        If your entries have been verified, approved, and invoiced, you
+        should not be able to add entries for that time period
+        """
+        entry = self.create_entry({
+            'start_time': self.ten_min_ago,
+            'end_time': self.ten_min_ago + datetime.timedelta(minutes=1)
+        })
+        entry.status = 'invoiced'
+        entry.save()
 
-        msg = 'You cannot add entries after a timesheet has been approved. ' \
-            'Please correct the start and end times.'
-        self.assertEqual([msg], response.context['form'].non_field_errors())
+        self.add_entry_test_helper()
 
 
 class StatusTest(TimepieceDataTestCase):
