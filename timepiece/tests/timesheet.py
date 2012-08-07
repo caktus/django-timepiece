@@ -818,7 +818,7 @@ class CreateEditEntry(TimepieceDataTestCase):
         valid_end = valid_start + datetime.timedelta(hours=1)
         two_hour_ago = self.now - datetime.timedelta(hours=2)
         one_hour_ago = self.now - datetime.timedelta(hours=1)
-        ten_min_ago = self.now - datetime.timedelta(minutes=10)
+        self.ten_min_ago = self.now - datetime.timedelta(minutes=10)
         #establish data, entries, urls for all tests
         self.default_data = {
             'project': self.project.pk,
@@ -841,7 +841,7 @@ class CreateEditEntry(TimepieceDataTestCase):
             'user': self.user,
             'project': self.project,
             'activity': self.devl_activity,
-            'start_time': ten_min_ago,
+            'start_time': self.ten_min_ago,
         }
         self.closed_entry = self.create_entry(self.closed_entry_data)
         self.current_entry = self.create_entry(self.current_entry_data)
@@ -850,7 +850,7 @@ class CreateEditEntry(TimepieceDataTestCase):
             'end_str': one_hour_ago.strftime('%H:%M:%S'),
         })
         self.current_entry_data.update({
-            'st_str': ten_min_ago.strftime('%H:%M:%S'),
+            'st_str': self.ten_min_ago.strftime('%H:%M:%S'),
         })
         self.create_url = reverse('timepiece-add')
         self.edit_closed_url = reverse('timepiece-update',
@@ -1019,6 +1019,28 @@ class CreateEditEntry(TimepieceDataTestCase):
         err_msg = 'sick/personal is not allowed for this project. Please '
         err_msg += 'choose among development, and Work'
         self.assertFormError(response, 'form', None, err_msg)
+
+    def test_add_approved_entries(self):
+        """
+        If your entries have been verified and then approved, you should
+        not be able to add entries for that time period
+        """
+        entry = self.create_entry({
+            'start_time': self.ten_min_ago,
+            'end_time': self.ten_min_ago + datetime.timedelta(minutes=1)
+        })
+        entry.status = 'approved'
+        entry.save()
+
+        self.client.login(username='user', password='abc')
+
+        response = self.client.post(self.create_url, data=self.default_data,
+            follow=True)
+        self.assertEqual(response.status_code, 200)
+
+        msg = 'You cannot add entries after a timesheet has been approved. ' \
+            'Please correct the start and end times.'
+        self.assertEqual([msg], response.context['form'].non_field_errors())
 
 
 class StatusTest(TimepieceDataTestCase):
