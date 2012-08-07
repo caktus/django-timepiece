@@ -219,3 +219,19 @@ def work_days(end):
     days = rrule.rrule(rrule.DAILY, byweekday=weekdays,
                        dtstart=datetime.date.today(), until=end)
     return len(list(days))
+
+
+@register.simple_tag
+def timesheet_url(type, pk, date):
+    if type == 'project':
+        name = 'project_time_sheet'
+    elif type == 'user':
+        name = 'view_person_time_sheet'
+
+    url = reverse(name, args=(pk,))
+    params = {
+        'month': date.month,
+        'year': date.year
+    }
+
+    return '?'.join((url, urllib.urlencode(params),))
