@@ -391,13 +391,18 @@ def delete_entry(request, entry_id):
 @permission_required('timepiece.view_entry_summary')
 @render_with('timepiece/time-sheet/reports/general_ledger.html')
 def summary(request, username=None):
-    if request.GET:
-        form = timepiece_forms.DateForm(request.GET)
-        if form.is_valid():
-            from_date, to_date = form.save()
-    else:
-        form = timepiece_forms.DateForm()
-        from_date, to_date = None, None
+    date = timezone.now() - relativedelta(months=1)
+    from_date = utils.get_month_start(date).date()
+    to_date = from_date + relativedelta(months=1)
+
+    form = timepiece_forms.YearMonthForm(request.GET or None, initial={
+        'month': from_date.month,
+        'year': from_date.year
+    })
+
+    if form.is_valid():
+        from_date, to_date = form.save()
+
     entries = timepiece.Entry.no_join.values(
         'project__id',
         'project__business__id',
@@ -426,6 +431,7 @@ def summary(request, username=None):
         'project_totals': project_totals,
         'total_hours': total_hours,
         'people_totals': people_totals,
+        'from_date': from_date
     }
     return context
 
@@ -1212,13 +1218,17 @@ def create_edit_project(request, project_id=None):
 @permission_required('timepiece.view_payroll_summary')
 @render_with('timepiece/time-sheet/reports/summary.html')
 def payroll_summary(request):
-    year_month_form = timepiece_forms.YearMonthForm(request.GET or None)
-    if request.GET and year_month_form.is_valid():
+    date = timezone.now() - relativedelta(months=1)
+    from_date = utils.get_month_start(date).date()
+    to_date = from_date + relativedelta(months=1)
+
+    year_month_form = timepiece_forms.YearMonthForm(request.GET or None, initial={
+        'month': from_date.month,
+        'year': from_date.year
+    })
+
+    if year_month_form.is_valid():
         from_date, to_date = year_month_form.save()
-    else:
-        date = utils.add_timezone(datetime.datetime.today())
-        from_date = utils.get_month_start(date).date()
-        to_date = from_date + relativedelta(months=1)
     last_billable = utils.get_last_billable_day(from_date)
     projects = getattr(settings, 'TIMEPIECE_PROJECTS', {})
     weekQ = Q(end_time__gt=utils.get_week_start(from_date),
