@@ -367,11 +367,10 @@ def reject_entries(request, user_id):
             start_time__gte=from_date, end_time__lte=to_date)
         if request.POST.get('yes'):
             if entries.exists():
-                for entry in entries:
-                    entry.status = 'unverified'
-                    entry.save()
+                count = entries.count()
+                entries.update(status='unverified')
                 msg = 'You have rejected %d previously verified entries.' \
-                    % entries.count()
+                    % count
             else:
                 msg = 'There are no verified entries to reject.'
             messages.info(request, msg)
