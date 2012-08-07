@@ -1416,8 +1416,10 @@ class ReportMixin(object):
 
         date_form = timepiece_forms.DateForm({
             'from_date': from_date,
-            'to_date': to_date,
+            'to_date': to_date
         })
+        if date_form.is_valid():
+            from_date, to_date = date_form.save()
 
         header_to = to_date - relativedelta(days=1)
         trunc = timepiece_forms.ProjectFiltersForm.DEFAULT_TRUNC
