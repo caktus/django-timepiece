@@ -603,7 +603,8 @@ class BillableHoursForm(forms.Form):
 
         people = []
         users = timepiece.Entry.no_join.values('user', 'user__first_name',
-            'user__last_name').distinct()
+            'user__last_name').distinct().order_by('user__first_name',
+            'user__last_name')
         for u in users:
             name = ' '.join([u['user__first_name'], u['user__last_name']])
             person = (u['user'], name,)
