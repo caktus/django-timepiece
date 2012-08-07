@@ -218,7 +218,7 @@ class TestHourlyReport(ReportsHelperBase):
             self.assertEqual(hour, last_day * worked2)
 
     def argsHelper(self, args={}, start=datetime.datetime(2011, 1, 2),
-                   end=datetime.datetime(2011, 1, 4)):
+                   end=datetime.datetime(2011, 1, 5)):
         start = utils.add_timezone(start)
         end = utils.add_timezone(end)
         args.update({
@@ -327,7 +327,7 @@ class TestHourlyReport(ReportsHelperBase):
     def testForm_Month(self):
         tz = timezone.get_current_timezone()
         start = datetime.datetime(2011, 1, 4, tzinfo=tz)
-        end = datetime.datetime(2011, 3, 28, tzinfo=tz)
+        end = datetime.datetime(2011, 3, 29, tzinfo=tz)
         args = {
             'billable': True,
             'non_billable': False,
