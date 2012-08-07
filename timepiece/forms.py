@@ -599,14 +599,18 @@ class BillableHoursForm(forms.Form):
         initial=timepiece.Attribute.objects.all())
 
     def __init__(self, *args, **kwargs):
-        choices = kwargs.pop('choices', None)
         super(BillableHoursForm, self).__init__(*args, **kwargs)
 
-        if choices:
-            people = choices.get('people', [])
-            if people:
-                self.fields['people'].choices = people
-                self.fields['people'].initial = [p[0] for p in people]
+        people = []
+        users = timepiece.Entry.no_join.values('user', 'user__first_name',
+            'user__last_name').distinct()
+        for u in users:
+            name = ' '.join([u['user__first_name'], u['user__last_name']])
+            person = (u['user'], name,)
+            people.append(person)
+
+        self.fields['people'].choices = people
+        self.fields['people'].initial = [p[0] for p in people]
 
     def save(self):
         return {

@@ -1510,8 +1510,8 @@ class BillableHours(ReportMixin, TemplateView):
     template_name = 'timepiece/time-sheet/reports/billable_hours.html'
 
     def get_hours_data(self, data, entries, date_headers):
-        users = data.get('people', '') or entries.order_by('user') \
-            .values_list('user', flat=True)
+        default_users = timepiece.Entry.no_join.values('user__pk',)
+        users = data.get('people', '') or default_users
 
         activities = data.get('activities', '') or \
             timepiece.Activity.objects.values_list('pk', flat=True)
@@ -1550,16 +1550,8 @@ class BillableHours(ReportMixin, TemplateView):
         context = super(BillableHours, self).get_context_data(**kwargs)
         entries = context['entries']
         date_headers = context['date_headers']
-        people = []
 
-        for e in entries:
-            name = ' '.join([e['user__first_name'], e['user__last_name']])
-            person = (e['user'], name,)
-            if person not in people:
-                people.append(person)
-
-        form = timepiece_forms.BillableHoursForm(self.request.GET or None,
-            choices={'people': people})
+        form = timepiece_forms.BillableHoursForm(self.request.GET or None)
 
         form_data = form.save() if form.is_valid() else {}
         dates, hours_data = self.get_hours_data(form_data, entries,
