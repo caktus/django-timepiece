@@ -24,9 +24,11 @@
                 <button type="submit" class="btn" name="submit">Update</button>
             </form>
         </div>
-        <div class="span2">
-            <a class="btn right" href="{% url 'edit_project_hours' %}?week_start={{ week|date:'Y-m-d' }}">Edit Schedule</a>
-        </div>
+        {% if perms.timepiece.add_projecthours %}
+            <div class="span2">
+                <a class="btn right" href="{% url 'edit_project_hours' %}?week_start={{ week|date:'Y-m-d' }}">Edit Schedule</a>
+            </div>
+        {% endif %}
     </div>
 
     <div class="row-fluid">
