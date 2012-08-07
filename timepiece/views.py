@@ -358,7 +358,8 @@ def reject_entries(request, user_id):
     """
     This allows admins to reject all entries, instead of just one
     """
-    form = timepiece_forms.YearMonthForm(request.GET)
+    form = timepiece_forms.YearMonthForm(request.GET
+        or request.POST)
     user = auth_models.User.objects.get(pk=user_id)
     if form.is_valid():
         from_date, to_date = form.save()

@@ -1521,3 +1521,107 @@ class HourlySummaryTest(TimepieceDataTestCase):
             .timespan(april, span='month') \
             .date_trunc('month', extra_values)
         self.assertEquals(list(entries), list(response.context['entries']))
+
+
+class MonthlyRejectTestCase(TimepieceDataTestCase):
+    def setUp(self):
+        super(MonthlyRejectTestCase, self).setUp()
+        self.now = timezone.now()
+        self.data = {
+            'month': self.now.month,
+            'year': self.now.year,
+            'yes': 'Yes'
+        }
+        self.url = reverse('timepiece-reject-entries', args=(self.user.pk,))
+
+    def create_entries(self, date, status):
+        """Create entries using a date and with a given status"""
+        self.create_entry({
+            'start_time': date,
+            'end_time': date + relativedelta(hours=1),
+            'status': status
+        })
+        self.create_entry({
+            'start_time': date + relativedelta(hours=2),
+            'end_time': date + relativedelta(hours=3),
+            'status': status
+        })
+
+    def test_page_permissions(self):
+        """
+        An admin should have the permission to reject a users entries
+        and unverify them
+        """
+        self.client.login(username='superuser', password='abc')
+        self.create_entries(self.now, 'verified')
+
+        response = self.client.get(self.url, data=self.data)
+        self.assertEqual(response.status_code, 200)
+
+        response = self.client.post(self.url, data=self.data)
+
+        entries = timepiece.Entry.no_join.filter(status='verified')
+        self.assertEquals(entries.count(), 0)
+
+    def test_page_no_permissions(self):
+        """
+        A regular user should not have the permissions to
+        get or post to the page
+        """
+        self.client.login(username='user', password='abc')
+        self.create_entries(timezone.now(), 'verified')
+
+        response = self.client.get(self.url, data=self.data)
+        self.assertEqual(response.status_code, 302)
+
+        response = self.client.post(self.url, data=self.data)
+
+        entries = timepiece.Entry.no_join.filter(status='verified')
+        self.assertEquals(entries.count(), 2)
+
+    def test_reject_entries_no_date(self):
+        """
+        If you are missing the month/year used to filter the entries
+        then the reject page should not show
+        """
+        self.client.login(username='superuser', password='abc')
+        self.create_entries(timezone.now(), 'verified')
+
+        data = {
+            'month': self.now.month
+        }
+        response = self.client.get(self.url, data=data)
+        self.assertEqual(response.status_code, 302)
+
+        data = {
+            'year': self.now.year
+        }
+        response = self.client.get(self.url, data=data)
+        self.assertEqual(response.status_code, 302)
+
+    def test_reject_entries_no_confirm(self):
+        """
+        If a post request contains the month/year but is missing the key
+        'yes', then the entries are not rejected
+        """
+        self.client.login(username='superuser', password='abc')
+        self.create_entries(timezone.now(), 'verified')
+
+        data = self.data
+        data.pop('yes')
+
+        response = self.client.post(self.url, data=data)
+
+        entries = timepiece.Entry.no_join.filter(status='verified')
+        self.assertEquals(entries.count(), 2)
+
+    def test_reject_approved_invoiced_entries(self):
+        """Entries that are approved invoiced should not be rejected"""
+        self.client.login(username='superuser', password='abc')
+        self.create_entries(timezone.now(), 'approved')
+        self.create_entries(timezone.now(), 'invoiced')
+
+        response = self.client.post(self.url, data=self.data)
+
+        entries = timepiece.Entry.no_join.filter(status='unverified')
+        self.assertEquals(entries.count(), 0)
