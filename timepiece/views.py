@@ -353,6 +353,43 @@ def reject_entry(request, entry_id):
                               context_instance=RequestContext(request))
 
 
+@permission_required('timepiece.view_payroll_summary')
+def reject_entries(request, user_id):
+    """
+    This allows admins to reject all entries, instead of just one
+    """
+    form = timepiece_forms.YearMonthForm(request.GET
+        or request.POST)
+    user = auth_models.User.objects.get(pk=user_id)
+    if form.is_valid():
+        from_date, to_date = form.save()
+        entries = timepiece.Entry.no_join.filter(status='verified', user=user,
+            start_time__gte=from_date, end_time__lte=to_date)
+        if request.POST.get('yes'):
+            if entries.exists():
+                count = entries.count()
+                entries.update(status='unverified')
+                msg = 'You have rejected %d previously verified entries.' \
+                    % count
+            else:
+                msg = 'There are no verified entries to reject.'
+            messages.info(request, msg)
+        else:
+            context = {
+                'date': from_date,
+                'timesheet_user': user
+            }
+            return render(request,
+                'timepiece/time-sheet/entry/reject_entries.html', context)
+    else:
+        msg = 'You must provide a month and year for entries to be rejected.'
+        messages.error(request, msg)
+
+    return HttpResponseRedirect(reverse('view_person_time_sheet',
+        args=(user_id,))
+    )
+
+
 @permission_required('timepiece.delete_entry')
 def delete_entry(request, entry_id):
     """
@@ -1426,8 +1463,10 @@ class ReportMixin(object):
 
         date_form = timepiece_forms.DateForm({
             'from_date': from_date,
-            'to_date': to_date,
+            'to_date': to_date
         })
+        if date_form.is_valid():
+            from_date, to_date = date_form.save()
 
         header_to = to_date - relativedelta(days=1)
         trunc = timepiece_forms.ProjectFiltersForm.DEFAULT_TRUNC
