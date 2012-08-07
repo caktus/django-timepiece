@@ -21,7 +21,8 @@ function drawChart() {
                 chartArea: {
                     width: '70%',
                     left: '5%'
-                }
+                },
+                pointSize: 6
             },
             containerId: 'chart'
         });
