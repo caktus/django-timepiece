@@ -816,8 +816,8 @@ class CreateEditEntry(TimepieceDataTestCase):
         self.now = timezone.now()
         valid_start = self.now - datetime.timedelta(days=1)
         valid_end = valid_start + datetime.timedelta(hours=1)
-        two_hour_ago = self.now - datetime.timedelta(hours=2)
-        one_hour_ago = self.now - datetime.timedelta(hours=1)
+        self.two_hour_ago = self.now - datetime.timedelta(hours=2)
+        self.one_hour_ago = self.now - datetime.timedelta(hours=1)
         ten_min_ago = self.now - datetime.timedelta(minutes=10)
         #establish data, entries, urls for all tests
         self.default_data = {
@@ -834,8 +834,8 @@ class CreateEditEntry(TimepieceDataTestCase):
             'user': self.user,
             'project': self.project,
             'activity': self.devl_activity,
-            'start_time': two_hour_ago,
-            'end_time': one_hour_ago,
+            'start_time': self.two_hour_ago,
+            'end_time': self.one_hour_ago,
         }
         self.current_entry_data = {
             'user': self.user,
@@ -846,8 +846,8 @@ class CreateEditEntry(TimepieceDataTestCase):
         self.closed_entry = self.create_entry(self.closed_entry_data)
         self.current_entry = self.create_entry(self.current_entry_data)
         self.closed_entry_data.update({
-            'st_str': two_hour_ago.strftime('%H:%M:%S'),
-            'end_str': one_hour_ago.strftime('%H:%M:%S'),
+            'st_str': self.two_hour_ago.strftime('%H:%M:%S'),
+            'end_str': self.one_hour_ago.strftime('%H:%M:%S'),
         })
         self.current_entry_data.update({
             'st_str': ten_min_ago.strftime('%H:%M:%S'),
@@ -1019,6 +1019,56 @@ class CreateEditEntry(TimepieceDataTestCase):
         err_msg = 'sick/personal is not allowed for this project. Please '
         err_msg += 'choose among development, and Work'
         self.assertFormError(response, 'form', None, err_msg)
+
+    def edit_entry_helper(self):
+        """Helper function for editing approved entries"""
+        entry = self.create_entry({
+            'project': self.project,
+            'start_time': self.now - relativedelta(hours=6),
+            'end_time': self.now - relativedelta(hours=5),
+            'status': 'approved'
+        })
+        url = reverse('timepiece-update', args=(entry.pk,))
+
+        data = self.default_data
+        data.update({
+            'start_time_0': entry.start_time.strftime('%m/%d/%Y'),
+            'start_time_1': entry.start_time.strftime('%H:%M:%S'),
+            'end_time_0': entry.end_time.strftime('%m/%d/%Y'),
+            'end_time_1': entry.end_time.strftime('%H:%M:%S'),
+        })
+
+        return url, entry, data
+
+    def test_admin_edit_approved_entry(self):
+        """
+        An administrator (or anyone with view_payroll_summary perm) should
+        be able to edit an entry even if theyve been approved
+        """
+        self.client.logout()
+        self.client.login(username='superuser', password='abc')
+
+        url, entry, data = self.edit_entry_helper()
+
+        response = self.client.get(url)
+        self.assertEqual(response.status_code, 200)
+
+        response = self.client.post(url, data=data, follow=True)
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response,
+            'The entry has been updated successfully.')
+
+        self.assertEqual(self.user, entry.user)
+
+    def test_user_edit_approved_entry(self):
+        """A regular user shouldnt be able to edit an approved entry"""
+        url, entry, data = self.edit_entry_helper()
+
+        response = self.client.get(url)
+        self.assertEqual(response.status_code, 404)
+
+        response = self.client.post(url, data=data)
+        self.assertEqual(response.status_code, 404)
 
 
 class StatusTest(TimepieceDataTestCase):

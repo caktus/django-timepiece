@@ -278,9 +278,9 @@ def create_edit_entry(request, entry_id=None):
         try:
             entry = timepiece.Entry.no_join.get(
                 pk=entry_id,
-                user=request.user,
             )
-            if not entry.is_editable:
+            if not (entry.is_editable or
+                    request.user.has_perm('timepiece.view_payroll_summary')):
                 raise Http404
 
         except timepiece.Entry.DoesNotExist:
@@ -293,7 +293,7 @@ def create_edit_entry(request, entry_id=None):
         form = timepiece_forms.AddUpdateEntryForm(
             request.POST,
             instance=entry,
-            user=request.user,
+            user=entry.user if entry else request.user,
         )
         if form.is_valid():
             entry = form.save()
