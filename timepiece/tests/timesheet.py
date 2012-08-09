@@ -1027,8 +1027,8 @@ class CreateEditEntry(TimepieceDataTestCase):
             follow=True)
         self.assertEqual(response.status_code, 200)
 
-        msg = 'You cannot add entries after a timesheet has been approved ' \
-            'or invoiced. Please correct the start and end times.'
+        msg = 'You cannot add/edit entries after a timesheet has been ' \
+            'approved or invoiced. Please correct the start and end times.'
         self.assertEqual([msg], response.context['form'].non_field_errors())
 
     def test_add_approved_entries(self):
@@ -1040,7 +1040,7 @@ class CreateEditEntry(TimepieceDataTestCase):
             'start_time': self.ten_min_ago,
             'end_time': self.ten_min_ago + datetime.timedelta(minutes=1)
         })
-        entry.status = 'approved'
+        entry.status = 'invoiced'
         entry.save()
 
         self.add_entry_test_helper()
@@ -1059,13 +1059,13 @@ class CreateEditEntry(TimepieceDataTestCase):
 
         self.add_entry_test_helper()
 
-    def edit_entry_helper(self):
+    def edit_entry_helper(self, status='approved'):
         """Helper function for editing approved entries"""
         entry = self.create_entry({
             'project': self.project,
             'start_time': self.now - relativedelta(hours=6),
             'end_time': self.now - relativedelta(hours=5),
-            'status': 'approved'
+            'status': status
         })
         url = reverse('timepiece-update', args=(entry.pk,))
 
@@ -1108,6 +1108,20 @@ class CreateEditEntry(TimepieceDataTestCase):
 
         response = self.client.post(url, data=data)
         self.assertEqual(response.status_code, 404)
+
+    def test_edit_invoiced_entry(self):
+        """You shouldnt be able to edit an invoiced entry"""
+        self.client.logout()
+        self.client.login(username='superuser', password='abc')
+
+        url, entry, data = self.edit_entry_helper('invoiced')
+
+        response = self.client.post(url, data=data, follow=True)
+        self.assertEqual(response.status_code, 200)
+
+        msg = 'You cannot add/edit entries after a timesheet has been ' \
+            'approved or invoiced. Please correct the start and end times.'
+        self.assertContains(response, msg)
 
 
 class StatusTest(TimepieceDataTestCase):
