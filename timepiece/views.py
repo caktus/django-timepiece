@@ -101,10 +101,6 @@ def view_entries(request):
         .select_related('user', 'contract__project__type')
     activity_entries = entries.values('billable').annotate(sum=Sum('hours')) \
                                                  .order_by('-sum')
-    others_active_entries = timepiece.Entry.objects \
-        .filter(end_time__isnull=True) \
-        .exclude(user=request.user) \
-        .select_related('user', 'project', 'activity')
     my_active_entries = timepiece.Entry.objects \
         .select_related('project__business',) \
         .only('user', 'project', 'activity', 'start_time') \
@@ -129,7 +125,6 @@ def view_entries(request):
         'project_entries': project_entries,
         'activity_entries': activity_entries,
         'current_total': current_total,
-        'others_active_entries': others_active_entries,
         'my_active_entries': my_active_entries,
         'view_entries': view_entries,
     }
