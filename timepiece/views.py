@@ -278,9 +278,9 @@ def create_edit_entry(request, entry_id=None):
         try:
             entry = timepiece.Entry.no_join.get(
                 pk=entry_id,
-                user=request.user,
             )
-            if not entry.is_editable:
+            if not (entry.is_editable or
+                    request.user.has_perm('timepiece.view_payroll_summary')):
                 raise Http404
 
         except timepiece.Entry.DoesNotExist:
@@ -293,7 +293,7 @@ def create_edit_entry(request, entry_id=None):
         form = timepiece_forms.AddUpdateEntryForm(
             request.POST,
             instance=entry,
-            user=request.user,
+            user=entry.user if entry else request.user,
         )
         if form.is_valid():
             entry = form.save()
@@ -351,6 +351,43 @@ def reject_entry(request, entry_id):
                                   'next': request.REQUEST.get('next'),
                               },
                               context_instance=RequestContext(request))
+
+
+@permission_required('timepiece.view_payroll_summary')
+def reject_entries(request, user_id):
+    """
+    This allows admins to reject all entries, instead of just one
+    """
+    form = timepiece_forms.YearMonthForm(request.GET
+        or request.POST)
+    user = auth_models.User.objects.get(pk=user_id)
+    if form.is_valid():
+        from_date, to_date = form.save()
+        entries = timepiece.Entry.no_join.filter(status='verified', user=user,
+            start_time__gte=from_date, end_time__lte=to_date)
+        if request.POST.get('yes'):
+            if entries.exists():
+                count = entries.count()
+                entries.update(status='unverified')
+                msg = 'You have rejected %d previously verified entries.' \
+                    % count
+            else:
+                msg = 'There are no verified entries to reject.'
+            messages.info(request, msg)
+        else:
+            context = {
+                'date': from_date,
+                'timesheet_user': user
+            }
+            return render(request,
+                'timepiece/time-sheet/entry/reject_entries.html', context)
+    else:
+        msg = 'You must provide a month and year for entries to be rejected.'
+        messages.error(request, msg)
+
+    return HttpResponseRedirect(reverse('view_person_time_sheet',
+        args=(user_id,))
+    )
 
 
 @permission_required('timepiece.delete_entry')
@@ -1426,8 +1463,10 @@ class ReportMixin(object):
 
         date_form = timepiece_forms.DateForm({
             'from_date': from_date,
-            'to_date': to_date,
+            'to_date': to_date
         })
+        if date_form.is_valid():
+            from_date, to_date = date_form.save()
 
         header_to = to_date - relativedelta(days=1)
         trunc = timepiece_forms.ProjectFiltersForm.DEFAULT_TRUNC
@@ -1518,8 +1557,8 @@ class BillableHours(ReportMixin, TemplateView):
     template_name = 'timepiece/time-sheet/reports/billable_hours.html'
 
     def get_hours_data(self, data, entries, date_headers):
-        users = data.get('people', '') or entries.order_by('user') \
-            .values_list('user', flat=True)
+        default_users = timepiece.Entry.no_join.values('user__pk',)
+        users = data.get('people', '') or default_users
 
         activities = data.get('activities', '') or \
             timepiece.Activity.objects.values_list('pk', flat=True)
@@ -1558,16 +1597,8 @@ class BillableHours(ReportMixin, TemplateView):
         context = super(BillableHours, self).get_context_data(**kwargs)
         entries = context['entries']
         date_headers = context['date_headers']
-        people = []
 
-        for e in entries:
-            name = ' '.join([e['user__first_name'], e['user__last_name']])
-            person = (e['user'], name,)
-            if person not in people:
-                people.append(person)
-
-        form = timepiece_forms.BillableHoursForm(self.request.GET or None,
-            choices={'people': people})
+        form = timepiece_forms.BillableHoursForm(self.request.GET or None)
 
         form_data = form.save() if form.is_valid() else {}
         dates, hours_data = self.get_hours_data(form_data, entries,
