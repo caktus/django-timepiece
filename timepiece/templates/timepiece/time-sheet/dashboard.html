@@ -102,7 +102,7 @@
     {% endif %}
 
     <div class="row-fluid">
-        {% if allocations or project_entries or my_active_entries %}
+        {% if project_entries or my_active_entries %}
             <div class="span12">
                 <h3>My Work This Week</h3>
                 <table class="table table-bordered table-condensed">
@@ -125,15 +125,6 @@
                                 </tr>
                             {% endfor %}
                         {% endif %}
-
-                        {% for assignment in allocations %}
-                            <tr>
-                                <td><a href="{% url timepiece-clock-in %}?project={{ assignment.assignment.contract.project.pk }}">{{ assignment.assignment.contract.project }}</a></td>
-                                <td class="hours">
-                                    {% bar_graph assignment.assignment.contract.project assignment.hours_worked assignment.hours %}
-                                </td>
-                            </tr>
-                        {% endfor %}
 
                         {% if project_entries %}
                             <tr class="ledger_header">
@@ -176,13 +167,6 @@
             </div>
         {% endif %}
     </div>
-
-
-    {% if allocations %}
-        <div class="row-fluid">
-            <div style="height: 320px; width: 320px;" id="my-weekly-hours-chart"></div>
-        </div>
-    {% endif %}
 
     {% if view_entries %}
         <div class="row-fluid">

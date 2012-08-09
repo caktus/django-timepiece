@@ -86,70 +86,45 @@ def view_entries(request):
     view_entries = False
     if request.user.has_perm('timepiece.can_clock_in'):
         view_entries = True
+    today = datetime.date.today()
     week_start = utils.get_week_start()
     time_q = Q(end_time__gte=week_start) | Q(end_time__isnull=True)
-    entries = timepiece.Entry.objects.select_related(
-        'project__business',
-    ).filter(
-        time_q,
-        user=request.user
-    ).select_related('project', 'activity', 'location')
-    today = datetime.date.today()
+    entries = timepiece.Entry.objects.filter(time_q, user=request.user) \
+                       .select_related('project__business', 'project',
+                                       'activity', 'location')
     assignments = timepiece.ContractAssignment.objects.filter(
-        user=request.user,
-        user__project_relationships__project=F('contract__project'),
-        end_date__gte=today,
-        contract__status='current',
-    ).order_by('contract__project__type', 'end_date')
-    assignments = assignments.select_related('user', 'contract__project__type')
-    activity_entries = list(entries.values(
-        'billable',
-    ).annotate(sum=Sum('hours')).order_by('-sum'))
-    others_active_entries = timepiece.Entry.objects.filter(
-        end_time__isnull=True,
-    ).exclude(
-        user=request.user,
-    ).select_related('user', 'project', 'activity')
-    my_active_entries = timepiece.Entry.objects.select_related(
-        'project__business',
-    ).only(
-        'user', 'project', 'activity', 'start_time'
-    ).filter(
-        user=request.user,
-        end_time__isnull=True,
-    )
-
+            user=request.user,
+            user__project_relationships__project=F('contract__project'),
+            end_date__gte=today,
+            contract__status='current') \
+        .order_by('contract__project__type', 'end_date') \
+        .select_related('user', 'contract__project__type')
+    activity_entries = entries.values('billable').annotate(sum=Sum('hours')) \
+                                                 .order_by('-sum')
+    others_active_entries = timepiece.Entry.objects \
+        .filter(end_time__isnull=True) \
+        .exclude(user=request.user) \
+        .select_related('user', 'project', 'activity')
+    my_active_entries = timepiece.Entry.objects \
+        .select_related('project__business',) \
+        .only('user', 'project', 'activity', 'start_time') \
+        .filter(user=request.user, end_time__isnull=True,)
     for current_entry in my_active_entries:
         for activity_entry in activity_entries:
             if current_entry.billable == activity_entry['billable']:
                 activity_entry['sum'] += get_active_hours(current_entry)
                 break
-    current_total = sum([entry['sum'] for entry in activity_entries])
-
-#     temporarily disabled until the allocations represent accurate goals
-#     -TM 6/27
-    allocations = []
-    allocated_projects = timepiece.Project.objects.none()
-#    allocations = timepiece.AssignmentAllocation.objects.during_this_week(
-#        request.user
-#        ).order_by('assignment__contract__project__name')
-#    allocated_projects = allocations.values_list(
-#    'assignment__contract__project',)
-
-    project_entries = entries.exclude(
-        project__in=allocated_projects,
-        end_time__isnull=True
-    ).values(
-        'project__name', 'project__pk'
-    ).annotate(sum=Sum('hours')).order_by('project__name')
-    schedule = timepiece.PersonSchedule.objects.filter(
-                                    user=request.user)
-    this_weeks_entries = entries.order_by('-start_time'). \
-        filter(end_time__gte=week_start)
+    current_total = sum((entry['sum'] for entry in activity_entries))
+    project_entries = entries.exclude(end_time__isnull=True) \
+                             .values('project__name', 'project__pk') \
+                             .annotate(sum=Sum('hours')) \
+                             .order_by('project__name')
+    schedule = timepiece.PersonSchedule.objects.filter(user=request.user)
+    this_weeks_entries = entries.order_by('-start_time') \
+                                .filter(end_time__gte=week_start)
     context = {
         'this_weeks_entries': this_weeks_entries,
         'assignments': assignments,
-        'allocations': allocations,
         'schedule': schedule,
         'project_entries': project_entries,
         'activity_entries': activity_entries,
