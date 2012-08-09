@@ -81,6 +81,13 @@ class CSVMixin(object):
 
 
 @login_required
+@render_with('timepiece/time-sheet/new-dashboard.html')
+def new_dashboard(request):
+    context = {}
+    return context
+
+
+@login_required
 @render_with('timepiece/time-sheet/dashboard.html')
 def view_entries(request):
     view_entries = False
