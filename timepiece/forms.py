@@ -588,9 +588,20 @@ class DeleteForm(forms.Form):
 
 
 class BillableHoursForm(forms.Form):
+    TRUNC_CHOICES = (
+        ('day', 'Day'),
+        ('week', 'Week'),
+        ('month', 'Month'),
+    )
+    trunc = forms.ChoiceField(
+        label='Group By:',
+        choices=TRUNC_CHOICES,
+        widget=forms.RadioSelect(),
+        required=False,
+        initial=TRUNC_CHOICES[1][0])
     people = forms.MultipleChoiceField(
         required=False,
-        widget=forms.CheckboxSelectMultiple(),
+        widget=forms.CheckboxSelectMultiple()
     )
     activities = forms.ModelMultipleChoiceField(
         widget=forms.CheckboxSelectMultiple(),
