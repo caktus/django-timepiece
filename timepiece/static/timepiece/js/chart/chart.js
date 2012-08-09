@@ -15,7 +15,7 @@ function drawChart() {
 
     if(dataTable.length > 1) {
         wrapper = new google.visualization.ChartWrapper({
-            chartType: 'ColumnChart',
+            chartType: 'AreaChart',
             dataTable: google.visualization.arrayToDataTable(dataTable),
             options: {
                 chartArea: {
