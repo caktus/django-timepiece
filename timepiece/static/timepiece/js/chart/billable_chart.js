@@ -78,11 +78,24 @@ $(function() {
     $('a.select').click(function(e) {
         e.preventDefault();
         
-        $(this).parent()
+        $(this).parent().parent()
             .next()
             .children()
             .each(function(i, e) {
                 $(e).find('input').attr('checked', 'checked');
+            });
+
+        return false;
+    });
+
+     $('a.select-none').click(function(e) {
+        e.preventDefault();
+        
+        $(this).parent().parent()
+            .next()
+            .children()
+            .each(function(i, e) {
+                $(e).find('input').removeAttr('checked');
             });
 
         return false;

@@ -46,7 +46,12 @@
                 
                 {% for field in billable_form %}
                     <label class="control-label">
-                        {{ field.label }} {% if field.label != "Group By" %}<a href="#" class="select right">select all</a>{% endif %}
+                        {{ field.label }}
+                        {% if field.label != "Group By" %}
+                            <span class="right">
+                                <a href="#" class="select">select all</a> | <a href="#" class="select-none">select none</a>
+                            </span>
+                        {% endif %}
                     </label>
                     {{ field }}
                 {% endfor %}
