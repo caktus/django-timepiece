@@ -537,7 +537,7 @@ class Entry(models.Model):
             start_time__gte=month_start,
             end_time__lt=next_month
         )
-        if entries.exists():
+        if entries.exists() and not self.id:
             msg = 'You cannot add entries after a timesheet has been ' \
                 'approved or invoiced. Please correct the start and end times.'
             raise ValidationError(msg)
