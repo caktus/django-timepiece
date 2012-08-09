@@ -498,3 +498,28 @@ def process_dates(dates, start=None, end=None):
         if to_date else end
 
     return from_date, to_date
+
+
+def process_todays_entries(entries):
+    now = timezone.now()
+    if entries:
+        start_time = entries[0].start_time
+        last_end = entries[entries.count() - 1].end_time
+    else:
+        start_time = now.replace(hour=0, minute=0, second=0, microsecond=0)
+    end_time = last_end if last_end is not None else now
+
+    def get_entry_details(entry):
+        entry.end_time = entry.end_time if entry.end_time else now        
+        return {
+            'project': entry.project.name,
+            'pk': entry.pk,
+            'start_time': entry.start_time.isoformat(),
+            'end_time': entry.end_time.isoformat(),
+            'hours': entry.get_seconds() * 1000,
+        }
+    return {
+        'start_time': start_time,
+        'end_time': end_time,
+        'entries': map(get_entry_details, entries),
+    }

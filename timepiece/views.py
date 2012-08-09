@@ -83,6 +83,12 @@ class CSVMixin(object):
 @login_required
 @render_with('timepiece/time-sheet/new-dashboard.html')
 def new_dashboard(request):
+    today = datetime.date.today()
+    todays_entries = timepiece.Entry.objects.filter(
+        Q(user=request.user) & (Q(end_time__gte=today) |
+                                Q(end_time__isnull=True))) \
+        .select_related('project').order_by('start_time')
+    todays_entries = utils.process_todays_entries(todays_entries)
     context = {}
     return context
 
