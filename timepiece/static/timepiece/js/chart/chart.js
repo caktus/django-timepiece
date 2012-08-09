@@ -15,14 +15,15 @@ function drawChart() {
 
     if(dataTable.length > 1) {
         wrapper = new google.visualization.ChartWrapper({
-            chartType: 'LineChart',
+            chartType: 'ColumnChart',
             dataTable: google.visualization.arrayToDataTable(dataTable),
             options: {
                 chartArea: {
                     width: '70%',
                     left: '5%'
                 },
-                pointSize: 6
+                pointSize: 6,
+                isStacked: true
             },
             containerId: 'chart'
         });
@@ -45,7 +46,7 @@ function round(x) {
 
 function processData() {
     var data = [
-        ['Date', 'Billable', 'Non-billable']
+        ['Date', 'Non-billable', 'Billable']
     ], i;
    
     for(i = 0; i < dates.length; i++) {
@@ -59,8 +60,8 @@ function processData() {
         for(var date in user_hours) {
             index = getIndexOfDate(data, user_hours[date].date);
 
-            data[index][1] += user_hours[date].billable;
-            data[index][2] += user_hours[date].nonbillable;
+            data[index][1] += user_hours[date].nonbillable;
+            data[index][2] += user_hours[date].billable;
         }
     }
 
