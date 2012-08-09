@@ -1,13 +1,23 @@
 Release Notes
 =========================================
 
+0.5.3 (UnReleased)
+------------------
+
+* Added a "Billable Hours" report, which displays a chart of billable and non-billable hours for a selected group of people, activities, project types and date range.
+* Improved usability of the payroll report
+* Made forms with date ranges more consistent and DRY
+* Added a restriction that prevents users from adding entries to months with approved or invoiced entries.
+* Removed the link to edit weekly project hours for users without that permission
+* Improved readability of report tables by changing the hover color to something more distinctive.
+
 0.5.2 (Released 08-01-2012)
+---------------------------
 
 * Added "Project Hours" views, which allow managers to assign project hours to users in a spreadsheet-like interface.
 * Simplified implementation of timezone support.
 * Fixed a bug that was preventing the weekly totals in "Hourly Summary" of "My Ledger" from being displayed.
 * Removed the display of "hours out of" in the "billable time" section of "My Work This Week" and added it to the "total time this week" section.
-
 
 0.5.1 (Released 07-20-2012)
 ---------------------------
