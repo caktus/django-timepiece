@@ -255,7 +255,7 @@ body {
 
     .chart {
         width: 100%;
-        min-height: 400px;
+        min-height: 500px;
     }
 
     .filter {
@@ -317,17 +317,46 @@ body {
     &#billable-hours {
         .filter {
             margin: 0px 0px 20px;
-        }
 
-        .date-form {
-            input {
-                width: 100px;
-                margin: 0px 10px 0px 0px;
+            .control-group {
+                display: inline-block;
+                vertical-align: top;
+                width: 22%;
+                // height: 200px;
+                overflow: auto;
+                margin-right: 15px;
+
+                &.people {
+                    width: 25%;
+
+                    ul li {
+                        display: inline;
+                        float: left;
+                        width: 50%;
+                    }
+
+                    ul li:nth-child(even) {
+                        float: right;
+                    }
+                }
+
+                &.group-by {
+                    width: 10%;
+                }
             }
-        }
 
-        select {
-            height: 150px;
+            .dates {
+                div {
+                    display: block;
+                    width: auto;
+                    height: auto;
+                }
+
+                input {
+                    width: 100px;
+                    margin: 0px 10px 0px 0px;
+                }
+            }
         }
     }
 
