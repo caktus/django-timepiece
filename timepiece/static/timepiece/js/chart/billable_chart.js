@@ -74,37 +74,17 @@ function processData() {
 }
 
 $(function() {
-    $('.people input[type="checkbox"]').click(function() {
-        var user = hours[$(this).attr('id')],
-            date, data, index;
+    // Add "select all" clickable to the label
+    $('a.select').click(function(e) {
+        e.preventDefault();
+        
+        $(this).parent()
+            .next()
+            .children()
+            .each(function(i, e) {
+                $(e).find('input').attr('checked', 'checked');
+            });
 
-        if($(this).attr('checked') === 'checked') {
-            for(date in user) {
-                data = user[date];
-                index = getIndexOfDate(dataTable, data.date);
-
-                dataTable[index][1] += data.billable;
-                dataTable[index][2] += data.nonbillable;
-
-                // Need to round the results...
-                dataTable[index][1] = round(dataTable[index][1]);
-                dataTable[index][2] = round(dataTable[index][2]);
-            }
-        } else {
-            for(date in user) {
-                data = user[date];
-                index = getIndexOfDate(dataTable, data.date);
-
-                dataTable[index][1] -= data.billable;
-                dataTable[index][2] -= data.nonbillable;
-
-                // Need to round the results...
-                dataTable[index][1] = round(dataTable[index][1]);
-                dataTable[index][2] = round(dataTable[index][2]);
-            }
-        }
-
-        wrapper.setDataTable(google.visualization.arrayToDataTable(dataTable));
-        wrapper.draw();
+        return false;
     });
 });

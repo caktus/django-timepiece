@@ -43,7 +43,14 @@
         <div class="span3">
             <form class="form-vertical filter" method="get">
                 {{ date_form|as_bootstrap }}
-                {{ billable_form.as_p }}
+                
+                {% for field in billable_form %}
+                    <label class="control-label">
+                        {{ field.label }} {% if field.label != "Group By" %}<a href="#" class="select right">select all</a>{% endif %}
+                    </label>
+                    {{ field }}
+                {% endfor %}
+
                 <input class="btn" type="submit" name="submit" value="Update" />
             </form>
         </div>

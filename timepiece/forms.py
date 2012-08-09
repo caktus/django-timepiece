@@ -594,7 +594,7 @@ class BillableHoursForm(forms.Form):
         ('month', 'Month'),
     )
     trunc = forms.ChoiceField(
-        label='Group By:',
+        label='Group By',
         choices=TRUNC_CHOICES,
         widget=forms.RadioSelect(),
         required=False,
