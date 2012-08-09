@@ -255,14 +255,7 @@ body {
 
     .chart {
         width: 100%;
-        min-height: 400px;
-    }
-
-    .filter {
-        label.control-label {
-            font-size: 1.5em;
-            font-weight: bold;
-        }
+        min-height: 500px;
     }
 
     .hidden {
@@ -308,17 +301,62 @@ body {
     &#billable-hours {
         .filter {
             margin: 0px 0px 20px;
-        }
 
-        .date-form {
-            input {
-                width: 100px;
-                margin: 0px 10px 0px 0px;
+            label.control-label, p > label {
+                font-size: 1.5em;
+                font-weight: bold;
             }
-        }
 
-        select {
-            height: 150px;
+            ul {
+                list-style-type: none;
+            }
+
+            span {
+                font-size: 0.6em;
+                font-weight: normal;
+                float: right;
+                margin-right: 20px;
+            }
+
+            .control-group {
+                display: inline-block;
+                vertical-align: top;
+                width: 22%;
+                // height: 200px;
+                overflow: auto;
+                margin-right: 15px;
+
+                &.people {
+                    width: 25%;
+
+                    ul li {
+                        display: inline;
+                        float: left;
+                        width: 50%;
+                    }
+
+                    ul li:nth-child(even) {
+                        float: right;
+                    }
+                }
+
+                &.group-by {
+                    width: 10%;
+                }
+            }
+
+            .dates {
+                div {
+                    display: block;
+                    width: auto;
+                    height: auto;
+                }
+
+                input {
+                    width: 100px;
+                    margin: 0px 10px 0px 0px;
+                }
+            }
         }
     }
 
