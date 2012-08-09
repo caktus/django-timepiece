@@ -43,6 +43,9 @@
                 {% if show_approve %}
                     <li><a href="{% url "change_person_time_sheet" "approve" timesheet_user.id from_date|date:"Y-m-d" %}">Approve Time Sheet</a></li>
                 {% endif %}
+                {% if perms.timepiece.view_payroll_summary %}
+                    <li><a href="{% url 'timepiece-reject-entries' timesheet_user.pk %}?month={{ from_date|date:'n' }}&amp;year={{ from_date|date:'Y' }}">Reject All Entries</a></li>
+                {% endif %}
             </ul>
         </div>
     </div>
@@ -171,12 +174,11 @@
                                 <td class="hours time">{{ entry.hours|floatformat:2 }}</td>
                                 <td class="comments" title="{{entry.comments}}">{{ entry.comments|truncatewords:12|urlizetrunc:25|safe }}</td>
                                 <td class="aux">
-                                    {% if entry.status == "unverified" %}
+                                    {% if entry.status == "unverified" or entry.status != 'invoiced' and perms.timepiece.view_payroll_summary %}
                                         <a href="{% url "timepiece-update" entry.id %}?next={{ request.get_full_path|urlencode }}#full-timesheet">Edit</a>
-                                    {% else %}
-                                        {% if perms.timepiece.change_user and entry.status != "invoiced" %}
-                                            <a href="{% url "timepiece-reject-entry" entry.id %}?next={{ request.get_full_path|urlencode }}#full-timesheet">Reject</a>
-                                        {% endif %}
+                                    {% endif %}
+                                    {% if perms.timepiece.view_payroll_summary and entry.status != "unverified" and entry.status != "invoiced" %}
+                                        | <a href="{% url "timepiece-reject-entry" entry.id %}?next={{ request.get_full_path|urlencode }}#full-timesheet">Reject</a>
                                     {% endif %}
                                 </td>
                             </tr>
