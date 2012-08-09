@@ -43,7 +43,7 @@
         <div class="span3">
             <form class="form-vertical filter" method="get">
                 {{ date_form|as_bootstrap }}
-                {{ billable_form|as_bootstrap }}
+                {{ billable_form.as_ul }}
                 <input class="btn" type="submit" name="submit" value="Update" />
             </form>
         </div>

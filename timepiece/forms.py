@@ -588,15 +588,22 @@ class DeleteForm(forms.Form):
 
 
 class BillableHoursForm(forms.Form):
-    people = forms.MultipleChoiceField(required=False)
+    people = forms.MultipleChoiceField(
+        required=False,
+        widget=forms.CheckboxSelectMultiple(),
+    )
     activities = forms.ModelMultipleChoiceField(
+        widget=forms.CheckboxSelectMultiple(),
         queryset=timepiece.Activity.objects.all(),
         required=False,
-        initial=timepiece.Activity.objects.all())
+        initial=timepiece.Activity.objects.all()
+    )
     project_types = forms.ModelMultipleChoiceField(
+        widget=forms.CheckboxSelectMultiple(),
         queryset=timepiece.Attribute.objects.all(),
         required=False,
-        initial=timepiece.Attribute.objects.all())
+        initial=timepiece.Attribute.objects.all()
+    )
 
     def __init__(self, *args, **kwargs):
         super(BillableHoursForm, self).__init__(*args, **kwargs)
