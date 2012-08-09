@@ -258,22 +258,6 @@ body {
         min-height: 500px;
     }
 
-    .filter {
-        label.control-label, p > label {
-            font-size: 1.5em;
-            font-weight: bold;
-        }
-
-        ul {
-            list-style-type: none;
-        }
-
-        span {
-            font-size: 0.6em;
-            font-weight: normal;
-        }
-    }
-
     .hidden {
         display: none;
     }
@@ -317,6 +301,22 @@ body {
     &#billable-hours {
         .filter {
             margin: 0px 0px 20px;
+
+            label.control-label, p > label {
+                font-size: 1.5em;
+                font-weight: bold;
+            }
+
+            ul {
+                list-style-type: none;
+            }
+
+            span {
+                font-size: 0.6em;
+                font-weight: normal;
+                float: right;
+                margin-right: 20px;
+            }
 
             .control-group {
                 display: inline-block;
