@@ -517,6 +517,7 @@ def process_todays_entries(entries):
             'start_time': entry.start_time.isoformat(),
             'end_time': entry.end_time.isoformat(),
             'hours': entry.get_seconds() * 1000,
+            'update_url': reverse('timepiece-update', args=(entry.pk,))
         }
     return {
         'start_time': start_time.isoformat(),

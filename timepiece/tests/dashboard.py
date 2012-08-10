@@ -1,6 +1,7 @@
 from dateutil.parser import parse as dt_parse
 import datetime
 from decimal import Decimal
+import json
 
 from django.core.urlresolvers import reverse
 from django.contrib.auth.models import User
@@ -48,7 +49,7 @@ class DashboardTestCase(TimepieceDataTestCase):
         tomorrow_entry = self.log_time(start=self.tomorrow, delta=(2, 0))
         response = self.client.get(self.url)
         self.assertEqual(response.status_code, 200)
-        entries = response.context['todays_entries']['entries']
+        entries = json.loads(response.context['todays_entries'])['entries']
         pks = (entry['pk'] for entry in entries)
         self.assertEqual(set(pks), set((first.pk, open_entry.pk)))
 
@@ -59,7 +60,7 @@ class DashboardTestCase(TimepieceDataTestCase):
             'start_time': self.start + datetime.timedelta(hours=4)
         })
         response = self.client.get(self.url)
-        entries = response.context['todays_entries']['entries']
+        entries = json.loads(response.context['todays_entries'])['entries']
         for entry, rsp_entry in zip((first, open_entry), entries):
             self.assertEqual(rsp_entry['project'], entry.project.name)
             self.assertEqual(rsp_entry['start_time'],
@@ -73,6 +74,8 @@ class DashboardTestCase(TimepieceDataTestCase):
             self.assertTrue(self.dt_near(rsp_end, entry.end_time))
             rsp_hours = (rsp_end - rsp_start).total_seconds() * 1000
             self.assertTrue(abs(rsp_entry['hours'] - rsp_hours) < 10000)
+            self.assertEqual(rsp_entry['update_url'],
+                reverse('timepiece-update', args=(entry.pk)))
 
     def test_todays_work_start_end(self):
         """
@@ -84,8 +87,9 @@ class DashboardTestCase(TimepieceDataTestCase):
         middle = self.log_time(start=self.start + three_hours, delta=(2, 0))
         last = self.log_time(start=self.start + three_hours * 2, delta=(2, 0))
         response = self.client.get(self.url)
-        start = dt_parse(response.context['todays_entries']['start_time'])
-        end = dt_parse(response.context['todays_entries']['end_time'])
+        entries = json.loads(response.context['todays_entries'])
+        start = dt_parse(entries['start_time'])
+        end = dt_parse(entries['end_time'])
         self.assertEqual(start.hour, first.start_time.hour)
         self.assertEqual(end.hour, last.end_time.hour)
 

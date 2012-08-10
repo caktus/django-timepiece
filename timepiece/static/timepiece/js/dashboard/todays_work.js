@@ -53,6 +53,7 @@ function Entry(timeline, entry_data) {
     this.end_time = entry_data['end_time'];
     this.hours = entry_data['hours'];
     this.pk = entry_data['pk'];
+    this.update_url = entry_data['update_url'];
 
     this.timeline = timeline;
 
@@ -120,6 +121,12 @@ Entry.prototype.draw = function() {
         .duration(1500)
         .attr('fill', '#FFFFFF')
         .style('opacity', '1.0');
+
+    // Handle click
+    var that = this;
+    $(entry.node()).click(function() {
+        location.href = that.update_url;
+    });
 };
 
 (function() {
@@ -149,7 +156,8 @@ Entry.prototype.draw = function() {
             'end_time': end.getTime() + timezone_offset,
             'project_name': entry.project,
             'pk': entry.pk,
-            'hours': hours
+            'hours': hours,
+            'update_url': entry.update_url
         });
         e.draw();
     }
