@@ -35,7 +35,7 @@ class DashboardTestCase(TimepieceDataTestCase):
         self.client.login(username='user', password='abc')
 
     def dt_near(self, dt_a, dt_b, tolerance=10):
-        return abs((dt_a - dt_b).total_seconds()) < tolerance
+        return abs(utils.get_total_seconds(dt_a - dt_b)) < tolerance
 
     def test_todays_work_limits(self):
         """
@@ -72,10 +72,11 @@ class DashboardTestCase(TimepieceDataTestCase):
             # The end time for open_entry was calculated sooner, so we allow a
             # tolerance of 10 seconds.
             self.assertTrue(self.dt_near(rsp_end, entry.end_time))
-            rsp_hours = (rsp_end - rsp_start).total_seconds() * 1000
+            dt = rsp_end - rsp_start
+            rsp_hours = utils.get_total_seconds(dt) * 1000
             self.assertTrue(abs(rsp_entry['hours'] - rsp_hours) < 10000)
             self.assertEqual(rsp_entry['update_url'],
-                reverse('timepiece-update', args=(entry.pk)))
+                reverse('timepiece-update', args=(entry.pk,)))
 
     def test_todays_work_start_end(self):
         """

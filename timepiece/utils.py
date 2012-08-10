@@ -524,3 +524,12 @@ def process_todays_entries(entries):
         'end_time': end_time.isoformat(),
         'entries': map(get_entry_details, entries),
     }
+
+
+def get_total_seconds(td):
+    """
+    The equivalent for datetime.timedelta.total_seconds() for Python 2.6
+    """
+    if hasattr(td, 'total_seconds'):
+        return td.total_seconds()
+    return (td.microseconds + (td.seconds + td.days * 24 * 3600) * 1e6) / 1e6
