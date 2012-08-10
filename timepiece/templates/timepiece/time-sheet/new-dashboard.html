@@ -21,7 +21,6 @@
                     </ul>
                     <ul class="unstyled subnav right">
                         <form action="{% url 'new-dashboard' %}" class="form-inline" method="get">
-                            {% csrf_token %}
                             {{ quick_clock_in_form.non_field_errors }}
                             {{ quick_clock_in_form.clockin.errors }}
                             {{ quick_clock_in_form.clockin }}
