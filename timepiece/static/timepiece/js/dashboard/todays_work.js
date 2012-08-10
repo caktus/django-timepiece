@@ -1,7 +1,7 @@
 var scripts = document.getElementsByTagName('script'),
     script = scripts[scripts.length - 1];
 
-//var entries = JSON.parse(script.getAttribute('data-entries'));
+var data = JSON.parse(script.getAttribute('data-entries'));
 
 function Timeline(loc, start_time, end_time, width, height) {
     this.loc = loc;
@@ -126,27 +126,36 @@ Entry.prototype.draw = function() {
     var width = $('#timeline').width(),
         height = 100;
 
-    d = new Date();
+    var start_time = new Date(data.start_time),
+        end_time = new Date(data.end_time);
 
-    t = new Timeline('#timeline', 1344600575682, 1344629375682, width, height);
+    // Convert the minutes to milliseconds
+    var timezone_offset = start_time.getTimezoneOffset() * 60 * 1000;
+
+    var t = new Timeline('#timeline', start_time.getTime() + timezone_offset,
+        end_time.getTime() + timezone_offset, width, height);
     t.draw();
 
-    new Entry(t, {
-        'start_time': 1344601007339,
-        'end_time': 1344604175282,
-        'project_name': 'Awesomesauce',
-        'hours': 0.84
-    }).draw();
+    for(var i = 0; i < data.entries.length; i++) {
+        var entry = data.entries[i],
+            start = new Date(entry.start_time),
+            end = new Date(entry.end_time);
 
-    new Entry(t, {
-        'start_time': 1344604175682,
-        'end_time': 1344619575682,
-        'project_name': 'django-timepiece',
-        'hours': 4.23
-    }).draw();
+        var dt = end - start,
+            hours = Math.ceil((dt / (3600 * 1000)) * 100) / 100;
+
+        var e = new Entry(t, {
+            'start_time': start.getTime() + timezone_offset,
+            'end_time': end.getTime() + timezone_offset,
+            'project_name': entry.project,
+            'pk': entry.pk,
+            'hours': hours
+        });
+        e.draw();
+    }
 
     // Enable popovers
-    $('rect').popover({
+    $('.timeline rect').popover({
         'placement': 'top'
     });
 }());

@@ -105,7 +105,7 @@ def new_dashboard(request):
         .select_related('project').order_by('start_time')
     context = {
         'quick_clock_in_form': quick_clock_in_form,
-        'todays_entries': utils.process_todays_entries(todays_entries)
+        'todays_entries': json.dumps(utils.process_todays_entries(todays_entries))
     }
     return context
 
