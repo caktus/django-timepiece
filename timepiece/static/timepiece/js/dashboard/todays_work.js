@@ -22,9 +22,7 @@ function Timeline(loc, start_time, end_time, width, height) {
 }
 
 Timeline.prototype.draw = function() {
-    var start_date = new Date(this.start_time),
-        end_date = new Date(this.end_time),
-        dt = this.end_time - this.start_time;
+    var dt = this.end_time - this.start_time;
 
     
     this.line_offset = this.draw_width / (dt / this.interval);

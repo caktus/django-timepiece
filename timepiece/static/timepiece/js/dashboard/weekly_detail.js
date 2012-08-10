@@ -1,11 +1,13 @@
 function ProgressBar(loc, width, height, label) {
-    Rectangle.call(this, loc, width, height);
-
+    this.loc = loc;
+    this.width = width;
+    this.height = height;
     this.label = label;
-}
 
-ProgressBar.prototype = new Rectangle();
-ProgressBar.prototype.constructor = ProgressBar;
+    // Append our svg for drawing
+    this.chart = d3.select(loc).append('svg')
+        .attr('class', 'hoursChart');
+}
 
 ProgressBar.prototype.draw = function(worked, remaining) {
     var width = $(this.loc).width(),
@@ -15,8 +17,8 @@ ProgressBar.prototype.draw = function(worked, remaining) {
     // If we have a label to draw, decrease the width, draw the label,
     // and set the offset to the amount width was decreased
     if(this.label) {
-        width -= 200;
         offset = 200;
+        width -= offset;
 
         this.chart.append('text')
             .attr('font-size', '16px')
@@ -27,7 +29,11 @@ ProgressBar.prototype.draw = function(worked, remaining) {
             .text(this.label);
     }
 
-    Rectangle.prototype.draw.call(this, offset);
+    this.border = this.chart
+        .append('rect')
+        .attr('x', offset).attr('y', 0)
+        .attr('height', this.height)
+        .attr('width', this.width - offset);
 
     var bar = this,
         chart = this.chart,
