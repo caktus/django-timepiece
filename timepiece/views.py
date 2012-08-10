@@ -83,32 +83,29 @@ class CSVMixin(object):
 @login_required
 @render_with('timepiece/time-sheet/new-dashboard.html')
 def new_dashboard(request):
+    if request.method == 'POST':
+        quick_clock_in_form = timepiece_forms.QuickClockInForm(
+                data=request.POST, user=request.user)
+        if quick_clock_in_form.is_valid():
+            pk = quick_clock_in_form.cleaned_data.get('project')
+            project = get_object_or_404(timepiece.Project, pk=pk)
+            url = reverse('timepiece-clock-in') + "?project={0}".format(pk)
+            return HttpResponseRedirect(url)
+    else:
+        quick_clock_in_form = timepiece_forms.QuickClockInForm(
+                user=request.user)
+
     today = datetime.date.today()
     week_start = utils.get_week_start()
-    userQ = Q(user=request.user)
     todayQ = Q(end_time__gte=today) | Q(end_time__isnull=True)
     weekQ = Q(end_time__gte=week_start) | Q(end_time__isnull=True)
-
-    # Projects that can be clocked in to.
-    vacation_ids = settings.TIMEPIECE_PROJECTS.values()
-    work_projects = timepiece.Project.objects.filter(
-            users=request.user) \
-        .exclude(id__in=vacation_ids) \
-        .order_by('name')
-    vacation_projects = timepiece.Project.objects.filter(
-            users=request.user, id__in=vacation_ids) \
-        .order_by('name')
-    choices = (list(work_projects.values_list('id', 'name')) +
-            list(vacation_projects.values_list('id', 'name')))
-    quick_clock_in_form = timepiece_forms.QuickClockInForm(choices)
-
+    
     todays_entries = timepiece.Entry.objects.filter(
-            userQ & todayQ).select_related('project').order_by('start_time')
+            Q(user=request.user) & todayQ) \
+        .select_related('project').order_by('start_time')
     todays_entries = utils.process_todays_entries(todays_entries)
 
     context = {
-        'work_projects': work_projects,
-        'vacation_projects': vacation_projects,
         'quick_clock_in_form': quick_clock_in_form,
     }
     return context
