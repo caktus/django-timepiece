@@ -516,7 +516,7 @@ def process_todays_entries(entries):
             'pk': entry.pk,
             'start_time': entry.start_time.isoformat(),
             'end_time': entry.end_time.isoformat(),
-            'hours': entry.get_seconds() * 1000,
+            'hours': '%.2f' % round(entry.total_hours, 2),
         }
     return {
         'start_time': start_time.isoformat(),

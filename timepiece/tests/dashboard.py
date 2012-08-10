@@ -71,8 +71,8 @@ class DashboardTestCase(TimepieceDataTestCase):
             # The end time for open_entry was calculated sooner, so we allow a
             # tolerance of 10 seconds.
             self.assertTrue(self.dt_near(rsp_end, entry.end_time))
-            rsp_hours = (rsp_end - rsp_start).total_seconds() * 1000
-            self.assertTrue(abs(rsp_entry['hours'] - rsp_hours) < 10000)
+            self.assertTrue(rsp_entry['hours'],
+                            '%.2f' % round(entry.total_hours, 2))
 
     def test_todays_work_start_end(self):
         """

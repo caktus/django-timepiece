@@ -105,11 +105,10 @@ def new_dashboard(request):
             Q(end_time__isnull=True)
     weeks_entries = timepiece.Entry.objects.filter(weekQ, user=user) \
         .select_related('project').order_by('start_time')
-    context = {
+    return {
         'quick_clock_in_form': quick_clock_in_form,
         'todays_entries': utils.process_todays_entries(todays_entries)
     }
-    return context
 
 
 @login_required
