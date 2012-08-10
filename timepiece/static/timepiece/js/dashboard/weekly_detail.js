@@ -89,10 +89,6 @@ ProgressBar.prototype.draw = function(worked, remaining) {
     }
 };
 
-ProgressBar.prototype.addRemainingHours = function(first_argument) {
-    // body...
-};
-
 (function() {
     bar_width = $('.bar').width();
 
