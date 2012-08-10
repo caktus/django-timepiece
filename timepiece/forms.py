@@ -164,6 +164,16 @@ class AddUserToProjectForm(forms.Form):
         return self.cleaned_data['user']
 
 
+class QuickClockInForm(forms.Form):
+    """User can select a project to which to clock in."""
+
+    def __init__(self, choices, *args, **kwargs):
+        super(QuickClockInForm, self).__init__(*args, **kwargs)
+        empty_choice = [('', "Clock in to project...")]
+        self.fields['project'] = forms.ChoiceField(
+                choices=empty_choice + choices, label="")
+
+
 class ClockInForm(forms.ModelForm):
     active_comment = forms.CharField(label='Notes for the active entry',
                                      widget=forms.Textarea, required=False)

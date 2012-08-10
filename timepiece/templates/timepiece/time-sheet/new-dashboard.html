@@ -1,1 +1,26 @@
 {% extends "timepiece/time-sheet/base.html" %}
+
+{% block title %}Timepiece Dashboard{% endblock title %}
+
+{% block bodyid %}dashboard{% endblock bodyid %}
+
+{% block content %}
+
+{% if perms.timepiece.can_clock_in %}
+    <div class="row-fluid">
+        <div class="span12">
+            <h2>My Time Sheet</h2>
+            <ul class="unstyled subnav">
+                <li><a href="{% url timepiece-clock-in %}">Clock In</a></li>
+                <li><a href="{% url timepiece-add %}">Add Entry</a></li>
+            </ul>
+        </div>
+    </div>
+
+    <form action="" class="form-inline" method="post">
+        {{ quick_clock_in_form.project }}
+        <input class="btn btn-primary" name="submit" value="Clock In" />
+    </form>
+{% endif %}
+
+{% endblock content %}
