@@ -35,15 +35,17 @@ Timeline.prototype.draw = function() {
             .attr('y1', this.y_offset).attr('y2', this.height - this.y_offset)
             .style('stroke', '#000000');
 
-        var hours = new Date(this.start_time + this.interval * i).getHours();
-        hours = hours > 12 ? hours % 12 + ' p.m.' : hours + ' a.m.';
+        var d = new Date(this.start_time + this.interval * i);
+        var time = d.getHours() > 12 ?
+            d.getHours() % 12 + ':' + d.getMinutes() + ' p.m.' :
+            d.getHours() + ':' + d.getMinutes() + ' a.m.';
 
         this.container.append('text')
             .attr('x', x_offset - 15).attr('y', 10)
             .style('font-size', '10px')
             .style('fill', '#000000')
             .style('opacity', 1)
-            .text(hours);
+            .text(time);
     }
 };
 
