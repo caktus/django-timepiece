@@ -1,30 +1,44 @@
 {% extends "timepiece/time-sheet/base.html" %}
-
 {% load url from future %}
 
 {% block title %}Timepiece Dashboard{% endblock title %}
 
 {% block bodyid %}dashboard{% endblock bodyid %}
 
+{% block extrajs %}
+    <script src="http://d3js.org/d3.v2.min.js"></script>
+{% endblock extrajs %}
+
 {% block content %}
+    {% if perms.timepiece.can_clock_in %}
+        <div class="row-fluid">
+            <div class="span12">
+                <h2>My Time Sheet</h2>
+                <div class="row-fluid">
+                    <ul class="unstyled subnav span4">
+                        <li><a href="{% url 'timepiece-clock-in' %}">Clock In</a></li>
+                        <li><a href="{% url 'timepiece-add' %}">Add Entry</a></li>
+                    </ul>
+                    <ul class="unstyled subnav right">
+                        <form action="{% url 'new-dashboard' %}" class="form-inline" method="get">
+                            {{ quick_clock_in_form.non_field_errors }}
+                            {{ quick_clock_in_form.clockin.errors }}
+                            {{ quick_clock_in_form.clockin }}
+                            <input type="submit" class="btn btn-primary" value="Clock In" />
+                        </form>
+                    </ul>
+                </div>
+            </div>
+        </div>        
 
-{% if perms.timepiece.can_clock_in %}
-    <div class="row-fluid">
-        <div class="span12">
-            <h2>My Time Sheet</h2>
-            <ul class="unstyled subnav">
-                <li><a href="{% url 'timepiece-clock-in' %}">Clock In</a></li>
-                <li><a href="{% url 'timepiece-add' %}">Add Entry</a></li>
-            </ul>
-        </div>
-    </div>
-    
-    <form action="{% url 'new-dashboard' %}" class="form-inline" method="get">
-        {{ quick_clock_in_form.non_field_errors }}
-        {{ quick_clock_in_form.clockin.errors }}
-        {{ quick_clock_in_form.clockin }}
-        <input type="submit" class="btn btn-primary" value="Clock In" />
-    </form>
-{% endif %}
-
+        {% if todays_entries %}
+            <div class="row-fluid">
+                <div class="span12">
+                    <h3>Today's Work Day</h3>
+                    <div id="timeline" class="timeline"></div>
+                </div>
+            </div>
+            <script src="{{ STATIC_URL }}timepiece/js/dashboard/todays_work.js" data-entries="{{ todays_entries }}"></script>
+        {% endif %}
+    {% endif %}
 {% endblock content %}

@@ -510,12 +510,13 @@ def process_todays_entries(entries):
     end_time = last_end if last_end is not None else now
 
     def get_entry_details(entry):
-        entry.end_time = entry.end_time if entry.end_time else now        
+        entry.end_time = entry.end_time if entry.end_time else now
         return {
             'project': entry.project.name,
             'pk': entry.pk,
             'start_time': entry.start_time.isoformat(),
             'end_time': entry.end_time.isoformat(),
+            'update_url': reverse('timepiece-update', args=(entry.pk,)),
             'hours': '%.2f' % round(entry.total_hours, 2),
         }
     return {
@@ -523,3 +524,12 @@ def process_todays_entries(entries):
         'end_time': end_time.isoformat(),
         'entries': map(get_entry_details, entries),
     }
+
+
+def get_total_seconds(td):
+    """
+    The equivalent for datetime.timedelta.total_seconds() for Python 2.6
+    """
+    if hasattr(td, 'total_seconds'):
+        return td.total_seconds()
+    return (td.microseconds + (td.seconds + td.days * 24 * 3600) * 1e6) / 1e6

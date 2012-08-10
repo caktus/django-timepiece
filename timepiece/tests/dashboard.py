@@ -1,6 +1,7 @@
 from dateutil.parser import parse as dt_parse
 import datetime
 from decimal import Decimal
+import json
 
 from django.core.urlresolvers import reverse
 from django.contrib.auth.models import User
@@ -34,7 +35,7 @@ class DashboardTestCase(TimepieceDataTestCase):
         self.client.login(username='user', password='abc')
 
     def dt_near(self, dt_a, dt_b, tolerance=10):
-        return abs((dt_a - dt_b).total_seconds()) < tolerance
+        return abs(utils.get_total_seconds(dt_a - dt_b)) < tolerance
 
     def test_todays_work_limits(self):
         """
@@ -48,7 +49,7 @@ class DashboardTestCase(TimepieceDataTestCase):
         tomorrow_entry = self.log_time(start=self.tomorrow, delta=(2, 0))
         response = self.client.get(self.url)
         self.assertEqual(response.status_code, 200)
-        entries = response.context['todays_entries']['entries']
+        entries = json.loads(response.context['todays_entries'])['entries']
         pks = (entry['pk'] for entry in entries)
         self.assertEqual(set(pks), set((first.pk, open_entry.pk)))
 
@@ -59,7 +60,7 @@ class DashboardTestCase(TimepieceDataTestCase):
             'start_time': self.start + datetime.timedelta(hours=4)
         })
         response = self.client.get(self.url)
-        entries = response.context['todays_entries']['entries']
+        entries = json.loads(response.context['todays_entries'])['entries']
         for entry, rsp_entry in zip((first, open_entry), entries):
             self.assertEqual(rsp_entry['project'], entry.project.name)
             self.assertEqual(rsp_entry['start_time'],
@@ -71,6 +72,8 @@ class DashboardTestCase(TimepieceDataTestCase):
             # The end time for open_entry was calculated sooner, so we allow a
             # tolerance of 10 seconds.
             self.assertTrue(self.dt_near(rsp_end, entry.end_time))
+            self.assertEqual(rsp_entry['update_url'],
+                reverse('timepiece-update', args=(entry.pk,)))
             self.assertTrue(rsp_entry['hours'],
                             '%.2f' % round(entry.total_hours, 2))
 
@@ -84,8 +87,9 @@ class DashboardTestCase(TimepieceDataTestCase):
         middle = self.log_time(start=self.start + three_hours, delta=(2, 0))
         last = self.log_time(start=self.start + three_hours * 2, delta=(2, 0))
         response = self.client.get(self.url)
-        start = dt_parse(response.context['todays_entries']['start_time'])
-        end = dt_parse(response.context['todays_entries']['end_time'])
+        entries = json.loads(response.context['todays_entries'])
+        start = dt_parse(entries['start_time'])
+        end = dt_parse(entries['end_time'])
         self.assertEqual(start.hour, first.start_time.hour)
         self.assertEqual(end.hour, last.end_time.hour)
 
