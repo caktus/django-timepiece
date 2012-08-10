@@ -501,7 +501,7 @@ def process_dates(dates, start=None, end=None):
 
 
 def process_todays_entries(entries):
-    now = timezone.now()
+    now = timezone.now().replace(microsecond=0)
     if entries:
         start_time = entries[0].start_time
         last_end = entries[entries.count() - 1].end_time
@@ -519,7 +519,7 @@ def process_todays_entries(entries):
             'hours': entry.get_seconds() * 1000,
         }
     return {
-        'start_time': start_time,
-        'end_time': end_time,
+        'start_time': start_time.isoformat(),
+        'end_time': end_time.isoformat(),
         'entries': map(get_entry_details, entries),
     }
