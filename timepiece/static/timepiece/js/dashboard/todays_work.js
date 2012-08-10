@@ -75,6 +75,10 @@ Entry.prototype.draw = function() {
         .attr('height', this.height - 10)
         .attr('width', width);
 
+    // Add the attributes for popovers
+    entry.attr('data-title', this.project_name)
+        .attr('data-content', 'You have worked ' + this.hours + ' hours.')
+
     entry.transition()
         .delay(100)
         .duration(1500)
@@ -88,9 +92,11 @@ Entry.prototype.draw = function() {
         .style('font-size', '14px')
         .text(this.project_name);
 
+    // Get bounding boxes for centering text
     var text_box = text.node().getBBox(),
         entry_box = entry.node().getBBox();
     
+    // Strip project name down if its too large
     if(text_box.width > entry_box.width) {
         var sub = Math.ceil(text_box.width / (text_box.width - entry_box.width)), // Ratio using widths
             name = this.project_name.substring(0, sub) + '...';
@@ -103,11 +109,14 @@ Entry.prototype.draw = function() {
         text_box = text.node().getBBox();
     }
 
-    var text_xpos = x_offset + width / 2 - text_box.width / 2;
+    // Do some positioning to get the text centered correctly
+    var text_xpos = x_offset + width / 2 - text_box.width / 2,
+        text_ypos = timeline.y_offset + this.height / 2 + text_box.height / 4;
 
     text.attr('x', text_xpos)
-        .attr('y', timeline.y_offset + this.height / 2 + text_box.height / 4);
-      
+        .attr('y', text_ypos);
+    
+    // Display!
     text.transition()
         .delay(100)
         .duration(1500)
@@ -127,13 +136,19 @@ Entry.prototype.draw = function() {
     new Entry(t, {
         'start_time': 1344601007339,
         'end_time': 1344604175282,
-        'project_name': 'Awesomesauce'
+        'project_name': 'Awesomesauce',
+        'hours': 0.84
     }).draw();
 
     new Entry(t, {
         'start_time': 1344604175682,
         'end_time': 1344619575682,
-        'project_name': 'django-timepiece'
+        'project_name': 'django-timepiece',
+        'hours': 4.23
     }).draw();
-    
+
+    // Enable popovers
+    $('rect').popover({
+        'placement': 'top'
+    });
 }());
