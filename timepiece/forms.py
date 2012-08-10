@@ -182,7 +182,7 @@ class QuickClockInForm(forms.Form):
         choices = [('', "Clock in to project...")] + \
                 list(work_projects.values_list('id', 'name')) + \
                 list(vacation_projects.values_list('id', 'name'))
-        self.fields['project'] = forms.ChoiceField(choices=choices, label="")
+        self.fields['clockin'] = forms.ChoiceField(choices=choices, label="")
 
 
 class ClockInForm(forms.ModelForm):

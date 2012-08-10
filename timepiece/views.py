@@ -84,11 +84,11 @@ class CSVMixin(object):
 @render_with('timepiece/time-sheet/new-dashboard.html')
 def new_dashboard(request):
     user = request.user
-    if request.method == 'POST':
+    if request.method == 'GET' and 'clockin' in request.GET:
         quick_clock_in_form = timepiece_forms.QuickClockInForm(
-                data=request.POST, user=request.user)
+                data=request.GET, user=request.user)
         if quick_clock_in_form.is_valid():
-            pk = quick_clock_in_form.cleaned_data.get('project')
+            pk = quick_clock_in_form.cleaned_data.get('clockin')
             project = get_object_or_404(timepiece.Project, pk=pk)
             url = reverse('timepiece-clock-in') + "?project={0}".format(pk)
             return HttpResponseRedirect(url)

@@ -20,12 +20,12 @@
                         <li><a href="{% url 'timepiece-add' %}">Add Entry</a></li>
                     </ul>
                     <ul class="unstyled subnav right">
-                        <form action="{% url 'new-dashboard' %}" class="form-inline" method="post">
+                        <form action="{% url 'new-dashboard' %}" class="form-inline" method="get">
                             {% csrf_token %}
                             {{ quick_clock_in_form.non_field_errors }}
-                            {{ quick_clock_in_form.project.errors }}
-                            {{ quick_clock_in_form.project }}
-                            <input type="submit" class="btn btn-primary" name="submit" value="Clock In" />
+                            {{ quick_clock_in_form.clockin.errors }}
+                            {{ quick_clock_in_form.clockin }}
+                            <input type="submit" class="btn btn-primary" value="Clock In" />
                         </form>
                     </ul>
                 </div>
