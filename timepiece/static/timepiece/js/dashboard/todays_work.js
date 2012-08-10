@@ -80,7 +80,7 @@ Entry.prototype.draw = function() {
     entry.transition()
         .delay(100)
         .duration(1500)
-        .attr('fill', 'steelblue')
+        .attr('fill', '#0061AA')
         .attr('stroke', '#333333')
         .attr('stroke-width', '2px')
         .style('opacity', '0.95');
