@@ -19,12 +19,11 @@
         </div>
     </div>
     
-    <form action="{% url 'new-dashboard' %}" class="form-inline" method="post">
-        {% csrf_token %}
+    <form action="{% url 'new-dashboard' %}" class="form-inline" method="get">
         {{ quick_clock_in_form.non_field_errors }}
-        {{ quick_clock_in_form.project.errors }}
-        {{ quick_clock_in_form.project }}
-        <input type="submit" class="btn btn-primary" name="submit" value="Clock In" />
+        {{ quick_clock_in_form.clockin.errors }}
+        {{ quick_clock_in_form.clockin }}
+        <input type="submit" class="btn btn-primary" value="Clock In" />
     </form>
 {% endif %}
 
