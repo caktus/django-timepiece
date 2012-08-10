@@ -83,13 +83,28 @@ class CSVMixin(object):
 @login_required
 @render_with('timepiece/time-sheet/new-dashboard.html')
 def new_dashboard(request):
+    if request.method == 'POST':
+        quick_clock_in_form = timepiece_forms.QuickClockInForm(
+                data=request.POST, user=request.user)
+        if quick_clock_in_form.is_valid():
+            pk = quick_clock_in_form.cleaned_data.get('project')
+            project = get_object_or_404(timepiece.Project, pk=pk)
+            url = reverse('timepiece-clock-in') + "?project={0}".format(pk)
+            return HttpResponseRedirect(url)
+    else:
+        quick_clock_in_form = timepiece_forms.QuickClockInForm(
+                user=request.user)
     today = datetime.date.today()
     eod = timezone.now().replace(hour=23, minute=59, second=59)
+    week_start = utils.get_week_start()
+    todayQ = Q(end_time__gte=today, end_time__lt=eod) | \
+             Q(end_time__isnull=True)
+    weekQ = Q(end_time__gte=week_start) | Q(end_time__isnull=True)
     todays_entries = timepiece.Entry.objects.filter(
-        Q(user=request.user) & (Q(end_time__gte=today, end_time__lt=eod) |
-                                Q(end_time__isnull=True))) \
+            Q(user=request.user) & todayQ) \
         .select_related('project').order_by('start_time')
     context = {
+        'quick_clock_in_form': quick_clock_in_form,
         'todays_entries': utils.process_todays_entries(todays_entries)
     }
     return context
