@@ -1,7 +1,7 @@
 Release Notes
 =========================================
 
-0.5.3 (UnReleased)
+0.5.3 (Released 08-10-2012)
 ------------------
 
 * Added a "Billable Hours" report, which displays a chart of billable and non-billable hours for a selected group of people, activities, project types and date range.
