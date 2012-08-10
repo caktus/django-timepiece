@@ -1,0 +1,45 @@
+{% extends "timepiece/base.html" %}
+
+{% block title %}Visualization{% endblock title %}
+
+{% block extracss %}
+<style type="text/css">
+.bar {
+    margin: 10px 0px;
+}
+
+.rectangleContainer {
+    border: 1px #000000 solid;
+}
+
+.worked, .remaining {
+    text-align: center;
+}
+
+svg.hoursChart {
+    height: 50px;
+    shape-rendering: crispEdges;
+}
+
+rect {
+    fill: #FFFFFF;
+    stroke: #000000;
+    stroke-width: 1px;
+}​
+</style>
+{% endblock extracss %}
+
+{% block content %}
+<div class="row-fluid">
+    <div class="span12">
+        <div id="hours1" class="bar"></div>
+        <div id="hours2" class="bar"></div>
+        <div id="hours3" class="bar"></div>
+        <div id="hours4" class="bar"></div>
+    </div>
+</div>
+
+<script src="http://d3js.org/d3.v2.min.js"></script>
+<script src="{{ STATIC_URL }}timepiece/js/dashboard/weekly_detail.js"></script>
+
+{% endblock content %}
