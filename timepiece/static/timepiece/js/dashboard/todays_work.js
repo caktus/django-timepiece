@@ -36,9 +36,13 @@ Timeline.prototype.draw = function() {
             .style('stroke', '#000000');
 
         var d = new Date(this.start_time + this.interval * i);
-        var time = d.getHours() > 12 ?
-            d.getHours() % 12 + ':' + d.getMinutes() + ' p.m.' :
-            d.getHours() + ':' + d.getMinutes() + ' a.m.';
+        var period = d.getHours() < 12 ? 'AM' : 'PM';
+        var hours = d.getHours() > 12 ? d.getHours() - 12 : d.getHours();
+        if (hours == 0) {
+            hours = 12;
+        }
+        var minutes = d.getMinutes() < 10 ? '0' + d.getMinutes() : d.getMinutes();
+        var time = hours + ':' + minutes + ' ' + period; 
 
         this.container.append('text')
             .attr('x', x_offset - 15).attr('y', 10)
