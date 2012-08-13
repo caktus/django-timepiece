@@ -1,3 +1,8 @@
+var scripts = document.getElementsByTagName('script'),
+    script = scripts[scripts.length - 1];
+
+var data = JSON.parse(script.getAttribute('data-entries'));
+
 function ProgressBar(loc, width, height, label) {
     this.loc = loc;
     this.width = width;
@@ -123,8 +128,16 @@ ProgressBar.prototype.draw = function(hours_worked, hours_remaining) {
 (function() {
     bar_width = $('.bar').width();
 
-    new ProgressBar('#hours1.bar', bar_width, 40).draw(19, 40);
-    new ProgressBar('#hours2.bar', bar_width, 40, 'django-timepiece').draw(2, 8);
-    new ProgressBar('#hours3.bar', bar_width, 40, 'CBS Local Places').draw(5, 19);
-    new ProgressBar('#hours4.bar', bar_width, 40, 'Awesomesauce 3000').draw(12, 13);
+    var total_hours = parseFloat(data.total_hours);
+    var worked = parseFloat(data.worked);
+    var remaining = parseFloat(data.remaining);
+    new ProgressBar('#all-hours.bar', bar_width, total_hours).draw(worked, remaining);
+
+    for(var i = 0; i < data.projects.length; i++) {
+        var project = data.projects[i];
+        var worked = parseFloat(project.worked);
+        var remaining = parseFloat(project.remaining);
+        var id = '#hours-' + project.pk + '.bar';
+        new ProgressBar(id, bar_width, total_hours, project.name).draw(worked, remaining);
+    } 
 }());

@@ -38,7 +38,22 @@
                     <div id="timeline" class="timeline"></div>
                 </div>
             </div>
-            <script src="{{ STATIC_URL }}timepiece/js/dashboard/todays_work.js" data-entries="{{ todays_entries }}"></script>
+            <script src="{{ STATIC_URL }}timepiece/js/dashboard/todays_work.js" data-entries="{{ todays_entries_json }}"></script>
+        {% endif %}
+
+        {% if weeks_entries %}
+            <div class="row-fluid">
+                <div class="span12">
+                    <h3>Hours This Week</h3>
+                    <div id="weekly-hours">
+                        <div id="all-hours" class="bar"></div>
+                        {% for project in weeks_entries.projects %}
+                            <div id="hours-{{ project.pk }}" class="bar"></div>
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
+            <script src="{{ STATIC_URL }}timepiece/js/dashboard/weeks_work.js" data-entries="{{ weeks_entries_json }}"></script>
         {% endif %}
     {% endif %}
 {% endblock content %}

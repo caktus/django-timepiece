@@ -100,14 +100,20 @@ def new_dashboard(request):
              Q(end_time__isnull=True)
     todays_entries = timepiece.Entry.objects.filter(todayQ, user=user) \
         .select_related('project').order_by('start_time')
+    todays_entries_summary = utils.process_todays_entries(todays_entries)
     week_start, week_end = utils.get_week_window(today)
     weekQ = Q(end_time__gte=week_start, end_time__lt=week_end) | \
             Q(end_time__isnull=True)
     weeks_entries = timepiece.Entry.objects.filter(weekQ, user=user) \
         .select_related('project').order_by('start_time')
+    weeks_entries_summary = utils.process_weeks_entries(user=user,
+            week_start=week_start, entries=weeks_entries)
     return {
         'quick_clock_in_form': quick_clock_in_form,
-        'todays_entries': json.dumps(utils.process_todays_entries(todays_entries))
+        'todays_entries': todays_entries_summary,
+        'todays_entries_json': json.dumps(todays_entries_summary),
+        'weeks_entries': weeks_entries_summary,
+        'weeks_entries_json': json.dumps(weeks_entries_summary),
     }
 
 
