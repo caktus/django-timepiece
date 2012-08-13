@@ -533,3 +533,89 @@ def get_total_seconds(td):
     if hasattr(td, 'total_seconds'):
         return td.total_seconds()
     return (td.microseconds + (td.seconds + td.days * 24 * 3600) * 1e6) / 1e6
+
+
+def get_active_hours(entry):
+    """Use with active entries to obtain the time worked so far."""
+    if not entry.end_time:
+        if entry.is_paused:
+            entry.end_time = entry.pause_time
+        else:
+            entry.end_time = timezone.now()
+    return Decimal('%.2f' % round(entry.total_hours, 2))
+
+
+def process_weeks_entries(user, week_start, entries):
+    """Summarizes the user's hours over the provided week's entries.
+
+    Returns a dictionary containing a summary of hours worked:
+    {
+        'worked': 123.45,
+        'remaining': 123.45,
+        'projects': [
+            {
+                'pk': 123,
+                'name': 'abc',
+                'worked': 123.45,
+                'remaining': 123.45,
+            }
+        ],
+    }
+    """
+
+    def _initialize_in_projects(entry):
+        """
+        Helper method which adds new project record to projects if there is 
+        no record for the project associated with this entry.
+
+        Requires projects, proj_hours, and ProjectHours in scope.
+        """
+        if entry.project_id not in projects:
+            try:
+                remaining = proj_hours.get(project=entry.project).hours
+            except ProjectHours.DoesNotExist:
+                remaining = None
+            projects[entry.project.pk] = {
+                'pk': entry.project.pk,
+                'name': entry.project.name,
+                'worked': Decimal('0.00'),
+                'remaining': remaining,
+            }
+
+    ProjectHours = get_model('timepiece', 'ProjectHours')
+    proj_hours = ProjectHours.objects.filter(user=user, week_start=week_start)
+    PersonSchedule = get_model('timepiece', 'PersonSchedule')
+    try:
+        sched = PersonSchedule.objects.get(user=user)
+    except PersonSchedule.DoesNotExist:
+        sched = None
+    total_hours = sched.hours_per_week if sched else Decimal('40.00')
+    
+    all_worked = Decimal('0.00')
+    all_remaining = total_hours
+    projects = {}  # Worked/remaining hours per project
+    for entry in entries:
+        _initialize_in_projects(entry)
+        pk = entry.project_id
+        hours = get_active_hours(entry)
+        all_worked += hours
+        projects[pk]['worked'] = projects[pk]['worked'] + hours
+        all_remaining -= hours
+        if projects[pk]['remaining']:
+            projects[pk]['remaining'] = projects[pk]['remaining'] - hours
+
+    # Convert Decimals to string so they can be serialized.
+    total_hours = '%.2f' % round(total_hours, 2)
+    all_worked = '%.2f' % round(all_worked, 2)
+    all_remaining = '%.2f' % round(all_remaining, 2)
+    for project in projects.values():
+        project['worked'] = '%.2f' % round(project['worked'], 2)
+        if project['remaining'] is not None:
+            project['remaining'] = '%.2f' % round(project['remaining'], 2)
+        
+    return {
+        'total_hours': total_hours,
+        'worked': all_worked,
+        'remaining': all_remaining,
+        'projects': projects.values(),
+    }
