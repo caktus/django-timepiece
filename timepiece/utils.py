@@ -574,14 +574,15 @@ def process_weeks_entries(user, week_start, entries):
         """
         if entry.project_id not in projects:
             try:
-                remaining = proj_hours.get(project=entry.project).hours
+                total_hours = proj_hours.get(project=entry.project).hours
             except ProjectHours.DoesNotExist:
-                remaining = Decimal('0.00')
+                total_hours = Decimal('0.00')
             projects[entry.project.pk] = {
                 'pk': entry.project.pk,
                 'name': entry.project.name,
                 'worked': Decimal('0.00'),
-                'remaining': remaining,
+                'remaining': total_hours,
+                'total_hours': total_hours,
                 'overworked': Decimal('0.00'),
             }
 
@@ -625,6 +626,7 @@ def process_weeks_entries(user, week_start, entries):
         project['worked'] = '%.2f' % round(project['worked'], 2)
         project['remaining'] = '%.2f' % round(project['remaining'], 2)
         project['overworked'] = '%.2f' % round(project['overworked'], 2)
+        project['total_hours'] = '%.2f' % round(project['total_hours'], 2)
         
     return {
         'total_hours': total_hours,
