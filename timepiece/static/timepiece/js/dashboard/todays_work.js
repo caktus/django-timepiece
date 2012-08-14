@@ -3,6 +3,17 @@ var scripts = document.getElementsByTagName('script'),
 
 var data = JSON.parse(script.getAttribute('data-entries'));
 
+var get_time_display = function(stamp) {
+    var dt = new Date(stamp);
+    var period = dt.getHours() < 12 ? 'AM' : 'PM';
+    var hours = dt.getHours() > 12 ? dt.getHours() - 12 : dt.getHours();
+    if (hours == 0) {
+        hours = 12;
+    }
+    var minutes = dt.getMinutes() < 10 ? '0' + dt.getMinutes() : dt.getMinutes();
+    return hours + ':' + minutes + ' ' + period;
+}
+
 function Timeline(loc, start_time, end_time, width, height) {
     this.loc = loc;
     this.start_time = start_time;
@@ -35,14 +46,7 @@ Timeline.prototype.draw = function() {
             .attr('y1', this.y_offset).attr('y2', this.height - this.y_offset)
             .style('stroke', '#000000');
 
-        var d = new Date(this.start_time + this.interval * i);
-        var period = d.getHours() < 12 ? 'AM' : 'PM';
-        var hours = d.getHours() > 12 ? d.getHours() - 12 : d.getHours();
-        if (hours == 0) {
-            hours = 12;
-        }
-        var minutes = d.getMinutes() < 10 ? '0' + d.getMinutes() : d.getMinutes();
-        var time = hours + ':' + minutes + ' ' + period; 
+        var time = get_time_display(new Date(this.start_time + this.interval * i));
 
         this.container.append('text')
             .attr('x', x_offset - 15).attr('y', 10)
@@ -80,15 +84,11 @@ Entry.prototype.draw = function() {
         .attr('height', this.height - 10)
         .attr('width', width);
 
-    var get_time_display = function(value) {
-        dt = new Date(value);
-        return dt.getHours() + ':' + dt.getMinutes();
-    }
-
     // Add the attributes for popovers
     var popover_msg = 'You have worked ' + this.hours + ' hours.';
-    popover_msg += '<br/>' + get_time_display(this.start_time) +
-                   ' - ' + get_time_display(this.end_time);
+    var start_str = get_time_display(new Date(this.start_time));
+    var end_str = get_time_display(new Date(this.end_time));
+    popover_msg += '<br/>' + start_str + ' - ' + end_str;
     entry.attr('data-title', this.project_name)
         .attr('data-content', popover_msg);
 
