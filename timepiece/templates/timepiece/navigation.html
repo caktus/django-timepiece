@@ -137,7 +137,7 @@
 
                 {% block quick-clock-in %}
                     {% if perms.timepiece.can_clock_in %}
-                        <form action="{% url 'new-dashboard' %}" class="navbar-search form-inline pull-right" method="get" id="quick-clock-in">
+                        <form action="{% url 'timepiece-clock-in' %}" class="navbar-search form-inline pull-right" method="get" id="quick-clock-in">
                             {{ quick_clock_in_form.clockin }}
                         </form>
                     {% endif %}
