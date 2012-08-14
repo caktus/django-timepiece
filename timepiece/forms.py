@@ -1,4 +1,3 @@
-from decimal import Decimal
 import time
 from datetime import datetime, timedelta
 from dateutil.relativedelta import relativedelta
@@ -10,14 +9,14 @@ from django.contrib.auth import models as auth_models
 from django.contrib.auth import forms as auth_forms
 from django.core.urlresolvers import reverse
 from django.utils.translation import ugettext_lazy as _
-from django.core.exceptions import ValidationError, NON_FIELD_ERRORS
+from django.core.exceptions import ValidationError
 
 from selectable import forms as selectable_forms
 
 from timepiece.lookups import ProjectLookup, QuickLookup
 from timepiece.lookups import UserLookup, BusinessLookup
 
-from timepiece.models import Project, Entry, Activity, UserProfile, Attribute
+from timepiece.models import Project, Entry, Attribute
 from timepiece.models import ProjectHours
 from timepiece.fields import UserModelChoiceField
 from timepiece import models as timepiece

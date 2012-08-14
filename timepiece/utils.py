@@ -4,14 +4,12 @@ from dateutil.relativedelta import relativedelta
 from decimal import Decimal
 from itertools import groupby
 import time
-import calendar
 
 from django.http import HttpResponse, HttpResponseRedirect, Http404
 from django.shortcuts import render_to_response
 from django.template import RequestContext
 from django.template.defaultfilters import slugify
 from django.db.models import Sum, get_model
-from django.contrib.sites.models import Site
 from django.utils.functional import lazy
 from django.core.urlresolvers import reverse
 
