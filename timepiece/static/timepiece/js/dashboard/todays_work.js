@@ -80,9 +80,17 @@ Entry.prototype.draw = function() {
         .attr('height', this.height - 10)
         .attr('width', width);
 
+    var get_time_display = function(value) {
+        dt = new Date(value);
+        return dt.getHours() + ':' + dt.getMinutes();
+    }
+
     // Add the attributes for popovers
+    var popover_msg = 'You have worked ' + this.hours + ' hours.';
+    popover_msg += '<br/>' + get_time_display(this.start_time) +
+                   ' - ' + get_time_display(this.end_time);
     entry.attr('data-title', this.project_name)
-        .attr('data-content', 'You have worked ' + this.hours + ' hours.');
+        .attr('data-content', popover_msg);
 
     entry.transition()
         .delay(100)
@@ -166,6 +174,7 @@ Entry.prototype.draw = function() {
             'update_url': entry.update_url
         });
         e.draw();
+        thing = e;
     }
 
     // Enable popovers
