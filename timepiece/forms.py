@@ -167,9 +167,9 @@ class AddUserToProjectForm(forms.Form):
 class QuickClockInForm(forms.Form):
     """User can select a project to which to clock in."""
 
-    def __init__(self, user, *args, **kwargs):
+    def __init__(self, *args, **kwargs):
+        user = kwargs.pop('user')
         super(QuickClockInForm, self).__init__(*args, **kwargs)
-
         vacation_ids = settings.TIMEPIECE_PROJECTS.values()
         work_projects = timepiece.Project.objects.filter(
                 users=user, status__enable_timetracking=True, 
@@ -183,6 +183,16 @@ class QuickClockInForm(forms.Form):
                 list(work_projects.values_list('id', 'name')) + \
                 list(vacation_projects.values_list('id', 'name'))
         self.fields['clockin'] = forms.ChoiceField(choices=choices, label="")
+
+    def clean(self):
+        data = self.cleaned_data
+        project_pk = data.get('clockin')
+        if not timepiece.Project.objects.filter(pk=project_pk).exists():
+            raise forms.ValidationError('Project not found.')
+        return data
+
+    def save(self, *args, **kwargs):
+        return self.cleaned_data.get('clockin')
 
 
 class ClockInForm(forms.ModelForm):

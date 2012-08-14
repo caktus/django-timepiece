@@ -502,6 +502,7 @@ def process_dates(dates, start=None, end=None):
 
 def process_todays_entries(entries):
     now = timezone.now().replace(microsecond=0)
+    last_end = None
     if entries:
         start_time = entries[0].start_time
         last_end = entries[entries.count() - 1].end_time

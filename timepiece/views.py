@@ -84,16 +84,6 @@ class CSVMixin(object):
 @render_with('timepiece/time-sheet/new-dashboard.html')
 def new_dashboard(request):
     user = request.user
-    if request.method == 'GET' and 'clockin' in request.GET:
-        quick_clock_in_form = timepiece_forms.QuickClockInForm(
-                data=request.GET, user=request.user)
-        if quick_clock_in_form.is_valid():
-            pk = quick_clock_in_form.cleaned_data.get('clockin')
-            project = get_object_or_404(timepiece.Project, pk=pk)
-            url = reverse('timepiece-clock-in') + "?project={0}".format(pk)
-            return HttpResponseRedirect(url)
-    else:
-        quick_clock_in_form = timepiece_forms.QuickClockInForm(user=user)
     today = datetime.date.today()
     eod = timezone.now().replace(hour=23, minute=59, second=59)
     todayQ = Q(end_time__gte=today, end_time__lt=eod) | \
@@ -109,7 +99,6 @@ def new_dashboard(request):
     weeks_entries_summary = utils.process_weeks_entries(user=user,
             week_start=week_start, entries=weeks_entries)
     return {
-        'quick_clock_in_form': quick_clock_in_form,
         'todays_entries': todays_entries_summary,
         'todays_entries_json': json.dumps(todays_entries_summary),
         'weeks_entries': weeks_entries_summary,

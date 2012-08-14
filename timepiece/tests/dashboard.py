@@ -1,7 +1,5 @@
 from dateutil.parser import parse as dt_parse
 import datetime
-from decimal import Decimal
-import json
 
 from django.core.urlresolvers import reverse
 from django.contrib.auth.models import User
@@ -11,9 +9,7 @@ try:
 except ImportError:
     from timepiece import timezone
 
-from timepiece.templatetags.timepiece_tags import get_active_hours
 from timepiece.tests.base import TimepieceDataTestCase
-from timepiece import models as timepiece
 from timepiece import utils
 
 
@@ -45,11 +41,11 @@ class DashboardTestCase(TimepieceDataTestCase):
         open_entry = self.create_entry({
             'start_time': self.start + datetime.timedelta(hours=4)
         })
-        yester_entry = self.log_time(start=self.yesterday, delta=(2, 0))
-        tomorrow_entry = self.log_time(start=self.tomorrow, delta=(2, 0))
+        self.log_time(start=self.yesterday, delta=(2, 0))
+        self.log_time(start=self.tomorrow, delta=(2, 0))
         response = self.client.get(self.url)
         self.assertEqual(response.status_code, 200)
-        entries = json.loads(response.context['todays_entries'])['entries']
+        entries = response.context['todays_entries']['entries']
         pks = (entry['pk'] for entry in entries)
         self.assertEqual(set(pks), set((first.pk, open_entry.pk)))
 
@@ -60,14 +56,13 @@ class DashboardTestCase(TimepieceDataTestCase):
             'start_time': self.start + datetime.timedelta(hours=4)
         })
         response = self.client.get(self.url)
-        entries = json.loads(response.context['todays_entries'])['entries']
+        entries = response.context['todays_entries']['entries']
         for entry, rsp_entry in zip((first, open_entry), entries):
             self.assertEqual(rsp_entry['project'], entry.project.name)
             self.assertEqual(rsp_entry['start_time'],
                              entry.start_time.isoformat())
             if not entry.end_time:
                 entry.end_time = timezone.now().replace(microsecond=0)
-            rsp_start = dt_parse(rsp_entry['start_time'])
             rsp_end = dt_parse(rsp_entry['end_time'])
             # The end time for open_entry was calculated sooner, so we allow a
             # tolerance of 10 seconds.
@@ -87,7 +82,7 @@ class DashboardTestCase(TimepieceDataTestCase):
         middle = self.log_time(start=self.start + three_hours, delta=(2, 0))
         last = self.log_time(start=self.start + three_hours * 2, delta=(2, 0))
         response = self.client.get(self.url)
-        entries = json.loads(response.context['todays_entries'])
+        entries = response.context['todays_entries']
         start = dt_parse(entries['start_time'])
         end = dt_parse(entries['end_time'])
         self.assertEqual(start.hour, first.start_time.hour)

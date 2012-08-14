@@ -1,7 +1,9 @@
 from django.conf import settings
+from django.http import HttpResponseRedirect, Http404
+from django.core.urlresolvers import reverse
 
 from timepiece import models as timepiece
-from timepiece.forms import QuickSearchForm
+from timepiece.forms import QuickSearchForm, QuickClockInForm
 
 
 def timepiece_settings(request):
@@ -31,6 +33,21 @@ def active_entries(request):
 
     return {
         'active_entries': active_entries,
+    }
+
+
+def quick_clock_in(request):
+    form = None
+    if request.user.is_authenticated():
+        user = request.user
+        form = QuickClockInForm(request.GET or None, user=user)
+        if 'clockin' in request.GET:
+            url = reverse('timepiece-clock-in')
+            if form.is_valid():
+                url += "?project={0}".format(form.save())
+            return HttpResponseRedirect(url)
+    return {
+        'quick_clock_in_form': form,
     }
 
 
