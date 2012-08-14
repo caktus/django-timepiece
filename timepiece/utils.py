@@ -42,38 +42,6 @@ def slugify_uniquely(s, queryset=None, field='slug'):
     return new_slug
 
 
-def render_with(template_name):
-    """
-    Renders the view wrapped by this decorator with the given template.  The
-    view should return the context to be used in the template, or an
-    HttpResponse.
-
-    If the view returns an HttpResponseRedirect, the decorator will redirect
-    to the given URL, or to request.REQUEST['next'] (if it exists).
-    """
-    def render_with_decorator(view_func):
-        def wrapper(*args, **kwargs):
-            request = args[0]
-            response = view_func(*args, **kwargs)
-
-            if isinstance(response, HttpResponse):
-                if isinstance(response, HttpResponseRedirect) and \
-                  'next' in request.REQUEST:
-                    return HttpResponseRedirect(request.REQUEST['next'])
-                else:
-                    return response
-            else:
-                # assume response is a context dictionary
-                context = response
-                return render_to_response(
-                    template_name,
-                    context,
-                    context_instance=RequestContext(request),
-                )
-        return wrapper
-    return render_with_decorator
-
-
 DEFAULT_TIME_FORMATS = [
     '%H:%M',        # 23:15         => 23:15:00
     '%H:%M:%S',     # 05:50:21      => 05:50:21
