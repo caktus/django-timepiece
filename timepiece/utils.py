@@ -506,6 +506,7 @@ def process_todays_entries(entries):
         last_end = entries[entries.count() - 1].end_time
     else:
         start_time = now.replace(hour=0, minute=0, second=0, microsecond=0)
+        last_end = None
     end_time = last_end if last_end is not None else now
 
     def get_entry_details(entry):
@@ -549,14 +550,16 @@ def process_weeks_entries(user, week_start, entries):
 
     Returns a dictionary containing a summary of hours worked:
     {
-        'worked': 123.45,
-        'remaining': 123.45,
+        'worked': '123.45',
+        'remaining': '123.45',
+        'overworked': '123.45',
         'projects': [
             {
                 'pk': 123,
                 'name': 'abc',
-                'worked': 123.45,
-                'remaining': 123.45,
+                'worked': '123.45',
+                'remaining': '123.45',
+                'overworked': '123.45',
             }
         ],
     }
@@ -573,12 +576,13 @@ def process_weeks_entries(user, week_start, entries):
             try:
                 remaining = proj_hours.get(project=entry.project).hours
             except ProjectHours.DoesNotExist:
-                remaining = None
+                remaining = Decimal('0.00')
             projects[entry.project.pk] = {
                 'pk': entry.project.pk,
                 'name': entry.project.name,
                 'worked': Decimal('0.00'),
                 'remaining': remaining,
+                'overworked': Decimal('0.00'),
             }
 
     ProjectHours = get_model('timepiece', 'ProjectHours')
@@ -592,29 +596,40 @@ def process_weeks_entries(user, week_start, entries):
     
     all_worked = Decimal('0.00')
     all_remaining = total_hours
+    all_overworked = Decimal('0.00')
     projects = {}  # Worked/remaining hours per project
     for entry in entries:
         _initialize_in_projects(entry)
         pk = entry.project_id
         hours = get_active_hours(entry)
+
         all_worked += hours
-        projects[pk]['worked'] = projects[pk]['worked'] + hours
+        projects[pk]['worked'] += hours
+
         all_remaining -= hours
-        if projects[pk]['remaining']:
-            projects[pk]['remaining'] = projects[pk]['remaining'] - hours
+        projects[pk]['remaining'] -= hours
+
+        if all_remaining < 0:
+            all_overworked = -1 * all_remaining
+            all_remaining = 0
+        if projects[pk]['remaining'] < 0:
+            projects[pk]['overworked'] += -1 * projects[pk]['remaining']
+            projects[pk]['remaining'] = 0
 
     # Convert Decimals to string so they can be serialized.
     total_hours = '%.2f' % round(total_hours, 2)
     all_worked = '%.2f' % round(all_worked, 2)
     all_remaining = '%.2f' % round(all_remaining, 2)
+    all_overworked = '%.2f' % round(all_overworked, 2)
     for project in projects.values():
         project['worked'] = '%.2f' % round(project['worked'], 2)
-        if project['remaining'] is not None:
-            project['remaining'] = '%.2f' % round(project['remaining'], 2)
+        project['remaining'] = '%.2f' % round(project['remaining'], 2)
+        project['overworked'] = '%.2f' % round(project['overworked'], 2)
         
     return {
         'total_hours': total_hours,
         'worked': all_worked,
         'remaining': all_remaining,
+        'overworked': all_overworked,
         'projects': projects.values(),
     }

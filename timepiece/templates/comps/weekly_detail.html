@@ -25,13 +25,14 @@ rect {
     fill: #FFFFFF;
     stroke: #000000;
     stroke-width: 1px;
-}​
+}
 </style>
 {% endblock extracss %}
 
 {% block content %}
 <div class="row-fluid">
     <div class="span12">
+        <h2>Hours This Week</h1>
         <div id="hours1" class="bar"></div>
         <div id="hours2" class="bar"></div>
         <div id="hours3" class="bar"></div>
@@ -40,6 +41,6 @@ rect {
 </div>
 
 <script src="http://d3js.org/d3.v2.min.js"></script>
-<script src="{{ STATIC_URL }}timepiece/js/dashboard/weekly_detail.js"></script>
+<script src="{{ STATIC_URL }}comps/js/weeks_work.js"></script>
 
 {% endblock content %}
