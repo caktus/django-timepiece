@@ -171,7 +171,7 @@ class QuickClockInForm(forms.Form):
         super(QuickClockInForm, self).__init__(*args, **kwargs)
         vacation_ids = settings.TIMEPIECE_PROJECTS.values()
         work_projects = timepiece.Project.objects.filter(
-                users=user, status__enable_timetracking=True, 
+                users=user, status__enable_timetracking=True,
                 type__enable_timetracking=True) \
             .exclude(id__in=vacation_ids) \
             .order_by('name')
@@ -181,17 +181,7 @@ class QuickClockInForm(forms.Form):
         choices = [('', "Clock in to project...")] + \
                 list(work_projects.values_list('id', 'name')) + \
                 list(vacation_projects.values_list('id', 'name'))
-        self.fields['clockin'] = forms.ChoiceField(choices=choices, label="")
-
-    def clean(self):
-        data = self.cleaned_data
-        project_pk = data.get('clockin')
-        if not timepiece.Project.objects.filter(pk=project_pk).exists():
-            raise forms.ValidationError('Project not found.')
-        return data
-
-    def save(self, *args, **kwargs):
-        return self.cleaned_data.get('clockin')
+        self.fields['project'] = forms.ChoiceField(choices=choices, label="")
 
 
 class ClockInForm(forms.ModelForm):
