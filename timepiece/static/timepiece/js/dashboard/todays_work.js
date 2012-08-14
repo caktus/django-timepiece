@@ -82,7 +82,7 @@ Entry.prototype.draw = function() {
 
     // Add the attributes for popovers
     entry.attr('data-title', this.project_name)
-        .attr('data-content', 'You have worked ' + this.hours + ' hours.')
+        .attr('data-content', 'You have worked ' + this.hours + ' hours.');
 
     entry.transition()
         .delay(100)
