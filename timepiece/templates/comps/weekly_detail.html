@@ -2,41 +2,16 @@
 
 {% block title %}Visualization{% endblock title %}
 
-{% block extracss %}
-<style type="text/css">
-.bar {
-    margin: 10px 0px;
-}
-
-.rectangleContainer {
-    border: 1px #000000 solid;
-}
-
-.worked, .remaining {
-    text-align: center;
-}
-
-svg.hoursChart {
-    height: 50px;
-    shape-rendering: crispEdges;
-}
-
-rect {
-    fill: #FFFFFF;
-    stroke: #000000;
-    stroke-width: 1px;
-}
-</style>
-{% endblock extracss %}
-
 {% block content %}
 <div class="row-fluid">
     <div class="span12">
         <h2>Hours This Week</h1>
-        <div id="hours1" class="bar"></div>
-        <div id="hours2" class="bar"></div>
-        <div id="hours3" class="bar"></div>
-        <div id="hours4" class="bar"></div>
+        <div id="weekly-hours">
+            <div id="hours1" class="bar"></div>
+            <div id="hours2" class="bar"></div>
+            <div id="hours3" class="bar"></div>
+            <div id="hours4" class="bar"></div>
+        </div>
     </div>
 </div>
 
