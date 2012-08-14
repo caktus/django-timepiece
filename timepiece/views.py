@@ -1,15 +1,11 @@
-import calendar
 import csv
 import datetime
-import math
 import urllib
 import json
-import urlparse
 from copy import deepcopy
 
 from decimal import Decimal
 from dateutil.relativedelta import relativedelta
-from dateutil import rrule
 from itertools import groupby
 
 from django.contrib import messages
@@ -22,16 +18,15 @@ from django.http import  Http404, HttpResponseForbidden
 from django.contrib.auth.decorators import login_required, permission_required
 from django.contrib.auth.models import User
 from django.contrib.auth import models as auth_models
-from django.db.models import Sum, Count, Q, F
+from django.db.models import Sum, Q, F
 from django.db import transaction
 from django.db import DatabaseError
 from django.conf import settings
-from django.utils.datastructures import SortedDict
 from django.views.decorators.csrf import csrf_exempt
 from django.views.generic.base import TemplateView
-from django.views.generic import UpdateView, ListView, DetailView, View
+from django.views.generic import ListView, DetailView, View
 from django.utils.decorators import method_decorator
-from django.core import serializers, exceptions
+from django.core import exceptions
 from django.contrib.contenttypes.models import ContentType
 
 try:
@@ -39,7 +34,7 @@ try:
 except ImportError:
     from timepiece import timezone
 
-from timepiece.utils import render_with, reverse_lazy, get_week_start
+from timepiece.utils import render_with, reverse_lazy
 
 from timepiece import models as timepiece
 from timepiece import utils
@@ -81,7 +76,6 @@ class CSVMixin(object):
 
 
 @login_required
-@render_with('timepiece/time-sheet/new-dashboard.html')
 def new_dashboard(request):
     user = request.user
     today = datetime.date.today()
@@ -98,12 +92,12 @@ def new_dashboard(request):
         .select_related('project').order_by('start_time')
     weeks_entries_summary = utils.process_weeks_entries(user=user,
             week_start=week_start, entries=weeks_entries)
-    return {
+    return render(request, 'timepiece/time-sheet/new-dashboard.html', {
         'todays_entries': todays_entries_summary,
         'todays_entries_json': json.dumps(todays_entries_summary),
         'weeks_entries': weeks_entries_summary,
         'weeks_entries_json': json.dumps(weeks_entries_summary),
-    }
+    })
 
 
 @login_required
