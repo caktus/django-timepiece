@@ -1,7 +1,7 @@
-var scripts = document.getElementsByTagName('script'),
-    script = scripts[scripts.length - 1];
 
-var data = JSON.parse(script.getAttribute('data-entries'));
+
+
+
 
 function ProgressBar(loc, width, height, label) {
     this.loc = loc;
@@ -135,9 +135,9 @@ ProgressBar.prototype.draw = function(hours_worked, hours_remaining, hours_over)
                 .attr('fill', '#FFFFFF')
                 .attr('font-weight', 'bolder')
                 .text(hours_remaining + ' remaining');
-    
+        
             var rem_pos = textPosition(bar.remaining, remaining);
-    
+
             remaining.attr('x', rem_pos.x)
                 .attr('y', rem_pos.y);
         }
@@ -147,18 +147,8 @@ ProgressBar.prototype.draw = function(hours_worked, hours_remaining, hours_over)
 (function() {
     bar_width = $('.bar').width();
 
-    var total_hours = parseFloat(data.total_hours);
-    var worked = parseFloat(data.worked);
-    var remaining = parseFloat(data.remaining);
-    var overworked = parseFloat(data.overworked);
-    new ProgressBar('#all-hours.bar', bar_width, total_hours).draw(worked, remaining, overworked);
-
-    for(var i = 0; i < data.projects.length; i++) {
-        var project = data.projects[i];
-        var worked = parseFloat(project.worked);
-        var remaining = parseFloat(project.remaining);
-        var overworked = parseFloat(project.overworked);
-        var id = '#hours-' + project.pk + '.bar';
-        new ProgressBar(id, bar_width, total_hours, project.name).draw(worked, remaining, overworked);
-    } 
+    new ProgressBar('#hours1.bar', bar_width, 40).draw(27.73, 40, 0);
+    new ProgressBar('#hours2.bar', bar_width, 40, 'django-timepiece').draw(10, 0, 2)
+    new ProgressBar('#hours3.bar', bar_width, 40, 'Cotton University').draw(10.73, 4.27, 0);
+    new ProgressBar('#hours4.bar', bar_width, 40, 'Dimagi SOW').draw(7, 10, 0);
 }());
