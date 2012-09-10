@@ -28,8 +28,8 @@
         <div class="span12">
             <form method="post">
                 {% csrf_token %}
-                <input class="btn" type="submit" name="do_action" value="Yes"/>
-                <a href="{{ return_url }}"><input type="button" value="No"/></a>
+                <input class="btn btn-primary" type="submit" name="do_action" value="Yes"/>
+                <a href="{{ return_url }}"><input type="button" class="btn" value="No"/></a>
             </form>
         </div>
     </div>
