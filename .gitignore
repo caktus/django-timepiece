@@ -6,3 +6,4 @@ dist/
 _build/
 .tox/
 /reports/
+/timepiece/static/CACHE
