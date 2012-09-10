@@ -800,6 +800,7 @@ def invoice_projects(request):
         'project__type__pk', 'project__type__label', 'project__name', 'hours',
         'project__pk', 'status', 'project__status__label'
     ).annotate(s=Sum('hours')).order_by('project__type__label',
+                                        'project__status__label', 
                                         'project__name', 'status')
     return render_to_response(
         'timepiece/time-sheet/invoice/make_invoice.html', {
