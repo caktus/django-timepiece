@@ -627,14 +627,16 @@ def view_person_time_sheet(request, user_id):
     summary = timepiece.Entry.summary(user, from_date, to_date)
     show_approve = show_verify = False
     if request.user.has_perm('timepiece.change_entry') or \
+        request.user.has_perm('timepiece.approve_timesheet') or \
         user == request.user:
         statuses = list(month_qs.values_list('status', flat=True))
         total_statuses = len(statuses)
         unverified_count = statuses.count('unverified')
         verified_count = statuses.count('verified')
         approved_count = statuses.count('approved')
+    if request.user.has_perm('timepiece.change_entry') or user == request.user:
         show_verify = unverified_count != 0
-    if request.user.has_perm('timepiece.change_entry'):
+    if request.user.has_perm('timepiece.approve_timesheet'):
         show_approve = verified_count + approved_count == total_statuses \
         and verified_count > 0 and total_statuses != 0
     context = {
