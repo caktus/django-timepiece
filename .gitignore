@@ -7,3 +7,4 @@ _build/
 .tox/
 /reports/
 /timepiece/static/CACHE
+*.swp
