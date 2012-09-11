@@ -99,7 +99,7 @@ class DashboardTestCase(TimepieceDataTestCase):
         self.assertEquals(len(context['activity_entries']), 2)
         for entry in context['activity_entries']:
             self.assertEquals(entry['sum'], Decimal('1.00'))
-        self.assertEquals(context['current_total'], total_hours) 
+        self.assertEquals(context['current_total'], total_hours)
 
     def test_time_detail(self):
         """

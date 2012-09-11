@@ -1262,7 +1262,7 @@ def payroll_summary(request):
     from_date = utils.get_month_start(date).date()
     to_date = from_date + relativedelta(months=1)
 
-    year_month_form = timepiece_forms.YearMonthForm(request.GET or None, 
+    year_month_form = timepiece_forms.YearMonthForm(request.GET or None,
         initial={'month': from_date.month, 'year': from_date.year})
 
     if year_month_form.is_valid():
@@ -1395,7 +1395,7 @@ class DeleteView(TemplateView):
     def dispatch(self, request, *args, **kwargs):
         for permission in self.permissions:
             if not request.user.has_perm(permission):
-                messages.info(request, 
+                messages.info(request,
                     'You do not have permission to access that')
                 return HttpResponseRedirect(reverse_lazy('timepiece-entries'))
         return super(DeleteView, self).dispatch(request, *args, **kwargs)
