@@ -267,8 +267,9 @@ class ProjectHoursEditTestCase(ProjectHoursTestCase):
         self.assertEquals(len(data['project_hours']), 2)
         self.assertEquals(len(data['projects']), 1)
 
-        self.assertEquals(data['project_hours'][0]['hours'], 25.0)
-        self.assertEquals(data['project_hours'][1]['hours'], 5.0)
+        correct_hours = {self.manager.id: 5.0, self.user.id: 25.0}
+        for entry in data['project_hours']:
+            self.assertEquals(entry['hours'], correct_hours[entry['user']])
 
     def test_permission_access(self):
         """
