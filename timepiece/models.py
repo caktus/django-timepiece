@@ -711,6 +711,7 @@ class Entry(models.Model):
             ('can_clock_out', 'Can use Pendulum to clock out'),
             ('view_entry_summary', 'Can view entry summary page'),
             ('view_payroll_summary', 'Can view payroll summary page'),
+            ('approve_timesheet', 'Can approve a verified timesheet'),
         )
 
 

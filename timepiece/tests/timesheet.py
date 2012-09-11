@@ -1149,12 +1149,11 @@ class StatusTest(TimepieceDataTestCase):
         self.admin.save()
         self.client.login(username='admin', password='abc')
 
-    def login_with_permission(self):
+    def login_with_permissions(self, *codenames):
         """Helper to login as a user with correct permissions"""
-        view_entry_summary = Permission.objects.get(
-            codename=('view_entry_summary'))
+        perms = Permission.objects.filter(codename__in=codenames)
         self.perm_user = User.objects.create_user('perm', 'e@e.com', 'abc')
-        self.perm_user.user_permissions.add(view_entry_summary)
+        self.perm_user.user_permissions.add(*perms)
         self.perm_user.save()
         self.client.login(username='perm', password='abc')
 
@@ -1171,16 +1170,27 @@ class StatusTest(TimepieceDataTestCase):
         self.assertTrue(response.context['show_verify'])
         self.assertFalse(response.context['show_approve'])
 
-    def test_approve_link(self):
+    def test_approve_link_no_permission(self):
+        """Permission is required to see approve timesheet link."""
         entry = self.create_entry({
             'user': self.user,
             'start_time': self.now - datetime.timedelta(hours=1),
             'end_time': self.now,
             'status': 'verified'
         })
-
         response = self.client.get(self.sheet_url)
-        self.assertTrue(response.status_code)
+        self.assertFalse(response.context['show_approve'])
+
+    def test_approve_link(self):
+        self.login_with_permissions('view_entry_summary', 'approve_timesheet')
+        entry = self.create_entry({
+            'user': self.user,
+            'start_time': self.now - datetime.timedelta(hours=1),
+            'end_time': self.now,
+            'status': 'verified'
+        })
+        response = self.client.get(self.sheet_url)
+        self.assertEquals(response.status_code, 200)
 
         self.assertTrue(response.context['show_approve'])
         self.assertFalse(response.context['show_verify'])
@@ -1197,7 +1207,7 @@ class StatusTest(TimepieceDataTestCase):
         self.assertEquals(messages._loaded_messages[0].message, msg)
 
     def test_no_hours_approve(self):
-        self.login_with_permission()
+        self.login_with_permissions('approve_timesheet', 'view_entry_summary')
         response = self.client.get(self.approve_url, follow=True)
         self.assertEquals(response.status_code, 200)
 
@@ -1329,8 +1339,7 @@ class StatusTest(TimepieceDataTestCase):
         self.assertFalse(response.context['show_approve'])
         entry = self.create_entry(data={
             'user': self.user,
-            'start_time': timezone.now() - \
-                datetime.timedelta(hours=1),
+            'start_time': timezone.now() - datetime.timedelta(hours=1),
             'end_time':  timezone.now(),
         })
         response = self.client.get(self.sheet_url)
@@ -1358,11 +1367,10 @@ class StatusTest(TimepieceDataTestCase):
         self.assertEquals(entries[0].status, 'verified')
 
     def testApprovePage(self):
-        self.login_with_permission()
+        self.login_with_permissions('approve_timesheet', 'view_entry_summary')
         entry = self.create_entry(data={
             'user': self.user,
-            'start_time': timezone.now() - \
-                datetime.timedelta(hours=1),
+            'start_time': timezone.now() - datetime.timedelta(hours=1),
             'end_time':  timezone.now(),
         })
 
