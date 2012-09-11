@@ -415,10 +415,11 @@ class DateForm(forms.Form):
     def save(self):
         from_date = self.cleaned_data.get('from_date', '')
         to_date = self.cleaned_data.get('to_date', '')
+        returned_date = to_date
 
-        if to_date:
-            to_date += timedelta(days=1)
-        return (from_date, to_date)
+        if returned_date:
+            returned_date += timedelta(days=1)
+        return (from_date, returned_date)
 
 
 class YearMonthForm(forms.Form):
@@ -607,25 +608,48 @@ class DeleteForm(forms.Form):
 
 
 class BillableHoursForm(forms.Form):
-    people = forms.MultipleChoiceField(required=False)
+    TRUNC_CHOICES = (
+        ('day', 'Day'),
+        ('week', 'Week'),
+        ('month', 'Month'),
+    )
+    trunc = forms.ChoiceField(
+        label='Group By',
+        choices=TRUNC_CHOICES,
+        widget=forms.RadioSelect(),
+        required=False,
+        initial=TRUNC_CHOICES[1][0])
+    people = forms.MultipleChoiceField(
+        required=False,
+        widget=forms.CheckboxSelectMultiple()
+    )
     activities = forms.ModelMultipleChoiceField(
+        widget=forms.CheckboxSelectMultiple(),
         queryset=timepiece.Activity.objects.all(),
         required=False,
-        initial=timepiece.Activity.objects.all())
+        initial=timepiece.Activity.objects.all()
+    )
     project_types = forms.ModelMultipleChoiceField(
+        widget=forms.CheckboxSelectMultiple(),
         queryset=timepiece.Attribute.objects.all(),
         required=False,
-        initial=timepiece.Attribute.objects.all())
+        initial=timepiece.Attribute.objects.all()
+    )
 
     def __init__(self, *args, **kwargs):
-        choices = kwargs.pop('choices', None)
         super(BillableHoursForm, self).__init__(*args, **kwargs)
 
-        if choices:
-            people = choices.get('people', [])
-            if people:
-                self.fields['people'].choices = people
-                self.fields['people'].initial = [p[0] for p in people]
+        people = []
+        users = timepiece.Entry.no_join.values('user', 'user__first_name',
+            'user__last_name').distinct().order_by('user__first_name',
+            'user__last_name')
+        for u in users:
+            name = ' '.join([u['user__first_name'], u['user__last_name']])
+            person = (u['user'], name,)
+            people.append(person)
+
+        self.fields['people'].choices = people
+        self.fields['people'].initial = [p[0] for p in people]
 
     def save(self):
         return {
