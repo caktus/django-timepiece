@@ -18,8 +18,8 @@
             <p>Deleting this invoice will return all associated entries to "approved" status. Are you sure you want to do this?</p>
 
             <form class="form-inline" method="post">{% csrf_token %}
+                <input class="btn btn-primary" type='submit' name='delete' value='Delete Invoice' />
                 <input class="btn" type='submit' value='Cancel' />
-                <input class="btn" type='submit' name='delete' value='Delete Invoice &rarr;' />
             </form>
         </div>
     </div>
