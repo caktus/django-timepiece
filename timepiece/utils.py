@@ -90,10 +90,10 @@ DEFAULT_TIME_FORMATS = [
 
 
 def add_timezone(value, tz=None):
-    """If the value is naive, then the timezone is added to it.  
+    """If the value is naive, then the timezone is added to it.
 
     If no timezone is given, timezone.get_current_timezone() is used.
-    """   
+    """
     if tz == None:
         tz = timezone.get_current_timezone()
     try:
@@ -394,7 +394,7 @@ def payroll_totals(month_work_entries, month_leave_entries):
         for status in labels.keys():
             # Include an extra entry for summary.
             row[status] = [{'hours': Decimal(), 'percent': Decimal()}
-                    for i in range(len(labels[status])+1)]
+                    for i in range(len(labels[status]) + 1)]
         row['work_total'] = Decimal()
         row['grand_total'] = Decimal()
         return row

@@ -28,7 +28,8 @@ class PayrollTest(TimepieceDataTestCase):
             'sick': self.sick.pk, 'vacation': self.vacation.pk
         }
         self.next = utils.add_timezone(datetime.datetime(2011, 6, 1))
-        self.overtime_before = utils.add_timezone(datetime.datetime(2011, 4, 29))
+        self.overtime_before = utils.add_timezone(
+            datetime.datetime(2011, 4, 29))
         self.first = utils.add_timezone(datetime.datetime(2011, 5, 1))
         self.first_week = utils.add_timezone(datetime.datetime(2011, 5, 2))
         self.middle = utils.add_timezone(datetime.datetime(2011, 5, 18))

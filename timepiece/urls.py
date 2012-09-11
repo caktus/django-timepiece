@@ -108,10 +108,27 @@ urlpatterns = patterns('',
     ### time sheets ###
 
     # Reports
-    url(r'^reports/$', views.HourlyReport.as_view(), name='hourly_report'),
-    url(r'^reports/summary/$', views.summary, name='timepiece-summary'),
-    url(r'^reports/payroll/$', views.payroll_summary, name='payroll_summary',),
-    url(r'^reports/billable/$', views.BillableHours.as_view(), name='billable_hours'),
+    url(
+        r'^reports/$',
+        views.HourlyReport.as_view(),
+        name='hourly_report',
+    ),
+    url(
+        r'^reports/summary/$',
+        views.summary,
+        name='timepiece-summary',
+    ),
+    url(
+        r'^reports/payroll/$',
+        views.payroll_summary,
+        name='payroll_summary',
+    ),
+    url(
+        r'^reports/billable/$',
+        views.BillableHours.as_view(),
+        name='billable_hours',
+    ),
+
     # People
     url(
         r'time-sheet/people/(?P<user_id>\d+)/$',
@@ -121,7 +138,7 @@ urlpatterns = patterns('',
     url(
         r'^time-sheet/reject/(?P<user_id>\d+)/$',
         views.reject_entries,
-        name='timepiece-reject-entries'
+        name='timepiece-reject-entries',
     ),
     url(
         r'^time-sheet/(?P<action>verify|approve)/(?P<user_id>\d+)/' +
@@ -129,6 +146,7 @@ urlpatterns = patterns('',
         views.change_person_time_sheet,
         name='change_person_time_sheet',
     ),
+
     # Projects
     url(
         r'^time-sheet/project/(?P<pk>\d+)/$',
@@ -219,7 +237,7 @@ urlpatterns = patterns('',
     url(
         r'^schedule/edit/$',
         views.EditProjectHoursView.as_view(),
-        name='edit_project_hours'
+        name='edit_project_hours',
     ),
 
     # ajax views

@@ -802,7 +802,7 @@ def invoice_projects(request):
         'project__type__pk', 'project__type__label', 'project__name', 'hours',
         'project__pk', 'status', 'project__status__label'
     ).annotate(s=Sum('hours')).order_by('project__type__label',
-                                        'project__status__label', 
+                                        'project__status__label',
                                         'project__name', 'status')
     return render_to_response(
         'timepiece/time-sheet/invoice/make_invoice.html', {
@@ -1262,10 +1262,8 @@ def payroll_summary(request):
     from_date = utils.get_month_start(date).date()
     to_date = from_date + relativedelta(months=1)
 
-    year_month_form = timepiece_forms.YearMonthForm(request.GET or None, initial={
-        'month': from_date.month,
-        'year': from_date.year
-    })
+    year_month_form = timepiece_forms.YearMonthForm(request.GET or None, 
+        initial={'month': from_date.month, 'year': from_date.year})
 
     if year_month_form.is_valid():
         from_date, to_date = year_month_form.save()
@@ -1397,7 +1395,8 @@ class DeleteView(TemplateView):
     def dispatch(self, request, *args, **kwargs):
         for permission in self.permissions:
             if not request.user.has_perm(permission):
-                messages.info(request, 'You do not have permission to access that')
+                messages.info(request, 
+                    'You do not have permission to access that')
                 return HttpResponseRedirect(reverse_lazy('timepiece-entries'))
         return super(DeleteView, self).dispatch(request, *args, **kwargs)
 
@@ -1634,8 +1633,8 @@ class ProjectHoursMixin(object):
 
         # Account for an empty string
         self.week_start = default_week if week_start_str == '' \
-            else utils.get_week_start(datetime.datetime.strptime(week_start_str,
-                '%Y-%m-%d').date())
+            else utils.get_week_start(datetime.datetime.strptime(
+                week_start_str, '%Y-%m-%d').date())
 
         return super(ProjectHoursMixin, self).dispatch(request, *args,
             **kwargs)
@@ -1644,8 +1643,8 @@ class ProjectHoursMixin(object):
         week_start = start if start else self.week_start
         week_end = week_start + relativedelta(days=7)
 
-        return timepiece.ProjectHours.objects.filter(week_start__gte=week_start,
-            week_start__lt=week_end)
+        return timepiece.ProjectHours.objects.filter(
+            week_start__gte=week_start, week_start__lt=week_end)
 
 
 class ProjectHoursView(ProjectHoursMixin, TemplateView):
@@ -1665,7 +1664,8 @@ class ProjectHoursView(ProjectHoursMixin, TemplateView):
         id_list = [person[0] for person in people]
         projects = []
 
-        for project, entries in groupby(project_hours, lambda o: o['project__id']):
+        func = lambda o: o['project__id']
+        for project, entries in groupby(project_hours, func):
             entries = list(entries)
             proj_id = entries[0]['project__id']
             name = entries[0]['project__name']
@@ -1733,7 +1733,8 @@ class ProjectHoursAjaxView(ProjectHoursMixin, View):
     def get_instance(self, data, week_start):
         try:
             user = auth_models.User.objects.get(pk=data.get('user', None))
-            project = timepiece.Project.objects.get(pk=data.get('project', None))
+            project = timepiece.Project.objects.get(
+                pk=data.get('project', None))
             hours = data.get('hours', None)
             week = datetime.datetime.strptime(week_start, '%Y-%m-%d').date()
 
@@ -1817,7 +1818,8 @@ class ProjectHoursAjaxView(ProjectHoursMixin, View):
             urllib.urlencode(param),))
 
         if week_qs.exists():
-            inner_qs = week_qs.filter(project__in=prev_week_qs.values_list('project'),
+            inner_qs = week_qs.filter(
+                project__in=prev_week_qs.values_list('project'),
                 user__in=prev_week_qs.values_list('user'))
 
             if inner_qs.exists():

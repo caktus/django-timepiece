@@ -53,7 +53,8 @@ class ProjectionTest(TimepieceDataTestCase):
         self.assertEqual(monday, utils.get_week_start(sunday).date())
         following_monday = datetime.date(2011, 1, 17)
         saturday = datetime.date(2011, 1, 22)
-        self.assertEqual(following_monday, utils.get_week_start(saturday).date())
+        self.assertEqual(following_monday,
+            utils.get_week_start(saturday).date())
 
     def  test_month_start(self):
         """ Test that any day returns the first day of the month"""
