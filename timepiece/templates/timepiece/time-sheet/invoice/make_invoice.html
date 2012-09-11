@@ -57,7 +57,7 @@
                     {% regroup type.list by project__name as project_list %}
                     {% for project in project_list %}
                         <tr>
-                            <td>{{ project.grouper }}</td>
+                            <td><a href="{% url 'project_time_sheet' project.list.0.project__pk %}">{{ project.grouper }}</a></td>
                             <td>{{ project.list.0.project__status__label|title }}</td>
                             <td class="hours">{% get_uninvoiced_hours project.list %}</td>
                             <td>
