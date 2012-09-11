@@ -218,7 +218,7 @@ class TestHourlyReport(ReportsHelperBase):
             self.assertEqual(hour, last_day * worked2)
 
     def argsHelper(self, args={}, start=datetime.datetime(2011, 1, 2),
-                   end=datetime.datetime(2011, 1, 5)):
+                   end=datetime.datetime(2011, 1, 4)):
         start = utils.add_timezone(start)
         end = utils.add_timezone(end)
         args.update({
@@ -327,7 +327,7 @@ class TestHourlyReport(ReportsHelperBase):
     def testForm_Month(self):
         tz = timezone.get_current_timezone()
         start = datetime.datetime(2011, 1, 4, tzinfo=tz)
-        end = datetime.datetime(2011, 3, 29, tzinfo=tz)
+        end = datetime.datetime(2011, 3, 28, tzinfo=tz)
         args = {
             'billable': True,
             'non_billable': False,
@@ -441,8 +441,9 @@ class TestBillableHours(ReportsHelperBase):
 
     def get_entries_data(self):
         projects = getattr(settings, 'TIMEPIECE_PROJECTS', {})
+        # Account for the day added by the form
         query = Q(end_time__gt=utils.get_week_start(self.from_date),
-            end_time__lt=self.to_date)
+            end_time__lt=self.to_date + relativedelta(days=1))
         query &= ~Q(project__in=projects.values())
         entries = timepiece.Entry.objects.date_trunc('week',
             extra_values=('activity', 'project__status')).filter(query)

@@ -120,6 +120,11 @@ urlpatterns = patterns('',
         name='view_person_time_sheet',
     ),
     url(
+        r'^time-sheet/reject/(?P<user_id>\d+)/$',
+        views.reject_entries,
+        name='timepiece-reject-entries'
+    ),
+    url(
         r'^time-sheet/(?P<action>verify|approve)/(?P<user_id>\d+)/' +
         r'(?P<from_date>\d\d\d\d-\d\d-\d\d)/$',
         views.change_person_time_sheet,

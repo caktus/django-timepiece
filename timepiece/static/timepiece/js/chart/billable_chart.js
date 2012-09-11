@@ -15,13 +15,15 @@ function drawChart() {
 
     if(dataTable.length > 1) {
         wrapper = new google.visualization.ChartWrapper({
-            chartType: 'LineChart',
+            chartType: 'AreaChart',
             dataTable: google.visualization.arrayToDataTable(dataTable),
             options: {
                 chartArea: {
                     width: '70%',
                     left: '5%'
-                }
+                },
+                pointSize: 6,
+                isStacked: true
             },
             containerId: 'chart'
         });
@@ -44,7 +46,7 @@ function round(x) {
 
 function processData() {
     var data = [
-        ['Date', 'Billable', 'Non-billable']
+        ['Date', 'Non-billable', 'Billable']
     ], i;
    
     for(i = 0; i < dates.length; i++) {
@@ -58,8 +60,8 @@ function processData() {
         for(var date in user_hours) {
             index = getIndexOfDate(data, user_hours[date].date);
 
-            data[index][1] += user_hours[date].billable;
-            data[index][2] += user_hours[date].nonbillable;
+            data[index][1] += user_hours[date].nonbillable;
+            data[index][2] += user_hours[date].billable;
         }
     }
 
@@ -72,37 +74,30 @@ function processData() {
 }
 
 $(function() {
-    $('.people input[type="checkbox"]').click(function() {
-        var user = hours[$(this).attr('id')],
-            date, data, index;
+    // Add "select all" clickable to the label
+    $('a.select').click(function(e) {
+        e.preventDefault();
+        
+        $(this).parent().parent()
+            .next()
+            .children()
+            .each(function(i, e) {
+                $(e).find('input').attr('checked', 'checked');
+            });
 
-        if($(this).attr('checked') === 'checked') {
-            for(date in user) {
-                data = user[date];
-                index = getIndexOfDate(dataTable, data.date);
+        return false;
+    });
 
-                dataTable[index][1] += data.billable;
-                dataTable[index][2] += data.nonbillable;
+     $('a.select-none').click(function(e) {
+        e.preventDefault();
+        
+        $(this).parent().parent()
+            .next()
+            .children()
+            .each(function(i, e) {
+                $(e).find('input').removeAttr('checked');
+            });
 
-                // Need to round the results...
-                dataTable[index][1] = round(dataTable[index][1]);
-                dataTable[index][2] = round(dataTable[index][2]);
-            }
-        } else {
-            for(date in user) {
-                data = user[date];
-                index = getIndexOfDate(dataTable, data.date);
-
-                dataTable[index][1] -= data.billable;
-                dataTable[index][2] -= data.nonbillable;
-
-                // Need to round the results...
-                dataTable[index][1] = round(dataTable[index][1]);
-                dataTable[index][2] = round(dataTable[index][2]);
-            }
-        }
-
-        wrapper.setDataTable(google.visualization.arrayToDataTable(dataTable));
-        wrapper.draw();
+        return false;
     });
 });

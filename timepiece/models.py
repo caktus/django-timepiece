@@ -537,8 +537,9 @@ class Entry(models.Model):
             start_time__gte=month_start,
             end_time__lt=next_month
         )
-        if entries.exists():
-            msg = 'You cannot add entries after a timesheet has been ' \
+        if (entries.exists() and not self.id
+                or self.id and self.status == 'invoiced'):
+            msg = 'You cannot add/edit entries after a timesheet has been ' \
                 'approved or invoiced. Please correct the start and end times.'
             raise ValidationError(msg)
         return True
@@ -710,6 +711,7 @@ class Entry(models.Model):
             ('can_clock_out', 'Can use Pendulum to clock out'),
             ('view_entry_summary', 'Can view entry summary page'),
             ('view_payroll_summary', 'Can view payroll summary page'),
+            ('approve_timesheet', 'Can approve a verified timesheet'),
         )
 
 

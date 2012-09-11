@@ -816,9 +816,9 @@ class CreateEditEntry(TimepieceDataTestCase):
         self.now = timezone.now()
         valid_start = self.now - datetime.timedelta(days=1)
         valid_end = valid_start + datetime.timedelta(hours=1)
-        two_hour_ago = self.now - datetime.timedelta(hours=2)
-        one_hour_ago = self.now - datetime.timedelta(hours=1)
         self.ten_min_ago = self.now - datetime.timedelta(minutes=10)
+        self.two_hour_ago = self.now - datetime.timedelta(hours=2)
+        self.one_hour_ago = self.now - datetime.timedelta(hours=1)
         #establish data, entries, urls for all tests
         self.default_data = {
             'project': self.project.pk,
@@ -834,8 +834,8 @@ class CreateEditEntry(TimepieceDataTestCase):
             'user': self.user,
             'project': self.project,
             'activity': self.devl_activity,
-            'start_time': two_hour_ago,
-            'end_time': one_hour_ago,
+            'start_time': self.two_hour_ago,
+            'end_time': self.one_hour_ago,
         }
         self.current_entry_data = {
             'user': self.user,
@@ -846,8 +846,8 @@ class CreateEditEntry(TimepieceDataTestCase):
         self.closed_entry = self.create_entry(self.closed_entry_data)
         self.current_entry = self.create_entry(self.current_entry_data)
         self.closed_entry_data.update({
-            'st_str': two_hour_ago.strftime('%H:%M:%S'),
-            'end_str': one_hour_ago.strftime('%H:%M:%S'),
+            'st_str': self.two_hour_ago.strftime('%H:%M:%S'),
+            'end_str': self.one_hour_ago.strftime('%H:%M:%S'),
         })
         self.current_entry_data.update({
             'st_str': self.ten_min_ago.strftime('%H:%M:%S'),
@@ -1027,8 +1027,8 @@ class CreateEditEntry(TimepieceDataTestCase):
             follow=True)
         self.assertEqual(response.status_code, 200)
 
-        msg = 'You cannot add entries after a timesheet has been approved ' \
-            'or invoiced. Please correct the start and end times.'
+        msg = 'You cannot add/edit entries after a timesheet has been ' \
+            'approved or invoiced. Please correct the start and end times.'
         self.assertEqual([msg], response.context['form'].non_field_errors())
 
     def test_add_approved_entries(self):
@@ -1040,7 +1040,7 @@ class CreateEditEntry(TimepieceDataTestCase):
             'start_time': self.ten_min_ago,
             'end_time': self.ten_min_ago + datetime.timedelta(minutes=1)
         })
-        entry.status = 'approved'
+        entry.status = 'invoiced'
         entry.save()
 
         self.add_entry_test_helper()
@@ -1058,6 +1058,70 @@ class CreateEditEntry(TimepieceDataTestCase):
         entry.save()
 
         self.add_entry_test_helper()
+
+    def edit_entry_helper(self, status='approved'):
+        """Helper function for editing approved entries"""
+        entry = self.create_entry({
+            'project': self.project,
+            'start_time': self.now - relativedelta(hours=6),
+            'end_time': self.now - relativedelta(hours=5),
+            'status': status
+        })
+        url = reverse('timepiece-update', args=(entry.pk,))
+
+        data = self.default_data
+        data.update({
+            'start_time_0': entry.start_time.strftime('%m/%d/%Y'),
+            'start_time_1': entry.start_time.strftime('%H:%M:%S'),
+            'end_time_0': entry.end_time.strftime('%m/%d/%Y'),
+            'end_time_1': entry.end_time.strftime('%H:%M:%S'),
+        })
+
+        return url, entry, data
+
+    def test_admin_edit_approved_entry(self):
+        """
+        An administrator (or anyone with view_payroll_summary perm) should
+        be able to edit an entry even if theyve been approved
+        """
+        self.client.logout()
+        self.client.login(username='superuser', password='abc')
+
+        url, entry, data = self.edit_entry_helper()
+
+        response = self.client.get(url)
+        self.assertEqual(response.status_code, 200)
+
+        response = self.client.post(url, data=data, follow=True)
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response,
+            'The entry has been updated successfully.')
+
+        self.assertEqual(self.user, entry.user)
+
+    def test_user_edit_approved_entry(self):
+        """A regular user shouldnt be able to edit an approved entry"""
+        url, entry, data = self.edit_entry_helper()
+
+        response = self.client.get(url)
+        self.assertEqual(response.status_code, 404)
+
+        response = self.client.post(url, data=data)
+        self.assertEqual(response.status_code, 404)
+
+    def test_edit_invoiced_entry(self):
+        """You shouldnt be able to edit an invoiced entry"""
+        self.client.logout()
+        self.client.login(username='superuser', password='abc')
+
+        url, entry, data = self.edit_entry_helper('invoiced')
+
+        response = self.client.post(url, data=data, follow=True)
+        self.assertEqual(response.status_code, 200)
+
+        msg = 'You cannot add/edit entries after a timesheet has been ' \
+            'approved or invoiced. Please correct the start and end times.'
+        self.assertContains(response, msg)
 
 
 class StatusTest(TimepieceDataTestCase):
@@ -1085,12 +1149,11 @@ class StatusTest(TimepieceDataTestCase):
         self.admin.save()
         self.client.login(username='admin', password='abc')
 
-    def login_with_permission(self):
+    def login_with_permissions(self, *codenames):
         """Helper to login as a user with correct permissions"""
-        view_entry_summary = Permission.objects.get(
-            codename=('view_entry_summary'))
+        perms = Permission.objects.filter(codename__in=codenames)
         self.perm_user = User.objects.create_user('perm', 'e@e.com', 'abc')
-        self.perm_user.user_permissions.add(view_entry_summary)
+        self.perm_user.user_permissions.add(*perms)
         self.perm_user.save()
         self.client.login(username='perm', password='abc')
 
@@ -1107,16 +1170,27 @@ class StatusTest(TimepieceDataTestCase):
         self.assertTrue(response.context['show_verify'])
         self.assertFalse(response.context['show_approve'])
 
-    def test_approve_link(self):
+    def test_approve_link_no_permission(self):
+        """Permission is required to see approve timesheet link."""
         entry = self.create_entry({
             'user': self.user,
             'start_time': self.now - datetime.timedelta(hours=1),
             'end_time': self.now,
             'status': 'verified'
         })
-
         response = self.client.get(self.sheet_url)
-        self.assertTrue(response.status_code)
+        self.assertFalse(response.context['show_approve'])
+
+    def test_approve_link(self):
+        self.login_with_permissions('view_entry_summary', 'approve_timesheet')
+        entry = self.create_entry({
+            'user': self.user,
+            'start_time': self.now - datetime.timedelta(hours=1),
+            'end_time': self.now,
+            'status': 'verified'
+        })
+        response = self.client.get(self.sheet_url)
+        self.assertEquals(response.status_code, 200)
 
         self.assertTrue(response.context['show_approve'])
         self.assertFalse(response.context['show_verify'])
@@ -1133,7 +1207,7 @@ class StatusTest(TimepieceDataTestCase):
         self.assertEquals(messages._loaded_messages[0].message, msg)
 
     def test_no_hours_approve(self):
-        self.login_with_permission()
+        self.login_with_permissions('approve_timesheet', 'view_entry_summary')
         response = self.client.get(self.approve_url, follow=True)
         self.assertEquals(response.status_code, 200)
 
@@ -1265,8 +1339,7 @@ class StatusTest(TimepieceDataTestCase):
         self.assertFalse(response.context['show_approve'])
         entry = self.create_entry(data={
             'user': self.user,
-            'start_time': timezone.now() - \
-                datetime.timedelta(hours=1),
+            'start_time': timezone.now() - datetime.timedelta(hours=1),
             'end_time':  timezone.now(),
         })
         response = self.client.get(self.sheet_url)
@@ -1294,11 +1367,10 @@ class StatusTest(TimepieceDataTestCase):
         self.assertEquals(entries[0].status, 'verified')
 
     def testApprovePage(self):
-        self.login_with_permission()
+        self.login_with_permissions('approve_timesheet', 'view_entry_summary')
         entry = self.create_entry(data={
             'user': self.user,
-            'start_time': timezone.now() - \
-                datetime.timedelta(hours=1),
+            'start_time': timezone.now() - datetime.timedelta(hours=1),
             'end_time':  timezone.now(),
         })
 
@@ -1560,3 +1632,107 @@ class HourlySummaryTest(TimepieceDataTestCase):
             .timespan(april, span='month') \
             .date_trunc('month', extra_values)
         self.assertEquals(list(entries), list(response.context['entries']))
+
+
+class MonthlyRejectTestCase(TimepieceDataTestCase):
+    def setUp(self):
+        super(MonthlyRejectTestCase, self).setUp()
+        self.now = timezone.now()
+        self.data = {
+            'month': self.now.month,
+            'year': self.now.year,
+            'yes': 'Yes'
+        }
+        self.url = reverse('timepiece-reject-entries', args=(self.user.pk,))
+
+    def create_entries(self, date, status):
+        """Create entries using a date and with a given status"""
+        self.create_entry({
+            'start_time': date,
+            'end_time': date + relativedelta(hours=1),
+            'status': status
+        })
+        self.create_entry({
+            'start_time': date + relativedelta(hours=2),
+            'end_time': date + relativedelta(hours=3),
+            'status': status
+        })
+
+    def test_page_permissions(self):
+        """
+        An admin should have the permission to reject a users entries
+        and unverify them
+        """
+        self.client.login(username='superuser', password='abc')
+        self.create_entries(self.now, 'verified')
+
+        response = self.client.get(self.url, data=self.data)
+        self.assertEqual(response.status_code, 200)
+
+        response = self.client.post(self.url, data=self.data)
+
+        entries = timepiece.Entry.no_join.filter(status='verified')
+        self.assertEquals(entries.count(), 0)
+
+    def test_page_no_permissions(self):
+        """
+        A regular user should not have the permissions to
+        get or post to the page
+        """
+        self.client.login(username='user', password='abc')
+        self.create_entries(timezone.now(), 'verified')
+
+        response = self.client.get(self.url, data=self.data)
+        self.assertEqual(response.status_code, 302)
+
+        response = self.client.post(self.url, data=self.data)
+
+        entries = timepiece.Entry.no_join.filter(status='verified')
+        self.assertEquals(entries.count(), 2)
+
+    def test_reject_entries_no_date(self):
+        """
+        If you are missing the month/year used to filter the entries
+        then the reject page should not show
+        """
+        self.client.login(username='superuser', password='abc')
+        self.create_entries(timezone.now(), 'verified')
+
+        data = {
+            'month': self.now.month
+        }
+        response = self.client.get(self.url, data=data)
+        self.assertEqual(response.status_code, 302)
+
+        data = {
+            'year': self.now.year
+        }
+        response = self.client.get(self.url, data=data)
+        self.assertEqual(response.status_code, 302)
+
+    def test_reject_entries_no_confirm(self):
+        """
+        If a post request contains the month/year but is missing the key
+        'yes', then the entries are not rejected
+        """
+        self.client.login(username='superuser', password='abc')
+        self.create_entries(timezone.now(), 'verified')
+
+        data = self.data
+        data.pop('yes')
+
+        response = self.client.post(self.url, data=data)
+
+        entries = timepiece.Entry.no_join.filter(status='verified')
+        self.assertEquals(entries.count(), 2)
+
+    def test_reject_approved_invoiced_entries(self):
+        """Entries that are approved invoiced should not be rejected"""
+        self.client.login(username='superuser', password='abc')
+        self.create_entries(timezone.now(), 'approved')
+        self.create_entries(timezone.now(), 'invoiced')
+
+        response = self.client.post(self.url, data=self.data)
+
+        entries = timepiece.Entry.no_join.filter(status='unverified')
+        self.assertEquals(entries.count(), 0)
