@@ -137,7 +137,7 @@ class TestHourlyReport(ReportsHelperBase):
             pj_totals = utils.project_totals(entries, date_headers, hour_type)
             pj_totals = list(pj_totals)
             rows = pj_totals[0][0]
-            hours = [hours for name, hours in rows]
+            hours = [hours for name, user_id, hours in rows]
             totals = pj_totals[0][1]
             return hours, totals
         else:

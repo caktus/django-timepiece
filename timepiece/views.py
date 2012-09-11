@@ -1530,7 +1530,7 @@ class HourlyReport(ReportMixin, CSVMixin, TemplateView):
         content.append(headers)
 
         for rows, totals in context['project_totals']:
-            for name, hours in rows:
+            for name, user_id, hours in rows:
                 data = [name]
                 data.extend(hours)
                 content.append(data)
@@ -1579,7 +1579,7 @@ class BillableHours(ReportMixin, TemplateView):
         dates = []
 
         for rows, totals in project_data:
-            for user, hours in rows:
+            for user, user_id, hours in rows:
                 hours_data[user] = []
 
                 for hour in hours:

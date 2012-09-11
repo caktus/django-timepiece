@@ -297,9 +297,10 @@ def user_date_totals(user_entries):
         d_entries = list(date_entries)
         name = ' '.join((d_entries[0]['user__first_name'],
                         d_entries[0]['user__last_name']))
+        user_id = d_entries[0]['user']
         hours = get_hours(d_entries)
         date_dict[date] = hours
-    return name, date_dict
+    return name, user_id, date_dict
 
 
 def project_totals(entries, date_headers, hour_type=None, overtime=False,
@@ -310,7 +311,7 @@ def project_totals(entries, date_headers, hour_type=None, overtime=False,
     totals = [0 for date in date_headers]
     rows = []
     for user, user_entries in groupby(entries, lambda x: x['user']):
-        name, date_dict = user_date_totals(user_entries)
+        name, user_id, date_dict = user_date_totals(user_entries)
         dates = []
         for index, day in enumerate(date_headers):
             if isinstance(day, datetime.datetime):
@@ -334,7 +335,7 @@ def project_totals(entries, date_headers, hour_type=None, overtime=False,
         if overtime:
             dates.append(find_overtime(dates))
         dates = [date or '' for date in dates]
-        rows.append((name, dates))
+        rows.append((name, user_id, dates))
     if total_column:
         totals.append(sum(totals))
     totals = [total or '' for total in totals]
@@ -359,12 +360,13 @@ def payroll_totals(month_work_entries, month_leave_entries):
     The last entry in each of the billable/nonbillable/leave lists contains a
     summary of the status. The last row contains sum totals for all other rows.
     """
-    def _get_name(entries):
+    def _get_user_info(entries):
         """Helper for getting the associated user's first and last name."""
         fname = entries[0].get('user__first_name', '') if entries else ''
         lname = entries[0].get('user__last_name', '') if entries else ''
         name = '{0} {1}'.format(fname, lname).strip()
-        return name
+        user_id = entries[0].get('user', None) if entries else None
+        return {'name': name, 'user_id': user_id}
 
     def _get_index(status, label):
         """
@@ -386,9 +388,9 @@ def payroll_totals(month_work_entries, month_leave_entries):
         totals[status].insert(-1, {'hours': Decimal(), 'percent': Decimal()})
         return len(labels[status]) - 1
 
-    def _construct_row(name):
+    def _construct_row(name, user_id=None):
         """Constructs an empty row for the given name."""
-        row = {'name': name}
+        row = {'name': name, 'user_id': user_id}
         for status in labels.keys():
             # Include an extra entry for summary.
             row[status] = [{'hours': Decimal(), 'percent': Decimal()}
@@ -417,7 +419,7 @@ def payroll_totals(month_work_entries, month_leave_entries):
     for user, work_entries in groupby(month_work_entries, lambda e: e['user']):
 
         work_entries = list(work_entries)
-        row = _construct_row(_get_name(work_entries))
+        row = _construct_row(**_get_user_info(work_entries))
         rows.append(row)
         for entry in work_entries:
             status = 'billable' if entry['billable'] else 'nonbillable'
