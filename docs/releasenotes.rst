@@ -1,8 +1,18 @@
 Release Notes
 =========================================
 
+0.5.4 (Released 09-13-2012)
+---------------------------
+
+* Projects on Invoices/Outstanding Hours page are sorted by status and then by name
+* Weekly Project Hours chart uses horizontal zebra striping
+* New permission added for approving timesheets
+* Fixed a bug in Project Hours edit view that prevented deletion of multiple entries at once.
+* Added links to Person timesheet from Payroll Report page
+* Added links to Project timesheet on Invoice page
+
 0.5.3 (Released 08-10-2012)
-------------------
+---------------------------
 
 * Added a "Billable Hours" report, which displays a chart of billable and non-billable hours for a selected group of people, activities, project types and date range.
 * Improved usability of the payroll report
