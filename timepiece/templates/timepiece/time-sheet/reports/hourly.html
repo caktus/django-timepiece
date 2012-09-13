@@ -85,7 +85,7 @@
                         </thead>
                         <tbody>
                             {% for rows, totals in project_totals %}
-                                {% for name, hours in rows %}
+                                {% for name, user_id, hours in rows %}
                                     <tr>
                                         <th class="name_col">{{name}}</td>
                                         {% for num in hours %}
