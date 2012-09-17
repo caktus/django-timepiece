@@ -53,9 +53,8 @@ def bar_graph(context, name, worked, total, width=None, suffix=None):
         }
 
 
-@register.inclusion_tag('timepiece/time-sheet/_date_filters.html',
-    takes_context=True)
-def date_filters(context, form_id, options=None, use_range=True):
+@register.inclusion_tag('timepiece/time-sheet/_date_filters.html')
+def date_filters(form_id, options=None, use_range=True):
     if not options:
         options = ('months', 'quarters', 'years')
     filters = {}
