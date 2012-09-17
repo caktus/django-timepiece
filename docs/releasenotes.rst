@@ -1,6 +1,14 @@
 Release Notes
 =========================================
 
+0.5.5 (Unreleased)
+------------------
+
+* Added Javascript to better manage date filter links on Reports pages
+* Added "empty" text when there is no Billable Report data to visualize
+* Keep selected month on link to Person timesheet from Payroll Report page
+* Keep selected month on link to Project timesheet from Outstanding Hours page
+
 0.5.4 (Released 09-13-2012)
 ---------------------------
 
