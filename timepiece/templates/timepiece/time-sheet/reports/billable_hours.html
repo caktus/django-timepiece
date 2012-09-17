@@ -34,7 +34,7 @@
 
     <div class="row-fluid">
         <div class="span12">
-            {% date_filters %}
+            {% date_filters "filter_form" %}
         </div>
     </div>
 
@@ -47,10 +47,10 @@
     
     <div class="row-fluid">
         <div class="span12">
-            <form class="filter" method="get">
+            <form class="filter" method="get" id="filter_form">
                 <div class="dates span2">
                     {{ date_form|as_bootstrap }}
-                    <input class="btn" type="submit" name="submit" value="Update" />
+                    <input class="btn" type="submit" value="Update" />
                 </div>
                 
                 {% for field in billable_form %}
