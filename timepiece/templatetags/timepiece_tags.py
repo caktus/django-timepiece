@@ -229,9 +229,6 @@ def timesheet_url(type, pk, date):
         name = 'view_person_time_sheet'
 
     url = reverse(name, args=(pk,))
-    params = {
-        'month': date.month,
-        'year': date.year
-    }
+    params = {'month': date.month, 'year': date.year} if date else {}
 
     return '?'.join((url, urllib.urlencode(params),))
