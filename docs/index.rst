@@ -6,6 +6,7 @@ Contents:
    :maxdepth: 2
 
    settings
+   testing
    releasenotes
 
 Indices and tables
