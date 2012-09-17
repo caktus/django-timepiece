@@ -54,9 +54,9 @@ Installation
         "django.core.context_processors.i18n",
         "django.core.context_processors.media",
         "django.contrib.messages.context_processors.messages",
-        "django.core.context_processors.request",      # <----
-        "timepiece.context_processors.extra_nav",      # <----
-        "timepiece.context_processors.active_entries", # <----
+        "django.core.context_processors.request",       # <----
+        "timepiece.context_processors.extra_nav",       # <----
+        "timepiece.context_processors.active_entries",  # <----
     )
 
 #. Add the timepiece URLs to urls.py, e.g.::
