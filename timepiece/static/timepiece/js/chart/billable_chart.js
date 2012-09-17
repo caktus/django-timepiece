@@ -29,6 +29,9 @@ function drawChart() {
         });
 
         wrapper.draw();
+    } else {
+        container = $('#chart');
+        container.text('There are no entries which match your query.');
     }
 }
 
