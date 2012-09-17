@@ -115,7 +115,7 @@
                             <tr>
                                 <th class='name_col'>
                                     {% if row.user_id %}
-                                        <a href="{% url 'view_person_time_sheet' row.user_id %}">{{ row.name }}</a>
+                                        <a href="{% timesheet_url 'user' row.user_id from_date %}">{{ row.name }}</a>
                                     {% else %}
                                         {{ row.name }}
                                     {% endif %}
@@ -173,7 +173,7 @@
                                 <tr>
                                     <th class='name_col'>
                                         {% if user_id %}
-                                            <a href="{% url 'view_person_time_sheet' user_id %}">{{ name }}</a>
+                                            <a href="{% timesheet_url 'user' user_id from_date %}">{{ name }}</a>
                                         {% else %}
                                             {{ name }}
                                         {% endif %}
