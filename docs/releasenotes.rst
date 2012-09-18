@@ -8,6 +8,7 @@ Release Notes
 * Added "empty" text when there is no Billable Report data to visualize
 * Keep selected month on link to Person timesheet from Payroll Report page
 * Keep selected month on link to Project timesheet from Outstanding Hours page
+* Fixed division-by-0 bug on ContractAssignment admin page
 
 0.5.4 (Released 09-13-2012)
 ---------------------------
