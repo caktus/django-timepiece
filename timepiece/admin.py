@@ -135,8 +135,10 @@ class ContractAssignmentAdmin(admin.ModelAdmin):
 
     def worked(self, obj):
         hours_worked = float(obj.hours_worked)
-        percent = hours_worked * 100.0 / float(obj.num_hours)
-        return "%.2f (%.2f%%)" % (hours_worked, percent)
+        if obj.num_hours:
+            percent = hours_worked * 100.0 / float(obj.num_hours)
+            return "%.2f (%.2f%%)" % (hours_worked, percent)
+        return ""
 
     def remaining(self, obj):
         return "%.2f" % (obj.hours_remaining,)
