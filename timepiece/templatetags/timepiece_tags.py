@@ -72,7 +72,7 @@ def date_filters(form_id, options=None, use_range=True):
             from_date = to_date - single_month
             to_date = to_date - single_day
             filters['Past 12 Months'].append((
-                    from_date.strftime("%b '%y"), 
+                    from_date.strftime("%b '%y"),
                     from_date.strftime(date_format) if use_range else "",
                     to_date.strftime(date_format)
             ))
@@ -97,8 +97,8 @@ def date_filters(form_id, options=None, use_range=True):
             from_date = to_date + single_day
             to_date = from_date + relativedelta(months=3) - single_day
             filters['Quarters (Calendar Year)'].append((
-                    'Q%s %s' % ((x % 4) + 1, from_date.year), 
-                    from_date.strftime(date_format) if use_range else "", 
+                    'Q%s %s' % ((x % 4) + 1, from_date.year),
+                    from_date.strftime(date_format) if use_range else "",
                     to_date.strftime(date_format)
             ))
 
