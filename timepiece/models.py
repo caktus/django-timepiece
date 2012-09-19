@@ -786,12 +786,6 @@ class ProjectContract(models.Model):
         return self._hours_assigned or 0
 
     @property
-    def hours_allocated(self):
-        allocations = AssignmentAllocation.objects.filter(
-            assignment__contract=self)
-        return allocations.aggregate(sum=Sum('hours'))['sum']
-
-    @property
     def hours_remaining(self):
         return self.num_hours - self.hours_worked()
 
@@ -948,68 +942,6 @@ class ContractAssignment(models.Model):
         type_list = ['ending', 'starting', 'ongoing', ]
         return type_list[self.this_weeks_priority_number]
 
-    def get_average_weekly_committment(self):
-        week_start = utils.get_week_start()
-        # calculate hours left on contract (subtract worked hours this week)
-        remaining = self.num_hours - self._filtered_hours_worked(week_start)
-        commitment = remaining / self.contract.weeks_remaining.count()
-        return commitment
-
-    def weekly_commitment(self, day=None):
-        self._log("Commitment for {0}".format(day))
-        # earlier assignments may have already allocated time for this week
-        unallocated = self.unallocated_hours_for_week(day)
-        self._log('Unallocated hours {0}'.format(unallocated))
-        reserved = self.remaining_min_hours()
-        self._log('Reserved hours {0}'.format(reserved))
-        # start with unallocated hours
-        commitment = unallocated
-        # reserve required hours on later assignments (min_hours_per_week)
-        commitment -= self.remaining_min_hours()
-        self._log('Commitment after reservation {0}'.format(commitment))
-        # if we're under the needed minimum hours and we have available
-        # time, then raise our commitment to the desired level
-        if commitment < self.min_hours_per_week \
-        and unallocated >= self.min_hours_per_week:
-            commitment = self.min_hours_per_week
-        self._log('Commitment after minimum weekly hours {0}'\
-            .format(commitment))
-        # calculate hours left on contract (subtract worked hours this week)
-        week_start = utils.get_week_start(day)
-        remaining = self.num_hours - self._filtered_hours_worked(week_start)
-        total_allocated = self.blocks.aggregate(s=Sum('hours'))['s'] or 0
-        remaining -= total_allocated
-        if remaining < 0:
-            remaining = 0
-        self._log('Remaining {0}'.format(remaining))
-        # reduce commitment to remaining hours
-        if commitment > remaining:
-            commitment = remaining
-        self._log('Final commitment {0}'.format(commitment))
-        return commitment
-
-    def allocated_hours_for_week(self, day):
-        week, next_week = utils.get_week_window(day)
-        allocs = AssignmentAllocation.objects
-        allocs = allocs.filter(assignment__user=self.user)
-        allocs = allocs.filter(date__gte=week, date__lt=next_week)
-        hours = allocs.aggregate(s=Sum('hours'))['s']
-        return hours or 0
-
-    def unallocated_hours_for_week(self, day):
-        """ Calculate number of hours left to work for a week """
-        allocated = self.allocated_hours_for_week(day)
-        self._log('Allocated hours {0}'.format(allocated))
-        try:
-            profile = UserProfile.objects.get(user=self.user)
-        except UserProfile.DoesNotExist:
-            profile = None
-        if profile:
-            unallocated = profile.hours_per_week - allocated
-        else:
-            unallocated = 40 - allocated
-        return unallocated
-
     def remaining_contracts(self):
         assignments = ContractAssignment.objects.exclude(pk=self.pk)
         assignments = assignments.filter(end_date__gte=self.end_date,
@@ -1025,38 +957,6 @@ class ContractAssignment(models.Model):
 
     def __unicode__(self):
         return u'%s / %s' % (self.user, self.contract.project)
-
-
-class AllocationManager(models.Manager):
-
-    def during_this_week(self, user, day=None):
-        week = utils.get_week_start(day=day)
-        return self.get_query_set().filter(
-            date=week, assignment__user=user,
-            assignment__contract__status='current'
-            ).exclude(hours=0)
-
-
-class AssignmentAllocation(models.Model):
-    assignment = models.ForeignKey(ContractAssignment, related_name='blocks')
-    date = models.DateField()
-    hours = models.DecimalField(max_digits=8, decimal_places=2, default=0)
-
-    @property
-    def hours_worked(self):
-        if not hasattr(self, '_hours_worked'):
-            end_date = self.date + datetime.timedelta(weeks=1)
-            self._hours_worked = self.assignment.\
-                    filtered_hours_worked_with_in_window(self.date, end_date)
-        return self._hours_worked or 0
-
-    @property
-    def hours_left(self):
-        if not hasattr(self, '_hours_left'):
-            self._hours_left = self.hours - self.hours_worked
-        return self._hours_left or 0
-
-    objects = AllocationManager()
 
 
 class UserProfile(models.Model):
