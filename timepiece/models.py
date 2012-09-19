@@ -1100,6 +1100,8 @@ class PersonSchedule(models.Model):
 
 class UserProfile(models.Model):
     user = models.OneToOneField(User, unique=True, related_name='profile')
+    hours_per_week = models.DecimalField(max_digits=8, decimal_places=2,
+                                         default=40)
 
     def __unicode__(self):
         return unicode(self.user)
