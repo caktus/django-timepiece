@@ -1001,11 +1001,11 @@ class ContractAssignment(models.Model):
         allocated = self.allocated_hours_for_week(day)
         self._log('Allocated hours {0}'.format(allocated))
         try:
-            schedule = PersonSchedule.objects.filter(user=self.user)[0]
-        except IndexError:
-            schedule = None
-        if schedule:
-            unallocated = schedule.hours_per_week - allocated
+            profile = UserProfile.objects.get(user=self.user)
+        except UserProfile.DoesNotExist:
+            profile = None
+        if profile:
+            unallocated = profile.hours_per_week - allocated
         else:
             unallocated = 40 - allocated
         return unallocated
@@ -1057,45 +1057,6 @@ class AssignmentAllocation(models.Model):
         return self._hours_left or 0
 
     objects = AllocationManager()
-
-
-class PersonSchedule(models.Model):
-    user = models.ForeignKey(
-        User,
-        unique=True,
-        null=True,
-    )
-    hours_per_week = models.DecimalField(max_digits=8, decimal_places=2,
-                                         default=0)
-    end_date = models.DateField()
-
-    @property
-    def furthest_end_date(self):
-        assignments = self.user.assignments.order_by('-end_date')
-        assignments = assignments.exclude(contract__status='complete')
-        try:
-            end_date = assignments.values('end_date')[0]['end_date']
-        except IndexError:
-            end_date = self.end_date
-        return end_date
-
-    @property
-    def hours_available(self):
-        today = datetime.date.today()
-        weeks_remaining = (self.end_date - today).days / 7.0
-        return float(self.hours_per_week) * weeks_remaining
-
-    @property
-    def hours_scheduled(self):
-        if not hasattr(self, '_hours_scheduled'):
-            self._hours_scheduled = 0
-            now = timezone.now()
-            for assignment in self.user.assignments.filter(end_date__gte=now):
-                self._hours_scheduled += assignment.hours_remaining
-        return self._hours_scheduled
-
-    def __unicode__(self):
-        return unicode(self.user)
 
 
 class UserProfile(models.Model):

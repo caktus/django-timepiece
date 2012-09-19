@@ -158,16 +158,6 @@ class TimepieceDataTestCase(TestCase):
         defaults['end_date'] = defaults['contract'].end_date
         return timepiece.ContractAssignment.objects.create(**defaults)
 
-    def create_person_schedule(self, data={}):
-        defaults = {
-            'hours_per_week': 40,
-            'end_date': datetime.date.today() + datetime.timedelta(weeks=2),
-        }
-        defaults.update(data)
-        if 'user' not in defaults:
-            defaults['user'] = self.create_person()
-        return timepiece.PersonSchedule.objects.create(**defaults)
-
     def log_time(self, delta=None, billable=True, project=None,
         start=None, end=None, status=None, pause=0, activity=None, user=None):
         if not user:

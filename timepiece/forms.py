@@ -547,7 +547,7 @@ class UserProfileForm(forms.ModelForm):
 
     class Meta:
         model = timepiece.UserProfile
-        exclude = ('user',)
+        exclude = ('user', 'hours_per_week')
 
 
 class ProjectSearchForm(forms.Form):

@@ -155,11 +155,7 @@
                         <tr>
                             <th> Total time this week: </th>
                             <td class="hours">
-                                {% ifnotequal schedule.count 0 %}
-                                    {% bar_graph "" current_total schedule.0.hours_per_week %}
-                                {% else %}
-                                    {{ current_total }}
-                                {% endifnotequal %}
+                                {% bargraph "" current_total hours_per_week %}
                             </td>
                         </tr>
                     </tbody>

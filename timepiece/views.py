@@ -131,14 +131,18 @@ def view_entries(request):
     ).values(
         'project__name', 'project__pk'
     ).annotate(sum=Sum('hours')).order_by('project__name')
-    schedule = timepiece.PersonSchedule.objects.filter(
-                                    user=request.user)
+    hours_per_week = Decimal('40.0')
+    try:
+        profile = timepiece.UserProfile.objects.get(user=request.user)
+        hours_per_week = profile.hours_per_week
+    except timepiece.UserProfile.DoesNotExist:
+        pass
     this_weeks_entries = entries.order_by('-start_time'). \
         filter(end_time__gte=week_start)
     context = {
         'this_weeks_entries': this_weeks_entries,
         'assignments': assignments,
-        'schedule': schedule,
+        'hours_per_week': hours_per_week,
         'project_entries': project_entries,
         'activity_entries': activity_entries,
         'current_total': current_total,
