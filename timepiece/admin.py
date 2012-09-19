@@ -148,3 +148,8 @@ class ProjectHoursAdmin(admin.ModelAdmin):
     _person.admin_order_field = 'user__last_name'
 
 admin.site.register(timepiece.ProjectHours, ProjectHoursAdmin)
+
+
+class UserProfileAdmin(admin.ModelAdmin):
+    list_display = ('user', 'hours_per_week')
+admin.site.register(timepiece.UserProfile, UserProfileAdmin)
