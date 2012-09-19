@@ -1,51 +1,43 @@
-import calendar
+from copy import deepcopy
 import csv
 import datetime
-import math
-import urllib
 import json
-import urlparse
-from copy import deepcopy
+import urllib
 
-from decimal import Decimal
 from dateutil.relativedelta import relativedelta
-from dateutil import rrule
+from decimal import Decimal
 from itertools import groupby
 
+from django.conf import settings
 from django.contrib import messages
-from django.template import RequestContext
-from django.shortcuts import (render_to_response, get_object_or_404, redirect,
-                              render)
+from django.contrib.auth.decorators import login_required, permission_required
+from django.contrib.auth.models import User, Permission
+from django.contrib.contenttypes.models import ContentType
+from django.core import exceptions
 from django.core.urlresolvers import reverse, resolve
+from django.db import DatabaseError, transaction
+from django.db.models import Sum, Q, F
 from django.http import HttpResponse, HttpResponseRedirect
 from django.http import  Http404, HttpResponseForbidden
-from django.contrib.auth.decorators import login_required, permission_required
-from django.contrib.auth.models import User
-from django.contrib.auth import models as auth_models
-from django.db.models import Sum, Count, Q, F
-from django.db import transaction
-from django.db import DatabaseError
-from django.conf import settings
-from django.utils.datastructures import SortedDict
-from django.views.decorators.csrf import csrf_exempt
-from django.views.generic.base import TemplateView
-from django.views.generic import UpdateView, ListView, DetailView, View
+from django.shortcuts import render_to_response, get_object_or_404
+from django.shortcuts import redirect, render
+from django.template import RequestContext
 from django.utils.decorators import method_decorator
-from django.core import serializers, exceptions
-from django.contrib.contenttypes.models import ContentType
+from django.views.decorators.csrf import csrf_exempt
+from django.views.generic import ListView, DetailView, View
+from django.views.generic.base import TemplateView
 
 try:
     from django.utils import timezone
 except ImportError:
     from timepiece import timezone
 
-from timepiece.utils import render_with, reverse_lazy, get_week_start
-
+from timepiece import forms as timepiece_forms
 from timepiece import models as timepiece
 from timepiece import utils
-from timepiece import forms as timepiece_forms
 from timepiece.templatetags.timepiece_tags import seconds_to_hours
 from timepiece.templatetags.timepiece_tags import get_active_hours
+from timepiece.utils import render_with, reverse_lazy
 
 
 @login_required
@@ -352,7 +344,7 @@ def reject_entries(request, user_id):
     """
     form = timepiece_forms.YearMonthForm(request.GET
         or request.POST)
-    user = auth_models.User.objects.get(pk=user_id)
+    user = User.objects.get(pk=user_id)
     if form.is_valid():
         from_date, to_date = form.save()
         entries = timepiece.Entry.no_join.filter(status='verified', user=user,
@@ -1024,7 +1016,7 @@ def list_people(request):
     form = timepiece_forms.SearchForm(request.GET)
     if form.is_valid() and 'search' in request.GET:
         search = form.cleaned_data['search']
-        people = auth_models.User.objects.filter(
+        people = User.objects.filter(
             Q(first_name__icontains=search) |
             Q(last_name__icontains=search) |
             Q(email__icontains=search)
@@ -1037,7 +1029,7 @@ def list_people(request):
                 reverse('view_person', kwargs=url_kwargs)
             )
     else:
-        people = auth_models.User.objects.all().order_by('last_name')
+        people = User.objects.all().order_by('last_name')
 
     context = {
         'form': form,
@@ -1050,7 +1042,7 @@ def list_people(request):
 @transaction.commit_on_success
 @render_with('timepiece/person/view.html')
 def view_person(request, person_id):
-    person = get_object_or_404(auth_models.User, pk=person_id)
+    person = get_object_or_404(User, pk=person_id)
     add_user_form = timepiece_forms.AddUserToProjectForm()
     context = {
         'person': person,
@@ -1073,7 +1065,7 @@ def view_person(request, person_id):
 @render_with('timepiece/person/create_edit.html')
 def create_edit_person(request, person_id=None):
     if person_id:
-        person = get_object_or_404(auth_models.User, pk=person_id)
+        person = get_object_or_404(User, pk=person_id)
     else:
         person = None
     if request.POST:
@@ -1701,7 +1693,7 @@ class ProjectHoursAjaxView(ProjectHoursMixin, View):
 
     def get_instance(self, data, week_start):
         try:
-            user = auth_models.User.objects.get(pk=data.get('user', None))
+            user = User.objects.get(pk=data.get('user', None))
             project = timepiece.Project.objects.get(
                 pk=data.get('project', None))
             hours = data.get('hours', None)
@@ -1724,7 +1716,7 @@ class ProjectHoursAjaxView(ProjectHoursMixin, View):
             all_projects: all of the projects; used for autocomplete
             all_users: all users that can clock in; used for completion
         """
-        perm = auth_models.Permission.objects.filter(
+        perm = Permission.objects.filter(
             content_type=ContentType.objects.get_for_model(timepiece.Entry),
             codename='can_clock_in'
         )
@@ -1737,7 +1729,7 @@ class ProjectHoursAjaxView(ProjectHoursMixin, View):
         projects = timepiece.Project.objects.filter(pk__in=inner_qs).values() \
             .order_by('name')
         all_projects = timepiece.Project.objects.values('id', 'name')
-        all_users = auth_models.User.objects.filter(groups__permissions=perm) \
+        all_users = User.objects.filter(groups__permissions=perm) \
             .values('id', 'first_name', 'last_name')
 
         data = {

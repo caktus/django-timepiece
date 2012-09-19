@@ -1,12 +1,13 @@
 import datetime
-import logging
+from dateutil.relativedelta import relativedelta
 from decimal import Decimal
+import logging
 
 from django.conf import settings
 from django.contrib.auth.models import User
-from django.core.exceptions import ValidationError, NON_FIELD_ERRORS
+from django.core.exceptions import ValidationError
 from django.db import models
-from django.db.models import Q, Avg, Sum, Max, Min
+from django.db.models import Q, Sum, Max, Min
 
 try:
     from django.utils import timezone
@@ -14,11 +15,6 @@ except ImportError:
     from timepiece import timezone
 
 from timepiece import utils
-
-from dateutil.relativedelta import relativedelta
-from dateutil import rrule
-
-from datetime import timedelta
 
 
 class Attribute(models.Model):
