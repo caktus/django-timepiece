@@ -126,18 +126,7 @@ def view_entries(request):
                 break
     current_total = sum([entry['sum'] for entry in activity_entries])
 
-#     temporarily disabled until the allocations represent accurate goals
-#     -TM 6/27
-    allocations = []
-    allocated_projects = timepiece.Project.objects.none()
-#    allocations = timepiece.AssignmentAllocation.objects.during_this_week(
-#        request.user
-#        ).order_by('assignment__contract__project__name')
-#    allocated_projects = allocations.values_list(
-#    'assignment__contract__project',)
-
     project_entries = entries.exclude(
-        project__in=allocated_projects,
         end_time__isnull=True
     ).values(
         'project__name', 'project__pk'
@@ -149,7 +138,6 @@ def view_entries(request):
     context = {
         'this_weeks_entries': this_weeks_entries,
         'assignments': assignments,
-        'allocations': allocations,
         'schedule': schedule,
         'project_entries': project_entries,
         'activity_entries': activity_entries,
@@ -1302,29 +1290,6 @@ def payroll_summary(request):
         'unverified': unverified.values_list(*user_values).distinct(),
         'unapproved': unapproved.values_list(*user_values).distinct(),
         'labels': labels,
-    }
-
-
-@permission_required('timepiece.view_projection_summary')
-@render_with('timepiece/time-sheet/projection/projection.html')
-@utils.date_filter
-def projection_summary(request, form, from_date, to_date, status, activity):
-    if not (from_date and to_date):
-        today = datetime.date.today()
-        from_date = today.replace(day=1)
-        to_date = from_date + relativedelta(months=1)
-    contracts = timepiece.ProjectContract.objects.exclude(status='complete')
-    contracts = contracts.exclude(
-        project__in=settings.TIMEPIECE_PROJECTS.values())
-    contracts = contracts.order_by('end_date')
-    users = User.objects.filter(assignments__contract__in=contracts).distinct()
-    weeks = utils.generate_dates(start=from_date, end=to_date, by='week')
-
-    return {
-        'form': form,
-        'weeks': weeks,
-        'contracts': contracts.select_related(),
-        'users': users,
     }
 
 

@@ -159,11 +159,6 @@ urlpatterns = patterns('',
         name='export_project_time_sheet',
     ),
     url(
-        r'^projection/$',
-        views.projection_summary,
-        name='projection_summary',
-    ),
-    url(
         r'^edit-settings/$',
         views.edit_settings,
         name='edit_settings',

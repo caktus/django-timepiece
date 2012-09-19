@@ -1,8 +1,6 @@
 from django.contrib import admin
 from timepiece import models as timepiece
 
-from timepiece.projection import run_projection
-
 
 class ActivityAdmin(admin.ModelAdmin):
     model = timepiece.Activity
@@ -96,16 +94,6 @@ class ProjectContractAdmin(admin.ModelAdmin):
     def hours_unassigned(self, obj):
         return obj.num_hours - obj.hours_assigned
 
-    # disabled by copelco 1/23/2012
-    # def save_formset(self, request, form, formset, change):
-    #     instances = formset.save()
-    #     form.save_m2m()
-    #     run_projection()
-
-    # def delete_model(self, request, obj):
-    #     obj.delete()
-    #     run_projection()
-
 admin.site.register(timepiece.ProjectContract, ProjectContractAdmin)
 
 
@@ -143,14 +131,6 @@ class ContractAssignmentAdmin(admin.ModelAdmin):
     def remaining(self, obj):
         return "%.2f" % (obj.hours_remaining,)
 
-    def save_model(self, request, obj, form, change):
-        obj.save()
-        run_projection()
-
-    def delete_model(self, request, obj):
-        obj.delete()
-        run_projection()
-
 admin.site.register(timepiece.ContractAssignment, ContractAssignmentAdmin)
 
 
@@ -166,14 +146,6 @@ class PersonScheduleAdmin(admin.ModelAdmin):
 
     def unscheduled(self, obj):
         return "%.2f" % (obj.hours_available - float(obj.hours_scheduled),)
-
-    def save_model(self, request, obj, form, change):
-        obj.save()
-        run_projection()
-
-    def delete_model(self, request, obj):
-        obj.delete()
-        run_projection()
 
 admin.site.register(timepiece.PersonSchedule, PersonScheduleAdmin)
 
