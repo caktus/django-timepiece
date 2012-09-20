@@ -1,5 +1,6 @@
 {% extends "timepiece/time-sheet/base.html" %}
 {% load timepiece_tags math_tags %}
+{% load url from future %}
 
 {% block title %}Timepiece Entries{% endblock title %}
 
@@ -11,8 +12,8 @@
             <div class="span12">
                 <h2>My Time Sheet</h2>
                 <ul class="unstyled subnav">
-                    <li><a href="{% url timepiece-clock-in %}">Clock In</a></li>
-                    <li><a href="{% url timepiece-add %}">Add Entry</a></li>
+                    <li><a href="{% url 'timepiece-clock-in' %}">Clock In</a></li>
+                    <li><a href="{% url 'timepiece-add' %}">Add Entry</a></li>
                 </ul>
             </div>
         </div>
@@ -60,16 +61,16 @@
                                 </tr>
                                 {% for assignment in type.list %}
                                     <tr>
-                                        <td><a href="{% url timepiece-clock-in %}?project={{ assignment.contract.project.pk }}">{{ assignment.contract.project }}</a></td>
+                                        <td><a href="{% url 'timepiece-clock-in' %}?project={{ assignment.contract.project.pk }}">{{ assignment.contract.project }}</a></td>
                                         <td class="hours">{{ assignment.num_hours }}</td>
                                         <td class="hours">{{ assignment.hours_worked|floatformat:2 }} ({% widthratio assignment.hours_worked assignment.num_hours 100 %}%)</td>
                                         <td class="hours">{{ assignment.hours_remaining|floatformat:2 }}</td>
                                         <td>{{ assignment.end_date }}</td>
                                         <td>
                                             <ul class="actions">
-                                                <li><a href="{% url timepiece-add %}?project={{ assignment.contract.project.pk }}">Add Entry</a></li>
+                                                <li><a href="{% url 'timepiece-add' %}?project={{ assignment.contract.project.pk }}">Add Entry</a></li>
                                                 {% if perms.timepiece.view_entry_summary %}
-                                                    <li><a href="{% url view_contract assignment.contract.pk %}">Report</a></li>
+                                                    <li><a href="{% url 'view_contract' assignment.contract.pk %}">Report</a></li>
                                                 {% endif %}
                                             </ul>
                                         </td>
@@ -120,7 +121,7 @@
 
                             {% for entry in my_active_entries %}
                                 <tr>
-                                    <td><a href="{% url timepiece-clock-in %}?project={{ entry.project_id }}">{{ entry.project }}</a></td>
+                                    <td><a href="{% url 'timepiece-clock-in' %}?project={{ entry.project_id }}">{{ entry.project }}</a></td>
                                     <td class="hours">{% get_active_hours entry %}</td>
                                 </tr>
                             {% endfor %}
@@ -133,7 +134,7 @@
 
                             {% for entry in project_entries %}
                                 <tr>
-                                    <td><a href="{% url timepiece-clock-in %}?project={{ entry.project__pk }}">{{ entry.project__name }}</a></td>
+                                    <td><a href="{% url 'timepiece-clock-in' %}?project={{ entry.project__pk }}">{{ entry.project__name }}</a></td>
                                     <td class="hours">{{ entry.sum }}</td>
                                 </tr>
                             {% endfor %}

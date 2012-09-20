@@ -1,4 +1,5 @@
 {% extends "timepiece/project/base.html" %}
+{% load url from future %}
 {% load bootstrap_toolkit %}
 
 {% block crumbs %}
@@ -6,9 +7,9 @@
     <li>
         <span class="divider">/</span>
         {% if not project %}
-            <a href="{% url create_project %}">Create Project</a>
+            <a href="{% url 'create_project' %}">Create Project</a>
         {% else %}
-            <a href="{% url edit_project project.pk %}">Edit Project</a>
+            <a href="{% url 'edit_project' project.pk %}">Edit Project</a>
         {% endif %}
     </li>
 {% endblock crumbs %}

@@ -1,6 +1,7 @@
 {% extends 'timepiece/base.html' %}
 {% load timepiece_tags %}
 {% load bootstrap_toolkit %}
+{% load url from future %}
 
 {% block title %}Payroll Per Project{% endblock %}
 
@@ -13,7 +14,7 @@
 
 {% block crumbs %}
     {{ block.super }}
-    <li><span class="divider">/</span> <a href="{% url hourly_report %}">Hourly Reports</a></li>
+    <li><span class="divider">/</span> <a href="{% url 'hourly_report' %}">Hourly Reports</a></li>
 {% endblock crumbs %}
 
 {% block content %}
@@ -26,17 +27,17 @@
                 </li>
                 <li>
                     {% if perms.timepiece.view_entry_summary %}
-                        <a href="{% url billable_hours %}">Billable Hours</a>
+                        <a href="{% url 'billable_hours' %}">Billable Hours</a>
                     {% endif %}
                 </li>
                 <li>
                     {% if perms.timepiece.view_entry_summary %}
-                        <a href="{% url timepiece-summary %}">General Ledger</a>
+                        <a href="{% url 'timepiece-summary' %}">General Ledger</a>
                     {% endif %}
                 </li>
                 <li>
                     {% if perms.timepiece.view_payroll_summary %}
-                        <a href="{% url payroll_summary %}">Payroll Report</a>
+                        <a href="{% url 'payroll_summary' %}">Payroll Report</a>
                     {% endif %}
                 </li>
             </ul>
