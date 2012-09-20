@@ -448,15 +448,6 @@ class UserYearMonthForm(YearMonthForm):
         return  (from_date, to_date, self.cleaned_data.get('user', None))
 
 
-class ProjectionForm(DateForm):
-    user = forms.ModelChoiceField(queryset=None)
-
-    def __init__(self, *args, **kwargs):
-        users = kwargs.pop('users')
-        super(ProjectionForm, self).__init__(*args, **kwargs)
-        self.fields['user'].queryset = users
-
-
 class BusinessForm(forms.ModelForm):
     class Meta:
         model = timepiece.Business
@@ -547,9 +538,7 @@ class UserProfileForm(forms.ModelForm):
         exclude = ('user', 'hours_per_week')
 
 
-class ProjectSearchForm(forms.Form):
-    search = forms.CharField(required=False, label='')
-    search.widget.attrs['placeholder'] = 'Search'
+class ProjectSearchForm(SearchForm):
     status = forms.ChoiceField(required=False, choices=[], label='')
 
     def __init__(self, *args, **kwargs):
