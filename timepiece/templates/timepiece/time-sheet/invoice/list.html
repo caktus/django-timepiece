@@ -24,10 +24,13 @@
         </div>
     </div>
 
+    {% load pagination_tags %}
+
     <div class="row-fluid">
         <div class="span12">
-            <h3>Invoices</h3>
             {% if invoices %}
+                {% autopaginate invoices %}
+                {% paginate %}
                 <table class="table table-bordered table-striped table-condensed">
                     <thead>
                         <tr>
@@ -58,6 +61,7 @@
                         {% endfor %}
                     </tbody>
                 </table>
+                {% paginate %}
             {% else %}
                 <p>There are no invoices.</p>
             {% endif %}
