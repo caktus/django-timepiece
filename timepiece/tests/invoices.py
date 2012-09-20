@@ -78,7 +78,11 @@ class InvoiceViewPreviousTestCase(TimepieceDataTestCase):
 
         # Search in username
         results = search(self.user.username)
-        self.assertEqual(len(results), 3)
+        self.assertEqual(len(results), 3)  # all were created by this user
+
+        # No results
+        results = search("You won't find me here")
+        self.assertEquals(len(results), 0)
 
     def test_invoice_detail(self):
         invoices = timepiece.EntryGroup.objects.all()
