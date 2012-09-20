@@ -813,14 +813,20 @@ def invoice_projects(request):
     }, context_instance=RequestContext(request))
 
 
-class InvoiceList(ListView):
-    template_name = 'timepiece/time-sheet/invoice/list.html'
-    context_object_name = 'invoices'
-    queryset = timepiece.EntryGroup.objects.all().order_by('-created')
-
-    @method_decorator(permission_required('timepiece.change_entrygroup'))
-    def dispatch(self, *args, **kwargs):
-        return super(InvoiceList, self).dispatch(*args, **kwargs)
+def list_invoices(request):
+    search_form = timepiece_forms.SearchForm(request.GET)
+    query = Q()
+    if search_form.is_valid():
+        search = search_form.save()
+        query |= Q(user__username__icontains=search)
+        query |= Q(project__name__icontains=search)
+        query |= Q(comments__icontains=search)
+        query |= Q(number__icontains=search)
+    invoices = timepiece.EntryGroup.objects.filter(query).order_by('-created')
+    return render(request, 'timepiece/time-sheet/invoice/list.html', {
+        'invoices': invoices,
+        'search_form': search_form,
+    })
 
 
 class InvoiceDetail(DetailView):

@@ -1,47 +1,36 @@
 import datetime
 import random
 
-from django.core.urlresolvers import reverse
 from django.contrib.auth.models import User, Permission
-
-try:
-    from django.utils import timezone
-except ImportError:
-    from timepiece import timezone
+from django.core.urlresolvers import reverse
 
 from timepiece import models as timepiece
-from timepiece.tests.base import TimepieceDataTestCase
 from timepiece import utils
+from timepiece.tests.base import TimepieceDataTestCase
 
 
 class InvoiceViewPreviousTestCase(TimepieceDataTestCase):
+
     def setUp(self):
         super(InvoiceViewPreviousTestCase, self).setUp()
         self.user.is_superuser = True
         self.user.save()
         self.client.login(username=self.user.username, password='abc')
         # Make some projects and entries for invoice creation
-        self.num_entries = 20
-        self.log_many()
-        self.create_invoice()
-        self.create_invoice(self.project2, status='not-invoiced')
-
-    def log_many(self):
         self.project = self.create_project(billable=True)
         self.project2 = self.create_project(billable=True)
-        projects = (self.project, self.project2)
-        project = self.project2
+        self.log_many([self.project, self.project2])
+        self.create_invoice(self.project, {'static': 'invoiced'})
+        self.create_invoice(self.project2, {'status': 'not-invoiced'})
+
+    def log_many(self, projects, num_entries=20):
         start = utils.add_timezone(datetime.datetime(2011, 1, 1, 0, 0, 0))
-        for index in xrange(0, self.num_entries):
+        for index in xrange(0, num_entries):
             start += datetime.timedelta(hours=(5 * index))
-            # Alternate projects
-            if project == self.project2:
-                project = self.project
-            else:
-                project = self.project2
+            project = projects[index % len(projects)]  # Alternate projects
             self.log_time(start=start, status='approved', project=project)
 
-    def create_invoice(self, project=None, status='invoiced'):
+    def create_invoice(self, project=None, data={}):
         if not project:
             project = self.project
         to_date = utils.add_timezone(datetime.datetime(2011, 1, 31))
@@ -49,8 +38,9 @@ class InvoiceViewPreviousTestCase(TimepieceDataTestCase):
         url = reverse('confirm_invoice_project', args=args)
         params = {
             'number': str(random.randint(999, 9999)),
-            'status': status,
+            'status': 'invoiced',
         }
+        params.update(data)
         response = self.client.post(url, params)
 
     def get_invoice(self):
@@ -61,12 +51,34 @@ class InvoiceViewPreviousTestCase(TimepieceDataTestCase):
         entries = invoice.entries.all()
         return random.choice(entries)
 
-    def test_previous_invoice_list(self):
+    def test_previous_invoice_list_no_search(self):
         url = reverse('list_invoices')
         response = self.client.get(url)
         self.assertEqual(response.status_code, 200)
         invoices = response.context['invoices']
         self.assertEqual(len(invoices), 2)
+
+    def test_previous_invoice_list_search(self):
+
+        def search(query):
+            response = self.client.get(list_url, data={'search': query})
+            return response.context['invoices']
+
+        list_url = reverse('list_invoices')
+        project3 = self.create_project(billable=True, data={'name': ':-D'})
+        self.log_many([project3], 10)
+        self.create_invoice(project3, data={'status': 'invoiced',
+                'comments': 'comment!', 'number': '###'})
+
+        # Search comments, project name, and number.
+        for query in ['comment!', ':-D', '###']:
+            results = search(query)
+            self.assertEqual(len(results), 1)
+            self.assertEqual(results[0].project, project3)
+
+        # Search in username
+        results = search(self.user.username)
+        self.assertEqual(len(results), 3)
 
     def test_invoice_detail(self):
         invoices = timepiece.EntryGroup.objects.all()
@@ -200,6 +212,7 @@ class InvoiceViewPreviousTestCase(TimepieceDataTestCase):
 
 
 class InvoiceCreateTestCase(TimepieceDataTestCase):
+
     def setUp(self):
         super(InvoiceCreateTestCase, self).setUp()
         self.user.is_superuser = True
