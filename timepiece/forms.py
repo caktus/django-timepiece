@@ -67,7 +67,7 @@ class CreatePersonForm(auth_forms.UserCreationForm):
         model = auth_models.User
         fields = (
             "username", "first_name", "last_name",
-            "email", "is_active", "is_staff"
+            "email", "is_active", "is_staff", "groups"
         )
 
 
