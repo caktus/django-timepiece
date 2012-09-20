@@ -1,27 +1,24 @@
-from decimal import Decimal
-import time
 from datetime import datetime, timedelta
 from dateutil.relativedelta import relativedelta
+import time
 
 from django import forms
-from django.db.models import Q
 from django.conf import settings
 from django.contrib.auth import models as auth_models
 from django.contrib.auth import forms as auth_forms
 from django.core.urlresolvers import reverse
+from django.db.models import Q
 from django.utils.translation import ugettext_lazy as _
-from django.core.exceptions import ValidationError, NON_FIELD_ERRORS
 
 from selectable import forms as selectable_forms
 
-from timepiece.lookups import ProjectLookup, QuickLookup
-from timepiece.lookups import UserLookup, BusinessLookup
-
-from timepiece.models import Project, Entry, Activity, UserProfile, Attribute
-from timepiece.models import ProjectHours
-from timepiece.fields import UserModelChoiceField
 from timepiece import models as timepiece
 from timepiece import utils
+from timepiece.fields import UserModelChoiceField
+from timepiece.lookups import ProjectLookup, QuickLookup
+from timepiece.lookups import UserLookup, BusinessLookup
+from timepiece.models import Project, Entry, Activity, UserProfile, Attribute
+from timepiece.models import ProjectHours
 
 
 class ProjectFiltersForm(forms.Form):
@@ -389,7 +386,7 @@ class DateForm(forms.Form):
         to_date = data.get('to_date', None)
         if from_date and to_date and from_date > to_date:
             err_msg = 'The ending date must exceed the beginning date'
-            raise ValidationError(err_msg)
+            raise forms.ValidationError(err_msg)
         return data
 
     def save(self):
