@@ -64,7 +64,7 @@ class CreatePersonForm(auth_forms.UserCreationForm):
         model = auth_models.User
         fields = (
             "username", "first_name", "last_name",
-            "email", "is_active", "is_staff"
+            "email", "is_active", "is_staff", "groups"
         )
 
 
@@ -517,6 +517,10 @@ class InvoiceForm(forms.ModelForm):
 class SearchForm(forms.Form):
     search = forms.CharField(required=False, label='')
     search.widget.attrs['placeholder'] = 'Search'
+
+    def save(self):
+        search = self.cleaned_data.get('search', '')
+        return search
 
 
 class UserForm(forms.ModelForm):
