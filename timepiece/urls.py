@@ -184,7 +184,7 @@ urlpatterns = patterns('',
     ),
     url(
         r'^invoice/list/$',
-        views.InvoiceList.as_view(),
+        views.list_invoices,
         name='list_invoices',
     ),
     url(

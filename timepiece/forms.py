@@ -530,6 +530,10 @@ class SearchForm(forms.Form):
     search = forms.CharField(required=False, label='')
     search.widget.attrs['placeholder'] = 'Search'
 
+    def save(self):
+        search = self.cleaned_data.get('search', '')
+        return search
+
 
 class UserForm(forms.ModelForm):
 
