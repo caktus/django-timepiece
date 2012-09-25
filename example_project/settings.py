@@ -112,10 +112,10 @@ TEMPLATE_CONTEXT_PROCESSORS = (
     'django.core.context_processors.request',
 )
 
-ROOT_URLCONF = 'example_project.urls'
+ROOT_URLCONF = 'urls'
 
 # Python dotted path to the WSGI application used by Django's runserver.
-WSGI_APPLICATION = 'example_project.wsgi.application'
+WSGI_APPLICATION = 'wsgi.application'
 
 TEMPLATE_DIRS = (
     '%s/templates' % PROJECT_PATH,
@@ -134,6 +134,7 @@ INSTALLED_APPS = (
     'timepiece',
     'compressor',
     'bootstrap_toolkit',
+    'selectable',
 )
 
 # Compressor specific settings
