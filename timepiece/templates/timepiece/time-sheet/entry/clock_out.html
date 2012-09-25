@@ -4,7 +4,7 @@
 
 {% block crumbs %}
     {{ block.super }}
-    <li><span class="divider">/</span> <a href="{% url 'timepiece-clock-out' entry.pk %}">Clock Out</a></li>
+    <li><span class="divider">/</span> <a href="{% url 'timepiece_clock_out' entry.pk %}">Clock Out</a></li>
 {% endblock crumbs %}
 
 {% block content %}
@@ -19,7 +19,7 @@
                 {{ form|as_bootstrap:"horizontal" }}
                 <div class="form-actions">
                     <input class="btn btn-primary" type="submit" name="submit" value="Clock Out" />
-                    <input class="btn" type="button" value="Cancel" onclick="window.location='{% url 'timepiece-entries' %}'" />
+                    <input class="btn" type="button" value="Cancel" onclick="window.location='{% url 'timepiece_entries' %}'" />
                 </div>
             </form>
         </div>

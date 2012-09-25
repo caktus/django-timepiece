@@ -23,7 +23,7 @@ class DashboardTestCase(TimepieceDataTestCase):
             password='abc',
             email='email@email.com'
         )
-        self.url = reverse('timepiece-entries')
+        self.url = reverse('timepiece_entries')
         self.text = [u'Clock In', u'Add Entry', u'My Active Entries']
         self.now = timezone.now()
 
