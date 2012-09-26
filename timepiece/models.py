@@ -7,6 +7,7 @@ from django.contrib.auth.models import User
 from django.core.exceptions import ValidationError, NON_FIELD_ERRORS
 from django.db import models
 from django.db.models import Q, Avg, Sum, Max, Min
+from django.utils.translation import ugettext_lazy as _
 
 try:
     from django.utils import timezone
@@ -23,8 +24,8 @@ from datetime import timedelta
 
 class Attribute(models.Model):
     ATTRIBUTE_TYPES = (
-        ('project-type', 'Project Type'),
-        ('project-status', 'Project Status'),
+        ('project-type', _('Project Type')),
+        ('project-status', _('Project Status')),
     )
     SORT_ORDER_CHOICES = [(x, x) for x in xrange(-20, 21)]
     type = models.CharField(max_length=32, choices=ATTRIBUTE_TYPES)
@@ -35,14 +36,16 @@ class Attribute(models.Model):
         choices=SORT_ORDER_CHOICES,
     )
     enable_timetracking = models.BooleanField(default=False,
-        help_text='Enable time tracking functionality for projects with this '
-                  'type or status.',
+        help_text=_('Enable time tracking functionality for projects with this '
+                  'type or status.'),
     )
     billable = models.BooleanField(default=False)
 
     class Meta:
         unique_together = ('type', 'label')
         ordering = ('sort_order',)
+        verbose_name = _('attribute')
+        verbose_name_plural = _('attributes')
 
     def __unicode__(self):
         return self.label
@@ -69,7 +72,8 @@ class Business(models.Model):
 
     class Meta:
         ordering = ('name',)
-
+        verbose_name = _('business')
+        verbose_name_plural = _('businesses')
 
 class Project(models.Model):
     name = models.CharField(max_length=255)
@@ -90,7 +94,7 @@ class Project(models.Model):
         related_name='activity_group',
         null=True,
         blank=True,
-        verbose_name="restrict activities to",
+        verbose_name=_("restrict activities to"),
     )
     type = models.ForeignKey(
         Attribute,
@@ -107,12 +111,14 @@ class Project(models.Model):
     class Meta:
         ordering = ('name', 'status', 'type',)
         permissions = (
-            ('view_project', 'Can view project'),
-            ('email_project_report', 'Can email project report'),
-            ('view_project_time_sheet', 'Can view project time sheet'),
-            ('export_project_time_sheet', 'Can export project time sheet'),
-            ('generate_project_invoice', 'Can generate project invoice'),
+            ('view_project', _('Can view project')),
+            ('email_project_report', _('Can email project report')),
+            ('view_project_time_sheet', _('Can view project time sheet')),
+            ('export_project_time_sheet', _('Can export project time sheet')),
+            ('generate_project_invoice', _('Can generate project invoice')),
         )
+        verbose_name = _('project')
+        verbose_name_plural = _('projects')
 
     def __unicode__(self):
         return self.name
@@ -135,6 +141,10 @@ class RelationshipType(models.Model):
     def __unicode__(self):
         return self.name
 
+    class Meta:
+        verbose_name = _('relationship type')
+        verbose_name_plural = _('relationship types')
+
 
 class ProjectRelationship(models.Model):
     types = models.ManyToManyField(
@@ -153,11 +163,13 @@ class ProjectRelationship(models.Model):
 
     class Meta:
         unique_together = ('user', 'project')
+        verbose_name = _('project relationship')
+        verbose_name_plural = _('project relationships')
 
     def __unicode__(self):
-        return "%s's relationship to %s" % (
-            self.project.name,
-            self.user.get_full_name(),
+        return _("%(project)'s relationship to %(user)") % {
+            'project': self.project.name,
+            'user': self.user.get_full_name(),
         )
 
 
@@ -169,12 +181,12 @@ class Activity(models.Model):
     code = models.CharField(
         max_length=5,
         unique=True,
-        help_text='Enter a short code to describe the type of ' + \
-            'activity that took place.'
+        help_text=_('Enter a short code to describe the type of ' + \
+            'activity that took place.')
     )
     name = models.CharField(
         max_length=50,
-        help_text="""Now enter a more meaningful name for the activity.""",
+        help_text=_("""Now enter a more meaningful name for the activity."""),
     )
     billable = models.BooleanField(default=True)
 
@@ -183,7 +195,8 @@ class Activity(models.Model):
 
     class Meta:
         ordering = ('name',)
-        verbose_name_plural = 'activities'
+        verbose_name = _('activity')
+        verbose_name_plural = _('activities')
 
 
 class HourGroupManager(models.Manager):
@@ -223,9 +236,9 @@ class HourGroupManager(models.Manager):
                 other_values = (bundle_value, act_values)
         totals = sorted(totals.items())
         if other_values:
-            totals.append(('Other', other_values))
+            totals.append((_('Other'), other_values))
         all_totals = sum([bt[2] for bt in bundled_totals])
-        totals.append(('Total', (all_totals, [])))
+        totals.append((_('Total'), (all_totals, [])))
         return totals
 
 
@@ -244,6 +257,10 @@ class HourGroup(models.Model):
     def __unicode__(self):
         return self.name
 
+    class Meta:
+        verbose_name = _('hour group')
+        verbose_name_plural = _('hour groups')
+
 
 class ActivityGroup(models.Model):
     """Activities that are allowed for a project"""
@@ -257,6 +274,10 @@ class ActivityGroup(models.Model):
     def __unicode__(self):
         return self.name
 
+    class Meta:
+        verbose_name = _('activity group')
+        verbose_name_plural = _('activity groups')
+
 
 class Location(models.Model):
     name = models.CharField(max_length=255, unique=True)
@@ -265,13 +286,17 @@ class Location(models.Model):
     def __unicode__(self):
         return self.name
 
+    class Meta:
+        verbose_name = _('location')
+        verbose_name_plural = _('locations')
+
 
 ENTRY_STATUS = (
-    ('unverified', 'Unverified',),
-    ('verified', 'Verified',),
-    ('approved', 'Approved',),
-    ('invoiced', 'Invoiced',),
-    ('not-invoiced', 'Not Invoiced',),
+    ('unverified', _('Unverified'),),
+    ('verified', _('Verified'),),
+    ('approved', _('Approved'),),
+    ('invoiced', _('Invoiced'),),
+    ('not-invoiced', _('Not Invoiced'),),
 )
 
 
@@ -446,9 +471,9 @@ class Entry(models.Model):
 
     def clean(self):
         if not self.user_id:
-            raise ValidationError('An unexpected error has occured')
+            raise ValidationError(_('An unexpected error has occured'))
         if not self.start_time:
-            raise ValidationError('Please enter a valid start time')
+            raise ValidationError(_('Please enter a valid start time'))
         start = self.start_time
         if self.end_time:
             end = self.end_time
@@ -477,18 +502,18 @@ class Entry(models.Model):
                         '%H:%M:%S')
                     entry_data['end_time'] = entry.end_time.strftime(
                         '%H:%M:%S')
-                    output = 'Start time overlaps with: ' + \
-                    '%(project)s - %(activity)s - ' % entry_data + \
-                    'from %(start_time)s to %(end_time)s' % entry_data
+                    output = _('Start time overlaps with: ' + \
+                    '%(project)s - %(activity)s - ' + \
+                    'from %(start_time)s to %(end_time)s') % entry_data
                     raise ValidationError(output)
                 else:
                     entry_data['start_time'] = entry.start_time.strftime(
-                        '%H:%M:%S on %m\%d\%Y')
+                        _('%H:%M:%S on %m\%d\%Y'))
                     entry_data['end_time'] = entry.end_time.strftime(
-                        '%H:%M:%S on %m\%d\%Y')
-                    output = 'Start time overlaps with: ' + \
-                    '%(project)s - %(activity)s - ' % entry_data + \
-                    'from %(start_time)s to %(end_time)s' % entry_data
+                        _('%H:%M:%S on %m\%d\%Y'))
+                    output = _('Start time overlaps with: ' + \
+                    '%(project)s - %(activity)s - ' + \
+                    'from %(start_time)s to %(end_time)s') % entry_data
                     raise ValidationError(output)
         try:
             act_group = self.project.activity_group
@@ -496,7 +521,7 @@ class Entry(models.Model):
                 activity = self.activity
                 if not act_group.activities.filter(pk=activity.pk).exists():
                     name = activity.name
-                    err_msg = '%s is not allowed for this project. ' % name
+                    err_msg = _('%s is not allowed for this project. ') % name
                     allowed = act_group.activities.filter()
                     allowed = allowed.values_list('name', flat=True)
                     allowed_names = ['among ']
@@ -506,23 +531,23 @@ class Entry(models.Model):
                             if index < len(allowed) - 2:
                                 allowed_names += ', '
                             elif index < len(allowed) - 1:
-                                allowed_names += ', and '
+                                allowed_names += _(', and ')
                         allowed_activities = ''.join(allowed_names)
                     else:
                         allowed_activities = allowed[0]
-                    err_msg += 'Please choose %s' % allowed_activities
+                    err_msg += _('Please choose %s') % allowed_activities
                     raise ValidationError(err_msg)
         except (Project.DoesNotExist, Activity.DoesNotExist):
             # Will be caught by field requirements
             pass
         if end <= start:
-            raise ValidationError('Ending time must exceed the starting time')
+            raise ValidationError(_('Ending time must exceed the starting time'))
         delta = (end - start)
         delta_secs = (delta.seconds + delta.days * 24 * 60 * 60)
         limit_secs = 60 * 60 * 12
         if delta_secs > limit_secs or self.seconds_paused > limit_secs:
-            err_msg = 'Ending time exceeds starting time by 12 hours or more '\
-                'for {0} on {1} at {2} to {3} at {4}.'.format(
+            err_msg = _('Ending time exceeds starting time by 12 hours or more '\
+                'for {0} on {1} at {2} to {3} at {4}.').format(
                     self.project.name,
                     start.strftime('%m/%d/%Y'),
                     start.strftime('%H:%M:%S'),
@@ -539,8 +564,8 @@ class Entry(models.Model):
         )
         if (entries.exists() and not self.id
                 or self.id and self.status == 'invoiced'):
-            msg = 'You cannot add/edit entries after a timesheet has been ' \
-                'approved or invoiced. Please correct the start and end times.'
+            msg = _('You cannot add/edit entries after a timesheet has been ' \
+                'approved or invoiced. Please correct the start and end times.')
             raise ValidationError(msg)
         return True
 
@@ -701,17 +726,18 @@ class Entry(models.Model):
         """
         The string representation of an instance of this class
         """
-        return '%s on %s' % (self.user, self.project)
+        return _('%(user) on %(project)') % {'user': self.user, 'project': self.project)
 
     class Meta:
-        verbose_name_plural = 'entries'
+        verbose_name = _('entry')
+        verbose_name_plural = _('entries')
         permissions = (
-            ('can_clock_in', 'Can use Pendulum to clock in'),
-            ('can_pause', 'Can pause and unpause log entries'),
-            ('can_clock_out', 'Can use Pendulum to clock out'),
-            ('view_entry_summary', 'Can view entry summary page'),
-            ('view_payroll_summary', 'Can view payroll summary page'),
-            ('approve_timesheet', 'Can approve a verified timesheet'),
+            ('can_clock_in', _('Can use Pendulum to clock in')),
+            ('can_pause', _('Can pause and unpause log entries')),
+            ('can_clock_out', _('Can use Pendulum to clock out')),
+            ('view_entry_summary', _('Can view entry summary page')),
+            ('view_payroll_summary', _('Can view payroll summary page')),
+            ('approve_timesheet', _('Can approve a verified timesheet')),
         )
 
 
@@ -723,7 +749,7 @@ class EntryGroup(models.Model):
     project = models.ForeignKey(Project, related_name='entry_group')
     status = models.CharField(max_length=24, choices=STATUS_CHOICES,
                               default='invoiced')
-    number = models.CharField("Reference #", max_length=50, blank=True,
+    number = models.CharField(_("Reference #"), max_length=50, blank=True,
                               null=True)
     comments = models.TextField(blank=True, null=True)
     created = models.DateTimeField(auto_now_add=True)
@@ -742,9 +768,12 @@ class EntryGroup(models.Model):
             'project': self.project,
             'end': self.end.strftime('%b %Y'),
         }
-        return u'Entry Group ' + \
-               u'%(number)s: %(status)s - %(project)s - %(end)s' % invoice_data
+        return _('Entry Group ' + \
+                 '%(number)s: %(status)s - %(project)s - %(end)s') % invoice_data
 
+    class Meta:
+        verbose_name = _('entry group')
+        verbose_name_plural = _('entry groups')
 
 # Add a utility method to the User class that will tell whether or not a
 # particular user has any unclosed entries
@@ -754,9 +783,9 @@ User.clocked_in = property(lambda user: user.timepiece_entries.filter(
 
 class ProjectContract(models.Model):
     CONTRACT_STATUS = (
-        ('upcoming', 'Upcoming'),
-        ('current', 'Current'),
-        ('complete', 'Complete'),
+        ('upcoming', _('Upcoming')),
+        ('current', _('Current')),
+        ('complete', _('Complete')),
     )
 
     project = models.ForeignKey(Project, related_name='contracts')
@@ -802,6 +831,10 @@ class ProjectContract(models.Model):
     def __unicode__(self):
         return unicode(self.project)
 
+    class Meta:
+        verbose_name = _('project contract')
+        verbose_name_plural = _('project contracts')
+
 
 class ContractMilestone(models.Model):
     contract = models.ForeignKey(ProjectContract, related_name='milestones')
@@ -813,6 +846,8 @@ class ContractMilestone(models.Model):
 
     class Meta(object):
         ordering = ('end_date',)
+        verbose_name = _('contract milestone')
+        verbose_name_plural = _('contract milestones')
 
     def hours_worked(self):
         """Hours worked during this milestone"""
@@ -956,23 +991,23 @@ class ContractAssignment(models.Model):
         return commitment
 
     def weekly_commitment(self, day=None):
-        self._log("Commitment for {0}".format(day))
+        self._log(_("Commitment for {0}").format(day))
         # earlier assignments may have already allocated time for this week
         unallocated = self.unallocated_hours_for_week(day)
-        self._log('Unallocated hours {0}'.format(unallocated))
+        self._log(_('Unallocated hours {0}').format(unallocated))
         reserved = self.remaining_min_hours()
-        self._log('Reserved hours {0}'.format(reserved))
+        self._log(_('Reserved hours {0}').format(reserved))
         # start with unallocated hours
         commitment = unallocated
         # reserve required hours on later assignments (min_hours_per_week)
         commitment -= self.remaining_min_hours()
-        self._log('Commitment after reservation {0}'.format(commitment))
+        self._log(_('Commitment after reservation {0}').format(commitment))
         # if we're under the needed minimum hours and we have available
         # time, then raise our commitment to the desired level
         if commitment < self.min_hours_per_week \
         and unallocated >= self.min_hours_per_week:
             commitment = self.min_hours_per_week
-        self._log('Commitment after minimum weekly hours {0}'\
+        self._log(_('Commitment after minimum weekly hours {0}')\
             .format(commitment))
         # calculate hours left on contract (subtract worked hours this week)
         week_start = utils.get_week_start(day)
@@ -981,11 +1016,11 @@ class ContractAssignment(models.Model):
         remaining -= total_allocated
         if remaining < 0:
             remaining = 0
-        self._log('Remaining {0}'.format(remaining))
+        self._log(_('Remaining {0}').format(remaining))
         # reduce commitment to remaining hours
         if commitment > remaining:
             commitment = remaining
-        self._log('Final commitment {0}'.format(commitment))
+        self._log(_('Final commitment {0}').format(commitment))
         return commitment
 
     def allocated_hours_for_week(self, day):
@@ -999,7 +1034,7 @@ class ContractAssignment(models.Model):
     def unallocated_hours_for_week(self, day):
         """ Calculate number of hours left to work for a week """
         allocated = self.allocated_hours_for_week(day)
-        self._log('Allocated hours {0}'.format(allocated))
+        self._log(_('Allocated hours {0}').format(allocated))
         try:
             schedule = PersonSchedule.objects.filter(user=self.user)[0]
         except IndexError:
@@ -1022,6 +1057,8 @@ class ContractAssignment(models.Model):
 
     class Meta:
         unique_together = (('contract', 'user'),)
+        verbose_name = _('contract assignment')
+        verbose_name_plural = _('contract assignments')
 
     def __unicode__(self):
         return u'%s / %s' % (self.user, self.contract.project)
@@ -1057,6 +1094,10 @@ class AssignmentAllocation(models.Model):
         return self._hours_left or 0
 
     objects = AllocationManager()
+
+    class Meta:
+        verbose_name = _('assignment allocation')
+        verbose_name_plural = _('assignment allocations')        
 
 
 class PersonSchedule(models.Model):
@@ -1097,6 +1138,10 @@ class PersonSchedule(models.Model):
     def __unicode__(self):
         return unicode(self.user)
 
+    class Meta:
+        verbose_name = _('person schedule')
+        verbose_name_plural = _('person schedules')
+
 
 class UserProfile(models.Model):
     user = models.OneToOneField(User, unique=True, related_name='profile')
@@ -1104,9 +1149,13 @@ class UserProfile(models.Model):
     def __unicode__(self):
         return unicode(self.user)
 
+    class Meta:
+        verbose_name = _('user profile')
+        verbose_name_plural = _('user profiles')
+
 
 class ProjectHours(models.Model):
-    week_start = models.DateField(verbose_name='start of week')
+    week_start = models.DateField(verbose_name=_('start of week'))
     project = models.ForeignKey(Project)
     user = models.ForeignKey(User)
     hours = models.DecimalField(max_digits=8, decimal_places=2, default=0)
@@ -1122,6 +1171,6 @@ class ProjectHours(models.Model):
         return super(ProjectHours, self).save(*args, **kwargs)
 
     class Meta:
-        verbose_name = 'project hours entry'
-        verbose_name_plural = 'project hours entries'
+        verbose_name = _('project hours entry')
+        verbose_name_plural = _('project hours entries')
         unique_together = ('week_start', 'project', 'user')
