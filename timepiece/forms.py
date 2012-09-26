@@ -26,20 +26,20 @@ from timepiece import utils
 
 class ProjectFiltersForm(forms.Form):
     TRUNC_CHOICES = [
-        ('day', 'Day'),
-        ('week', 'Week'),
-        ('month', 'Month'),
+        ('day', _('Day')),
+        ('week', _('Week')),
+        ('month', _('Month')),
     ]
     DEFAULT_TRUNC = TRUNC_CHOICES[1][0]
     billable = forms.BooleanField(initial=True, required=False)
-    non_billable = forms.BooleanField(label='Non-Billable', initial=True,
+    non_billable = forms.BooleanField(label=_('Non-Billable'), initial=True,
                                       required=False)
     paid_leave = forms.BooleanField(initial=True, required=False)
-    trunc = forms.ChoiceField(label='Group Totals By:', choices=TRUNC_CHOICES,
+    trunc = forms.ChoiceField(label=_('Group Totals By:'), choices=TRUNC_CHOICES,
                               widget=forms.RadioSelect(), required=False,
                               initial=DEFAULT_TRUNC)
     pj_select = selectable_forms.AutoCompleteSelectMultipleField(ProjectLookup,
-        label='Project Name:', required=False)
+        label=_('Project Name:'), required=False)
 
     def clean_trunc(self):
         trunc = self.cleaned_data.get('trunc', '')
@@ -116,10 +116,10 @@ class EditPersonForm(auth_forms.UserChangeForm):
 class QuickSearchForm(forms.Form):
     quick_search = selectable_forms.AutoCompleteSelectField(
         QuickLookup,
-        label='Quick Search',
+        label=_('Quick Search'),
         required=False
     )
-    quick_search.widget.attrs['placeholder'] = 'Search'
+    quick_search.widget.attrs['placeholder'] = _('Search')
 
     def clean_quick_search(self):
         item = self.cleaned_data['quick_search']
@@ -132,10 +132,10 @@ class QuickSearchForm(forms.Form):
                 return item
             except ValueError:
                 raise forms.ValidationError('%s' %
-                    'User, business, or project does not exist')
+                    _('User, business, or project does not exist'))
         else:
             raise forms.ValidationError('%s' %
-                'User, business, or project does not exist')
+                _('User, business, or project does not exist'))
 
     def save(self):
         type, pk = self.cleaned_data['quick_search']
@@ -153,19 +153,19 @@ class QuickSearchForm(forms.Form):
                 'project_id': pk
             })
 
-        raise forms.ValidationError('Must be a user, project, or business')
+        raise forms.ValidationError(_('Must be a user, project, or business'))
 
 
 class AddUserToProjectForm(forms.Form):
     user = selectable_forms.AutoCompleteSelectField(UserLookup, label="")
-    user.widget.attrs['placeholder'] = 'Add User'
+    user.widget.attrs['placeholder'] = _('Add User')
 
     def save(self):
         return self.cleaned_data['user']
 
 
 class ClockInForm(forms.ModelForm):
-    active_comment = forms.CharField(label='Notes for the active entry',
+    active_comment = forms.CharField(label=_('Notes for the active entry'),
                                      widget=forms.Textarea, required=False)
 
     class Meta:
@@ -226,9 +226,10 @@ class ClockInForm(forms.ModelForm):
         active_entries = self.user.timepiece_entries.filter(
             start_time__gte=start, end_time__isnull=True)
         for entry in active_entries:
-            output = 'The start time is on or before the current entry: ' + \
-            '%s - %s starting at %s' % (entry.project, entry.activity,
-                entry.start_time.strftime('%H:%M:%S'))
+            output = _('The start time is on or before the current entry: ' + \
+            '%(project) - %(activity) starting at %(start)' % \
+                           {'project': entry.project, 'activity': entry.activity, \
+                            'start': entry.start_time.strftime('%H:%M:%S')}
             raise forms.ValidationError(output)
         return start
 
@@ -336,7 +337,7 @@ class AddUpdateEntryForm(forms.ModelForm):
         end = cleaned_data.get('end_time', None)
         if not start:
             raise forms.ValidationError(
-                'Please enter a valid date/time.')
+                _('Please enter a valid date/time.'))
         #Obtain all current entries, except the one being edited
         times = [start, end] if end else [start]
         query = reduce(lambda q, time: q | Q(start_time__lte=time), times, Q())
@@ -344,10 +345,10 @@ class AddUpdateEntryForm(forms.ModelForm):
             query, end_time__isnull=True
             ).exclude(id=self.instance.id)
         for entry in entries:
-            output = 'The times below conflict with the current entry: ' + \
-            '%s - %s starting at %s' % \
-            (entry.project, entry.activity,
-                entry.start_time.strftime('%H:%M:%S'))
+            output = _('The times below conflict with the current entry: ' + \
+            '%(project) - %(activity) starting at %(start)') % \
+            {'project': entry.project, 'activity': entry.activity,
+                'start': entry.start_time.strftime('%H:%M:%S')}
             raise forms.ValidationError(output)
         return self.cleaned_data
 
@@ -366,10 +367,10 @@ STATUS_CHOICES.extend(timepiece.ENTRY_STATUS)
 class DateForm(forms.Form):
     DATE_FORMAT = '%m/%d/%Y'
 
-    from_date = forms.DateField(label="From", required=False,
+    from_date = forms.DateField(label=_("From"), required=False,
         input_formats=(DATE_FORMAT,),
         widget=forms.DateInput(format=DATE_FORMAT))
-    to_date = forms.DateField(label="To", required=False,
+    to_date = forms.DateField(label=_("To"), required=False,
         input_formats=(DATE_FORMAT,),
         widget=forms.DateInput(format=DATE_FORMAT))
     status = forms.ChoiceField(choices=STATUS_CHOICES,
@@ -388,7 +389,7 @@ class DateForm(forms.Form):
         from_date = data.get('from_date', None)
         to_date = data.get('to_date', None)
         if from_date and to_date and from_date > to_date:
-            err_msg = 'The ending date must exceed the beginning date'
+            err_msg = _('The ending date must exceed the beginning date')
             raise ValidationError(err_msg)
         return data
 
@@ -482,10 +483,10 @@ class ProjectForm(forms.ModelForm):
 
     business = selectable_forms.AutoCompleteSelectField(
         BusinessLookup,
-        label='Business',
+        label=_('Business'),
         required=True
     )
-    business.widget.attrs['placeholder'] = 'Search'
+    business.widget.attrs['placeholder'] = _('Search')
 
     def __init__(self, *args, **kwargs):
         super(ProjectForm, self).__init__(*args, **kwargs)
@@ -528,7 +529,7 @@ class InvoiceForm(forms.ModelForm):
 
 class SearchForm(forms.Form):
     search = forms.CharField(required=False, label='')
-    search.widget.attrs['placeholder'] = 'Search'
+    search.widget.attrs['placeholder'] = _('Search')
 
     def save(self):
         search = self.cleaned_data.get('search', '')
@@ -556,12 +557,12 @@ class UserProfileForm(forms.ModelForm):
 
 class ProjectSearchForm(forms.Form):
     search = forms.CharField(required=False, label='')
-    search.widget.attrs['placeholder'] = 'Search'
+    search.widget.attrs['placeholder'] = _('Search')
     status = forms.ChoiceField(required=False, choices=[], label='')
 
     def __init__(self, *args, **kwargs):
         super(ProjectSearchForm, self).__init__(*args, **kwargs)
-        PROJ_STATUS_CHOICES = [('', 'Any Status')]
+        PROJ_STATUS_CHOICES = [('', _('Any Status'))]
         PROJ_STATUS_CHOICES.extend([(a.pk, a.label) for a
                 in Attribute.objects.all().filter(type="project-status")])
         self.fields['status'].choices = PROJ_STATUS_CHOICES
@@ -593,12 +594,12 @@ class DeleteForm(forms.Form):
 
 class BillableHoursForm(forms.Form):
     TRUNC_CHOICES = (
-        ('day', 'Day'),
-        ('week', 'Week'),
-        ('month', 'Month'),
+        ('day', _('Day')),
+        ('week', _('Week')),
+        ('month', _('Month')),
     )
     trunc = forms.ChoiceField(
-        label='Group By',
+        label=_('Group By'),
         choices=TRUNC_CHOICES,
         widget=forms.RadioSelect(),
         required=False,
@@ -644,7 +645,7 @@ class BillableHoursForm(forms.Form):
 
 
 class ProjectHoursSearchForm(forms.Form):
-    week_start = forms.DateField(label='Week of', required=False,
+    week_start = forms.DateField(label=_('Week of'), required=False,
             input_formats=('%Y-%m-%d',),
             widget=forms.DateInput(format='%Y-%m-%d'))
 
