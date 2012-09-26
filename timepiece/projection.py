@@ -28,14 +28,14 @@ def user_weekly_assignments():
 
 
 def run_projection():
-    logger.info('calculating projection')
+    logger.info(_('calculating projection'))
     timepiece.AssignmentAllocation.objects.all().delete()
     for schedule, week, assignments in user_weekly_assignments():
         for assignment in assignments:
             commitment = assignment.weekly_commitment(week)
             assignment.blocks.create(date=week, hours=commitment)
-            logger.debug('{0} | Commitment: {1:<6.2f} | {2}'.format(
+            logger.debug(_('{0} | Commitment: {1:<6.2f} | {2}').format(
                 week, commitment, assignment))
             # if hours_left <= 0:
             #     break
-    logger.info('projection complete')
+    logger.info(_('projection complete'))
