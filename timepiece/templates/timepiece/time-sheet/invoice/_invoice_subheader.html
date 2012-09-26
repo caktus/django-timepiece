@@ -1,47 +1,47 @@
 {% load url from future %}
 <h2>
     {% if current == 'edit' %}
-        Edit Invoice for
+        {% trans "Edit Invoice for" %}
     {% endif %}
     {% if current == 'entries' %}
-        Entries for invoice of
+        {% trans "Entries for invoice of" %}
     {% endif %}
     {% if current == 'detail' %}
-        Invoice Details for
+        {% trans "Invoice Details for" %}
     {% endif %}
 
-    {{ invoice.project.name }} hours
+    {% blocktrans %}{{ invoice.project.name }} hours{% endblocktrans %}
     {% if invoice.start %}
-        from {{ invoice.start }} to {{ invoice.end }}
+        {% blocktrans %}from {{ invoice.start }} to {{ invoice.end }}{% endblocktrans %}
     {% else %}
-        through {{ invoice.end }}{% endif %}
+        {% blocktrans %}through {{ invoice.end }}{% endblocktrans %}{% endif %}
 </h2>
 <ul class="unstyled subnav">
     <li>
-        <a href="{% url 'list_invoices' %}">Previous Invoices</a>
+        <a href="{% url 'list_invoices' %}">{% trans "Previous Invoices" %}</a>
     </li>
     <li>
         {% if current != 'detail' %}
-            <a href="{% url 'view_invoice' invoice.id %}">View Invoice</a>
+            <a href="{% url 'view_invoice' invoice.id %}">{% trans "View Invoice" %}</a>
         {% else %}
-            View Invoice
+            {% trans "View Invoice" %}
         {% endif %}
     </li>
     <li>
         {% if current != 'edit' %}
-            <a href="{% url 'edit_invoice' invoice.id %}">Edit Invoice</a>
+            <a href="{% url 'edit_invoice' invoice.id %}">{% trans "Edit Invoice" %}</a>
         {% else %}
-            Edit Invoice
+            {% trans "Edit Invoice" %}
         {% endif %}
     </li>
     <li>
         {% if current != 'entries' %}
-            <a href="{% url 'view_invoice_entries' invoice.id %}">Entries</a>
+            <a href="{% url 'view_invoice_entries' invoice.id %}">{% trans "Entries" %}</a>
         {% else %}
-            Entries
+            {% trans "Entries" %}
         {% endif %}
     </li>
     <li>
-        <a href="{% url 'view_invoice_csv' invoice.id %}">Download CSV</a>
+        <a href="{% url 'view_invoice_csv' invoice.id %}">{% trans "Download CSV" %}</a>
     </li>
 </ul>

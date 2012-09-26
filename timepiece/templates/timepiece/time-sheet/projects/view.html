@@ -2,20 +2,20 @@
 {% load url from future %}
 {% load timepiece_tags %}
 
-{% block title %}{{ project }} Time Sheet{% endblock %}
+{% block title %}{% blocktrans %}{{ project }} Time Sheet{% endblocktrans %}{% endblock %}
 
 {% block crumbs %}
     {{ block.super }}
-    <li><span class="divider">/</span> <a href="{% url 'view_project' project.pk %}">Project Detail</a></li>
-    <li><span class="divider">/</span> <a href="{% url 'project_time_sheet' project.pk %}">Project Timesheet</a></li>
+    <li><span class="divider">/</span> <a href="{% url 'view_project' project.pk %}">{% trans "Project Detail" %}</a></li>
+    <li><span class="divider">/</span> <a href="{% url 'project_time_sheet' project.pk %}">{% trans "Project Timesheet" %}</a></li>
 {% endblock crumbs %}
 
 {% block content %}
     <div class="row-fluid">
         <div class="span12">
-            <h2>{{ project }} Time Sheet ({{ from_date|date:"N j" }} &mdash; {{ to_date|date:"N j" }})</h2>
+            <h2>{% blocktrans with to=to_date|date:"N j" from=from_date|date:"N j" %}{{ project }} Time Sheet ({{ from }} &mdash; {{ to }}){% endblocktrans %}</h2>
             <ul class="unstyled subnav">
-                <li><a href='{% url 'view_project' project.id %}'>Project Information</a></li>
+                <li><a href='{% url 'view_project' project.id %}'>{% trans "Project Information" %}</a></li>
             </ul>
         </div>
     </div>
@@ -24,9 +24,9 @@
         <div class="span12">
             <form class="form-inline" method="get" action="" id="date-filter" accept-charset="utf-8">
                 {{ year_month_form }}
-                <input class="btn" type='submit' name='yearmonth' value="Update" id='yearmonth'/>
+                <input class="btn" type='submit' name='yearmonth' value="{% trans "Update" %}" id='yearmonth'/>
                 {% if perms.timepiece.export_project_time_sheet %}
-                    <button class="btn" type='submit' name='csv' value="csv" id='csv'>Download CSV</button>
+                    <button class="btn" type='submit' name='csv' value="{% trans "csv" %}" id='csv'>{% trans "Download CSV" %}</button>
                 {% endif %}
             </form>
         </div>
@@ -36,7 +36,7 @@
         {% if user_entries %}
             <div class="span3">
                 <table class='table table-bordered table-striped'>
-                    <caption>Person Summary</caption>
+                    <caption>{% trans "Person Summary" %}</caption>
                 {% for entry in user_entries %}
                     <tr>
                         <td>{{ entry.user__first_name }} {{ entry.user__last_name }}</td>
@@ -50,7 +50,7 @@
         {% if activity_entries %}
             <div class="span3">
                 <table class='table table-bordered table-striped'>
-                    <caption>Activity Summary</caption>
+                    <caption>{% trans "Activity Summary" %}</caption>
                 {% for entry in activity_entries %}
                     <tr>
                         <td>{{ entry.activity__name }}</td>
@@ -68,15 +68,15 @@
             {% if entries %}
                 <table class="table table-bordered table-striped">
                     <tr>
-                        <th>Date</th>
-                        <th>Person</th>
-                        <th>Activity</th>
-                        <th>Location</th>
-                        <th>Time In</th>
-                        <th>Time Out</th>
-                        <th>Breaks</th>
-                        <th>Hours</th>
-                        <th>Comments</th>
+                        <th>{% trans "Date" %}</th>
+                        <th>{% trans "Person" %}</th>
+                        <th>{% trans "Activity" %}</th>
+                        <th>{% trans "Location" %}</th>
+                        <th>{% trans "Time In" %}</th>
+                        <th>{% trans "Time Out" %}</th>
+                        <th>{% trans "Breaks" %}</th>
+                        <th>{% trans "Hours" %}</th>
+                        <th>{% trans "Comments" %}</th>
                     </tr>
                     {% for entry in entries %}
                     <tr{% if entry.comments %} title='{{ entry.comments }}'{% endif %}>
@@ -92,12 +92,12 @@
                     </tr>
                     {% endfor %}
                     <tr>
-                        <th colspan='7'>Total:</th>
+                        <th colspan='7'>{% trans "Total:" %}</th>
                         <td>{{ total|floatformat:2 }}</td>
                     </tr>
                 </table>
             {% else %}
-                <p>No entries exist for this time sheet.</p>
+                <p>{% trans "No entries exist for this time sheet." %}</p>
             {% endif %}
         </div>
     </div>

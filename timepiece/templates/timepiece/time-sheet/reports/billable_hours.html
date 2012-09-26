@@ -1,31 +1,31 @@
 {% extends "timepiece/base.html" %}
 {% load timepiece_tags bootstrap_toolkit %}
 
-{% block title %}Billable Hours{% endblock title %}
+{% block title %}{% trans "Billable Hours" %}{% endblock title %}
 
 {% block bodyid %}billable-hours{% endblock bodyid %}
 
 {% block content %}
     <div class="row-fluid">
         <div class="span12">
-            <h2>Reports</h2>
+            <h2>{% trans "Reports" %}</h2>
             <ul class="nav nav-pills">
                 <li>
                     {% if perms.timepiece.view_entry_summary %}
-                        <a href="{% url hourly_report %}">Hourly</a>
+                        <a href="{% url hourly_report %}">{% trans "Hourly" %}</a>
                     {% endif %}
                 </li>
                 <li class="active">
-                    <a href="#">Billable Hours</a>
+                    <a href="#">{% trans "Billable Hours" %}</a>
                 </li>
                 <li>
                     {% if perms.timepiece.view_entry_summary %}
-                        <a href="{% url timepiece-summary %}">General Ledger</a>
+                        <a href="{% url timepiece-summary %}">{% trans "General Ledger" %}</a>
                     {% endif %}
                 </li>
                 <li>
                     {% if perms.timepiece.view_payroll_summary %}
-                        <a href="{% url payroll_summary %}">Payroll Report</a>
+                        <a href="{% url payroll_summary %}">{% trans "Payroll Report" %}</a>
                     {% endif %}
                 </li>
             </ul>
@@ -50,7 +50,7 @@
             <form class="filter" method="get" id="filter_form">
                 <div class="dates span2">
                     {{ date_form|as_bootstrap }}
-                    <input class="btn" type="submit" value="Update" />
+                    <input class="btn" type="submit" value="{% trans "Update" %}" />
                 </div>
                 
                 {% for field in billable_form %}
@@ -59,7 +59,7 @@
                         {{ field.label }}
                         {% if field.label != "Group By" %}
                             <span>
-                                <a href="#" class="select">select all</a> | <a href="#" class="select-none">select none</a>
+                                <a href="#" class="select">{% trans "select all" %}</a> | <a href="#" class="select-none">{% trans "select none" %}</a>
                             </span>
                         {% endif %}
                     </label>

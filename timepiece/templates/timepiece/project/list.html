@@ -1,6 +1,6 @@
 {% extends "timepiece/project/base.html" %}
 {% load url from future %}
-{% block title %}Projects{% endblock %}
+{% block title %}{% trans "Projects" %}{% endblock %}
 {% load bootstrap_toolkit %}
 
 {% block content %}
@@ -9,7 +9,7 @@
             <h2>Projects</h2>
             <ul class="unstyled subnav">
             {% if perms.timepiece.add_project %}
-                <li><a href='{% url 'create_project' %}'>Create Project</a></li>
+                <li><a href='{% url 'create_project' %}'>{% trans "Create Project" %}</a></li>
             {% endif %}
             </ul>
         </div>
@@ -19,7 +19,7 @@
         <div class="span12">
             <form class='form-inline' accept-charset='UTF-8' method='get' action=''>
                 {{ form|as_bootstrap:"inline" }}
-                <button type='submit' class="btn" name='submit'>Search</button>
+                <button type='submit' class="btn" name='submit'>{% trans "Search" %}</button>
             </form>
         </div>
     </div>
@@ -33,10 +33,10 @@
             <table class='table table-striped table-bordered table-condensed'>
                 <thead>
                     <tr>
-                        <th>Name</th>
-                        <th>Business</th>
-                        <th>Description</th>
-                        <th>Timesheet</th>
+                        <th>{% trans "Name" %}</th>
+                        <th>{% trans "Business" %}</th>
+                        <th>{% trans "Description" %}</th>
+                        <th>{% trans "Timesheet" %}</th>
                     </tr>
                 </thead>
                 <tbody>
@@ -45,7 +45,7 @@
                             <td><a href="{% url 'view_project' project_id=project.id %}">{{ project.name }}</a></td>
                             <td>{{ project.business }}</td>
                             <td>{{ project.description|truncatewords:8 }}</td>
-                            <td><a href="{% url 'project_time_sheet' project.id %}">Timesheet</a></td>
+                            <td><a href="{% url 'project_time_sheet' project.id %}">{% trans "Timesheet" %}</a></td>
                         </tr>
                     {% endfor %}
                 </tbody>

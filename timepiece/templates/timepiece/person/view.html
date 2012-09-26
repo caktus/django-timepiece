@@ -4,7 +4,7 @@
 
 {% block crumbs %}
     {{ block.super }}
-    <li><span class="divider">/</span> <a href="{% url 'view_person' person.pk %}">Person Detail</a></li>
+    <li><span class="divider">/</span> <a href="{% url 'view_person' person.pk %}">{% trans "Person Detail" %}</a></li>
 {% endblock crumbs %}
 
 {% block title %}{{ person.first_name }} {{ person.last_name }}{% endblock %}
@@ -15,11 +15,11 @@
             <h2>{{ person.first_name }} {{ person.last_name }}</h2>
             <ul class="unstyled subnav">
                 {% if perms.auth.change_person %}
-                    <li><a href="{% url 'edit_person' person.pk %}">Edit Person</a></li>
-                    <li><a href="{% url 'delete_person' person.pk %}">Delete Person</a></li>
+                    <li><a href="{% url 'edit_person' person.pk %}">{% trans "Edit Person" %}</a></li>
+                    <li><a href="{% url 'delete_person' person.pk %}">{% trans "Delete Person" %}</a></li>
                 {% endif %}
                 {% if perms.auth.view_entry_summary %}
-                    <li><a href="{% url 'view_person_time_sheet' person.pk %}">View Timesheet</a></li>
+                    <li><a href="{% url 'view_person_time_sheet' person.pk %}">{% trans "View Timesheet" %}</a></li>
                 {% endif %}
             </ul>
         </div>
@@ -28,10 +28,10 @@
     <div class="row-fluid">
         <div class="span12">
             <table class='table table-bordered table-striped'>
-                <tr><th>Username</th><td>{{ person.username }}</td></tr>
-                <tr><th>First Name</th><td>{{ person.first_name }}</td></tr>
-                <tr><th>Last Name</th><td>{{ person.last_name }}</td></tr>
-                <tr><th>Email:</th><td>{{ person.email }}</td></tr>
+                <tr><th>{% trans "Username" %}</th><td>{{ person.username }}</td></tr>
+                <tr><th>{% trans "First Name" %}</th><td>{{ person.first_name }}</td></tr>
+                <tr><th>{% trans "Last Name" %}</th><td>{{ person.last_name }}</td></tr>
+                <tr><th>{% trans "Email" %}</th><td>{{ person.email }}</td></tr>
             </table>
         </div>
     </div>

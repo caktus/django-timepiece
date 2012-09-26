@@ -1,9 +1,9 @@
 {% extends "timepiece/base.html" %}
 
-{% block title %}404 Not Found{% endblock %}
+{% block title %}{% trans "404 Not Found" %}{% endblock %}
 
 {% block content %}
-    <h1>Not Found</h1>
+    <h1>{% trans "Not Found" %}</h1>
 
-    <p>The requested URL {{ request.path }} was not found on this server.</p>
+    <p>{% blocktrans %}The requested URL {{ request.path }} was not found on this server.{% endblocktrans %}</p>
 {% endblock %}

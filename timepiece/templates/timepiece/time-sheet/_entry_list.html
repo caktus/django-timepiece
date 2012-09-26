@@ -2,15 +2,15 @@
 <table class="table table-striped table-bordered table-condensed">
     <thead>
         <tr>
-            <th>Date</th>
-            <th>Project</th>
-            <th class="visible-desktop">Activity</th>
-            <th class="visible-desktop">Clock In</th>
-            <th class="{% if not active %}visible-desktop{% endif %}">Clock Out</th>
-            <th class="visible-desktop">Breaks</th>
-            <th>Hours</th>
-            <th class="visible-desktop">Location</th>
-            <th>Actions</th>
+            <th>{% trans "Date" %}</th>
+            <th>{% trans "Project" %}</th>
+            <th class="visible-desktop">{% trans "Activity" %}</th>
+            <th class="visible-desktop">{% trans "Clock In" %}</th>
+            <th class="{% if not active %}visible-desktop{% endif %}">{% trans "Clock Out" %}</th>
+            <th class="visible-desktop">{% trans "Breaks" %}</th>
+            <th>{% trans "Hours" %}</th>
+            <th class="visible-desktop">{% trans "Location" %}</th>
+            <th>{% trans "Actions" %}</th>
         </tr>
     </thead>
     <tbody>
@@ -28,7 +28,7 @@
             <td class="visible-desktop">{{ entry.start_time|date:"P" }}</td>
             <td class="{% if not active %}visible-desktop{% endif %}">
                 {% if active or not entry.end_time %}
-                    <a href="{% url timepiece-clock-out entry.id %}">Clock Out</a>
+                    <a href="{% url timepiece-clock-out entry.id %}">{% trans "Clock Out" %}</a>
                 {% else %}
                     {{ entry.end_time|date:"P" }}
                 {% endif %}
@@ -37,9 +37,9 @@
                 {{ entry.seconds_paused|seconds_to_hours|floatformat:2 }}
                 {% if active or not entry.end_time %}
                     {% if entry.is_paused %}
-                        <a href="{% url timepiece-toggle-paused entry.id %}">(Resume)</a>
+                        <a href="{% url timepiece-toggle-paused entry.id %}">({% trans "Resume" %})</a>
                     {% else %}
-                        <a href="{% url timepiece-toggle-paused entry.id %}">(Pause)</a>
+                        <a href="{% url timepiece-toggle-paused entry.id %}">({% trans "Pause" %})</a>
                     {% endif %}
                 {% endif %}
             </td>
@@ -48,14 +48,14 @@
             <td>
                 <ul class='actions'>
                     {% ifequal entry.status 'unverified' %}
-                    <li><a href="{% url timepiece-update entry.id %}">Change</a></li>
-                    <li><a href="{% url timepiece-delete entry.id %}">Remove</a></li>
+                    <li><a href="{% url timepiece-update entry.id %}">{% trans "Change" %}</a></li>
+                    <li><a href="{% url timepiece-delete entry.id %}">{% trans "Remove" %}</a></li>
                     {% endifequal %}
                 </ul>
             </td>
         </tr>
         {% empty %}
-            <tr><td colspan='9'>You have no time logged for this period.</td></tr>
+            <tr><td colspan='9'>{% trans "You have no time logged for this period." %}</td></tr>
         {% endfor %}
     </tbody>
 </table>

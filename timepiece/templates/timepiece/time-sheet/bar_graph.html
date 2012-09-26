@@ -4,17 +4,17 @@
 {% else %}
     {% ifnotequal worked 0 %}
     <div title="{{ worked }}">
-        <span>{{ worked }} hours worked</span>
+        <span>{% blocktrans %}{{ worked }} hours worked{% endblocktrans %}</span>
     </div>
     {% endifnotequal %}
     {% ifnotequal left 0 %}
     <div title="{{ left }}">
-        <span>({{ left }} hours remaining)</span>
+        <span>({% blocktrans %}{{ left }} hours remaining{% endblocktrans %})</span>
     </div>
     {% endifnotequal %}
     {% ifnotequal over 0 %}
     <div title="{{ over }}">
-        <span>({{ over }} hours over)</span>
+        <span>({% blocktrans %}{{ over }} hours over{% endblocktrans %})</span>
     </div>
     {% endifnotequal %}
 {% endif %}

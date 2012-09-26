@@ -2,15 +2,15 @@
 {% load url from future %}
 {% load bootstrap_toolkit %}
 
-{% block title %}People{% endblock %}
+{% block title %}{% trans "People" %}{% endblock %}
 
 {% block content %}
     <div class="row-fluid">
         <div class="span12">
-            <h2>People</h2>
+            <h2>{% trans "People" %}</h2>
             <ul class="unstyled subnav">
                 {% if perms.auth.add_user %}
-                    <li><a href='{% url 'create_person' %}'>Create Person</a></li>
+                    <li><a href='{% url 'create_person' %}'>{% trans "Create Person" %}</a></li>
                 {% endif %}
             </ul>
         </div>
@@ -20,7 +20,7 @@
         <div class="span12">
             <form class='form-inline' accept-charset='UTF-8' method='get' action=''>
                 {{ form|as_bootstrap:"inline" }}
-                <button type='submit' name='submit' class="btn">Search</button>
+                <button type='submit' name='submit' class="btn">{% trans "Search" %}</button>
             </form>
         </div>
     </div>
@@ -34,11 +34,11 @@
             <table class='table table-bordered table-striped table-condensed'>
                 <thead>
                     <tr>
-                        <th>Username</th>
-                        <th>First Name</th>
-                        <th>Last Name</th>
-                        <th>Email</th>
-                        <th>Timesheet</th>
+                        <th>{% trans "Username" %}</th>
+                        <th>{% trans "First Name" %}</th>
+                        <th>{% trans "Last Name" %}</th>
+                        <th>{% trans "Email" %}</th>
+                        <th>{% trans "Timesheet" %}</th>
                     </tr>
                 </thead>
                 <tbody>
@@ -49,7 +49,7 @@
                             <td>{{ person.last_name }}</td>
                             <td>{{ person.email }}</td>
 
-                            <td><a href="{% url 'view_person_time_sheet' person.pk %}">View Timesheet</a></td>
+                            <td><a href="{% url 'view_person_time_sheet' person.pk %}">{% trans "View Timesheet" %}</a></td>
                         </tr>
                     {% endfor %}
                 </tbody>

@@ -2,17 +2,17 @@
 {% load url from future %}
 {% load bootstrap_toolkit %}
 
-{% block title %}Schedule for the Week of {{ week|date:'F j, Y' }}{% endblock %}
+{% block title %}{% endblocktrans %}Schedule for the Week of {{ week|date:'F j, Y' }}{% endblocktrans %}{% endblock %}
 
 {% block bodyid %}project-hours{% endblock bodyid %}
 
 {% block content %}
     <div class="row-fluid">
         <div class="span12">
-            <h2>Schedule for the Week of {{ week|date:'F j, Y' }}</h2>
+            <h2>{% blocktrans %}Schedule for the Week of {{ week|date:'F j, Y' }}{% endblocktrans %}</h2>
             <ul class="unstyled subnav">
-                <li><a href="{% url 'project_hours' %}?week_start={{ prev_week|date:'Y-m-d' }}">Prev. Week</a></li>
-                <li><a href="{% url 'project_hours' %}?week_start={{ next_week|date:'Y-m-d' }}">Next Week</a></li>
+                <li><a href="{% url 'project_hours' %}?week_start={{ prev_week|date:'Y-m-d' }}">{% trans "Prev. Week" %}</a></li>
+                <li><a href="{% url 'project_hours' %}?week_start={{ next_week|date:'Y-m-d' }}">{% trans "Next Week" %}</a></li>
             </ul>
         </div>
     </div>
@@ -21,12 +21,12 @@
         <div class="span10">
             <form class="form-inline" accept-charset="UTF-8" method="get" action="">
                 {{ form|as_bootstrap:"inline" }}
-                <button type="submit" class="btn" name="submit">Update</button>
+                <button type="submit" class="btn" name="submit">{% trans "Update" %}</button>
             </form>
         </div>
         {% if perms.timepiece.add_projecthours %}
             <div class="span2">
-                <a class="btn right" href="{% url 'edit_project_hours' %}?week_start={{ week|date:'Y-m-d' }}">Edit Schedule</a>
+                <a class="btn right" href="{% url 'edit_project_hours' %}?week_start={{ week|date:'Y-m-d' }}">{% trans "Edit Schedule" %}</a>
             </div>
         {% endif %}
     </div>
@@ -37,7 +37,7 @@
                 <table class="table-striped table-bordered table-condensed">
                     <thead>
                         <tr>
-                            <th>Project</th>
+                            <th>{% trans "Project" %}</th>
                             {% for id, first_name, last_name in people %}
                                 <th>{{ first_name }} {{ last_name|first }}.</th>
                             {% endfor %}
@@ -57,7 +57,7 @@
                     </tbody>
                 </table>
             {% else %}
-                <p>There are no entries this week.</p>
+                <p>{% trans "There are no entries this week." %}</p>
             {% endif %}
         </div>
     </div>

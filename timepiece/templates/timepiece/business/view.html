@@ -5,7 +5,7 @@
 
 {% block crumbs %}
     {{ block.super }}
-    <li><span class="divider">/</span> <a href="{% url view_business business.pk %}">Business Detail</a></li>
+    <li><span class="divider">/</span> <a href="{% url view_business business.pk %}">{% trans "Business Detail" %}</a></li>
 {% endblock crumbs %}
 
 {% block content %}
@@ -14,8 +14,8 @@
             <h2>{{ business.name }}</h2>
             <ul class="unstyled subnav">
                 {% if perms.timepiece.change_business %}
-                    <li><a href='{% url edit_business business.pk %}'>Edit business</a></li>
-                    <li><a href="{% url delete_business business.pk %}">Delete business</a></li>
+                    <li><a href='{% url edit_business business.pk %}'>{% trans "Edit business" %}</a></li>
+                    <li><a href="{% url delete_business business.pk %}">{% trans "Delete business" %}</a></li>
                 {% endif %}
             </ul>
         </div>
@@ -25,15 +25,15 @@
         <div class="span12">
             <table class='table table-bordered table-striped'>
                 <tr>
-                    <th>Email:</th>
+                    <th>{% trans "Email" %}:</th>
                     <td>{{ business.email }}</td>
                 </tr>
                 <tr>
-                    <th>Description:</th>
+                    <th>{% trans "Description" %}:</th>
                     <td>{{ business.description|linebreaks }}</td>
                 </tr>
                 <tr>
-                    <th>Notes:</th>
+                    <th>{% trans "Notes" %}:</th>
                     <td>{{ business.notes|linebreaks }}</td>
                 </tr>
             </table>

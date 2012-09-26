@@ -1,7 +1,7 @@
 <!doctype html>
 <html>
 <head>
-    <title>Timepiece: {% block title %}{% endblock %}</title>
+    <title>{% trans "Timepiece:" %} {% block title %}{% endblock %}</title>
     <link rel="icon" type="image/png" href="{{ STATIC_URL }}images/icons/clock.png">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
 
@@ -58,7 +58,7 @@
             {% block breadcrumb %}
                 <ul class="breadcrumb">
                     {% block crumbs %}
-                        <li><a href="{% url timepiece-entries %}">Home</a></li>
+                        <li><a href="{% url timepiece-entries %}">{% trans "Home" %}</a></li>
                     {% endblock crumbs %}
                 </ul>
             {% endblock breadcrumb %}
@@ -72,9 +72,9 @@
         <footer class="footer">
             <div class="container-fluid">
                 <p class="pull-right">
-                    <a href="https://github.com/caktus/django-timepiece/">Source</a>
+                    <a href="https://github.com/caktus/django-timepiece/">{% trans "Source" %}</a>
                     |
-                    <a href="http://www.caktusgroup.com/">Caktus Group</a>
+                    <a href="http://www.caktusgroup.com/">{% trans "Caktus Group" %}</a>
                 </p>
             </div>
         </footer>

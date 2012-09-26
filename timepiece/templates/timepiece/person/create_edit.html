@@ -1,5 +1,5 @@
 {% extends "timepiece/person/base.html" %}
-{% block title %}{% if not person %}Create Person{% else %}Edit {{ person.get_full_name }}{% endif %}{% endblock %}
+{% block title %}{% if not person %}{% trans "Create Person" %}{% else %}{% blocktrans %}Edit {{ person.get_full_name }}{% endblocktrans %}{% endif %}{% endblock %}
 {% load bootstrap_toolkit %}
 
 {% block crumbs %}
@@ -7,9 +7,9 @@
     <li>
         <span class="divider">/</span>
         {% if not person %}
-            <a href="{% url create_person %}">Create Person</a>
+            <a href="{% url create_person %}">{% trans "Create Person" %}</a>
         {% else %}
-            <a href="{% url edit_person person.pk %}">Edit Person</a>
+            <a href="{% url edit_person person.pk %}">{% trans "Edit Person" %}</a>
         {% endif %}
     </li>
 {% endblock crumbs %}
@@ -17,7 +17,7 @@
 {% block content %}
     <div class="row-fluid">
         <div class="span12">
-            <h2>{% if not person %}Create Person{% else %}Edit {{ person.name }}{% endif %}</h2>
+            <h2>{% if not person %}{% trans "Create Person" %}{% else %}{% blocktrans %}Edit {{ person.name }}{% endblocktrans %}{% endif %}</h2>
 
             <br style="clear: both;" />
 
@@ -25,8 +25,8 @@
                 {% csrf_token %}
                 {{ person_form|as_bootstrap:"horizontal" }}
                 <div class="form-actions">
-                    <input class="btn btn-primary" type="submit" value="Save" name="submit" />
-                    <input class="btn" type="button" onclick="history.go(-1)" value="Cancel" />
+                    <input class="btn btn-primary" type="submit" value="{% trans "Save" %}" name="submit" />
+                    <input class="btn" type="button" onclick="history.go(-1)" value="{% trans "Cancel" %}" />
                 </div>
             </form>
         </div>

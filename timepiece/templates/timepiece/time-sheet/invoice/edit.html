@@ -2,11 +2,11 @@
 {% load timepiece_tags %}
 {% load url from future %}
 
-{% block title %}Edit Invoice{% endblock %}
+{% block title %}{% trans "Edit Invoice" %}{% endblock %}
 
 {% block crumbs %}
     {{ block.super }}
-    <li><span class="divider">/</span> <a href="{% url 'edit_invoice' invoice.pk %}">Edit Invoice</a></li>
+    <li><span class="divider">/</span> <a href="{% url 'edit_invoice' invoice.pk %}">{% trans "Edit Invoice" %}</a></li>
 {% endblock crumbs %}
 
 {% block content %}
@@ -20,31 +20,31 @@
         <div class="span12">
             <form class="form-horizontal" method="post">{% csrf_token %}
                 {{ invoice_form.as_p }}
-                <input class="btn" type="submit" name="submit" value="Update Invoice" />
-                <a class="btn btn-danger" href="{% url 'delete_invoice' invoice.pk %}">Delete Invoice</a>
+                <input class="btn" type="submit" name="submit" value="{% trans "Update Invoice" %}" />
+                <a class="btn btn-danger" href="{% url 'delete_invoice' invoice.pk %}">{% trans "Delete Invoice" %}</a>
             </form>
         </div>
     </div>
 
     <div class="row-fluid">
         <div class="span12">
-            <h3>Selected Entries</h3>
+            <h3>{% trans "Selected Entries" %}</h3>
             {% if entries %}
                 <table class="table table-bordered table-condensed">
                     <tr>
-                        <th>Date</th>
-                        <th>User</th>
-                        <th>Time</th>
-                        <th>Project</th>
-                        <th>Activity</th>
-                        <th>Hours</th>
-                        <th>Comments</th>
-                        <th>Remove</th>
+                        <th>{% trans "Date" %}</th>
+                        <th>{% trans "User" %}</th>
+                        <th>{% trans "Time" %}</th>
+                        <th>{% trans "Project" %}</th>
+                        <th>{% trans "Activity" %}</th>
+                        <th>{% trans "Hours" %}</th>
+                        <th>{% trans "Comments" %}</th>
+                        <th>{% trans "Remove" %}</th>
                     </tr>
                     {% for entry in entries %}
                         {% ifchanged entry.start_time|date:"W" %}
                             <tr class="ledger_header">
-                                <th colspan='8'>Week of {% week_start entry.start_time %} </th>
+                                <th colspan='8'>{% blocktrans with week=week_start entry.start_time %}Week of {{ week }}{% endblocktrans %}</th>
                             </tr>
                         {% endifchanged %}
                         <tr>
@@ -59,12 +59,12 @@
                         <td>{{ entry.activity.name }}</td>
                         <td class="hours">{{ entry.hours }}</td>
                         <td title="{{entry.comments}}">{{ entry.comments|truncatewords:12 }}</td>
-                        <td><a href="{% url 'remove_invoice_entry' invoice.pk entry.pk %}">Remove</a></td>
+                        <td><a href="{% url 'remove_invoice_entry' invoice.pk entry.pk %}">{% trans "Remove" %}</a></td>
                     </tr>
                     {% endfor %}
                 </table>
             {% else %}
-                <p>No entries were found</p>
+                <p>{% trans "No entries were found" %}</p>
             {% endif %}
         </div>
     </div>

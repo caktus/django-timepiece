@@ -1,16 +1,16 @@
 {% extends "timepiece/base.html" %}
 {% load bootstrap_toolkit %}
-{% block title %}My Settings{% endblock %}
+{% block title %}{% trans "My Settings" %}{% endblock %}
 
 {% block crumbs %}
     {{ block.super }}
-    <li><span class="divider">/</span> <a href="{% url edit_settings %}">My Settings</a></li>
+    <li><span class="divider">/</span> <a href="{% url edit_settings %}">{% trans "My Settings" %}</a></li>
 {% endblock crumbs %}
 
 {% block content %}
     <div class="row-fluid">
         <div class="span12">
-            <h2>My Settings</h2>
+            <h2>{% trans "My Settings" %}</h2>
 
             <br style="clear: both;" />
 
@@ -19,8 +19,8 @@
                 {{ user_form|as_bootstrap:"horizontal" }}
                 {{ profile_form|as_bootstrap:"horizontal" }}
                 <div class="form-actions">
-                    <input class="btn btn-primary" type="submit" value="Save" name="submit">
-                    <input class="btn" type="button" onclick="history.go(-1)" value="Cancel">
+                    <input class="btn btn-primary" type="submit" value="{% trans "Save" %}" name="submit">
+                    <input class="btn" type="button" onclick="history.go(-1)" value="{% trans "Cancel" %}">
                 </div>
             </form>
         </div>

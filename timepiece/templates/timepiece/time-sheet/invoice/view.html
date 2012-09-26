@@ -2,11 +2,11 @@
 {% load timepiece_tags %}
 {% load url from future %}
 
-{% block title %}Invoice Detail{% endblock %}
+{% block title %}{% trans "Invoice Detail" %}{% endblock %}
 
 {% block crumbs %}
     {{ block.super }}
-    <li><span class="divider">/</span> <a href="{% url 'view_invoice' invoice.pk %}">Invoice Detail</a></li>
+    <li><span class="divider">/</span> <a href="{% url 'view_invoice' invoice.pk %}">{% trans "Invoice Detail" %}</a></li>
 {% endblock crumbs %}
 
 {% block content %}
@@ -23,11 +23,11 @@
 
         <div class="span6">
             {% if totals %}
-                <h3>Totals</h3>
+                <h3>{% trans "Totals" %}</h3>
                 <table class="table table-bordered">
                     <tr>
-                        <th>Activity Type</th>
-                        <th>Total Hours</th>
+                        <th>{% trans "Activity Type" %}</th>
+                        <th>{% trans "Total Hours" %}</th>
                     </tr>
                     {% for name, hours_activities in totals %}
                         <tr class="ledger_header">

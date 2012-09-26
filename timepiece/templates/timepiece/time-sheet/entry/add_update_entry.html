@@ -1,21 +1,21 @@
 {% extends 'timepiece/time-sheet/base.html' %}
 {% load bootstrap_toolkit %}
 
-{% block title %}{% if entry %}Update{% else %}Create{% endif %} Entry{% endblock %}
+{% block title %}{% if entry %}{% trans "Update" %}{% else %}{% trans "Create" %}{% endif %} {% trans "Entry" %}{% endblock %}
 
 {% block crumbs %}
     {{ block.super }}
     {% if entry %}
-        <li><span class="divider">/</span> <a href="{% url timepiece-update entry.pk %}">Update Entry</a></li>
+        <li><span class="divider">/</span> <a href="{% url timepiece-update entry.pk %}">{% trans "Update Entry" %}</a></li>
     {% else %}
-        <li><span class="divider">/</span> <a href="{% url timepiece-add %}">Create Entry</a></li>
+        <li><span class="divider">/</span> <a href="{% url timepiece-add %}">{% trans "Create Entry" %}</a></li>
     {% endif %}
 {% endblock crumbs %}
 
 {% block content %}
     <div class="row-fluid">
         <div class="span12">
-            <h2>{% if entry %}Update{% else %}Create{% endif %} Entry</h2>
+            <h2>{% if entry %}{% trans "Update" %}{% else %}{% trans "Create" %}{% endif %} {% trans "Entry" %}</h2>
 
             <br style="clear: both;" />
 
@@ -23,8 +23,8 @@
                 {% csrf_token %}
                 {{ form|as_bootstrap:"horizontal" }}
                 <div class="form-actions">
-                    <input class="btn btn-primary" type='submit' name='submit' value='Save' />
-                    <input class="btn" type='button' value='Cancel' onclick="window.location='{% url timepiece-entries %}'" />
+                    <input class="btn btn-primary" type='submit' name='submit' value='{% trans "Save" %}' />
+                    <input class="btn" type='button' value='{% trans "Cancel" %}' onclick="window.location='{% url timepiece-entries %}'" />
                 </div>
             </form>
         </div>

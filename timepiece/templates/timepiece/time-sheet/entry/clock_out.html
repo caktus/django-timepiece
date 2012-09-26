@@ -3,13 +3,13 @@
 
 {% block crumbs %}
     {{ block.super }}
-    <li><span class="divider">/</span> <a href="{% url timepiece-clock-out entry.pk %}">Clock Out</a></li>
+    <li><span class="divider">/</span> <a href="{% url timepiece-clock-out entry.pk %}">{% trans "Clock Out" %}</a></li>
 {% endblock crumbs %}
 
 {% block content %}
     <div class="row-fluid">
         <div class="span12">
-            <h2>Clock Out of Project</h2>
+            <h2>{% trans "Clock Out of Project" %}</h2>
 
             <br style="clear: both;" />
 
@@ -17,8 +17,8 @@
                 {% csrf_token %}
                 {{ form|as_bootstrap:"horizontal" }}
                 <div class="form-actions">
-                    <input class="btn btn-primary" type="submit" name="submit" value="Clock Out" />
-                    <input class="btn" type="button" value="Cancel" onclick="window.location='{% url timepiece-entries %}'" />
+                    <input class="btn btn-primary" type="submit" name="submit" value="{% trans "Clock Out" %}" />
+                    <input class="btn" type="button" value="{% trans "Cancel" %}" onclick="window.location='{% url timepiece-entries %}'" />
                 </div>
             </form>
         </div>

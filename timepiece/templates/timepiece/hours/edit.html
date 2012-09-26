@@ -2,7 +2,7 @@
 {% load url from future %}
 {% load bootstrap_toolkit %}
 
-{% block title %}Schedule for the Week of {{ week|date:'F j, Y' }}{% endblock %}
+{% block title %}{% blocktrans %}Schedule for the Week of {{ week|date:'F j, Y' }}{% endblocktrans %}{% endblock %}
 
 {% block extrajs %}
     <script type="text/javascript">
@@ -23,7 +23,7 @@
 
 {% block crumbs %}
     {{ block.super }}
-    <li><span class="divider">/</span> <a href="{% url 'edit_project_hours' %}?week_start={{ week|date:'Y-m-d' }}"> Edit Weekly Schedule</a></li>
+    <li><span class="divider">/</span> <a href="{% url 'edit_project_hours' %}?week_start={{ week|date:'Y-m-d' }}">{% trans "Edit Weekly Schedule" %}</a></li>
 {% endblock crumbs %}
 
 {% block bodyid %}project-hours{% endblock bodyid %}
@@ -33,7 +33,7 @@
 
     <div class="row-fluid">
         <div class="span12">
-            <h2 data-date="{{ week|date:'Y-m-d' }}">Schedule for the Week of {{ week|date:'F j, Y' }}</h2>
+            <h2 data-date="{{ week|date:'Y-m-d' }}">{% blocktrans %}Schedule for the Week of {{ week|date:'F j, Y' }}{% endblocktrans %}</h2>
         </div>
     </div>
 
@@ -41,7 +41,7 @@
         <div class="span4">
             <form class="form-inline" method="get">
                 {{ form|as_bootstrap:"inline" }}
-                <button type="submit" class="btn">Update</button>
+                <button type="submit" class="btn">{% trans "Update" %}</button>
             </form>
 
         </div>
@@ -50,12 +50,12 @@
                 {% csrf_token %}
                 <input type="hidden" name="duplicate" value="duplicate" />
                 <input type="hidden" name="week_update" value="{{ week|date:'Y-m-d' }}" />
-                <button id="copy" type="submit" class="btn">Copy previous week</button>
+                <button id="copy" type="submit" class="btn">{% trans "Copy previous week" %}</button>
             </form>
             <form class="form-inline right" method="post" action="{% url 'edit_project_hours' %}">
                 {% csrf_token %}
                 <input type="hidden" name="week_start" value="{{ week|date:'Y-m-d' }}" />
-                <button type="submit" class="btn">Publish hours</button>
+                <button type="submit" class="btn">{% trans "Publish hours" %}</button>
             </form>
         </div>
     </div>

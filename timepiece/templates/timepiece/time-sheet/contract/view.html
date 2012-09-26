@@ -2,33 +2,33 @@
 {% load timepiece_tags %}
 {% load url from future %}
 
-{% block title %}{{ contract }} Report{% endblock %}
+{% block title %}{% blocktrans %}{{ contract }} Report{% endblocktrans %}{% endblock %}
 
 {% block crumbs %}
     {{ block.super }}
-    <li><span class="divider">/</span> <a href="{% url 'view_contract' contract.pk %}">Contract Detail</a></li>
+    <li><span class="divider">/</span> <a href="{% url 'view_contract' contract.pk %}">{% trans "Contract Detail" %}</a></li>
 {% endblock crumbs %}
 
 {% block content %}
     <div class="row-fluid">
         <div class="span12">
-            <h2>{{ contract }} Report</h2>
+            <h2>{% blocktrans %}{{ contract }} Report{% endblocktrans %}</h2>
             <ul class="unstyled subnav">
-                <li><a href="{% url 'list_contracts' %}">Contracts</a></li>
+                <li><a href="{% url 'list_contracts' %}">{% trans "Contracts" %}</a></li>
             </ul>
 
             <table class='table table-bordered'>
                 <tr>
-                    <th>Project</th>
+                    <th>{% trans "Project" %}</th>
                     <td>{{ contract.project }}</td>
                 </tr>
                 <tr>
-                    <th>Time Frame</th>
+                    <th>{% trans "Time Frame" %}</th>
                     <td>{{ contract.start_date|date }} &mdash; {{ contract.end_date }}</td>
                 </tr>
                 <tr>
-                    <th>Hours</th>
-                    <td>Worked {{ contract.hours_worked }} of {{ contract.num_hours }} ({% widthratio contract.hours_worked contract.num_hours 100 %}%)</td>
+                    <th>{% trans "Hours" %}</th>
+                    <td>{% blocktrans %}Worked {{ contract.hours_worked }} of {{ contract.num_hours }}{% endblocktrans %} ({% widthratio contract.hours_worked contract.num_hours 100 %}%)</td>
                 </tr>
             </table>
         </div>
@@ -37,19 +37,19 @@
     {% if contract.milestones.exists %}
         <div class="row-fluid">
             <div class="span12">
-                <h3>Milestones</h3>
+                <h3>{% trans "Milestones" %}</h3>
 
                 <table class='table table-striped table-bordered'>
                     <thead>
                         <tr>
-                            <th>Name</th>
-                            <th>Status</th>
-                            <th>Time Frame</th>
-                            <th>Budget</th>
+                            <th>{% trans "Name" %}</th>
+                            <th>{% trans "Status" %}</th>
+                            <th>{% trans "Time Frame" %}</th>
+                            <th{% trans ">Budget" %}</th>
                             <th></th>
-                            <th>Worked</th>
+                            <th>{% trans "Worked" %}</th>
                             <th></th>
-                            <th>Remaining</th>
+                            <th>{% trans "Remaining" %}</th>
                         </tr>
                     </thead>
                     <tbody>
@@ -58,12 +58,12 @@
                                 <td>{{ milestone.name }}</td>
                                 <td>
                                     {% if milestone.is_complete %}
-                                        Complete
+                                        {% trans "Complete" %}
                                     {% else %}
                                         {% if milestone.is_before %}
-                                            Upcoming
+                                            {% trans "Upcoming" %}
                                         {% else %}
-                                            {{ milestone.end_date|work_days }} days left
+                                            {% blocktrans %}{{ milestone.end_date|work_days }} days left{% endblocktrans %}
                                         {% endif %}
                                     {% endif %}
                                 </td>

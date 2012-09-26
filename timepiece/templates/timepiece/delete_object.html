@@ -1,22 +1,22 @@
 {% extends "timepiece/base.html" %}
 
 {% block title %}
-    Delete {{ object }}
+    {% trans "Delete" %} {{ object }}
 {% endblock title %}
 
 {% block content %}
     <div class="row-fluid">
         <div class="span12">
             {% if object.get_full_name %}
-                <h3>Are you sure you want to delete {{ object.get_full_name }}?</h3>
+                <h3>{% blocktrans %}Are you sure you want to delete {{ object.get_full_name }}?{% endblocktrans %}</h3>
             {% else %}
-                <h3>Are you sure you want to delete {{ object }}?</h3>
+                <h3>{% blocktrans %}Are you sure you want to delete {{ object }}?{% endblocktrans %}</h3>
             {% endif %}
             <form method="post" action="">
                 {% csrf_token %}
                 <input type="hidden" name="delete" value="delete" />
-                <input type="submit" class="btn btn-danger" value="Delete" />
-                <input type="button" class="btn" value="Do Not Delete" onclick="history.back(-1)" />
+                <input type="submit" class="btn btn-danger" value="{% trans "Delete" %}" />
+                <input type="button" class="btn" value="{% trans "Do Not Delete" %}" onclick="history.back(-1)" />
             </form>
         </div>
     </div>

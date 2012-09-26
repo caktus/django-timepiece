@@ -1,17 +1,17 @@
 {% extends 'timepiece/time-sheet/reports/base.html' %}
 {% load timepiece_tags %}
 
-{% block title %}Projection Summary{% endblock %}
+{% block title %}{% trans "Projection Summary" %}{% endblock %}
 
 {% block crumbs %}
     {{ block.super }}
-    <li><span class="divider">/</span> <a href="{% url projection_summary %}">Projection</a></li>
+    <li><span class="divider">/</span> <a href="{% url projection_summary %}">{% trans "Projection" %}</a></li>
 {% endblock crumbs %}
 
 {% block content %}
     <div class="row-fluid">
         <div class="span12">
-            <h2>Projection Summary</h2>
+            <h2>{% trans "Projection Summary" %}</h2>
         </div>
     </div>
 
@@ -37,16 +37,16 @@
             <table class="table table-bordered table-condensed">
                 {% for contract in contracts %}
                     <tr>
-                        <th colspan="{{ weeks.count }}" class='contract'>{{ contract }} (Due {{ contract.end_date|date:"n/j" }}) - Remaining: {{ contract.hours_remaining }}, Allocated: {{ contract.hours_allocated }}</th>
+                        <th colspan="{{ weeks.count }}" class='contract'>{% blocktrans with due=contract.end_date|date:"n/j" remaining=contract.hours_remaining allocated=contract.hours_allocated %}{{ contract }} (Due {{ due }}) - Remaining: {{ remaining }}, Allocated: {{ allocated }}{% endblocktrans %}</th>
                     </tr>
                     <tr>
                         <th>&nbsp;</th>
-                        <th class='assigned'>Assigned</th>
-                        <th class='worked'>Worked</th>
+                        <th class='assigned'>{% trans "Assigned" %}</th>
+                        <th class='worked'>{% trans "Worked" %}</th>
                         {% for week in weeks %}
                             <th>{{ week|date:"n/j" }}</th>
                         {% endfor %}
-                        <th>Allocated</th>
+                        <th>{% trans "Allocated" %}</th>
                     </tr>
                     {% for assignment in contract.assignments.select_related %}
                         <tr>

@@ -2,26 +2,26 @@
 {% load timepiece_tags %}
 {% load url from future %}
 
-{% block title %}Current Contracts{% endblock %}
+{% block title %}{% trans "Current Contracts" %}{% endblock %}
 
 {% block crumbs %}
     {{ block.super }}
-    <li><span class="divider">/</span> <a href="{% url 'list_contracts' %}">Contracts</a></li>
+    <li><span class="divider">/</span> <a href="{% url 'list_contracts' %}">{% trans "Contracts" %}</a></li>
 {% endblock crumbs %}
 
 {% block content %}
     <div class="row-fluid">
         <div class="span12">
-            <h2>Current Contracts</h2>
+            <h2>{% trans "Current Contracts" %}</h2>
 
             <table class='table table-bordered table-striped table-condensed'>
                 <thead>
                     <tr>
-                        <th>Project</th>
-                        <th>Time Frame</th>
-                        <th>Hours Worked</th>
-                        <th>Contract Hours</th>
-                        <th>Percent Complete</th>
+                        <th>{% trans "Project" %}</th>
+                        <th>{% trans "Time Frame" %}</th>
+                        <th>{% trans "Hours Worked" %}</th>
+                        <th>{% trans "Contract Hours" %}</th>
+                        <th>{% trans "Percent Complete" %}</th>
                     </tr>
                 </thead>
                 <tbody>

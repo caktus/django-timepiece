@@ -2,5 +2,5 @@
 
 {% block crumbs %}
     {{ block.super }}
-    <li><span class="divider">/</span> <a href="{% url view_person_time_sheet user.pk %}">Timesheet</a></li>
+    <li><span class="divider">/</span> <a href="{% url view_person_time_sheet user.pk %}">{% trans "Timesheet" %}</a></li>
 {% endblock crumbs %}

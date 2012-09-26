@@ -1,20 +1,20 @@
 {% extends "timepiece/time-sheet/base.html" %}
 
-{% block title %}Reject Entries{% endblock title %}
+{% block title %}{% trans "Reject Entries" %}{% endblock title %}
 
 {% block content %}
     <div class="row-fluid">
         <div class="span12">
-            <h2>Reject Entries for {{ date|date:"F Y" }}</h2>
+            <h2>{% blocktrans with fdate=date|date:"F Y" %}Reject Entries for {{ fdate }}{% endblocktrans %}</h2>
 
             <form class="form-inline" action="" method="post">
                 {% csrf_token %}
-                <h3>Are you sure you want to reject {{ user.first_name }}'s entries for {{ date|date:"F Y" }}?</h3>
+                <h3>{% blocktrans with first=user.first_name fdate=date|date:"F Y" %}Are you sure you want to reject {{ first }}'s entries for {{ fdate }}?{% endblocktrans %}</h3>
                 <input type="hidden" name="month" value="{{ date|date:'n' }}" />
                 <input type="hidden" name="year" value="{{ date|date:'Y' }}" />
                 <div class="form-actions">
-                    <input class="btn btn-primary" type="submit" name="yes" value="Yes" />
-                    <input class="btn" type="button" value="No" onclick="javascript:history.go(-1)" />
+                    <input class="btn btn-primary" type="submit" name="yes" value="{% trans "Yes" %}" />
+                    <input class="btn" type="button" value="{% trans "No" %}" onclick="javascript:history.go(-1)" />
                 </div>
             </form>
         </div>

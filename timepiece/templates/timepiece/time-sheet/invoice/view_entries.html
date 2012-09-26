@@ -2,11 +2,11 @@
 {% load timepiece_tags %}
 {% load url from future %}
 
-{% block title %}Invoice Detail{% endblock %}
+{% block title %}{% trans "Invoice Detail" %}{% endblock %}
 
 {% block crumbs %}
     {{ block.super }}
-    <li><span class="divider">/</span> <a href="{% url 'view_invoice_entries' invoice.pk %}">View Entries</a></li>
+    <li><span class="divider">/</span> <a href="{% url 'view_invoice_entries' invoice.pk %}">{% trans "View Entries" %}</a></li>
 {% endblock crumbs %}
 
 {% block content %}

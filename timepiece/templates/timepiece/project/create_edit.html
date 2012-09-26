@@ -6,19 +6,19 @@
     <li>
         <span class="divider">/</span>
         {% if not project %}
-            <a href="{% url create_project %}">Create Project</a>
+            <a href="{% url create_project %}">{% trans "Create Project" %}</a>
         {% else %}
-            <a href="{% url edit_project project.pk %}">Edit Project</a>
+            <a href="{% url edit_project project.pk %}">{% trans "Edit Project" %}</a>
         {% endif %}
     </li>
 {% endblock crumbs %}
 
-{% block title %}{% if not project %}Create Project{% else %}Edit {{ project }}{% endif %}{% endblock %}
+{% block title %}{% if not project %}{% trans "Create Project" %}{% else %}{% blocktrans %}Edit {{ project }}{% endblocktrans %}{% endif %}{% endblock %}
 
 {% block content %}
     <div class="row-fluid">
         <div class="span12">
-            <h2>{% if not project %}Create Project{% if business %} for {{ business }}{% endif %}{% else %}Edit {{ project }}{% endif %}</h2>
+            <h2>{% if not project %}{% trans "Create Project" %} {% if business %}{% blocktrans %}for {{ business }}{% endblocktrans %}{% endif %}{% else %}{% blocktrans %}Edit {{ project }}{% endblocktrans %}{% endif %}</h2>
 
             <br style="clear: both;" />
 
@@ -26,8 +26,8 @@
                 {% csrf_token %}
                 {{ project_form|as_bootstrap:"horizontal" }}
                 <div class="form-actions">
-                    <input class="btn btn-primary" type='submit' name='submit' value='Save' />
-                    <input class="btn" type='button' value='Cancel' onclick='history.go(-1)' />
+                    <input class="btn btn-primary" type='submit' name='submit' value='{% trans "Save" %}' />
+                    <input class="btn" type='button' value='{% trans "Cancel" %}' onclick='history.go(-1)' />
                 </div>
             </form>
         </div>

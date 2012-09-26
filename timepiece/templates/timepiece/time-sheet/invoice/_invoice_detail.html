@@ -4,44 +4,45 @@
 <table class='table table-bordered'>
     {% if invoice.number %}
         <tr>
-            <th>Number:</th>
+            <th>{% trans "Number" %}:</th>
             <td>{{ invoice.number }}</td>
         </tr>
     {% endif %}
     <tr>
-        <th>Project:</th>
+        <th>{% trans "Project" %}:</th>
         <td>{{ invoice.project.name }}</td>
     </tr>
     <tr>
-        <th>Status:</th>
+        <th>{% trans "Status" %}:</th>
         <td>{{ invoice.get_status_display }}</td>
     </tr>
     <tr>
-        <th>Created by:</th>
+        <th>{% trans "Created by" %}:</th>
         <td>{{ invoice.user.get_full_name }}</td>
     </tr>
     <tr>
-        <th>Created on:</th>
+        <th>{% trans "Created on" %}:</th>
         <td>{{ invoice.created|date:"M d Y P" }}</td>
     </tr>
     <tr>
-        <th>Last modified:</th>
+        <th>{% trans "Last modified" %}:</th>
         <td>{{ invoice.modified|date:"M d Y P" }}</td>
     </tr>
 
     {% if invoice.start %}
         <tr>
-            <th>Starting on:</th>
-            <td>{{ invoice.start|date:"M d Y"|default:"Not specified" }}</td>
+            <th>{% trans "Starting on" %}:</th>
+            {% trans "Not specified" as start_default %}
+            <td>{{ invoice.start|date:"M d Y"|default:start_default }}</td>
         </tr>
     {% endif %}
     <tr>
-        <th>Ending on:</th>
+        <th>{% trans "Ending on" %}:</th>
         <td>{{ invoice.end|date:"M d Y" }}</td>
     </tr>
     {% if invoice.comments %}
         <tr>
-            <th>Comments:</th>
+            <th>{% trans "Comments" %}:</th>
             <td>{{ invoice.comments }}</td>
         </tr>
     {% endif %}

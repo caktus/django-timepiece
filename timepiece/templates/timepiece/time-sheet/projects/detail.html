@@ -1,7 +1,7 @@
 {% extends 'timepiece/time-sheet/base.html' %}
 {% load timepiece_tags %}
 
-{% block title %}Payroll Per Project{% endblock %}
+{% block title %}{% trans "Payroll Per Project" %}{% endblock %}
 
 {% block css %}
     <link rel="stylesheet" href="https://ajax.googleapis.com/ajax/libs/jqueryui/1.8.13/themes/ui-lightness/jquery-ui.css" type="text/css" media="screen">
@@ -26,16 +26,16 @@
 <h2>Reports</h2>
 <ul class='header-actions-left'>
     <li>
-        Hourly
+        {% trans "Hourly" %}
     </li>
     <li>
         {% if perms.timepiece.view_entry_summary %}
-            <a href='{% url timepiece-summary %}'>General Ledger</a>
+            <a href='{% url timepiece-summary %}'>{% trans "General Ledger" %}</a>
         {% endif %}
     </li>
     <li>
         {% if perms.timepiece.view_payroll_summary %}
-            <a href='{% url payroll_summary %}'>Payroll Report</a>
+            <a href='{% url payroll_summary %}'>{% trans "Payroll Report" %}</a>
         {% endif %}
     </li>
 </ul>
@@ -59,9 +59,9 @@
                 {{field.label}} {{field}}
             {% endif %}
         {% endfor %}
-        <input class="btn" type='submit' name='ok' value="Apply Filters" id='billable'/>
+        <input class="btn" type='submit' name='ok' value="{% trans "Apply Filters" %}" id='billable'/>
         {% if perms.timepiece.export_project_time_sheet %}
-            <button class="btn" type='submit' name='export' value="True">Export as CSV</button>
+            <button class="btn" type='submit' name='export' value="{% trans "True" %}">{% trans "Export as CSV" %}</button>
         {% endif %}
     </div>
 </form>
@@ -72,7 +72,7 @@
         <table class='table table-bordered table-striped'>
             <thead>
                 <tr class="header">
-                    <th class='name_col'>Name</th>
+                    <th class='name_col'>{% trans "Name" %}</th>
                     {% for date in date_headers %}
                         {% if trunc == 'month' %}
                             <th>{{date|date:"M 'Y"}}</th>
@@ -95,7 +95,7 @@
         </table>
     </div>
 {% else %}
-        <p>No entries found.</p>
+        <p>{% trans "No entries found." %}</p>
 {% endif %}
 
 <div id="cal_wrapper">

@@ -6,7 +6,7 @@
 
 {% block crumbs %}
     {{ block.super }}
-    <li><span class="divider">/</span> <a href="{% url view_project project.pk %}">Project Detail</a></li>
+    <li><span class="divider">/</span> <a href="{% url view_project project.pk %}">{% trans "Project Detail" %}</a></li>
 {% endblock crumbs %}
 
 {% block content %}
@@ -15,14 +15,14 @@
             <h2>{{ project }}</h2>
             <ul class="unstyled subnav">
                 {% if perms.timepiece.change_project %}
-                    <li><a href='{% url edit_project project_id=project.id %}'>Edit project</a></li>
-                    <li><a href="{% url delete_project project.id %}">Delete project</a></li>
+                    <li><a href='{% url edit_project project_id=project.id %}'>{% trans "Edit project" %}</a></li>
+                    <li><a href="{% url delete_project project.id %}">{% trans "Delete project" %}</a></li>
                 {% endif %}
                 {% if perms.timepiece.view_businesses %}
-                    <li><a href='{% url view_business business=project.business.id %}'>Return to {{ project.business.name }}</a></li>
+                    <li><a href='{% url view_business business=project.business.id %}'>{% blocktrans %}Return to {{ project.business.name }}{% endblocktrans %}</a></li>
                 {% endif %}
                 {% if perms.timepiece.view_project_time_sheet %}
-                    <li><a href='{% url project_time_sheet project.id %}'>Project Time Sheet</a></li>
+                    <li><a href='{% url project_time_sheet project.id %}'>{% trans "Project Time Sheet" %}</a></li>
                 {% endif %}
             </ul>
         </div>
@@ -32,28 +32,28 @@
         <div class="span6">
             <table class='table table-bordered table-striped'>
                 <tr>
-                    <th>Type</th>
+                    <th>{% trans "Type" %}</th>
                     <td>{{ project.type }}</td>
                 </tr>
                 <tr>
-                    <th>Status</th>
+                    <th>{% trans "Status" %}</th>
                     <td>{{ project.status }}</td>
                 </tr>
                 <tr>
-                    <th>Billable</th>
+                    <th>{% trans "Billable" %}</th>
                     <td>{{ project.billable }}</td>
                 </tr>
                 <tr>
-                    <th>Point Person</th>
+                    <th>{% trans "Point Person" %}</th>
                     <td>{{ project.point_person }}</td>
                 </tr>
                 <tr>
-                    <th>Description</th>
+                    <th>{% trans "Description" %}</th>
                     <td>{{ project.description|linebreaks }}</td>
                 </tr>
                 {% if project.tracker_url %}
                 <tr>
-                    <th>Tracker URL</th>
+                    <th>{% trans "Tracker URL" %}</th>
                     <td>{{ project.tracker_url }}</td>
                 </tr>
                 {% endif %}
@@ -61,17 +61,17 @@
         </div>
 
         <div class="span4 offset1">
-            <h3>Contacts</h3>
+            <h3>{% trans "Contacts" %}</h3>
             <ul class='people'>
             {% ifnotequal project.users.count 0 %}
             {% for user in project.users.select_related.all %}
                 <li>
                     {{ user.get_full_name }}
                     {% if perms.timepiece.change_projectrelationship %}
-                        <a title="Edit {{ user.get_full_name }}'s relationship to {{ project }}" href='{% url edit_project_relationship project_id=project.id,user_id=user.id %}?next={% url view_project project_id=project.id %}'><img alt="Edit {{ user.get_full_name }}'s relationship to {{ project }}" src='{{ FAMFAMFAM_URL }}pencil.png' /></a>
+                        <a title="{% blocktrans %}Edit {{ user.get_full_name }}'s relationship to {{ project }}{% endblocktrans %}" href='{% url edit_project_relationship project_id=project.id,user_id=user.id %}?next={% url view_project project_id=project.id %}'><img alt="{% blocktrans %}Edit {{ user.get_full_name }}'s relationship to {{ project }}{% endblocktrans %}" src='{{ FAMFAMFAM_URL }}pencil.png' /></a>
                     {% endif %}
                     {% if perms.timepiece.delete_projectrelationship %}
-                        <a title='Remove {{ user.get_full_name }}' href='{% url remove_user_from_project project_id=project.id,user_id=user.id %}?next={% url view_project project_id=project.id %}'><img alt='Remove {{ user.get_full_name }}' src='{{ FAMFAMFAM_URL }}/delete.png' /></a>
+                        <a title='{% blocktrans %}Remove {{ user.get_full_name }}{% endblocktrans %}' href='{% url remove_user_from_project project_id=project.id,user_id=user.id %}?next={% url view_project project_id=project.id %}'><img alt='{% blocktrans %}Remove {{ user.get_full_name }}{% endblocktrans %}' src='{{ FAMFAMFAM_URL }}/delete.png' /></a>
                     {% endif %}
                 </li>
             {% endfor %}
@@ -81,7 +81,7 @@
             <form class="form-inline" action='{% url add_user_to_project project_id=project.id %}?next={% url view_project project_id=project.id %}' method="post" accept-charset="utf-8">
                 {% csrf_token %}
                 {{ add_user_form|as_bootstrap:"inline" }}
-                <input class="btn" type="submit" name="submit" id="submit" value="Add" />
+                <input class="btn" type="submit" name="submit" id="submit" value="{% trans "Add" %}" />
             </form>
             {% endif %}
         </div>

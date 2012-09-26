@@ -6,55 +6,55 @@
         <div class="container-fluid visible-desktop">
             {% block navbar-left %}
                 <ul class="nav pull-left">
-                    <li class="active"><a class="brand" href="/">Timepiece</a></li>
+                    <li class="active"><a class="brand" href="/">{% trans "Timepiece" %}</a></li>
                     {% if perms.timepiece.add_entry %}
                         <li class="dropdown">
-                            <a href="#" class="dropdown-toggle" data-toggle="dropdown">Dashboard <b class="caret"></b></a>
+                            <a href="#" class="dropdown-toggle" data-toggle="dropdown">{% trans "Dashboard" %} <b class="caret"></b></a>
                             <ul class="dropdown-menu">
-                                <li><a href="{% url 'timepiece-entries' %}">Time Tracking</a></li>
-                                <li><a href="{% url 'view_person_time_sheet' request.user.pk %}">My Ledger</a></li>
+                                <li><a href="{% url 'timepiece-entries' %}"{% trans "Time Tracking" %}</a></li>
+                                <li><a href="{% url 'view_person_time_sheet' request.user.pk %}">{% trans "My Ledger" %}</a></li>
                             </ul>
                         </li>
                     {% endif %}
                     {% if perms.timepiece.view_project or perms.auth.view_user or perms.timepiece.view_business %}
                         <li class="dropdown">
-                            <a href="#" class="dropdown-toggle" data-toggle="dropdown">CRM <b class="caret"></b></a>
+                            <a href="#" class="dropdown-toggle" data-toggle="dropdown">{% trans "CRM" %} <b class="caret"></b></a>
                             <ul class="dropdown-menu">
                                 {% if perms.timepiece.view_project %}
-                                    <li><a href="{% url 'list_projects' %}">Projects</a></li>
+                                    <li><a href="{% url 'list_projects' %}">{% trans "Projects" %}</a></li>
                                 {% endif %}
                                 {% if perms.auth.view_user %}
-                                    <li><a href="{% url 'list_people' %}">People</a></li>
+                                    <li><a href="{% url 'list_people' %}">{% trans "People" %}</a></li>
                                 {% endif %}
                                 {% if perms.timepiece.view_business %}
-                                    <li><a href="{% url 'list_businesses' %}">Businesses</a></li>
+                                    <li><a href="{% url 'list_businesses' %}">{% trans "Businesses" %}</a></li>
                                 {% endif %}
                             </ul>
                         </li>
                     {% endif %}
                     {% if perms.timepiece.view_entry_summary or perms.timepiece.view_payroll_summary or perms.timepiece.add_project_contract or perms.timepiece.change_entrygroup or perms.timepiece.can_clock_in %}
                         <li class="dropdown">
-                            <a href="#" class="dropdown-toggle" data-toggle="dropdown">Reports <b class="caret"></b></a>
+                            <a href="#" class="dropdown-toggle" data-toggle="dropdown">{% trans "Reports" %} <b class="caret"></b></a>
                             <ul class="dropdown-menu">
                                 {% if perms.timepiece.view_entry_summary %}
-                                    <li><a href="{% url 'hourly_report' %}">Hourly</a></li>
-                                    <li><a href="{% url 'billable_hours' %}">Billable Hours</a></li>
+                                    <li><a href="{% url 'hourly_report' %}">{% trans "Hourly" %}</a></li>
+                                    <li><a href="{% url 'billable_hours' %}">{% trans "Billable Hours" %}</a></li>
                                 {% endif %}
                                 {% if perms.timepiece.view_payroll_summary %}
-                                    <li><a href="{% url 'payroll_summary' %}">Payroll</a></li>
+                                    <li><a href="{% url 'payroll_summary' %}">{% trans "Payroll" %}</a></li>
                                 {% endif %}
                                 {% if perms.timepiece.add_project_contract %}
-                                    <li><a href="{% url 'list_contracts' %}">Contracts</a></li>
+                                    <li><a href="{% url 'list_contracts' %}">{% trans "Contracts" %}</a></li>
                                 {% endif %}
                                 {% if perms.timepiece.view_entry_summary %}
-                                    <li><a href="{% url 'timepiece-summary' %}">General Ledger</a></li>
+                                    <li><a href="{% url 'timepiece-summary' %}">{% trans "General Ledger" %}</a></li>
                                 {% endif %}
                                 {% if perms.timepiece.change_entrygroup %}
                                     <li class="divider"></li>
-                                    <li><a href="{% url 'invoice_projects' %}">Invoices</a></li>
+                                    <li><a href="{% url 'invoice_projects' %}">{% trans "Invoices" %}</a></li>
                                 {% endif %}
                                 {% if perms.timepiece.can_clock_in %}
-                                    <li><a href="{% url 'project_hours' %}">Weekly Schedule</a></li>
+                                    <li><a href="{% url 'project_hours' %}">{% trans "Weekly Schedule" %}</a></li>
                                 {% endif %}
                             </ul>
                         </li>
@@ -73,30 +73,30 @@
 
                     {% if perms.timepiece.add_entry %}
                         <li class="dropdown"><a class="popover-toggle" data-target="#active-popover">
-                            <i class="icon-user icon-white"></i> {{ active_entries|length }} online user(s)</a>
+                            <i class="icon-user icon-white"></i> {% blocktrans %}{{ active_entries|length }} online user(s){% endblocktrans %}</a>
                         </li>
                         <div id="active-popover" class="popover">
-                            <h3 class="popover-title">Others Active Entries</h3>
+                            <h3 class="popover-title">{% trans "Others Active Entries" $}</h3>
                             <div class="popover-content">
                                 <table class="table table-striped table-bordered table-condensed">
                                     <thead>
                                         <tr>
-                                            <th>Name</th>
-                                            <th>Project</th>
-                                            <th>Activity</th>
-                                            <th>Since</th>
+                                            <th>{% trans "Name" %}</th>
+                                            <th>{% trans "Project" %}</th>
+                                            <th>{% trans "Activity" %}</th>
+                                            <th>{% trans "Since" %}</th>
                                         </tr>
                                     </thead>
                                     <tbody>
                                         {% for entry in active_entries %}
-                                            <tr class="{% if entry.is_paused %}paused{% endif %}">
+                                            <tr class="{% if entry.is_paused %}{% trans "paused" %}{% endif %}">
                                                 <td>{{ entry.user.first_name }} {{ entry.user.last_name }}</td>
                                                 <td class="project">{{ entry.project.name }}</td>
                                                 <td>{{ entry.activity.name }}</td>
                                                 <td>{{ entry.start_time|date:"P" }}</td>
                                             </tr>
                                         {% empty %}
-                                            <tr><td colspan="4">Currently there are no other active entries.</td></tr>
+                                            <tr><td colspan="4">{% blocktrans %}Currently there are no other active entries.{% endblocktrans %}</td></tr>
                                         {% endfor %}
                                     </tbody>
                                 </table>
@@ -114,17 +114,17 @@
                             <a href="" class="dropdown-toggle" data-toggle="dropdown">{{ user.email }} <b class="caret"></b></a>
                             <ul class="dropdown-menu">
                                 {% if user.is_staff %}
-                                    <li><a href="{% url 'admin:index' %}">Admin</a></li>
+                                    <li><a href="{% url 'admin:index' %}">{% trans "Admin" %}</a></li>
                                 {% endif %}
-                                <li><a href="{% url 'edit_settings' %}">Settings</a></li>
-                                <li><a href="{% url 'change_password' %}">Change Password</a></li>
+                                <li><a href="{% url 'edit_settings' %}">{% trans "Settings" %}</a></li>
+                                <li><a href="{% url 'change_password' %}">{% trans "Change Password" %}</a></li>
                                 <li class="divider"></li>
-                                <li><a href="{% url 'auth_logout' %}">Logout</a></li>
+                                <li><a href="{% url 'auth_logout' %}">{% trans "Logout" %}</a></li>
                             </ul>
                         </li>
                     </ul>
                 {% else %}
-                    <a class="btn btn-primary pull-right" href="{% url 'auth_login' %}">Login</a>
+                    <a class="btn btn-primary pull-right" href="{% url 'auth_login' %}">{% trans "Login"%}</a>
                 {% endif %}
 
                 {% block quick-search %}
@@ -138,7 +138,7 @@
         </div>
 
         <div class="container-fluid hidden-desktop">
-            <a class="brand" href="/">Timepiece</a>
+            <a class="brand" href="/">{% trans "Timepiece" %}</a>
 
             {% if user.is_authenticated %}
                 <a class="btn btn-navbar" data-toggle="collapse" data-target=".nav-collapse">
@@ -152,10 +152,10 @@
                 <ul class="nav">
                     {% if perms.timepiece.add_entry %}
                         <li class="dropdown">
-                            <a href="/" class="dropdown-toggle" data-toggle="dropdown">Dashboard</a>
+                            <a href="/" class="dropdown-toggle" data-toggle="dropdown">{% trans "Dashboard" %}</a>
                             <ul class="dropdown-menu">
-                                <li><a href="{% url 'timepiece-entries' %}">Time Tracking</a></li>
-                                <li><a href="{% url 'view_person_time_sheet' request.user.pk %}">My Ledger</a></li>
+                                <li><a href="{% url 'timepiece-entries' %}">{% trans "Time Tracking" %}</a></li>
+                                <li><a href="{% url 'view_person_time_sheet' request.user.pk %}">{% trans "My Ledger" %}</a></li>
                             </ul>
                         </li>
                     {% endif %}

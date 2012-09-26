@@ -2,23 +2,23 @@
 {% load timepiece_tags bootstrap_toolkit %}
 {% load url from future %}
 
-{% block title %}Invoices{% endblock %}
+{% block title %}{% trans "Invoices" %}{% endblock %}
 
 {% block crumbs %}
     {{ block.super }}
-    <li><span class="divider">/</span> <a href="{% url 'list_invoices' %}">Summary</a></li>
+    <li><span class="divider">/</span> <a href="{% url 'list_invoices' %}">{% trans "Summary" %}</a></li>
 {% endblock crumbs %}
 
 {% block content %}
     <div class="row-fluid">
         <div class="span12">
-            <h2>Invoice Summary</h2>
+            <h2>{% trans "Invoice Summary" %}</h2>
             <ul class="unstyled subnav">
                 <li>
-                    <a href="{% url 'invoice_projects' %}">Create Invoice</a>
+                    <a href="{% url 'invoice_projects' %}">{% trans "Create Invoice" %}</a>
                 </li>
                 <li>
-                    Previous Invoices
+                    {% trans "Previous Invoices" %}
                 </li>
             </ul>
         </div>
@@ -28,7 +28,7 @@
         <div class="span12">
             <form class="form-inline" accept-charset="UTF-8" method="get" action="">
                 {{ search_form|as_bootstrap:"inline" }}
-                <button type="submit" class="btn">Search</button>
+                <button type="submit" class="btn">{% trans "Search" %}</button>
             </form>
         </div>
     </div>
@@ -43,15 +43,15 @@
                 <table class="table table-bordered table-striped table-condensed">
                     <thead>
                         <tr>
-                            <th>Invoice</th>
-                            <th>Reference</th>
-                            <th>Project</th>
-                            <th>Status</th>
-                            <th>Invoiced by</th>
-                            <th>Created on</th>
-                            <th>Starting on</th>
-                            <th>Ending on</th>
-                            <th>Comments</th>
+                            <th>{% trans "Invoice" %}</th>
+                            <th>{% trans "Reference" %}</th>
+                            <th>{% trans "Project" %}</th>
+                            <th>{% trans "Status" %}</th>
+                            <th>{% trans "Invoiced by" %}</th>
+                            <th>{% trans "Created on" %}</th>
+                            <th>{% trans "Starting on" %}</th>
+                            <th>{% trans "Ending on" %}</th>
+                            <th>{% trans "Comments" %}</th>
                         </tr>
                     </thead>
                     <tbody>
@@ -72,7 +72,7 @@
                 </table>
                 {% paginate %}
             {% else %}
-                <p>There are no invoices.</p>
+                <p>{% trans "There are no invoices." %}</p>
             {% endif %}
         </div>
     </div>
