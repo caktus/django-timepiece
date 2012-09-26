@@ -9,6 +9,11 @@ Release Notes
 * Keep selected month on link to Person timesheet from Payroll Report page
 * Keep selected month on link to Project timesheet from Outstanding Hours page
 * Fixed division-by-0 bug on ContractAssignment admin page
+* Updated the South version requirement
+* Added auth groups select to Person creation form
+* Added pagination and search to Previous Invoices page
+* Added current project and activity names to Clock Out page
+* Added missing requirement/JavaScript files to example project
 
 0.5.4 (Released 09-13-2012)
 ---------------------------
