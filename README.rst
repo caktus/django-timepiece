@@ -16,7 +16,7 @@ Features
 Requirements
 ------------
 
-django-timepiece is compatible with Python 2.{6,7} and Django 1.{3,4}. PostgreSQL is the only offically supported database backend and, therefore, requires `psycopg2 <http://initd.org/psycopg/>`_. django-timepiece also depends on the following Django apps:
+django-timepiece is compatible with Python 2.{6,7}, Django 1.{3,4}, and PostgreSQL. PostgreSQL is the only offically supported database backend and, therefore, requires `psycopg2 <http://initd.org/psycopg/>`_. django-timepiece also depends on the following Django apps:
 
  * `python-dateutil <http://labix.org/python-dateutil>`_
  * `django-selectable <http://pypi.python.org/pypi/django-selectable>`_
@@ -24,12 +24,12 @@ django-timepiece is compatible with Python 2.{6,7} and Django 1.{3,4}. PostgreSQ
  * `django-compressor <https://github.com/jezdez/django_compressor>`_
  * `django-bootstrap-toolkit <https://github.com/dyve/django-bootstrap-toolkit>`_
 
-django-timepiece uses Sphinx and RST for documentation. You can use Sphinx to build the documentation
+django-timepiece uses Sphinx and RST for documentation. You can use Sphinx to build the documentation:
 
  * `docutils <http://docutils.sourceforge.net/>`_
  * `Sphinx <http://sphinx.pocoo.org/>`_
 
-A makefile is included with the documentation so you can run `make html` in the `doc/` directory to build the documentation
+A makefile is included with the documentation so you can run `make html` in the `doc/` directory to build the documentation.
 
 Installation
 ------------
@@ -38,15 +38,19 @@ Installation
 
     pip install django-timepiece
 
-#. Add `timepiece` to INSTALLED_APPS in settings.py and run syncdb::
+#. Add `timepiece` and its dependencies to ``INSTALLED_APPS`` in `settings.py` and run syncdb::
 
     INSTALLED_APPS = (
         ...
+        'bootstrap_toolkit',
+        'compressor',
+        'pagination',
+        'selectable',
         'timepiece',
         ...
     )
 
-#. Add `django.core.context_processors.request` and django-timepiece context processors to TEMPLATE_CONTEXT_PROCESSORS::
+#. Add `django.core.context_processors.request` and django-timepiece context processors to ``TEMPLATE_CONTEXT_PROCESSORS``::
 
     TEMPLATE_CONTEXT_PROCESSORS = (
         "django.contrib.auth.context_processors.auth",
@@ -59,16 +63,24 @@ Installation
         "timepiece.context_processors.active_entries",  # <----
     )
 
-#. Add the timepiece URLs to urls.py, e.g.::
+#. Configure compressor::
+
+    COMPRESS_PRECOMPILERS = (
+        ('text/less', 'lessc {infile} {outfile}'),
+    )
+    COMPRESS_ROOT = '%s/static/' % PROJECT_PATH
+
+#. Add URLs for django-timepiece and selectable to `urls.py`, e.g.::
 
     urlpatterns = patterns('',
         ...
-        (r'^timepiece/', include('timepiece.urls')),
+        (r'^selectable/', include('selectable.urls')),
+        (r'', include('timepiece.urls')),
         ...
     )
 
-#. Add the ``django.contrib.auth`` URLs to urls.py, e.g.::
-    
+#. Add the ``django.contrib.auth`` URLs to `urls.py`, e.g.::
+
     urlpatterns = patterns('',
         ...
         url(r'^accounts/login/$', 'django.contrib.auth.views.login',
@@ -89,6 +101,14 @@ Installation
             'django.contrib.auth.views.password_reset_confirm'),
         url(r'^accounts/reset/done/$',
             'django.contrib.auth.views.password_reset_complete'),
+        ...
+    )
+
+#. Create registration templates. For examples, see the registration templates in `example_project/templates/registration`. Ensure that your project's template directory is added to ``TEMPLATE_DIRS``::
+
+    TEMPLATE_DIRS = (
+        ...
+        '%s/templates' % PROJECT_PATH,
         ...
     )
 
