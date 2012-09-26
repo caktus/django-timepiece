@@ -8,6 +8,7 @@ Contents:
    settings
    testing
    releasenotes
+   contributing
 
 Indices and tables
 ==================
