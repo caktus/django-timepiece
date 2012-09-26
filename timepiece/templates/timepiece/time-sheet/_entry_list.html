@@ -29,7 +29,7 @@
             <td class="visible-desktop">{{ entry.start_time|date:"P" }}</td>
             <td class="{% if not active %}visible-desktop{% endif %}">
                 {% if active or not entry.end_time %}
-                    <a href="{% url 'timepiece_clock_out' entry.id %}">Clock Out</a>
+                    <a href="{% url 'timepiece-clock-out' entry.id %}">Clock Out</a>
                 {% else %}
                     {{ entry.end_time|date:"P" }}
                 {% endif %}
@@ -38,9 +38,9 @@
                 {{ entry.seconds_paused|seconds_to_hours|floatformat:2 }}
                 {% if active or not entry.end_time %}
                     {% if entry.is_paused %}
-                        <a href="{% url 'timepiece_toggle_paused' entry.id %}">(Resume)</a>
+                        <a href="{% url 'timepiece-toggle-paused' entry.id %}">(Resume)</a>
                     {% else %}
-                        <a href="{% url 'timepiece_toggle_paused' entry.id %}">(Pause)</a>
+                        <a href="{% url 'timepiece-toggle-paused' entry.id %}">(Pause)</a>
                     {% endif %}
                 {% endif %}
             </td>
@@ -49,8 +49,8 @@
             <td>
                 <ul class='actions'>
                     {% ifequal entry.status 'unverified' %}
-                    <li><a href="{% url 'timepiece_update' entry.id %}">Change</a></li>
-                    <li><a href="{% url 'timepiece_delete' entry.id %}">Remove</a></li>
+                    <li><a href="{% url 'timepiece-update' entry.id %}">Change</a></li>
+                    <li><a href="{% url 'timepiece-delete' entry.id %}">Remove</a></li>
                     {% endifequal %}
                 </ul>
             </td>

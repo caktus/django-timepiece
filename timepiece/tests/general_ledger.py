@@ -9,7 +9,7 @@ from timepiece.tests.base import TimepieceDataTestCase
 class TestGeneralLedger(TimepieceDataTestCase):
     def setUp(self):
         super(TestGeneralLedger, self).setUp()
-        self.url = reverse('timepiece_summary')
+        self.url = reverse('timepiece-summary')
 
     def testNoPermission(self):
         """

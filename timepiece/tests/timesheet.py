@@ -108,7 +108,7 @@ class MyLedgerTest(TimepieceDataTestCase):
 
     def testNoLedger(self):
         self.client.login(username='user2', password='abc')
-        self.url = reverse('timepiece_entries')
+        self.url = reverse('timepiece-entries')
         try:
             response = self.client.get(self.url)
         except Exception, e:
@@ -166,7 +166,7 @@ class MyLedgerTest(TimepieceDataTestCase):
 class ClockInTest(TimepieceDataTestCase):
     def setUp(self):
         super(ClockInTest, self).setUp()
-        self.url = reverse('timepiece_clock_in')
+        self.url = reverse('timepiece-clock-in')
         self.now = timezone.now()
         self.ten_min_ago = self.now - datetime.timedelta(minutes=10)
         self.clock_in_form = {
@@ -184,7 +184,7 @@ class ClockInTest(TimepieceDataTestCase):
         response = self.client.post(self.url, data, follow=True)
         # Clock in form submission leads to the dashboard page
         # with one active entry
-        self.assertRedirects(response, reverse('timepiece_entries'),
+        self.assertRedirects(response, reverse('timepiece-entries'),
                              status_code=302, target_status_code=200)
         self.assertContains(response, 'You have clocked into', count=1)
         self.assertEquals(len(response.context['my_active_entries']), 1)
@@ -234,7 +234,7 @@ class ClockInTest(TimepieceDataTestCase):
             'start_time_1': self.now.strftime('%H:%M:%S'),
         })
         response = self.client.post(self.url, data, follow=True)
-        self.assertRedirects(response, reverse('timepiece_entries'),
+        self.assertRedirects(response, reverse('timepiece-entries'),
                              status_code=302, target_status_code=200)
         message = response.context['messages']._loaded_messages[0].message
         self.assertTrue(message.startswith('You have more than one active'))
@@ -570,12 +570,12 @@ class ClockOutTest(TimepieceDataTestCase):
             'start_time_0': back.strftime('%m/%d/%Y'),
             'start_time_1': back.strftime('%H:%M:%S'),
         }
-        clock_in_url = reverse('timepiece_clock_in')
+        clock_in_url = reverse('timepiece-clock-in')
         response = self.client.post(clock_in_url, clock_in_data, follow=True)
         entry.save()
         #establish entry and url for all tests
         self.entry = timepiece.Entry.objects.get(pk=entry.pk)
-        self.url = reverse('timepiece_clock_out', args=[entry.pk])
+        self.url = reverse('timepiece-clock-out', args=[entry.pk])
 
     def testBasicClockOut(self):
         data = {
@@ -609,7 +609,7 @@ class ClockOutTest(TimepieceDataTestCase):
             'location': self.location.pk,
         }
         response = self.client.post(
-            reverse('timepiece_clock_out', args=[entry_with_pause.pk]), data)
+            reverse('timepiece-clock-out', args=[entry_with_pause.pk]), data)
         entry_with_pause = timepiece.Entry.objects.get(pk=entry_with_pause.pk)
         self.assertAlmostEqual(entry_with_pause.hours, 4)
 
@@ -629,7 +629,7 @@ class ClockOutTest(TimepieceDataTestCase):
             'location': self.location.pk,
         }
         response = self.client.post(
-            reverse('timepiece_clock_out', args=[paused_entry.pk]), data)
+            reverse('timepiece-clock-out', args=[paused_entry.pk]), data)
         paused_entry = timepiece.Entry.objects.get(pk=paused_entry.pk)
         self.assertAlmostEqual(paused_entry.hours, 1)
 
@@ -648,7 +648,7 @@ class ClockOutTest(TimepieceDataTestCase):
             'location': self.location.pk,
         }
         response = self.client.post(
-            reverse('timepiece_clock_out', args=[backward_entry.pk]), data)
+            reverse('timepiece-clock-out', args=[backward_entry.pk]), data)
         self.assertFormError(response, 'form', None,
             'Ending time must exceed the starting time')
 
@@ -684,7 +684,7 @@ class ClockOutTest(TimepieceDataTestCase):
             'location': self.location.pk,
         }
         response = self.client.post(
-            reverse('timepiece_clock_out', args=[paused_entry.pk]), data)
+            reverse('timepiece-clock-out', args=[paused_entry.pk]), data)
         err_msg = 'Ending time exceeds starting time by 12 hours ' \
             'or more for {0} on {1} at {2} to {3} at {4}.'.format(
                 self.entry.project.name,
@@ -730,7 +730,7 @@ class ClockOutTest(TimepieceDataTestCase):
         }
         #With entry1 on either side, a post with the bad_entry data should fail
         response = self.client.post(
-            reverse('timepiece_clock_out', args=[bad_entry.pk]), data)
+            reverse('timepiece-clock-out', args=[bad_entry.pk]), data)
         self.assertFormError(response, 'form', None,
             'Start time overlaps with: ' + \
             '%(project)s - %(activity)s - from %(st_str)s to %(end_str)s' %
@@ -852,10 +852,10 @@ class CreateEditEntry(TimepieceDataTestCase):
         self.current_entry_data.update({
             'st_str': self.ten_min_ago.strftime('%H:%M:%S'),
         })
-        self.create_url = reverse('timepiece_add')
-        self.edit_closed_url = reverse('timepiece_update',
+        self.create_url = reverse('timepiece-add')
+        self.edit_closed_url = reverse('timepiece-update',
             args=[self.closed_entry.pk])
-        self.edit_current_url = reverse('timepiece_update',
+        self.edit_current_url = reverse('timepiece-update',
             args=[self.current_entry.pk])
 
     def testCreateEntry(self):
@@ -864,7 +864,7 @@ class CreateEditEntry(TimepieceDataTestCase):
         """
         response = self.client.post(self.create_url, self.default_data,
             follow=True)
-        self.assertRedirects(response, reverse('timepiece_entries'),
+        self.assertRedirects(response, reverse('timepiece-entries'),
             status_code=302, target_status_code=200)
         self.assertContains(response,
             'The entry has been created successfully', count=1)
@@ -878,7 +878,7 @@ class CreateEditEntry(TimepieceDataTestCase):
         """
         response = self.client.post(self.edit_closed_url, self.default_data,
             follow=True)
-        self.assertRedirects(response, reverse('timepiece_entries'),
+        self.assertRedirects(response, reverse('timepiece-entries'),
             status_code=302, target_status_code=200)
         self.assertContains(response,
             'The entry has been updated successfully', count=1)
@@ -900,7 +900,7 @@ class CreateEditEntry(TimepieceDataTestCase):
         response = self.client.post(self.edit_current_url, data, follow=True)
         #This post should redirect to the dashboard, with the correct message
         #and 1 active entry, because we updated the current entry from setUp
-        self.assertRedirects(response, reverse('timepiece_entries'),
+        self.assertRedirects(response, reverse('timepiece-entries'),
             status_code=302, target_status_code=200)
         self.assertContains(response,
             'The entry has been updated successfully', count=1)
@@ -920,7 +920,7 @@ class CreateEditEntry(TimepieceDataTestCase):
         response = self.client.post(self.edit_current_url, data, follow=True)
         #This post should redirect to the dashboard, with the correct message
         #and 1 active entry, because we updated the current entry from setUp
-        self.assertRedirects(response, reverse('timepiece_entries'),
+        self.assertRedirects(response, reverse('timepiece-entries'),
             status_code=302, target_status_code=200)
         self.assertContains(response,
             'The entry has been updated successfully', count=1)
@@ -997,14 +997,14 @@ class CreateEditEntry(TimepieceDataTestCase):
         """
         Make sure the list of available projects conforms to user associations
         """
-        response = self.client.get(reverse('timepiece_add'))
+        response = self.client.get(reverse('timepiece-add'))
         self.assertEqual(response.status_code, 200)
         projects = list(response.context['form'].fields['project'].queryset)
         self.assertTrue(self.project in projects)
         self.assertTrue(self.project2 not in projects)
         self.project.status.enable_timetracking = False
         self.project.status.save()
-        response = self.client.get(reverse('timepiece_add'))
+        response = self.client.get(reverse('timepiece-add'))
         projects = list(response.context['form'].fields['project'].queryset)
         self.assertTrue(self.project not in projects)
 
@@ -1067,7 +1067,7 @@ class CreateEditEntry(TimepieceDataTestCase):
             'end_time': self.now - relativedelta(hours=5),
             'status': status
         })
-        url = reverse('timepiece_update', args=(entry.pk,))
+        url = reverse('timepiece-update', args=(entry.pk,))
 
         data = self.default_data
         data.update({
@@ -1140,7 +1140,7 @@ class StatusTest(TimepieceDataTestCase):
 
     def get_reject_url(self, entry_id):
         "Helper for the reject entry view"
-        return reverse('timepiece_reject_entry', args=[entry_id])
+        return reverse('timepiece-reject-entry', args=[entry_id])
 
     def login_as_admin(self):
         "Helper to login as an admin user"
@@ -1643,7 +1643,7 @@ class MonthlyRejectTestCase(TimepieceDataTestCase):
             'year': self.now.year,
             'yes': 'Yes'
         }
-        self.url = reverse('reject_time_sheet_entries', args=(self.user.pk,))
+        self.url = reverse('timepiece-reject-entries', args=(self.user.pk,))
 
     def create_entries(self, date, status):
         """Create entries using a date and with a given status"""

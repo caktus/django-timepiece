@@ -31,12 +31,12 @@ class EditSettingsTest(TimepieceDataTestCase):
             'email': 'test@caktusgroup.com',
         }
         response = self.edit_profile(self.url, data)
-        self.assertRedirects(response, reverse('timepiece_entries'))
+        self.assertRedirects(response, reverse('timepiece-entries'))
         self.user = auth_models.User.objects.get(pk=self.user.pk)
         for k, v in data.iteritems():
             value = getattr(self.user, k)
             self.assertEquals(value, v)
-        next = reverse('timepiece_clock_in')
+        next = reverse('timepiece-clock-in')
         next_query_url = '%s?next=%s' % (self.url, next)
         data = {
             'first_name': 'Terry',

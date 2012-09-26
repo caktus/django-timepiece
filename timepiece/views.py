@@ -148,7 +148,7 @@ def clock_in(request):
         err_msg = 'You have more than one active entry and must clock out ' \
                   'of these entries before clocking into another.'
         messages.error(request, err_msg)
-        return redirect('timepiece_entries')
+        return redirect('timepiece-entries')
     active_entry = active_entry[0] if active_entry else None
     initial = dict([(k, v) for k, v in request.GET.items()])
     form = timepiece_forms.ClockInForm(request.POST or None, initial=initial,
@@ -157,7 +157,7 @@ def clock_in(request):
         entry = form.save()
         message = 'You have clocked into %s' % entry.project
         messages.info(request, message)
-        return HttpResponseRedirect(reverse('timepiece_entries'))
+        return HttpResponseRedirect(reverse('timepiece-entries'))
     return render(request, 'timepiece/time-sheet/entry/clock_in.html', {
         'form': form,
         'active': active_entry,
@@ -178,7 +178,7 @@ def clock_out(request, entry_id):
             entry = form.save()
             message = "You've been clocked out."
             messages.info(request, message)
-            return HttpResponseRedirect(reverse('timepiece_entries'))
+            return HttpResponseRedirect(reverse('timepiece-entries'))
         else:
             message = 'Please correct the errors below.'
             messages.error(request, message)
@@ -237,7 +237,7 @@ def toggle_paused(request, entry_id):
         messages.info(request, message)
 
     # redirect to the log entry list
-    return HttpResponseRedirect(reverse('timepiece_entries'))
+    return HttpResponseRedirect(reverse('timepiece-entries'))
 
 
 @permission_required('timepiece.change_entry')
@@ -266,7 +266,7 @@ def create_edit_entry(request, entry_id=None):
             else:
                 message = 'The entry has been created successfully.'
             messages.info(request, message)
-            url = request.REQUEST.get('next', reverse('timepiece_entries'))
+            url = request.REQUEST.get('next', reverse('timepiece-entries'))
             return HttpResponseRedirect(url)
         else:
             message = 'Please fix the errors below.'
@@ -293,7 +293,7 @@ def reject_entry(request, entry_id):
     invoiced to set its status to 'unverified' for the user to fix.
     """
     user = request.user
-    return_url = request.REQUEST.get('next', reverse('timepiece_entries'))
+    return_url = request.REQUEST.get('next', reverse('timepiece-entries'))
     try:
         entry = timepiece.Entry.no_join.get(pk=entry_id)
     except:
@@ -372,7 +372,7 @@ def delete_entry(request, entry_id):
         # entry does not exist
         message = 'No such log entry.'
         messages.info(request, message)
-        return HttpResponseRedirect(reverse('timepiece_entries'))
+        return HttpResponseRedirect(reverse('timepiece-entries'))
 
     if request.method == 'POST':
         key = request.POST.get('key', None)
@@ -380,7 +380,7 @@ def delete_entry(request, entry_id):
             entry.delete()
             message = 'Entry deleted.'
             messages.info(request, message)
-            return HttpResponseRedirect(reverse('timepiece_entries'))
+            return HttpResponseRedirect(reverse('timepiece-entries'))
         else:
             message = 'You are not authorized to delete this entry!'
             messages.error(request, message)
@@ -1255,7 +1255,7 @@ def edit_settings(request):
         except Http404:
             next_url = None
     if not next_url:
-        next_url = reverse('timepiece_entries')
+        next_url = reverse('timepiece-entries')
     profile, created = timepiece.UserProfile.objects.get_or_create(
         user=request.user)
     if request.POST:
@@ -1317,7 +1317,7 @@ class DeleteView(TemplateView):
                 messages.info(request,
                         'You do not have permission to access that')
                 return HttpResponseRedirect(
-                        utils.reverse_lazy('timepiece_entries'))
+                        utils.reverse_lazy('timepiece-entries'))
         return super(DeleteView, self).dispatch(request, *args, **kwargs)
 
     def post(self, request, *args, **kwargs):

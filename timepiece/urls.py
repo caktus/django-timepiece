@@ -7,39 +7,24 @@ from timepiece import views
 
 
 urlpatterns = patterns('',
+    url(r'^$', views.view_entries, name='timepiece-entries'),
+    url(r'^period/(?P<delta>\d+)/$', views.view_entries,
+        name='timepiece-previous-entries'),
+    url(r'^clockin/$', views.clock_in, name='timepiece-clock-in'),
+    url(r'^clockout/(?P<entry_id>\d+)/$', views.clock_out,
+        name='timepiece-clock-out'),
+    url(r'^toggle/(?P<entry_id>\d+)/$', views.toggle_paused,
+        name='timepiece-toggle-paused'),
+    url(r'^add/$', views.create_edit_entry, name='timepiece-add'),
+    url(r'^update/(?P<entry_id>\d+)/$', views.create_edit_entry,
+        name='timepiece-update'),
+    url(r'^reject/(?P<entry_id>\d+)/$', views.reject_entry,
+        name='timepiece-reject-entry'),
+    url(r'^delete/(?P<entry_id>\d+)/$', views.delete_entry,
+        name='timepiece-delete'),
+    url(r'^search/$', views.quick_search, name='quick_search'),
 
-    # Dashboard and entries
-    url(r'^$',
-        views.view_entries, name='timepiece_entries'),
-    url(r'^period/(?P<delta>\d+)/$',
-        views.view_entries, name='timepiece_previous_entries'),
-    url(r'^clockin/$',
-        views.clock_in, name='timepiece_clock_in'),
-    url(r'^clockout/(?P<entry_id>\d+)/$',
-        views.clock_out, name='timepiece_clock_out'),
-    url(r'^toggle/(?P<entry_id>\d+)/$',
-        views.toggle_paused, name='timepiece_toggle_paused'),
-    url(r'^add/$',
-        views.create_edit_entry, name='timepiece_add'),
-    url(r'^update/(?P<entry_id>\d+)/$',
-        views.create_edit_entry, name='timepiece_update'),
-    url(r'^reject/(?P<entry_id>\d+)/$',
-        views.reject_entry, name='timepiece_reject_entry'),
-    url(r'^delete/(?P<entry_id>\d+)/$',
-        views.delete_entry, name='timepiece_delete'),
-
-    # Miscellaneous
-    url(r'^search/$',
-        views.quick_search, name='quick_search'),
-    url(r'^edit-settings/$',
-        views.edit_settings, name='edit_settings'),
-
-    # People
-    url(
-        r'^person/list/$',
-        views.list_people,
-        name='list_people',
-    ),
+    url(r'^person/list/$', views.list_people, name='list_people'),
     url(
         r'^person/(?P<person_id>\d+)/$',
         views.view_person,
@@ -55,17 +40,11 @@ urlpatterns = patterns('',
         views.create_edit_person,
         name='edit_person',
     ),
+    url(r'^business/list/$', views.list_businesses, name='list_businesses'),
     url(
-        r'^person/(?P<pk>\d+)/delete/$',
-        views.DeletePersonView.as_view(),
-        name='delete_person',
-    ),
-
-    # Businesses
-    url(
-        r'^business/list/$',
-        views.list_businesses,
-        name='list_businesses',
+        r'^business/create/$',
+        views.create_edit_business,
+        name='create_business',
     ),
     url(
         r'^business/(?P<business>\d+)/$',
@@ -73,27 +52,11 @@ urlpatterns = patterns('',
         name='view_business',
     ),
     url(
-        r'^business/create/$',
-        views.create_edit_business,
-        name='create_business',
-    ),
-    url(
         r'^business/(?P<business>\d+)/edit/$',
         views.create_edit_business,
         name='edit_business',
     ),
-    url(
-        r'^business/(?P<pk>\d+)/delete/$',
-        views.DeleteBusinessView.as_view(),
-        name='delete_business',
-    ),
-
-    # Projects
-    url(
-        r'^project/list/$',
-        views.list_projects,
-        name='list_projects',
-    ),
+    url(r'^project/list/$', views.list_projects, name='list_projects'),
     url(
         r'^project/(?P<project_id>\d+)/$',
         views.view_project,
@@ -108,11 +71,6 @@ urlpatterns = patterns('',
         r'^project/(?P<project_id>\d+)/edit/$',
         views.create_edit_project,
         name='edit_project',
-    ),
-    url(
-        r'^project/(?P<pk>\d+)/delete/$',
-        views.DeleteProjectView.as_view(),
-        name='delete_project',
     ),
     url(
         r'^project/(?P<project_id>\d+)/user/add/$',
@@ -130,6 +88,25 @@ urlpatterns = patterns('',
         name='edit_project_relationship',
     ),
 
+
+    url(
+        r'^project/(?P<pk>\d+)/delete/$',
+        views.DeleteProjectView.as_view(),
+        name='delete_project',
+    ),
+    url(
+        r'^business/(?P<pk>\d+)/delete/$',
+        views.DeleteBusinessView.as_view(),
+        name='delete_business',
+    ),
+    url(
+        r'^person/(?P<pk>\d+)/delete/$',
+        views.DeletePersonView.as_view(),
+        name='delete_person',
+    ),
+
+    ### time sheets ###
+
     # Reports
     url(
         r'^reports/$',
@@ -139,7 +116,7 @@ urlpatterns = patterns('',
     url(
         r'^reports/summary/$',
         views.summary,
-        name='timepiece_summary',
+        name='timepiece-summary',
     ),
     url(
         r'^reports/payroll/$',
@@ -152,7 +129,7 @@ urlpatterns = patterns('',
         name='billable_hours',
     ),
 
-    # Person time sheets
+    # People
     url(
         r'time-sheet/people/(?P<user_id>\d+)/$',
         views.view_person_time_sheet,
@@ -161,7 +138,7 @@ urlpatterns = patterns('',
     url(
         r'^time-sheet/reject/(?P<user_id>\d+)/$',
         views.reject_entries,
-        name='reject_time_sheet_entries',
+        name='timepiece-reject-entries',
     ),
     url(
         r'^time-sheet/(?P<action>verify|approve)/(?P<user_id>\d+)/' +
@@ -170,7 +147,7 @@ urlpatterns = patterns('',
         name='change_person_time_sheet',
     ),
 
-    # Project time sheets
+    # Projects
     url(
         r'^time-sheet/project/(?P<pk>\d+)/$',
         views.ProjectTimesheet.as_view(),
@@ -181,8 +158,13 @@ urlpatterns = patterns('',
         views.ProjectTimesheetCSV.as_view(),
         name='export_project_time_sheet',
     ),
+    url(
+        r'^edit-settings/$',
+        views.edit_settings,
+        name='edit_settings',
+    ),
 
-    # Invoices
+    ### Invoices ###
     url(
         r'^invoice/outstanding/$',
         views.invoice_projects,
@@ -230,8 +212,7 @@ urlpatterns = patterns('',
         views.remove_invoice_entry,
         name='remove_invoice_entry',
     ),
-
-    # Contracts
+    # contracts
     url(
         r'^contract/(?P<pk>\d+)/$',
         views.ContractDetail.as_view(),
@@ -242,8 +223,7 @@ urlpatterns = patterns('',
         views.ContractList.as_view(),
         name='list_contracts',
     ),
-
-    # Project hours
+    # project hours
     url(
         r'^schedule/$',
         views.ProjectHoursView.as_view(),
@@ -254,6 +234,8 @@ urlpatterns = patterns('',
         views.EditProjectHoursView.as_view(),
         name='edit_project_hours',
     ),
+
+    # ajax views
     url(
         r'^ajax/hours/$',
         views.ProjectHoursAjaxView.as_view(),
