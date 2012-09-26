@@ -29,7 +29,7 @@ setup(
         'python-dateutil==1.5',
         'django-pagination==1.0.7',
         'django-selectable==0.4.1',
-        'django-bootstrap-toolkit==2.5.4',
+        'django-bootstrap-toolkit==2.5.6',
         'django-compressor==1.1.2',
         'pytz==2012c'
     ],
@@ -39,7 +39,7 @@ setup(
         'python-dateutil==1.5',
         'django-pagination==1.0.7',
         'django-selectable==0.4.1',
-        'django-bootstrap-toolkit==2.5.4',
+        'django-bootstrap-toolkit==2.5.6',
         'django-compressor==1.1.2',
         'pytz==2012c'
     ],
