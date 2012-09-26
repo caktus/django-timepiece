@@ -7,6 +7,7 @@ from decimal import Decimal
 from django import template
 from django.db.models import Sum
 from django.core.urlresolvers import reverse
+from django.utils.translation import ugettext_lazy as _
 
 try:
     from django.utils import timezone
@@ -39,7 +40,7 @@ def bar_graph(context, name, worked, total, width=None, suffix=None):
     over_total = 0
     error = ''
     if worked < 0:
-        error = 'Somehow you\'ve logged %s negative hours for %s this week.' \
+        error = _('Somehow you\'ve logged %s negative hours for %s this week.') \
         % (abs(worked), name)
     if left < 0:
         over = abs(left)
@@ -65,38 +66,38 @@ def date_filters(form_id, options=None, use_range=True):
     single_year = relativedelta(years=1)
 
     if 'months' in options:
-        filters['Past 12 Months'] = []
+        filters[_('Past 12 Months')] = []
         from_date = today.replace(day=1) + single_month
         for x in range(12):
             to_date = from_date
             from_date = to_date - single_month
             to_date = to_date - single_day
-            filters['Past 12 Months'].append((
+            filters[_('Past 12 Months')].append((
                     from_date.strftime("%b '%y"),
                     from_date.strftime(date_format) if use_range else "",
                     to_date.strftime(date_format)
             ))
-        filters['Past 12 Months'].reverse()
+        filters[_('Past 12 Months')].reverse()
 
     if 'years' in options:
-        filters['Years'] = []
+        filters[_('Years')] = []
         start = today.year - 3
         for year in range(start, start + 4):
             from_date = datetime.datetime(year, 1, 1)
             to_date = from_date + single_year - single_day
-            filters['Years'].append((
+            filters[_('Years')].append((
                     str(from_date.year),
                     from_date.strftime(date_format) if use_range else "",
                     to_date.strftime(date_format)
             ))
 
     if 'quarters' in options:
-        filters['Quarters (Calendar Year)'] = []
+        filters[_('Quarters (Calendar Year)')] = []
         to_date = datetime.date(today.year - 1, 1, 1) - single_day
         for x in range(8):
             from_date = to_date + single_day
             to_date = from_date + relativedelta(months=3) - single_day
-            filters['Quarters (Calendar Year)'].append((
+            filters[_('Quarters (Calendar Year)')].append((
                     'Q%s %s' % ((x % 4) + 1, from_date.year),
                     from_date.strftime(date_format) if use_range else "",
                     to_date.strftime(date_format)
