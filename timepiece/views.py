@@ -33,6 +33,7 @@ from django.views.generic import UpdateView, ListView, DetailView, View
 from django.utils.decorators import method_decorator
 from django.core import serializers, exceptions
 from django.contrib.contenttypes.models import ContentType
+from django.utils.translation import ugettext_lazy as _
 
 try:
     from django.utils import timezone
@@ -73,11 +74,11 @@ class CSVMixin(object):
         return response
 
     def get_filename(self, context):
-        raise NotImplemented("You must implement this in the subclass")
+        raise NotImplemented(_("You must implement this in the subclass"))
 
     def convert_context_to_csv(self, context):
         "Convert the context dictionary into a CSV file"
-        raise NotImplemented("You must implement this in the subclass")
+        raise NotImplemented(_("You must implement this in the subclass"))
 
 
 @login_required
@@ -169,8 +170,8 @@ def clock_in(request):
                                                   end_time__isnull=True)
     # Should never happen, but just in case.
     if len(active_entry) > 1:
-        err_msg = 'You have more than one active entry and must clock out ' \
-                  'of these entries before clocking into another.'
+        err_msg = _('You have more than one active entry and must clock out ' \
+                  'of these entries before clocking into another.')
         messages.error(request, err_msg)
         return redirect('timepiece-entries')
     active_entry = active_entry[0] if active_entry else None
@@ -179,7 +180,7 @@ def clock_in(request):
                                        user=request.user, active=active_entry)
     if form.is_valid():
         entry = form.save()
-        message = 'You have clocked into %s' % entry.project
+        message = _('You have clocked into %s') % entry.project
         messages.info(request, message)
         return HttpResponseRedirect(reverse('timepiece-entries'))
     return render_to_response('timepiece/time-sheet/entry/clock_in.html', {
@@ -202,11 +203,11 @@ def clock_out(request, entry_id):
         form = timepiece_forms.ClockOutForm(request.POST, instance=entry)
         if form.is_valid():
             entry = form.save()
-            message = "You've been clocked out."
+            message = _("You've been clocked out.")
             messages.info(request, message)
             return HttpResponseRedirect(reverse('timepiece-entries'))
         else:
-            message = 'Please correct the errors below.'
+            message = _('Please correct the errors below.')
             messages.error(request, message)
     else:
         form = timepiece_forms.ClockOutForm(instance=entry)
@@ -237,7 +238,7 @@ def toggle_paused(request, entry_id):
                                   end_time__isnull=True)
     except:
         # create an error message for the user
-        message = 'The entry could not be paused.  Please try again.'
+        message = _('The entry could not be paused.  Please try again.')
         messages.error(request, message)
     else:
         # toggle the paused state
@@ -247,9 +248,9 @@ def toggle_paused(request, entry_id):
         entry.save()
 
         if entry.is_paused:
-            action = 'paused'
+            action = _('paused')
         else:
-            action = 'resumed'
+            action = _('resumed')
 
         delta = timezone.now() - entry.start_time
         seconds = delta.seconds - entry.seconds_paused
@@ -257,12 +258,13 @@ def toggle_paused(request, entry_id):
 
         if seconds < 3600:
             seconds /= 60.0
-            duration = "You've clocked %d minutes." % seconds
+            duration = _("You've clocked %d minutes.") % seconds
         else:
             seconds /= 3600.0
-            duration = "You've clocked %.2f hours." % seconds
+            duration = _("You've clocked %.2f hours.") % seconds
 
-        message = 'The log entry has been %s. %s' % (action, duration)
+        message = _('The log entry has been %(action). %(duration)' % \
+                        {'action': action, 'duration': duration}
 
         # create a message that can be displayed to the user
         messages.info(request, message)
@@ -298,13 +300,13 @@ def create_edit_entry(request, entry_id=None):
         if form.is_valid():
             entry = form.save()
             if entry_id:
-                message = 'The entry has been updated successfully.'
+                message = _('The entry has been updated successfully.')
             else:
-                message = 'The entry has been created successfully.'
+                message = _('The entry has been created successfully.')
             messages.info(request, message)
             return HttpResponseRedirect(reverse('timepiece-entries'))
         else:
-            message = 'Please fix the errors below.'
+            message = _('Please fix the errors below.')
             messages.error(request, message)
     else:
         initial = dict([(k, request.GET[k]) for k in request.GET.keys()])
@@ -331,19 +333,19 @@ def reject_entry(request, entry_id):
     try:
         entry = timepiece.Entry.no_join.get(pk=entry_id)
     except:
-        message = 'No such log entry.'
+        message = _('No such log entry.')
         messages.error(request, message)
         return redirect(return_url)
 
     if entry.status == 'unverified' or entry.status == 'invoiced':
-        msg_text = 'This entry is unverified or is already invoiced'
+        msg_text = _('This entry is unverified or is already invoiced')
         messages.error(request, msg_text)
         return redirect(return_url)
 
     if request.POST.get('Yes'):
         entry.status = 'unverified'
         entry.save()
-        msg_text = "The entry's status was set to unverified"
+        msg_text = _("The entry's status was set to unverified")
         messages.info(request, msg_text)
         return redirect(return_url)
     return render_to_response('timepiece/time-sheet/entry/reject_entry.html', {
@@ -369,10 +371,10 @@ def reject_entries(request, user_id):
             if entries.exists():
                 count = entries.count()
                 entries.update(status='unverified')
-                msg = 'You have rejected %d previously verified entries.' \
+                msg = _('You have rejected %d previously verified entries.') \
                     % count
             else:
-                msg = 'There are no verified entries to reject.'
+                msg = _('There are no verified entries to reject.')
             messages.info(request, msg)
         else:
             context = {
@@ -382,7 +384,7 @@ def reject_entries(request, user_id):
             return render(request,
                 'timepiece/time-sheet/entry/reject_entries.html', context)
     else:
-        msg = 'You must provide a month and year for entries to be rejected.'
+        msg = _('You must provide a month and year for entries to be rejected.')
         messages.error(request, msg)
 
     return HttpResponseRedirect(reverse('view_person_time_sheet',
@@ -405,7 +407,7 @@ def delete_entry(request, entry_id):
                                   user=request.user)
     except:
         # entry does not exist
-        message = 'No such log entry.'
+        message = _('No such log entry.')
         messages.info(request, message)
         return HttpResponseRedirect(reverse('timepiece-entries'))
 
@@ -413,11 +415,11 @@ def delete_entry(request, entry_id):
         key = request.POST.get('key', None)
         if key and key == entry.delete_key:
             entry.delete()
-            message = 'Entry deleted.'
+            message = _('Entry deleted.')
             messages.info(request, message)
             return HttpResponseRedirect(reverse('timepiece-entries'))
         else:
-            message = 'You are not authorized to delete this entry!'
+            message = _('You are not authorized to delete this entry!')
             messages.error(request, message)
 
     return render_to_response('timepiece/time-sheet/entry/delete_entry.html',
@@ -538,7 +540,7 @@ class ProjectTimesheetCSV(CSVMixin, ProjectTimesheet):
     def get_filename(self, context):
         project = self.object.name
         to_date_str = context['to_date'].strftime("%m-%d-%Y")
-        return "Project_timesheet {0} {1}".format(project, to_date_str)
+        return _("Project_timesheet {0} {1}").format(project, to_date_str)
 
     def convert_context_to_csv(self, context):
         rows = []
@@ -566,7 +568,7 @@ class ProjectTimesheetCSV(CSVMixin, ProjectTimesheet):
             ]
             rows.append(data)
         total = context['total']
-        rows.append(('', '', '', '', '', '', 'Total:', total))
+        rows.append(('', '', '', '', '', '', _('Total:'), total))
         return rows
 
 
@@ -575,7 +577,7 @@ def view_person_time_sheet(request, user_id):
     user = get_object_or_404(User, pk=user_id)
     if not (request.user.has_perm('timepiece.view_entry_summary') or \
         user.pk == request.user.pk):
-        return HttpResponseForbidden('Forbidden')
+        return HttpResponseForbidden(_('Forbidden'))
     today_reset = utils.add_timezone(datetime.datetime.today())
     today_reset = today_reset.replace(hour=0, minute=0, second=0, \
         microsecond=0)
@@ -667,8 +669,8 @@ def change_person_time_sheet(request, action, user_id, from_date):
         perm = False
 
     if not perm:
-        return HttpResponseForbidden('Forbidden: You cannot {0} this ' \
-            'timesheet'.format(action))
+        return HttpResponseForbidden(_('Forbidden: You cannot {0} this ' \
+            'timesheet').format(action))
 
     try:
         from_date = utils.add_timezone(
@@ -697,9 +699,9 @@ def change_person_time_sheet(request, action, user_id, from_date):
         'month': from_date.month,
     })
     if active_entries:
-        msg = 'You cannot verify/approve this timesheet while the user {0} ' \
+        msg = _('You cannot verify/approve this timesheet while the user {0} ' \
             'has an active entry. Please have them close any active ' \
-            'entries.'.format(user.get_full_name())
+            'entries.').format(user.get_full_name())
         messages.error(request, msg)
         return redirect(return_url)
     if request.POST.get('do_action') == 'Yes':
@@ -709,11 +711,11 @@ def change_person_time_sheet(request, action, user_id, from_date):
         }
         entries.update(status=update_status[action])
         messages.info(request,
-            'Your entries have been %s' % update_status[action])
+            _('Your entries have been %s') % update_status[action])
         return redirect(return_url)
     hours = entries.all().aggregate(s=Sum('hours'))['s']
     if not hours:
-        msg = 'You cannot verify/approve a timesheet with no hours'
+        msg = _('You cannot verify/approve a timesheet with no hours')
         messages.error(request, msg)
         return redirect(return_url)
     context = {
@@ -732,7 +734,7 @@ def change_person_time_sheet(request, action, user_id, from_date):
 @transaction.commit_on_success
 def confirm_invoice_project(request, project_id, to_date, from_date=None):
     if not request.user.has_perm('timepiece.generate_project_invoice'):
-        return HttpResponseForbidden('Forbidden')
+        return HttpResponseForbidden(_('Forbidden'))
     try:
         to_date = utils.add_timezone(
             datetime.datetime.strptime(to_date, '%Y-%m-%d'))
@@ -870,7 +872,7 @@ class InvoiceCSV(CSVMixin, InvoiceDetail):
         invoice = context['invoice']
         project = str(invoice.project).replace(' ', '_')
         end_day = invoice.end.strftime("%m-%d-%Y")
-        return "Invoice-{0}-{1}".format(project, end_day)
+        return _("Invoice-{0}-{1}").format(project, end_day)
 
     def convert_context_to_csv(self, context):
         rows = []
@@ -897,7 +899,7 @@ class InvoiceCSV(CSVMixin, InvoiceDetail):
             ]
             rows.append(data)
         total = context['entries'].aggregate(hours=Sum('hours'))['hours']
-        rows.append(('', '', '', '', '', '', 'Total:', total))
+        rows.append(('', '', '', '', '', '', _('Total:'), total))
         return rows
 
 
@@ -1356,7 +1358,7 @@ def edit_settings(request):
         if user_form.is_valid() and profile_form.is_valid():
             user_form.save()
             profile_form.save()
-            messages.info(request, 'Your settings have been updated')
+            messages.info(request, _('Your settings have been updated'))
             return HttpResponseRedirect(next_url)
     else:
         profile_form = timepiece_forms.UserProfileForm(instance=profile)
@@ -1402,18 +1404,18 @@ class DeleteView(TemplateView):
         for permission in self.permissions:
             if not request.user.has_perm(permission):
                 messages.info(request,
-                    'You do not have permission to access that')
+                    _('You do not have permission to access that'))
                 return HttpResponseRedirect(reverse_lazy('timepiece-entries'))
         return super(DeleteView, self).dispatch(request, *args, **kwargs)
 
     def post(self, request, *args, **kwargs):
         instance = self.get_queryset(**kwargs)
         form = self.form_class(request.POST, instance=instance)
-        msg = '{0} could not be successfully deleted'.format(instance)
+        msg = _('{0} could not be successfully deleted').format(instance)
 
         if form.is_valid():
             if form.save():
-                msg = '{0} was successfully deleted'.format(instance)
+                msg = _('{0} was successfully deleted').format(instance)
 
         messages.info(request, msg)
         return HttpResponseRedirect(reverse_lazy(self.url_name))
@@ -1718,9 +1720,9 @@ class EditProjectHoursView(ProjectHoursMixin, TemplateView):
 
         if ph.exists():
             ph.update(published=True)
-            msg = 'Unpublished project hours are now published'
+            msg = _('Unpublished project hours are now published')
         else:
-            msg = 'There were no hours to publish'
+            msg = _('There were no hours to publish')
 
         messages.info(request, msg)
 
@@ -1806,10 +1808,10 @@ class ProjectHoursAjaxView(ProjectHoursMixin, View):
                     for entry in duplicate_builder(prev_week_qs):
                         entry.save()
             except DatabaseError:
-                msg = 'An error occurred and hours could not be duplicated'
+                msg = _('An error occurred and hours could not be duplicated')
                 messages.error(self.request, msg)
             else:
-                msg = 'Project hours were copied'
+                msg = _('Project hours were copied')
                 messages.info(self.request, msg)
 
         date = datetime.datetime.strptime(week_update, '%Y-%m-%d').date()
@@ -1835,12 +1837,12 @@ class ProjectHoursAjaxView(ProjectHoursMixin, View):
                     ph.hours = prev_ph.hours
                     ph.published = False
                     ph.save()
-                msg = 'Project hours were copied'
+                msg = _('Project hours were copied')
                 messages.info(self.request, msg)
             else:
                 duplicate_helper()
         elif not prev_week_qs.exists():
-            msg = 'There are no hours to copy'
+            msg = _('There are no hours to copy')
             messages.warning(self.request, msg)
         else:
             duplicate_helper()
@@ -1851,8 +1853,8 @@ class ProjectHoursAjaxView(ProjectHoursMixin, View):
         try:
             instance = self.get_instance(self.request.POST, week_start)
         except TypeError:
-            msg = 'Parameter week_start must be a date in the format ' \
-                'yyyy-mm-dd'
+            msg = _('Parameter week_start must be a date in the format ' \
+                'yyyy-mm-dd')
             return HttpResponse(msg, status=500)
 
         form = timepiece_forms.ProjectHoursForm(self.request.POST,
@@ -1862,7 +1864,7 @@ class ProjectHoursAjaxView(ProjectHoursMixin, View):
             ph = form.save()
             return HttpResponse(str(ph.pk), mimetype='text/plain')
 
-        msg = 'The request must contain values for user, project, and hours'
+        msg = _('The request must contain values for user, project, and hours')
         return HttpResponse(msg, status=500)
 
     def post(self, request, *args, **kwargs):
