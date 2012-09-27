@@ -170,7 +170,7 @@ class ProjectRelationship(models.Model):
         return _("%(project)'s relationship to %(user)") % {
             'project': self.project.name,
             'user': self.user.get_full_name(),
-        )
+        }
 
 
 class Activity(models.Model):
@@ -726,7 +726,7 @@ class Entry(models.Model):
         """
         The string representation of an instance of this class
         """
-        return _('%(user) on %(project)') % {'user': self.user, 'project': self.project)
+        return _('%(user) on %(project)') % {'user': self.user, 'project': self.project}
 
     class Meta:
         verbose_name = _('entry')

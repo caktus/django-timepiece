@@ -263,7 +263,7 @@ def toggle_paused(request, entry_id):
             seconds /= 3600.0
             duration = _("You've clocked %.2f hours.") % seconds
 
-        message = _('The log entry has been %(action). %(duration)' % \
+        message = _('The log entry has been %(action). %(duration)') % \
                         {'action': action, 'duration': duration}
 
         # create a message that can be displayed to the user

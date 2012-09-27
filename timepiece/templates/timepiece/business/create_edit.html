@@ -1,4 +1,6 @@
 {% extends "timepiece/business/base.html" %}
+{% load i18n %}
+
 {% block title %}{% if not business %}{% trans "Create Business" %}{% else %}{% blocktrans %}Edit {{ business }}{% endblocktrans %}{% endif %}{% endblock %}
 {% load bootstrap_toolkit %}
 

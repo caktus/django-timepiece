@@ -2,6 +2,7 @@
 {% load timepiece_tags %}
 {% load bootstrap_toolkit %}
 {% load url from future %}
+{% load i18n %}
 
 {% block extrajs %}
     <script src="{{ STATIC_URL }}bootstrap/js/bootstrap-tab.js" type="text/javascript" charset="utf-8"></script>
@@ -144,7 +145,7 @@
                                     </thead>
                                     <tbody>
                                         <tr class="ledger_header">
-                                            <th colspan="11">{% blocktrans with week=week_start entry.start_time %}Week of {{ week }}{% endblocktrans %}</th>
+                                            <th colspan="11">{% trans "Week of" %} {% week_start(entry.start_time) %}</th>
                                         </tr>
                             {% endifchanged %}
                             <tr>

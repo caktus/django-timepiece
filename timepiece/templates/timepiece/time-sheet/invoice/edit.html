@@ -1,6 +1,7 @@
 {% extends 'timepiece/time-sheet/invoice/base.html' %}
 {% load timepiece_tags %}
 {% load url from future %}
+{% load i18n %}
 
 {% block title %}{% trans "Edit Invoice" %}{% endblock %}
 
@@ -44,7 +45,7 @@
                     {% for entry in entries %}
                         {% ifchanged entry.start_time|date:"W" %}
                             <tr class="ledger_header">
-                                <th colspan='8'>{% blocktrans with week=week_start entry.start_time %}Week of {{ week }}{% endblocktrans %}</th>
+                                <th colspan='8'>{% trans "Week of" %}{% week_start(entry.start_time) %}</th>
                             </tr>
                         {% endifchanged %}
                         <tr>

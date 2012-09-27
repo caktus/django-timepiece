@@ -1,6 +1,7 @@
 {% extends 'timepiece/hours/base.html' %}
 {% load url from future %}
 {% load bootstrap_toolkit %}
+{% load i18n %}
 
 {% block title %}{% blocktrans %}Schedule for the Week of {{ week|date:'F j, Y' }}{% endblocktrans %}{% endblock %}
 

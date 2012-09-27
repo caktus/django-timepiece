@@ -1,17 +1,18 @@
 {% extends "timepiece/base.html" %}
 {% load timepiece_tags %}
+{% load i18n %}
 
-{% block title %}{% blocktrans with action_cap=action.capitalize %}{{ action_cap }} Hours for Time Sheet{% endblocktrans %}{% endblock %}
+{% block title %}{% blocktrans %}{{ action.capitalize }} Hours for Time Sheet{% endblocktrans %}{% endblock %}
 
 {% block crumbs %}
     {{ block.super }}
-    <li><span class="divider">/</span> <a href="{% url change_person_time_sheet action timesheet_user.id from_date|date:"Y-m-d" %}">{% blocktrans with action_cap=action.capitalize %}{{ action_cap }} Timesheet{% endblocktrans %}</a></li>
+    <li><span class="divider">/</span> <a href="{% url change_person_time_sheet action timesheet_user.id from_date|date:"Y-m-d" %}">{% blocktrans %}{{ action.capitalize }} Timesheet{% endblocktrans %}</a></li>
 {% endblock crumbs %}
 
 {% block content %}
     <div class="row-fluid">
         <div class="span12">
-            <h2>{% blocktrans with action_cap=action.capitalize %}{{ action_cap }} Hours for Time Sheet{% endblocktrans %}</h2>
+            <h2>{% blocktrans %}{{ action.capitalize }} Hours for Time Sheet{% endblocktrans %}</h2>
             <h3>
                 {% blocktrans with name=timesheet_user.get_full_name from=from_date|date:"N j, Y" to=to_date|date:"N j, Y" %}Are you sure you want to {{ action }} all of {{ name }}'s timesheet, from {{ from }} to {{ to }}, which includes a total of {{ hours }} hours?{% endblocktrans %}
             </h3>

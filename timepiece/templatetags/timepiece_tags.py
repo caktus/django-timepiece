@@ -41,7 +41,7 @@ def bar_graph(context, name, worked, total, width=None, suffix=None):
     error = ''
     if worked < 0:
         error = _('Somehow you\'ve logged %(negative) negative hours for %(name) this week.') \
-        % {'negative': abs(worked), 'name': name)
+        % {'negative': abs(worked), 'name': name}
     if left < 0:
         over = abs(left)
         left = 0

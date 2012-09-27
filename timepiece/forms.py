@@ -227,7 +227,7 @@ class ClockInForm(forms.ModelForm):
             start_time__gte=start, end_time__isnull=True)
         for entry in active_entries:
             output = _('The start time is on or before the current entry: ' + \
-            '%(project) - %(activity) starting at %(start)' % \
+                       '%(project) - %(activity) starting at %(start)') % \
                            {'project': entry.project, 'activity': entry.activity, \
                             'start': entry.start_time.strftime('%H:%M:%S')}
             raise forms.ValidationError(output)

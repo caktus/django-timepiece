@@ -225,7 +225,7 @@ For options type:
 
     def show_name(self, person):
         print _('Checking %(first) %(last)...') % \
-        ('first': person.first_name, 'last': person.last_name)
+        {'first': person.first_name, 'last': person.last_name}
 
     def show_overlap(self, entry_a, entry_b=None, **kwargs):
         def make_output_data(entry):

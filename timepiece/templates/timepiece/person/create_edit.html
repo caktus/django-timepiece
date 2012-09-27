@@ -1,6 +1,8 @@
 {% extends "timepiece/person/base.html" %}
-{% block title %}{% if not person %}{% trans "Create Person" %}{% else %}{% blocktrans %}Edit {{ person.get_full_name }}{% endblocktrans %}{% endif %}{% endblock %}
 {% load bootstrap_toolkit %}
+{% load i18n %}
+
+{% block title %}{% if not person %}{% trans "Create Person" %}{% else %}{% blocktrans %}Edit {{ person.get_full_name }}{% endblocktrans %}{% endif %}{% endblock %}
 
 {% block crumbs %}
     {{ block.super }}

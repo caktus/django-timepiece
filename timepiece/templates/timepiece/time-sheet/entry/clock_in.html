@@ -1,6 +1,7 @@
 {% extends 'timepiece/time-sheet/base.html' %}
 {% load timepiece_tags %}
 {% load bootstrap_toolkit %}
+{% load i18n %}
 
 {% block crumbs %}
     {{ block.super }}
@@ -20,7 +21,7 @@
                 <div class="alert">
                     <button type="button" class="close" data-dismiss="alert">x</button>
                     <h4 class="alert-heading">{% trans "Switching Projects" %}</h4>
-                    <p>{% blocktrans with project=active.project.name hours=get_active_hours active %}You currently have an active entry on {{ project }}. Switching to a new project below will clock out of this entry at {{ hours }} hours and start a new one. Please enter any notes about switching below.{% endblocktrans %}</p>
+                    <p>{% blocktrans with project=active.project.name hours=get_active_hours.active %}You currently have an active entry on {{ project }}. Switching to a new project below will clock out of this entry at {{ hours }} hours and start a new one. Please enter any notes about switching below.{% endblocktrans %}</p>
                 </div>
             {% endif %}
 
