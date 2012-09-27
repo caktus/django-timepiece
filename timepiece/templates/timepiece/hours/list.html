@@ -3,14 +3,14 @@
 {% load bootstrap_toolkit %}
 {% load i18n %}
 
-{% block title %}{% endblocktrans %}Schedule for the Week of {{ week|date:'F j, Y' }}{% endblocktrans %}{% endblock %}
+{% block title %}{% blocktrans with fweek=week|date:'F j, Y' %}Schedule for the Week of {{ fweek }}{% endblocktrans %}{% endblock %}
 
 {% block bodyid %}project-hours{% endblock bodyid %}
 
 {% block content %}
     <div class="row-fluid">
         <div class="span12">
-            <h2>{% blocktrans %}Schedule for the Week of {{ week|date:'F j, Y' }}{% endblocktrans %}</h2>
+            <h2>{% blocktrans with fweek=week|date:'F j, Y' %}Schedule for the Week of {{ fweek }}{% endblocktrans %}</h2>
             <ul class="unstyled subnav">
                 <li><a href="{% url 'project_hours' %}?week_start={{ prev_week|date:'Y-m-d' }}">{% trans "Prev. Week" %}</a></li>
                 <li><a href="{% url 'project_hours' %}?week_start={{ next_week|date:'Y-m-d' }}">{% trans "Next Week" %}</a></li>
