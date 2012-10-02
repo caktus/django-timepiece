@@ -36,7 +36,18 @@ Installation
 
 #. django-timepiece is available on `PyPI <http://pypi.python.org/pypi/django-timepiece>`_, so the easiest way to install it is to use `pip <http://pip.openplans.org/>`_::
 
-    pip install django-timepiece
+    $ pip install django-timepiece
+
+#. Ensure that `less <http://lesscss.org>`_ is installed on your machine::
+
+    # Install node.js and npm:
+    $ sudo apt-get install python-software-properties
+    $ sudo add-apt-repository ppa:chris-lea/node.js
+    $ sudo apt-get update
+    $ sudo apt-get install nodejs npm
+
+    # Use npm to install less:
+    $ npm install less -g
 
 #. Add `timepiece` and its dependencies to ``INSTALLED_APPS`` in `settings.py` and run syncdb::
 
