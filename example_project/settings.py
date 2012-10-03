@@ -134,6 +134,7 @@ INSTALLED_APPS = (
     'timepiece',
     'compressor',
     'bootstrap_toolkit',
+    'selectable',
 )
 
 # Compressor specific settings
