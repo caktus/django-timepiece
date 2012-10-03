@@ -82,7 +82,7 @@ class ContractMilestoneInline(admin.TabularInline):
 
 class ProjectContractAdmin(admin.ModelAdmin):
     model = timepiece.ProjectContract
-    list_display = ('project', 'start_date', 'end_date', 'status',
+    list_display = ('_project', 'start_date', 'end_date', 'status',
                     'num_hours', 'hours_assigned', 'hours_unassigned',
                     'hours_worked')
     ordering = ('-end_date',)
@@ -90,6 +90,11 @@ class ProjectContractAdmin(admin.ModelAdmin):
     list_filter = ('status',)
     raw_id_fields = ('project',)
     list_per_page = 20
+
+    def _project(self, obj):
+        return obj.project.name
+    _project.admin_order_field = 'project__name'
+    _project.short_description = 'Project'
 
     def hours_unassigned(self, obj):
         return obj.num_hours - obj.hours_assigned
@@ -99,6 +104,7 @@ admin.site.register(timepiece.ProjectContract, ProjectContractAdmin)
 
 class ProjectContractInline(admin.TabularInline):
     model = timepiece.ProjectContract
+    extra = 0
 
 
 class ProjectAdmin(admin.ModelAdmin):

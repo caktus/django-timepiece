@@ -1395,7 +1395,8 @@ class ReportMixin(object):
         query = Q(end_time__gt=utils.get_week_start(from_date),
                   end_time__lt=to_date)
 
-        project_form = timepiece_forms.ProjectFiltersForm(self.request.GET)
+        data = self.request.GET or None
+        project_form = timepiece_forms.ProjectFiltersForm(data)
 
         if project_form.is_valid():
             trunc = project_form.cleaned_data['trunc']
