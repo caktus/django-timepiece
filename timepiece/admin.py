@@ -111,6 +111,7 @@ admin.site.register(timepiece.ProjectContract, ProjectContractAdmin)
 
 class ProjectContractInline(admin.TabularInline):
     model = timepiece.ProjectContract
+    extra = 0
 
 
 class ProjectAdmin(admin.ModelAdmin):
