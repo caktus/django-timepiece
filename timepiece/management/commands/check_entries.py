@@ -1,23 +1,19 @@
-import pprint
 import datetime
 from optparse import OptionParser, make_option
 
 from dateutil.relativedelta import relativedelta
 
-from django.core.management.base import BaseCommand, CommandError
 from django.contrib.auth import models as auth_models
+from django.core.management.base import BaseCommand, CommandError
 from django.db.models import Q
-from django.conf import settings
-from django.db import transaction
 
 try:
     from django.utils import timezone
 except ImportError:
     from timepiece import timezone
 
-from timepiece import utils
-
 from timepiece import models as timepiece
+from timepiece import utils
 
 
 class Command(BaseCommand):

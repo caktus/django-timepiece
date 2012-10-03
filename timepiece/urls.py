@@ -3,8 +3,8 @@ try:
 except ImportError:
     from django.conf.urls.defaults import patterns, include, url
 
-from timepiece.models import Entry
 from timepiece import views
+
 
 urlpatterns = patterns('',
     url(r'^$', views.view_entries, name='timepiece-entries'),
@@ -157,11 +157,6 @@ urlpatterns = patterns('',
         r'^time-sheet/project/(?P<pk>\d+)/csv/$',
         views.ProjectTimesheetCSV.as_view(),
         name='export_project_time_sheet',
-    ),
-    url(
-        r'^projection/$',
-        views.projection_summary,
-        name='projection_summary',
     ),
     url(
         r'^edit-settings/$',

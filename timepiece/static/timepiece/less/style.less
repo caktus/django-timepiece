@@ -5,7 +5,7 @@
 // Replace the 2.0.4 mixin with the 2.1.0 WIP mixin
 // This gives us an offset for fluid layouts
 // ref: https://github.com/twitter/bootstrap/pull/3764/
-@import "fluidoffsetmixin.less"; 
+@import "fluidoffsetmixin.less";
 
 // Variables & Mixins
 @white: #FFFFFF;
@@ -55,6 +55,10 @@ body {
     textarea {
         width: 100%;
         height: 10em;
+    }
+
+    caption {
+        font-weight: bold;
     }
 
     img.icon {
@@ -180,6 +184,17 @@ body {
         }
     }
 
+    form {
+        .field-wrapper {
+            padding: 1em 0.1em 0.5em 0.1em;
+
+            label {
+                font-weight: bold;
+            }
+        }
+    }
+
+
     /*****************************************
      * End HTML entities
      *****************************************/
@@ -197,6 +212,10 @@ body {
             margin: 20px auto;
             width: 97%;
         }
+    }
+
+    .right {
+        float: right;
     }
 
     .scroll {
@@ -541,7 +560,7 @@ body {
             table {
                 width: 100%;
                 table-layout: fixed;
-                
+
                 th, td {
                     &.billable, &.non-billable {
                         width: 20%;
@@ -569,7 +588,7 @@ body {
                 li {
                     .list-icon('chart_bar.png');
                     margin-bottom: 0.2em;
-                    
+
                 }
             }
 

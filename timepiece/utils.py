@@ -3,15 +3,9 @@ from dateutil import rrule
 from dateutil.relativedelta import relativedelta
 from decimal import Decimal
 from itertools import groupby
-import time
-import calendar
 
-from django.http import HttpResponse, HttpResponseRedirect, Http404
-from django.shortcuts import render_to_response
-from django.template import RequestContext
 from django.template.defaultfilters import slugify
 from django.db.models import Sum, get_model
-from django.contrib.sites.models import Site
 from django.utils.functional import lazy
 from django.core.urlresolvers import reverse
 
@@ -44,51 +38,6 @@ def slugify_uniquely(s, queryset=None, field='slug'):
     return new_slug
 
 
-def render_with(template_name):
-    """
-    Renders the view wrapped by this decorator with the given template.  The
-    view should return the context to be used in the template, or an
-    HttpResponse.
-
-    If the view returns an HttpResponseRedirect, the decorator will redirect
-    to the given URL, or to request.REQUEST['next'] (if it exists).
-    """
-    def render_with_decorator(view_func):
-        def wrapper(*args, **kwargs):
-            request = args[0]
-            response = view_func(*args, **kwargs)
-
-            if isinstance(response, HttpResponse):
-                if isinstance(response, HttpResponseRedirect) and \
-                  'next' in request.REQUEST:
-                    return HttpResponseRedirect(request.REQUEST['next'])
-                else:
-                    return response
-            else:
-                # assume response is a context dictionary
-                context = response
-                return render_to_response(
-                    template_name,
-                    context,
-                    context_instance=RequestContext(request),
-                )
-        return wrapper
-    return render_with_decorator
-
-
-DEFAULT_TIME_FORMATS = [
-    '%H:%M',        # 23:15         => 23:15:00
-    '%H:%M:%S',     # 05:50:21      => 05:50:21
-    '%I:%M:%S %p',  # 11:40:53 PM   => 23:40:53
-    '%I:%M %p',     # 6:21 AM       => 06:21:00
-    '%I %p',        # 1 pm          => 13:00:00
-    '%I:%M:%S%p',   # 8:45:52pm     => 23:45:52
-    '%I:%M%p',      # 12:03am       => 00:03:00
-    '%I%p',         # 12pm          => 12:00:00
-    '%H',           # 22            => 22:00:00
-]
-
-
 def add_timezone(value, tz=None):
     """If the value is naive, then the timezone is added to it.
 
@@ -103,29 +52,6 @@ def add_timezone(value, tz=None):
         dt = datetime.datetime.combine(value, datetime.time())
         return timezone.make_aware(dt, tz)
     return value
-
-
-def parse_time(time_str, input_formats=None):
-    """
-    This function will take a string with some sort of representation of time
-    in it.  The string will be parsed using a variety of formats until a match
-    is found for the format given.  The return value is a datetime.time object.
-    """
-    formats = input_formats or DEFAULT_TIME_FORMATS
-
-    # iterate over all formats until we find a match
-    for format in formats:
-        try:
-            # attempt to parse the time with the current format
-            value = time.strptime(time_str, format)
-        except ValueError:
-            continue
-        else:
-            # turn the time_struct into a datetime.time object
-            return add_timezone(datetime.time(*value[3:6]))
-
-    # return None if there's no matching format
-    return None
 
 
 def get_total_time(seconds):
@@ -184,28 +110,6 @@ def get_week_window(day):
     end = start + datetime.timedelta(weeks=1)
     weeks = generate_dates(end=end, start=start, by='week')
     return list(weeks)
-
-
-def date_filter(func):
-    def inner_decorator(request, *args, **kwargs):
-        from timepiece import forms as timepiece_forms
-        if 'to_date' in request.GET:
-            form = timepiece_forms.DateForm(request.GET)
-            if form.is_valid():
-                from_date, to_date = form.save()
-                status = form.cleaned_data.get('status')
-                activity = form.cleaned_data.get('activity')
-            else:
-                raise Http404
-        else:
-            form = timepiece_forms.DateForm()
-            today = datetime.date.today()
-            from_date = today.replace(day=1)
-            to_date = from_date + relativedelta(months=1)
-            status = activity = None
-        return func(request, form, from_date, to_date, status, activity,
-            *args, **kwargs)
-    return inner_decorator
 
 
 def get_hours(entries):
