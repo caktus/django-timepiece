@@ -369,16 +369,6 @@ class DateForm(forms.Form):
     to_date = forms.DateField(label="To", required=False,
         input_formats=(DATE_FORMAT,),
         widget=forms.DateInput(format=DATE_FORMAT))
-    status = forms.ChoiceField(choices=STATUS_CHOICES,
-        widget=forms.HiddenInput(), required=False)
-    activity = forms.ModelChoiceField(
-        queryset=timepiece.Activity.objects.all(),
-        widget=forms.HiddenInput(), required=False,
-    )
-    project = forms.ModelChoiceField(
-        queryset=timepiece.Project.objects.all(),
-        widget=forms.HiddenInput(), required=False,
-    )
 
     def clean(self):
         data = self.cleaned_data
