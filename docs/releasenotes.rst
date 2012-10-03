@@ -4,16 +4,19 @@ Release Notes
 0.5.5 (Unreleased)
 ------------------
 
-* Added Javascript to better manage date filter links on Reports pages
-* Added "empty" text when there is no Billable Report data to visualize
-* Keep selected month on link to Person timesheet from Payroll Report page
-* Keep selected month on link to Project timesheet from Outstanding Hours page
-* Fixed division-by-0 bug on ContractAssignment admin page
+* Refreshed the example project and added missing templates and JavaScript files
 * Updated the South version requirement
-* Added auth groups select to Person creation form
+* Use Javascript to manage date filter links on Reports pages
+* Use "empty" text when there is no Billable Report data to visualize
+* Include auth groups select to Person creation form
 * Added pagination and search to Previous Invoices page
-* Added current project and activity names to Clock Out page
-* Added missing requirement/JavaScript files to example project
+* Show current project name and activity on Clock Out page
+* Maintain selected month on link to Person timesheet from Payroll Report page
+* Maintain selected month on link to Project timesheet from Outstanding Hours page
+* Fixed division-by-0 bug on ContractAssignment admin page
+* Fixed infinite loop when ordering by Project on ProjectContract admin page
+* Prevent admin from requiring that all ProjectContract inlines be completed on Project creation
+* Use default options for the filter form on the Hourly Report page
 
 0.5.4 (Released 09-13-2012)
 ---------------------------
