@@ -1,8 +1,8 @@
 Release Notes
 =========================================
 
-0.5.5 (Unreleased)
-------------------
+0.6.0 (Released 10-04-2012)
+---------------------------
 
 * Updated version requirement for South to 0.7.6
 * Updated version requirement for django-bootstrap-toolkit to 2.5.6

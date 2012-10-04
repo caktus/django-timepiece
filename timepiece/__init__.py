@@ -5,8 +5,8 @@ projects.
 
 __version_info__ = {
     'major': 0,
-    'minor': 5,
-    'micro': 4,
+    'minor': 6,
+    'micro': 0,
     'releaselevel': 'final',
 }
 
