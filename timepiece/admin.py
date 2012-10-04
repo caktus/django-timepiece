@@ -113,6 +113,9 @@ class ProjectAdmin(admin.ModelAdmin):
     list_display = ('name', 'business', 'point_person', 'status', 'type',)
     list_filter = ('type', 'status')
     inlines = (ProjectContractInline,)
+    search_fields = ('name', 'business__name', 'point_person__username',
+            'point_person__first_name', 'point_person__last_name',
+            'description')
 admin.site.register(timepiece.Project, ProjectAdmin)
 
 
