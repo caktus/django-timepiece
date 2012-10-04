@@ -29,10 +29,8 @@ pull request to have it merged in. Here's a quick guide:
 
 #. Fork the repo.
 
-#. `Run the tests
-   <http://django-timepiece.readthedocs.org/en/latest/testing.html>`_. We only
-   take pull requests with passing tests, and it's great to know that you have
-   a clean slate.
+#. :doc:`Run the tests </testing>`. We only take pull requests with passing
+   tests, and it's great to know that you have a clean slate.
 
 #. Add a test for your change. Only refactoring and documentation changes
    require no new tests. If you are adding functionality or fixing a bug, we
@@ -50,3 +48,9 @@ pull request to have it merged in. Here's a quick guide:
 #. Now you're waiting on us. We'll typically review and comment on your pull
    request within 3 business days. We may suggest some changes, improvements,
    or alternatives to be used before pulling in the changeset.
+
+Contact Us
+----------
+
+If you have any questions, feel free to reach out to us on GitHub or through
+`our website <http://caktusgroup.com>`_.
