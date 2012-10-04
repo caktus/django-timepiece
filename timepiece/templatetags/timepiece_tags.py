@@ -1,11 +1,10 @@
-import urllib
 import datetime
-import time
-import calendar
+from dateutil.relativedelta import relativedelta
+from dateutil import rrule
 from decimal import Decimal
+import urllib
 
 from django import template
-from django.db.models import Sum
 from django.core.urlresolvers import reverse
 
 try:
@@ -13,11 +12,8 @@ try:
 except ImportError:
     from timepiece import timezone
 
-from dateutil.relativedelta import relativedelta
-from dateutil import rrule
-
 import timepiece.models as timepiece
-from timepiece.utils import get_total_time, get_week_start, get_month_start
+from timepiece.utils import get_week_start
 
 
 register = template.Library()
@@ -115,53 +111,6 @@ def invoice_subheaders(context, current):
 
 
 @register.simple_tag
-def hours_for_assignment(assignment, date):
-    end = date + relativedelta(days=5)
-    blocks = assignment.blocks.filter(
-        date__gte=date, date__lte=end).select_related()
-    hours = blocks.aggregate(hours=Sum('hours'))['hours']
-    if not hours:
-        hours = ''
-    return hours
-
-
-@register.simple_tag
-def total_allocated(assignment):
-    hours = assignment.blocks.aggregate(hours=Sum('hours'))['hours']
-    if not hours:
-        hours = ''
-    return hours
-
-
-@register.simple_tag
-def hours_for_week(user, date):
-    end = date + relativedelta(days=5)
-    blocks = timepiece.AssignmentAllocation.objects.filter(
-                                                 assignment__user=user,
-                                                 date__gte=date, date__lte=end)
-    hours = blocks.aggregate(hours=Sum('hours'))['hours']
-    if not hours:
-        hours = ''
-    return hours
-
-
-@register.simple_tag
-def weekly_hours_worked(rp, date):
-    hours = rp.hours_in_week(date)
-    if not hours:
-        hours = ''
-    return hours
-
-
-@register.simple_tag
-def monthly_overtime(rp, date):
-    hours = rp.total_monthly_overtime(date)
-    if not hours:
-        hours = ''
-    return hours
-
-
-@register.simple_tag
 def week_start(date):
     return get_week_start(date).strftime('%m/%d/%Y')
 
@@ -175,14 +124,6 @@ def get_active_hours(entry):
         else:
             entry.end_time = timezone.now()
     return Decimal('%.2f' % round(entry.total_hours, 2))
-
-
-@register.simple_tag
-def show_cal(from_date, offset=0):
-    date = get_month_start(from_date)
-    date = date + relativedelta(months=offset)
-    html_cal = calendar.HTMLCalendar(calendar.SUNDAY)
-    return html_cal.formatmonth(date.year, date.month)
 
 
 @register.simple_tag

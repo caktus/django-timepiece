@@ -1,49 +1,38 @@
-import calendar
+from copy import deepcopy
 import csv
 import datetime
-import math
-import urllib
 import json
-import urlparse
-from copy import deepcopy
+import urllib
 
-from decimal import Decimal
 from dateutil.relativedelta import relativedelta
-from dateutil import rrule
+from decimal import Decimal
 from itertools import groupby
 
+from django.conf import settings
 from django.contrib import messages
-from django.template import RequestContext
-from django.shortcuts import (render_to_response, get_object_or_404, redirect,
-                              render)
+from django.contrib.auth.decorators import login_required, permission_required
+from django.contrib.auth.models import User, Permission
+from django.contrib.contenttypes.models import ContentType
+from django.core import exceptions
 from django.core.urlresolvers import reverse, resolve
+from django.db import DatabaseError, transaction
+from django.db.models import Sum, Q, F
 from django.http import HttpResponse, HttpResponseRedirect
 from django.http import  Http404, HttpResponseForbidden
-from django.contrib.auth.decorators import login_required, permission_required
-from django.contrib.auth.models import User
-from django.contrib.auth import models as auth_models
-from django.db.models import Sum, Count, Q, F
-from django.db import transaction
-from django.db import DatabaseError
-from django.conf import settings
-from django.utils.datastructures import SortedDict
-from django.views.decorators.csrf import csrf_exempt
-from django.views.generic.base import TemplateView
-from django.views.generic import UpdateView, ListView, DetailView, View
+from django.shortcuts import get_object_or_404, redirect, render
 from django.utils.decorators import method_decorator
-from django.core import serializers, exceptions
-from django.contrib.contenttypes.models import ContentType
+from django.views.decorators.csrf import csrf_exempt
+from django.views.generic import ListView, DetailView, View
+from django.views.generic.base import TemplateView
 
 try:
     from django.utils import timezone
 except ImportError:
     from timepiece import timezone
 
-from timepiece.utils import render_with, reverse_lazy, get_week_start
-
+from timepiece import forms as timepiece_forms
 from timepiece import models as timepiece
 from timepiece import utils
-from timepiece import forms as timepiece_forms
 from timepiece.templatetags.timepiece_tags import seconds_to_hours
 from timepiece.templatetags.timepiece_tags import get_active_hours
 
@@ -54,14 +43,13 @@ def quick_search(request):
         form = timepiece_forms.QuickSearchForm(request.GET)
         if form.is_valid():
             return HttpResponseRedirect(form.save())
-    return render_to_response('timepiece/search_results.html', {
-            'form': form,
-        },
-        context_instance=RequestContext(request)
-    )
+    return render(request, 'timepiece/search_results.html', {
+        'form': form,
+    })
 
 
 class CSVMixin(object):
+
     def render_to_response(self, context):
         response = HttpResponse(content_type='text/csv')
         fn = self.get_filename(context)
@@ -81,11 +69,8 @@ class CSVMixin(object):
 
 
 @login_required
-@render_with('timepiece/time-sheet/dashboard.html')
 def view_entries(request):
-    view_entries = False
-    if request.user.has_perm('timepiece.can_clock_in'):
-        view_entries = True
+    view_entries = request.user.has_perm('timepiece.can_clock_in')
     week_start = utils.get_week_start()
     time_q = Q(end_time__gte=week_start) | Q(end_time__isnull=True)
     entries = timepiece.Entry.objects.select_related(
@@ -126,39 +111,30 @@ def view_entries(request):
                 break
     current_total = sum([entry['sum'] for entry in activity_entries])
 
-#     temporarily disabled until the allocations represent accurate goals
-#     -TM 6/27
-    allocations = []
-    allocated_projects = timepiece.Project.objects.none()
-#    allocations = timepiece.AssignmentAllocation.objects.during_this_week(
-#        request.user
-#        ).order_by('assignment__contract__project__name')
-#    allocated_projects = allocations.values_list(
-#    'assignment__contract__project',)
-
     project_entries = entries.exclude(
-        project__in=allocated_projects,
         end_time__isnull=True
     ).values(
         'project__name', 'project__pk'
     ).annotate(sum=Sum('hours')).order_by('project__name')
-    schedule = timepiece.PersonSchedule.objects.filter(
-                                    user=request.user)
+    hours_per_week = Decimal('40.0')
+    try:
+        profile = timepiece.UserProfile.objects.get(user=request.user)
+        hours_per_week = profile.hours_per_week
+    except timepiece.UserProfile.DoesNotExist:
+        pass
     this_weeks_entries = entries.order_by('-start_time'). \
         filter(end_time__gte=week_start)
-    context = {
+    return render(request, 'timepiece/time-sheet/dashboard.html', {
         'this_weeks_entries': this_weeks_entries,
         'assignments': assignments,
-        'allocations': allocations,
-        'schedule': schedule,
+        'hours_per_week': hours_per_week,
         'project_entries': project_entries,
         'activity_entries': activity_entries,
         'current_total': current_total,
         'others_active_entries': others_active_entries,
         'my_active_entries': my_active_entries,
         'view_entries': view_entries,
-    }
-    return context
+    })
 
 
 @permission_required('timepiece.can_clock_in')
@@ -182,12 +158,10 @@ def clock_in(request):
         message = 'You have clocked into %s' % entry.project
         messages.info(request, message)
         return HttpResponseRedirect(reverse('timepiece-entries'))
-    return render_to_response('timepiece/time-sheet/entry/clock_in.html', {
-            'form': form,
-            'active': active_entry,
-        },
-        context_instance=RequestContext(request),
-    )
+    return render(request, 'timepiece/time-sheet/entry/clock_in.html', {
+        'form': form,
+        'active': active_entry,
+    })
 
 
 @permission_required('timepiece.can_clock_out')
@@ -210,15 +184,10 @@ def clock_out(request, entry_id):
             messages.error(request, message)
     else:
         form = timepiece_forms.ClockOutForm(instance=entry)
-    context = {
+    return render(request, 'timepiece/time-sheet/entry/clock_out.html', {
         'form': form,
         'entry': entry,
-    }
-    return render_to_response(
-        'timepiece/time-sheet/entry/clock_out.html',
-        context,
-        context_instance=RequestContext(request),
-    )
+    })
 
 
 @permission_required('timepiece.can_pause')
@@ -272,20 +241,15 @@ def toggle_paused(request, entry_id):
 
 
 @permission_required('timepiece.change_entry')
-@render_with('timepiece/time-sheet/entry/add_update_entry.html')
 def create_edit_entry(request, entry_id=None):
     if entry_id:
         try:
-            entry = timepiece.Entry.no_join.get(
-                pk=entry_id,
-            )
+            entry = timepiece.Entry.no_join.get(pk=entry_id)
             if not (entry.is_editable or
                     request.user.has_perm('timepiece.view_payroll_summary')):
                 raise Http404
-
         except timepiece.Entry.DoesNotExist:
             raise Http404
-
     else:
         entry = None
 
@@ -302,7 +266,8 @@ def create_edit_entry(request, entry_id=None):
             else:
                 message = 'The entry has been created successfully.'
             messages.info(request, message)
-            return HttpResponseRedirect(reverse('timepiece-entries'))
+            url = request.REQUEST.get('next', reverse('timepiece-entries'))
+            return HttpResponseRedirect(url)
         else:
             message = 'Please fix the errors below.'
             messages.error(request, message)
@@ -314,10 +279,11 @@ def create_edit_entry(request, entry_id=None):
             initial=initial,
         )
 
-    return {
+    template = 'timepiece/time-sheet/entry/add_update_entry.html'
+    return render(request, template, {
         'form': form,
         'entry': entry,
-    }
+    })
 
 
 @permission_required('timepiece.view_payroll_summary')
@@ -346,11 +312,10 @@ def reject_entry(request, entry_id):
         msg_text = "The entry's status was set to unverified"
         messages.info(request, msg_text)
         return redirect(return_url)
-    return render_to_response('timepiece/time-sheet/entry/reject_entry.html', {
-                                  'entry': entry,
-                                  'next': request.REQUEST.get('next'),
-                              },
-                              context_instance=RequestContext(request))
+    return render(request, 'timepiece/time-sheet/entry/reject_entry.html', {
+        'entry': entry,
+        'next': request.REQUEST.get('next'),
+    })
 
 
 @permission_required('timepiece.view_payroll_summary')
@@ -360,7 +325,7 @@ def reject_entries(request, user_id):
     """
     form = timepiece_forms.YearMonthForm(request.GET
         or request.POST)
-    user = auth_models.User.objects.get(pk=user_id)
+    user = User.objects.get(pk=user_id)
     if form.is_valid():
         from_date, to_date = form.save()
         entries = timepiece.Entry.no_join.filter(status='verified', user=user,
@@ -380,7 +345,7 @@ def reject_entries(request, user_id):
                 'timesheet_user': user
             }
             return render(request,
-                'timepiece/time-sheet/entry/reject_entries.html', context)
+                    'timepiece/time-sheet/entry/reject_entries.html', context)
     else:
         msg = 'You must provide a month and year for entries to be rejected.'
         messages.error(request, msg)
@@ -420,13 +385,12 @@ def delete_entry(request, entry_id):
             message = 'You are not authorized to delete this entry!'
             messages.error(request, message)
 
-    return render_to_response('timepiece/time-sheet/entry/delete_entry.html',
-                              {'entry': entry},
-                              context_instance=RequestContext(request))
+    return render(request, 'timepiece/time-sheet/entry/delete_entry.html', {
+        'entry': entry,
+    })
 
 
 @permission_required('timepiece.view_entry_summary')
-@render_with('timepiece/time-sheet/reports/general_ledger.html')
 def summary(request, username=None):
     date = timezone.now() - relativedelta(months=1)
     from_date = utils.get_month_start(date).date()
@@ -463,14 +427,14 @@ def summary(request, username=None):
                                                    'user__last_name')
     people_totals = people_totals.order_by('user__last_name').filter(dates)
     people_totals = people_totals.annotate(total_hours=Sum('hours'))
-    context = {
+    template = 'timepiece/time-sheet/reports/general_ledger.html'
+    return render(request, template, {
         'form': form,
         'project_totals': project_totals,
         'total_hours': total_hours,
         'people_totals': people_totals,
         'from_date': from_date
-    }
-    return context
+    })
 
 
 class ProjectTimesheet(DetailView):
@@ -639,7 +603,7 @@ def view_person_time_sheet(request, user_id):
     if request.user.has_perm('timepiece.approve_timesheet'):
         show_approve = verified_count + approved_count == total_statuses \
         and verified_count > 0 and total_statuses != 0
-    context = {
+    return render(request, 'timepiece/time-sheet/people/view.html', {
         'year_month_form': year_month_form,
         'from_date': from_date,
         'to_date': to_date - datetime.timedelta(days=1),
@@ -650,9 +614,7 @@ def view_person_time_sheet(request, user_id):
         'grouped_totals': grouped_totals,
         'project_entries': project_entries,
         'summary': summary,
-    }
-    return render_to_response('timepiece/time-sheet/people/view.html',
-        context, context_instance=RequestContext(request))
+    })
 
 
 @login_required
@@ -716,16 +678,14 @@ def change_person_time_sheet(request, action, user_id, from_date):
         msg = 'You cannot verify/approve a timesheet with no hours'
         messages.error(request, msg)
         return redirect(return_url)
-    context = {
+    return render(request, 'timepiece/time-sheet/people/change_status.html', {
         'action': action,
         'timesheet_user': user,
         'from_date': from_date,
         'to_date': to_date - datetime.timedelta(days=1),
         'return_url': return_url,
         'hours': hours,
-    }
-    return render_to_response('timepiece/time-sheet/people/change_status.html',
-        context, context_instance=RequestContext(request))
+    })
 
 
 @login_required
@@ -771,15 +731,14 @@ def confirm_invoice_project(request, project_id, to_date, from_date=None):
             raise Http404
 
     totals = timepiece.HourGroup.objects.summaries(entries)
-    template = 'timepiece/time-sheet/invoice/confirm.html'
-    return render_to_response(template, {
+    return render(request, 'timepiece/time-sheet/invoice/confirm.html', {
         'invoice_form': invoice_form,
         'entries': entries.select_related(),
         'project': project,
         'totals': totals,
         'from_date': from_date,
         'to_date': to_date,
-    }, context_instance=RequestContext(request))
+    })
 
 
 @permission_required('timepiece.change_entrygroup')
@@ -804,13 +763,12 @@ def invoice_projects(request):
     ).annotate(s=Sum('hours')).order_by('project__type__label',
                                         'project__status__label',
                                         'project__name', 'status')
-    return render_to_response(
-        'timepiece/time-sheet/invoice/make_invoice.html', {
+    return render(request, 'timepiece/time-sheet/invoice/make_invoice.html', {
         'date_form': date_form,
         'project_totals': project_totals if to_date else [],
         'to_date': to_date - relativedelta(days=1) if to_date else '',
         'from_date': from_date,
-    }, context_instance=RequestContext(request))
+    })
 
 
 def list_invoices(request):
@@ -962,15 +920,12 @@ def remove_invoice_entry(request, invoice_id, entry_id):
             'invoice': invoice,
             'entry': entry,
         }
-        return render_to_response(
-            'timepiece/time-sheet/invoice/remove_invoice_entry.html',
-            context,
-            context_instance=RequestContext(request)
-        )
+        return render(request,
+                'timepiece/time-sheet/invoice/remove_invoice_entry.html',
+                context)
 
 
 @permission_required('timepiece.view_business')
-@render_with('timepiece/business/list.html')
 def list_businesses(request):
     form = timepiece_forms.SearchForm(request.GET)
     if form.is_valid() and 'search' in request.GET:
@@ -980,34 +935,28 @@ def list_businesses(request):
             Q(description__icontains=search)
         )
         if businesses.count() == 1:
-            url_kwargs = {
-                'business': businesses[0].pk,
-            }
-            return HttpResponseRedirect(
-                reverse('view_business', kwargs=url_kwargs)
-            )
+            url_kwargs = {'business': businesses[0].pk}
+            url = request.REQUEST.get('next',
+                    reverse('view_business', kwargs=url_kwargs))
+            return HttpResponseRedirect(url)
     else:
         businesses = timepiece.Business.objects.all()
 
-    context = {
+    return render(request, 'timepiece/business/list.html', {
         'form': form,
         'businesses': businesses,
-    }
-    return context
+    })
 
 
 @permission_required('timepiece.view_business')
-@render_with('timepiece/business/view.html')
 def view_business(request, business):
     business = get_object_or_404(timepiece.Business, pk=business)
-    context = {
+    return render(request, 'timepiece/business/view.html', {
         'business': business,
-    }
-    return context
+    })
 
 
 @permission_required('timepiece.add_business')
-@render_with('timepiece/business/create_edit.html')
 def create_edit_business(request, business=None):
     if business:
         business = get_object_or_404(timepiece.Business, pk=business)
@@ -1025,20 +974,18 @@ def create_edit_business(request, business=None):
         business_form = timepiece_forms.BusinessForm(
             instance=business
         )
-    context = {
+    return render(request, 'timepiece/business/create_edit.html', {
         'business': business,
         'business_form': business_form,
-    }
-    return context
+    })
 
 
 @permission_required('auth.view_user')
-@render_with('timepiece/person/list.html')
 def list_people(request):
     form = timepiece_forms.SearchForm(request.GET)
     if form.is_valid() and 'search' in request.GET:
         search = form.cleaned_data['search']
-        people = auth_models.User.objects.filter(
+        people = User.objects.filter(
             Q(first_name__icontains=search) |
             Q(last_name__icontains=search) |
             Q(email__icontains=search)
@@ -1047,24 +994,22 @@ def list_people(request):
             url_kwargs = {
                 'person_id': people[0].id,
             }
-            return HttpResponseRedirect(
-                reverse('view_person', kwargs=url_kwargs)
-            )
+            url = request.REQUEST.get('next',
+                    reverse('view_person', kwargs=url_kwargs))
+            return HttpResponseRedirect(url)
     else:
-        people = auth_models.User.objects.all().order_by('last_name')
+        people = User.objects.all().order_by('last_name')
 
-    context = {
+    return render(request, 'timepiece/person/list.html', {
         'form': form,
         'people': people.select_related(),
-    }
-    return context
+    })
 
 
 @permission_required('auth.view_user')
 @transaction.commit_on_success
-@render_with('timepiece/person/view.html')
 def view_person(request, person_id):
-    person = get_object_or_404(auth_models.User, pk=person_id)
+    person = get_object_or_404(User, pk=person_id)
     add_user_form = timepiece_forms.AddUserToProjectForm()
     context = {
         'person': person,
@@ -1078,16 +1023,14 @@ def view_person(request, person_id):
             context['exchanges'].filter(type__deliverable=True).count() > 0
     except ImportError:
         pass
-
-    return context
+    return render(request, 'timepiece/person/view.html', context)
 
 
 @permission_required('auth.add_user')
 @permission_required('auth.change_user')
-@render_with('timepiece/person/create_edit.html')
 def create_edit_person(request, person_id=None):
     if person_id:
-        person = get_object_or_404(auth_models.User, pk=person_id)
+        person = get_object_or_404(User, pk=person_id)
     else:
         person = None
     if request.POST:
@@ -1100,9 +1043,9 @@ def create_edit_person(request, person_id=None):
             person_form = timepiece_forms.CreatePersonForm(request.POST,)
         if person_form.is_valid():
             person = person_form.save()
-            return HttpResponseRedirect(
-                reverse('view_person', args=(person.id,))
-            )
+            url = request.REQUEST.get('next',
+                    reverse('view_person', args=(person.id,)))
+            return HttpResponseRedirect(url)
     else:
         if person:
             person_form = timepiece_forms.EditPersonForm(
@@ -1111,15 +1054,13 @@ def create_edit_person(request, person_id=None):
         else:
             person_form = timepiece_forms.CreatePersonForm()
 
-    context = {
+    return render(request, 'timepiece/person/create_edit.html', {
         'person': person,
         'person_form': person_form,
-    }
-    return context
+    })
 
 
 @permission_required('timepiece.view_project')
-@render_with('timepiece/project/list.html')
 def list_projects(request):
     form = timepiece_forms.ProjectSearchForm(request.GET)
     if form.is_valid():
@@ -1131,22 +1072,20 @@ def list_projects(request):
             url_kwargs = {
                 'project_id': projects[0].id,
             }
-            return HttpResponseRedirect(
-                reverse('view_project', kwargs=url_kwargs)
-            )
+            url = request.REQUEST.get('next',
+                    reverse('view_project', kwargs=url_kwargs))
+            return HttpResponseRedirect(url)
     else:
         projects = timepiece.Project.objects.all()
 
-    context = {
+    return render(request, 'timepiece/project/list.html', {
         'form': form,
         'projects': projects.select_related('business'),
-    }
-    return context
+    })
 
 
 @permission_required('timepiece.view_project')
 @transaction.commit_on_success
-@render_with('timepiece/project/view.html')
 def view_project(request, project_id):
     project = get_object_or_404(timepiece.Project, pk=project_id)
     add_user_form = timepiece_forms.AddUserToProjectForm()
@@ -1164,7 +1103,7 @@ def view_project(request, project_id):
     except ImportError:
         pass
 
-    return context
+    return render(request, 'timepiece/project/view.html', context)
 
 
 @csrf_exempt
@@ -1210,7 +1149,6 @@ def remove_user_from_project(request, project_id, user_id):
 
 @permission_required('timepiece.change_project')
 @transaction.commit_on_success
-@render_with('timepiece/project/relationship.html')
 def edit_project_relationship(request, project_id, user_id):
     project = get_object_or_404(timepiece.Project, pk=project_id)
     try:
@@ -1233,17 +1171,15 @@ def edit_project_relationship(request, project_id, user_id):
         relationship_form = \
             timepiece_forms.ProjectRelationshipForm(instance=rel)
 
-    context = {
+    return render(request, 'timepiece/project/relationship.html', {
         'user': rel.user,
         'project': project,
         'relationship_form': relationship_form,
-    }
-    return context
+    })
 
 
 @permission_required('timepiece.add_project')
 @permission_required('timepiece.change_project')
-@render_with('timepiece/project/create_edit.html')
 def create_edit_project(request, project_id=None):
     project = get_object_or_404(timepiece.Project, pk=project_id) \
         if project_id else None
@@ -1251,18 +1187,16 @@ def create_edit_project(request, project_id=None):
     if request.POST and form.is_valid():
         project = form.save()
         project.save()
-        return HttpResponseRedirect(
-            reverse('view_project', args=(project.id,))
-        )
-    context = {
+        url = request.REQUEST.get('next',
+                reverse('view_project', args=(project.id,)))
+        return HttpResponseRedirect(url)
+    return render(request, 'timepiece/project/create_edit.html', {
         'project': project,
         'project_form': form,
-    }
-    return context
+    })
 
 
 @permission_required('timepiece.view_payroll_summary')
-@render_with('timepiece/time-sheet/reports/summary.html')
 def payroll_summary(request):
     date = timezone.now() - relativedelta(months=1)
     from_date = utils.get_month_start(date).date()
@@ -1299,7 +1233,7 @@ def payroll_summary(request):
     unverified = entries.filter(monthQ, status='unverified',
                                 user__is_active=True)
     unapproved = entries.filter(monthQ, status='verified')
-    return {
+    return render(request, 'timepiece/time-sheet/reports/summary.html', {
         'from_date': from_date,
         'year_month_form': year_month_form,
         'date_headers': date_headers,
@@ -1308,34 +1242,10 @@ def payroll_summary(request):
         'unverified': unverified.values_list(*user_values).distinct(),
         'unapproved': unapproved.values_list(*user_values).distinct(),
         'labels': labels,
-    }
-
-
-@permission_required('timepiece.view_projection_summary')
-@render_with('timepiece/time-sheet/projection/projection.html')
-@utils.date_filter
-def projection_summary(request, form, from_date, to_date, status, activity):
-    if not (from_date and to_date):
-        today = datetime.date.today()
-        from_date = today.replace(day=1)
-        to_date = from_date + relativedelta(months=1)
-    contracts = timepiece.ProjectContract.objects.exclude(status='complete')
-    contracts = contracts.exclude(
-        project__in=settings.TIMEPIECE_PROJECTS.values())
-    contracts = contracts.order_by('end_date')
-    users = User.objects.filter(assignments__contract__in=contracts).distinct()
-    weeks = utils.generate_dates(start=from_date, end=to_date, by='week')
-
-    return {
-        'form': form,
-        'weeks': weeks,
-        'contracts': contracts.select_related(),
-        'users': users,
-    }
+    })
 
 
 @login_required
-@render_with('timepiece/person/settings.html')
 def edit_settings(request):
     next_url = None
     if request.GET and 'next' in request.GET:
@@ -1361,7 +1271,10 @@ def edit_settings(request):
     else:
         profile_form = timepiece_forms.UserProfileForm(instance=profile)
         user_form = timepiece_forms.UserForm(instance=request.user)
-    return {'profile_form': profile_form, 'user_form': user_form}
+    return render(request, 'timepiece/person/settings.html', {
+        'profile_form': profile_form,
+        'user_form': user_form
+    })
 
 
 class ContractDetail(DetailView):
@@ -1402,8 +1315,9 @@ class DeleteView(TemplateView):
         for permission in self.permissions:
             if not request.user.has_perm(permission):
                 messages.info(request,
-                    'You do not have permission to access that')
-                return HttpResponseRedirect(reverse_lazy('timepiece-entries'))
+                        'You do not have permission to access that')
+                return HttpResponseRedirect(
+                        utils.reverse_lazy('timepiece-entries'))
         return super(DeleteView, self).dispatch(request, *args, **kwargs)
 
     def post(self, request, *args, **kwargs):
@@ -1416,7 +1330,7 @@ class DeleteView(TemplateView):
                 msg = '{0} was successfully deleted'.format(instance)
 
         messages.info(request, msg)
-        return HttpResponseRedirect(reverse_lazy(self.url_name))
+        return HttpResponseRedirect(utils.reverse_lazy(self.url_name))
 
     def get(self, request, *args, **kwargs):
         context = self.get_context_data(*args, **kwargs)
@@ -1739,7 +1653,7 @@ class ProjectHoursAjaxView(ProjectHoursMixin, View):
 
     def get_instance(self, data, week_start):
         try:
-            user = auth_models.User.objects.get(pk=data.get('user', None))
+            user = User.objects.get(pk=data.get('user', None))
             project = timepiece.Project.objects.get(
                 pk=data.get('project', None))
             hours = data.get('hours', None)
@@ -1762,7 +1676,7 @@ class ProjectHoursAjaxView(ProjectHoursMixin, View):
             all_projects: all of the projects; used for autocomplete
             all_users: all users that can clock in; used for completion
         """
-        perm = auth_models.Permission.objects.filter(
+        perm = Permission.objects.filter(
             content_type=ContentType.objects.get_for_model(timepiece.Entry),
             codename='can_clock_in'
         )
@@ -1775,7 +1689,7 @@ class ProjectHoursAjaxView(ProjectHoursMixin, View):
         projects = timepiece.Project.objects.filter(pk__in=inner_qs).values() \
             .order_by('name')
         all_projects = timepiece.Project.objects.values('id', 'name')
-        all_users = auth_models.User.objects.filter(groups__permissions=perm) \
+        all_users = User.objects.filter(groups__permissions=perm) \
             .values('id', 'first_name', 'last_name')
 
         data = {

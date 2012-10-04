@@ -1,15 +1,17 @@
 {% extends "timepiece/business/base.html" %}
-{% block title %}{% if not business %}Create Business{% else %}Edit {{ business }}{% endif %}{% endblock %}
 {% load bootstrap_toolkit %}
+{% load url from future %}
+
+{% block title %}{% if not business %}Create Business{% else %}Edit {{ business }}{% endif %}{% endblock %}
 
 {% block crumbs %}
     {{ block.super }}
     <li>
         <span class="divider">/</span>
         {% if not business %}
-            <a href="{% url create_business %}">Create Business</a>
+            <a href="{% url 'create_business' %}">Create Business</a>
         {% else %}
-            <a href="{% url edit_business business.pk %}">Edit Business</a>
+            <a href="{% url 'edit_business' business.pk %}">Edit Business</a>
         {% endif %}
     </li>
 {% endblock crumbs %}

@@ -1,5 +1,6 @@
 {% extends "timepiece/business/base.html" %}
 {% load bootstrap_toolkit %}
+{% load url from future %}
 
 {% block title %}Businesses{% endblock %}
 
@@ -9,7 +10,7 @@
             <h2>Businesses</h2>
             <ul class="unstyled subnav">
                 {% if perms.timepiece.add_business %}
-                    <li><a href='{% url create_business %}'>Create Business</a></li>
+                    <li><a href='{% url 'create_business' %}'>Create Business</a></li>
                 {% endif %}
             </ul>
         </div>
@@ -40,7 +41,7 @@
                 <tbody>
                     {% for business in businesses %}
                         <tr>
-                            <td><a href='{% url view_business business.pk %}'>{{ business.name }}</a></td>
+                            <td><a href='{% url 'view_business' business.pk %}'>{{ business.name }}</a></td>
                             <td>{{ business.description|truncatewords:8 }}</td>
                         </tr>
                     {% endfor %}

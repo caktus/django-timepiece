@@ -1,6 +1,5 @@
 from timepiece.tests.timesheet import *
 from timepiece.tests.payroll import *
-from timepiece.tests.projection import *
 from timepiece.tests.projects import *
 from timepiece.tests.invoices import *
 from timepiece.tests.user_settings import *
