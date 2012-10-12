@@ -15,7 +15,7 @@ from selectable import forms as selectable_forms
 from timepiece import models as timepiece
 from timepiece import utils
 from timepiece.fields import UserModelChoiceField
-from timepiece.lookups import ProjectLookup, QuickLookup, ContractLookup
+from timepiece.lookups import ProjectLookup, QuickLookup
 from timepiece.lookups import UserLookup, BusinessLookup
 from timepiece.models import Project, Entry, Activity, UserProfile, Attribute
 from timepiece.models import ProjectHours
