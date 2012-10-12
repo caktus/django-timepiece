@@ -1,15 +1,12 @@
 var scripts = document.getElementsByTagName('script'),
     script = scripts[scripts.length - 1];
 
-var labels = JSON.parse(script.getAttribute('data-labels')),
-    report = JSON.parse(script.getAttribute('data-report'));
-
-report.unshift(labels)
+var report = JSON.parse(script.getAttribute('data-report'));
 
 google.load('visualization', '1.0', {'packages':['corechart']});
 google.setOnLoadCallback(drawChart);
 
-var wrapper, dataTable;
+var wrapper;
 
 function drawChart() {
     if(report.length > 1) {
@@ -17,19 +14,22 @@ function drawChart() {
             chartType: 'BarChart',
             dataTable: google.visualization.arrayToDataTable(report),
             options: {
-                chartArea: {
-                    width: '70%',
-                    left: '5%',
+                bar: {
+                    groupWidth: '50%'
                 },
-                pointSize: 6,
+                chartArea: {
+                    top: '5%',
+                    bottom: '5%'
+                },
+                legend: {
+                    position: 'bottom'
+                }
             },
             containerId: 'chart'
         });
-
         wrapper.draw();
     } else {
         container = $('#chart');
-        container.text('No data.');
+        container.text('');
     }
 }
-

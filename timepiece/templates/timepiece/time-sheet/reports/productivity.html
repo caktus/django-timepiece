@@ -9,7 +9,7 @@
 {% block extrajs %}
     {{ block.super }}
     <script type="text/javascript" src="https://www.google.com/jsapi"></script>
-    <script type="text/javascript" src="{{ STATIC_URL }}timepiece/js/chart/productivity_chart.js" data-report="{{ report_json }}" data-labels="{{ headers_json }}"></script>
+    <script type="text/javascript" src="{{ STATIC_URL }}timepiece/js/chart/productivity_chart.js" data-report="{{ report }}"></script>
 {% endblock extrajs %}
 
 {% block crumbs %}
@@ -29,6 +29,7 @@
             <form class="form-horizontal" action="" method="GET">
                 {{ form|as_bootstrap:"horizontal" }}
                 <button type="submit" class="btn btn-primary">Submit</button>
+                <button type="submit" class="btn" name="export" value="True">Export as CSV</button>
             </form>
         </div>
     </div>
@@ -36,31 +37,6 @@
     <div class="row-fluid">
         <div class="span12">
             <div id="chart" class="chart"></div>
-        </div>
-    </div>
-
-    <div class="row-fluid">
-        <div class="span12">
-            {% if report %}
-                <table class="table table-condensed table-bordered table-striped">
-                    <thead>
-                        <tr>
-                            {% for header in headers %}
-                                <th>{{ header }}</th>
-                            {% endfor %}
-                        </tr>
-                    </thead>
-                    <tbody>
-                        {% for label, actual, projected in report %}
-                            <tr>
-                                <td>{{ label}}</td>
-                                <td class="hours">{% if projected %}{{ projected|floatformat:2 }}{% else %}0.00{% endif %}</td>
-                                <td class="hours">{% if actual %}{{ actual|floatformat:2 }}{% else %}0.00{% endif %}</td>
-                            </tr>
-                        {% endfor %}
-                    </tbody>
-                </table>
-            {% endif %}
         </div>
     </div>
 {% endblock report_content %}

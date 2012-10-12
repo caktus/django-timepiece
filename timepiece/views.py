@@ -1825,18 +1825,19 @@ class ProjectHoursDetailView(ProjectHoursMixin, View):
 
 def productivity_report(request):
     report = []
-    headers = []
+
     form = timepiece_forms.ProductivityReportForm(request.GET or None)
-    if request.GET and form.is_valid():
+    if form.is_valid():
         project = form.cleaned_data['project']
         organize_by = form.cleaned_data['organize_by']
+        export = request.GET.get('export', False)
 
         actuals = timepiece.Entry.objects.filter(project=project,
                 end_time__isnull=False)
         projections = timepiece.ProjectHours.objects.filter(project=project)
 
         if organize_by == 'week':
-            headers = ['Week', 'Actual Hours', 'Projected Hours']
+            report.append(['Week', 'Actual Hours', 'Assigned Hours'])
 
             amax = actuals.aggregate(Max('start_time'))['start_time__max']
             amin = actuals.aggregate(Min('start_time'))['start_time__min']
@@ -1854,11 +1855,11 @@ def productivity_report(request):
                         week_start__lt=next_week).aggregate(
                         Sum('hours'))['hours__sum']
                 report.append([current.strftime('%Y-%m-%d'),
-                    actual_hours, projected_hours])
+                        actual_hours or 0, projected_hours or 0])
                 current += relativedelta(days=7)
 
         elif organize_by == 'people':
-            headers = ['Person', 'Actual Hours', 'Projected Hours']
+            report.append(['Person', 'Actual Hours', 'Assigned Hours'])
 
             vals = ('user__first_name', 'user__last_name', 'user')
             apeople = list(actuals.values_list(*vals).distinct())
@@ -1866,15 +1867,24 @@ def productivity_report(request):
 
             people = sorted(list(set(apeople + ppeople)))
             for person in people:
-                actual_hours = actuals.filter(user=person[2]).aggregate(Sum('hours'))['hours__sum']
-                projected_hours = projections.filter(user=person[2]).aggregate(Sum('hours'))['hours__sum']
+                actual_hours = actuals.filter(user=person[2]).aggregate(
+                        Sum('hours'))['hours__sum']
+                projected_hours = projections.filter(user=person[2]).aggregate(
+                        Sum('hours'))['hours__sum']
                 report.append(['{0} {1}'.format(person[0], person[1]),
-                    actual_hours, projected_hours])
+                        actual_hours or 0, projected_hours or 0])
+
+        if export:
+            response = HttpResponse(content_type='text/csv')
+            filename = '{0}_productivity'.format(project.name)
+            content_disp = 'attachment; filename={0}.csv'.format(filename)
+            response['Content-Disposition'] = content_disp
+            writer = csv.writer(response)
+            for row in report:
+                writer.writerow(row)
+            return response
 
     return render(request, 'timepiece/time-sheet/reports/productivity.html', {
-        'report': report,
-        'headers': headers,
         'form': form,
-        'headers_json': json.dumps(headers),
-        'report_json': json.dumps(report, cls=DecimalEncoder),
+        'report': json.dumps(report, cls=DecimalEncoder),
     })
