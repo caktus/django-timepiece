@@ -518,6 +518,12 @@ class TestProductivityReport(TimepieceDataTestCase):
     def _get_context(self, response):
         return response.context['form'], json.loads(response.context['report'])
 
+    def _make_entries(self):
+        pass # TODO
+
+    def _make_assignments(self):
+        pass # TODO
+
     def test_not_authenticated(self):
         """User must be logged in to see this report."""
         self.client.logout()
@@ -535,41 +541,67 @@ class TestProductivityReport(TimepieceDataTestCase):
         response = self._get()
         self.assertEquals(response.status_code, 200)
         form, report = self._get_context(response)
+        self.assertEquals(len(form.errors), 0)
         self.assertEquals(len(report), 0)
 
     def test_no_project(self):
         """Form requires specification of project."""
-        get_kwargs={'organize_by': 'week'}
-        response=self._get(get_kwargs=get_kwargs)
+        data = {'organize_by': 'week'}
+        response = self._get(data=data)
         self.assertEquals(response.status_code, 200)
         form, report = self._get_context(response)
+        self.assertEquals(len(form.errors), 1)
         self.assertTrue('project' in form.errors)
-        self.assertEqual(len(report), 0)
-
-    def test_invalid_project_name(self):
-        """Form requires specification of valid project."""
-        pass
+        self.assertEquals(len(report), 0)
 
     def test_invalid_project_id(self):
         """Form requires specification of valid project."""
-        pass
+        data = {'organize_by': 'week', 'project_1': 12345}
+        response = self._get(data=data)
+        self.assertEquals(response.status_code, 200)
+        form, report = self._get_context(response)
+        self.assertEquals(len(form.errors), 1)
+        self.assertTrue('project' in form.errors)
+        self.assertEquals(len(report), 0)
 
     def test_no_organize_by(self):
         """Form requires specification of organization method."""
-        pass
+        data = {'project_1': self.project1.pk}
+        response = self._get(data=data)
+        self.assertEquals(response.status_code, 200)
+        form, report = self._get_context(response)
+        self.assertEquals(len(form.errors), 1)
+        self.assertTrue('organize_by' in form.errors)
+        self.assertEquals(len(report), 0)
 
     def test_invalid_organize_by(self):
         """Form requires specification of valid organization method."""
-        pass
+        data = {'project_1': self.project1.pk, 'organize_by': 'invalid'}
+        response = self._get(data=data)
+        self.assertEquals(response.status_code, 200)
+        form, report = self._get_context(response)
+        self.assertEquals(len(form.errors), 1)
+        self.assertTrue('organize_by' in form.errors)
+        self.assertEquals(len(report), 0)
 
     def test_organize_by_week(self):
         """Report should contain hours per week on the project."""
-        pass
+        data = {'project_1': self.project1.pk, 'organize_by': 'week'}
+        response = self._get(data=data)
+        self.assertEquals(response.status_code, 200)
+        form, report = self._get_context(response)
+        self.assertEquals(len(form.errors), 0)
+        # TODO
 
     def test_organize_by_people(self):
         """Report should contain hours per peron on the project."""
-        pass
+        data = {'project_1': self.project1.pk, 'organize_by': 'people'}
+        response = self._get(data=data)
+        self.assertEquals(response.status_code, 200)
+        form, report = self._get_context(response)
+        self.assertEquals(len(form.errors), 0)
+        # TODO
 
     def test_export(self):
         """Data should be exported in CSV format."""
-        pass
+        pass # TODO
