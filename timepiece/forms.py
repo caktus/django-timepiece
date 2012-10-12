@@ -15,7 +15,7 @@ from selectable import forms as selectable_forms
 from timepiece import models as timepiece
 from timepiece import utils
 from timepiece.fields import UserModelChoiceField
-from timepiece.lookups import ProjectLookup, QuickLookup
+from timepiece.lookups import ProjectLookup, QuickLookup, ContractLookup
 from timepiece.lookups import UserLookup, BusinessLookup
 from timepiece.models import Project, Entry, Activity, UserProfile, Attribute
 from timepiece.models import ProjectHours
@@ -635,3 +635,14 @@ class ProjectHoursForm(forms.ModelForm):
 
     class Meta:
         model = ProjectHours
+
+
+class ProductivityReportForm(forms.Form):
+    DATE_FORMAT = '%Y-%m-%d'
+    ORGANIZE_BY_CHOICES = (
+        ('week', 'Week'),
+        ('people', 'People'),
+    )
+    project = selectable_forms.AutoCompleteSelectField(ProjectLookup)
+    organize_by = forms.ChoiceField(choices=ORGANIZE_BY_CHOICES,
+            widget=forms.RadioSelect(), initial=ORGANIZE_BY_CHOICES[0][0])

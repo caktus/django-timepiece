@@ -246,4 +246,10 @@ urlpatterns = patterns('',
         views.ProjectHoursDetailView.as_view(),
         name='project_hours_detail_view',
     ),
+
+    url(
+        r'reports/productivity/$',
+        views.productivity_report,
+        name='productivity_report',
+    ),
 )

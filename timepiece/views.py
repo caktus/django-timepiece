@@ -16,7 +16,7 @@ from django.contrib.contenttypes.models import ContentType
 from django.core import exceptions
 from django.core.urlresolvers import reverse, resolve
 from django.db import DatabaseError, transaction
-from django.db.models import Sum, Q, F
+from django.db.models import Sum, Q, F, Min, Max
 from django.http import HttpResponse, HttpResponseRedirect
 from django.http import  Http404, HttpResponseForbidden
 from django.shortcuts import get_object_or_404, redirect, render
@@ -1821,3 +1821,60 @@ class ProjectHoursDetailView(ProjectHoursMixin, View):
                 return HttpResponse('ok', mimetype='text/plain')
 
         return HttpResponse('', status=500)
+
+
+def productivity_report(request):
+    report = []
+    headers = []
+    form = timepiece_forms.ProductivityReportForm(request.GET or None)
+    if request.GET and form.is_valid():
+        project = form.cleaned_data['project']
+        organize_by = form.cleaned_data['organize_by']
+
+        actuals = timepiece.Entry.objects.filter(project=project,
+                end_time__isnull=False)
+        projections = timepiece.ProjectHours.objects.filter(project=project)
+
+        if organize_by == 'week':
+            headers = ['Week', 'Actual Hours', 'Projected Hours']
+
+            amax = actuals.aggregate(Max('start_time'))['start_time__max']
+            amin = actuals.aggregate(Min('start_time'))['start_time__min']
+            pmax = projections.aggregate(Max('week_start'))['week_start__max']
+            pmin = projections.aggregate(Min('week_start'))['week_start__min']
+
+            latest = max(utils.get_week_start(amax).date(), pmax)
+            current = min(utils.get_week_start(amin).date(), pmin)
+            while current <= latest:
+                next_week = current + relativedelta(days=7)
+                actual_hours = actuals.filter(start_time__gte=current,
+                        start_time__lt=next_week).aggregate(
+                        Sum('hours'))['hours__sum']
+                projected_hours = projections.filter(week_start__gte=current,
+                        week_start__lt=next_week).aggregate(
+                        Sum('hours'))['hours__sum']
+                report.append([current.strftime('%Y-%m-%d'),
+                    actual_hours, projected_hours])
+                current += relativedelta(days=7)
+
+        elif organize_by == 'people':
+            headers = ['Person', 'Actual Hours', 'Projected Hours']
+
+            vals = ('user__first_name', 'user__last_name', 'user')
+            apeople = list(actuals.values_list(*vals).distinct())
+            ppeople = list(projections.values_list(*vals).distinct())
+
+            people = sorted(list(set(apeople + ppeople)))
+            for person in people:
+                actual_hours = actuals.filter(user=person[2]).aggregate(Sum('hours'))['hours__sum']
+                projected_hours = projections.filter(user=person[2]).aggregate(Sum('hours'))['hours__sum']
+                report.append(['{0} {1}'.format(person[0], person[1]),
+                    actual_hours, projected_hours])
+
+    return render(request, 'timepiece/time-sheet/reports/productivity.html', {
+        'report': report,
+        'headers': headers,
+        'form': form,
+        'headers_json': json.dumps(headers),
+        'report_json': json.dumps(report, cls=DecimalEncoder),
+    })
