@@ -1823,6 +1823,8 @@ class ProjectHoursDetailView(ProjectHoursMixin, View):
         return HttpResponse('', status=500)
 
 
+@login_required
+@permission_required('timepiece.view_entry_summary')
 def productivity_report(request):
     report = []
 

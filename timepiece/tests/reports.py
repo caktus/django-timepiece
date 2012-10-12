@@ -1,24 +1,24 @@
 import datetime
 from dateutil.relativedelta import relativedelta
 from decimal import Decimal
-from random import randint
 import json
+from random import randint
+from urllib import urlencode
 
 from django.conf import settings
+from django.contrib.auth.models import Permission
 from django.core.urlresolvers import reverse
 from django.db.models import Q
-from django.contrib.auth.models import Permission
 
 try:
     from django.utils import timezone
 except ImportError:
     from timepiece import timezone
 
-from timepiece.tests.base import TimepieceDataTestCase
-
-from timepiece import models as timepiece
 from timepiece import forms as timepiece_forms
+from timepiece import models as timepiece
 from timepiece import utils
+from timepiece.tests.base import TimepieceDataTestCase
 
 
 class ReportsHelperBase(TimepieceDataTestCase):
@@ -489,3 +489,87 @@ class TestBillableHours(ReportsHelperBase):
                 entries_data.filter(user__last_name=last_name)])
             response_total = sum(e['total'] for e in data)
             self.assertEqual(entries_total, response_total)
+
+
+class TestProductivityReport(TimepieceDataTestCase):
+    url_name = 'productivity_report'
+
+    def setUp(self):
+        self.username = 'test_user'
+        self.password = 'password'
+        self.user = self.create_user(username=self.username, password=self.password)
+        self.permission = Permission.objects.get(codename='view_entry_summary')
+        self.user.user_permissions.add(self.permission)
+        self.client.login(username=self.username, password=self.password)
+
+        self.person1 = self.create_person()
+        self.person2 = self.create_person()
+        self.project1 = self.create_project()
+        self.project2 = self.create_project()
+
+    def _get(self, url_name=None, url_kwargs=None, get_kwargs=None, **kwargs):
+        """Convenience wrapper for test client GET request."""
+        url_name = url_name or self.url_name
+        url = reverse(url_name, kwargs=url_kwargs)
+        if get_kwargs:
+            url += '?' + urlencode(get_kwargs)
+        return self.client.get(url, **kwargs)
+
+    def _get_context(self, response):
+        return response.context['form'], json.loads(response.context['report'])
+
+    def test_not_authenticated(self):
+        """User must be logged in to see this report."""
+        self.client.logout()
+        response = self._get()
+        self.assertEquals(response.status_code, 302)
+
+    def test_no_permission(self):
+        """This report requires permission to view entry summaries."""
+        self.user.user_permissions.remove(self.permission)
+        response = self._get()
+        self.assertEquals(response.status_code, 302)
+
+    def test_no_data(self):
+        """No report data should be returned upon initial retrieval."""
+        response = self._get()
+        self.assertEquals(response.status_code, 200)
+        form, report = self._get_context(response)
+        self.assertEquals(len(report), 0)
+
+    def test_no_project(self):
+        """Form requires specification of project."""
+        get_kwargs={'organize_by': 'week'}
+        response=self._get(get_kwargs=get_kwargs)
+        self.assertEquals(response.status_code, 200)
+        form, report = self._get_context(response)
+        self.assertTrue('project' in form.errors)
+        self.assertEqual(len(report), 0)
+
+    def test_invalid_project_name(self):
+        """Form requires specification of valid project."""
+        pass
+
+    def test_invalid_project_id(self):
+        """Form requires specification of valid project."""
+        pass
+
+    def test_no_organize_by(self):
+        """Form requires specification of organization method."""
+        pass
+
+    def test_invalid_organize_by(self):
+        """Form requires specification of valid organization method."""
+        pass
+
+    def test_organize_by_week(self):
+        """Report should contain hours per week on the project."""
+        pass
+
+    def test_organize_by_people(self):
+        """Report should contain hours per peron on the project."""
+        pass
+
+    def test_export(self):
+        """Data should be exported in CSV format."""
+        pass
