@@ -4,6 +4,7 @@ local_settings.py
 *.db
 dist/
 _build/
+build/
 .tox/
 /reports/
 /timepiece/static/CACHE

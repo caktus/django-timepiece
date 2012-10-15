@@ -3,8 +3,8 @@ try:
 except ImportError:
     from django.conf.urls.defaults import patterns, include, url
 
-from timepiece.models import Entry
 from timepiece import views
+
 
 urlpatterns = patterns('',
     url(r'^$', views.view_entries, name='timepiece-entries'),
@@ -109,10 +109,27 @@ urlpatterns = patterns('',
     ### time sheets ###
 
     # Reports
-    url(r'^reports/$', views.HourlyReport.as_view(), name='hourly_report'),
-    url(r'^reports/summary/$', views.summary, name='timepiece-summary'),
-    url(r'^reports/payroll/$', views.payroll_summary, name='payroll_summary',),
-    url(r'^reports/billable/$', views.BillableHours.as_view(), name='billable_hours'),
+    url(
+        r'^reports/$',
+        views.HourlyReport.as_view(),
+        name='hourly_report',
+    ),
+    url(
+        r'^reports/summary/$',
+        views.summary,
+        name='timepiece-summary',
+    ),
+    url(
+        r'^reports/payroll/$',
+        views.payroll_summary,
+        name='payroll_summary',
+    ),
+    url(
+        r'^reports/billable/$',
+        views.BillableHours.as_view(),
+        name='billable_hours',
+    ),
+
     # People
     url(
         r'time-sheet/people/(?P<user_id>\d+)/$',
@@ -122,7 +139,7 @@ urlpatterns = patterns('',
     url(
         r'^time-sheet/reject/(?P<user_id>\d+)/$',
         views.reject_entries,
-        name='timepiece-reject-entries'
+        name='timepiece-reject-entries',
     ),
     url(
         r'^time-sheet/(?P<action>verify|approve)/(?P<user_id>\d+)/' +
@@ -130,6 +147,7 @@ urlpatterns = patterns('',
         views.change_person_time_sheet,
         name='change_person_time_sheet',
     ),
+
     # Projects
     url(
         r'^time-sheet/project/(?P<pk>\d+)/$',
@@ -140,11 +158,6 @@ urlpatterns = patterns('',
         r'^time-sheet/project/(?P<pk>\d+)/csv/$',
         views.ProjectTimesheetCSV.as_view(),
         name='export_project_time_sheet',
-    ),
-    url(
-        r'^projection/$',
-        views.projection_summary,
-        name='projection_summary',
     ),
     url(
         r'^edit-settings/$',
@@ -167,7 +180,7 @@ urlpatterns = patterns('',
     ),
     url(
         r'^invoice/list/$',
-        views.InvoiceList.as_view(),
+        views.list_invoices,
         name='list_invoices',
     ),
     url(
@@ -220,7 +233,7 @@ urlpatterns = patterns('',
     url(
         r'^schedule/edit/$',
         views.EditProjectHoursView.as_view(),
-        name='edit_project_hours'
+        name='edit_project_hours',
     ),
 
     # ajax views

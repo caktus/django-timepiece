@@ -1,8 +1,47 @@
 Release Notes
 =========================================
 
+0.6.0 (Released 10-04-2012)
+---------------------------
+
+* Updated version requirement for South to 0.7.6
+* Updated version requirement for django-bootstrap-toolkit to 2.5.6
+* Use Javascript to manage date filter links on Reports pages
+* Use "empty" text when there is no Billable Report data to visualize
+* Include auth groups select to Person creation form
+* Added pagination and search to Previous Invoices page
+* Show current project name and activity on Clock Out page
+* Maintain selected month on link to Person time sheet from Payroll Report page
+* Maintain selected month on link to Project time sheet from Outstanding Hours page
+* Fixed division-by-0 bug on ContractAssignment admin page
+* Fixed infinite loop when ordering by Project on ProjectContract admin page
+* Prevent admin from requiring that all ProjectContract inlines be completed on Project creation
+* Use default options for the filter form on the Hourly Report page
+
+We also completed a full audit of the code, in which we deleted stale parts, removed unmaintained features, and made some simple cleanups:
+
+* Migrated the ``PersonSchedule.hours_per_week`` field to the UserProfile model
+* Deleted the AssignmentAllocation and PersonSchedule models
+* Removed all projection-related code, including admin and model hooks, forms, views, templates, and `projection.py`
+* Deleted `widgets.py`
+* Removed unused fields from DateForm
+* Removed unused templates and static files
+* Removed unused utilities, template tags, and forms
+* Cleaned up imports, used the ``render`` shortcut in all views, and used the new-style url in all templates
+* Refreshed the example project and added missing templates and JavaScript files
+
+0.5.4 (Released 09-13-2012)
+---------------------------
+
+* Projects on Invoices/Outstanding Hours page are sorted by status and then by name
+* Weekly Project Hours chart uses horizontal zebra striping
+* New permission added for approving timesheets
+* Fixed a bug in Project Hours edit view that prevented deletion of multiple entries at once
+* Added links to Person timesheet from Payroll Report page
+* Added links to Project timesheet on Invoice page
+
 0.5.3 (Released 08-10-2012)
-------------------
+---------------------------
 
 * Added a "Billable Hours" report, which displays a chart of billable and non-billable hours for a selected group of people, activities, project types and date range.
 * Improved usability of the payroll report

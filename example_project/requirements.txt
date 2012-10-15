@@ -3,6 +3,7 @@ python-dateutil==1.5
 django-pagination==1.0.7
 django-selectable==0.4.1
 django-compressor==1.1.2
-django-bootstrap-toolkit
-South==0.7.2
+django-bootstrap-toolkit==2.5.6
+South==0.7.6
 pytz==2012c
+psycopg2==2.4.1

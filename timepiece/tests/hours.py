@@ -170,7 +170,8 @@ class ProjectHoursListViewTestCase(ProjectHoursTestCase):
 class ProjectHoursEditTestCase(ProjectHoursTestCase):
     def setUp(self):
         super(ProjectHoursEditTestCase, self).setUp()
-        self.permission = Permission.objects.filter(codename='add_projecthours')
+        self.permission = Permission.objects.filter(
+            codename='add_projecthours')
         self.manager = self.create_user('manager', 'e@e.com', 'abc')
         self.manager.user_permissions = self.permission
         self.view_url = reverse('edit_project_hours')

@@ -1,26 +1,24 @@
-import time
 from datetime import datetime, timedelta
 from dateutil.relativedelta import relativedelta
+import time
 
 from django import forms
-from django.db.models import Q
 from django.conf import settings
 from django.contrib.auth import models as auth_models
 from django.contrib.auth import forms as auth_forms
 from django.core.urlresolvers import reverse
+from django.db.models import Q
 from django.utils.translation import ugettext_lazy as _
-from django.core.exceptions import ValidationError
 
 from selectable import forms as selectable_forms
 
-from timepiece.lookups import ProjectLookup, QuickLookup
-from timepiece.lookups import UserLookup, BusinessLookup
-
-from timepiece.models import Project, Entry, Attribute
-from timepiece.models import ProjectHours
-from timepiece.fields import UserModelChoiceField
 from timepiece import models as timepiece
 from timepiece import utils
+from timepiece.fields import UserModelChoiceField
+from timepiece.lookups import ProjectLookup, QuickLookup
+from timepiece.lookups import UserLookup, BusinessLookup
+from timepiece.models import Project, Entry, Activity, UserProfile, Attribute
+from timepiece.models import ProjectHours
 
 
 class ProjectFiltersForm(forms.Form):
@@ -66,7 +64,7 @@ class CreatePersonForm(auth_forms.UserCreationForm):
         model = auth_models.User
         fields = (
             "username", "first_name", "last_name",
-            "email", "is_active", "is_staff"
+            "email", "is_active", "is_staff", "groups"
         )
 
 
@@ -392,16 +390,6 @@ class DateForm(forms.Form):
     to_date = forms.DateField(label="To", required=False,
         input_formats=(DATE_FORMAT,),
         widget=forms.DateInput(format=DATE_FORMAT))
-    status = forms.ChoiceField(choices=STATUS_CHOICES,
-        widget=forms.HiddenInput(), required=False)
-    activity = forms.ModelChoiceField(
-        queryset=timepiece.Activity.objects.all(),
-        widget=forms.HiddenInput(), required=False,
-    )
-    project = forms.ModelChoiceField(
-        queryset=timepiece.Project.objects.all(),
-        widget=forms.HiddenInput(), required=False,
-    )
 
     def clean(self):
         data = self.cleaned_data
@@ -409,7 +397,7 @@ class DateForm(forms.Form):
         to_date = data.get('to_date', None)
         if from_date and to_date and from_date > to_date:
             err_msg = 'The ending date must exceed the beginning date'
-            raise ValidationError(err_msg)
+            raise forms.ValidationError(err_msg)
         return data
 
     def save(self):
@@ -469,15 +457,6 @@ class UserYearMonthForm(YearMonthForm):
     def save(self):
         from_date, to_date = super(UserYearMonthForm, self).save()
         return  (from_date, to_date, self.cleaned_data.get('user', None))
-
-
-class ProjectionForm(DateForm):
-    user = forms.ModelChoiceField(queryset=None)
-
-    def __init__(self, *args, **kwargs):
-        users = kwargs.pop('users')
-        super(ProjectionForm, self).__init__(*args, **kwargs)
-        self.fields['user'].queryset = users
 
 
 class BusinessForm(forms.ModelForm):
@@ -550,6 +529,10 @@ class SearchForm(forms.Form):
     search = forms.CharField(required=False, label='')
     search.widget.attrs['placeholder'] = 'Search'
 
+    def save(self):
+        search = self.cleaned_data.get('search', '')
+        return search
+
 
 class UserForm(forms.ModelForm):
 
@@ -567,12 +550,10 @@ class UserProfileForm(forms.ModelForm):
 
     class Meta:
         model = timepiece.UserProfile
-        exclude = ('user',)
+        exclude = ('user', 'hours_per_week')
 
 
-class ProjectSearchForm(forms.Form):
-    search = forms.CharField(required=False, label='')
-    search.widget.attrs['placeholder'] = 'Search'
+class ProjectSearchForm(SearchForm):
     status = forms.ChoiceField(required=False, choices=[], label='')
 
     def __init__(self, *args, **kwargs):

@@ -1,5 +1,5 @@
 {% extends 'timepiece/time-sheet/invoice/base.html' %}
-{% load timepiece_tags %}
+{% load timepiece_tags bootstrap_toolkit %}
 {% load url from future %}
 
 {% block title %}Invoices{% endblock %}
@@ -26,8 +26,20 @@
 
     <div class="row-fluid">
         <div class="span12">
-            <h3>Invoices</h3>
+            <form class="form-inline" accept-charset="UTF-8" method="get" action="">
+                {{ search_form|as_bootstrap:"inline" }}
+                <button type="submit" class="btn">Search</button>
+            </form>
+        </div>
+    </div>
+
+    {% load pagination_tags %}
+
+    <div class="row-fluid">
+        <div class="span12">
             {% if invoices %}
+                {% autopaginate invoices %}
+                {% paginate %}
                 <table class="table table-bordered table-striped table-condensed">
                     <thead>
                         <tr>
@@ -58,6 +70,7 @@
                         {% endfor %}
                     </tbody>
                 </table>
+                {% paginate %}
             {% else %}
                 <p>There are no invoices.</p>
             {% endif %}

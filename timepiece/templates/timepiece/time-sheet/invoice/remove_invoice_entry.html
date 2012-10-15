@@ -57,8 +57,8 @@
         <div class="span6">
             <form class="form-inline" method="post">
                 {% csrf_token %}
+                <input class="btn btn-primary" type='submit' name='submit' value='Remove Entry' />
                 <input class="btn" type='button' value='Cancel' onclick='history.go(-1)' />
-                <input class="btn" type='submit' name='submit' value='Remove Entry &rarr;' />
             </form>
         </div>
     </div>

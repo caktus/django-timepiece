@@ -1,8 +1,6 @@
 from django.contrib import admin
 from timepiece import models as timepiece
 
-from timepiece.projection import run_projection
-
 
 class ActivityAdmin(admin.ModelAdmin):
     model = timepiece.Activity
@@ -84,7 +82,7 @@ class ContractMilestoneInline(admin.TabularInline):
 
 class ProjectContractAdmin(admin.ModelAdmin):
     model = timepiece.ProjectContract
-    list_display = ('project', 'start_date', 'end_date', 'status',
+    list_display = ('_project', 'start_date', 'end_date', 'status',
                     'num_hours', 'hours_assigned', 'hours_unassigned',
                     'hours_worked')
     ordering = ('-end_date',)
@@ -93,24 +91,20 @@ class ProjectContractAdmin(admin.ModelAdmin):
     raw_id_fields = ('project',)
     list_per_page = 20
 
+    def _project(self, obj):
+        return obj.project.name
+    _project.admin_order_field = 'project__name'
+    _project.short_description = 'Project'
+
     def hours_unassigned(self, obj):
         return obj.num_hours - obj.hours_assigned
-
-    # disabled by copelco 1/23/2012
-    # def save_formset(self, request, form, formset, change):
-    #     instances = formset.save()
-    #     form.save_m2m()
-    #     run_projection()
-
-    # def delete_model(self, request, obj):
-    #     obj.delete()
-    #     run_projection()
 
 admin.site.register(timepiece.ProjectContract, ProjectContractAdmin)
 
 
 class ProjectContractInline(admin.TabularInline):
     model = timepiece.ProjectContract
+    extra = 0
 
 
 class ProjectAdmin(admin.ModelAdmin):
@@ -135,55 +129,20 @@ class ContractAssignmentAdmin(admin.ModelAdmin):
 
     def worked(self, obj):
         hours_worked = float(obj.hours_worked)
-        percent = hours_worked * 100.0 / float(obj.num_hours)
-        return "%.2f (%.2f%%)" % (hours_worked, percent)
+        if obj.num_hours:
+            percent = hours_worked * 100.0 / float(obj.num_hours)
+            return "%.2f (%.2f%%)" % (hours_worked, percent)
+        return ""
 
     def remaining(self, obj):
         return "%.2f" % (obj.hours_remaining,)
 
-    def save_model(self, request, obj, form, change):
-        obj.save()
-        run_projection()
-
-    def delete_model(self, request, obj):
-        obj.delete()
-        run_projection()
-
 admin.site.register(timepiece.ContractAssignment, ContractAssignmentAdmin)
-
-
-class PersonScheduleAdmin(admin.ModelAdmin):
-    list_display = ('user', 'hours_per_week', 'end_date', 'total_available',
-                    'scheduled', 'unscheduled')
-
-    def total_available(self, obj):
-        return "%.2f" % (obj.hours_available,)
-
-    def scheduled(self, obj):
-        return "%.2f" % (obj.hours_scheduled,)
-
-    def unscheduled(self, obj):
-        return "%.2f" % (obj.hours_available - float(obj.hours_scheduled),)
-
-    def save_model(self, request, obj, form, change):
-        obj.save()
-        run_projection()
-
-    def delete_model(self, request, obj):
-        obj.delete()
-        run_projection()
-
-admin.site.register(timepiece.PersonSchedule, PersonScheduleAdmin)
 
 
 class LocationAdmin(admin.ModelAdmin):
     list_display = ('id', 'name')
 admin.site.register(timepiece.Location, LocationAdmin)
-
-
-class AllocationAdmin(admin.ModelAdmin):
-    list_display = ('date', 'hours', 'hours_worked', 'hours_left',)
-admin.site.register(timepiece.AssignmentAllocation, AllocationAdmin)
 
 
 class ProjectHoursAdmin(admin.ModelAdmin):
@@ -195,3 +154,8 @@ class ProjectHoursAdmin(admin.ModelAdmin):
     _person.admin_order_field = 'user__last_name'
 
 admin.site.register(timepiece.ProjectHours, ProjectHoursAdmin)
+
+
+class UserProfileAdmin(admin.ModelAdmin):
+    list_display = ('user', 'hours_per_week')
+admin.site.register(timepiece.UserProfile, UserProfileAdmin)

@@ -3,11 +3,7 @@ from dateutil import rrule
 from dateutil.relativedelta import relativedelta
 from decimal import Decimal
 from itertools import groupby
-import time
 
-from django.http import HttpResponse, HttpResponseRedirect, Http404
-from django.shortcuts import render_to_response
-from django.template import RequestContext
 from django.template.defaultfilters import slugify
 from django.db.models import Sum, get_model
 from django.utils.functional import lazy
@@ -42,24 +38,11 @@ def slugify_uniquely(s, queryset=None, field='slug'):
     return new_slug
 
 
-DEFAULT_TIME_FORMATS = [
-    '%H:%M',        # 23:15         => 23:15:00
-    '%H:%M:%S',     # 05:50:21      => 05:50:21
-    '%I:%M:%S %p',  # 11:40:53 PM   => 23:40:53
-    '%I:%M %p',     # 6:21 AM       => 06:21:00
-    '%I %p',        # 1 pm          => 13:00:00
-    '%I:%M:%S%p',   # 8:45:52pm     => 23:45:52
-    '%I:%M%p',      # 12:03am       => 00:03:00
-    '%I%p',         # 12pm          => 12:00:00
-    '%H',           # 22            => 22:00:00
-]
-
-
 def add_timezone(value, tz=None):
-    """If the value is naive, then the timezone is added to it.  
+    """If the value is naive, then the timezone is added to it.
 
     If no timezone is given, timezone.get_current_timezone() is used.
-    """   
+    """
     if tz == None:
         tz = timezone.get_current_timezone()
     try:
@@ -69,29 +52,6 @@ def add_timezone(value, tz=None):
         dt = datetime.datetime.combine(value, datetime.time())
         return timezone.make_aware(dt, tz)
     return value
-
-
-def parse_time(time_str, input_formats=None):
-    """
-    This function will take a string with some sort of representation of time
-    in it.  The string will be parsed using a variety of formats until a match
-    is found for the format given.  The return value is a datetime.time object.
-    """
-    formats = input_formats or DEFAULT_TIME_FORMATS
-
-    # iterate over all formats until we find a match
-    for format in formats:
-        try:
-            # attempt to parse the time with the current format
-            value = time.strptime(time_str, format)
-        except ValueError:
-            continue
-        else:
-            # turn the time_struct into a datetime.time object
-            return add_timezone(datetime.time(*value[3:6]))
-
-    # return None if there's no matching format
-    return None
 
 
 def get_total_time(seconds):
@@ -150,28 +110,6 @@ def get_week_window(day):
     end = start + datetime.timedelta(weeks=1)
     weeks = generate_dates(end=end, start=start, by='week')
     return list(weeks)
-
-
-def date_filter(func):
-    def inner_decorator(request, *args, **kwargs):
-        from timepiece import forms as timepiece_forms
-        if 'to_date' in request.GET:
-            form = timepiece_forms.DateForm(request.GET)
-            if form.is_valid():
-                from_date, to_date = form.save()
-                status = form.cleaned_data.get('status')
-                activity = form.cleaned_data.get('activity')
-            else:
-                raise Http404
-        else:
-            form = timepiece_forms.DateForm()
-            today = datetime.date.today()
-            from_date = today.replace(day=1)
-            to_date = from_date + relativedelta(months=1)
-            status = activity = None
-        return func(request, form, from_date, to_date, status, activity,
-            *args, **kwargs)
-    return inner_decorator
 
 
 def get_hours(entries):
@@ -263,9 +201,10 @@ def user_date_totals(user_entries):
         d_entries = list(date_entries)
         name = ' '.join((d_entries[0]['user__first_name'],
                         d_entries[0]['user__last_name']))
+        user_id = d_entries[0]['user']
         hours = get_hours(d_entries)
         date_dict[date] = hours
-    return name, date_dict
+    return name, user_id, date_dict
 
 
 def project_totals(entries, date_headers, hour_type=None, overtime=False,
@@ -276,7 +215,7 @@ def project_totals(entries, date_headers, hour_type=None, overtime=False,
     totals = [0 for date in date_headers]
     rows = []
     for user, user_entries in groupby(entries, lambda x: x['user']):
-        name, date_dict = user_date_totals(user_entries)
+        name, user_id, date_dict = user_date_totals(user_entries)
         dates = []
         for index, day in enumerate(date_headers):
             if isinstance(day, datetime.datetime):
@@ -300,7 +239,7 @@ def project_totals(entries, date_headers, hour_type=None, overtime=False,
         if overtime:
             dates.append(find_overtime(dates))
         dates = [date or '' for date in dates]
-        rows.append((name, dates))
+        rows.append((name, user_id, dates))
     if total_column:
         totals.append(sum(totals))
     totals = [total or '' for total in totals]
@@ -325,12 +264,13 @@ def payroll_totals(month_work_entries, month_leave_entries):
     The last entry in each of the billable/nonbillable/leave lists contains a
     summary of the status. The last row contains sum totals for all other rows.
     """
-    def _get_name(entries):
+    def _get_user_info(entries):
         """Helper for getting the associated user's first and last name."""
         fname = entries[0].get('user__first_name', '') if entries else ''
         lname = entries[0].get('user__last_name', '') if entries else ''
         name = '{0} {1}'.format(fname, lname).strip()
-        return name
+        user_id = entries[0].get('user', None) if entries else None
+        return {'name': name, 'user_id': user_id}
 
     def _get_index(status, label):
         """
@@ -352,13 +292,13 @@ def payroll_totals(month_work_entries, month_leave_entries):
         totals[status].insert(-1, {'hours': Decimal(), 'percent': Decimal()})
         return len(labels[status]) - 1
 
-    def _construct_row(name):
+    def _construct_row(name, user_id=None):
         """Constructs an empty row for the given name."""
-        row = {'name': name}
+        row = {'name': name, 'user_id': user_id}
         for status in labels.keys():
             # Include an extra entry for summary.
             row[status] = [{'hours': Decimal(), 'percent': Decimal()}
-                    for i in range(len(labels[status])+1)]
+                    for i in range(len(labels[status]) + 1)]
         row['work_total'] = Decimal()
         row['grand_total'] = Decimal()
         return row
@@ -383,7 +323,7 @@ def payroll_totals(month_work_entries, month_leave_entries):
     for user, work_entries in groupby(month_work_entries, lambda e: e['user']):
 
         work_entries = list(work_entries)
-        row = _construct_row(_get_name(work_entries))
+        row = _construct_row(**_get_user_info(work_entries))
         rows.append(row)
         for entry in work_entries:
             status = 'billable' if entry['billable'] else 'nonbillable'
@@ -535,7 +475,7 @@ def process_weeks_entries(user, week_start, entries):
 
     def _initialize_in_projects(entry):
         """
-        Helper method which adds new project record to projects if there is 
+        Helper method which adds new project record to projects if there is
         no record for the project associated with this entry.
 
         Requires projects, proj_hours, and ProjectHours in scope.
@@ -562,7 +502,7 @@ def process_weeks_entries(user, week_start, entries):
     except PersonSchedule.DoesNotExist:
         sched = None
     total_hours = sched.hours_per_week if sched else Decimal('40.00')
-    
+
     all_worked = Decimal('0.00')
     all_remaining = total_hours
     all_overworked = Decimal('0.00')
@@ -595,7 +535,7 @@ def process_weeks_entries(user, week_start, entries):
         project['remaining'] = '%.2f' % round(project['remaining'], 2)
         project['overworked'] = '%.2f' % round(project['overworked'], 2)
         project['total_hours'] = '%.2f' % round(project['total_hours'], 2)
-        
+
     return {
         'total_hours': total_hours,
         'worked': all_worked,

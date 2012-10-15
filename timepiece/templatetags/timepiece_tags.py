@@ -1,11 +1,10 @@
-import urllib
 import datetime
-import time
-import calendar
+from dateutil.relativedelta import relativedelta
+from dateutil import rrule
 from decimal import Decimal
+import urllib
 
 from django import template
-from django.db.models import Sum
 from django.core.urlresolvers import reverse
 
 try:
@@ -13,11 +12,8 @@ try:
 except ImportError:
     from timepiece import timezone
 
-from dateutil.relativedelta import relativedelta
-from dateutil import rrule
-
 import timepiece.models as timepiece
-from timepiece.utils import get_total_time, get_week_start, get_month_start
+from timepiece.utils import get_week_start
 
 
 register = template.Library()
@@ -53,75 +49,56 @@ def bar_graph(context, name, worked, total, width=None, suffix=None):
         }
 
 
-@register.inclusion_tag('timepiece/time-sheet/_date_filters.html',
-    takes_context=True)
-def date_filters(context, options=None):
-    request = context['request']
-    from_slug = 'from_date'
-    to_slug = 'to_date'
-    use_range = True
+@register.inclusion_tag('timepiece/time-sheet/_date_filters.html')
+def date_filters(form_id, options=None, use_range=True):
     if not options:
         options = ('months', 'quarters', 'years')
-
-    def construct_url(from_date, to_date):
-        query = request.GET.copy()
-        query.pop(to_slug, None)
-        query.pop(from_slug, None)
-        query[to_slug] = to_date.strftime('%m/%d/%Y')
-        if use_range:
-            query[from_slug] = from_date.strftime('%m/%d/%Y')
-        return '%s?%s' % (request.path, query.urlencode())
-
     filters = {}
-    if 'months_no_range' in options:
-        filters['Past 12 Months'] = []
-        single_month = relativedelta(months=1)
-        from_date = datetime.date.today().replace(day=1) + \
-            relativedelta(months=1)
-        for x in range(12):
-            to_date = from_date
-            use_range = False
-            from_date = to_date - single_month
-            url = construct_url(from_date, to_date - relativedelta(days=1))
-            filters['Past 12 Months'].append(
-                (from_date.strftime("%b '%y"), url))
-        filters['Past 12 Months'].reverse()
+    date_format = '%m/%d/%Y'
+    today = datetime.date.today()
+    single_day = relativedelta(days=1)
+    single_month = relativedelta(months=1)
+    single_year = relativedelta(years=1)
 
     if 'months' in options:
         filters['Past 12 Months'] = []
-        single_month = relativedelta(months=1)
-        from_date = datetime.date.today().replace(day=1) + \
-            relativedelta(months=1)
+        from_date = today.replace(day=1) + single_month
         for x in range(12):
             to_date = from_date
             from_date = to_date - single_month
-            url = construct_url(from_date, to_date - relativedelta(days=1))
-            filters['Past 12 Months'].append(
-                (from_date.strftime("%b '%y"), url))
+            to_date = to_date - single_day
+            filters['Past 12 Months'].append((
+                    from_date.strftime("%b '%y"),
+                    from_date.strftime(date_format) if use_range else "",
+                    to_date.strftime(date_format)
+            ))
         filters['Past 12 Months'].reverse()
 
     if 'years' in options:
-        start = datetime.date.today().year - 3
-
         filters['Years'] = []
+        start = today.year - 3
         for year in range(start, start + 4):
             from_date = datetime.datetime(year, 1, 1)
-            to_date = from_date + relativedelta(years=1)
-            url = construct_url(from_date, to_date - relativedelta(days=1))
-            filters['Years'].append((str(from_date.year), url))
+            to_date = from_date + single_year - single_day
+            filters['Years'].append((
+                    str(from_date.year),
+                    from_date.strftime(date_format) if use_range else "",
+                    to_date.strftime(date_format)
+            ))
 
     if 'quarters' in options:
         filters['Quarters (Calendar Year)'] = []
-        to_date = datetime.date(datetime.date.today().year - 1, 1, 1)
+        to_date = datetime.date(today.year - 1, 1, 1) - single_day
         for x in range(8):
-            from_date = to_date
-            to_date = from_date + relativedelta(months=3)
-            url = construct_url(from_date, to_date - relativedelta(days=1))
-            filters['Quarters (Calendar Year)'].append(
-                ('Q%s %s' % ((x % 4) + 1, from_date.year), url)
-            )
+            from_date = to_date + single_day
+            to_date = from_date + relativedelta(months=3) - single_day
+            filters['Quarters (Calendar Year)'].append((
+                    'Q%s %s' % ((x % 4) + 1, from_date.year),
+                    from_date.strftime(date_format) if use_range else "",
+                    to_date.strftime(date_format)
+            ))
 
-    return {'filters': filters}
+    return {'filters': filters, 'form_id': form_id}
 
 
 @register.inclusion_tag('timepiece/time-sheet/invoice/_invoice_subheader.html',
@@ -131,53 +108,6 @@ def invoice_subheaders(context, current):
         'current': current,
         'invoice': context['invoice'],
     }
-
-
-@register.simple_tag
-def hours_for_assignment(assignment, date):
-    end = date + relativedelta(days=5)
-    blocks = assignment.blocks.filter(
-        date__gte=date, date__lte=end).select_related()
-    hours = blocks.aggregate(hours=Sum('hours'))['hours']
-    if not hours:
-        hours = ''
-    return hours
-
-
-@register.simple_tag
-def total_allocated(assignment):
-    hours = assignment.blocks.aggregate(hours=Sum('hours'))['hours']
-    if not hours:
-        hours = ''
-    return hours
-
-
-@register.simple_tag
-def hours_for_week(user, date):
-    end = date + relativedelta(days=5)
-    blocks = timepiece.AssignmentAllocation.objects.filter(
-                                                 assignment__user=user,
-                                                 date__gte=date, date__lte=end)
-    hours = blocks.aggregate(hours=Sum('hours'))['hours']
-    if not hours:
-        hours = ''
-    return hours
-
-
-@register.simple_tag
-def weekly_hours_worked(rp, date):
-    hours = rp.hours_in_week(date)
-    if not hours:
-        hours = ''
-    return hours
-
-
-@register.simple_tag
-def monthly_overtime(rp, date):
-    hours = rp.total_monthly_overtime(date)
-    if not hours:
-        hours = ''
-    return hours
 
 
 @register.simple_tag
@@ -194,14 +124,6 @@ def get_active_hours(entry):
         else:
             entry.end_time = timezone.now()
     return Decimal('%.2f' % round(entry.total_hours, 2))
-
-
-@register.simple_tag
-def show_cal(from_date, offset=0):
-    date = get_month_start(from_date)
-    date = date + relativedelta(months=offset)
-    html_cal = calendar.HTMLCalendar(calendar.SUNDAY)
-    return html_cal.formatmonth(date.year, date.month)
 
 
 @register.simple_tag
@@ -229,9 +151,6 @@ def timesheet_url(type, pk, date):
         name = 'view_person_time_sheet'
 
     url = reverse(name, args=(pk,))
-    params = {
-        'month': date.month,
-        'year': date.year
-    }
+    params = {'month': date.month, 'year': date.year} if date else {}
 
     return '?'.join((url, urllib.urlencode(params),))

@@ -309,69 +309,71 @@ $(function() {
             }
         },
 
-        onChange: function(changes) {
-            if(changes.length > 1) { return; }
+        onChange: function(changes, source) {
+            if(source === 'loadData') { return; }
+            
+            for(j = 0; j < changes.length; j++) {
+                var row = changes[j][0],
+                    col = changes[j][1],
+                    before = changes[j][2],
+                    after = changes[j][3],
+                    project, user, hours, i;
 
-            var row = changes[0][0],
-                col = changes[0][1],
-                before = changes[0][2],
-                after = changes[0][3],
-                project, user, hours, i;
+                if(row === 0) {
+                    user = users.get_by_name(before);
 
-            if(row === 0) {
-                user = users.get_by_name(before);
+                    if(user && after === '') {
+                        users.remove(user);
 
-                if(user && after === '') {
-                    users.remove(user);
+                        hours = project_hours.get_by_key('user', user);
 
-                    hours = project_hours.get_by_key('user', user);
+                        for(i = 0; i < hours.length; i++) {
+                            project_hours.remove(hours[i]);
+                        }
 
-                    for(i = 0; i < hours.length; i++) {
-                        project_hours.remove(hours[i]);
+                        $('.dataTable').handsontable('alter', 'remove_col', user.col);
+                    }
+                } else if(col === 0) {
+                    project = projects.get_by_name(before);
+
+                    if(project && after === '') {
+                        projects.remove(project);
+
+                        hours = project_hours.get_by_key('project', project);
+
+                        for(i = 0; i < hours.length; i++) {
+                            project_hours.remove(hours[i]);
+                        }
+
+                        $('.dataTable').handsontable('alter', 'remove_row', project.row);
+                    }
+                } else if(row >= 1 && col >= 1) {
+                    function deleteHours() {
+                        $.del(ajax_url + hours.id + '/', function(data, status, xhr) {
+                            updateTotals(col, -hours.hours);
+
+                            project_hours.remove(hours);
+                            $('.dataTable').handsontable('setDataAtCell', row, col, '');
+                        }, function(xhr, status, error) {
+                            $('.dataTable').handsontable('setDataAtCell', row, col, before);
+                            showError('Could not delete the project hours. Please notify an administrator.');
+                        });
                     }
 
-                    $('.dataTable').handsontable('alter', 'remove_col', user.col);
-                }
-            } else if(col === 0) {
-                project = projects.get_by_name(before);
+                    hours = project_hours.get_by_row_col(row, col);
 
-                if(project && after === '') {
-                    projects.remove(project);
-
-                    hours = project_hours.get_by_key('project', project);
-
-                    for(i = 0; i < hours.length; i++) {
-                        project_hours.remove(hours[i]);
+                    if(hours && after === '') {
+                        // If the hours have been removed from the table, delete from
+                        // the database
+                        deleteHours();
+                    } else if(hours && after == '0') {
+                        // If the hours have been zeroed out in the table, delete from
+                        // the database
+                        deleteHours();
                     }
-
-                    $('.dataTable').handsontable('alter', 'remove_row', project.row);
+                } else {
+                    return;
                 }
-            } else if(row >= 1 && col >= 1) {
-                function deleteHours() {
-                    $.del(ajax_url + hours.id + '/', function(data, status, xhr) {
-                        updateTotals(col, -hours.hours);
-
-                        project_hours.remove(hours);
-                        $('.dataTable').handsontable('setDataAtCell', row, col, '');
-                    }, function(xhr, status, error) {
-                        $('.dataTable').handsontable('setDataAtCell', row, col, before);
-                        showError('Could not delete the project hours. Please notify an administrator.');
-                    });
-                }
-
-                hours = project_hours.get_by_row_col(row, col);
-
-                if(hours && after === '') {
-                    // If the hours have been removed from the table, delete from
-                    // the database
-                    deleteHours();
-                } else if(hours && after == '0') {
-                    // If the hours have been zeroed out in the table, delete from
-                    // the database
-                    deleteHours();
-                }
-            } else {
-                return;
             }
         }
     });

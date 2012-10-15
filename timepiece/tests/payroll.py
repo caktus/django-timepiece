@@ -28,7 +28,8 @@ class PayrollTest(TimepieceDataTestCase):
             'sick': self.sick.pk, 'vacation': self.vacation.pk
         }
         self.next = utils.add_timezone(datetime.datetime(2011, 6, 1))
-        self.overtime_before = utils.add_timezone(datetime.datetime(2011, 4, 29))
+        self.overtime_before = utils.add_timezone(
+            datetime.datetime(2011, 4, 29))
         self.first = utils.add_timezone(datetime.datetime(2011, 5, 1))
         self.first_week = utils.add_timezone(datetime.datetime(2011, 5, 2))
         self.middle = utils.add_timezone(datetime.datetime(2011, 5, 18))
@@ -110,7 +111,7 @@ class PayrollTest(TimepieceDataTestCase):
         self.client.login(username='superuser', password='abc')
         response = self.client.get(self.url, self.args)
         weekly_totals = response.context['weekly_totals']
-        self.assertEqual(weekly_totals[0][0][0][1],
+        self.assertEqual(weekly_totals[0][0][0][2],
                          [Decimal('22.00'),
                           Decimal('11.00'), '',
                           Decimal('11.00'),
@@ -135,7 +136,7 @@ class PayrollTest(TimepieceDataTestCase):
                            overtime=Decimal('30.00')):
             self.client.login(username='superuser', password='abc')
             response = self.client.get(self.url, self.args)
-            weekly_totals = response.context['weekly_totals'][0][0][0][1]
+            weekly_totals = response.context['weekly_totals'][0][0][0][2]
             self.assertEqual(weekly_totals[0], week0)
             self.assertEqual(weekly_totals[1], week1)
             self.assertEqual(weekly_totals[5], overtime)

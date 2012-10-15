@@ -1,12 +1,12 @@
 {% extends "timepiece/project/base.html" %}
-{% load timepiece_tags markup %}
-{% load bootstrap_toolkit %}
+{% load url from future %}
+{% load timepiece_tags markup bootstrap_toolkit %}
 
 {% block title %}{{ project }}{% endblock %}
 
 {% block crumbs %}
     {{ block.super }}
-    <li><span class="divider">/</span> <a href="{% url view_project project.pk %}">Project Detail</a></li>
+    <li><span class="divider">/</span> <a href="{% url 'view_project' project.pk %}">Project Detail</a></li>
 {% endblock crumbs %}
 
 {% block content %}
@@ -15,14 +15,14 @@
             <h2>{{ project }}</h2>
             <ul class="unstyled subnav">
                 {% if perms.timepiece.change_project %}
-                    <li><a href='{% url edit_project project_id=project.id %}'>Edit project</a></li>
-                    <li><a href="{% url delete_project project.id %}">Delete project</a></li>
+                    <li><a href='{% url 'edit_project' project_id=project.id %}'>Edit project</a></li>
+                    <li><a href="{% url 'delete_project' project.id %}">Delete project</a></li>
                 {% endif %}
                 {% if perms.timepiece.view_businesses %}
-                    <li><a href='{% url view_business business=project.business.id %}'>Return to {{ project.business.name }}</a></li>
+                    <li><a href='{% url 'view_business' business=project.business.id %}'>Return to {{ project.business.name }}</a></li>
                 {% endif %}
                 {% if perms.timepiece.view_project_time_sheet %}
-                    <li><a href='{% url project_time_sheet project.id %}'>Project Time Sheet</a></li>
+                    <li><a href='{% url 'project_time_sheet' project.id %}'>Project Time Sheet</a></li>
                 {% endif %}
             </ul>
         </div>
@@ -68,17 +68,17 @@
                 <li>
                     {{ user.get_full_name }}
                     {% if perms.timepiece.change_projectrelationship %}
-                        <a title="Edit {{ user.get_full_name }}'s relationship to {{ project }}" href='{% url edit_project_relationship project_id=project.id,user_id=user.id %}?next={% url view_project project_id=project.id %}'><img alt="Edit {{ user.get_full_name }}'s relationship to {{ project }}" src='{{ FAMFAMFAM_URL }}pencil.png' /></a>
+                        <a title="Edit {{ user.get_full_name }}'s relationship to {{ project }}" href='{% url 'edit_project_relationship' project_id=project.id user_id=user.id %}?next={% url 'view_project' project_id=project.id %}'><img alt="Edit {{ user.get_full_name }}'s relationship to {{ project }}" src='{{ FAMFAMFAM_URL }}pencil.png' /></a>
                     {% endif %}
                     {% if perms.timepiece.delete_projectrelationship %}
-                        <a title='Remove {{ user.get_full_name }}' href='{% url remove_user_from_project project_id=project.id,user_id=user.id %}?next={% url view_project project_id=project.id %}'><img alt='Remove {{ user.get_full_name }}' src='{{ FAMFAMFAM_URL }}/delete.png' /></a>
+                        <a title='Remove {{ user.get_full_name }}' href='{% url 'remove_user_from_project' project_id=project.id user_id=user.id %}?next={% url 'view_project' project_id=project.id %}'><img alt='Remove {{ user.get_full_name }}' src='{{ FAMFAMFAM_URL }}/delete.png' /></a>
                     {% endif %}
                 </li>
             {% endfor %}
             {% endifnotequal %}
             </ul>
             {% if perms.timepiece.add_projectrelationship %}
-            <form class="form-inline" action='{% url add_user_to_project project_id=project.id %}?next={% url view_project project_id=project.id %}' method="post" accept-charset="utf-8">
+            <form class="form-inline" action='{% url 'add_user_to_project' project_id=project.id %}?next={% url 'view_project' project_id=project.id %}' method="post" accept-charset="utf-8">
                 {% csrf_token %}
                 {{ add_user_form|as_bootstrap:"inline" }}
                 <input class="btn" type="submit" name="submit" id="submit" value="Add" />

@@ -1,6 +1,7 @@
 {% extends "timepiece/base.html" %}
+{% load url from future %}
 
 {% block crumbs %}
     {{ block.super }}
-    <li><span class="divider">/</span> <a href="{% url list_projects %}">Projects</a></li>
+    <li><span class="divider">/</span> <a href="{% url 'list_projects' %}">Projects</a></li>
 {% endblock crumbs %}

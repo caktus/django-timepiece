@@ -29,7 +29,7 @@
 
     <div class="row-fluid">
         <div class="span12">
-            {% date_filters "months_no_range" %}
+            {% date_filters "date-filter" "months" 0 %}
         </div>
     </div>
 
@@ -57,7 +57,7 @@
                     {% regroup type.list by project__name as project_list %}
                     {% for project in project_list %}
                         <tr>
-                            <td>{{ project.grouper }}</td>
+                            <td><a href="{% timesheet_url 'project' project.list.0.project__pk to_date %}">{{ project.grouper }}</a></td>
                             <td>{{ project.list.0.project__status__label|title }}</td>
                             <td class="hours">{% get_uninvoiced_hours project.list %}</td>
                             <td>

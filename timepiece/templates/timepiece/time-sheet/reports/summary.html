@@ -113,7 +113,13 @@
                     <tbody>
                         {% for row in monthly_totals %}
                             <tr>
-                                <th class='name_col'>{{ row.name }}</th>
+                                <th class='name_col'>
+                                    {% if row.user_id %}
+                                        <a href="{% timesheet_url 'user' row.user_id from_date %}">{{ row.name }}</a>
+                                    {% else %}
+                                        {{ row.name }}
+                                    {% endif %}
+                                </th>
                                 {% if labels.billable %}
                                     {% for entry in row.billable %}
                                         <td class="hours">{% if entry.hours %}{{ entry.hours|floatformat:2 }}{% endif %}</td>
@@ -163,9 +169,15 @@
                     </thead>
                     <tbody>
                         {% for rows, totals in weekly_totals %}
-                            {% for name, hours in rows %}
+                            {% for name, user_id, hours in rows %}
                                 <tr>
-                                    <th class='name_col'>{{name}}</th>
+                                    <th class='name_col'>
+                                        {% if user_id %}
+                                            <a href="{% timesheet_url 'user' user_id from_date %}">{{ name }}</a>
+                                        {% else %}
+                                            {{ name }}
+                                        {% endif %}
+                                    </th>
                                     {% for num in hours %}
                                         <td class='hours' title='{{name}}'>{{num|floatformat:2}}</td>
                                     {% endfor %}
