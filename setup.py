@@ -1,5 +1,17 @@
 from setuptools import setup, find_packages
 
+
+required_packages = [
+    'django>=1.3',
+    'psycopg2==2.4.1',
+    'python-dateutil==1.5',
+    'django-pagination==1.0.7',
+    'django-selectable==0.4.1',
+    'django-bootstrap-toolkit==2.5.6',
+    'django-compressor==1.2',
+    'pytz==2012c'
+]
+
 setup(
     name='django-timepiece',
     version=__import__('timepiece').__version__,
@@ -24,23 +36,7 @@ setup(
         'Development Status :: 4 - Beta',
         'Operating System :: OS Independent',
     ],
-    tests_require=[
-        'django==1.4',
-        'python-dateutil==1.5',
-        'django-pagination==1.0.7',
-        'django-selectable==0.4.1',
-        'django-bootstrap-toolkit==2.5.6',
-        'django-compressor==1.1.2',
-        'pytz==2012c'
-    ],
+    tests_require=required_packages,
     test_suite='run_tests.run',
-    install_requires=[
-        'psycopg2==2.4.1',
-        'python-dateutil==1.5',
-        'django-pagination==1.0.7',
-        'django-selectable==0.4.1',
-        'django-bootstrap-toolkit==2.5.6',
-        'django-compressor==1.1.2',
-        'pytz==2012c'
-    ],
+    install_requires=required_packages,
 )
