@@ -5,25 +5,11 @@ from os import path
 
 PROJECT_PATH = path.abspath('%s' % path.dirname(__file__))
 
-DEBUG = True
-TEMPLATE_DEBUG = DEBUG
-
 ADMINS = (
     # ('Your Name', 'your_email@example.com'),
 )
 
 MANAGERS = ADMINS
-
-DATABASES = {
-    'default': {
-        'ENGINE': 'django.db.backends.postgresql_psycopg2',
-        'NAME': 'timepiece',
-        'USER': 'timepiece',
-        'PASSWORD': '',
-        'HOST': '',
-        'PORT': '',
-    }
-}
 
 # Local time zone for this installation. Choices can be found here:
 # http://en.wikipedia.org/wiki/List_of_tz_zones_by_name
@@ -82,16 +68,6 @@ STATICFILES_FINDERS = (
     'compressor.finders.CompressorFinder',
 )
 
-# Make this unique, and don't share it with anybody.
-SECRET_KEY = 'oap0ahyb%_iitq1un(4j!#v81_%6jl$wefeh@$^=metg6w8pr^'
-
-# List of callables that know how to import templates from various sources.
-TEMPLATE_LOADERS = (
-    'django.template.loaders.filesystem.Loader',
-    'django.template.loaders.app_directories.Loader',
-#     'django.template.loaders.eggs.Loader',
-)
-
 MIDDLEWARE_CLASSES = (
     'django.middleware.common.CommonMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
@@ -103,6 +79,11 @@ MIDDLEWARE_CLASSES = (
     # 'django.middleware.clickjacking.XFrameOptionsMiddleware',
 )
 
+# Make this unique, and don't share it with anybody.
+SECRET_KEY = 'oap0ahyb%_iitq1un(4j!#v81_%6jl$wefeh@$^=metg6w8pr^'
+
+ROOT_URLCONF = 'example_project.urls'
+
 TEMPLATE_CONTEXT_PROCESSORS = (
     'django.contrib.auth.context_processors.auth',
     'django.core.context_processors.debug',
@@ -111,16 +92,26 @@ TEMPLATE_CONTEXT_PROCESSORS = (
     'django.core.context_processors.static',
     'django.contrib.messages.context_processors.messages',
     'django.core.context_processors.request',
+    'timepiece.context_processors.quick_search',
+    'timepiece.context_processors.timepiece_settings',
+    'timepiece.context_processors.active_entries',
+    'timepiece.context_processors.extra_nav',
 )
-
-ROOT_URLCONF = 'example_project.urls'
-
-# Python dotted path to the WSGI application used by Django's runserver.
-WSGI_APPLICATION = 'example_project.wsgi.application'
 
 TEMPLATE_DIRS = (
     '%s/templates' % PROJECT_PATH,
 )
+
+# List of callables that know how to import templates from various sources.
+TEMPLATE_LOADERS = (
+    'django.template.loaders.filesystem.Loader',
+    'django.template.loaders.app_directories.Loader',
+#     'django.template.loaders.eggs.Loader',
+)
+
+# Python dotted path to the WSGI application used by Django's runserver.
+WSGI_APPLICATION = 'example_project.wsgi.application'
+
 
 INSTALLED_APPS = (
     'django.contrib.auth',
@@ -137,13 +128,6 @@ INSTALLED_APPS = (
     'bootstrap_toolkit',
     'selectable',
 )
-
-# Compressor specific settings
-COMPRESS_PRECOMPILERS = (
-    ('text/less', 'lessc {infile} {outfile}'),
-)
-
-COMPRESS_ROOT = '%s/static/' % PROJECT_PATH
 
 # A sample logging configuration. The only tangible logging
 # performed by this configuration is to send an email to
@@ -173,3 +157,17 @@ LOGGING = {
         },
     }
 }
+
+# compressor settings
+COMPRESS_PRECOMPILERS = (
+    ('text/less', 'lessc {infile} {outfile}'),
+)
+COMPRESS_ROOT = '%s/static/' % PROJECT_PATH
+
+# django-timepiece settings
+TIMEPIECE_TIMESHEET_EDITABLE_DAYS = 3
+TIMEPIECE_DEFAULT_LOCATION_SLUG = None
+TIMEPIECE_PROJECTS = {}
+EXTRA_NAV = {}
+TRAC_URL = '/%s'  # Example: TRAC_URL = 'https://projects.example.com/%s/'
+FAMFAMFAM_URL = STATIC_URL + 'images/icons/'

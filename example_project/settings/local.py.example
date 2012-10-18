@@ -1,0 +1,17 @@
+from .base import *
+
+
+DEBUG = True
+
+TEMPLATE_DEBUG = True
+
+DATABASES = {
+    'default': {
+        'ENGINE': 'django.db.backends.postgresql_psycopg2',
+        'NAME': 'timepiece',
+        'USER': 'timepiece',
+        'PASSWORD': '',
+        'HOST': '',
+        'PORT': '',
+    }
+}

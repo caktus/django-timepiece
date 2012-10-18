@@ -49,37 +49,43 @@ Installation
     # Use npm to install less:
     $ npm install less -g
 
-#. Add `timepiece` and its dependencies to ``INSTALLED_APPS`` in `settings.py` and run syncdb::
+#. We provide an example project template in the ``example_project`` directory. Primary settings are in ``example_project.settings.base`` and local settings are in ``example_project.settings.local``. If you are using an existing project, you will need to make the following changes to your settings:
 
-    INSTALLED_APPS = (
-        ...
-        'bootstrap_toolkit',
-        'compressor',
-        'pagination',
-        'selectable',
-        'timepiece',
-        ...
-    )
+    #. Add `timepiece` and its dependencies to ``INSTALLED_APPS`` in your settings file::
 
-#. Add `django.core.context_processors.request` and django-timepiece context processors to ``TEMPLATE_CONTEXT_PROCESSORS``::
+        INSTALLED_APPS = (
+            ...
+            'bootstrap_toolkit',
+            'compressor',
+            'pagination',
+            'selectable',
+            'timepiece',
+            ...
+        )
 
-    TEMPLATE_CONTEXT_PROCESSORS = (
-        "django.contrib.auth.context_processors.auth",
-        "django.core.context_processors.debug",
-        "django.core.context_processors.i18n",
-        "django.core.context_processors.media",
-        "django.contrib.messages.context_processors.messages",
-        "django.core.context_processors.request",       # <----
-        "timepiece.context_processors.extra_nav",       # <----
-        "timepiece.context_processors.active_entries",  # <----
-    )
+    #. Add `django.core.context_processors.request` and django-timepiece context processors to ``TEMPLATE_CONTEXT_PROCESSORS``::
 
-#. Configure compressor::
+        TEMPLATE_CONTEXT_PROCESSORS = (
+            "django.contrib.auth.context_processors.auth",
+            "django.core.context_processors.debug",
+            "django.core.context_processors.i18n",
+            "django.core.context_processors.media",
+            "django.contrib.messages.context_processors.messages",
+            "django.core.context_processors.request",           # <----
+            "timepiece.context_processors.extra_nav",           # <----
+            "timepiece.context_processors.active_entries",      # <----
+            "timepiece.context_processors.timepiece_settings",  # <----
+            "timepiece.context_processors.quick_search",        # <----
+        )
 
-    COMPRESS_PRECOMPILERS = (
-        ('text/less', 'lessc {infile} {outfile}'),
-    )
-    COMPRESS_ROOT = '%s/static/' % PROJECT_PATH
+    #. Configure compressor::
+
+        COMPRESS_PRECOMPILERS = (
+            ('text/less', 'lessc {infile} {outfile}'),
+        )
+        COMPRESS_ROOT = '%s/static/' % PROJECT_PATH
+
+#. Run ``syncdb``.
 
 #. Add URLs for django-timepiece and selectable to `urls.py`, e.g.::
 
