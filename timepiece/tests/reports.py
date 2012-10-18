@@ -440,7 +440,7 @@ class TestBillableHours(ReportsHelperBase):
         self.dates_data = ['12/27/2010', '01/03/2011']
 
     def get_entries_data(self):
-        projects = getattr(settings, 'TIMEPIECE_PROJECTS', {})
+        projects = utils.get_setting('TIMEPIECE_PROJECTS')
         # Account for the day added by the form
         query = Q(end_time__gt=utils.get_week_start(self.from_date),
             end_time__lt=self.to_date + relativedelta(days=1))

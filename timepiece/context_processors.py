@@ -1,14 +1,11 @@
-from django.conf import settings
-
 from timepiece import models as timepiece
+from timepiece import utils
 from timepiece.forms import QuickSearchForm
 
 
 def timepiece_settings(request):
-    default_famfamfam_url = settings.STATIC_URL + 'images/icons/'
-    famfamfam_url = getattr(settings, 'FAMFAMFAM_URL', default_famfamfam_url)
     context = {
-        'FAMFAMFAM_URL': famfamfam_url,
+        'FAMFAMFAM_URL': utils.get_setting('FAMFAMFAM_URL'),
     }
     return context
 
@@ -36,6 +33,6 @@ def active_entries(request):
 
 def extra_nav(request):
     context = {
-        'extra_nav': getattr(settings, 'EXTRA_NAV', {})
+        'extra_nav': utils.get_setting('EXTRA_NAV'),
     }
     return context

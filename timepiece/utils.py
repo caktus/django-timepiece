@@ -4,18 +4,33 @@ from dateutil.relativedelta import relativedelta
 from decimal import Decimal
 from itertools import groupby
 
-from django.template.defaultfilters import slugify
-from django.db.models import Sum, get_model
-from django.utils.functional import lazy
+from django.conf import settings
 from django.core.urlresolvers import reverse
+from django.db.models import Sum, get_model
+from django.template.defaultfilters import slugify
+from django.utils.functional import lazy
 
 try:
     from django.utils import timezone
 except ImportError:
     from timepiece import timezone
 
+from timepiece.defaults import TimepieceDefaults
+
 
 reverse_lazy = lazy(reverse, str)
+
+
+defaults = TimepieceDefaults()
+def get_setting(name, **kwargs):
+    if hasattr(settings, name):
+        return getattr(settings, name)
+    if hasattr(kwargs, 'default'):
+        return kwargs['default']
+    if hasattr(defaults, name):
+        return getattr(defaults, name)
+    msg = '{0} must be specified in your project settings.'.format(name)
+    raise AttributeError(msg)
 
 
 def slugify_uniquely(s, queryset=None, field='slug'):
