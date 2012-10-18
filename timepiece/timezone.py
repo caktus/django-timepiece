@@ -1,7 +1,7 @@
 import datetime
 import pytz
 
-from timepiece import utils
+from django.conf import settings
 
 
 def make_aware(value, tz):
@@ -18,7 +18,7 @@ def now():
     """
     If USE_TZ is set (default on Django 1.4), return an aware datetime
     """
-    if utils.get_setting('USE_TZ', None):
+    if getattr(settings, 'USE_TZ', None):
         return datetime.datetime.utcnow().replace(tzinfo=pytz.utc)
     return datetime.datetime.now()
 
@@ -41,4 +41,5 @@ def get_current_timezone():
     """
     Return the timezone set in project settings or Eastern time by default
     """
-    return pytz.timezone(utils.get_setting('TIMEZONE', 'US/Eastern'))
+    tz = getattr(settings, 'TIME_ZONE', 'US/Eastern')
+    return pytz.timezone(tz)

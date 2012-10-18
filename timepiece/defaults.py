@@ -4,13 +4,13 @@ from django.conf import settings
 class TimepieceDefaults(object):
 
     @property
-    def FAMFAMFAM_URL(self):
+    def TIMEPIECE_ICON_URL(self):
         return getattr(settings, 'STATIC_URL', '/') + 'images/icons/'
 
-    EXTRA_NAV = {}
+    TIMEPIECE_EXTRA_NAV = {}
 
     TIMEPIECE_DEFAULT_LOCATION_SLUG = None
 
-    TIMEPIECE_PROJECTS = {}
+    TIMEPIECE_PAID_LEAVE_PROJECTS = {}
 
-    TRAC_URL = lambda slug: '/%s' % slug
+    TIMEPIECE_TRACKER_URL_FUNC = lambda slug: '/%s' % slug

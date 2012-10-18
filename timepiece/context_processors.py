@@ -5,7 +5,7 @@ from timepiece.forms import QuickSearchForm
 
 def timepiece_settings(request):
     context = {
-        'FAMFAMFAM_URL': utils.get_setting('FAMFAMFAM_URL'),
+        'TIMEPIECE_ICON_URL': utils.get_setting('TIMEPIECE_ICON_URL'),
     }
     return context
 
@@ -33,6 +33,6 @@ def active_entries(request):
 
 def extra_nav(request):
     context = {
-        'extra_nav': utils.get_setting('EXTRA_NAV'),
+        'timepiece_extra_nav': utils.get_setting('TIMEPIECE_EXTRA_NAV'),
     }
     return context

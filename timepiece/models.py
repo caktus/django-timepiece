@@ -113,7 +113,8 @@ class Project(models.Model):
         return self.name
 
     def trac_url(self):
-        return utils.get_setting('TRAC_URL')(self.tracker_url)
+        func = utils.get_setting('TIMEPIECE_TRACKER_URL_FUNC')
+        return func(self.tracker_url) if func else None
 
 
 class RelationshipType(models.Model):
@@ -338,7 +339,7 @@ class EntryWorkedManager(models.Manager):
 
     def get_query_set(self):
         qs = EntryQuerySet(self.model)
-        projects = utils.get_setting('TIMEPIECE_PROJECTS')
+        projects = utils.get_setting('TIMEPIECE_PAID_LEAVE_PROJECTS')
         return qs.exclude(project__in=projects.values())
 
 
@@ -652,12 +653,13 @@ class Entry(models.Model):
     def summary(user, date, end_date):
         """
         Returns a summary of hours worked in the given time frame, for this
-        user.  The setting TIMEPIECE_PROJECTS can be used to separate out hours
-        for paid leave that should not be included in the total worked (e.g.,
-        sick time, vacation time, etc.).  Those hours will be added to the
-        summary separately using the dictionary key set in TIMEPIECE_PROJECTS.
+        user.  The setting TIMEPIECE_PAID_LEAVE_PROJECTS can be used to
+        separate out hours for paid leave that should not be included in the
+        total worked (e.g., sick time, vacation time, etc.).  Those hours will
+        be added to the summary separately using the dictionary key set in
+        TIMEPIECE_PAID_LEAVE_PROJECTS.
         """
-        projects = utils.get_setting('TIMEPIECE_PROJECTS')
+        projects = utils.get_setting('TIMEPIECE_PAID_LEAVE_PROJECTS')
         entries = user.timepiece_entries.filter(
             end_time__gt=date, end_time__lt=end_date)
         data = {

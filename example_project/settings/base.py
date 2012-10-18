@@ -163,10 +163,3 @@ COMPRESS_PRECOMPILERS = (
     ('text/less', 'lessc {infile} {outfile}'),
 )
 COMPRESS_ROOT = '%s/static/' % PROJECT_PATH
-
-# django-timepiece settings
-TIMEPIECE_DEFAULT_LOCATION_SLUG = None
-TIMEPIECE_PROJECTS = {}
-EXTRA_NAV = {}
-TRAC_URL = '/%s'  # Example: TRAC_URL = 'https://projects.example.com/%s/'
-FAMFAMFAM_URL = STATIC_URL + 'images/icons/'

@@ -1210,7 +1210,7 @@ def payroll_summary(request):
     if year_month_form.is_valid():
         from_date, to_date = year_month_form.save()
     last_billable = utils.get_last_billable_day(from_date)
-    projects = utils.get_setting('TIMEPIECE_PROJECTS')
+    projects = utils.get_setting('TIMEPIECE_PAID_LEAVE_PROJECTS')
     weekQ = Q(end_time__gt=utils.get_week_start(from_date),
               end_time__lt=last_billable + datetime.timedelta(days=1))
     monthQ = Q(end_time__gt=from_date, end_time__lt=to_date)
@@ -1403,7 +1403,7 @@ class ReportMixin(object):
         if project_form.is_valid():
             trunc = project_form.cleaned_data['trunc']
             if not project_form.cleaned_data['paid_leave']:
-                projects = utils.get_setting('TIMEPIECE_PROJECTS')
+                projects = utils.get_setting('TIMEPIECE_PAID_LEAVE_PROJECTS')
                 query &= ~Q(project__in=projects.values())
             if project_form.cleaned_data['pj_select']:
                 query &= Q(project__in=project_form.cleaned_data['pj_select'])
