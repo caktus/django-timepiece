@@ -49,9 +49,11 @@ Installation
     # Use npm to install less:
     $ npm install less -g
 
-#. We provide an example project template in the ``example_project`` directory. Primary settings are in ``example_project.settings.base`` and local settings are in ``example_project.settings.local``. If you are using an existing project, you will need to make the following changes to your settings:
+#. If you are starting from the included example project, copy the example local settings file at `example_project/settings/local.py.example` to `example_project/settings/local.py`.
 
-    #. Add `timepiece` and its dependencies to ``INSTALLED_APPS`` in your settings file::
+   If you are using an existing project, you will need to make the following changes to your settings:
+
+    - Add `timepiece` and its dependencies to ``INSTALLED_APPS``::
 
         INSTALLED_APPS = (
             ...
@@ -63,7 +65,7 @@ Installation
             ...
         )
 
-    #. Add `django.core.context_processors.request` and django-timepiece context processors to ``TEMPLATE_CONTEXT_PROCESSORS``::
+    - Add `django.core.context_processors.request` and django-timepiece context processors to ``TEMPLATE_CONTEXT_PROCESSORS``::
 
         TEMPLATE_CONTEXT_PROCESSORS = (
             "django.contrib.auth.context_processors.auth",
@@ -78,7 +80,7 @@ Installation
             "timepiece.context_processors.quick_search",        # <----
         )
 
-    #. Configure compressor::
+    - Configure compressor settings::
 
         COMPRESS_PRECOMPILERS = (
             ('text/less', 'lessc {infile} {outfile}'),
