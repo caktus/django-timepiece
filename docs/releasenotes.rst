@@ -1,5 +1,19 @@
 Release Notes
-=========================================
+=============
+
+0.6.1 (Unreleased)
+------------------
+
+*Features*
+
+* Added search to project list in admin
+* Can create project relationship from person detail view
+
+*Code Quality*
+
+* Added missing app and context processors to settings in example project and run_tests
+* Removed unnecessary settings from example project and run_tests
+* Split up settings files in example project to use base and local settings
 
 0.6.0 (Released 10-04-2012)
 ---------------------------
