@@ -153,12 +153,20 @@ class QuickSearchForm(forms.Form):
         raise forms.ValidationError('Must be a user, project, or business')
 
 
-class AddUserToProjectForm(forms.Form):
+class SelectUserForm(forms.Form):
     user = selectable_forms.AutoCompleteSelectField(UserLookup, label="")
     user.widget.attrs['placeholder'] = 'Add User'
 
     def save(self):
         return self.cleaned_data['user']
+
+
+class SelectProjectForm(forms.Form):
+    project = selectable_forms.AutoCompleteSelectField(ProjectLookup, label="")
+    project.widget.attrs['placeholder'] = 'Add Project'
+
+    def save(self):
+        return self.cleaned_data['project']
 
 
 class ClockInForm(forms.ModelForm):
