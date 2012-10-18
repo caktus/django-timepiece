@@ -22,6 +22,7 @@ from django.http import  Http404, HttpResponseForbidden
 from django.shortcuts import get_object_or_404, redirect, render
 from django.utils.decorators import method_decorator
 from django.views.decorators.csrf import csrf_exempt
+from django.views.decorators.http import require_POST
 from django.views.generic import ListView, DetailView, View
 from django.views.generic.base import TemplateView
 
@@ -1011,9 +1012,10 @@ def list_people(request):
 @transaction.commit_on_success
 def view_person(request, person_id):
     person = get_object_or_404(User, pk=person_id)
-    add_user_form = timepiece_forms.AddUserToProjectForm()
+    add_project_form = timepiece_forms.SelectProjectForm()
     context = {
         'person': person,
+        'add_project_form': add_project_form,
     }
     try:
         from ledger.models import Exchange
@@ -1089,7 +1091,7 @@ def list_projects(request):
 @transaction.commit_on_success
 def view_project(request, project_id):
     project = get_object_or_404(timepiece.Project, pk=project_id)
-    add_user_form = timepiece_forms.AddUserToProjectForm()
+    add_user_form = timepiece_forms.SelectUserForm()
     context = {
         'project': project,
         'add_user_form': add_user_form,
@@ -1108,73 +1110,74 @@ def view_project(request, project_id):
 
 
 @csrf_exempt
-@permission_required('timepiece.change_project')
+@require_POST
+@permission_required('timepiece.add_projectrelationship')
 @transaction.commit_on_success
-def add_user_to_project(request, project_id):
-    project = get_object_or_404(timepiece.Project, pk=project_id)
-    if request.POST:
-        form = timepiece_forms.AddUserToProjectForm(request.POST)
-        if form.is_valid():
-            user = form.save()
-            timepiece.ProjectRelationship.objects.get_or_create(
-                user=user,
-                project=project,
-            )
+def add_project_relationship(request, project_id=None, user_id=None):
+    user = None
+    if user_id:
+        user = get_object_or_404(User, pk=user_id)
+    if not user:
+        user_form = timepiece_forms.SelectUserForm(request.POST)
+        if user_form.is_valid():
+            user = user_form.save()
+
+    project = None
+    if project_id:
+        project = get_object_or_404(timepiece.Project, pk=project_id)
+    if not project:
+        project_form = timepiece_forms.SelectProjectForm(request.POST)
+        if project_form.is_valid():
+            project = project_form.save()
+
+    if user and project:
+        timepiece.ProjectRelationship.objects.get_or_create(
+                user=user, project=project)
+
     if 'next' in request.REQUEST and request.REQUEST['next']:
         return HttpResponseRedirect(request.REQUEST['next'])
-    else:
-        return HttpResponseRedirect(
-            reverse('view_project', args=(project.pk,)))
+    if project_id:
+        project_url = reverse('view_project', args=(project_id,))
+        return HttpResponseRedirect(project_url)
+    person_url = reverse('view_person', args=(user_id,))
+    return HttpResponseRedirect(person_url)
 
 
 @csrf_exempt
-@permission_required('timepiece.change_project')
+@require_POST
+@permission_required('timepiece.delete_projectrelationship')
 @transaction.commit_on_success
-def remove_user_from_project(request, project_id, user_id):
+def remove_project_relationship(request, project_id, user_id):
+    user = get_object_or_404(User, pk=user_id)
     project = get_object_or_404(timepiece.Project, pk=project_id)
-    try:
-        rel = timepiece.ProjectRelationship.objects.get(
-            user=user_id,
-            project=project,
-        )
-    except timepiece.ProjectRelationship.DoesNotExist:
-        pass
-    else:
-        rel.delete()
+
+    timepiece.ProjectRelationship.objects.filter(user=user,
+            project=project).delete()
+
     if 'next' in request.REQUEST and request.REQUEST['next']:
         return HttpResponseRedirect(request.REQUEST['next'])
-    else:
-        return HttpResponseRedirect(
-            reverse('view_project', args=(project.pk,)))
+    return HttpResponseRedirect(reverse('view_project', args=(project.pk,)))
 
 
-@permission_required('timepiece.change_project')
+@permission_required('timepiece.change_projectrelationship')
 @transaction.commit_on_success
 def edit_project_relationship(request, project_id, user_id):
-    project = get_object_or_404(timepiece.Project, pk=project_id)
-    try:
-        rel = project.project_relationships.get(user__pk=user_id)
-    except timepiece.ProjectRelationship.DoesNotExist:
-        raise Http404
-    rel = timepiece.ProjectRelationship.objects.get(
-        project=project,
-        user=rel.user,
-    )
-    if request.POST:
-        relationship_form = timepiece_forms.ProjectRelationshipForm(
-            request.POST,
-            instance=rel,
-        )
-        if relationship_form.is_valid():
-            rel = relationship_form.save()
+    rel = get_object_or_404(timepiece.ProjectRelationship,
+            user__id=user_id, project__id=project_id)
+
+    data = request.POST if request.method == 'POST' else None
+    relationship_form = timepiece_forms.ProjectRelationshipForm(
+            data, instance=rel)
+    if request.method == 'POST' and relationship_form.is_valid():
+        rel = relationship_form.save()
+        if 'next' in request.REQUEST and request.REQUEST['next']:
             return HttpResponseRedirect(request.REQUEST['next'])
-    else:
-        relationship_form = \
-            timepiece_forms.ProjectRelationshipForm(instance=rel)
+        return HttpResponseRedirect(reverse('view_project',
+                args=(project_id,)))
 
     return render(request, 'timepiece/project/relationship.html', {
         'user': rel.user,
-        'project': project,
+        'project': rel.project,
         'relationship_form': relationship_form,
     })
 
