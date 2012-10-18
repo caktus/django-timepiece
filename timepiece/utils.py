@@ -496,12 +496,12 @@ def process_weeks_entries(user, week_start, entries):
 
     ProjectHours = get_model('timepiece', 'ProjectHours')
     proj_hours = ProjectHours.objects.filter(user=user, week_start=week_start)
-    PersonSchedule = get_model('timepiece', 'PersonSchedule')
+    UserProfile = get_model('timepiece', 'UserProfile')
     try:
-        sched = PersonSchedule.objects.get(user=user)
-    except PersonSchedule.DoesNotExist:
-        sched = None
-    total_hours = sched.hours_per_week if sched else Decimal('40.00')
+        profile = UserProfile.objects.get(user=user)
+    except UserProfile.DoesNotExist:
+        profile = None
+    total_hours = profile.hours_per_week if profile else Decimal('40.00')
 
     all_worked = Decimal('0.00')
     all_remaining = total_hours
