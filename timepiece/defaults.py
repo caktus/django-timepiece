@@ -9,4 +9,4 @@ class TimepieceDefaults(object):
 
     TIMEPIECE_PAID_LEAVE_PROJECTS = {}
 
-    TIMEPIECE_TRACKER_URL_FUNC = lambda slug: '/%s' % slug
+    TIMEPIECE_TRACKER_URL_FUNC = None
