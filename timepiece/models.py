@@ -112,10 +112,6 @@ class Project(models.Model):
     def __unicode__(self):
         return self.name
 
-    def trac_url(self):
-        func = utils.get_setting('TIMEPIECE_TRACKER_URL_FUNC')
-        return func(self.tracker_url) if func else None
-
 
 class RelationshipType(models.Model):
     name = models.CharField(max_length=255, unique=True)
