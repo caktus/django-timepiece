@@ -3,7 +3,7 @@
 from os import path
 
 
-PROJECT_PATH = path.abspath('%s' % path.dirname(__file__))
+PROJECT_PATH = path.abspath(path.join(path.dirname(__file__), path.pardir))
 
 ADMINS = (
     # ('Your Name', 'your_email@example.com'),
@@ -165,7 +165,6 @@ COMPRESS_PRECOMPILERS = (
 COMPRESS_ROOT = '%s/static/' % PROJECT_PATH
 
 # django-timepiece settings
-TIMEPIECE_TIMESHEET_EDITABLE_DAYS = 3
 TIMEPIECE_DEFAULT_LOCATION_SLUG = None
 TIMEPIECE_PROJECTS = {}
 EXTRA_NAV = {}
