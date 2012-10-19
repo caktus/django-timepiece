@@ -453,27 +453,38 @@ def get_active_hours(entry):
     return Decimal('%.2f' % round(entry.total_hours, 2))
 
 
+def get_hours_per_week(user):
+    """Retrieves the number of hours the user should work per week."""
+    UserProfile = get_model('timepiece', 'UserProfile')
+    try:
+        profile = UserProfile.objects.get(user=user)
+    except UserProfile.DoesNotExist:
+        profile = None
+    return profile.hours_per_week if profile else Decimal('40.00')
+
+
 def process_weeks_entries(user, week_start, entries):
     """Summarizes the user's hours over the provided week's entries.
 
     Returns a dictionary containing a summary of hours worked:
     {
-        'worked': '123.45',
-        'remaining': '123.45',
-        'overworked': '123.45',
+        'assigned': Decimal('123.45'),
+        'worked': Decimal('123.45'),
+        'remaining': Decimal('123.45'),
+        'overworked': Decimal('123.45'),
         'projects': [
             {
                 'pk': 123,
                 'name': 'abc',
-                'worked': '123.45',
-                'remaining': '123.45',
-                'overworked': '123.45',
+                'assigned': Decimal('123.45'),
+                'worked': Decimal('123.45'),
+                'remaining': Decimal('123.45'),
+                'overworked': Decimal('123.45'),
             }
         ],
     }
     """
-
-    def _initialize_in_projects(entry):
+    def _initialize_project_if_needed(entry):
         """
         Helper method which adds new project record to projects if there is
         no record for the project associated with this entry.
@@ -482,62 +493,46 @@ def process_weeks_entries(user, week_start, entries):
         """
         if entry.project_id not in projects:
             try:
-                total_hours = proj_hours.get(project=entry.project).hours
+                assigned = proj_hours.get(project=entry.project).hours
             except ProjectHours.DoesNotExist:
-                total_hours = Decimal('0.00')
-            projects[entry.project.pk] = {
-                'pk': entry.project.pk,
+                assigned = Decimal('0.00')
+            projects[entry.project_id] = {
+                'pk': entry.project_id,
                 'name': entry.project.name,
+                'assigned': assigned,
                 'worked': Decimal('0.00'),
-                'remaining': total_hours,
-                'total_hours': total_hours,
+                'remaining': assigned,
                 'overworked': Decimal('0.00'),
             }
 
     ProjectHours = get_model('timepiece', 'ProjectHours')
     proj_hours = ProjectHours.objects.filter(user=user, week_start=week_start)
-    UserProfile = get_model('timepiece', 'UserProfile')
-    try:
-        profile = UserProfile.objects.get(user=user)
-    except UserProfile.DoesNotExist:
-        profile = None
-    total_hours = profile.hours_per_week if profile else Decimal('40.00')
 
+    all_assigned = get_hours_per_week(user)
     all_worked = Decimal('0.00')
-    all_remaining = total_hours
+    all_remaining = all_assigned
     all_overworked = Decimal('0.00')
+
     projects = {}  # Worked/remaining hours per project
     for entry in entries:
-        _initialize_in_projects(entry)
+        _initialize_project_if_needed(entry)
         pk = entry.project_id
         hours = get_active_hours(entry)
 
         all_worked += hours
         projects[pk]['worked'] += hours
-
         all_remaining -= hours
         projects[pk]['remaining'] -= hours
 
         if all_remaining < 0:
-            all_overworked = -1 * all_remaining
+            all_overworked -= all_remaining
             all_remaining = 0
         if projects[pk]['remaining'] < 0:
-            projects[pk]['overworked'] += -1 * projects[pk]['remaining']
+            projects[pk]['overworked'] -= projects[pk]['remaining']
             projects[pk]['remaining'] = 0
 
-    # Convert Decimals to string so they can be serialized.
-    total_hours = '%.2f' % round(total_hours, 2)
-    all_worked = '%.2f' % round(all_worked, 2)
-    all_remaining = '%.2f' % round(all_remaining, 2)
-    all_overworked = '%.2f' % round(all_overworked, 2)
-    for project in projects.values():
-        project['worked'] = '%.2f' % round(project['worked'], 2)
-        project['remaining'] = '%.2f' % round(project['remaining'], 2)
-        project['overworked'] = '%.2f' % round(project['overworked'], 2)
-        project['total_hours'] = '%.2f' % round(project['total_hours'], 2)
-
     return {
-        'total_hours': total_hours,
+        'assigned': all_assigned,
         'worked': all_worked,
         'remaining': all_remaining,
         'overworked': all_overworked,

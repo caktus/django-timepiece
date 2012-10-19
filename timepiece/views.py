@@ -88,9 +88,9 @@ def new_dashboard(request):
             week_start=week_start, entries=weeks_entries)
     return render(request, 'timepiece/time-sheet/new-dashboard.html', {
         'todays_entries': todays_entries_summary,
-        'todays_entries_json': json.dumps(todays_entries_summary),
+        'todays_entries_json': json.dumps(todays_entries_summary, cls=DecimalEncoder),
         'weeks_entries': weeks_entries_summary,
-        'weeks_entries_json': json.dumps(weeks_entries_summary),
+        'weeks_entries_json': json.dumps(weeks_entries_summary, cls=DecimalEncoder),
     })
 
 
