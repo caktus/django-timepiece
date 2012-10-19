@@ -3,7 +3,7 @@
 from os import path
 
 
-PROJECT_PATH = path.abspath('%s' % path.dirname(__file__))
+PROJECT_PATH = path.abspath(path.join(path.dirname(__file__), path.pardir))
 
 ADMINS = (
     # ('Your Name', 'your_email@example.com'),
