@@ -58,7 +58,6 @@ if not settings.configured:
             'django.contrib.messages.context_processors.messages',
             'django.core.context_processors.request',
             'timepiece.context_processors.quick_search',
-            'timepiece.context_processors.timepiece_settings',
             'timepiece.context_processors.extra_nav',
         ),
         TEMPLATE_DIRS=(

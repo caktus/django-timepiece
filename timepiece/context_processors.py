@@ -3,13 +3,6 @@ from timepiece import utils
 from timepiece.forms import QuickSearchForm
 
 
-def timepiece_settings(request):
-    context = {
-        'TIMEPIECE_ICON_URL': utils.get_setting('TIMEPIECE_ICON_URL'),
-    }
-    return context
-
-
 def quick_search(request):
     return {
         'quick_search_form': QuickSearchForm(),
