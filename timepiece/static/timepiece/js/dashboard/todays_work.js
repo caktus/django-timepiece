@@ -7,12 +7,12 @@ var get_time_display = function(stamp) {
     var dt = new Date(stamp);
     var period = dt.getHours() < 12 ? 'AM' : 'PM';
     var hours = dt.getHours() > 12 ? dt.getHours() - 12 : dt.getHours();
-    if (hours == 0) {
+    if (hours === 0) {
         hours = 12;
     }
     var minutes = dt.getMinutes() < 10 ? '0' + dt.getMinutes() : dt.getMinutes();
     return hours + ':' + minutes + ' ' + period;
-}
+};
 
 function Timeline(loc, start_time, end_time, width, height) {
     this.loc = loc;
@@ -64,6 +64,8 @@ function Entry(timeline, entry_data) {
     this.hours = entry_data['hours'];
     this.pk = entry_data['pk'];
     this.update_url = entry_data['update_url'];
+    this.active = entry_data['active'];
+    this.seconds_paused = entry_data['seconds_paused'];
 
     this.timeline = timeline;
 
@@ -170,11 +172,12 @@ Entry.prototype.draw = function() {
             'end_time': end.getTime() + timezone_offset,
             'project_name': entry.project,
             'pk': entry.pk,
+            'active': entry.active,
+            'seconds_paused': entry.seconds_paused,
             'hours': hours,
             'update_url': entry.update_url
         });
         e.draw();
-        thing = e;
     }
 
     // Enable popovers
