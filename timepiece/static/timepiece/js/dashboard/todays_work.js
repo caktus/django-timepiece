@@ -1,8 +1,6 @@
 var scripts = document.getElementsByTagName('script'),
     script = scripts[scripts.length - 1];
 
-var data = JSON.parse(script.getAttribute('data-entries'));
-
 var get_time_display = function(stamp) {
     var dt = new Date(stamp);
     var period = dt.getHours() < 12 ? 'AM' : 'PM';
@@ -18,12 +16,10 @@ function Timeline(loc, start_time, end_time, width, height) {
     this.loc = loc;
     this.start_time = start_time;
     this.end_time = end_time;
-
-    this.container = d3.select(this.loc).append('svg')
-        .attr('height', height);
-
     this.width = width;
     this.height = height;
+
+    this.container = d3.select(this.loc).append('svg');
 
     // Settings
     this.draw_width = this.width - 40; // Draw inside the svg without clipping
@@ -35,7 +31,6 @@ function Timeline(loc, start_time, end_time, width, height) {
 Timeline.prototype.draw = function() {
     var dt = this.end_time - this.start_time;
 
-    
     this.line_offset = this.draw_width / (dt / this.interval);
 
     for(var i = 0; i <= dt / this.interval; i++) {
@@ -145,9 +140,14 @@ Entry.prototype.draw = function() {
     });
 };
 
-(function() {
-    var width = $('#timeline').width(),
-        height = 100;
+var draw_timeline = function(data, width) {
+    var $timeline = $('#timeline'),
+        height = $timeline.height();
+
+    // width is not passed into draw_timeline() for the initial rendering
+    if (!width) {
+        width = $timeline.width();
+    }
 
     var start_time = new Date(data.start_time),
         end_time = new Date(data.end_time);
@@ -155,7 +155,7 @@ Entry.prototype.draw = function() {
     // Convert the minutes to milliseconds
     var timezone_offset = start_time.getTimezoneOffset() * 60 * 1000;
 
-    var t = new Timeline('#timeline', start_time.getTime() + timezone_offset,
+    var t = new Timeline($timeline.selector, start_time.getTime() + timezone_offset,
         end_time.getTime() + timezone_offset, width, height);
     t.draw();
 
@@ -184,4 +184,15 @@ Entry.prototype.draw = function() {
     $('.timeline rect').popover({
         'placement': 'top'
     });
-}());
+};
+
+
+(function() {
+    var data = JSON.parse(script.getAttribute('data-entries'));
+    draw_timeline(data);
+
+    $(window).resize(function(e) {
+        $('#timeline svg').remove();
+        draw_timeline(data, $(window).width());
+    });
+})();
