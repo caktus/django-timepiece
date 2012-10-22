@@ -33,7 +33,8 @@ ProgressBar.prototype.draw = function (hours_assigned, hours_worked, hours_remai
         opacity = 0.95,
         color_worked = '#0061aa',
         color_overworked = 'indianred',
-        color_remaining = 'gray';
+        color_remaining = 'gray',
+        color_unassigned = '#33AA33';
 
     // If we have a label to draw, increase the bar offset, decrease the bar
     // width, and draw the label.
@@ -69,7 +70,10 @@ ProgressBar.prototype.draw = function (hours_assigned, hours_worked, hours_remai
     // Draw the hours worked bar first.
 
     // Color the bar based on whether there are overworked hours.
-    var worked_color = hours_overworked <= 0 ? color_worked : color_overworked;
+    var worked_color = color_worked;
+    if (hours_overworked > 0) {
+        worked_color = hours_assigned > 0 ? color_overworked : color_unassigned;
+    }
 
     var worked_ratio = hours_assigned > 0 ? hours_worked / hours_assigned : 1,
         worked_width = worked_ratio * width - edge_offset - 1;
@@ -142,7 +146,7 @@ ProgressBar.prototype.draw = function (hours_assigned, hours_worked, hours_remai
     // Display text after the bars have been drawn.
     function drawLabel() {
         var worked_text = humanizeTime(hours_worked) + ' worked';
-        if (hours_overworked > 0) {
+        if (hours_overworked > 0 && hours_assigned > 0) {
             worked_text += ' (' + humanizeTime(hours_overworked) + ' over)';
         }
         var worked = chart.append('text')
