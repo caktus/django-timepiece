@@ -1,4 +1,16 @@
 
+// Calculate the correct positioning of a bar's label.
+function calculateLabelPosition(bar, label) {
+    var box = label.node().getBBox(),
+        xpos = Number(bar.attr('x')) + Number(bar.attr('width')) / 2 - box.width / 2,
+        ypos = (Number(bar.attr('height')) / 2) + (box.height / 4) + 2;
+
+    return {
+        'x': xpos,
+        'y': ypos
+    };
+}
+
 // Shorten the node's text if it is too wide
 function shortenText(node, max_width, partial_allowed) {
     if (node.node() === null) { return node; }

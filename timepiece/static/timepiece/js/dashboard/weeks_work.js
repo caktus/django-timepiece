@@ -8,13 +8,16 @@ function ProgressBar(container, width, height, label) {
     this.height = height;
     this.label = label;
 
-    this.edge_offset = 5;  // Come off the edge.
-    this.draw_width = this.width - 2 * this.edge_offset;  // Draw inside the svg without clipping
+    // Come off the edge.
+    this.edge_offset = 5;
+
+    // Draw inside the svg without clipping
+    this.draw_width = this.width - 2 * this.edge_offset;
 
     // Append our svg for drawing
     this.chart = d3.select(container).append('svg')
-        .attr('width', this.draw_width)
-        .attr('class', 'hoursChart');
+        .attr('class', 'hoursChart')
+        .attr('width', this.draw_width);
 }
 
 ProgressBar.prototype.draw = function (hours_assigned, hours_worked, hours_remaining, hours_overworked) {
@@ -25,6 +28,7 @@ ProgressBar.prototype.draw = function (hours_assigned, hours_worked, hours_remai
         width = this.draw_width,
         edge_offset = this.edge_offset,
         offset = 0,
+
         // Styles
         opacity = 0.95,
         color_worked = '#0061aa',
@@ -38,116 +42,105 @@ ProgressBar.prototype.draw = function (hours_assigned, hours_worked, hours_remai
         width -= offset;
 
         var text = this.chart.append('text')
-            .attr('font-size', '16px')
+            .attr('class', 'project-label')
+            .attr('data-title', label)
             .attr('fill', '#000000')
+            .attr('font-size', '16px')
             .attr('font-weight', 'bolder')
             .attr('x', 0)
             .attr('y', 30)
-            .text(label)
-            .attr('class', 'project-label')
-            .attr('data-title', label);
+            .text(label);
 
         // Shorten the label if it is too long.
         shortenText(text, offset, true);
     }
 
-    offset = offset + edge_offset;
+    offset += edge_offset;
 
     // Container for worked/remaining hours.
-    this.border = this.chart
-        .append('rect')
+    this.border = this.chart.append('rect')
+        .style('stroke-width', '2px')
+        .style('stroke', '#333333')
         .attr('x', offset)
         .attr('y', 1)
-        .attr('height', height)
         .attr('width', width - 2 * edge_offset)  // Prevent border clipping.
-        .style('stroke-width', '2px')
-        .style('stroke', '#333333');
+        .attr('height', height);
 
-    // Draw the hours worked bar first
-    bar.worked = chart.append('rect')
-        .attr('class', 'workedHours')
-        .attr('height', height - 2)
-        .attr('x', offset + 1)  // Account for stroke
-        .attr('y', 2);
-//        .style('stroke-width', '0px')
-//        .style('stroke', 'none')
+    // Draw the hours worked bar first.
 
-    // Add the attributes for popovers
-    var worked_title = (label || 'Total') + ' - Worked',
-        worked_message = 'You have worked ' + humanizeTime(hours_worked) + ' hours out of ' + humanizeTime(hours_assigned) + ' hours scheduled';
-    if (hours_overworked > 0) {
-        worked_message += ', including ' + humanizeTime(hours_overworked) + ' hours overtime.';
-    } else {
-        worked_message += '.';
-    }
-    bar.worked.attr('data-title', worked_title)
-        .attr('data-content', worked_message);
-
-    // Color the bar based on whether there are overworked hours
+    // Color the bar based on whether there are overworked hours.
     var worked_color = hours_overworked <= 0 ? color_worked : color_overworked;
 
-    // Determine width of worked bar & correct width if there is no remaining bar
-    var ratio = hours_assigned > 0 ? hours_worked / hours_assigned : 1,
-        worked_width = ratio * width - edge_offset;
+    var worked_ratio = hours_assigned > 0 ? hours_worked / hours_assigned : 1,
+        worked_width = worked_ratio * width - edge_offset - 1;
     if (hours_remaining <= 0) {
-        worked_width = worked_width - edge_offset - 1;
+        // Correct width if there is no remaining bar.
+        worked_width -= (edge_offset + 1);
     }
 
-    if (hours_remaining <= 0) {
-        bar.worked.transition()
-            .delay(100)
-            .duration(1500)
-            .attr('width', worked_width - 1)
-            .style('fill', worked_color)
-            .style('opacity', opacity)
-            .each('end', drawText);
+    // Popover attributes.
+    var worked_tooltip = ((label || 'Total') + ' - You have worked ' +
+        humanizeTime(hours_worked));
+    if (hours_overworked > 0) {
+        worked_tooltip += (', including ' + humanizeTime(hours_overworked) +
+            ' overtime.');
     } else {
-        bar.worked.transition()
-            .delay(100)
-            .duration(750)
-            .attr('width', worked_width - 1)
-            .style('fill', worked_color)
-            .style('opacity', opacity)
-            .each('end', drawRemaining);
+        worked_tooltip += ' of ' + humanizeTime(hours_assigned) + ' assigned.';
     }
 
-    // Draw the remaining bar after drawing the worked bar
+    bar.worked = chart.append('rect')
+        .attr('class', 'workedHours')
+        .attr('data-title', worked_tooltip)
+        .attr('x', offset + 1)  // Account for stroke
+        .attr('y', 2)
+        .attr('height', height - 2);
+
+    // Animation.
+    var duration = hours_remaining <= 0 ? 1500 : 750,
+        next = hours_remaining <= 0 ? drawLabel : drawRemaining;
+    bar.worked.transition()
+        .delay(100)
+        .duration(duration)
+        .attr('width', Math.max(worked_width, 0))
+        .style('fill', worked_color)
+        .style('opacity', opacity)
+        .each('end', next);
+
+    // Draw the remaining bar after drawing the worked bar.
     function drawRemaining() {
+        var remaining_tooltip = ((label || 'Total') + ' - You have ' +
+            humanizeTime(hours_remaining) + ' of ' +
+            humanizeTime(hours_assigned) + ' remaining.');
+
+        var remaining_ratio = hours_remaining / hours_assigned,
+            remaining_width = remaining_ratio * width - edge_offset,
+            remaining_x = (Number(d3.select(this).attr('x')) +
+            Number(d3.select(this).attr('width')) - 1);
+        if (hours_worked <= 0) {
+            // Correct width & position if there is no worked bar.
+            remaining_width -= (edge_offset + 2);
+            remaining_x += 1;
+        }
+
         bar.remaining = chart.append('rect')
+            .attr('class', 'remainingHours')
+            .attr('data-title', remaining_tooltip)
             .style('fill', color_remaining)
             .style('opacity', opacity)
-            .attr('class', 'remainingHours')
             .attr('height', height - 2)
-            .attr('y', 2)
-            .attr('x', Number(d3.select(this).attr('x')) + Number(d3.select(this).attr('width')) - 1);
+            .attr('x', remaining_x)
+            .attr('y', 2);
 
-        // Add the attributes for popovers
-        var remaining_title = (label || 'Total') + ' - Remaining',
-            remaining_message = 'You have ' + humanizeTime(hours_remaining) + ' hours remaining.';
-        bar.remaining.attr('data-content', remaining_message)
-            .attr('data-title', remaining_title);
-
+        // Animation.
         bar.remaining.transition()
             .delay(0)
             .duration(750)
-            .attr('width', (hours_remaining / hours_assigned) * width - edge_offset)
-            .each('end', drawText);
-    }
-
-    // Calculate the correct positioning.
-    function textPosition(bar, text) {
-        var box = text.node().getBBox(),
-            xpos = Number(bar.attr('x')) + Number(bar.attr('width')) / 2 - box.width / 2,
-            ypos = (Number(bar.attr('height')) / 2) + (box.height / 4) + 2;
-
-        return {
-            'x': xpos,
-            'y': ypos
-        };
+            .attr('width', Math.max(remaining_width, 0))
+            .each('end', drawLabel);
     }
 
     // Display text after the bars have been drawn.
-    function drawText() {
+    function drawLabel() {
         var worked_text = humanizeTime(hours_worked) + ' worked';
         if (hours_overworked > 0) {
             worked_text += ' (' + humanizeTime(hours_overworked) + ' over)';
@@ -160,7 +153,7 @@ ProgressBar.prototype.draw = function (hours_assigned, hours_worked, hours_remai
 
         shortenText(worked, bar.worked.node().getBBox().width, false);
 
-        var worked_pos = textPosition(bar.worked, worked);
+        var worked_pos = calculateLabelPosition(bar.worked, worked);
 
         worked.attr('x', worked_pos.x)
             .attr('y', worked_pos.y);
@@ -175,13 +168,13 @@ ProgressBar.prototype.draw = function (hours_assigned, hours_worked, hours_remai
 
             shortenText(remaining, bar.remaining.node().getBBox().width, false);
 
-            var rem_pos = textPosition(bar.remaining, remaining);
+            var rem_pos = calculateLabelPosition(bar.remaining, remaining);
             remaining.attr('x', rem_pos.x)
                 .attr('y', rem_pos.y);
         }
 
         // Finally, activate popovers and tooltips.
-        $('.hoursChart rect').popover({'placement': 'top'});
+        $('.hoursChart rect').tooltip({'placement': 'top'});
         $('.project-label').tooltip({'placement': 'top'});
     }
 };
