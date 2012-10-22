@@ -74,19 +74,34 @@ def new_dashboard(request):
     user = request.user
     today = datetime.date.today()
     eod = timezone.now().replace(hour=23, minute=59, second=59)
+    Entry = timepiece.Entry
+    # Query for the active entry if it exists and determine if its from today
+    try:
+        active_entry = timepiece.Entry.objects.get(
+            user=request.user, end_time__isnull=True
+        )
+    except (Entry.DoesNotExist, Entry.MultipleObjectsReturned):
+        active_entry = None
+        active_today = False
+    else:
+        active_today = (active_entry.start_time.date() == today)
+    # Query and process data for "Today's Work Day"
     todayQ = Q(end_time__gte=today, end_time__lt=eod) | \
              Q(end_time__isnull=True)
-    todays_entries = timepiece.Entry.objects.filter(todayQ, user=user) \
+    todays_entries = Entry.objects.filter(todayQ, user=user) \
         .select_related('project').order_by('start_time')
     todays_entries_summary = utils.process_todays_entries(todays_entries)
+    # Query and process data  for "Hours this Week"
     week_start, week_end = utils.get_week_window(today)
     weekQ = Q(end_time__gte=week_start, end_time__lt=week_end) | \
             Q(end_time__isnull=True)
-    weeks_entries = timepiece.Entry.objects.filter(weekQ, user=user) \
+    weeks_entries = Entry.objects.filter(weekQ, user=user) \
         .select_related('project').order_by('start_time')
     weeks_entries_summary = utils.process_weeks_entries(user=user,
             week_start=week_start, entries=weeks_entries)
     return render(request, 'timepiece/time-sheet/new-dashboard.html', {
+        'active_entry': active_entry,
+        'active_today': active_today,
         'todays_entries': todays_entries_summary,
         'todays_entries_json': json.dumps(todays_entries_summary, cls=DecimalEncoder),
         'weeks_entries': weeks_entries_summary,
