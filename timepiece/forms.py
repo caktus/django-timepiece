@@ -174,7 +174,7 @@ class QuickClockInForm(forms.Form):
     def __init__(self, *args, **kwargs):
         user = kwargs.pop('user')
         super(QuickClockInForm, self).__init__(*args, **kwargs)
-        vacation_ids = settings.TIMEPIECE_PROJECTS.values()
+        vacation_ids = utils.get_setting('TIMEPIECE_PROJECTS').values()
         work_projects = timepiece.Project.objects.filter(
                 users=user, status__enable_timetracking=True,
                 type__enable_timetracking=True) \
