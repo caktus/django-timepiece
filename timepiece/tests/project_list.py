@@ -1,6 +1,3 @@
-from urllib import unquote, urlencode
-
-from django.conf import settings
 from django.contrib.auth.models import User, Permission
 from django.core.urlresolvers import reverse
 
