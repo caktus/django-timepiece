@@ -419,3 +419,137 @@ def process_dates(dates, start=None, end=None):
         if to_date else end
 
     return from_date, to_date
+
+
+def process_todays_entries(entries):
+    now = timezone.now().replace(microsecond=0)
+    last_end = None
+    if entries:
+        start_time = entries[0].start_time
+        last_end = entries[entries.count() - 1].end_time
+    else:
+        start_time = now.replace(hour=0, minute=0, second=0, microsecond=0)
+        last_end = None
+    end_time = last_end if last_end is not None else now
+
+    def get_entry_details(entry):
+        entry.end_time = entry.end_time if entry.end_time else now
+        return {
+            'project': entry.project.name,
+            'pk': entry.pk,
+            'start_time': entry.start_time.isoformat(),
+            'end_time': entry.end_time.isoformat(),
+            'update_url': reverse('timepiece-update', args=(entry.pk,)),
+            'hours': '%.2f' % round(entry.total_hours, 2),
+        }
+    return {
+        'start_time': start_time.isoformat(),
+        'end_time': end_time.isoformat(),
+        'entries': map(get_entry_details, entries),
+    }
+
+
+def get_total_seconds(td):
+    """
+    The equivalent for datetime.timedelta.total_seconds() for Python 2.6
+    """
+    if hasattr(td, 'total_seconds'):
+        return td.total_seconds()
+    return (td.microseconds + (td.seconds + td.days * 24 * 3600) * 1e6) / 1e6
+
+
+def get_active_hours(entry):
+    """Use with active entries to obtain the time worked so far."""
+    if not entry.end_time:
+        if entry.is_paused:
+            entry.end_time = entry.pause_time
+        else:
+            entry.end_time = timezone.now()
+    return Decimal('%.2f' % round(entry.total_hours, 2))
+
+
+def get_hours_per_week(user):
+    """Retrieves the number of hours the user should work per week."""
+    UserProfile = get_model('timepiece', 'UserProfile')
+    try:
+        profile = UserProfile.objects.get(user=user)
+    except UserProfile.DoesNotExist:
+        profile = None
+    return profile.hours_per_week if profile else Decimal('40.00')
+
+
+def process_weeks_entries(user, week_start, entries):
+    """Summarizes the user's hours over the provided week's entries.
+
+    Returns a dictionary containing a summary of hours worked:
+    {
+        'assigned': Decimal('123.45'),
+        'worked': Decimal('123.45'),
+        'remaining': Decimal('123.45'),
+        'overworked': Decimal('123.45'),
+        'projects': [
+            {
+                'pk': 123,
+                'name': 'abc',
+                'assigned': Decimal('123.45'),
+                'worked': Decimal('123.45'),
+                'remaining': Decimal('123.45'),
+                'overworked': Decimal('123.45'),
+            }
+        ],
+    }
+    """
+    def _initialize_project_if_needed(entry):
+        """
+        Helper method which adds new project record to projects if there is
+        no record for the project associated with this entry.
+
+        Requires projects, proj_hours, and ProjectHours in scope.
+        """
+        if entry.project_id not in projects:
+            try:
+                assigned = proj_hours.get(project=entry.project).hours
+            except ProjectHours.DoesNotExist:
+                assigned = Decimal('0.00')
+            projects[entry.project_id] = {
+                'pk': entry.project_id,
+                'name': entry.project.name,
+                'assigned': assigned,
+                'worked': Decimal('0.00'),
+                'remaining': assigned,
+                'overworked': Decimal('0.00'),
+            }
+
+    ProjectHours = get_model('timepiece', 'ProjectHours')
+    proj_hours = ProjectHours.objects.filter(user=user, week_start=week_start)
+
+    all_assigned = get_hours_per_week(user)
+    all_worked = Decimal('0.00')
+    all_remaining = all_assigned
+    all_overworked = Decimal('0.00')
+
+    projects = {}  # Worked/remaining hours per project
+    for entry in entries:
+        _initialize_project_if_needed(entry)
+        pk = entry.project_id
+        hours = get_active_hours(entry)
+
+        all_worked += hours
+        projects[pk]['worked'] += hours
+        all_remaining -= hours
+        projects[pk]['remaining'] -= hours
+
+        if all_remaining < 0:
+            all_overworked -= all_remaining
+            all_remaining = 0
+        if projects[pk]['remaining'] < 0:
+            projects[pk]['overworked'] -= projects[pk]['remaining']
+            projects[pk]['remaining'] = 0
+
+    return {
+        'assigned': all_assigned,
+        'worked': all_worked,
+        'remaining': all_remaining,
+        'overworked': all_overworked,
+        'projects': projects.values(),
+    }

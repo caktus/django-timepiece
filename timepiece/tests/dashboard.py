@@ -1,5 +1,5 @@
+from dateutil.parser import parse as dt_parse
 import datetime
-from decimal import Decimal
 
 from django.core.urlresolvers import reverse
 from django.contrib.auth.models import User
@@ -9,7 +9,6 @@ try:
 except ImportError:
     from timepiece import timezone
 
-from timepiece.templatetags.timepiece_tags import get_active_hours
 from timepiece.tests.base import TimepieceDataTestCase
 from timepiece import utils
 
@@ -23,101 +22,123 @@ class DashboardTestCase(TimepieceDataTestCase):
             password='abc',
             email='email@email.com'
         )
-        self.url = reverse('timepiece-entries')
+        self.url = reverse('new-dashboard')
         self.text = [u'Clock In', u'Add Entry', u'My Active Entries']
         self.now = timezone.now()
-
-    def test_unpriveleged_user(self):
-        """
-        A regular user should not be able to see what people are
-        working on or timesheet related links
-        """
-        self.client.login(username='tester', password='abc')
-
-        response = self.client.get(self.url)
-        for text in self.text:
-            self.assertNotContains(response, text)
-
-    def test_timepiece_user(self):
-        """
-        A timepiece user should be able to see what others are
-        working on as well as timesheet links
-        """
+        self.start = self.now.replace(hour=8, minute=0, second=0)
+        self.yesterday = self.start - datetime.timedelta(days=1)
+        self.tomorrow = self.start + datetime.timedelta(days=1)
         self.client.login(username='user', password='abc')
 
+    def dt_near(self, dt_a, dt_b, tolerance=10):
+        return abs(utils.get_total_seconds(dt_a - dt_b)) < tolerance
+
+    def test_current_entry(self):
+        """
+        Assure the response contains 'active_entry' when it exists, and
+        'active_today' = True since if the entry is from the current day.
+        """
+        entry_start = self.start.replace(hour=0)
+        active_entry = self.create_entry({'start_time': entry_start})
         response = self.client.get(self.url)
-        for text in self.text:
-            self.assertContains(response, text)
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.context['active_entry'], active_entry)
+        self.assertEqual(response.context['active_today'], True)
 
-    def test_work_this_week(self):
+    def test_current_entry_not_today(self):
         """
-        Work This Week table should contain hours worked on projects this week,
-        including from active entries.
+        Assure response contains 'active_entry' when it exists, and
+        'active_today' = False if the entry is from another day.
         """
-        projects = []
-        projects.append(self.create_project(billable=True))
-        projects.append(self.create_project(billable=False))
-        past = []
-        past.append(self.create_entry({  # 15 minutes
-            'start_time': self.now + datetime.timedelta(minutes=5),
-            'end_time': self.now + datetime.timedelta(minutes=20),
-            'project': projects[0],
-            'activity': self.create_activity(data={'billable': True}),
-        }))
-        past.append(self.create_entry({  # 15 minutes
-            'start_time': self.now + datetime.timedelta(minutes=25),
-            'end_time': self.now + datetime.timedelta(minutes=40),
-            'project': projects[0],
-            'activity': self.create_activity(data={'billable': True}),
-        }))
-        past.append(self.create_entry({  # 60 minutes
-            'start_time': self.now + datetime.timedelta(minutes=45),
-            'end_time': self.now + datetime.timedelta(minutes=105),
-            'project': projects[1],
-            'activity': self.create_activity(data={'billable': False}),
-        }))
-        current = self.create_entry({  # 30 minutes
-            'start_time': self.now - datetime.timedelta(minutes=30),
-            'project': projects[0],
-            'activity': self.create_activity(data={'billable': True}),
-        })
-        current_hours = get_active_hours(current)
-        total_hours = sum([p.hours for p in past]) + current_hours
-
-        self.client.login(username='user', password='abc')
+        active_entry = self.create_entry({'start_time': self.yesterday})
         response = self.client.get(self.url)
-        context = response.context
-        self.assertEquals(len(context['my_active_entries']), 1)
-        self.assertEquals(get_active_hours(context['my_active_entries'][0]),
-                current_hours)
-        self.assertEquals(len(context['project_entries']), 2)
-        for entry in context['project_entries']:
-            if entry['project__pk'] == projects[0].pk:
-                self.assertEquals(entry['sum'], Decimal('0.50'))
-            else:
-                self.assertEquals(entry['sum'], Decimal('1.00'))
-        self.assertEquals(len(context['activity_entries']), 2)
-        for entry in context['activity_entries']:
-            self.assertEquals(entry['sum'], Decimal('1.00'))
-        self.assertEquals(context['current_total'], total_hours)
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.context['active_entry'], active_entry)
+        self.assertEqual(response.context['active_today'], False)
 
-    def test_time_detail(self):
+    def test_no_current_entry(self):
         """
-        An active entry should not appear in the Time
-        Detail This Week table
+        Assure 'active_entry' is None when no active entry exists and
+        'active_today' is False
         """
-        entry = self.create_entry({
-            'start_time': self.now,
-            'end_time': self.now + datetime.timedelta(hours=1),
-        })
-        self.create_entry({
-            'start_time': self.now + datetime.timedelta(hours=2),
-            'project': self.create_project(billable=True)
-        })
-
-        self.client.login(username='user', password='abc')
-
         response = self.client.get(self.url)
-        context = response.context
-        self.assertEquals(len(context['this_weeks_entries']), 1)
-        self.assertEquals(context['this_weeks_entries'][0], entry)
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.context['active_entry'], None)
+        self.assertEqual(response.context['active_today'], False)
+
+    def test_todays_work_limits(self):
+        """
+        todays_entries includes closed entries from today & open entries only
+        """
+        first = self.log_time(start=self.start, delta=(2, 0))
+        open_entry = self.create_entry({
+            'start_time': self.start + datetime.timedelta(hours=4)
+        })
+        self.log_time(start=self.yesterday, delta=(2, 0))
+        self.log_time(start=self.tomorrow, delta=(2, 0))
+        response = self.client.get(self.url)
+        self.assertEqual(response.status_code, 200)
+        entries = response.context['todays_entries']['entries']
+        pks = (entry['pk'] for entry in entries)
+        self.assertEqual(set(pks), set((first.pk, open_entry.pk)))
+
+    def test_todays_work_formatting(self):
+        """todays_entries object lists entry values with formatting"""
+        first = self.log_time(start=self.start, delta=(2, 0))
+        open_entry = self.create_entry({
+            'start_time': self.start + datetime.timedelta(hours=4)
+        })
+        response = self.client.get(self.url)
+        entries = response.context['todays_entries']['entries']
+        for entry, rsp_entry in zip((first, open_entry), entries):
+            self.assertEqual(rsp_entry['project'], entry.project.name)
+            self.assertEqual(rsp_entry['start_time'],
+                             entry.start_time.isoformat())
+            if not entry.end_time:
+                entry.end_time = timezone.now().replace(microsecond=0)
+            rsp_end = dt_parse(rsp_entry['end_time'])
+            # The end time for open_entry was calculated sooner, so we allow a
+            # tolerance of 10 seconds.
+            self.assertTrue(self.dt_near(rsp_end, entry.end_time))
+            self.assertEqual(rsp_entry['update_url'],
+                reverse('timepiece-update', args=(entry.pk,)))
+            self.assertTrue(rsp_entry['hours'],
+                            '%.2f' % round(entry.total_hours, 2))
+
+    def test_todays_work_start_end(self):
+        """
+        todays_entries object supplies the start and end of the first and last
+        entries in isoformat
+        """
+        three_hours = datetime.timedelta(hours=3)
+        first = self.log_time(start=self.start, delta=(2, 0))
+        middle = self.log_time(start=self.start + three_hours, delta=(2, 0))
+        last = self.log_time(start=self.start + three_hours * 2, delta=(2, 0))
+        response = self.client.get(self.url)
+        entries = response.context['todays_entries']
+        start = dt_parse(entries['start_time'])
+        end = dt_parse(entries['end_time'])
+        self.assertEqual(start.hour, first.start_time.hour)
+        self.assertEqual(end.hour, last.end_time.hour)
+
+#    def test_unpriveleged_user(self):
+#        """
+#        A regular user should not be able to see what people are
+#        working on or timesheet related links
+#        """
+#        self.client.login(username='tester', password='abc')
+
+#        response = self.client.get(self.url)
+#        for text in self.text:
+#            self.assertNotContains(response, text)
+
+#    def test_timepiece_user(self):
+#        """
+#        A timepiece user should be able to see what others are
+#        working on as well as timesheet links
+#        """
+#        self.client.login(username='user', password='abc')
+
+#        response = self.client.get(self.url)
+#        for text in self.text:
+#            self.assertContains(response, text)

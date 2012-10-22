@@ -134,6 +134,14 @@
                         </form>
                     {% endif %}
                 {% endblock %}
+
+                {% block quick-clock-in %}
+                    {% if perms.timepiece.can_clock_in %}
+                        <form action="{% url 'timepiece-clock-in' %}" class="navbar-search form-inline pull-right" method="get" id="quick-clock-in">
+                            {{ quick_clock_in_form.project }}
+                        </form>
+                    {% endif %}
+                {% endblock %}
             {% endblock %}
         </div>
 
