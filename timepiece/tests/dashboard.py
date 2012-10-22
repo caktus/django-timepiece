@@ -33,6 +33,39 @@ class DashboardTestCase(TimepieceDataTestCase):
     def dt_near(self, dt_a, dt_b, tolerance=10):
         return abs(utils.get_total_seconds(dt_a - dt_b)) < tolerance
 
+    def test_current_entry(self):
+        """
+        Assure the response contains 'active_entry' when it exists, and
+        'active_today' = True since if the entry is from the current day.
+        """
+        entry_start = self.start.replace(hour=0)
+        active_entry = self.create_entry({'start_time': entry_start})
+        response = self.client.get(self.url)
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.context['active_entry'], active_entry)
+        self.assertEqual(response.context['active_today'], True)
+
+    def test_current_entry_not_today(self):
+        """
+        Assure response contains 'active_entry' when it exists, and
+        'active_today' = False if the entry is from another day.
+        """
+        active_entry = self.create_entry({'start_time': self.yesterday})
+        response = self.client.get(self.url)
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.context['active_entry'], active_entry)
+        self.assertEqual(response.context['active_today'], False)
+
+    def test_no_current_entry(self):
+        """
+        Assure 'active_entry' is None when no active entry exists and
+        'active_today' is False
+        """
+        response = self.client.get(self.url)
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.context['active_entry'], None)
+        self.assertEqual(response.context['active_today'], False)
+
     def test_todays_work_limits(self):
         """
         todays_entries includes closed entries from today & open entries only
