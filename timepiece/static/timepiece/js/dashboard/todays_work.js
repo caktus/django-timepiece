@@ -140,14 +140,10 @@ Entry.prototype.draw = function() {
     });
 };
 
-var draw_timeline = function(data, width) {
+var draw_timeline = function(data) {
     var $timeline = $('#timeline'),
-        height = $timeline.height();
-
-    // width is not passed into draw_timeline() for the initial rendering
-    if (!width) {
-        width = $timeline.width();
-    }
+        height = $timeline.height(),
+        width = $(window).width();
 
     var start_time = new Date(data.start_time),
         end_time = new Date(data.end_time);
@@ -191,8 +187,8 @@ var draw_timeline = function(data, width) {
     var data = JSON.parse(script.getAttribute('data-entries'));
     draw_timeline(data);
 
-    $(window).resize(function(e) {
+    $(window).resize(function() {
         $('#timeline svg').remove();
-        draw_timeline(data, $(window).width());
+        draw_timeline(data);
     });
 })();
