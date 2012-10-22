@@ -1066,7 +1066,8 @@ def create_edit_person(request, person_id=None):
 @permission_required('timepiece.view_project')
 def list_projects(request):
     form = timepiece_forms.ProjectSearchForm(request.GET)
-    if form.is_valid():
+    if form.is_valid() and ('search' in request.GET or 'status' in
+            request.GET):
         search, status = form.save()
         projects = timepiece.Project.objects.filter(
             Q(name__icontains=search) | Q(description__icontains=search))
