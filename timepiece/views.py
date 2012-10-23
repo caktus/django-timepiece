@@ -8,7 +8,6 @@ from dateutil.relativedelta import relativedelta
 from decimal import Decimal
 from itertools import groupby
 
-from django.conf import settings
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required, permission_required
 from django.contrib.auth.models import User, Permission
@@ -74,19 +73,34 @@ def new_dashboard(request):
     user = request.user
     today = datetime.date.today()
     eod = timezone.now().replace(hour=23, minute=59, second=59)
+    Entry = timepiece.Entry
+    # Query for the active entry if it exists and determine if its from today
+    try:
+        active_entry = timepiece.Entry.objects.get(
+            user=request.user, end_time__isnull=True
+        )
+    except (Entry.DoesNotExist, Entry.MultipleObjectsReturned):
+        active_entry = None
+        active_today = False
+    else:
+        active_today = (active_entry.start_time.date() == today)
+    # Query and process data for "Today's Work Day"
     todayQ = Q(end_time__gte=today, end_time__lt=eod) | \
              Q(end_time__isnull=True)
-    todays_entries = timepiece.Entry.objects.filter(todayQ, user=user) \
+    todays_entries = Entry.objects.filter(todayQ, user=user) \
         .select_related('project').order_by('start_time')
     todays_entries_summary = utils.process_todays_entries(todays_entries)
+    # Query and process data  for "Hours this Week"
     week_start, week_end = utils.get_week_window(today)
     weekQ = Q(end_time__gte=week_start, end_time__lt=week_end) | \
             Q(end_time__isnull=True)
-    weeks_entries = timepiece.Entry.objects.filter(weekQ, user=user) \
+    weeks_entries = Entry.objects.filter(weekQ, user=user) \
         .select_related('project').order_by('start_time')
     weeks_entries_summary = utils.process_weeks_entries(user=user,
             week_start=week_start, entries=weeks_entries)
     return render(request, 'timepiece/time-sheet/new-dashboard.html', {
+        'active_entry': active_entry,
+        'active_today': active_today,
         'todays_entries': todays_entries_summary,
         'todays_entries_json': json.dumps(todays_entries_summary, cls=DecimalEncoder),
         'weeks_entries': weeks_entries_summary,
@@ -1066,7 +1080,8 @@ def create_edit_person(request, person_id=None):
 @permission_required('timepiece.view_project')
 def list_projects(request):
     form = timepiece_forms.ProjectSearchForm(request.GET)
-    if form.is_valid():
+    if form.is_valid() and ('search' in request.GET or 'status' in
+            request.GET):
         search, status = form.save()
         projects = timepiece.Project.objects.filter(
             Q(name__icontains=search) | Q(description__icontains=search))
@@ -1212,7 +1227,7 @@ def payroll_summary(request):
     if year_month_form.is_valid():
         from_date, to_date = year_month_form.save()
     last_billable = utils.get_last_billable_day(from_date)
-    projects = getattr(settings, 'TIMEPIECE_PROJECTS', {})
+    projects = utils.get_setting('TIMEPIECE_PAID_LEAVE_PROJECTS')
     weekQ = Q(end_time__gt=utils.get_week_start(from_date),
               end_time__lt=last_billable + datetime.timedelta(days=1))
     monthQ = Q(end_time__gt=from_date, end_time__lt=to_date)
@@ -1403,7 +1418,7 @@ class ReportMixin(object):
         if project_form.is_valid():
             trunc = project_form.cleaned_data['trunc']
             if not project_form.cleaned_data['paid_leave']:
-                projects = getattr(settings, 'TIMEPIECE_PROJECTS', {})
+                projects = utils.get_setting('TIMEPIECE_PAID_LEAVE_PROJECTS')
                 query &= ~Q(project__in=projects.values())
             if project_form.cleaned_data['pj_select']:
                 query &= Q(project__in=project_form.cleaned_data['pj_select'])
@@ -1687,7 +1702,9 @@ class ProjectHoursAjaxView(ProjectHoursMixin, View):
         projects = timepiece.Project.objects.filter(pk__in=inner_qs).values() \
             .order_by('name')
         all_projects = timepiece.Project.objects.values('id', 'name')
-        all_users = User.objects.filter(groups__permissions=perm) \
+        user_q = Q(groups__permissions=perm) | Q(user_permissions=perm)
+        user_q |= Q(is_superuser=True)
+        all_users = User.objects.filter(user_q) \
             .values('id', 'first_name', 'last_name')
 
         data = {

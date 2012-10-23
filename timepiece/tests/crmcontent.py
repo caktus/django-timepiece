@@ -17,7 +17,7 @@ class BusinessTest(TimepieceDataTestCase):
         }
 
     def login_with_permission(self):
-        user = User.objects.create_user('admin', 'e@e.com', 'abc')
+        user = self.create_user('admin', 'e@e.com', 'abc')
         perm = Permission.objects.get(codename='add_business')
         user.user_permissions.add(perm)
         self.client.login(username='admin', password='abc')
@@ -50,7 +50,7 @@ class DeleteObjectsTest(TimepieceDataTestCase):
         self.login_with_permission()
 
     def login_with_permission(self):
-        user = User.objects.create_user('admin', 'e@e.com', 'abc')
+        user = self.create_user('admin', 'e@e.com', 'abc')
         user.is_staff = True
         user.is_superuser = True
         user.save()
@@ -141,7 +141,7 @@ class ProjectsTest(TimepieceDataTestCase):
         self.url = reverse('create_project')
 
     def login_with_permission(self):
-        user = User.objects.create_user('admin', 'e@e.com', 'abc')
+        user = self.create_user('admin', 'e@e.com', 'abc')
         user.is_staff = True
         user.is_superuser = True
         user.save()
