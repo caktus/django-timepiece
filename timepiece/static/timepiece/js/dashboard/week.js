@@ -9,7 +9,7 @@ function createBar(type, percent, label) {
     var cls = (type === 'remaining') ? 'remaining' : 'bar bar-' + type;
     return $('<div />', {
         'class': cls,
-        'style': 'width: ' + Math.floor(percent * 100) + '%;',
+        'style': 'width: ' + percent + '%;',
         'text': label
     });
 }
@@ -32,6 +32,7 @@ function createBars(progress, worked, assigned) {
             worked_percent = Math.min(1, assigned / worked);
             worked_text = humanizeTime(assigned);
         }
+        worked_percent = Math.floor(worked_percent * 100);
         progress.append(createBar('success', worked_percent, worked_text));
     }
 
@@ -39,6 +40,7 @@ function createBars(progress, worked, assigned) {
     if (worked > assigned) {
         var overtime_percent = Math.min(1, 1 - assigned / worked),
             overtime_text = humanizeTime(worked - assigned) + ' over';
+        overtime_percent = Math.ceil(overtime_percent * 100);
         progress.append(createBar('warning', overtime_percent, overtime_text));
     }
 
@@ -46,6 +48,7 @@ function createBars(progress, worked, assigned) {
     if (worked < assigned) {
         var remaining_percent = Math.min(1, 1 - worked / assigned),
             remaining_text = humanizeTime(assigned - worked) + ' remaining';
+        remaining_percent = Math.ceil(remaining_percent * 100);
         progress.append(createBar('remaining', remaining_percent, remaining_text));
     }
 }
