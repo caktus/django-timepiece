@@ -5,12 +5,12 @@
         <tr>
             <th>Date</th>
             <th>Project</th>
-            <th class="visible-desktop">Activity</th>
-            <th class="visible-desktop">Clock In</th>
-            <th class="{% if not active %}visible-desktop{% endif %}">Clock Out</th>
-            <th class="visible-desktop">Breaks</th>
+            <th class="desktop">Activity</th>
+            <th class="desktop">Clock In</th>
+            <th class="{% if not active %}desktop{% endif %}">Clock Out</th>
+            <th class="desktop">Breaks</th>
             <th>Hours</th>
-            <th class="visible-desktop">Location</th>
+            <th class="desktop">Location</th>
             <th>Actions</th>
         </tr>
     </thead>
@@ -25,16 +25,16 @@
                     {{ entry.project }}
                 {% endif %}
             </td>
-            <td class="visible-desktop">{{ entry.activity }}</td>
-            <td class="visible-desktop">{{ entry.start_time|date:"P" }}</td>
-            <td class="{% if not active %}visible-desktop{% endif %}">
+            <td class="desktop">{{ entry.activity }}</td>
+            <td class="desktop">{{ entry.start_time|date:"P" }}</td>
+            <td class="{% if not active %}desktop{% endif %}">
                 {% if active or not entry.end_time %}
                     <a href="{% url 'timepiece-clock-out' entry.id %}">Clock Out</a>
                 {% else %}
                     {{ entry.end_time|date:"P" }}
                 {% endif %}
             </td>
-            <td class="hours visible-desktop">
+            <td class="hours desktop">
                 {{ entry.seconds_paused|seconds_to_hours|floatformat:2 }}
                 {% if active or not entry.end_time %}
                     {% if entry.is_paused %}
@@ -45,7 +45,7 @@
                 {% endif %}
             </td>
             <td class="hours">{% get_active_hours entry %}</td>
-            <td class="visible-desktop">{{ entry.location }}</td>
+            <td class="desktop">{{ entry.location }}</td>
             <td>
                 <ul class='actions'>
                     {% ifequal entry.status 'unverified' %}
