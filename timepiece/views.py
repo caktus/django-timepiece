@@ -1702,7 +1702,9 @@ class ProjectHoursAjaxView(ProjectHoursMixin, View):
         projects = timepiece.Project.objects.filter(pk__in=inner_qs).values() \
             .order_by('name')
         all_projects = timepiece.Project.objects.values('id', 'name')
-        all_users = User.objects.filter(groups__permissions=perm) \
+        user_q = Q(groups__permissions=perm) | Q(user_permissions=perm)
+        user_q |= Q(is_superuser=True)
+        all_users = User.objects.filter(user_q) \
             .values('id', 'first_name', 'last_name')
 
         data = {
