@@ -62,14 +62,8 @@ class EditPersonTest(TimepieceDataTestCase):
         }
 
     def login_with_permission(self):
-        user = auth_models.User.objects.create_user(
-            'admin',
-            'e@e.com',
-            'abc'
-        )
-        user.is_superuser = True
-        user.is_staff = True
-        user.save()
+        user = self.create_user('admin', 'e@e.com', 'abc', is_superuser=True,
+                is_staff=True)
         self.client.login(username='admin', password='abc')
 
     def test_edit_user(self):

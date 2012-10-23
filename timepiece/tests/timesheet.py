@@ -62,7 +62,7 @@ class MyLedgerTest(TimepieceDataTestCase):
     def login_with_permissions(self):
         view_entry_summary = Permission.objects.get(
             codename='view_entry_summary')
-        user = User.objects.create_user('perm', 'e@e.com', 'abc')
+        user = self.create_user('perm', 'e@e.com', 'abc')
         user.user_permissions.add(view_entry_summary)
         user.save()
 
@@ -1144,15 +1144,14 @@ class StatusTest(TimepieceDataTestCase):
 
     def login_as_admin(self):
         "Helper to login as an admin user"
-        self.admin = User.objects.create_user('admin', 'e@e.com', 'abc')
-        self.admin.is_superuser = True
-        self.admin.save()
+        self.admin = self.create_user('admin', 'e@e.com', 'abc',
+                is_superuser=True)
         self.client.login(username='admin', password='abc')
 
     def login_with_permissions(self, *codenames):
         """Helper to login as a user with correct permissions"""
         perms = Permission.objects.filter(codename__in=codenames)
-        self.perm_user = User.objects.create_user('perm', 'e@e.com', 'abc')
+        self.perm_user = self.create_user('perm', 'e@e.com', 'abc')
         self.perm_user.user_permissions.add(*perms)
         self.perm_user.save()
         self.client.login(username='perm', password='abc')
