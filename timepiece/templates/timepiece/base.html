@@ -7,20 +7,16 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
 
     {% block javascript %}
-        <script src="//ajax.googleapis.com/ajax/libs/jquery/1.7.2/jquery.min.js"></script>
-        <script src="//ajax.googleapis.com/ajax/libs/jqueryui/1.8.18/jquery-ui.min.js"></script>
-        <script src="{{ STATIC_URL }}timepiece/js/widgets.js"></script>
-        <script src="{{ STATIC_URL }}bootstrap/js/bootstrap-dropdown.js"></script>
+        <script type="text/javascript" src="//ajax.googleapis.com/ajax/libs/jquery/1.7.2/jquery.min.js"></script>
+        <script type="text/javascript" src="//ajax.googleapis.com/ajax/libs/jqueryui/1.8.18/jquery-ui.min.js"></script>
+        <script type="text/javascript" src="{{ STATIC_URL }}bootstrap/js/bootstrap.min.js"></script>
+        <script type="text/javascript" src="{{ STATIC_URL }}selectable/js/jquery.dj.selectable.js"></script>
         {% if perms.timepiece.view_business %}
             {{ quick_search_form.media.js }}
             <script type="text/javascript" src="{{ STATIC_URL }}timepiece/js/quicksearch.js"></script>
         {% endif %}
-        <script src="{{ STATIC_URL }}bootstrap/js/bootstrap-alert.js"></script>
-        <script src="{{ STATIC_URL }}bootstrap/js/bootstrap-collapse.js"></script>
-        <script src="{{ STATIC_URL }}timepiece/js/dashboard/dashboard.tooltip.js"></script>
-        <script src="{{ STATIC_URL }}timepiece/js/dashboard/navigation.js"></script>
-        <script type="text/javascript" src="{{ STATIC_URL }}bootstrap/js/bootstrap-popover.js"></script>
-        <script type="text/javascript" src="{{ STATIC_URL }}selectable/js/jquery.dj.selectable.js"></script>
+        <script type="text/javascript" src="{{ STATIC_URL }}timepiece/js/dashboard/dashboard.tooltip.js"></script>
+        <script stype="text/javascript" rc="{{ STATIC_URL }}timepiece/js/dashboard/navigation.js"></script>
     {% endblock javascript %}
 
     {% block extrajs %}
