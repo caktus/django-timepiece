@@ -24,7 +24,17 @@ function Timeline(loc, start_time, end_time, width, height) {
     // Settings
     this.draw_width = this.width - 40; // Draw inside the svg without clipping
     this.y_offset = 20; // Height offset from time marker
-    this.interval = 3600000; // One hour in milliseconds
+    var one_hour = 60 * 60 * 1000; // One hour in milliseconds
+    this.interval = one_hour;
+    var span_in_hours = (this.end_time - this.start_time) / one_hour,
+        width_span_ratio = Math.ceil(this.draw_width / span_in_hours);
+    /*
+    If the browser is small enough or more than a day has elapsed, show six
+    time interval markers
+    */
+    if (width_span_ratio < 60 || span_in_hours > 24) {
+        this.interval = Math.floor((span_in_hours * one_hour) / 6);
+    }
     this.edge_offset = 20; // Come off the edge
 }
 
