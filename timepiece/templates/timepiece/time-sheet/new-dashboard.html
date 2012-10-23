@@ -7,7 +7,6 @@
 
 {% block extrajs %}
     <script src="{{ STATIC_URL }}d3/d3.v2.min.js"></script>
-    <script src="{{ STATIC_URL }}timepiece/js/dashboard/utils.js"></script>
 {% endblock extrajs %}
 
 {% block breadcrumb %}
@@ -20,7 +19,7 @@
                 {% if active_entry %}
                     <div class="alert alert-info">
                         <button type="button" class="close" data-dismiss="alert">×</button>
-                        You are currently clocked into <a href="{% url 'view_project' active_entry.project.pk %}">{{ active_entry.project.name }}</a> since {{ active_entry.start_time|date:"h:i A" }} 
+                        You are currently clocked into <a href="{% url 'view_project' active_entry.project.pk %}">{{ active_entry.project.name }}</a> since {{ active_entry.start_time|date:"h:i A" }}
                     {% if not active_today %}
                         on {{ active_entry.start_time|date:"m/d/Y" }}.
                     {% endif %}
@@ -56,18 +55,23 @@
         {% endif %}
 
         {% if weeks_entries %}
+            <style>
+                #week-hours #progress-all {
+                    height: 30px;
+                }
+                .remaining {
+                    font-size: 12px;
+                    text-align: center;
+                    float: left;
+                }
+            </style>
             <div class="row-fluid">
                 <div class="span12">
                     <h3>Hours This Week</h3>
-                    <div id="weekly-hours">
-                        <div id="all-hours" class="bar"></div>
-                        {% for project in weeks_entries.projects %}
-                            <div id="hours-{{ project.pk }}" class="bar"></div>
-                        {% endfor %}
-                    </div>
+                    <div id="week-hours" data="{{ weeks_entries_json }}"></div>
+                    <script src="{{ STATIC_URL }}timepiece/js/dashboard/week.js"></script>
                 </div>
             </div>
-            <script src="{{ STATIC_URL }}timepiece/js/dashboard/weeks_work.js" data-entries="{{ weeks_entries_json }}"></script>
         {% endif %}
     {% endif %}
 {% endblock content %}

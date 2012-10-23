@@ -485,16 +485,12 @@ def process_weeks_entries(user, week_start, entries):
     {
         'assigned': Decimal('123.45'),
         'worked': Decimal('123.45'),
-        'remaining': Decimal('123.45'),
-        'overworked': Decimal('123.45'),
         'projects': [
             {
                 'pk': 123,
                 'name': 'abc',
                 'assigned': Decimal('123.45'),
                 'worked': Decimal('123.45'),
-                'remaining': Decimal('123.45'),
-                'overworked': Decimal('123.45'),
             }
         ],
     }
@@ -516,8 +512,6 @@ def process_weeks_entries(user, week_start, entries):
                 'name': entry.project.name,
                 'assigned': assigned,
                 'worked': Decimal('0.00'),
-                'remaining': assigned,
-                'overworked': Decimal('0.00'),
             }
 
     ProjectHours = get_model('timepiece', 'ProjectHours')
@@ -525,8 +519,6 @@ def process_weeks_entries(user, week_start, entries):
 
     all_assigned = get_hours_per_week(user)
     all_worked = Decimal('0.00')
-    all_remaining = all_assigned
-    all_overworked = Decimal('0.00')
 
     projects = {}  # Worked/remaining hours per project
     for entry in entries:
@@ -536,20 +528,11 @@ def process_weeks_entries(user, week_start, entries):
 
         all_worked += hours
         projects[pk]['worked'] += hours
-        all_remaining -= hours
-        projects[pk]['remaining'] -= hours
 
-        if all_remaining < 0:
-            all_overworked -= all_remaining
-            all_remaining = 0
-        if projects[pk]['remaining'] < 0:
-            projects[pk]['overworked'] -= projects[pk]['remaining']
-            projects[pk]['remaining'] = 0
-
+    # Sort by maximum of worked or assigned hours (highest first)
+    key = lambda x: max(x['worked'], x['assigned'])
     return {
         'assigned': all_assigned,
         'worked': all_worked,
-        'remaining': all_remaining,
-        'overworked': all_overworked,
-        'projects': projects.values(),
+        'projects': sorted(projects.values(), key=key, reverse=True),
     }
