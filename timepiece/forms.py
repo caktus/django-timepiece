@@ -3,7 +3,6 @@ from dateutil.relativedelta import relativedelta
 import time
 
 from django import forms
-from django.conf import settings
 from django.contrib.auth import models as auth_models
 from django.contrib.auth import forms as auth_forms
 from django.core.urlresolvers import reverse
@@ -175,7 +174,7 @@ class QuickClockInForm(forms.Form):
     def __init__(self, *args, **kwargs):
         user = kwargs.pop('user')
         super(QuickClockInForm, self).__init__(*args, **kwargs)
-        vacation_ids = settings.TIMEPIECE_PROJECTS.values()
+        vacation_ids = utils.get_setting('TIMEPIECE_PROJECTS').values()
         work_projects = timepiece.Project.objects.filter(
                 users=user, status__enable_timetracking=True,
                 type__enable_timetracking=True) \
@@ -205,11 +204,7 @@ class ClockInForm(forms.ModelForm):
         self.user = kwargs.pop('user')
         self.active = kwargs.pop('active', None)
         initial = kwargs.get('initial', {})
-        default_loc = getattr(
-            settings,
-            'TIMEPIECE_DEFAULT_LOCATION_SLUG',
-            None,
-        )
+        default_loc = utils.get_setting('TIMEPIECE_DEFAULT_LOCATION_SLUG')
         if default_loc:
             try:
                 loc = timepiece.Location.objects.get(slug=default_loc)

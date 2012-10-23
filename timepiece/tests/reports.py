@@ -26,7 +26,7 @@ class ReportsHelperBase(TimepieceDataTestCase):
         super(ReportsHelperBase, self).setUp()
         self.sick = self.create_project()
         self.vacation = self.create_project()
-        settings.TIMEPIECE_PROJECTS = {
+        settings.TIMEPIECE_PAID_LEAVE_PROJECTS = {
             'sick': self.sick.pk,
             'vacation': self.vacation.pk
         }
@@ -440,7 +440,7 @@ class TestBillableHours(ReportsHelperBase):
         self.dates_data = ['12/27/2010', '01/03/2011']
 
     def get_entries_data(self):
-        projects = getattr(settings, 'TIMEPIECE_PROJECTS', {})
+        projects = utils.get_setting('TIMEPIECE_PAID_LEAVE_PROJECTS')
         # Account for the day added by the form
         query = Q(end_time__gt=utils.get_week_start(self.from_date),
             end_time__lt=self.to_date + relativedelta(days=1))

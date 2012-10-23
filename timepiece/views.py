@@ -8,7 +8,6 @@ from dateutil.relativedelta import relativedelta
 from decimal import Decimal
 from itertools import groupby
 
-from django.conf import settings
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required, permission_required
 from django.contrib.auth.models import User, Permission
@@ -1081,7 +1080,8 @@ def create_edit_person(request, person_id=None):
 @permission_required('timepiece.view_project')
 def list_projects(request):
     form = timepiece_forms.ProjectSearchForm(request.GET)
-    if form.is_valid():
+    if form.is_valid() and ('search' in request.GET or 'status' in
+            request.GET):
         search, status = form.save()
         projects = timepiece.Project.objects.filter(
             Q(name__icontains=search) | Q(description__icontains=search))
@@ -1227,7 +1227,7 @@ def payroll_summary(request):
     if year_month_form.is_valid():
         from_date, to_date = year_month_form.save()
     last_billable = utils.get_last_billable_day(from_date)
-    projects = getattr(settings, 'TIMEPIECE_PROJECTS', {})
+    projects = utils.get_setting('TIMEPIECE_PAID_LEAVE_PROJECTS')
     weekQ = Q(end_time__gt=utils.get_week_start(from_date),
               end_time__lt=last_billable + datetime.timedelta(days=1))
     monthQ = Q(end_time__gt=from_date, end_time__lt=to_date)
@@ -1418,7 +1418,7 @@ class ReportMixin(object):
         if project_form.is_valid():
             trunc = project_form.cleaned_data['trunc']
             if not project_form.cleaned_data['paid_leave']:
-                projects = getattr(settings, 'TIMEPIECE_PROJECTS', {})
+                projects = utils.get_setting('TIMEPIECE_PAID_LEAVE_PROJECTS')
                 query &= ~Q(project__in=projects.values())
             if project_form.cleaned_data['pj_select']:
                 query &= Q(project__in=project_form.cleaned_data['pj_select'])
