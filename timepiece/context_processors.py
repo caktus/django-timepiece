@@ -1,6 +1,6 @@
 from timepiece import models as timepiece
 from timepiece import utils
-from timepiece.forms import QuickSearchForm, QuickClockInForm
+from timepiece.forms import QuickSearchForm
 
 
 def quick_search(request):
