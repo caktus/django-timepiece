@@ -25,23 +25,23 @@
                     {% endif %}
                     </div>
                 {% endif %}
-                <div class="row-fluid">
-                    <ul class="unstyled subnav">
-                        <li><a class="btn btn-inverse btn-large" href="{% url 'timepiece-clock-in' %}">Clock In</a></li>
-                        {% if active_entry %}
-                            <li><a class="btn btn-inverse btn-large" href="{% url 'timepiece-clock-out' active_entry.pk %}">Clock Out</a></li>
-                            <li><a class="btn btn-large {% if active_entry.is_paused %}btn-warning{% else %}btn-inverse{% endif %}" href="{% url 'timepiece-toggle-paused' active_entry.pk %}">
-                                {% if active_entry.is_paused %}
-                                    Resume
-                                {% else %}
-                                    Pause
-                                {% endif %}
-                            </a></li>
-                        {% endif %}
-                        <li><a class="btn btn-large btn-success" href="{% url 'timepiece-add' %}">Add Entry</a></li>
-                    </ul>
-                </div>
             </div>
+        </div>
+
+        <div class="row-fluid">
+            <ul class="unstyled subnav">
+                <li><a class="btn btn-inverse btn-large" href="{% url 'timepiece-clock-in' %}">Clock In</a></li>
+                    {% if active_entry %}
+                        <li><a class="btn btn-inverse btn-large" href="{% url 'timepiece-clock-out' active_entry.pk %}">Clock Out</a></li>
+                        <li><a class="btn btn-large {% if active_entry.is_paused %}btn-warning{% else %}btn-inverse{% endif %}" href="{% url 'timepiece-toggle-paused' active_entry.pk %}">
+                        {% if active_entry.is_paused %}
+                            Resume
+                        {% else %}
+                            Pause
+                        {% endif %}</a></li>
+                    {% endif %}
+                <li><a class="btn btn-success add-entry" href="{% url 'timepiece-add' %}">Add Entry</a></li>
+            </ul>
         </div>
 
         {% if todays_entries %}

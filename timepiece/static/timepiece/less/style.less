@@ -70,15 +70,27 @@ body {
     ul {
         &.subnav {
             margin-top: 3px;
-
             li {
                 display: inline;
-                border-left: 1px solid @lightgray;
-                padding: 0px 10px;
-
+                padding: 0px 3px;
+                @media(max-width: 350px) {
+                    padding: 0;
+                }
                 &:first-child {
                     padding-left: 0px;
                     border-left: 0px;
+                }
+                a {
+                    .btn-large;
+                    &.add-entry {
+                        @media(max-width: 505px) {
+                            .hide;
+                        }
+                    }
+                    @media(max-width: 350px) {
+                        .btn;
+                        .btn-inverse;
+                    }
                 }
             }
         }
