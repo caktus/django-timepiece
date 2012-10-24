@@ -211,7 +211,8 @@ var draw_timeline = function(data) {
 
     // Enable popovers
     $('.timeline rect').popover({
-        'placement': 'top'
+        'placement': 'top',
+        'trigger': 'hover'
     });
 };
 
