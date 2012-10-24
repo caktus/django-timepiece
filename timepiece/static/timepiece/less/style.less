@@ -71,25 +71,17 @@ body {
         &.subnav {
             margin-top: 3px;
             li {
-                display: inline;
-                padding: 0px 3px;
-                @media(max-width: 350px) {
-                    padding: 0;
-                }
-                &:first-child {
-                    padding-left: 0px;
-                    border-left: 0px;
+                .pull-left;
+                padding: 0px 10px 0 0;
+                @media(max-width: 480px) {
+                    padding: 0 5px 0 0;
                 }
                 a {
                     .btn-large;
                     &.add-entry {
-                        @media(max-width: 505px) {
-                            .hide;
+                        @media(max-width: 430px) {
+                            margin-top: 10px;
                         }
-                    }
-                    @media(max-width: 350px) {
-                        .btn;
-                        .btn-inverse;
                     }
                 }
             }
