@@ -271,9 +271,8 @@ class InvoiceCreateTestCase(TimepieceDataTestCase):
         """Helper to login as user with correct permissions"""
         generate_invoice = Permission.objects.get(
             codename='generate_project_invoice')
-        user = User.objects.create_user('perm', 'e@e.com', 'abc')
-        user.user_permissions.add(generate_invoice)
-        user.save()
+        user = self.create_user('perm', 'e@e.com', 'abc',
+                user_permissions=[generate_invoice])
 
     def test_invoice_create(self):
         """

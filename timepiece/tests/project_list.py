@@ -9,12 +9,11 @@ class ProjectListTest(TimepieceDataTestCase):
     def setUp(self):
         self.url = reverse('list_projects')
 
-        self.user = User.objects.create_user('user', 'u@a.com', 'abc')
+        self.user = self.create_user('user', 'u@a.com', 'abc')
         self.user.save()
 
-        self.super_user = User.objects.create_user('super', 's@a.com', 'abc')
-        self.super_user.is_superuser = True
-        self.super_user.save()
+        self.super_user = self.create_user('super', 's@a.com', 'abc',
+                is_superuser=True)
 
         self.statuses = []
         self.statuses.append(self.create_project_status(data={'label': '1'}))
