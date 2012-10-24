@@ -14,18 +14,41 @@ var get_time_display = function(stamp) {
 
 function Timeline(loc, start_time, end_time, width, height) {
     this.loc = loc;
-    this.start_time = start_time;
-    this.end_time = end_time;
     this.width = width;
     this.height = height;
 
     this.container = d3.select(this.loc).append('svg');
 
     // Settings
+    var today = new Date();
+    today.setHours(0),
+    today.setMinutes(0),
+    today.setSeconds(0),
+    today.setMilliseconds(0);
+    today = today.getTime();
     this.draw_width = this.width - 40; // Draw inside the svg without clipping
     this.y_offset = 20; // Height offset from time marker
     var one_hour = 60 * 60 * 1000; // One hour in milliseconds
+    var default_start = (one_hour * 8) + today;
+        default_end = (one_hour * 18) + today;
     this.interval = one_hour;
+
+    /*
+    Set the start and end times to defaults (8AM - 6PM) unless entries fall
+    outside of this, in which case round to the nearest hour on the outside.
+    */
+    if (start_time < default_start) {
+        this.start_time = Math.floor(start_time / one_hour) * one_hour;
+    } else {
+        this.start_time = default_start;
+    }
+
+    if (end_time > default_end) {
+        this.end_time = Math.ceil(end_time / one_hour) * one_hour;
+    } else {
+        this.end_time = default_end;
+    }
+
     var span_in_hours = (this.end_time - this.start_time) / one_hour,
         width_span_ratio = Math.ceil(this.draw_width / span_in_hours);
     /*
@@ -33,7 +56,7 @@ function Timeline(loc, start_time, end_time, width, height) {
     time interval markers
     */
     if (width_span_ratio < 60 || span_in_hours > 24) {
-        this.interval = Math.floor((span_in_hours * one_hour) / 6);
+        this.interval = Math.floor((span_in_hours * one_hour) / 5);
     }
     this.edge_offset = 20; // Come off the edge
 }
