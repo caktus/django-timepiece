@@ -1,6 +1,6 @@
 from timepiece import models as timepiece
 from timepiece import utils
-from timepiece.forms import QuickSearchForm, QuickClockInForm
+from timepiece.forms import QuickSearchForm
 
 
 def quick_search(request):
@@ -23,10 +23,23 @@ def active_entries(request):
 
 
 def quick_clock_in(request):
-    form = QuickClockInForm(request.GET or None, user=request.user) \
-        if request.user.is_authenticated() else None
+    user = request.user
+    projects = []
+    if user.is_authenticated() and user.is_active:
+        vacation_ids = utils.get_setting(
+                'TIMEPIECE_PAID_LEAVE_PROJECTS').values()
+        vacation_projects = timepiece.Project.objects.filter(
+                users=user, id__in=vacation_ids) \
+            .order_by('name').values('name', 'id')
+        work_projects = timepiece.Project.objects.filter(
+                users=user, status__enable_timetracking=True,
+                type__enable_timetracking=True) \
+            .exclude(id__in=vacation_ids) \
+            .order_by('name').values('name', 'id')
+        projects = list(work_projects) + list(vacation_projects)
+
     return {
-        'quick_clock_in_form': form,
+        'quick_clock_in_projects': projects,
     }
 
 
