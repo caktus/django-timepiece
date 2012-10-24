@@ -69,7 +69,7 @@ class CSVMixin(object):
 
 
 @login_required
-def new_dashboard(request):
+def dashboard(request):
     user = request.user
     today = datetime.date.today()
     eod = timezone.now().replace(hour=23, minute=59, second=59)
@@ -105,58 +105,6 @@ def new_dashboard(request):
         'todays_entries_json': json.dumps(todays_entries_summary, cls=DecimalEncoder),
         'weeks_entries': weeks_entries_summary,
         'weeks_entries_json': json.dumps(weeks_entries_summary, cls=DecimalEncoder),
-    })
-
-
-@login_required
-def view_entries(request):
-    view_entries = request.user.has_perm('timepiece.can_clock_in')
-    today = datetime.date.today()
-    week_start = utils.get_week_start()
-    time_q = Q(end_time__gte=week_start) | Q(end_time__isnull=True)
-    entries = timepiece.Entry.objects.filter(time_q, user=request.user) \
-                       .select_related('project__business', 'project',
-                                       'activity', 'location')
-    assignments = timepiece.ContractAssignment.objects.filter(
-            user=request.user,
-            user__project_relationships__project=F('contract__project'),
-            end_date__gte=today,
-            contract__status='current') \
-        .order_by('contract__project__type', 'end_date') \
-        .select_related('user', 'contract__project__type')
-    activity_entries = entries.values('billable').annotate(sum=Sum('hours')) \
-                                                 .order_by('-sum')
-    my_active_entries = timepiece.Entry.objects \
-        .select_related('project__business',) \
-        .only('user', 'project', 'activity', 'start_time') \
-        .filter(user=request.user, end_time__isnull=True,)
-    for current_entry in my_active_entries:
-        for activity_entry in activity_entries:
-            if current_entry.billable == activity_entry['billable']:
-                activity_entry['sum'] += get_active_hours(current_entry)
-                break
-    current_total = sum([entry['sum'] for entry in activity_entries])
-    project_entries = entries.exclude(end_time__isnull=True) \
-                             .values('project__name', 'project__pk') \
-                             .annotate(sum=Sum('hours')) \
-                             .order_by('project__name')
-    this_weeks_entries = entries.order_by('-start_time') \
-                                .filter(end_time__gte=week_start)
-    try:
-        profile = timepiece.UserProfile.objects.get(user=request.user)
-        hours_per_week = profile.hours_per_week
-    except timepiece.UserProfile.DoesNotExist:
-        hours_per_week = Decimal('40.0')
-
-    return render(request, 'timepiece/time-sheet/dashboard.html', {
-        'this_weeks_entries': this_weeks_entries,
-        'assignments': assignments,
-        'hours_per_week': hours_per_week,
-        'project_entries': project_entries,
-        'activity_entries': activity_entries,
-        'current_total': current_total,
-        'my_active_entries': my_active_entries,
-        'view_entries': view_entries,
     })
 
 
