@@ -186,8 +186,10 @@ class ClockInTest(TimepieceDataTestCase):
         # with one active entry
         self.assertRedirects(response, reverse('timepiece-entries'),
                              status_code=302, target_status_code=200)
-        self.assertContains(response, 'You have clocked into', count=1)
-        self.assertEquals(len(response.context['my_active_entries']), 1)
+        entries = timepiece.Entry.objects.filter(
+            end_time__isnull=True, user=self.user
+        )
+        self.assertEqual(entries.count(), 1)
 
     def testClockInAutoOut(self):
         """
@@ -868,9 +870,6 @@ class CreateEditEntry(TimepieceDataTestCase):
             status_code=302, target_status_code=200)
         self.assertContains(response,
             'The entry has been created successfully', count=1)
-        #If after Monday, there is one entry this week, otherwise 1
-        this_w = 2 if self.now.isoweekday() != 1 else 1
-        self.assertEquals(len(response.context['this_weeks_entries']), this_w)
 
     def testEditClosed(self):
         """
@@ -882,9 +881,6 @@ class CreateEditEntry(TimepieceDataTestCase):
             status_code=302, target_status_code=200)
         self.assertContains(response,
             'The entry has been updated successfully', count=1)
-        #If after Monday, there are two entries this week, otherwise 0
-        this_w = 1 if self.now.isoweekday() != 1 else 0
-        self.assertEquals(len(response.context['this_weeks_entries']), this_w)
 
     def testEditCurrentSameTime(self):
         """
@@ -904,7 +900,10 @@ class CreateEditEntry(TimepieceDataTestCase):
             status_code=302, target_status_code=200)
         self.assertContains(response,
             'The entry has been updated successfully', count=1)
-        self.assertEquals(len(response.context['my_active_entries']), 1)
+        entries = timepiece.Entry.objects.filter(
+            user=self.user, end_time__isnull=True
+        )
+        self.assertEquals(entries.count(), 1)
 
     def testEditCurrentDiffTime(self):
         """
@@ -922,9 +921,10 @@ class CreateEditEntry(TimepieceDataTestCase):
         #and 1 active entry, because we updated the current entry from setUp
         self.assertRedirects(response, reverse('timepiece-entries'),
             status_code=302, target_status_code=200)
-        self.assertContains(response,
-            'The entry has been updated successfully', count=1)
-        self.assertEquals(len(response.context['my_active_entries']), 1)
+        entries = timepiece.Entry.objects.filter(
+            user=self.user, end_time__isnull=True
+        )
+        self.assertEquals(entries.count(), 1)
 
     def testCreateBlockByClosed(self):
         """
