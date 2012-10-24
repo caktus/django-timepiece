@@ -39,17 +39,17 @@ function createBars(progress, worked, assigned) {
     // Overtime bar.
     if (worked > assigned) {
         var overtime_percent = Math.min(1, 1 - assigned / worked),
-            overtime_text = humanizeTime(worked - assigned) + ' over';
+            overtime_text = humanizeTime(worked - assigned) + ' Over';
         overtime_percent = Math.ceil(overtime_percent * 100);
-        progress.append(createBar('warning', overtime_percent, overtime_text));
+        progress.append(createBar('danger', overtime_percent, overtime_text));
     }
 
     // Remaining bar.
     if (worked < assigned) {
         var remaining_percent = Math.min(1, 1 - worked / assigned),
-            remaining_text = humanizeTime(assigned - worked) + ' remaining';
+            remaining_text = humanizeTime(assigned - worked) + ' Remaining';
         remaining_percent = Math.ceil(remaining_percent * 100);
-        progress.append(createBar('remaining', remaining_percent, remaining_text));
+        progress.append(createBar('Remaining', remaining_percent, remaining_text));
     }
 }
 
@@ -64,10 +64,10 @@ function getMinutes(time) {
 function humanizeTime(time) {
     var hours = getHours(time),
         minutes = getMinutes(time),
-        humanized_time = hours + 'h';
+        humanized_time = hours + ' Hours';
 
     if (minutes > 0) {
-        humanized_time += ' ' + minutes + 'm';
+        humanized_time += ' ' + minutes + ' Min';
     }
     return humanized_time;
 }

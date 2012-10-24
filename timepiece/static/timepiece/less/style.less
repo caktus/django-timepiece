@@ -67,20 +67,23 @@ body {
         width: 16px;
     }
 
-    ul {
-        &.subnav {
-            margin-top: 3px;
-            li {
-                .pull-left;
-                padding: 0px 10px 0 0;
-                @media(max-width: 480px) {
-                    padding: 0 5px 0 0;
-                }
-                a {
-                    .btn-large;
-                    &.add-entry {
-                        @media(max-width: 430px) {
-                            margin-top: 10px;
+    .quick-buttons {
+        margin-bottom: 20px;
+        ul {
+            &.subnav {
+                margin-top: 3px;
+                li {
+                    .pull-left;
+                    padding: 0px 10px 0 0;
+                    @media(max-width: 480px) {
+                        padding: 0 5px 0 0;
+                    }
+                    a {
+                        .btn-large;
+                        &.add-entry {
+                            @media(max-width: 430px) {
+                                margin-top: 10px;
+                            }
                         }
                     }
                 }
@@ -322,7 +325,6 @@ body {
     /*
     Dashboard styles
     */
-
     #timeline {
         height: 100px;
     }
@@ -381,6 +383,17 @@ body {
     &#dashboard {
         .active.paused, #active-entries .paused {
             color: #999;
+        }
+        h3 {
+            border-bottom: 1px solid @grayLighter;
+            margin-bottom: 20px;
+        }
+        #progress-all.progress {
+            .bar {
+                font-size: 24px;
+                line-height: 38px;
+                font-weight: bold;
+            }
         }
     }
 

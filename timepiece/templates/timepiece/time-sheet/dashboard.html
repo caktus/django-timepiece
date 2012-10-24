@@ -28,7 +28,7 @@
             </div>
         </div>
 
-        <div class="row-fluid">
+        <div class="row-fluid quick-buttons">
             <ul class="unstyled subnav">
                 <li><a class="btn btn-inverse btn-large" href="{% url 'timepiece-clock-in' %}">Clock In</a></li>
                     {% if active_entry %}
@@ -57,7 +57,7 @@
         {% if weeks_entries %}
             <style>
                 #week-hours #progress-all {
-                    height: 30px;
+                    height: 40px;
                 }
                 .remaining {
                     font-size: 12px;
