@@ -22,26 +22,35 @@ function createLabel(name, assigned) {
 
 // Creates all bar elements for the given progress div.
 function createBars(progress, worked, assigned) {
-    // Worked bar.
-    if (worked > 0 && assigned > 0) {
-        var worked_percent, worked_text;
-        if (worked <= assigned) {
-            worked_percent = Math.min(1, worked / assigned);
-            worked_text = humanizeTime(worked);
-        } else {
-            worked_percent = Math.min(1, assigned / worked);
-            worked_text = humanizeTime(assigned);
-        }
-        worked_percent = Math.floor(worked_percent * 100);
-        progress.append(createBar('success', worked_percent, worked_text));
+    // Early exit in case there are no hours assigned or worked
+    if (worked === 0 && assigned === 0) {
+        return;
     }
+    var worked_percent, worked_text;
+    if (worked <= assigned) {
+        worked_percent = Math.min(1, worked / assigned);
+        worked_text = humanizeTime(worked);
+    } else {
+        worked_percent = Math.min(1, assigned / worked);
+        worked_text = humanizeTime(assigned);
+    }
+    worked_percent = Math.floor(worked_percent * 100);
+    progress.append(createBar('success', worked_percent, worked_text));
 
     // Overtime bar.
     if (worked > assigned) {
         var overtime_percent = Math.min(1, 1 - assigned / worked),
-            overtime_text = humanizeTime(worked - assigned) + ' Over';
+            overtime_text = humanizeTime(worked - assigned);
         overtime_percent = Math.ceil(overtime_percent * 100);
-        progress.append(createBar('danger', overtime_percent, overtime_text));
+        // Only show a red bar (danger) if the user is assigned and went over.
+        var bar_type;
+        if (assigned > 0) {
+            bar_type = 'danger';
+            overtime_text += ' Over';
+        } else {
+            bar_type = 'success';
+        }
+        progress.append(createBar(bar_type, overtime_percent, overtime_text));
     }
 
     // Remaining bar.
@@ -72,27 +81,28 @@ function humanizeTime(time) {
     return humanized_time;
 }
 
+(function() {
+    var $container = $('#week-hours'),
+        data = JSON.parse($container.attr('data'));
 
-var container = $('#week-hours'),
-    data = JSON.parse(container.attr('data'));
+    // Create overall progress bar.
+    var progress_all = createProgress('progress-all');
+    createBars(progress_all, data.worked, data.assigned);
+    $container.append(progress_all);
 
-// Create overall progress bar.
-var progress_all = createProgress('progress-all');
-createBars(progress_all, data.worked, data.assigned);
-container.append(progress_all);
+    // Create individual project progress bars.
+    var max = Math.max(data.projects[0].worked, data.projects[0].assigned);
+    for (var i = 0; i < data.projects.length; i++) {
+        var project = data.projects[i],
+            progress = createProgress('progress-' + project.pk),
+            percent = Math.min(1, Math.max(project.worked, project.assigned) / max);
 
-// Create individual project progress bars.
-var max = Math.max(data.projects[0].worked, data.projects[0].assigned);
-for (var i = 0; i < data.projects.length; i++) {
-    var project = data.projects[i],
-        progress = createProgress('progress-' + project.pk),
-        percent = Math.min(1, Math.max(project.worked, project.assigned) / max);
-
-    var thing = $('<div />', {
-        'style': 'width: ' + Math.floor(percent * 100) + '%;'
-    })
-    createBars(progress, project.worked, project.assigned);
-    thing.append(createLabel(project.name, project.assigned));
-    thing.append(progress);
-    container.append(thing);
-}
+        var $bar = $('<div />', {
+            'style': 'width: ' + Math.floor(percent * 100) + '%;'
+        });
+        createBars(progress, project.worked, project.assigned);
+        $bar.append(createLabel(project.name, project.assigned));
+        $bar.append(progress);
+        $container.append($bar);
+    }
+})();
