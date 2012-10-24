@@ -433,12 +433,19 @@ def process_todays_entries(entries):
     end_time = last_end if last_end is not None else now
 
     def get_entry_details(entry):
-        entry.end_time = entry.end_time if entry.end_time else now
+        if entry.end_time:
+            entry.end_time = entry.end_time
+            active = False
+        else:
+            entry.end_time = now
+            active = True
         return {
             'project': entry.project.name,
             'pk': entry.pk,
             'start_time': entry.start_time.isoformat(),
             'end_time': entry.end_time.isoformat(),
+            'active': active,
+            'seconds_paused': entry.seconds_paused,
             'update_url': reverse('timepiece-update', args=(entry.pk,)),
             'hours': '%.2f' % round(entry.total_hours, 2),
         }

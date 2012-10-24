@@ -1,41 +1,46 @@
 var scripts = document.getElementsByTagName('script'),
     script = scripts[scripts.length - 1];
 
-var data = JSON.parse(script.getAttribute('data-entries'));
-
 var get_time_display = function(stamp) {
     var dt = new Date(stamp);
     var period = dt.getHours() < 12 ? 'AM' : 'PM';
     var hours = dt.getHours() > 12 ? dt.getHours() - 12 : dt.getHours();
-    if (hours == 0) {
+    if (hours === 0) {
         hours = 12;
     }
     var minutes = dt.getMinutes() < 10 ? '0' + dt.getMinutes() : dt.getMinutes();
     return hours + ':' + minutes + ' ' + period;
-}
+};
 
 function Timeline(loc, start_time, end_time, width, height) {
     this.loc = loc;
     this.start_time = start_time;
     this.end_time = end_time;
-
-    this.container = d3.select(this.loc).append('svg')
-        .attr('height', height);
-
     this.width = width;
     this.height = height;
+
+    this.container = d3.select(this.loc).append('svg');
 
     // Settings
     this.draw_width = this.width - 40; // Draw inside the svg without clipping
     this.y_offset = 20; // Height offset from time marker
-    this.interval = 3600000; // One hour in milliseconds
+    var one_hour = 60 * 60 * 1000; // One hour in milliseconds
+    this.interval = one_hour;
+    var span_in_hours = (this.end_time - this.start_time) / one_hour,
+        width_span_ratio = Math.ceil(this.draw_width / span_in_hours);
+    /*
+    If the browser is small enough or more than a day has elapsed, show six
+    time interval markers
+    */
+    if (width_span_ratio < 60 || span_in_hours > 24) {
+        this.interval = Math.floor((span_in_hours * one_hour) / 6);
+    }
     this.edge_offset = 20; // Come off the edge
 }
 
 Timeline.prototype.draw = function() {
     var dt = this.end_time - this.start_time;
 
-    
     this.line_offset = this.draw_width / (dt / this.interval);
 
     for(var i = 0; i <= dt / this.interval; i++) {
@@ -64,6 +69,8 @@ function Entry(timeline, entry_data) {
     this.hours = entry_data['hours'];
     this.pk = entry_data['pk'];
     this.update_url = entry_data['update_url'];
+    this.active = entry_data['active'];
+    this.seconds_paused = entry_data['seconds_paused'];
 
     this.timeline = timeline;
 
@@ -143,9 +150,10 @@ Entry.prototype.draw = function() {
     });
 };
 
-(function() {
-    var width = $('#timeline').width(),
-        height = 100;
+var draw_timeline = function(data) {
+    var $timeline = $('#timeline'),
+        height = $timeline.height(),
+        width = $(window).width();
 
     var start_time = new Date(data.start_time),
         end_time = new Date(data.end_time);
@@ -153,7 +161,7 @@ Entry.prototype.draw = function() {
     // Convert the minutes to milliseconds
     var timezone_offset = start_time.getTimezoneOffset() * 60 * 1000;
 
-    var t = new Timeline('#timeline', start_time.getTime() + timezone_offset,
+    var t = new Timeline($timeline.selector, start_time.getTime() + timezone_offset,
         end_time.getTime() + timezone_offset, width, height);
     t.draw();
 
@@ -170,15 +178,27 @@ Entry.prototype.draw = function() {
             'end_time': end.getTime() + timezone_offset,
             'project_name': entry.project,
             'pk': entry.pk,
+            'active': entry.active,
+            'seconds_paused': entry.seconds_paused,
             'hours': hours,
             'update_url': entry.update_url
         });
         e.draw();
-        thing = e;
     }
 
     // Enable popovers
     $('.timeline rect').popover({
         'placement': 'top'
     });
-}());
+};
+
+
+(function() {
+    var data = JSON.parse(script.getAttribute('data-entries'));
+    draw_timeline(data);
+
+    $(window).resize(function() {
+        $('#timeline svg').remove();
+        draw_timeline(data);
+    });
+})();
