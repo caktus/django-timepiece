@@ -98,7 +98,7 @@ def dashboard(request):
         .select_related('project').order_by('start_time')
     weeks_entries_summary = utils.process_weeks_entries(user=user,
             week_start=week_start, entries=weeks_entries)
-    return render(request, 'timepiece/time-sheet/new-dashboard.html', {
+    return render(request, 'timepiece/time-sheet/dashboard.html', {
         'active_entry': active_entry,
         'active_today': active_today,
         'todays_entries': todays_entries_summary,
