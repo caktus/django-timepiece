@@ -263,15 +263,23 @@ body {
         cursor: pointer;
     }
 
-    .popover-inner {
+    .popover {
         width: auto;
-
-        .popover-content {
+        margin-top: 15px !important;
+        .popover-inner {
             width: auto;
+            h3.popover-title { 
+                font-size: 18px;
+                font-weight: bold;
+            }
+            .popover-content {
+                width: auto;
+                padding: 15px 15px 0 15px;
+            }
         }
     }
 
-    .popover-toggle:hover {
+    a#popover-toggle {
         cursor: hand;
         cursor: pointer;
     }

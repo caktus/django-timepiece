@@ -72,7 +72,7 @@
                     {% endfor %}
 
                     {% if perms.timepiece.add_entry %}
-                        <li class="dropdown"><a class="popover-toggle" data-target="#active-popover">
+                        <li class="dropdown"><a href="#" id="popover-toggle" data-target="#active-popover">
                             <i class="icon-user icon-white"></i> {{ active_entries|length }} online user(s)</a>
                         </li>
                         <div id="active-popover" class="popover">
