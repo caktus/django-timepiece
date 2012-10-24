@@ -24,7 +24,7 @@ class PayrollTest(TimepieceDataTestCase):
         super(PayrollTest, self).setUp()
         self.sick = self.create_project(name='sick')
         self.vacation = self.create_project(name='vacation')
-        settings.TIMEPIECE_PROJECTS = {
+        settings.TIMEPIECE_PAID_LEAVE_PROJECTS = {
             'sick': self.sick.pk, 'vacation': self.vacation.pk
         }
         self.next = utils.add_timezone(datetime.datetime(2011, 6, 1))

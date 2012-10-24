@@ -8,7 +8,7 @@ from decimal import Decimal
 from django.test import TestCase
 from django.core.urlresolvers import reverse
 from django.template.defaultfilters import slugify
-from django.contrib.auth.models import User, Permission
+from django.contrib.auth.models import User, Permission, Group
 from django.contrib.contenttypes.models import ContentType
 from django.db.models import Q
 
@@ -77,11 +77,7 @@ class TimepieceDataTestCase(TestCase):
         if 'business' not in defaults:
             defaults['business'] = self.create_business()
         if 'point_person' not in defaults:
-            defaults['point_person'] = User.objects.create_user(
-                self.random_string(10),
-                'test@example.com',
-                'test',
-            )
+            defaults['point_person'] = self.create_user()
         return timepiece.Project.objects.create(**defaults)
 
     def create_project_relationship(self, types=None, data=None):
@@ -208,15 +204,29 @@ class TimepieceDataTestCase(TestCase):
         return self.create_entry(data)
 
     def create_user(self, username=None, email=None, password=None,
-            is_superuser=False):
+            user_permissions=None, groups=None, **kwargs):
         username = self.random_string(25) if not username else username
         email = self.random_string(10) + "@example.com" if not email else email
         password = self.random_string(25) if not password else password
         user = User.objects.create_user(username, email, password)
-        if is_superuser:
-            user.is_superuser = True
-            user.save()
-        return user
+        if user_permissions:
+            user.user_permissions = user_permissions
+        if groups:
+            user.groups = groups
+        if kwargs:
+            User.objects.filter(pk=user.pk).update(**kwargs)
+        return User.objects.get(pk=user.pk)
+
+    def create_auth_group(self, permissions=None, **kwargs):
+        defaults = {
+            'name': self.random_string(25),
+        }
+        defaults.update(kwargs)
+        group = Group.objects.create(**defaults)
+        if permissions:
+            group.permissions = permissions
+            group.save()
+        return group
 
     def create_activity_group(self, name=None, data=None):
         data = data or {}
@@ -238,12 +248,12 @@ class TimepieceDataTestCase(TestCase):
                 published=published or False)
 
     def setUp(self):
-        self.user = User.objects.create_user('user', 'u@abc.com', 'abc')
+        self.user = self.create_user('user', 'u@abc.com', 'abc')
         self.user.last_name = 'Jones'
-        self.user2 = User.objects.create_user('user2', 'u2@abc.com', 'abc')
+        self.user2 = self.create_user('user2', 'u2@abc.com', 'abc')
         self.user2.last_name = 'Smith'
-        self.superuser = User.objects.create_user('superuser',
-                                                  'super@abc.com', 'abc')
+        self.superuser = self.create_user('superuser', 'super@abc.com', 'abc',
+                is_superuser=True)
         permissions = Permission.objects.filter(
             content_type=ContentType.objects.get_for_model(timepiece.Entry),
             codename__in=('can_clock_in', 'can_clock_out',
@@ -251,8 +261,6 @@ class TimepieceDataTestCase(TestCase):
         )
         self.user.user_permissions = permissions
         self.user2.user_permissions = permissions
-        self.superuser.is_superuser = True
-        self.superuser.save()
         self.user.save()
         self.user2.save()
         self.activity = timepiece.Activity.objects.create(

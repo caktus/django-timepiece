@@ -3,7 +3,6 @@ from dateutil.relativedelta import relativedelta
 from decimal import Decimal
 import logging
 
-from django.conf import settings
 from django.contrib.auth.models import User
 from django.core.exceptions import ValidationError
 from django.db import models
@@ -112,9 +111,6 @@ class Project(models.Model):
 
     def __unicode__(self):
         return self.name
-
-    def trac_url(self):
-        return settings.TRAC_URL % self.tracker_url
 
 
 class RelationshipType(models.Model):
@@ -339,7 +335,7 @@ class EntryWorkedManager(models.Manager):
 
     def get_query_set(self):
         qs = EntryQuerySet(self.model)
-        projects = getattr(settings, 'TIMEPIECE_PROJECTS', {})
+        projects = utils.get_setting('TIMEPIECE_PAID_LEAVE_PROJECTS')
         return qs.exclude(project__in=projects.values())
 
 
@@ -653,12 +649,13 @@ class Entry(models.Model):
     def summary(user, date, end_date):
         """
         Returns a summary of hours worked in the given time frame, for this
-        user.  The setting TIMEPIECE_PROJECTS can be used to separate out hours
-        for paid leave that should not be included in the total worked (e.g.,
-        sick time, vacation time, etc.).  Those hours will be added to the
-        summary separately using the dictionary key set in TIMEPIECE_PROJECTS.
+        user.  The setting TIMEPIECE_PAID_LEAVE_PROJECTS can be used to
+        separate out hours for paid leave that should not be included in the
+        total worked (e.g., sick time, vacation time, etc.).  Those hours will
+        be added to the summary separately using the dictionary key set in
+        TIMEPIECE_PAID_LEAVE_PROJECTS.
         """
-        projects = getattr(settings, 'TIMEPIECE_PROJECTS', {})
+        projects = utils.get_setting('TIMEPIECE_PAID_LEAVE_PROJECTS')
         entries = user.timepiece_entries.filter(
             end_time__gt=date, end_time__lt=end_date)
         data = {

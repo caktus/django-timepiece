@@ -3,7 +3,6 @@ from dateutil.relativedelta import relativedelta
 import time
 
 from django import forms
-from django.conf import settings
 from django.contrib.auth import models as auth_models
 from django.contrib.auth import forms as auth_forms
 from django.core.urlresolvers import reverse
@@ -153,12 +152,20 @@ class QuickSearchForm(forms.Form):
         raise forms.ValidationError('Must be a user, project, or business')
 
 
-class AddUserToProjectForm(forms.Form):
+class SelectUserForm(forms.Form):
     user = selectable_forms.AutoCompleteSelectField(UserLookup, label="")
     user.widget.attrs['placeholder'] = 'Add User'
 
     def save(self):
         return self.cleaned_data['user']
+
+
+class SelectProjectForm(forms.Form):
+    project = selectable_forms.AutoCompleteSelectField(ProjectLookup, label="")
+    project.widget.attrs['placeholder'] = 'Add Project'
+
+    def save(self):
+        return self.cleaned_data['project']
 
 
 class ClockInForm(forms.ModelForm):
@@ -176,11 +183,7 @@ class ClockInForm(forms.ModelForm):
         self.user = kwargs.pop('user')
         self.active = kwargs.pop('active', None)
         initial = kwargs.get('initial', {})
-        default_loc = getattr(
-            settings,
-            'TIMEPIECE_DEFAULT_LOCATION_SLUG',
-            None,
-        )
+        default_loc = utils.get_setting('TIMEPIECE_DEFAULT_LOCATION_SLUG')
         if default_loc:
             try:
                 loc = timepiece.Location.objects.get(slug=default_loc)

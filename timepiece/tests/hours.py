@@ -5,7 +5,7 @@ from decimal import Decimal
 
 from dateutil.relativedelta import relativedelta
 
-from django.contrib.auth.models import Permission
+from django.contrib.auth.models import Permission, User
 from django.contrib.contenttypes.models import ContentType
 from django.core.urlresolvers import reverse
 
@@ -25,7 +25,7 @@ class ProjectHoursTestCase(TimepieceDataTestCase):
         )
         self.user.user_permissions = permissions
         self.user.save()
-        self.superuser = self.create_user('super', 's@abc.com', 'abc', True)
+        self.superuser = self.create_user('super', 's@abc.com', 'abc', is_superuser=True)
 
         self.tracked_status = self.create_project_status(data={
                 'label': 'Current', 'billable': True,
@@ -312,6 +312,24 @@ class ProjectHoursEditTestCase(ProjectHoursTestCase):
 
         self.assertEquals(data['project_hours'], [])
         self.assertEquals(data['projects'], [])
+
+    def test_users(self):
+        """Should retrieve all users who can_clock_in."""
+        perm = Permission.objects.get(codename='can_clock_in')
+        group = self.create_auth_group(permissions=[perm])
+
+        group_user = self.create_user(username='groupie', groups=[group])
+        perm_user = User.objects.get(username='user')
+        super_user = User.objects.get(username='super')
+
+        self.client.login(username='manager', password='abc')
+        response = self.client.get(self.ajax_url)
+        self.assertEquals(response.status_code, 200)
+        users = [u['id'] for u in json.loads(response.content)['all_users']]
+        self.assertEquals(len(users), 3)
+        self.assertTrue(group_user.id in users)
+        self.assertTrue(perm_user.id in users)
+        self.assertTrue(super_user.id in users)
 
     def test_default_ajax_call(self):
         """
