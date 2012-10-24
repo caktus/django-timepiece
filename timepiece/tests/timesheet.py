@@ -108,7 +108,7 @@ class MyLedgerTest(TimepieceDataTestCase):
 
     def testNoLedger(self):
         self.client.login(username='user2', password='abc')
-        self.url = reverse('timepiece-entries')
+        self.url = reverse('dashboard')
         try:
             response = self.client.get(self.url)
         except Exception, e:
@@ -184,7 +184,7 @@ class ClockInTest(TimepieceDataTestCase):
         response = self.client.post(self.url, data, follow=True)
         # Clock in form submission leads to the dashboard page
         # with one active entry
-        self.assertRedirects(response, reverse('timepiece-entries'),
+        self.assertRedirects(response, reverse('dashboard'),
                              status_code=302, target_status_code=200)
         entries = timepiece.Entry.objects.filter(
             end_time__isnull=True, user=self.user
@@ -236,7 +236,7 @@ class ClockInTest(TimepieceDataTestCase):
             'start_time_1': self.now.strftime('%H:%M:%S'),
         })
         response = self.client.post(self.url, data, follow=True)
-        self.assertRedirects(response, reverse('timepiece-entries'),
+        self.assertRedirects(response, reverse('dashboard'),
                              status_code=302, target_status_code=200)
         message = response.context['messages']._loaded_messages[0].message
         self.assertTrue(message.startswith('You have more than one active'))
@@ -866,7 +866,7 @@ class CreateEditEntry(TimepieceDataTestCase):
         """
         response = self.client.post(self.create_url, self.default_data,
             follow=True)
-        self.assertRedirects(response, reverse('timepiece-entries'),
+        self.assertRedirects(response, reverse('dashboard'),
             status_code=302, target_status_code=200)
         self.assertContains(response,
             'The entry has been created successfully', count=1)
@@ -877,7 +877,7 @@ class CreateEditEntry(TimepieceDataTestCase):
         """
         response = self.client.post(self.edit_closed_url, self.default_data,
             follow=True)
-        self.assertRedirects(response, reverse('timepiece-entries'),
+        self.assertRedirects(response, reverse('dashboard'),
             status_code=302, target_status_code=200)
         self.assertContains(response,
             'The entry has been updated successfully', count=1)
@@ -896,7 +896,7 @@ class CreateEditEntry(TimepieceDataTestCase):
         response = self.client.post(self.edit_current_url, data, follow=True)
         #This post should redirect to the dashboard, with the correct message
         #and 1 active entry, because we updated the current entry from setUp
-        self.assertRedirects(response, reverse('timepiece-entries'),
+        self.assertRedirects(response, reverse('dashboard'),
             status_code=302, target_status_code=200)
         self.assertContains(response,
             'The entry has been updated successfully', count=1)
@@ -919,7 +919,7 @@ class CreateEditEntry(TimepieceDataTestCase):
         response = self.client.post(self.edit_current_url, data, follow=True)
         #This post should redirect to the dashboard, with the correct message
         #and 1 active entry, because we updated the current entry from setUp
-        self.assertRedirects(response, reverse('timepiece-entries'),
+        self.assertRedirects(response, reverse('dashboard'),
             status_code=302, target_status_code=200)
         entries = timepiece.Entry.objects.filter(
             user=self.user, end_time__isnull=True

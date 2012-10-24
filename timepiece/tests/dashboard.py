@@ -19,7 +19,7 @@ class DashboardTestCase(TimepieceDataTestCase):
         super(DashboardTestCase, self).setUp()
         self.unpriveleged_user = self.create_user('tester', 'email@email.com',
                 'abc')
-        self.url = reverse('timepiece-entries')
+        self.url = reverse('dashboard')
         self.text = [u'Clock In', u'Add Entry', u'My Active Entries']
         self.now = timezone.now()
         self.start = self.now.replace(hour=8, minute=0, second=0)
