@@ -8,8 +8,6 @@ from timepiece import views
 
 urlpatterns = patterns('',
     url(r'^$', views.view_entries, name='timepiece-entries'),
-    url(r'^period/(?P<delta>\d+)/$', views.view_entries,
-        name='timepiece-previous-entries'),
     url(r'^clockin/$', views.clock_in, name='timepiece-clock-in'),
     url(r'^clockout/(?P<entry_id>\d+)/$', views.clock_out,
         name='timepiece-clock-out'),
