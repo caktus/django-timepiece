@@ -97,14 +97,16 @@ function humanizeTime(time) {
             percent = Math.min(1, Math.max(project.worked, project.assigned) / max),
             bar_width = Math.floor(percent * 100);
 
-        var $label = $('<div class="progress-label" />')
+        var $bar_parent = $('<div class="progress-parent"/>');
+        var $label = $('<div class="progress-label span2" />')
             .append(createLabel(project.name, project.assigned));
 
-        var $bar = $('<div />');
-        var progress = createProgress('progress-' + project.pk);
+        var $bar = $('<div class="progress-bar" span10/>'),
+            progress = createProgress('progress-' + project.pk);
         createBars(progress, project.worked, project.assigned);
         $bar.append(progress)
             .attr('style', 'width: ' + bar_width + '%;');
-        $container.append($label, $bar);
+        $bar_parent.append($label, $bar);
+        $container.append($bar_parent);
     }
 })();
