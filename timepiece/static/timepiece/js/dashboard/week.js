@@ -14,9 +14,9 @@ function createBar(type, percent, label) {
     });
 }
 
-function createLabel(name, assigned) {
+function createLabel(project_name, assigned) {
     return $('<div />', {
-        'text': name + ' - ' + humanizeTime(assigned) + ' assigned'
+        'text': project_name + ' - ' + humanizeTime(assigned) + ' assigned'
     });
 }
 
@@ -94,15 +94,17 @@ function humanizeTime(time) {
     var max = Math.max(data.projects[0].worked, data.projects[0].assigned);
     for (var i = 0; i < data.projects.length; i++) {
         var project = data.projects[i],
-            progress = createProgress('progress-' + project.pk),
-            percent = Math.min(1, Math.max(project.worked, project.assigned) / max);
+            percent = Math.min(1, Math.max(project.worked, project.assigned) / max),
+            bar_width = Math.floor(percent * 100);
 
-        var $bar = $('<div />', {
-            'style': 'width: ' + Math.floor(percent * 100) + '%;'
-        });
+        var $label = $('<div class="progress-label" />')
+            .append(createLabel(project.name, project.assigned));
+
+        var $bar = $('<div />');
+        var progress = createProgress('progress-' + project.pk);
         createBars(progress, project.worked, project.assigned);
-        $bar.append(createLabel(project.name, project.assigned));
-        $bar.append(progress);
-        $container.append($bar);
+        $bar.append(progress)
+            .attr('style', 'width: ' + bar_width + '%;');
+        $container.append($label, $bar);
     }
 })();
