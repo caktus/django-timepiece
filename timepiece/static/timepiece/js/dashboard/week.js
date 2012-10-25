@@ -23,9 +23,6 @@ function createLabel(project_name, assigned) {
 // Creates all bar elements for the given progress div.
 function createBars(progress, worked, assigned) {
     // Early exit in case there are no hours assigned or worked
-    if (worked === 0 && assigned === 0) {
-        return;
-    }
     var worked_percent, worked_text;
     if (worked <= assigned) {
         worked_percent = Math.min(1, worked / assigned);
@@ -90,23 +87,23 @@ function humanizeTime(time) {
     createBars(progress_all, data.worked, data.assigned);
     $container.append(progress_all);
 
+    $container.append('<h3>Project Hours</h3>');
+
     // Create individual project progress bars.
-    var max = Math.max(data.projects[0].worked, data.projects[0].assigned);
     for (var i = 0; i < data.projects.length; i++) {
-        var project = data.projects[i],
-            percent = Math.min(1, Math.max(project.worked, project.assigned) / max),
-            bar_width = Math.floor(percent * 100);
+        var project = data.projects[i];
+        if (project.worked === 0) continue;
 
         var $bar_parent = $('<div class="progress-parent"/>');
-        var $label = $('<div class="progress-label span2" />')
+        var $label = $('<div class="progress-label" />')
             .append(createLabel(project.name, project.assigned));
+        $bar_parent.append($label);
 
-        var $bar = $('<div class="progress-bar" span10/>'),
-            progress = createProgress('progress-' + project.pk);
+        var progress = createProgress('progress-' + project.pk);
         createBars(progress, project.worked, project.assigned);
-        $bar.append(progress)
-            .attr('style', 'width: ' + bar_width + '%;');
-        $bar_parent.append($label, $bar);
+        var $bar = $('<div class="progress-bar" />')
+            .append(progress);
+        $bar_parent.append($bar);
         $container.append($bar_parent);
     }
 })();
