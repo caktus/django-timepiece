@@ -152,10 +152,7 @@ Entry.prototype.draw = function() {
     entry.attr('data-title', this.project_name)
         .attr('data-content', popover_msg);
 
-    entry.transition()
-        .delay(100)
-        .duration(1500)
-        .attr('fill', '#0061AA')
+    entry.attr('fill', '#0061AA')
         .attr('stroke', '#333333')
         .attr('stroke-width', '2px')
         .style('opacity', '0.95');
@@ -174,8 +171,7 @@ Entry.prototype.draw = function() {
         var sub = Math.ceil(text_box.width / (text_box.width - entry_box.width)), // Ratio using widths
             name = this.project_name.substring(0, sub) + '...';
 
-        name = sub === 0 || entry_box.width < 30 ? '' : name;
-
+        name = (sub === 0 || entry_box.width < 30) ? '' : name;
         text.text(name);
 
         // New bounding box
@@ -189,11 +185,8 @@ Entry.prototype.draw = function() {
     text.attr('x', text_xpos)
         .attr('y', text_ypos);
     
-    // Display!
-    text.transition()
-        .delay(100)
-        .duration(1500)
-        .attr('fill', '#FFFFFF')
+    // Display text
+    text.attr('fill', '#FFFFFF')
         .style('opacity', '1.0');
 
     // Handle click
