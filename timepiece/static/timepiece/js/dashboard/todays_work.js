@@ -12,6 +12,32 @@ var get_time_display = function(stamp) {
     return hours + ':' + minutes + ' ' + period;
 };
 
+var get_hms_display_from_seconds = function(total_seconds) {
+
+    var hours = Math.floor(total_seconds / (60 * 60));
+    var minutes = Math.floor((total_seconds % 360) / 60);
+    var seconds = total_seconds % 360 % 60;
+
+    var get_hms_text = function(hours, minutes, seconds) {
+        var result = '';
+
+        var extend_message = function(unit, unit_description) {
+            var msg = '';
+            if (unit > 0) {
+                msg += unit + ' ' + unit_description;
+                msg += unit !== 1 ? 's ' : ' ';
+            }
+            return msg;
+        };
+
+        result += extend_message(hours, 'hour');
+        result += extend_message(minutes, 'minute');
+        result += extend_message(seconds, 'second');
+        return result;
+    };
+    return get_hms_text(hours, minutes, seconds);
+};
+
 function Timeline(loc, start_time, end_time, width, height) {
     this.loc = loc;
     this.width = width;
@@ -115,7 +141,11 @@ Entry.prototype.draw = function() {
         .attr('width', width);
 
     // Add the attributes for popovers
-    var popover_msg = 'You have worked ' + this.hours + ' hours.';
+    var popover_msg = 'You have worked ' + this.hours + ' hours';
+    if (this.seconds_paused > 0) {
+        var hms = get_hms_display_from_seconds(this.seconds_paused);
+        popover_msg += ' with ' + hms + ' paused';
+    }
     var start_str = get_time_display(new Date(this.start_time));
     var end_str = get_time_display(new Date(this.end_time));
     popover_msg += '<br/>' + start_str + ' - ' + end_str;
