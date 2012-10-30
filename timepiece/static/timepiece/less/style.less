@@ -275,7 +275,7 @@ body {
         margin-top: 15px !important;
         .popover-inner {
             width: auto;
-            h3.popover-title { 
+            h3.popover-title {
                 font-size: 18px;
                 font-weight: bold;
             }
@@ -301,7 +301,7 @@ body {
     }
 
     .timeline {
-  
+
     }
 
     #active-popover {
@@ -319,24 +319,6 @@ body {
     */
     #timeline {
         height: 100px;
-    }
-
-    #weekly-hours {
-        .bar {
-            margin: 10px 0px;
-        }
-
-        .worked, .remaining {
-            text-align: center;
-        }
-
-        svg.hoursChart {
-            height: 50px;
-        }
-
-        rect {
-            fill: #FFFFFF;
-        }
     }
 
     /*****************************************
@@ -380,8 +362,20 @@ body {
             border-bottom: 1px solid @grayLighter;
             margin-bottom: 20px;
         }
+        .progress {
+            height: 24px;
+            .bar, .remaining {
+                font-size: 16px;
+                line-height: 22px;
+            }
+            .remaining {
+                text-align: center;
+                float: left;
+            }
+        }
         #progress-all.progress {
-            .bar {
+            height: 40px;
+            .bar, .remaining {
                 font-size: 24px;
                 line-height: 38px;
                 font-weight: bold;

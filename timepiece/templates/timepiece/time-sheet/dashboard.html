@@ -14,9 +14,10 @@
 
 {% block content %}
     {% if perms.timepiece.can_clock_in %}
-        <div class="row-fluid">
-            <div class="span12" id="dashboard-active-entry">
-                {% if active_entry %}
+
+        {% if active_entry %}
+            <div class="row-fluid">
+                <div class="span12" id="dashboard-active-entry">
                     <div class="alert alert-info">
                         <button type="button" class="close" data-dismiss="alert">×</button>
                         You are currently clocked into <a href="{% url 'view_project' active_entry.project.pk %}">{{ active_entry.project.name }}</a> since {{ active_entry.start_time|date:"h:i A" }}
@@ -24,23 +25,23 @@
                         on {{ active_entry.start_time|date:"m/d/Y" }}.
                     {% endif %}
                     </div>
-                {% endif %}
+                </div>
             </div>
-        </div>
+        {% endif %}
 
         <div class="row-fluid quick-buttons">
             <ul class="unstyled subnav">
-                <li><a class="btn btn-inverse btn-large" href="{% url 'timepiece-clock-in' %}">Clock In</a></li>
+                <li><a class="btn btn-primary" href="{% url 'timepiece-clock-in' %}">Clock In</a></li>
                     {% if active_entry %}
-                        <li><a class="btn btn-inverse btn-large" href="{% url 'timepiece-clock-out' active_entry.pk %}">Clock Out</a></li>
-                        <li><a class="btn btn-large {% if active_entry.is_paused %}btn-warning{% else %}btn-inverse{% endif %}" href="{% url 'timepiece-toggle-paused' active_entry.pk %}">
+                        <li><a class="btn btn-primary" href="{% url 'timepiece-clock-out' active_entry.pk %}">Clock Out</a></li>
+                        <li><a class="btn {% if active_entry.is_paused %}btn-warning{% else %}btn-primary{% endif %}" href="{% url 'timepiece-toggle-paused' active_entry.pk %}">
                         {% if active_entry.is_paused %}
                             Resume
                         {% else %}
                             Pause
                         {% endif %}</a></li>
                     {% endif %}
-                <li><a class="btn btn-success add-entry" href="{% url 'timepiece-add' %}">Add Entry</a></li>
+                <li><a class="btn add-entry" href="{% url 'timepiece-add' %}">Add Entry</a></li>
             </ul>
         </div>
 
@@ -55,16 +56,6 @@
         {% endif %}
 
         {% if weeks_entries %}
-            <style>
-                #week-hours #progress-all {
-                    height: 40px;
-                }
-                .remaining {
-                    font-size: 12px;
-                    text-align: center;
-                    float: left;
-                }
-            </style>
             <div class="row-fluid">
                 <div class="span12">
                     <h3>Hours This Week</h3>

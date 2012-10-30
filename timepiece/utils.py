@@ -6,7 +6,7 @@ from itertools import groupby
 
 from django.conf import settings
 from django.core.urlresolvers import reverse
-from django.db.models import Sum, get_model
+from django.db.models import Sum, get_model, Q
 from django.template.defaultfilters import slugify
 from django.utils.functional import lazy
 
@@ -502,21 +502,16 @@ def process_weeks_entries(user, week_start, entries):
         ],
     }
     """
-    def _initialize_project_if_needed(entry):
-        """
-        Helper method which adds new project record to projects if there is
-        no record for the project associated with this entry.
-
-        Requires projects, proj_hours, and ProjectHours in scope.
-        """
-        if entry.project_id not in projects:
+    def _initialize_project(project):
+        """Requires project_data, proj_hours, and ProjectHours in scope."""
+        if project['pk'] not in project_data:
             try:
-                assigned = proj_hours.get(project=entry.project).hours
+                assigned = proj_hours.get(project__id=project['pk']).hours
             except ProjectHours.DoesNotExist:
                 assigned = Decimal('0.00')
-            projects[entry.project_id] = {
-                'pk': entry.project_id,
-                'name': entry.project.name,
+            project_data[project['pk']] = {
+                'pk': project['pk'],
+                'name': project['name'],
                 'assigned': assigned,
                 'worked': Decimal('0.00'),
             }
@@ -527,19 +522,26 @@ def process_weeks_entries(user, week_start, entries):
     all_assigned = get_hours_per_week(user)
     all_worked = Decimal('0.00')
 
-    projects = {}  # Worked/remaining hours per project
+    Project = get_model('timepiece', 'Project')
+    project_q = Q(id__in=proj_hours.values_list('project__id', flat=True))
+    project_q |= Q(id__in=entries.values_list('project__id', flat=True))
+    projects = Project.objects.filter(project_q).values('pk', 'name')
+
+    project_data = {}  # Worked/remaining hours per project.
+    for project in projects:
+        _initialize_project(project)
+
     for entry in entries:
-        _initialize_project_if_needed(entry)
         pk = entry.project_id
         hours = get_active_hours(entry)
 
         all_worked += hours
-        projects[pk]['worked'] += hours
+        project_data[pk]['worked'] += hours
 
-    # Sort by maximum of worked or assigned hours (highest first)
+    # Sort by maximum of worked or assigned hours (highest first).
     key = lambda x: max(x['worked'], x['assigned'])
     return {
         'assigned': all_assigned,
         'worked': all_worked,
-        'projects': sorted(projects.values(), key=key, reverse=True),
+        'projects': sorted(project_data.values(), key=key, reverse=True),
     }

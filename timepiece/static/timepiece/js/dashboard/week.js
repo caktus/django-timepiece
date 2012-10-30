@@ -1,12 +1,34 @@
-function createProgress(id) {
+
+function getHours(time) {
+    return Math.floor(time);
+}
+
+function getMinutes(time) {
+    var minutes = Math.floor((time - getHours(time)) * 60);
+    if (minutes < 10) {
+        minutes = '0' + minutes;
+    }
+    return minutes
+}
+
+function humanizeTime(time) {
+    var hours = getHours(time),
+        minutes = getMinutes(time);
+
+    return hours + ':' + minutes;
+}
+
+// Label for project charts.
+function createProjectLabel(project_name, assigned) {
     return $('<div />', {
-        'id': id,
-        'class': 'progress'
+        'class': 'progress-label',
+        'text': project_name + ' - ' + humanizeTime(assigned) + ' Assigned'
     });
 }
 
+// Worked, remaining, or overtime hours on a project.
 function createBar(type, percent, label) {
-    var cls = (type === 'remaining') ? 'remaining' : 'bar bar-' + type;
+    var cls = (type === 'remaining') ? type : 'bar bar-' + type;
     return $('<div />', {
         'class': cls,
         'style': 'width: ' + percent + '%;',
@@ -14,40 +36,42 @@ function createBar(type, percent, label) {
     });
 }
 
-function createLabel(project_name, assigned) {
-    return $('<div />', {
-        'text': project_name + ' - ' + humanizeTime(assigned) + ' assigned'
+// Container for all bars (worked, overtime, remaining) on a project.
+function createChart(id, worked, assigned, percent) {
+    var chart = $('<div />', {
+        'id': id,
+        'class': 'progress',
+        'style': 'width: ' + percent + '%;'
     });
-}
 
-// Creates all bar elements for the given progress div.
-function createBars(progress, worked, assigned) {
-    // Early exit in case there are no hours assigned or worked
-    var worked_percent, worked_text;
-    if (worked <= assigned) {
-        worked_percent = Math.min(1, worked / assigned);
-        worked_text = humanizeTime(worked);
-    } else {
-        worked_percent = Math.min(1, assigned / worked);
-        worked_text = humanizeTime(assigned);
+    // Worked bar.
+    if (worked > 0 && assigned > 0) {  // Shortcut if only remaining or overtime bar is needed.
+        var worked_percent, worked_text;
+        if (worked <= assigned) {
+            worked_percent = Math.min(1, worked / assigned);
+            worked_text = humanizeTime(worked);
+        } else {
+            worked_percent = Math.min(1, assigned / worked);
+            worked_text = humanizeTime(assigned);
+        }
+        worked_percent = Math.floor(worked_percent * 100);
+        chart.append(createBar('success', worked_percent, worked_text));  // Green
     }
-    worked_percent = Math.floor(worked_percent * 100);
-    progress.append(createBar('success', worked_percent, worked_text));
 
     // Overtime bar.
     if (worked > assigned) {
         var overtime_percent = Math.min(1, 1 - assigned / worked),
             overtime_text = humanizeTime(worked - assigned);
         overtime_percent = Math.ceil(overtime_percent * 100);
-        // Only show a red bar (danger) if the user is assigned and went over.
+        // Only show a red bar if the user is assigned and went over.
         var bar_type;
         if (assigned > 0) {
-            bar_type = 'danger';
+            bar_type = 'danger';  // Red
             overtime_text += ' Over';
         } else {
-            bar_type = 'success';
+            bar_type = 'success';  // Green
         }
-        progress.append(createBar(bar_type, overtime_percent, overtime_text));
+        chart.append(createBar(bar_type, overtime_percent, overtime_text));
     }
 
     // Remaining bar.
@@ -55,55 +79,34 @@ function createBars(progress, worked, assigned) {
         var remaining_percent = Math.min(1, 1 - worked / assigned),
             remaining_text = humanizeTime(assigned - worked) + ' Remaining';
         remaining_percent = Math.ceil(remaining_percent * 100);
-        progress.append(createBar('Remaining', remaining_percent, remaining_text));
+        chart.append(createBar('info', remaining_percent, remaining_text));  // Blue
     }
+
+    return chart;
 }
 
-function getHours(time) {
-    return Math.floor(time);
-}
-
-function getMinutes(time) {
-    return Math.floor((time - getHours(time)) * 60);
-}
-
-function humanizeTime(time) {
-    var hours = getHours(time),
-        minutes = getMinutes(time),
-        humanized_time = hours + ' Hours';
-
-    if (minutes > 0) {
-        humanized_time += ' ' + minutes + ' Min';
-    }
-    return humanized_time;
-}
-
+// Entry point for creating progress charts for overall & individual projects.
 (function() {
-    var $container = $('#week-hours'),
-        data = JSON.parse($container.attr('data'));
+    var container = $('#week-hours'),
+        data = JSON.parse(container.attr('data'));
 
-    // Create overall progress bar.
-    var progress_all = createProgress('progress-all');
-    createBars(progress_all, data.worked, data.assigned);
-    $container.append(progress_all);
+    var overall_chart = createChart('progress-all', data.worked, data.assigned, 100);
+    container.append(overall_chart);
 
-    $container.append('<h3>Project Hours</h3>');
+    container.append('<h3>Project Hours</h3>');
 
-    // Create individual project progress bars.
+    // Create individual project charts.
+    var max = Math.max(data.projects[0].worked, data.projects[0].assigned);
     for (var i = 0; i < data.projects.length; i++) {
-        var project = data.projects[i];
-        if (project.worked === 0) continue;
-
-        var $bar_parent = $('<div class="progress-parent"/>');
-        var $label = $('<div class="progress-label" />')
-            .append(createLabel(project.name, project.assigned));
-        $bar_parent.append($label);
-
-        var progress = createProgress('progress-' + project.pk);
-        createBars(progress, project.worked, project.assigned);
-        var $bar = $('<div class="progress-bar" />')
-            .append(progress);
-        $bar_parent.append($bar);
-        $container.append($bar_parent);
+        var project = data.projects[i],
+            portion = Math.max(project.worked, project.assigned) / max,
+            percent = 100 * Math.min(1, portion),
+            label = createProjectLabel(project.name, project.assigned),
+            chart_id = 'progress-' + project.pk,
+            chart = createChart(chart_id, project.worked, project.assigned, percent),
+            progress_parent = $('<div class="progress-parent"/>')
+                .append(label)
+                .append(chart);
+        container.append(progress_parent);
     }
 })();
