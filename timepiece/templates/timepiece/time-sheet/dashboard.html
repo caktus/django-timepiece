@@ -6,12 +6,7 @@
 
 {% block bodyid %}dashboard{% endblock bodyid %}
 
-{% block extrajs %}
-    <script src="{{ STATIC_URL }}d3/d3.v2.min.js"></script>
-{% endblock extrajs %}
-
-{% block breadcrumb %}
-{% endblock breadcrumb %}
+{% block breadcrumb %}{% endblock breadcrumb %}
 
 {% block content %}
     {% if perms.timepiece.can_clock_in %}
@@ -20,18 +15,15 @@
         <div class="row-fluid">
             <div class="span12" id="active-entry">
                 <div id="active-header">
-                    <h3>Current Entry</h3>
-                    <div>
-                        <a class="btn btn-primary" href="{% url 'timepiece-clock-in' %}">Clock In</a>
-                        {% if active_entry %}
-                            <a class="btn btn-primary" href="{% url 'timepiece-clock-out' active_entry.pk %}">Clock Out</a>
-                            <a class="btn btn-{% if active_entry.is_paused %}inverse{% else %}primary{% endif %}"
-                                    href="{% url 'timepiece-toggle-paused' active_entry.pk %}">
-                                {% if active_entry.is_paused %}Resume{% else %}Pause{% endif %}
-                            </a>
-                            <a class="btn btn-primary" href="{% url 'timepiece-update' active_entry.pk %}">Edit</a>
-                        {% endif %}
-                    </div>
+                    <a class="btn btn-primary" href="{% url 'timepiece-clock-in' %}">Clock In</a>
+                    {% if active_entry %}
+                        <a class="btn btn-primary" href="{% url 'timepiece-clock-out' active_entry.pk %}">Clock Out</a>
+                        <a class="btn btn-{% if active_entry.is_paused %}inverse{% else %}primary{% endif %}"
+                                href="{% url 'timepiece-toggle-paused' active_entry.pk %}">
+                            {% if active_entry.is_paused %}Resume{% else %}Pause{% endif %}
+                        </a>
+                        <a class="btn btn-primary" href="{% url 'timepiece-update' active_entry.pk %}">Edit</a>
+                    {% endif %}
                 </div>
 
                 <p>
@@ -39,7 +31,9 @@
                         You have been clocked into
                         <a href="{% url 'view_project' active_entry.project.pk %}">{{ active_entry.project.name }}</a>
                         since {{ active_entry.start_time|date:"g:i A" }}{% if not active_today %} on
-                        {{ active_entry.start_time|date:"l, F j" }}{% endif %}.
+                        {{ active_entry.start_time|date:"l, F j" }}{% endif %}
+                        ({% get_active_hours active_entry %} hours{% if active_entry.seconds_paused %}
+                        with {{ active_entry.seconds_paused|seconds_to_hours }} hours paused{% endif %}).
                     {% else %}
                         You are not currently clocked in to a project.
                     {% endif %}
@@ -54,9 +48,28 @@
 
         <div class="tab-content">
             <div class="tab-pane active" id="progress">
-                <div id="week-hours" data="{{ weeks_entries_json }}"></div>
-                <script src="{{ STATIC_URL }}timepiece/js/dashboard/week.js"></script>
+                <div id="progress-all" data-worked="{{ all_worked }}" data-assigned="{{ all_assigned }}"></div>
+                <table class="table table-striped table-bordered">
+                    <thead>
+                        <th>Project</th>
+                        <th>Hours Worked</th>
+                        <th>Hours Assigned</th>
+                        <th>Hours Remaining</th>
+                    </thead>
+                    <tbody>
+                        {% for assignment in assignment_progress %}
+                            <tr>
+                                <td>{{ assignment.name }}</td>
+                                <td>{{ assignment.worked }}</td>
+                                <td>{{ assignment.assigned }}</td>
+                                <td>{{ assignment.remaining }}</td>
+                            </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
             </div>
+            <script src="{{ STATIC_URL }}timepiece/js/dashboard/week.js"></script>
+
             <div class="tab-pane" id="entries">
                 <a class="btn add-entry" href="{% url 'timepiece-add' %}">Add Entry</a>
                 {% if entries %}

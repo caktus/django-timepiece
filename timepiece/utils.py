@@ -514,6 +514,7 @@ def process_weeks_entries(user, week_start, entries):
                 'pk': project['pk'],
                 'name': project['name'],
                 'assigned': assigned,
+                'remaining': assigned,
                 'worked': Decimal('0.00'),
             }
 
@@ -538,11 +539,9 @@ def process_weeks_entries(user, week_start, entries):
 
         all_worked += hours
         project_data[pk]['worked'] += hours
+        project_data[pk]['remaining'] -= hours
 
     # Sort by maximum of worked or assigned hours (highest first).
-    key = lambda x: max(x['worked'], x['assigned'])
-    return {
-        'assigned': all_assigned,
-        'worked': all_worked,
-        'projects': sorted(project_data.values(), key=key, reverse=True),
-    }
+    key = lambda x: x['name'].lower()
+    assignment_progress = sorted(project_data.values(), key=key)
+    return all_assigned, all_worked, assignment_progress

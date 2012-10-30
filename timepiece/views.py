@@ -83,19 +83,16 @@ def dashboard(request):
         active_today = False
     else:
         active_today = (active_entry.start_time.date() == today)
-    # Query and process data for "Today's Work Day"
-    todays_entries = Entry.objects.filter(user=user) \
-        .timespan(today, span='day', current=True) \
-        .select_related('project').order_by('start_time')
-    todays_entries_summary = utils.process_todays_entries(todays_entries)
-    # Query and process data  for "Hours this Week"
+
+    # Query for week's progress
     week_start = utils.get_week_start(today)
     raw_weeks_entries = Entry.objects.filter(user=user) \
         .timespan(week_start, span='week', current=True) \
         .select_related('project')
     weeks_entries = raw_weeks_entries.order_by('start_time')
-    weeks_entries_summary = utils.process_weeks_entries(user=user,
-            week_start=week_start, entries=weeks_entries)
+    all_assigned, all_worked, assignment_progress = \
+            utils.process_weeks_entries(user=user, week_start=week_start,
+            entries=weeks_entries)
     entries = raw_weeks_entries.exclude(end_time__isnull=True) \
         .order_by('-start_time')
     return render(request, 'timepiece/time-sheet/dashboard.html', {
@@ -103,11 +100,10 @@ def dashboard(request):
         'to_date': week_start.date() + relativedelta(days=6),
         'active_entry': active_entry,
         'active_today': active_today,
-        'todays_entries': todays_entries_summary,
-        'todays_entries_json': json.dumps(todays_entries_summary, cls=DecimalEncoder),
-        'weeks_entries': weeks_entries_summary,
-        'weeks_entries_json': json.dumps(weeks_entries_summary, cls=DecimalEncoder),
         'entries': entries,
+        'all_assigned': all_assigned,
+        'all_worked': all_worked,
+        'assignment_progress': assignment_progress,
     })
 
 
