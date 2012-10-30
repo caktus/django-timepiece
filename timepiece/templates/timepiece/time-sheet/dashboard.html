@@ -59,7 +59,7 @@
                     <tbody>
                         {% for assignment in assignment_progress %}
                             <tr>
-                                <td>{{ assignment.name }}</td>
+                                <td><a href="{% url 'timepiece-clock-in' %}?project_id={{ assignment.pk }}">{{ assignment.name }}</a></td>
                                 <td>{{ assignment.worked }}</td>
                                 <td>{{ assignment.assigned }}</td>
                                 <td>{{ assignment.remaining }}</td>
