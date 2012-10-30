@@ -99,6 +99,8 @@ def dashboard(request):
     entries = raw_weeks_entries.exclude(end_time__isnull=True) \
         .order_by('-start_time')
     return render(request, 'timepiece/time-sheet/dashboard.html', {
+        'from_date': week_start.date(),
+        'to_date': week_start.date() + relativedelta(days=6),
         'active_entry': active_entry,
         'active_today': active_today,
         'todays_entries': todays_entries_summary,
