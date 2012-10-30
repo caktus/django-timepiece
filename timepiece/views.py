@@ -72,7 +72,6 @@ class CSVMixin(object):
 def dashboard(request):
     user = request.user
     today = datetime.date.today()
-    eod = timezone.now().replace(hour=23, minute=59, second=59)
     Entry = timepiece.Entry
     # Query for the active entry if it exists and determine if its from today
     try:
@@ -85,16 +84,14 @@ def dashboard(request):
     else:
         active_today = (active_entry.start_time.date() == today)
     # Query and process data for "Today's Work Day"
-    todayQ = Q(end_time__gte=today, end_time__lt=eod) | \
-             Q(end_time__isnull=True)
-    todays_entries = Entry.objects.filter(todayQ, user=user) \
+    todays_entries = Entry.objects.filter(user=user) \
+        .timespan(today, span='day', current=True) \
         .select_related('project').order_by('start_time')
     todays_entries_summary = utils.process_todays_entries(todays_entries)
     # Query and process data  for "Hours this Week"
-    week_start, week_end = utils.get_week_window(today)
-    weekQ = Q(end_time__gte=week_start, end_time__lt=week_end) | \
-            Q(end_time__isnull=True)
-    weeks_entries = Entry.objects.filter(weekQ, user=user) \
+    week_start = utils.get_week_start(today)
+    weeks_entries = Entry.objects.filter(user=user) \
+        .timespan(week_start, span='week', current=True) \
         .select_related('project').order_by('start_time')
     weeks_entries_summary = utils.process_weeks_entries(user=user,
             week_start=week_start, entries=weeks_entries)

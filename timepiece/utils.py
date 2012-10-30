@@ -168,7 +168,8 @@ def grouped_totals(entries):
                                                         'project__name')
     weeks = {}
     for week, week_entries in groupby(weekly, lambda x: x['date']):
-        week = add_timezone(week)
+        if week is not None:
+            week = add_timezone(week)
         weeks[week] = get_hours(week_entries)
     days = []
     last_week = None
