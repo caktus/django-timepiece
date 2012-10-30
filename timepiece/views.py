@@ -96,6 +96,8 @@ def dashboard(request):
     weeks_entries_summary = utils.process_weeks_entries(user=user,
             week_start=week_start, entries=weeks_entries)
     return render(request, 'timepiece/time-sheet/dashboard.html', {
+        'from_date': week_start.date(),
+        'to_date': week_start.date() + relativedelta(days=6),
         'active_entry': active_entry,
         'active_today': active_today,
         'todays_entries': todays_entries_summary,

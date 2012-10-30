@@ -79,7 +79,6 @@ body {
                         padding: 0 5px 0 0;
                     }
                     a {
-                        .btn-large;
                         &.add-entry {
                             @media(max-width: 430px) {
                                 margin-top: 10px;
@@ -355,12 +354,13 @@ body {
      *****************************************/
 
     &#dashboard {
-        .active.paused, #active-entries .paused {
-            color: #999;
-        }
-        h3 {
-            border-bottom: 1px solid @grayLighter;
-            margin-bottom: 20px;
+        #active-entry {
+            margin-bottom: 25px;
+            #active-header {
+                border-bottom: 1px solid @grayLight;
+                padding-bottom: 3px;
+                margin-bottom: 10px;
+           }
         }
         .progress {
             height: 24px;

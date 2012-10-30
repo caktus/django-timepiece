@@ -93,7 +93,7 @@ function createChart(id, worked, assigned, percent) {
     var overall_chart = createChart('progress-all', data.worked, data.assigned, 100);
     container.append(overall_chart);
 
-    container.append('<h3>Project Hours</h3>');
+    container.append('<h3>Projects</h3>');
 
     // Create individual project charts.
     var max = Math.max(data.projects[0].worked, data.projects[0].assigned);
