@@ -90,11 +90,14 @@ def dashboard(request):
     todays_entries_summary = utils.process_todays_entries(todays_entries)
     # Query and process data  for "Hours this Week"
     week_start = utils.get_week_start(today)
-    weeks_entries = Entry.objects.filter(user=user) \
+    raw_weeks_entries = Entry.objects.filter(user=user) \
         .timespan(week_start, span='week', current=True) \
-        .select_related('project').order_by('start_time')
+        .select_related('project')
+    weeks_entries = raw_weeks_entries.order_by('start_time')
     weeks_entries_summary = utils.process_weeks_entries(user=user,
             week_start=week_start, entries=weeks_entries)
+    entries = raw_weeks_entries.exclude(end_time__isnull=True) \
+        .order_by('-start_time')
     return render(request, 'timepiece/time-sheet/dashboard.html', {
         'from_date': week_start.date(),
         'to_date': week_start.date() + relativedelta(days=6),
@@ -104,6 +107,7 @@ def dashboard(request):
         'todays_entries_json': json.dumps(todays_entries_summary, cls=DecimalEncoder),
         'weeks_entries': weeks_entries_summary,
         'weeks_entries_json': json.dumps(weeks_entries_summary, cls=DecimalEncoder),
+        'entries': entries,
     })
 
 
