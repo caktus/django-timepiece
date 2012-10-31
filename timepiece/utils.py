@@ -422,41 +422,6 @@ def process_dates(dates, start=None, end=None):
     return from_date, to_date
 
 
-def process_todays_entries(entries):
-    now = timezone.now().replace(microsecond=0)
-    last_end = None
-    if entries:
-        start_time = entries[0].start_time
-        last_end = entries[entries.count() - 1].end_time
-    else:
-        start_time = now.replace(hour=0, minute=0, second=0, microsecond=0)
-        last_end = None
-    end_time = last_end if last_end is not None else now
-
-    def get_entry_details(entry):
-        if entry.end_time:
-            entry.end_time = entry.end_time
-            active = False
-        else:
-            entry.end_time = now
-            active = True
-        return {
-            'project': entry.project.name,
-            'pk': entry.pk,
-            'start_time': entry.start_time.isoformat(),
-            'end_time': entry.end_time.isoformat(),
-            'active': active,
-            'seconds_paused': entry.seconds_paused,
-            'update_url': reverse('timepiece-update', args=(entry.pk,)),
-            'hours': '%.2f' % round(entry.total_hours, 2),
-        }
-    return {
-        'start_time': start_time.isoformat(),
-        'end_time': end_time.isoformat(),
-        'entries': map(get_entry_details, entries),
-    }
-
-
 def get_total_seconds(td):
     """
     The equivalent for datetime.timedelta.total_seconds() for Python 2.6
