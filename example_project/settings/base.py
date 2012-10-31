@@ -93,8 +93,8 @@ TEMPLATE_CONTEXT_PROCESSORS = (
     'django.contrib.messages.context_processors.messages',
     'django.core.context_processors.request',
     'timepiece.context_processors.quick_search',
-    'timepiece.context_processors.active_entries',
     'timepiece.context_processors.extra_nav',
+    'timepiece.context_processors.quick_clock_in',
 )
 
 TEMPLATE_DIRS = (

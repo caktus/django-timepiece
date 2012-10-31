@@ -44,6 +44,7 @@
         <ul class="nav nav-tabs">
             <li class="active"><a href="#progress" data-toggle="tab">Progress</a></li>
             <li><a href="#entries" data-toggle="tab">Entries</a></li>
+            <li><a href="#online-users" data-toggle="tab">Online Users</a></li>
         </ul>
 
         <div class="tab-content">
@@ -111,6 +112,29 @@
                     </table>
                 {% else %}
                     <p>No entries exist for this week.</p>
+                {% endif %}
+            </div>
+
+            <div class="tab-pane" id="online-users">
+                {% if others_active_entries %}
+                    <table class="table table-striped table-bordered">
+                        <thead>
+                            <th>Name</th>
+                            <th>Entry</th>
+                            <th>Since</th>
+                        </thead>
+                        <tbody>
+                            {% for entry in others_active_entries %}
+                                <tr>
+                                    <td>{{ entry.user__first_name }} {{ entry.user__last_name }}</td>
+                                    <td>{{ entry.activity__name }} on {{ entry.project__name }}</td>
+                                    <td>{{ entry.start_time|date:"P" }}</td>
+                                </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                {% else %}
+                    <p>Currently there are no other users with an active entry.</p>
                 {% endif %}
             </div>
         </div>
