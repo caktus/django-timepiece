@@ -43,14 +43,14 @@ function createChart(worked, assigned) {
     });
 
     // Worked bar.
-    if (worked > 0 && assigned > 0) {  // Shortcut if only remaining or overtime bar is needed.
+    if (worked > 0 && assigned > 0) {  // Skip if only remaining or overtime bar is needed.
         var worked_percent, worked_text;
         if (worked <= assigned) {
             worked_percent = Math.min(1, worked / assigned);
-            worked_text = humanizeTime(worked);
+            worked_text = humanizeTime(worked) + ' Worked';
         } else {
             worked_percent = Math.min(1, assigned / worked);
-            worked_text = humanizeTime(assigned);
+            worked_text = humanizeTime(assigned) + ' Worked';
         }
         worked_percent = Math.floor(worked_percent * 100);
         chart.append(createBar('success', worked_percent, worked_text));  // Green
@@ -59,7 +59,7 @@ function createChart(worked, assigned) {
     // Overtime bar.
     if (worked > assigned) {
         var overtime_percent = Math.min(1, 1 - assigned / worked),
-            overtime_text = humanizeTime(worked - assigned);
+            overtime_text = humanizeTime(worked - assigned) + ' Overtime';
         overtime_percent = Math.ceil(overtime_percent * 100);
         chart.append(createBar('danger', overtime_percent, overtime_text));  // Red
     }
