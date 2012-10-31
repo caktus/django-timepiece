@@ -2,7 +2,7 @@
  * File activating any jQuery UI or Bootstrap widgets
  */
 
-jQuery(function($) {
+$(function() {
     /* use jQuery-UI to apply a date picker to all crm-date-fields.  If you
      * wish, substitute your JavaScript library of choice.
      */
@@ -14,7 +14,7 @@ jQuery(function($) {
         'dateFormat': 'yy-mm-dd'
     });
 
-    $('.popover-toggle').popover({
+    $('#popover-toggle').popover({
         'title': function() {
             var target = $(this).data('target');
 
@@ -25,6 +25,7 @@ jQuery(function($) {
 
             return $(target).children('.popover-content').html();
         },
-        'placement': 'bottom'
+        'placement': 'bottom',
+        'trigger': 'hover'
     });
 });

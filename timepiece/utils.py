@@ -6,7 +6,7 @@ from itertools import groupby
 
 from django.conf import settings
 from django.core.urlresolvers import reverse
-from django.db.models import Sum, get_model
+from django.db.models import Sum, get_model, Q
 from django.template.defaultfilters import slugify
 from django.utils.functional import lazy
 
@@ -168,7 +168,8 @@ def grouped_totals(entries):
                                                         'project__name')
     weeks = {}
     for week, week_entries in groupby(weekly, lambda x: x['date']):
-        week = add_timezone(week)
+        if week is not None:
+            week = add_timezone(week)
         weeks[week] = get_hours(week_entries)
     days = []
     last_week = None
@@ -419,3 +420,128 @@ def process_dates(dates, start=None, end=None):
         if to_date else end
 
     return from_date, to_date
+
+
+def process_todays_entries(entries):
+    now = timezone.now().replace(microsecond=0)
+    last_end = None
+    if entries:
+        start_time = entries[0].start_time
+        last_end = entries[entries.count() - 1].end_time
+    else:
+        start_time = now.replace(hour=0, minute=0, second=0, microsecond=0)
+        last_end = None
+    end_time = last_end if last_end is not None else now
+
+    def get_entry_details(entry):
+        if entry.end_time:
+            entry.end_time = entry.end_time
+            active = False
+        else:
+            entry.end_time = now
+            active = True
+        return {
+            'project': entry.project.name,
+            'pk': entry.pk,
+            'start_time': entry.start_time.isoformat(),
+            'end_time': entry.end_time.isoformat(),
+            'active': active,
+            'seconds_paused': entry.seconds_paused,
+            'update_url': reverse('timepiece-update', args=(entry.pk,)),
+            'hours': '%.2f' % round(entry.total_hours, 2),
+        }
+    return {
+        'start_time': start_time.isoformat(),
+        'end_time': end_time.isoformat(),
+        'entries': map(get_entry_details, entries),
+    }
+
+
+def get_total_seconds(td):
+    """
+    The equivalent for datetime.timedelta.total_seconds() for Python 2.6
+    """
+    if hasattr(td, 'total_seconds'):
+        return td.total_seconds()
+    return (td.microseconds + (td.seconds + td.days * 24 * 3600) * 1e6) / 1e6
+
+
+def get_active_hours(entry):
+    """Use with active entries to obtain the time worked so far."""
+    if not entry.end_time:
+        if entry.is_paused:
+            entry.end_time = entry.pause_time
+        else:
+            entry.end_time = timezone.now()
+    return Decimal('%.2f' % round(entry.total_hours, 2))
+
+
+def get_hours_per_week(user):
+    """Retrieves the number of hours the user should work per week."""
+    UserProfile = get_model('timepiece', 'UserProfile')
+    try:
+        profile = UserProfile.objects.get(user=user)
+    except UserProfile.DoesNotExist:
+        profile = None
+    return profile.hours_per_week if profile else Decimal('40.00')
+
+
+def process_weeks_entries(user, week_start, entries):
+    """Summarizes the user's hours over the provided week's entries.
+
+    Returns a dictionary containing a summary of hours worked:
+    {
+        'assigned': Decimal('123.45'),
+        'worked': Decimal('123.45'),
+        'projects': [
+            {
+                'pk': 123,
+                'name': 'abc',
+                'assigned': Decimal('123.45'),
+                'worked': Decimal('123.45'),
+            }
+        ],
+    }
+    """
+    def _initialize_project(project):
+        """Requires project_data, proj_hours, and ProjectHours in scope."""
+        if project['pk'] not in project_data:
+            try:
+                assigned = proj_hours.get(project__id=project['pk']).hours
+            except ProjectHours.DoesNotExist:
+                assigned = Decimal('0.00')
+            project_data[project['pk']] = {
+                'pk': project['pk'],
+                'name': project['name'],
+                'assigned': assigned,
+                'remaining': assigned,
+                'worked': Decimal('0.00'),
+            }
+
+    ProjectHours = get_model('timepiece', 'ProjectHours')
+    proj_hours = ProjectHours.objects.filter(user=user, week_start=week_start)
+
+    all_assigned = get_hours_per_week(user)
+    all_worked = Decimal('0.00')
+
+    Project = get_model('timepiece', 'Project')
+    project_q = Q(id__in=proj_hours.values_list('project__id', flat=True))
+    project_q |= Q(id__in=entries.values_list('project__id', flat=True))
+    projects = Project.objects.filter(project_q).values('pk', 'name')
+
+    project_data = {}  # Worked/remaining hours per project.
+    for project in projects:
+        _initialize_project(project)
+
+    for entry in entries:
+        pk = entry.project_id
+        hours = get_active_hours(entry)
+
+        all_worked += hours
+        project_data[pk]['worked'] += hours
+        project_data[pk]['remaining'] -= hours
+
+    # Sort by maximum of worked or assigned hours (highest first).
+    key = lambda x: x['name'].lower()
+    assignment_progress = sorted(project_data.values(), key=key)
+    return all_assigned, all_worked, assignment_progress
