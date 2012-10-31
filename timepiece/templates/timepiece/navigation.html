@@ -83,39 +83,6 @@
                         </li>
                     {% endfor %}
 
-                    {% if perms.timepiece.add_entry %}
-                        <li class="dropdown"><a href="#" id="popover-toggle" data-target="#active-popover">
-                            <i class="icon-user icon-white"></i> {{ active_entries|length }} online user(s)</a>
-                        </li>
-                        <div id="active-popover" class="popover">
-                            <h3 class="popover-title">Others Active Entries</h3>
-                            <div class="popover-content">
-                                <table class="table table-striped table-bordered table-condensed">
-                                    <thead>
-                                        <tr>
-                                            <th>Name</th>
-                                            <th>Project</th>
-                                            <th>Activity</th>
-                                            <th>Since</th>
-                                        </tr>
-                                    </thead>
-                                    <tbody>
-                                        {% for entry in active_entries %}
-                                            <tr class="{% if entry.is_paused %}paused{% endif %}">
-                                                <td>{{ entry.user.first_name }} {{ entry.user.last_name }}</td>
-                                                <td class="project">{{ entry.project.name }}</td>
-                                                <td>{{ entry.activity.name }}</td>
-                                                <td>{{ entry.start_time|date:"P" }}</td>
-                                            </tr>
-                                        {% empty %}
-                                            <tr><td colspan="4">Currently there are no other active entries.</td></tr>
-                                        {% endfor %}
-                                    </tbody>
-                                </table>
-                            </div>
-                        </div>
-                    {% endif %}
-
                 </ul>
             {% endblock %}
 
@@ -123,7 +90,7 @@
                 {% if user.is_authenticated %}
                     <ul class="nav pull-right">
                         <li class="dropdown">
-                            <a href="" class="dropdown-toggle" data-toggle="dropdown">{{ user.email }} <b class="caret"></b></a>
+                            <a href="" class="dropdown-toggle" data-toggle="dropdown"><icon class="icon-user icon-white"></icon> {{ user.first_name }} <b class="caret"></b></a>
                             <ul class="dropdown-menu">
                                 {% if user.is_staff %}
                                     <li><a href="{% url 'admin:index' %}">Admin</a></li>

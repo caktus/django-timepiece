@@ -95,6 +95,12 @@ def dashboard(request):
             entries=weeks_entries)
     entries = raw_weeks_entries.exclude(end_time__isnull=True) \
         .order_by('-start_time')
+
+    # Others' active entries
+    others_active_entries = Entry.objects.filter(end_time__isnull=True).values(
+            'user__first_name', 'user__last_name', 'project__name',
+            'activity__name', 'start_time')
+
     return render(request, 'timepiece/time-sheet/dashboard.html', {
         'from_date': week_start.date(),
         'to_date': week_start.date() + relativedelta(days=6),
@@ -104,6 +110,7 @@ def dashboard(request):
         'all_assigned': all_assigned,
         'all_worked': all_worked,
         'assignment_progress': assignment_progress,
+        'others_active_entries': others_active_entries,
     })
 
 
@@ -1209,6 +1216,8 @@ def payroll_summary(request):
         'unapproved': unapproved.values_list(*user_values).distinct(),
         'labels': labels,
     })
+
+
 @login_required
 def edit_settings(request):
     next_url = None
