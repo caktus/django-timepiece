@@ -101,8 +101,10 @@
                                 {% endifchanged %}
                                 <td class="project">
                                         {% if entry.status == "unverified" %}
-                                            <a href="{% url 'timepiece-update' entry.id %}?next={{ request.get_full_path|urlencode }}#full-timesheet"><icon class="icon-edit"></icon></a>
+                                            <a href="{% url 'timepiece-update' entry.id %}?next={{ request.get_full_path|urlencode }}#full-timesheet"><icon class="icon-pencil"></icon></a>
                                             <a href="{% url 'timepiece-delete' entry.id %}?next={{ request.get_full_path|urlencode }}#full-timesheet"><icon class="icon-remove"></icon></a>
+                                        {% else %}
+                                            <icon> </icon><icon class="icon-ok"></icon>
                                         {% endif %}
                                     {{ entry.activity.name }} on {{ entry.project.name }}
                                 </td>
