@@ -130,13 +130,10 @@
             <div class="nav-collapse">
                 <ul class="nav">
                     {% if perms.timepiece.add_entry %}
-                        <li class="dropdown">
-                            <a href="/" class="dropdown-toggle" data-toggle="dropdown">Dashboard</a>
-                            <ul class="dropdown-menu">
-                                <li><a href="{% url 'dashboard' %}">Time Tracking</a></li>
-                                <li><a href="{% url 'view_person_time_sheet' request.user.pk %}">My Ledger</a></li>
-                            </ul>
-                        </li>
+                        <li><a href="{% url 'dashboard' %}">Dashboard</a></li>
+                        <li><a href="{% url 'view_person_time_sheet' request.user.pk %}">My Ledger</a></li>
+                        <li><a href="{% url 'timepiece-add' %}">Add Entry</a></li>
+                        <li><a href="{% url 'auth_logout' %}">Logout</a></li>
                     {% endif %}
                 </ul>
             </div>
