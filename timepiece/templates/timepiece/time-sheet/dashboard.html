@@ -100,13 +100,11 @@
                                     <td></td>
                                 {% endifchanged %}
                                 <td class="project">
-                                    {{ entry.activity.name }} on {{ entry.project.name }}
-                                    <span class="right">
                                         {% if entry.status == "unverified" %}
                                             <a href="{% url 'timepiece-update' entry.id %}?next={{ request.get_full_path|urlencode }}#full-timesheet"><icon class="icon-edit"></icon></a>
                                             <a href="{% url 'timepiece-delete' entry.id %}?next={{ request.get_full_path|urlencode }}#full-timesheet"><icon class="icon-remove"></icon></a>
                                         {% endif %}
-                                    </span>
+                                    {{ entry.activity.name }} on {{ entry.project.name }}
                                 </td>
                                 <td class="time break">{{ entry.start_time|date:"P" }}</td>
                                 <td class="time break">{{ entry.end_time|date:"P" }}</td>
