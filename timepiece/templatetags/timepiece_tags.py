@@ -1,7 +1,6 @@
 import datetime
 from dateutil.relativedelta import relativedelta
 from dateutil import rrule
-from decimal import Decimal
 import urllib
 
 from django import template
@@ -12,11 +11,17 @@ try:
 except ImportError:
     from timepiece import timezone
 
-import timepiece.models as timepiece
 from timepiece import utils
 
 
 register = template.Library()
+
+
+@register.filter
+def multiply(num, arg):
+    num = float(num)
+    arg = float(arg)
+    return num * arg
 
 
 @register.filter
