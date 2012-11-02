@@ -78,8 +78,22 @@ function createChart(worked, assigned) {
 
 var build_project_bar = function($bar_cell, percentage) {
     var $bar = $('<div />');
-
-    // Use some magic to attach actual sprite to $bar here
+    var num_sprites = 4, // number of sprites in sheet, except overworked bar
+        sprite_quotient = (100 / num_sprites),
+        sprite_x = Math.round(percentage / sprite_quotient);
+    if (percentage > 100) {
+        sprite_x = num_sprites + 1; // assign to the overworked sprite
+    }
+    // Use some magic to attach actual sprite to $bar here using sprite_x;
+    /*
+        sprite_x is one of the following:
+        0 - roughly 0 work
+        1 - roughly 25% work
+        2 - roughly 50%
+        3 - roughly 75%
+        4 - <= 100% or working on an unassigned project
+        5 - Worked over assigned hours
+    */
 
     $bar_cell.append($bar);
 };
