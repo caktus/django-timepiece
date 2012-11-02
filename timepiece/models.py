@@ -554,7 +554,8 @@ class Entry(models.Model):
 
         return seconds + (delta.days * 86400)
 
-    def __total_hours(self):
+    @property
+    def total_hours(self):
         """
         Determined the total number of hours worked in this entry
         """
@@ -563,14 +564,13 @@ class Entry(models.Model):
         if total < 0:
             total = 0
         return total
-    total_hours = property(__total_hours)
 
-    def __is_paused(self):
+    @property
+    def is_paused(self):
         """
         Determine whether or not this entry is paused
         """
         return bool(self.pause_time)
-    is_paused = property(__is_paused)
 
     def pause(self):
         """
@@ -607,12 +607,12 @@ class Entry(models.Model):
         else:
             self.pause()
 
-    def __is_closed(self):
+    @property
+    def is_closed(self):
         """
         Determine whether this entry has been closed or not
         """
         return bool(self.end_time)
-    is_closed = property(__is_closed)
 
     def clock_in(self, user, project):
         """
@@ -624,11 +624,12 @@ class Entry(models.Model):
             if not self.start_time:
                 self.start_time = timezone.now()
 
-    def __is_editable(self):
+    @property
+    def is_editable(self):
         return self.status == 'unverified'
-    is_editable = property(__is_editable)
 
-    def __delete_key(self):
+    @property
+    def delete_key(self):
         """
         Make it a little more interesting for deleting logs
         """
@@ -642,7 +643,6 @@ class Entry(models.Model):
         else:
             key = hashlib.sha1(salt).hexdigest()
         return key
-    delete_key = property(__delete_key)
 
     @staticmethod
     def summary(user, date, end_date):
