@@ -1,4 +1,5 @@
 import datetime
+from decimal import Decimal
 from dateutil.relativedelta import relativedelta
 from dateutil import rrule
 import urllib
@@ -18,10 +19,8 @@ register = template.Library()
 
 
 @register.filter
-def multiply(num, arg):
-    num = float(num)
-    arg = float(arg)
-    return num * arg
+def multiply(a, b):
+    return float(a) * float(b)
 
 
 @register.filter
@@ -108,6 +107,28 @@ def get_uninvoiced_hours(entries):
         if entry['status'] != 'invoiced' and entry['status'] != 'not-invoiced':
             hours_uninvoiced += entry['s']
     return hours_uninvoiced
+
+
+@register.filter
+def humanize_hours(total_hours, format='%H:%M'):
+    """
+    Given time in Decimal(hours), return a string in `format`, which defaults
+    to %H:%M
+    """
+    return humanize_seconds(int(float(total_hours) * 3600), format)
+
+
+@register.filter
+def humanize_seconds(total_seconds, format='%H:%M:%S'):
+    """
+    Given time in int(seconds), return a string in `format`, which defaults to
+    %H:%M:%S
+    """
+    if total_seconds == 0:
+        return '0'
+    delta = datetime.timedelta(seconds=total_seconds)
+    dt = datetime.datetime(1901, 1, 1) + delta
+    return dt.strftime(format)
 
 
 @register.filter
