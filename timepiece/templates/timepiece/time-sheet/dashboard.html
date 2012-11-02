@@ -126,7 +126,7 @@
                         <tbody>
                             {% for entry in others_active_entries %}
                                 <tr>
-                                    <td>{{ entry.user__first_name }} {{ entry.user__last_name }}</td>
+                                    <td><i class="icon-user"></i> {{ entry.user__first_name }} {{ entry.user__last_name }}</td>
                                     <td>{{ entry.activity__name }} on {{ entry.project__name }}</td>
                                     <td>{{ entry.start_time|date:"P" }}</td>
                                 </tr>
