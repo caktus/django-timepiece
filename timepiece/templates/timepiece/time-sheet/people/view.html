@@ -33,7 +33,7 @@
                 TimeSheet
                 ({{ from_date|date:"N j, Y" }} &mdash; {{ to_date|date:"N j, Y" }})
             </h2>
-            <ul class="unstyled subnav">
+            <ul class="nav nav-pills">
                 {% if perms.timepiece.view_user %}
                     <li><a href="{% url 'view_person' timesheet_user.pk %}">User Information</a></li>
                 {% endif %}

@@ -8,7 +8,7 @@
     <div class="row-fluid">
         <div class="span12">
             <h2>Projects</h2>
-            <ul class="unstyled subnav">
+            <ul class="nav nav-pills">
             {% if perms.timepiece.add_project %}
                 <li><a href='{% url 'create_project' %}'>Create Project</a></li>
             {% endif %}

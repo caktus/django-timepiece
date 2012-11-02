@@ -13,7 +13,7 @@
     <div class="row-fluid">
         <div class="span12">
             <h2>{{ person.first_name }} {{ person.last_name }}</h2>
-            <ul class="unstyled subnav">
+            <ul class="nav nav-pills">
                 {% if perms.auth.change_person %}
                     <li><a href="{% url 'edit_person' person.pk %}">Edit Person</a></li>
                     <li><a href="{% url 'delete_person' person.pk %}">Delete Person</a></li>

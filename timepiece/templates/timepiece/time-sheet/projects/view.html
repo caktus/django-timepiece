@@ -14,7 +14,7 @@
     <div class="row-fluid">
         <div class="span12">
             <h2>{{ project }} Time Sheet ({{ from_date|date:"N j" }} &mdash; {{ to_date|date:"N j" }})</h2>
-            <ul class="unstyled subnav">
+            <ul class="nav nav-pills">
                 <li><a href='{% url 'view_project' project.id %}'>Project Information</a></li>
             </ul>
         </div>
