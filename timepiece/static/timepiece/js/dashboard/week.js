@@ -75,6 +75,16 @@ function createChart(worked, assigned) {
     return chart;
 }
 
+
+var build_project_bar = function($bar_cell, percentage) {
+    var $bar = $('<div />');
+
+    // Use some magic to attach actual sprite to $bar here
+
+    $bar_cell.append($bar);
+};
+
+
 // Entry point for creating overall progress chart.
 (function() {
     var container = $('#progress-all'),
@@ -83,4 +93,20 @@ function createChart(worked, assigned) {
 
     var overall_chart = createChart(worked, assigned);
     container.append(overall_chart);
+
+    // Create progress bars for each project
+    $.each($('.project_progress'), function() {
+        var self = $(this);
+        var $bar_cell = self.siblings('.project_progress_bar');
+        var worked = self.data('worked'),
+            assigned = self.data('assigned');
+        // Set percentage to 100 for unassigned projects.
+        var percentage = (assigned === 0) ? 100: (worked / assigned) * 100;
+        // Getting around .toFixed() implicit conversion to a string
+        percentage *= 100;
+        percentage = Math.round(percentage);
+        percentage /= 100;
+        // Attach progress bar sprite
+        build_project_bar($bar_cell, percentage);
+    });
 })();
