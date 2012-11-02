@@ -15,7 +15,13 @@
         <div class="row-fluid">
             <div class="span12" id="active-entry">
                 <div id="active-header">
-                    <a class="btn btn-primary" href="{% url 'timepiece-clock-in' %}">Clock In</a>
+                    <a class="btn btn-primary" href="{% url 'timepiece-clock-in' %}">
+                    {% if active_entry %}
+                        Switch Entry
+                    {% else %}
+                        Clock In
+                    {% endif %}
+                    </a>
                     {% if active_entry %}
                         <a class="btn btn-primary" href="{% url 'timepiece-clock-out' active_entry.pk %}">Clock Out</a>
                         <a class="btn btn-{% if active_entry.is_paused %}inverse{% else %}primary{% endif %}"
