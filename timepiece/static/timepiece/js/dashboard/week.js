@@ -78,20 +78,19 @@ function createChart(worked, assigned) {
 
 var build_project_bar = function($bar_cell, percentage) {
     var $bar = $('<div />');
-    /*
-    Find sprite_num, which is 0 to 5 (inclusive) and determines what sprite
-    class to use
-    */
-    var sprite_divisor = 4, // number of ways to divide progress by 100
-        sprite_quotient = (100 / sprite_divisor),
-        sprite_num = Math.round(percentage / sprite_quotient);
+
+    // Creating text to fill the progress bar div
+    var bar_alt;
+
     if (percentage > 100) {
-        sprite_num = sprite_divisor + 1; // assign to the overworked sprite
+        bar_alt = 'You have gone over on hours.';
+        $bar.addClass('progress-over');
     }
-    // Use sprite_num to assign a class with the appropriate sprite
-    var sprite_class_suffix = (sprite_num <= sprite_divisor) ?
-        (sprite_num * sprite_quotient) : 'over';
-    $bar.addClass('sprite-' + sprite_class_suffix);
+    else {
+        bar_alt = 'You have worked ' + percentage + '% of your hours.';
+        $bar.attr('width', (percentage + '%'));
+    }
+    $bar.append(bar_alt);
     // Append the new bar div to the container
     $bar_cell.append($bar);
 };
@@ -117,7 +116,7 @@ var build_project_bar = function($bar_cell, percentage) {
         percentage *= 100;
         percentage = Math.round(percentage);
         percentage /= 100;
-        // Attach progress bar sprite
+        // Attach progress bar bar
         build_project_bar(self, percentage);
     });
 })();
