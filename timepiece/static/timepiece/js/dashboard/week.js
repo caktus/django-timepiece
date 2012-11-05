@@ -76,7 +76,16 @@ function createChart(worked, assigned) {
 }
 
 
-var build_project_bar = function($bar_cell, percentage, assigned) {
+// Given the jQuery object, the percentage and assigned values, return a div that holds the progress bar
+var build_project_bar = function(percentage, assigned) {
+
+    if (percentage === 0 ) {
+        return 'You have no hours clocked for this project.';
+    }
+    else if (assigned === 0) {
+        return 'You are not assigned to this project.';
+    }
+
     var $bar = $('<div />');
 
     // Creating text to fill the progress bar div
@@ -86,21 +95,17 @@ var build_project_bar = function($bar_cell, percentage, assigned) {
         bar_alt = 'You have gone over on hours.';
         $bar.addClass('progress-over');
     }
-    else if (percentage === 0 ) {
-        bar_alt = 'You have no hours clocked for this project.';
-        $bar.addClass('progress-none');
-    }
-    else if (assigned === 0) {
-        bar_alt = 'You are not assigned to this project.';
-        $bar.addClass('progress-none');
-    }
     else {
         bar_alt = 'You have worked ' + percentage + '% of your hours.';
         $bar.attr("style", ("width: " + percentage + "%;"));
     }
+
     $bar.append(bar_alt);
-    // Append the new bar div to the container
-    $bar_cell.append($bar);
+
+    var $parentBar = $('<div class="progress-wrapper" />');
+    $parentBar.append($bar);
+
+    return $parentBar;
 };
 
 
@@ -124,7 +129,8 @@ var build_project_bar = function($bar_cell, percentage, assigned) {
         percentage *= 100;
         percentage = Math.round(percentage);
         percentage /= 100;
-        // Attach progress bar bar
-        build_project_bar(self, percentage, assigned);
+
+        // Construct progress bar
+        self.append(build_project_bar(percentage, assigned));
     });
 })();

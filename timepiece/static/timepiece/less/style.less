@@ -363,7 +363,7 @@ body {
         }
         .progress {
             height: 40px;
-            border: 1px solid @grayLight;
+            border: 1px solid #DDDDDD;
             .bar, .remaining {
                 font-size: 24px;
                 line-height: 38px;
@@ -374,8 +374,10 @@ body {
                 float: left;
             }
         }
-        .project_progress_bar {
+        .progress-wrapper {
             width: auto;
+            border: 1px solid #DDDDDD;
+            background-color: @white;
             > div {
                 background-color: @green;
                 display: block;
