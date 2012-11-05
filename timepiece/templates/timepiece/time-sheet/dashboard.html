@@ -36,8 +36,14 @@
                     {% if active_entry %}
                         You have been clocked into
                         <a href="{% url 'view_project' active_entry.project.pk %}">{{ active_entry.project.name }}</a>
-                        since {{ active_entry.start_time|date:"g:i A" }}{% if not active_today %} on
-                        {{ active_entry.start_time|date:"l, F j" }}{% endif %}
+                        since {{ active_entry.start_time|date:"g:i A" }}
+                        {% ifnotequal active_entry.start_time.date today %}
+                            {% if active_entry.start_time.date < from_date or active_entry.start_time.date > to_date %}
+                                on {{ active_entry.start_time|date:"F j" }}
+                            {% else %}
+                                on {{ active_entry.start_time|date:"l" }}
+                            {% endif %}
+                        {% endifnotequal %}
                         ({% get_active_hours active_entry %} hours{% if active_entry.seconds_paused %}
                         with {{ active_entry.seconds_paused|seconds_to_hours }} hours paused{% endif %}).
                     {% else %}
@@ -78,7 +84,7 @@
             <script src="{{ STATIC_URL }}timepiece/js/dashboard/week.js"></script>
 
             <div class="tab-pane" id="entries">
-                <a class="btn add-entry" href="{% url 'timepiece-add' %}">Add Entry</a>
+                <a class="btn add-entry" href="{% url 'timepiece-add' %}" id="add-entry">Add Entry</a>
                 {% if entries %}
                     <table class="table table-striped table-condensed table-bordered" style="margin-top:10px;">
                         <thead>
@@ -134,7 +140,16 @@
                                 <tr>
                                     <td><i class="icon-user"></i> {{ entry.user__first_name }} {{ entry.user__last_name }}</td>
                                     <td>{{ entry.activity__name }} on {{ entry.project__name }}</td>
-                                    <td>{{ entry.start_time|date:"P" }}</td>
+                                    <td>
+                                        {{ entry.start_time|date:"P" }}
+                                        {% ifnotequal entry.start_time.date today %}
+                                            {% if entry.start_time.date < from_date or entry.start_time.date > to_date %}
+                                                on {{ entry.start_time|date:"N j" }}
+                                            {% else %}
+                                                on {{ entry.start_time|date:"l" }}
+                                            {% endif %}
+                                        {% endifnotequal %}
+                                    </td>
                                 </tr>
                             {% endfor %}
                         </tbody>
