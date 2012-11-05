@@ -80,9 +80,6 @@ def dashboard(request):
         )
     except (Entry.DoesNotExist, Entry.MultipleObjectsReturned):
         active_entry = None
-        active_today = False
-    else:
-        active_today = (active_entry.start_time.date() == today)
 
     # Query for week's progress
     week_start = utils.get_week_start(today)
@@ -102,10 +99,10 @@ def dashboard(request):
             'activity__name', 'start_time')
 
     return render(request, 'timepiece/time-sheet/dashboard.html', {
+        'today': today,
         'from_date': week_start.date(),
         'to_date': week_start.date() + relativedelta(days=6),
         'active_entry': active_entry,
-        'active_today': active_today,
         'entries': entries,
         'all_assigned': all_assigned,
         'all_worked': all_worked,
