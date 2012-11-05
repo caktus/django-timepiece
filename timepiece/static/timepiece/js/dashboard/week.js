@@ -89,22 +89,9 @@ var build_project_bar = function($bar_cell, percentage) {
         sprite_num = sprite_divisor + 1; // assign to the overworked sprite
     }
     // Use sprite_num to assign a class with the appropriate sprite
-    var sprite_class;
-    switch(sprite_num) {
-        case 0:
-            sprite_class = 'sprite-0'; break;
-        case 1:
-            sprite_class = 'spirte-25'; break;
-        case 2:
-            sprite_class = 'sprite-50'; break;
-        case 3:
-            sprite_class = 'sprite-75'; break;
-        case 4:
-            sprite_class = 'sprite-100'; break;
-        case 5:
-            sprite_class = 'sprite-over'; break;
-    }
-    $bar.addClass(sprite_class);
+    var sprite_class_suffix = (sprite_num <= sprite_divisor) ?
+        (sprite_num * sprite_quotient) : 'over';
+    $bar.addClass('sprite-' + sprite_class_suffix);
     // Append the new bar div to the container
     $bar_cell.append($bar);
 };
