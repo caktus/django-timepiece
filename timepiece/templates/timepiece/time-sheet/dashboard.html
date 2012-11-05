@@ -10,7 +10,7 @@
 
 {% block content %}
     {% if perms.timepiece.can_clock_in %}
-        <h2>{{ from_date|date:'F j' }} to {{ to_date|date:'F j' }}</h2>
+        <h2>{{ week_start|date:'F j' }} to {{ week_end|date:'F j' }}</h2>
 
         <div class="row-fluid">
             <div class="span12" id="active-entry">
@@ -38,7 +38,7 @@
                         <a href="{% url 'view_project' active_entry.project.pk %}">{{ active_entry.project.name }}</a>
                         since {{ active_entry.start_time|date:"g:i A" }}
                         {% ifnotequal active_entry.start_time.date today %}
-                            {% if active_entry.start_time.date < from_date or active_entry.start_time.date > to_date %}
+                            {% if active_entry.start_time.date < week_start or active_entry.start_time.date > week_end %}
                                 on {{ active_entry.start_time|date:"F j" }}
                             {% else %}
                                 on {{ active_entry.start_time|date:"l" }}
@@ -61,31 +61,35 @@
 
         <div class="tab-content">
             <div class="tab-pane active" id="progress">
-                <div id="progress-all" data-worked="{{ all_worked }}" data-assigned="{{ all_assigned }}"></div>
-                <table class="table table-striped table-bordered">
-                    <thead>
-                        <th>Project</th>
-                        <th>Hours Worked</th>
-                        <th>Hours Assigned</th>
-                        <th>Hours Remaining</th>
-                    </thead>
-                    <tbody>
-                        {% for assignment in assignment_progress %}
-                            <tr>
-                                <td><a href="{% url 'timepiece-clock-in' %}?project_id={{ assignment.pk }}">{{ assignment.name }}</a></td>
-                                <td>{{ assignment.worked }}</td>
-                                <td>{{ assignment.assigned }}</td>
-                                <td>{{ assignment.remaining }}</td>
-                            </tr>
-                        {% endfor %}
-                    </tbody>
-                </table>
+                <div id="progress-all" data-worked="{{ total_worked }}" data-assigned="{{ total_assigned }}"></div>
+                {% if project_progress %}
+                    <table class="table table-striped table-bordered">
+                        <thead>
+                            <th>Project</th>
+                            <th>Hours Worked</th>
+                            <th>Hours Assigned</th>
+                            <th>Hours Remaining</th>
+                        </thead>
+                        <tbody>
+                            {% for project in project_progress %}
+                                <tr>
+                                    <td><a href="{% url 'timepiece-clock-in' %}?project_id={{ project.pk }}">{{ project.name }}</a></td>
+                                    <td>{{ project.worked }}</td>
+                                    <td>{{ project.assigned }}</td>
+                                    <td>{{ project.remaining }}</td>
+                                </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                {% else %}
+                    <p>No entries or assignments exist for this week.</p>
+                {% endif %}
             </div>
             <script src="{{ STATIC_URL }}timepiece/js/dashboard/week.js"></script>
 
             <div class="tab-pane" id="entries">
                 <a class="btn add-entry" href="{% url 'timepiece-add' %}" id="add-entry">Add Entry</a>
-                {% if entries %}
+                {% if week_entries %}
                     <table class="table table-striped table-condensed table-bordered" style="margin-top:10px;">
                         <thead>
                             <tr>
@@ -98,7 +102,7 @@
                             </tr>
                         </thead>
                         <tbody>
-                        {% for entry in entries %}
+                        {% for entry in week_entries %}
                             <tr>
                                 {% ifchanged entry.start_time|date %}
                                     <td>{{ entry.start_time|date:"D" }}</td>
@@ -143,7 +147,7 @@
                                     <td>
                                         {{ entry.start_time|date:"P" }}
                                         {% ifnotequal entry.start_time.date today %}
-                                            {% if entry.start_time.date < from_date or entry.start_time.date > to_date %}
+                                            {% if entry.start_time.date < week_start or entry.start_time.date > week_end %}
                                                 on {{ entry.start_time|date:"N j" }}
                                             {% else %}
                                                 on {{ entry.start_time|date:"l" }}

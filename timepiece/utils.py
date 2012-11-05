@@ -451,62 +451,42 @@ def get_hours_per_week(user):
     return profile.hours_per_week if profile else Decimal('40.00')
 
 
-def process_weeks_entries(user, week_start, entries):
-    """Summarizes the user's hours over the provided week's entries.
-
-    Returns a dictionary containing a summary of hours worked:
-    {
-        'assigned': Decimal('123.45'),
-        'worked': Decimal('123.45'),
-        'projects': [
-            {
-                'pk': 123,
-                'name': 'abc',
-                'assigned': Decimal('123.45'),
-                'worked': Decimal('123.45'),
-            }
-        ],
-    }
+def process_progress(entries, assignments):
     """
-    def _initialize_project(project):
-        """Requires project_data, proj_hours, and ProjectHours in scope."""
-        if project['pk'] not in project_data:
-            try:
-                assigned = proj_hours.get(project__id=project['pk']).hours
-            except ProjectHours.DoesNotExist:
-                assigned = Decimal('0.00')
-            project_data[project['pk']] = {
-                'pk': project['pk'],
-                'name': project['name'],
-                'assigned': assigned,
-                'remaining': assigned,
-                'worked': Decimal('0.00'),
-            }
-
-    ProjectHours = get_model('timepiece', 'ProjectHours')
-    proj_hours = ProjectHours.objects.filter(user=user, week_start=week_start)
-
-    all_assigned = get_hours_per_week(user)
-    all_worked = Decimal('0.00')
-
+    Returns a list of progress summary data (pk, name, hours worked, hours
+    assigned, and hours remaining) for each project either worked or assigned.
+    The list is ordered by project name.
+    """
     Project = get_model('timepiece', 'Project')
-    project_q = Q(id__in=proj_hours.values_list('project__id', flat=True))
+    ProjectHours = get_model('timepiece', 'ProjectHours')
+
+    # Determine all projects either worked or assigned.
+    project_q = Q(id__in=assignments.values_list('project__id', flat=True))
     project_q |= Q(id__in=entries.values_list('project__id', flat=True))
     projects = Project.objects.filter(project_q).values('pk', 'name')
 
     project_data = {}  # Worked/remaining hours per project.
     for project in projects:
-        _initialize_project(project)
+        try:
+            assigned = assignments.get(project__id=project['pk']).hours
+        except ProjectHours.DoesNotExist:
+            assigned = Decimal('0.00')
+        project_data[project['pk']] = {
+            'pk': project['pk'],
+            'name': project['name'],
+            'assigned': assigned,
+            'remaining': assigned,
+            'worked': Decimal('0.00'),
+        }
 
     for entry in entries:
         pk = entry.project_id
         hours = get_active_hours(entry)
-
-        all_worked += hours
         project_data[pk]['worked'] += hours
         project_data[pk]['remaining'] -= hours
 
     # Sort by maximum of worked or assigned hours (highest first).
     key = lambda x: x['name'].lower()
-    assignment_progress = sorted(project_data.values(), key=key)
-    return all_assigned, all_worked, assignment_progress
+    project_progress = sorted(project_data.values(), key=key)
+
+    return project_progress
