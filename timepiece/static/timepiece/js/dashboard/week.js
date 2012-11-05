@@ -76,19 +76,27 @@ function createChart(worked, assigned) {
 }
 
 
-var build_project_bar = function($bar_cell, percentage) {
+var build_project_bar = function($bar_cell, percentage, assigned) {
     var $bar = $('<div />');
 
     // Creating text to fill the progress bar div
     var bar_alt;
 
-    if (percentage > 100) {
+    if (percentage > 100 && assigned > 0) {
         bar_alt = 'You have gone over on hours.';
         $bar.addClass('progress-over');
     }
+    else if (percentage === 0 ) {
+        bar_alt = 'You have no hours clocked for this project.';
+        $bar.addClass('progress-none');
+    }
+    else if (assigned === 0) {
+        bar_alt = 'You are not assigned to this project.';
+        $bar.addClass('progress-none');
+    }
     else {
         bar_alt = 'You have worked ' + percentage + '% of your hours.';
-        $bar.attr('width', (percentage + '%'));
+        $bar.attr("style", ("width: " + percentage + "%;"));
     }
     $bar.append(bar_alt);
     // Append the new bar div to the container
@@ -117,6 +125,6 @@ var build_project_bar = function($bar_cell, percentage) {
         percentage = Math.round(percentage);
         percentage /= 100;
         // Attach progress bar bar
-        build_project_bar(self, percentage);
+        build_project_bar(self, percentage, assigned);
     });
 })();

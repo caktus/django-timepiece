@@ -374,6 +374,24 @@ body {
                 float: left;
             }
         }
+        .project_progress_bar {
+            width: auto;
+            > div {
+                background-color: @green;
+                display: block;
+                text-indent: 100%;
+                white-space: nowrap;
+                overflow: hidden;
+                &.progress-over {
+                    background-color: @red;
+                    width: 100%;
+                }
+                &.progress-none {
+                    background: transparent;
+                    text-indent: 0;
+                }
+            }
+        }
     }
 
     &#paste {
