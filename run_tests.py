@@ -70,6 +70,7 @@ if not settings.configured:
             ('text/less', 'lessc {infile} {outfile}'),
         ),
         COMPRESS_ROOT='%s/timepiece/static/' % directory,
+        INTERNAL_IPS=('127.0.0.1',),
 
         # jenkins settings.
         PROJECT_APPS=('timepiece',),
