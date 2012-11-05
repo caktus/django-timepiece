@@ -93,8 +93,8 @@ TEMPLATE_CONTEXT_PROCESSORS = (
     'django.contrib.messages.context_processors.messages',
     'django.core.context_processors.request',
     'timepiece.context_processors.quick_search',
-    'timepiece.context_processors.active_entries',
     'timepiece.context_processors.extra_nav',
+    'timepiece.context_processors.quick_clock_in',
 )
 
 TEMPLATE_DIRS = (
@@ -162,3 +162,10 @@ COMPRESS_PRECOMPILERS = (
     ('text/less', 'lessc {infile} {outfile}'),
 )
 COMPRESS_ROOT = '%s/static/' % PROJECT_PATH
+
+# django-timepiece settings
+TIMEPIECE_DEFAULT_LOCATION_SLUG = None
+TIMEPIECE_PROJECTS = {}
+EXTRA_NAV = {}
+TRAC_URL = '/%s'  # Example: TRAC_URL = 'https://projects.example.com/%s/'
+FAMFAMFAM_URL = STATIC_URL + 'images/icons/'

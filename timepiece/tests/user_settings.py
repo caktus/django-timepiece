@@ -31,7 +31,7 @@ class EditSettingsTest(TimepieceDataTestCase):
             'email': 'test@caktusgroup.com',
         }
         response = self.edit_profile(self.url, data)
-        self.assertRedirects(response, reverse('timepiece-entries'))
+        self.assertRedirects(response, reverse('dashboard'))
         self.user = auth_models.User.objects.get(pk=self.user.pk)
         for k, v in data.iteritems():
             value = getattr(self.user, k)

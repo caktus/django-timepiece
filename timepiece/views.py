@@ -69,71 +69,48 @@ class CSVMixin(object):
 
 
 @login_required
-def view_entries(request):
-    view_entries = request.user.has_perm('timepiece.can_clock_in')
-    week_start = utils.get_week_start()
-    time_q = Q(end_time__gte=week_start) | Q(end_time__isnull=True)
-    entries = timepiece.Entry.objects.select_related(
-        'project__business',
-    ).filter(
-        time_q,
-        user=request.user
-    ).select_related('project', 'activity', 'location')
+def dashboard(request):
+    user = request.user
     today = datetime.date.today()
-    assignments = timepiece.ContractAssignment.objects.filter(
-        user=request.user,
-        user__project_relationships__project=F('contract__project'),
-        end_date__gte=today,
-        contract__status='current',
-    ).order_by('contract__project__type', 'end_date')
-    assignments = assignments.select_related('user', 'contract__project__type')
-    activity_entries = list(entries.values(
-        'billable',
-    ).annotate(sum=Sum('hours')).order_by('-sum'))
-    others_active_entries = timepiece.Entry.objects.filter(
-        end_time__isnull=True,
-    ).exclude(
-        user=request.user,
-    ).select_related('user', 'project', 'activity')
-    my_active_entries = timepiece.Entry.objects.select_related(
-        'project__business',
-    ).only(
-        'user', 'project', 'activity', 'start_time'
-    ).filter(
-        user=request.user,
-        end_time__isnull=True,
-    )
-
-    for current_entry in my_active_entries:
-        for activity_entry in activity_entries:
-            if current_entry.billable == activity_entry['billable']:
-                activity_entry['sum'] += get_active_hours(current_entry)
-                break
-    current_total = sum([entry['sum'] for entry in activity_entries])
-
-    project_entries = entries.exclude(
-        end_time__isnull=True
-    ).values(
-        'project__name', 'project__pk'
-    ).annotate(sum=Sum('hours')).order_by('project__name')
-    hours_per_week = Decimal('40.0')
+    Entry = timepiece.Entry
+    # Query for the active entry if it exists and determine if its from today
     try:
-        profile = timepiece.UserProfile.objects.get(user=request.user)
-        hours_per_week = profile.hours_per_week
-    except timepiece.UserProfile.DoesNotExist:
-        pass
-    this_weeks_entries = entries.order_by('-start_time'). \
-        filter(end_time__gte=week_start)
+        active_entry = timepiece.Entry.objects.get(
+            user=request.user, end_time__isnull=True
+        )
+    except (Entry.DoesNotExist, Entry.MultipleObjectsReturned):
+        active_entry = None
+        active_today = False
+    else:
+        active_today = (active_entry.start_time.date() == today)
+
+    # Query for week's progress
+    week_start = utils.get_week_start(today)
+    raw_weeks_entries = Entry.objects.filter(user=user) \
+        .timespan(week_start, span='week', current=True) \
+        .select_related('project')
+    weeks_entries = raw_weeks_entries.order_by('start_time')
+    all_assigned, all_worked, assignment_progress = \
+            utils.process_weeks_entries(user=user, week_start=week_start,
+            entries=weeks_entries)
+    entries = raw_weeks_entries.exclude(end_time__isnull=True) \
+        .order_by('-start_time')
+
+    # Others' active entries
+    others_active_entries = Entry.objects.filter(end_time__isnull=True).values(
+            'user__first_name', 'user__last_name', 'project__name',
+            'activity__name', 'start_time')
+
     return render(request, 'timepiece/time-sheet/dashboard.html', {
-        'this_weeks_entries': this_weeks_entries,
-        'assignments': assignments,
-        'hours_per_week': hours_per_week,
-        'project_entries': project_entries,
-        'activity_entries': activity_entries,
-        'current_total': current_total,
+        'from_date': week_start.date(),
+        'to_date': week_start.date() + relativedelta(days=6),
+        'active_entry': active_entry,
+        'active_today': active_today,
+        'entries': entries,
+        'all_assigned': all_assigned,
+        'all_worked': all_worked,
+        'assignment_progress': assignment_progress,
         'others_active_entries': others_active_entries,
-        'my_active_entries': my_active_entries,
-        'view_entries': view_entries,
     })
 
 
@@ -148,7 +125,7 @@ def clock_in(request):
         err_msg = 'You have more than one active entry and must clock out ' \
                   'of these entries before clocking into another.'
         messages.error(request, err_msg)
-        return redirect('timepiece-entries')
+        return redirect('dashboard')
     active_entry = active_entry[0] if active_entry else None
     initial = dict([(k, v) for k, v in request.GET.items()])
     form = timepiece_forms.ClockInForm(request.POST or None, initial=initial,
@@ -157,7 +134,7 @@ def clock_in(request):
         entry = form.save()
         message = 'You have clocked into %s' % entry.project
         messages.info(request, message)
-        return HttpResponseRedirect(reverse('timepiece-entries'))
+        return HttpResponseRedirect(reverse('dashboard'))
     return render(request, 'timepiece/time-sheet/entry/clock_in.html', {
         'form': form,
         'active': active_entry,
@@ -178,7 +155,7 @@ def clock_out(request, entry_id):
             entry = form.save()
             message = "You've been clocked out."
             messages.info(request, message)
-            return HttpResponseRedirect(reverse('timepiece-entries'))
+            return HttpResponseRedirect(reverse('dashboard'))
         else:
             message = 'Please correct the errors below.'
             messages.error(request, message)
@@ -237,7 +214,7 @@ def toggle_paused(request, entry_id):
         messages.info(request, message)
 
     # redirect to the log entry list
-    return HttpResponseRedirect(reverse('timepiece-entries'))
+    return HttpResponseRedirect(reverse('dashboard'))
 
 
 @permission_required('timepiece.change_entry')
@@ -266,7 +243,7 @@ def create_edit_entry(request, entry_id=None):
             else:
                 message = 'The entry has been created successfully.'
             messages.info(request, message)
-            url = request.REQUEST.get('next', reverse('timepiece-entries'))
+            url = request.REQUEST.get('next', reverse('dashboard'))
             return HttpResponseRedirect(url)
         else:
             message = 'Please fix the errors below.'
@@ -293,7 +270,7 @@ def reject_entry(request, entry_id):
     invoiced to set its status to 'unverified' for the user to fix.
     """
     user = request.user
-    return_url = request.REQUEST.get('next', reverse('timepiece-entries'))
+    return_url = request.REQUEST.get('next', reverse('dashboard'))
     try:
         entry = timepiece.Entry.no_join.get(pk=entry_id)
     except:
@@ -372,15 +349,14 @@ def delete_entry(request, entry_id):
         # entry does not exist
         message = 'No such log entry.'
         messages.info(request, message)
-        return HttpResponseRedirect(reverse('timepiece-entries'))
-
+        return HttpResponseRedirect(reverse('dashboard'))
     if request.method == 'POST':
         key = request.POST.get('key', None)
         if key and key == entry.delete_key:
             entry.delete()
             message = 'Entry deleted.'
             messages.info(request, message)
-            return HttpResponseRedirect(reverse('timepiece-entries'))
+            return HttpResponseRedirect(reverse('dashboard'))
         else:
             message = 'You are not authorized to delete this entry!'
             messages.error(request, message)
@@ -729,13 +705,11 @@ def confirm_invoice_project(request, project_id, to_date, from_date=None):
         entries = entries.order_by('start_time')
         if not entries:
             raise Http404
-
-    totals = timepiece.HourGroup.objects.summaries(entries)
     return render(request, 'timepiece/time-sheet/invoice/confirm.html', {
         'invoice_form': invoice_form,
         'entries': entries.select_related(),
         'project': project,
-        'totals': totals,
+        'totals': timepiece.HourGroup.objects.summaries(entries),
         'from_date': from_date,
         'to_date': to_date,
     })
@@ -915,14 +889,11 @@ def remove_invoice_entry(request, invoice_id, entry_id):
         entry.save()
         kwargs = {'pk': invoice_id}
         return HttpResponseRedirect(reverse('edit_invoice', kwargs=kwargs))
-    else:
-        context = {
-            'invoice': invoice,
-            'entry': entry,
-        }
-        return render(request,
-                'timepiece/time-sheet/invoice/remove_invoice_entry.html',
-                context)
+    template = 'timepiece/time-sheet/invoice/remove_invoice_entry.html'
+    return render(request, template, {
+        'invoice': invoice,
+        'entry': entry,
+    })
 
 
 @permission_required('timepiece.view_business')
@@ -999,7 +970,6 @@ def list_people(request):
             return HttpResponseRedirect(url)
     else:
         people = User.objects.all().order_by('last_name')
-
     return render(request, 'timepiece/person/list.html', {
         'form': form,
         'people': people.select_related(),
@@ -1258,7 +1228,7 @@ def edit_settings(request):
         except Http404:
             next_url = None
     if not next_url:
-        next_url = reverse('timepiece-entries')
+        next_url = reverse('dashboard')
     profile, created = timepiece.UserProfile.objects.get_or_create(
         user=request.user)
     if request.POST:
@@ -1276,7 +1246,7 @@ def edit_settings(request):
         user_form = timepiece_forms.UserForm(instance=request.user)
     return render(request, 'timepiece/person/settings.html', {
         'profile_form': profile_form,
-        'user_form': user_form
+        'user_form': user_form,
     })
 
 
@@ -1320,7 +1290,7 @@ class DeleteView(TemplateView):
                 messages.info(request,
                         'You do not have permission to access that')
                 return HttpResponseRedirect(
-                        utils.reverse_lazy('timepiece-entries'))
+                        utils.reverse_lazy('dashboard'))
         return super(DeleteView, self).dispatch(request, *args, **kwargs)
 
     def post(self, request, *args, **kwargs):
@@ -1460,7 +1430,6 @@ class HourlyReport(ReportMixin, CSVMixin, TemplateView):
             total = ['Totals']
             total.extend(totals)
             content.append(total)
-
         return content
 
     def get_context_data(self, **kwargs):
@@ -1475,7 +1444,6 @@ class HourlyReport(ReportMixin, CSVMixin, TemplateView):
         context.update({
             'project_totals': project_totals,
         })
-
         return context
 
 
@@ -1535,7 +1503,6 @@ class BillableHours(ReportMixin, TemplateView):
             'data': json.dumps(hours_data, cls=DecimalEncoder),
             'dates': json.dumps(dates),
         })
-
         return context
 
 
@@ -1609,7 +1576,6 @@ class ProjectHoursView(ProjectHoursMixin, TemplateView):
             'project_hours': project_hours,
             'projects': projects
         })
-
         return context
 
 
