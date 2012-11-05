@@ -34,7 +34,6 @@ from timepiece import forms as timepiece_forms
 from timepiece import models as timepiece
 from timepiece import utils
 from timepiece.templatetags.timepiece_tags import seconds_to_hours
-from timepiece.templatetags.timepiece_tags import get_active_hours
 
 
 @login_required

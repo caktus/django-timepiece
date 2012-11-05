@@ -4,11 +4,6 @@ from timepiece.tests.base import TimepieceDataTestCase
 
 class HumanizeSecondsTestCase(TimepieceDataTestCase):
 
-    def test_zero(self):
-        self.assertEqual(tags.humanize_seconds(0), '0',
-            "Given 0 seconds, but doesn't return '0'"
-        )
-
     def test_default_format(self):
         seconds_display = tags.humanize_seconds((5.5 * 3600) + 3)
         self.assertEqual(seconds_display, '05:30:03',
@@ -27,11 +22,6 @@ class HumanizeSecondsTestCase(TimepieceDataTestCase):
 
 
 class HumanizeHoursTestCase(TimepieceDataTestCase):
-
-    def test_zero(self):
-        self.assertEqual(tags.humanize_hours('0'), '0',
-            "Given 0 hours, should return '0'"
-        )
 
     def test_default_format(self):
         hours_display = tags.humanize_hours('3.25')

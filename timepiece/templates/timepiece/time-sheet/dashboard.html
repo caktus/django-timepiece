@@ -38,10 +38,9 @@
                         <a href="{% url 'view_project' active_entry.project.pk %}">{{ active_entry.project.name }}</a>
                         since {{ active_entry.start_time|date:"g:i A" }}{% if not active_today %} on
                         {{ active_entry.start_time|date:"l, F j" }}{% endif %}
-                        ({% get_active_hours active_entry %} hours{% if active_entry.seconds_paused %}
-                        with {{ active_entry.seconds_paused|seconds_to_hours }} hours paused{% endif %}).
+                        ({{ active_entry.get_active_seconds|humanize_seconds }} elapsed{% if active_entry.seconds_paused %} with {{ active_entry.seconds_paused|seconds_to_hours }} hours paused{% endif %}).
                     {% else %}
-                        You are not currently clocked in to a project.
+                        You are not currently clocked into a project.
                     {% endif %}
                 </p>
             </div>

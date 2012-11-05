@@ -95,12 +95,6 @@ def week_start(date):
 
 
 @register.simple_tag
-def get_active_hours(entry):
-    """Use with active entries to obtain time worked so far"""
-    return utils.get_active_hours(entry)
-
-
-@register.simple_tag
 def get_uninvoiced_hours(entries):
     hours_uninvoiced = 0
     for entry in entries:
@@ -124,8 +118,6 @@ def humanize_seconds(total_seconds, format='%H:%M:%S'):
     Given time in int(seconds), return a string in `format`, which defaults to
     %H:%M:%S
     """
-    if total_seconds == 0:
-        return '0'
     delta = datetime.timedelta(seconds=total_seconds)
     dt = datetime.datetime(1901, 1, 1) + delta
     return dt.strftime(format)
