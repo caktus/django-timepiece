@@ -78,28 +78,39 @@ function createChart(worked, assigned) {
 
 var build_project_bar = function($bar_cell, percentage) {
     var $bar = $('<div />');
-    var num_sprites = 4, // number of sprites in sheet, except overworked bar
-        sprite_quotient = (100 / num_sprites),
-        sprite_x = Math.round(percentage / sprite_quotient);
-    if (percentage > 100) {
-        sprite_x = num_sprites + 1; // assign to the overworked sprite
-    }
-    // Use some magic to attach actual sprite to $bar here using sprite_x;
     /*
-        sprite_x is one of the following:
-        0 - roughly 0 work
-        1 - roughly 25% work
-        2 - roughly 50%
-        3 - roughly 75%
-        4 - <= 100% or working on an unassigned project
-        5 - Worked over assigned hours
+    Find sprite_num, which is 0 to 5 (inclusive) and determines what sprite
+    class to use
     */
-
+    var sprite_divisor = 4, // number of ways to divide progress by 100
+        sprite_quotient = (100 / sprite_divisor),
+        sprite_num = Math.round(percentage / sprite_quotient);
+    if (percentage > 100) {
+        sprite_num = sprite_divisor + 1; // assign to the overworked sprite
+    }
+    // Use sprite_num to assign a class with the appropriate sprite
+    var sprite_class;
+    switch(sprite_num) {
+        case 0:
+            sprite_class = 'sprite-0'; break;
+        case 1:
+            sprite_class = 'spirte-25'; break;
+        case 2:
+            sprite_class = 'sprite-50'; break;
+        case 3:
+            sprite_class = 'sprite-75'; break;
+        case 4:
+            sprite_class = 'sprite-100'; break;
+        case 5:
+            sprite_class = 'sprite-over'; break;
+    }
+    $bar.addClass(sprite_class);
+    // Append the new bar div to the container
     $bar_cell.append($bar);
 };
 
 
-// Entry point for creating overall progress chart.
+// Entry point to create overall progress chart and per project progress bars
 (function() {
     var container = $('#progress-all'),
         worked = parseFloat(container.attr('data-worked')),
@@ -109,9 +120,8 @@ var build_project_bar = function($bar_cell, percentage) {
     container.append(overall_chart);
 
     // Create progress bars for each project
-    $.each($('.project_progress'), function() {
+    $.each($('.project_progress_bar'), function() {
         var self = $(this);
-        var $bar_cell = self.siblings('.project_progress_bar');
         var worked = self.data('worked'),
             assigned = self.data('assigned');
         // Set percentage to 100 for unassigned projects.
@@ -121,6 +131,6 @@ var build_project_bar = function($bar_cell, percentage) {
         percentage = Math.round(percentage);
         percentage /= 100;
         // Attach progress bar sprite
-        build_project_bar($bar_cell, percentage);
+        build_project_bar(self, percentage);
     });
 })();

@@ -66,15 +66,16 @@
                     <tbody>
                         {% for assignment in assignment_progress %}
                             <tr>
-                                <td class="project_progress"
-                                data-worked = "{{ assignment.worked }}"
-                                data-assigned = "{{ assignment.assigned }}">
-                                    <a href="{% url 'timepiece-clock-in' %}?project_id={{ assignment.pk }}">{{ assignment.name }}</a>
+                                <td>
+                                <a href="{% url 'timepiece-clock-in' %}?project_id={{ assignment.pk }}">{{ assignment.name }}</a>
                                 </td>
                                 <td>{{ assignment.worked }}</td>
                                 <td>{{ assignment.assigned }}</td>
                                 <td>{{ assignment.remaining }}</td>
-                                <td class="project_progress_bar"></td>
+                                <td class="project_progress_bar"
+                                data-worked = "{{ assignment.worked }}"
+                                data-assigned = "{{ assignment.assigned }}">
+                                </td>
                             </tr>
                         {% endfor %}
                     </tbody>
