@@ -48,7 +48,7 @@ if not settings.configured:
         ),
         ROOT_URLCONF='example_project.urls',
         SITE_ID=1,
-        STATIC_URL='%s/example_project/static/' % directory,
+        STATIC_URL='%s/timepiece/static/' % directory,
         TEMPLATE_CONTEXT_PROCESSORS=(
             'django.contrib.auth.context_processors.auth',
             'django.core.context_processors.debug',
@@ -58,8 +58,8 @@ if not settings.configured:
             'django.contrib.messages.context_processors.messages',
             'django.core.context_processors.request',
             'timepiece.context_processors.quick_search',
+            'timepiece.context_processors.quick_clock_in',
             'timepiece.context_processors.extra_nav',
-            'timepiece.context_processors.active_entries',
         ),
         TEMPLATE_DIRS=(
             '%s/example_project/templates' % directory,
