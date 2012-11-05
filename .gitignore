@@ -9,4 +9,4 @@ build/
 /reports/
 */static/CACHE/
 *.swp
-
+*.DS_Store
