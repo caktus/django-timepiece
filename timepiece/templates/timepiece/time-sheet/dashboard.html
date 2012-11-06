@@ -67,6 +67,7 @@
                         <th>Hours Worked</th>
                         <th>Hours Assigned</th>
                         <th>Hours Remaining</th>
+                        <th>Your Progress</th>
                     </thead>
                     <tbody>
                         {% for assignment in assignment_progress %}
@@ -75,6 +76,10 @@
                                 <td>{{ assignment.worked|humanize_hours }}</td>
                                 <td>{{ assignment.assigned|humanize_hours }}</td>
                                 <td>{{ assignment.remaining|humanize_hours }}</td>
+                                <td class="project_progress_bar"
+                                data-worked = "{{ assignment.worked }}"
+                                data-assigned = "{{ assignment.assigned }}">
+                                </td>
                             </tr>
                         {% endfor %}
                     </tbody>
