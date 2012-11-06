@@ -44,7 +44,7 @@
                     {% endif %}
                 {% endif %}
             </td>
-            <td class="hours">{% get_active_hours entry %}</td>
+            <td class="hours">{{ entry.get_active_seconds|seconds_to_hours }}</td>
             <td class="desktop">{{ entry.location }}</td>
             <td>
                 <ul class='actions'>

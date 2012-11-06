@@ -44,10 +44,9 @@
                                 on {{ active_entry.start_time|date:"l" }}
                             {% endif %}
                         {% endifnotequal %}
-                        ({% get_active_hours active_entry %} hours{% if active_entry.seconds_paused %}
-                        with {{ active_entry.seconds_paused|seconds_to_hours }} hours paused{% endif %}).
+                        ({{ active_entry.get_active_seconds|humanize_seconds }} elapsed{% if active_entry.seconds_paused %} with {{ active_entry.seconds_paused|seconds_to_hours }} hours paused{% endif %}).
                     {% else %}
-                        You are not currently clocked in to a project.
+                        You are not currently clocked into a project.
                     {% endif %}
                 </p>
             </div>
@@ -73,9 +72,9 @@
                         {% for assignment in assignment_progress %}
                             <tr>
                                 <td><a href="{% url 'timepiece-clock-in' %}?project_id={{ assignment.pk }}">{{ assignment.name }}</a></td>
-                                <td>{{ assignment.worked }}</td>
-                                <td>{{ assignment.assigned }}</td>
-                                <td>{{ assignment.remaining }}</td>
+                                <td>{{ assignment.worked|humanize_hours }}</td>
+                                <td>{{ assignment.assigned|humanize_hours }}</td>
+                                <td>{{ assignment.remaining|humanize_hours }}</td>
                             </tr>
                         {% endfor %}
                     </tbody>
@@ -116,8 +115,8 @@
                                 </td>
                                 <td class="time break">{{ entry.start_time|date:"P" }}</td>
                                 <td class="time break">{{ entry.end_time|date:"P" }}</td>
-                                <td class="time break">{{ entry.seconds_paused|seconds_to_hours|floatformat:2 }}</td>
-                                <td class="time break">{{ entry.hours|floatformat:2 }}</td>
+                                <td class="time break">{{ entry.seconds_paused|humanize_seconds }}</td>
+                                <td class="time break">{{ entry.get_seconds|humanize_seconds:"%H:%M" }}</td>
                             </tr>
                         {% endfor %}
                         </tbody>
