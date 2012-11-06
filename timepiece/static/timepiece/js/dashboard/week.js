@@ -75,7 +75,41 @@ function createChart(worked, assigned) {
     return chart;
 }
 
-// Entry point for creating overall progress chart.
+
+// Given the jQuery object, the percentage and assigned values, return a div that holds the progress bar
+var build_project_bar = function(percentage, assigned) {
+
+    if (percentage === 0 ) {
+        return 'You have no hours clocked for this project.';
+    }
+    else if (assigned === 0) {
+        return 'You are not assigned to this project.';
+    }
+
+    var $bar = $('<div />');
+
+    // Creating text to fill the progress bar div
+    var bar_alt;
+
+    if (percentage > 100 && assigned > 0) {
+        bar_alt = 'You have gone over on hours.';
+        $bar.addClass('progress-over');
+    }
+    else {
+        bar_alt = 'You have worked ' + percentage + '% of your hours.';
+        $bar.attr("style", ("width: " + percentage + "%;"));
+    }
+
+    $bar.append(bar_alt);
+
+    var $parentBar = $('<div class="progress-wrapper" />');
+    $parentBar.append($bar);
+
+    return $parentBar;
+};
+
+
+// Entry point to create overall progress chart and per project progress bars
 (function() {
     var container = $('#progress-all'),
         worked = parseFloat(container.attr('data-worked')),
@@ -83,4 +117,20 @@ function createChart(worked, assigned) {
 
     var overall_chart = createChart(worked, assigned);
     container.append(overall_chart);
+
+    // Create progress bars for each project
+    $.each($('.project_progress_bar'), function() {
+        var self = $(this);
+        var worked = self.data('worked'),
+            assigned = self.data('assigned');
+        // Set percentage to 100 for unassigned projects.
+        var percentage = (assigned === 0) ? 100: (worked / assigned) * 100;
+        // Getting around .toFixed() implicit conversion to a string
+        percentage *= 100;
+        percentage = Math.round(percentage);
+        percentage /= 100;
+
+        // Construct progress bar
+        self.append(build_project_bar(percentage, assigned));
+    });
 })();

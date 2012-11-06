@@ -362,11 +362,11 @@ body {
             }
         }
         .progress {
-            height: 40px;
-            border: 1px solid @grayLight;
+            height: 28px;
+            border: 1px solid #DDDDDD;
             .bar, .remaining {
-                font-size: 24px;
-                line-height: 38px;
+                font-size: 22px;
+                line-height: 26px;
                 font-weight: bold;
             }
             .remaining {
@@ -374,9 +374,29 @@ body {
                 float: left;
             }
         }
+        .progress-wrapper {
+            width: auto;
+            border: 1px solid #DDDDDD;
+            background-color: @white;
+            > div {
+                background-color: @green;
+                display: block;
+                text-indent: 100%;
+                white-space: nowrap;
+                overflow: hidden;
+                &.progress-over {
+                    background-color: @red;
+                    width: 100%;
+                }
+                &.progress-none {
+                    background: transparent;
+                    text-indent: 0;
+                }
+            }
+        }
         #entries {
             #add-entry {
-                margin-bottom: 5px;
+                margin-bottom: 10px;
             }
         }
     }
