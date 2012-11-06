@@ -72,8 +72,8 @@ def dashboard(request):
     user = request.user
     Entry = timepiece.Entry
     ProjectHours = timepiece.ProjectHours
-    today = datetime.date.today()
 
+    today = datetime.date.today()
     day = today
     if 'week_start' in request.GET:
         param = request.GET.get('week_start')
@@ -140,7 +140,7 @@ def clock_in(request):
     except Entry.DoesNotExist:
         active_entry = None
     except Entry.MultipleObjectsReturned:
-        raise Exception("Only on active entry is allowed.")
+        raise Exception("Only one active entry is allowed.")
 
     initial = dict([(k, v) for k, v in request.GET.items()])
     form = timepiece_forms.ClockInForm(request.POST or None, initial=initial,
