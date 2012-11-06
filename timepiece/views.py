@@ -171,43 +171,18 @@ def toggle_paused(request, entry_id):
     method is invoked on an entry that is already paused, it will unpause it.
     Then the user will be redirected to their log entry list.
     """
+    entry = get_object_or_404(timepiece.Entry, pk=entry_id, user=request.user,
+            end_time__isnull=True)
 
-    try:
-        # retrieve the log entry
-        entry = timepiece.Entry.no_join.get(pk=entry_id,
-                                  user=request.user,
-                                  end_time__isnull=True)
-    except:
-        # create an error message for the user
-        message = 'The entry could not be paused.  Please try again.'
-        messages.error(request, message)
-    else:
-        # toggle the paused state
-        entry.toggle_paused()
+    # toggle the paused state
+    entry.toggle_paused()
+    entry.save()
 
-        # save it
-        entry.save()
-
-        if entry.is_paused:
-            action = 'paused'
-        else:
-            action = 'resumed'
-
-        delta = timezone.now() - entry.start_time
-        seconds = delta.seconds - entry.seconds_paused
-        seconds += delta.days * 86400
-
-        if seconds < 3600:
-            seconds /= 60.0
-            duration = "You've clocked %d minutes." % seconds
-        else:
-            seconds /= 3600.0
-            duration = "You've clocked %.2f hours." % seconds
-
-        message = 'The log entry has been %s. %s' % (action, duration)
-
-        # create a message that can be displayed to the user
-        messages.info(request, message)
+    # create a message that can be displayed to the user
+    action = 'paused' if entry.is_paused else 'resumed'
+    message = 'Your entry, {0} on {1}, has been {2}.'.format(
+            entry.activity.name, entry.project.name, action)
+    messages.info(request, message)
 
     # redirect to the log entry list
     return HttpResponseRedirect(reverse('dashboard'))
