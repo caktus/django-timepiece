@@ -89,6 +89,8 @@ def dashboard(request):
         active_entry = Entry.objects.get(user=user, end_time__isnull=True)
     except Entry.DoesNotExist:
         active_entry = None
+    except Entry.MultipleObjectsReturned:
+        raise Exception("Only one active entry is allowed.")
 
     # Process this week's entries to determine assignment progress.
     week_entries = Entry.objects.filter(user=user) \
@@ -129,26 +131,27 @@ def dashboard(request):
 @permission_required('timepiece.can_clock_in')
 @transaction.commit_on_success
 def clock_in(request):
-    """For clocking the user into a project"""
+    """For clocking the user into a project."""
+    user = request.user
+    Entry = timepiece.Entry
+
     try:
-        active_entry = timepiece.Entry.no_join.get(user=request.user,
-                                                   end_time__isnull=True)
-    except timepiece.Entry.MultipleObjectsReturned:  # Shouldn't happen
-        err_msg = 'You have more than one active entry and must clock out ' \
-                  'of these entries before clocking into another.'
-        messages.error(request, err_msg)
-        return redirect('dashboard')
-    except timepiece.Entry.DoesNotExist:
+        active_entry = Entry.no_join.get(user=user, end_time__isnull=True)
+    except Entry.DoesNotExist:
         active_entry = None
+    except Entry.MultipleObjectsReturned:
+        raise Exception("Only on active entry is allowed.")
 
     initial = dict([(k, v) for k, v in request.GET.items()])
     form = timepiece_forms.ClockInForm(request.POST or None, initial=initial,
-                                       user=request.user, active=active_entry)
+                                       user=user, active=active_entry)
     if form.is_valid():
         entry = form.save()
-        message = 'You have clocked into %s' % entry.project
+        message = 'You have clocked into {0} on {1}.'.format(
+                entry.activity.name, entry.project.name)
         messages.info(request, message)
         return HttpResponseRedirect(reverse('dashboard'))
+
     return render(request, 'timepiece/time-sheet/entry/clock_in.html', {
         'form': form,
         'active': active_entry,
@@ -167,7 +170,8 @@ def clock_out(request, entry_id):
         form = timepiece_forms.ClockOutForm(request.POST, instance=entry)
         if form.is_valid():
             entry = form.save()
-            message = "You've been clocked out."
+            message = "You have clocked out of {0} on {1}.".format(
+                    entry.activity.name, entry.project.name)
             messages.info(request, message)
             return HttpResponseRedirect(reverse('dashboard'))
         else:
