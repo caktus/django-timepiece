@@ -13,3 +13,4 @@ from timepiece.tests.tracking.dashboard import *
 from timepiece.tests.tracking.timesheet import *
 from timepiece.tests.user_settings import *
 from timepiece.tests.utils import *
+from timepiece.tests.template_tags import *

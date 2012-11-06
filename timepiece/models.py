@@ -554,6 +554,15 @@ class Entry(models.Model):
 
         return seconds + (delta.days * 86400)
 
+    def get_active_seconds(self):
+        """Use with active entries to obtain the seconds worked so far."""
+        if not self.end_time:
+            if self.is_paused:
+                self.end_time = self.pause_time
+            else:
+                self.end_time = timezone.now()
+        return self.get_seconds()
+
     @property
     def total_hours(self):
         """
