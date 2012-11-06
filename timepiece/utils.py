@@ -465,7 +465,8 @@ def process_progress(entries, assignments):
     project_q |= Q(id__in=entries.values_list('project__id', flat=True))
     projects = Project.objects.filter(project_q).values('pk', 'name')
 
-    project_data = {}  # Worked/remaining hours per project.
+    # Worked/remaining hours per project.
+    project_data = {}
     for project in projects:
         try:
             assigned = assignments.get(project__id=project['pk']).hours

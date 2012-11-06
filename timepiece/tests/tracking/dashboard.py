@@ -12,6 +12,7 @@ except ImportError:
     from timepiece import timezone
 
 from timepiece import utils
+from timepiece.models import Entry, ProjectHours
 from timepiece.tests.base import TimepieceDataTestCase
 
 
@@ -148,16 +149,105 @@ class ProcessProgressTestCase(TimepieceDataTestCase):
     """Tests for timepiece.utils.process_progress."""
 
     def setUp(self):
-        pass
+        self.today = datetime.date(2012, 11, 7)
+        self.this_week = utils.get_week_start(self.today)
+        self.next_week = self.this_week + relativedelta(days=7)
+
+        self.uname = 'test'
+        self.pword = 'password'
+        self.user = self.create_user(username=self.uname, password=self.pword)
+        self.client.login(username=self.uname, password=self.pword)
+
+        self.project = self.create_project()
+        self.activity = self.create_activity()
+        self.location = self.create_location()
+        self.status = 'unverified'
+
+    def _create_entry(self, start_time, end_time=None, project=None):
+        data = {
+            'user': self.user,
+            'project': project or self.project,
+            'activity': self.activity,
+            'location': self.location,
+            'status': self.status,
+            'start_time': start_time,
+        }
+        if end_time:
+            data['end_time'] = end_time
+        return self.create_entry(data=data)
+
+    def _create_hours(self, hours, project=None):
+        data = {
+            'user': self.user,
+            'project': project or self.project,
+            'week_start': self.this_week,
+            'hours': hours,
+        }
+        return self.create_project_hours_entry(**data)
+
+    def _get_progress(self):
+        entries = Entry.objects.all()
+        assignments = ProjectHours.objects.all()
+        return utils.process_progress(entries, assignments)
+
+    def _check_progress(self, progress, project, assigned, remaining, worked):
+        self.assertEqual(progress['pk'], project.pk)
+        self.assertEqual(progress['name'], project.name)
+        self.assertEqual(progress['assigned'], assigned)
+        self.assertEqual(progress['remaining'], remaining)
+        self.assertEqual(progress['worked'], worked)
 
     def test_progress(self):
-        pass
+        """Progress when work has been done for an assigned project."""
+        start_time = datetime.datetime(2012, 11, 7, 8, 0)
+        end_time = datetime.datetime(2012, 11, 7, 12, 0)
+        entry = self._create_entry(start_time, end_time)
+        worked_hours = utils.get_active_hours(entry)
+        assigned_hours = 5
+        assignment = self._create_hours(assigned_hours)
+
+        progress = self._get_progress()
+        self.assertEqual(len(progress), 1)
+        self._check_progress(progress[0], self.project,
+                assigned_hours, assigned_hours - worked_hours, worked_hours)
 
     def test_work_with_no_assignment(self):
-        pass
+        """Progress when work has been done on an unassigned project."""
+        start_time = datetime.datetime(2012, 11, 7, 8, 0)
+        end_time = datetime.datetime(2012, 11, 7, 12, 0)
+        entry = self._create_entry(start_time, end_time)
+        worked_hours = utils.get_active_hours(entry)
+
+        progress = self._get_progress()
+        self.assertEqual(len(progress), 1)
+        self._check_progress(progress[0], self.project,
+                0, -1 * worked_hours, worked_hours)
 
     def test_assignment_with_no_work(self):
-        pass
+        """Progress when no work has been done on an assigned project."""
+        assigned_hours = 5
+        assignment = self._create_hours(assigned_hours)
+
+        progress = self._get_progress()
+        self.assertEqual(len(progress), 1)
+        self._check_progress(progress[0], self.project,
+                assigned_hours, assigned_hours, 0)
 
     def test_ordering(self):
-        pass
+        """Progress list should be ordered by project name."""
+        projects = [
+            self.create_project(data={'name': 'a'}),
+            self.create_project(data={'name': 'b'}),
+            self.create_project(data={'name': 'c'}),
+        ]
+        for i in range(3):
+            start_time = datetime.datetime(2012, 11, 5 + i, 8, 0)
+            end_time = datetime.datetime(2012, 11, 5 + i, 12, 0)
+            entry = self._create_entry(start_time, end_time, projects[i])
+            assignment = self._create_hours(5 + 5*i, projects[i])
+
+        progress = self._get_progress()
+        self.assertEqual(len(progress), 3)
+        self.assertEqual(progress[0]['name'], 'a')
+        self.assertEqual(progress[1]['name'], 'b')
+        self.assertEqual(progress[2]['name'], 'c')
