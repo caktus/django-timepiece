@@ -221,7 +221,7 @@ class ClockInTest(TimepieceDataTestCase):
     def testClockInManyActive(self):
         """
         There should never be more than one active entry. If this happens,
-        there is not a clean way to auto-clock out. Redirect to dashboard.
+        a 500 error should be raised so that we are notified of the situation.
         """
         self.client.login(username='user', password='abc')
         entry1 = self.create_entry({
@@ -235,11 +235,15 @@ class ClockInTest(TimepieceDataTestCase):
             'start_time_0': self.now.strftime('%m/%d/%Y'),
             'start_time_1': self.now.strftime('%H:%M:%S'),
         })
-        response = self.client.post(self.url, data, follow=True)
-        self.assertRedirects(response, reverse('dashboard'),
-                             status_code=302, target_status_code=200)
-        message = response.context['messages']._loaded_messages[0].message
-        self.assertTrue(message.startswith('You have more than one active'))
+        try:
+            response = self.client.post(self.url, data)
+        except Exception as e:
+            self.assertEqual(str(e), "Only one active entry is allowed.")
+        else:
+            self.fail("Only one active entry should be allowed.")
+        self.assertEqual(timepiece.Entry.objects.count(), 2)
+        self.assertEqual(timepiece.Entry.objects.get(pk=entry1.pk), entry1)
+        self.assertEqual(timepiece.Entry.objects.get(pk=entry2.pk), entry2)
 
     def testClockInCurrentStatus(self):
         """Verify the status of the current entry shows what is expected"""
