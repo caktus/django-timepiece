@@ -431,16 +431,6 @@ def get_total_seconds(td):
     return (td.microseconds + (td.seconds + td.days * 24 * 3600) * 1e6) / 1e6
 
 
-def get_active_hours(entry):
-    """Use with active entries to obtain the time worked so far."""
-    if not entry.end_time:
-        if entry.is_paused:
-            entry.end_time = entry.pause_time
-        else:
-            entry.end_time = timezone.now()
-    return Decimal('%.2f' % round(entry.total_hours, 2))
-
-
 def get_hours_per_week(user):
     """Retrieves the number of hours the user should work per week."""
     UserProfile = get_model('timepiece', 'UserProfile')
@@ -500,8 +490,7 @@ def process_weeks_entries(user, week_start, entries):
 
     for entry in entries:
         pk = entry.project_id
-        hours = get_active_hours(entry)
-
+        hours = Decimal('%.2f' % round(entry.get_active_seconds() / 3600.0, 2))
         all_worked += hours
         project_data[pk]['worked'] += hours
         project_data[pk]['remaining'] -= hours

@@ -1,7 +1,7 @@
 import datetime
+from decimal import Decimal
 from dateutil.relativedelta import relativedelta
 from dateutil import rrule
-from decimal import Decimal
 import urllib
 
 from django import template
@@ -12,11 +12,15 @@ try:
 except ImportError:
     from timepiece import timezone
 
-import timepiece.models as timepiece
 from timepiece import utils
 
 
 register = template.Library()
+
+
+@register.filter
+def multiply(a, b):
+    return float(a) * float(b)
 
 
 @register.filter
@@ -91,18 +95,32 @@ def week_start(date):
 
 
 @register.simple_tag
-def get_active_hours(entry):
-    """Use with active entries to obtain time worked so far"""
-    return utils.get_active_hours(entry)
-
-
-@register.simple_tag
 def get_uninvoiced_hours(entries):
     hours_uninvoiced = 0
     for entry in entries:
         if entry['status'] != 'invoiced' and entry['status'] != 'not-invoiced':
             hours_uninvoiced += entry['s']
     return hours_uninvoiced
+
+
+@register.filter
+def humanize_hours(total_hours, format='%H:%M'):
+    """
+    Given time in Decimal(hours), return a string in `format`, which defaults
+    to %H:%M
+    """
+    return humanize_seconds(int(float(total_hours) * 3600), format)
+
+
+@register.filter
+def humanize_seconds(total_seconds, format='%H:%M:%S'):
+    """
+    Given time in int(seconds), return a string in `format`, which defaults to
+    %H:%M:%S
+    """
+    delta = datetime.timedelta(seconds=total_seconds)
+    dt = datetime.datetime(1901, 1, 1) + delta
+    return dt.strftime(format)
 
 
 @register.filter
