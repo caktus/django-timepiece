@@ -235,11 +235,15 @@ class ClockInTest(TimepieceDataTestCase):
             'start_time_0': self.now.strftime('%m/%d/%Y'),
             'start_time_1': self.now.strftime('%H:%M:%S'),
         })
-        with self.assertRaisesMessage(Exception, "Only one active entry is allowed."):
+        try:
             response = self.client.post(self.url, data)
-        self.assertEquals(timepiece.Entry.objects.count(), 2)
-        self.assertEquals(timepiece.Entry.objects.get(pk=entry1.pk), entry1)
-        self.assertEquals(timepiece.Entry.objects.get(pk=entry2.pk), entry2)
+        except Exception as e:
+            self.assertEqual(str(e), "Only one active entry is allowed.")
+        else:
+            self.fail("Only one active entry should be allowed.")
+        self.assertEqual(timepiece.Entry.objects.count(), 2)
+        self.assertEqual(timepiece.Entry.objects.get(pk=entry1.pk), entry1)
+        self.assertEqual(timepiece.Entry.objects.get(pk=entry2.pk), entry2)
 
     def testClockInCurrentStatus(self):
         """Verify the status of the current entry shows what is expected"""
