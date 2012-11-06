@@ -20,6 +20,12 @@ class HumanizeSecondsTestCase(TimepieceDataTestCase):
             "Given '%H:%M:%S' as second argument, should return in that format"
         )
 
+    def test_negative_seconds(self):
+        seconds_display = tags.humanize_seconds((-2.5 * 3600) - 4)
+        self.assertEqual(seconds_display, '-02:30:04',
+            "Given negative seconds, should return as -%H:%M:%S"
+        )
+
 
 class HumanizeHoursTestCase(TimepieceDataTestCase):
 

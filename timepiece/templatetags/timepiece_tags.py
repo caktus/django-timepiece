@@ -118,9 +118,10 @@ def humanize_seconds(total_seconds, format='%H:%M:%S'):
     Given time in int(seconds), return a string in `format`, which defaults to
     %H:%M:%S
     """
-    delta = datetime.timedelta(seconds=total_seconds)
+    delta = datetime.timedelta(seconds=abs(total_seconds))
     dt = datetime.datetime(1901, 1, 1) + delta
-    return dt.strftime(format)
+    result = dt.time().strftime(format)
+    return result if total_seconds >= 0 else '-' + result
 
 
 @register.filter
