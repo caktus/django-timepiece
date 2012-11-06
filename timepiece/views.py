@@ -70,42 +70,60 @@ class CSVMixin(object):
 @login_required
 def dashboard(request):
     user = request.user
-    today = datetime.date.today()
     Entry = timepiece.Entry
-    # Query for the active entry if it exists and determine if its from today
-    try:
-        active_entry = timepiece.Entry.objects.get(
-            user=request.user, end_time__isnull=True
-        )
-    except (Entry.DoesNotExist, Entry.MultipleObjectsReturned):
-        active_entry = None
+    ProjectHours = timepiece.ProjectHours
 
-    # Query for week's progress
-    week_start = utils.get_week_start(today)
-    raw_weeks_entries = Entry.objects.filter(user=user) \
+    today = datetime.date.today()
+    day = today
+    if 'week_start' in request.GET:
+        param = request.GET.get('week_start')
+        try:
+            day = datetime.datetime.strptime(param, '%Y-%m-%d').date()
+        except:
+            pass
+    week_start = utils.get_week_start(day)
+    week_end = week_start + relativedelta(days=6)
+
+    # Query for the user's active entry if it exists.
+    try:
+        active_entry = Entry.objects.get(user=user, end_time__isnull=True)
+    except Entry.DoesNotExist:
+        active_entry = None
+    except Entry.MultipleObjectsReturned:
+        raise Exception("Only one active entry is allowed.")
+
+    # Process this week's entries to determine assignment progress.
+    week_entries = Entry.objects.filter(user=user) \
         .timespan(week_start, span='week', current=True) \
         .select_related('project')
-    weeks_entries = raw_weeks_entries.order_by('start_time')
-    all_assigned, all_worked, assignment_progress = \
-            utils.process_weeks_entries(user=user, week_start=week_start,
-            entries=weeks_entries)
-    entries = raw_weeks_entries.exclude(end_time__isnull=True) \
-        .order_by('-start_time')
+    assignments = ProjectHours.objects.filter(user=user,
+            week_start=week_start.date())
+    project_progress = utils.process_progress(week_entries, assignments)
+
+    # Total hours that the user is expected to clock this week.
+    total_assigned = utils.get_hours_per_week(user)
+    total_worked = sum([p['worked'] for p in project_progress])
+
+    # Query for list of all complete entries this week.
+    week_entries = week_entries.exclude(end_time__isnull=True) \
+            .order_by('-start_time')
 
     # Others' active entries
-    others_active_entries = Entry.objects.filter(end_time__isnull=True).values(
-            'user__first_name', 'user__last_name', 'project__name',
-            'activity__name', 'start_time')
+    active_entry_values = ('user__first_name', 'user__last_name',
+            'project__name', 'activity__name', 'start_time')
+    others_active_entries = Entry.objects.filter(end_time__isnull=True) \
+            .exclude(user=user) \
+            .values(*active_entry_values)
 
     return render(request, 'timepiece/time-sheet/dashboard.html', {
         'today': today,
-        'from_date': week_start.date(),
-        'to_date': week_start.date() + relativedelta(days=6),
+        'week_start': week_start.date(),
+        'week_end': week_end.date(),
         'active_entry': active_entry,
-        'entries': entries,
-        'all_assigned': all_assigned,
-        'all_worked': all_worked,
-        'assignment_progress': assignment_progress,
+        'total_assigned': total_assigned,
+        'total_worked': total_worked,
+        'project_progress': project_progress,
+        'week_entries': week_entries,
         'others_active_entries': others_active_entries,
     })
 
@@ -113,24 +131,27 @@ def dashboard(request):
 @permission_required('timepiece.can_clock_in')
 @transaction.commit_on_success
 def clock_in(request):
-    """For clocking the user into a project"""
-    active_entry = timepiece.Entry.no_join.filter(user=request.user,
-                                                  end_time__isnull=True)
-    # Should never happen, but just in case.
-    if len(active_entry) > 1:
-        err_msg = 'You have more than one active entry and must clock out ' \
-                  'of these entries before clocking into another.'
-        messages.error(request, err_msg)
-        return redirect('dashboard')
-    active_entry = active_entry[0] if active_entry else None
+    """For clocking the user into a project."""
+    user = request.user
+    Entry = timepiece.Entry
+
+    try:
+        active_entry = Entry.no_join.get(user=user, end_time__isnull=True)
+    except Entry.DoesNotExist:
+        active_entry = None
+    except Entry.MultipleObjectsReturned:
+        raise Exception("Only one active entry is allowed.")
+
     initial = dict([(k, v) for k, v in request.GET.items()])
     form = timepiece_forms.ClockInForm(request.POST or None, initial=initial,
-                                       user=request.user, active=active_entry)
+                                       user=user, active=active_entry)
     if form.is_valid():
         entry = form.save()
-        message = 'You have clocked into %s' % entry.project
+        message = 'You have clocked into {0} on {1}.'.format(
+                entry.activity.name, entry.project.name)
         messages.info(request, message)
         return HttpResponseRedirect(reverse('dashboard'))
+
     return render(request, 'timepiece/time-sheet/entry/clock_in.html', {
         'form': form,
         'active': active_entry,
@@ -149,7 +170,8 @@ def clock_out(request, entry_id):
         form = timepiece_forms.ClockOutForm(request.POST, instance=entry)
         if form.is_valid():
             entry = form.save()
-            message = "You've been clocked out."
+            message = "You have clocked out of {0} on {1}.".format(
+                    entry.activity.name, entry.project.name)
             messages.info(request, message)
             return HttpResponseRedirect(reverse('dashboard'))
         else:
