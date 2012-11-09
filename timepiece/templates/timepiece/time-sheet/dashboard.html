@@ -67,7 +67,7 @@
                             <th>Hours Worked</th>
                             <th>Hours Assigned</th>
                             <th>Hours Remaining</th>
-                            <th>Progress</th>
+                            <th class="desktop">Progress</th>
                         </thead>
                         <tbody>
                             {% for project in project_progress %}
@@ -78,7 +78,7 @@
                                     <td{% if project.remaining < 0 %} class="overtime"{% endif %}>
                                         {{ project.remaining|humanize_hours }}
                                     </td>
-                                    <td class="project_progress_bar"
+                                    <td class="desktop project_progress_bar"
                                         data-worked = "{{ project.worked }}"
                                         data-assigned = "{{ project.assigned }}">
                                     </td>
