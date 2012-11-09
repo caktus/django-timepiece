@@ -376,7 +376,7 @@ body {
         }
         .progress-wrapper {
             width: auto;
-            border: 1px solid #DDDDDD;
+            border: 1px solid #CCCCCC;
             background-color: @white;
             > div {
                 background-color: @green;
@@ -384,19 +384,16 @@ body {
                 text-indent: 100%;
                 white-space: nowrap;
                 overflow: hidden;
-                &.progress-over {
-                    background-color: @red;
-                    width: 100%;
-                }
-                &.progress-none {
-                    background: transparent;
-                    text-indent: 0;
-                }
             }
         }
         #entries {
             #add-entry {
                 margin-bottom: 10px;
+            }
+        }
+        #project-progress {
+            .overtime {
+                color: @red;
             }
         }
     }

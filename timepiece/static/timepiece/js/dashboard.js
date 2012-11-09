@@ -69,7 +69,7 @@ function createChart(worked, assigned) {
         var remaining_percent = Math.min(1, 1 - worked / assigned),
             remaining_text = humanizeTime(assigned - worked) + ' Remaining';
         remaining_percent = Math.ceil(remaining_percent * 100);
-        chart.append(createBar('remaining', remaining_percent, remaining_text));  // Blue
+        chart.append(createBar('remaining', remaining_percent, remaining_text));
     }
 
     return chart;
@@ -78,12 +78,8 @@ function createChart(worked, assigned) {
 
 // Given the jQuery object, the percentage and assigned values, return a div that holds the progress bar
 var build_project_bar = function(percentage, assigned) {
-
-    if (percentage === 0 ) {
-        return 'You have no hours clocked for this project.';
-    }
-    else if (assigned === 0) {
-        return 'You are not assigned to this project.';
+    if (assigned <= 0) {
+        return 'You have no assigned hours for this project this week.';
     }
 
     var $bar = $('<div />');
@@ -91,9 +87,9 @@ var build_project_bar = function(percentage, assigned) {
     // Creating text to fill the progress bar div
     var bar_alt;
 
-    if (percentage > 100 && assigned > 0) {
+    if (percentage > 100) {
         bar_alt = 'You have gone over on hours.';
-        $bar.addClass('progress-over');
+        $bar.attr("style", ("width: 100%;"));
     }
     else {
         bar_alt = 'You have worked ' + percentage + '% of your hours.';
