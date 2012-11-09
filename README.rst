@@ -75,8 +75,7 @@ Installation
             "django.contrib.messages.context_processors.messages",
             "django.core.context_processors.request",           # <----
             "timepiece.context_processors.extra_nav",           # <----
-            "timepiece.context_processors.active_entries",      # <----
-            "timepiece.context_processors.timepiece_settings",  # <----
+            "timepiece.context_processors.quick_clock_in",      # <----
             "timepiece.context_processors.quick_search",        # <----
         )
 
@@ -86,6 +85,9 @@ Installation
             ('text/less', 'lessc {infile} {outfile}'),
         )
         COMPRESS_ROOT = '%s/static/' % PROJECT_PATH
+        INTERNAL_IPS = ('127.0.0.1',)
+
+    - Set ``USE_TZ`` to ``False``. django-timepiece does not currently support timezones.
 
 #. Run ``syncdb``.
 
