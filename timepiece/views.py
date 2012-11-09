@@ -1106,19 +1106,24 @@ def add_project_relationship(request, project_id=None, user_id=None):
 
 
 @csrf_exempt
-@require_POST
 @permission_required('timepiece.delete_projectrelationship')
 @transaction.commit_on_success
 def remove_project_relationship(request, project_id, user_id):
-    user = get_object_or_404(User, pk=user_id)
-    project = get_object_or_404(timepiece.Project, pk=project_id)
-
-    timepiece.ProjectRelationship.objects.filter(user=user,
-            project=project).delete()
-
-    if 'next' in request.REQUEST and request.REQUEST['next']:
-        return HttpResponseRedirect(request.REQUEST['next'])
-    return HttpResponseRedirect(reverse('view_project', args=(project.pk,)))
+    rel = get_object_or_404(timepiece.ProjectRelationship,
+        user__id=user_id, project__id=project_id
+    )
+    if request.POST:
+        rel.delete()
+        if request.REQUEST.get('next', ''):
+            return HttpResponseRedirect(request.REQUEST['next'])
+        return HttpResponseRedirect(
+            reverse('view_project', args=(rel.project.pk,))
+        )
+    return render(request, 'timepiece/project/relationship_remove.html', {
+        'user': rel.user,
+        'project': rel.project,
+        'next': request.REQUEST.get('next', '')
+    })
 
 
 @permission_required('timepiece.change_projectrelationship')

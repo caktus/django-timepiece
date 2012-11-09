@@ -286,19 +286,16 @@ class RemoveProjectRelationshipTestCase(RelationshipTestBase):
     def _url_kwargs(self):
         return {'project_id': self.project.pk, 'user_id': self.user.pk}
 
-    def test_other_methods(self):
-        """Remove Project Relationship requires POST."""
+    def test_get_no_delete(self):
+        """Remove Project Relationship renders but doesn't delete on GET"""
         url = reverse(self.url_name, kwargs=self._url_kwargs())
-        for method in (self.client.get, self.client.head, self.client.options,
-                self.client.put, self.client.delete):
-            response = method(url)
-            self.assertEquals(response.status_code, 405)
-            self.assertEquals(ProjectRelationship.objects.count(), 1)
+        response = self.client.get(url)
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(ProjectRelationship.objects.count(), 1)
 
     def test_permission(self):
         """Permission is required to delete a project relationship."""
         self.user.user_permissions.remove(self.permission)
-
         response = self._post()
         self.assertEquals(response.status_code, 302)
         self.assertEquals(ProjectRelationship.objects.count(), 1)
@@ -318,22 +315,8 @@ class RemoveProjectRelationshipTestCase(RelationshipTestBase):
         self.assertEquals(ProjectRelationship.objects.count(), 1)
 
     def test_non_existant_relationship(self):
-        """Should have no effect."""
+        """Assure 404 is raised if the project relationship doesn't exist"""
         self.relationship.delete()
-
         response = self._post()
-        self.assertEquals(response.status_code, 302)
-        self.assertEquals(ProjectRelationship.objects.count(), 0)
-
-    def test_redirect_to_project_page(self):
-        kwargs = {'project_id': self.project.pk}
-        project_url = reverse('view_project', kwargs=kwargs)
-
-        response = self._post()
-        self._assertRedirectsNoFollow(response, project_url)
-        self.assertEquals(ProjectRelationship.objects.count(), 0)
-
-    def test_redirect_to_next(self):
-        response = self._post(get_kwargs={'next': '/hello'})
-        self._assertRedirectsNoFollow(response, '/hello')
+        self.assertEquals(response.status_code, 404)
         self.assertEquals(ProjectRelationship.objects.count(), 0)
