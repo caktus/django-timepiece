@@ -53,7 +53,7 @@ Installation
 
    If you are using an existing project, you will need to make the following changes to your settings:
 
-    - Add `timepiece` and its dependencies to ``INSTALLED_APPS``::
+   - Add `timepiece` and its dependencies to ``INSTALLED_APPS``::
 
         INSTALLED_APPS = (
             ...
@@ -65,7 +65,7 @@ Installation
             ...
         )
 
-    - Add `django.core.context_processors.request` and django-timepiece context processors to ``TEMPLATE_CONTEXT_PROCESSORS``::
+   - Add `django.core.context_processors.request` and django-timepiece context processors to ``TEMPLATE_CONTEXT_PROCESSORS``::
 
         TEMPLATE_CONTEXT_PROCESSORS = (
             "django.contrib.auth.context_processors.auth",
@@ -79,7 +79,7 @@ Installation
             "timepiece.context_processors.quick_search",        # <----
         )
 
-    - Configure compressor settings::
+   - Configure compressor settings::
 
         COMPRESS_PRECOMPILERS = (
             ('text/less', 'lessc {infile} {outfile}'),
@@ -87,7 +87,7 @@ Installation
         COMPRESS_ROOT = '%s/static/' % PROJECT_PATH
         INTERNAL_IPS = ('127.0.0.1',)
 
-    - Set ``USE_TZ`` to ``False``. django-timepiece does not currently support timezones.
+   - Set ``USE_TZ`` to ``False``. django-timepiece does not currently support timezones.
 
 #. Run ``syncdb``.
 
