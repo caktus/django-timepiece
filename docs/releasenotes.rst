@@ -42,7 +42,7 @@ Release Notes
   be set in order to ensure that Bootstrap Glyphicons can be found
 * Fixed bug when copying the previous week's ProjectHours entries to
   current week when entries for the current week already exist.
-
+* Fixed bug when removing ProjectRelationship through the front end
 
 *Code Quality*
 
