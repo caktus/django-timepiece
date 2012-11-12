@@ -540,11 +540,13 @@ class TestProductivityReport(TimepieceDataTestCase):
             url += '?' + urlencode(get_kwargs)
         return self.client.get(url, **kwargs)
 
-    def _get_context(self, response):
+    def _unpack(self, response):
         form = response.context['form']
         report = json.loads(response.context['report'])
         organize_by = response.context['type']
-        return form, report, organize_by
+        worked = response.context['total_worked']
+        assigned = response.context['total_assigned']
+        return form, report, organize_by, worked, assigned
 
     def _check_row(self, row, correct):
         self.assertEqual(len(row), 3)
@@ -568,54 +570,64 @@ class TestProductivityReport(TimepieceDataTestCase):
         """No report data should be returned upon initial retrieval."""
         response = self._get()
         self.assertEqual(response.status_code, 200)
-        form, report, organize_by = self._get_context(response)
+        form, report, organize_by, worked, assigned = self._unpack(response)
         self.assertEqual(len(form.errors), 0)
         self.assertEqual(len(report), 0)
         self.assertEqual(organize_by, '')
+        self.assertEqual(float(worked), 0.0)
+        self.assertEqual(float(assigned), 0.0)
 
     def test_no_project(self):
         """Form requires specification of project."""
         data = {'organize_by': 'week'}
         response = self._get(data=data)
         self.assertEqual(response.status_code, 200)
-        form, report, organize_by = self._get_context(response)
+        form, report, organize_by, worked, assigned = self._unpack(response)
         self.assertEqual(len(form.errors), 1)
         self.assertTrue('project' in form.errors)
         self.assertEqual(len(report), 0)
         self.assertEqual(organize_by, '')
+        self.assertEqual(float(worked), 0.0)
+        self.assertEqual(float(assigned), 0.0)
 
     def test_invalid_project_id(self):
         """Form requires specification of valid project."""
         data = {'organize_by': 'week', 'project_1': 12345}
         response = self._get(data=data)
         self.assertEqual(response.status_code, 200)
-        form, report, organize_by = self._get_context(response)
+        form, report, organize_by, worked, assigned = self._unpack(response)
         self.assertEqual(len(form.errors), 1)
         self.assertTrue('project' in form.errors)
         self.assertEqual(len(report), 0)
         self.assertEqual(organize_by, '')
+        self.assertEqual(float(worked), 0.0)
+        self.assertEqual(float(assigned), 0.0)
 
     def test_no_organize_by(self):
         """Form requires specification of organization method."""
         data = {'project_1': self.project.pk}
         response = self._get(data=data)
         self.assertEqual(response.status_code, 200)
-        form, report, organize_by = self._get_context(response)
+        form, report, organize_by, worked, assigned = self._unpack(response)
         self.assertEqual(len(form.errors), 1)
         self.assertTrue('organize_by' in form.errors)
         self.assertEqual(len(report), 0)
         self.assertEqual(organize_by, '')
+        self.assertEqual(float(worked), 0.0)
+        self.assertEqual(float(assigned), 0.0)
 
     def test_invalid_organize_by(self):
         """Form requires specification of valid organization method."""
         data = {'project_1': self.project.pk, 'organize_by': 'invalid'}
         response = self._get(data=data)
         self.assertEqual(response.status_code, 200)
-        form, report, organize_by = self._get_context(response)
+        form, report, organize_by, worked, assigned = self._unpack(response)
         self.assertEqual(len(form.errors), 1)
         self.assertTrue('organize_by' in form.errors)
         self.assertEqual(len(report), 0)
         self.assertEqual(organize_by, '')
+        self.assertEqual(float(worked), 0.0)
+        self.assertEqual(float(assigned), 0.0)
 
     def test_no_data(self):
         """If no data, report should contain header row only."""
@@ -624,19 +636,23 @@ class TestProductivityReport(TimepieceDataTestCase):
         data = {'project_1': self.project.pk, 'organize_by': 'week'}
         response = self._get(data=data)
         self.assertEqual(response.status_code, 200)
-        form, report, organize_by = self._get_context(response)
+        form, report, organize_by, worked, assigned = self._unpack(response)
         self.assertEqual(len(form.errors), 0)
         self.assertEqual(len(report), 1)
         self.assertEqual(organize_by, 'week')
+        self.assertEqual(float(worked), 0.0)
+        self.assertEqual(float(assigned), 0.0)
 
     def test_organize_by_week(self):
         """Report should contain hours per week on the project."""
         data = {'project_1': self.project.pk, 'organize_by': 'week'}
         response = self._get(data=data)
         self.assertEqual(response.status_code, 200)
-        form, report, organize_by = self._get_context(response)
+        form, report, organize_by, worked, assigned = self._unpack(response)
         self.assertEqual(len(form.errors), 0)
         self.assertEqual(organize_by, 'week')
+        self.assertEqual(float(worked), 8.0)
+        self.assertEqual(float(assigned), 8.0)
         self.assertEqual(len(report), 1 + 4)  # Include header row
         self._check_row(report[1], ['2012-09-24', 0.0, 4.0])
         self._check_row(report[2], ['2012-10-01', 4.0, 4.0])
@@ -648,9 +664,11 @@ class TestProductivityReport(TimepieceDataTestCase):
         data = {'project_1': self.project.pk, 'organize_by': 'person'}
         response = self._get(data=data)
         self.assertEqual(response.status_code, 200)
-        form, report, organize_by = self._get_context(response)
+        form, report, organize_by, worked, assigned = self._unpack(response)
         self.assertEqual(len(form.errors), 0)
         self.assertEqual(organize_by, 'person')
+        self.assertEqual(float(worked), 8.0)
+        self.assertEqual(float(assigned), 8.0)
         self.assertEqual(len(report), 1 + 3)  # Include header row
         self._check_row(report[1], ['Person 1', 0.0, 4.0])
         self._check_row(report[2], ['Person 2', 4.0, 4.0])

@@ -1783,8 +1783,8 @@ def productivity_report(request):
         organize_by = form.cleaned_data['organize_by']
         export = request.GET.get('export', False)
 
-        actuals = timepiece.Entry.objects.filter(project=project,
-                end_time__isnull=False)
+        actualsQ = Q(project=project, end_time__isnull=False)
+        actuals = timepiece.Entry.objects.filter(actualsQ)
         projections = timepiece.ProjectHours.objects.filter(project=project)
         entry_count = actuals.count() + projections.count()
 
@@ -1792,15 +1792,13 @@ def productivity_report(request):
             # Determine the project's time range.
             amin = None; amax = None; pmin = None; pmax = None
             if actuals.count() > 0:
-                amin = actuals.aggregate(Min('start_time'))['start_time__min']
+                amin = actuals.aggregate(Min('start_time')).values()[0]
                 amin = utils.get_week_start(amin).date()
-                amax = actuals.aggregate(Max('start_time'))['start_time__max']
+                amax = actuals.aggregate(Max('start_time')).values()[0]
                 amax = utils.get_week_start(amax).date()
             if projections.count() > 0:
-                pmin = projections.aggregate(
-                        Min('week_start'))['week_start__min']
-                pmax = projections.aggregate(
-                        Max('week_start'))['week_start__max']
+                pmin = projections.aggregate(Min('week_start')).values()[0]
+                pmax = projections.aggregate(Max('week_start')).values()[0]
             current = min(amin, pmin) if (amin and pmin) else (amin or pmin)
             latest = max(amax, pmax) if (amax and pmax) else (amax or pmax)
 
@@ -1809,10 +1807,10 @@ def productivity_report(request):
                 next_week = current + relativedelta(days=7)
                 actual_hours = actuals.filter(start_time__gte=current,
                         start_time__lt=next_week).aggregate(
-                        Sum('hours'))['hours__sum']
+                        Sum('hours')).values()[0]
                 projected_hours = projections.filter(week_start__gte=current,
                         week_start__lt=next_week).aggregate(
-                        Sum('hours'))['hours__sum']
+                        Sum('hours')).values()[0]
                 report.append([current.strftime('%Y-%m-%d'),
                         actual_hours or 0, projected_hours or 0])
                 current = next_week
@@ -1828,12 +1826,12 @@ def productivity_report(request):
 
             # Report for each person.
             for person in people:
-                actual_hours = actuals.filter(user=person[0]).aggregate(
-                        Sum('hours'))['hours__sum']
-                projected_hours = projections.filter(user=person[0]).aggregate(
-                        Sum('hours'))['hours__sum']
-                report.append(['{0} {1}'.format(person[1], person[2]),
-                        actual_hours or 0, projected_hours or 0])
+                name = '{0} {1}'.format(person[1], person[2])
+                actual_hours = actuals.filter(user=person[0]) \
+                        .aggregate(Sum('hours')).values()[0]
+                projected_hours = projections.filter(user=person[0]) \
+                        .aggregate(Sum('hours')).values()[0]
+                report.append([name, actual_hours or 0, projected_hours or 0])
 
         col_headers = [organize_by.title(), 'Worked Hours', 'Assigned Hours']
         report.insert(0, col_headers)
@@ -1852,4 +1850,6 @@ def productivity_report(request):
         'form': form,
         'report': json.dumps(report, cls=DecimalEncoder),
         'type': organize_by or '',
+        'total_worked': sum([r[1] for r in report[1:]]),
+        'total_assigned': sum([r[2] for r in report[1:]]),
     })

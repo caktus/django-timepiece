@@ -36,6 +36,12 @@
 
     <div class="row-fluid">
         <div class="span12">
+            {% if type %}
+                <div id="productivity-summary">
+                    <p><span>Total Worked:</span> {{ total_worked|floatformat:0 }} hours</p>
+                    <p><span>Total Assigned:</span> {{ total_assigned|floatformat:0 }} hours</p>
+                </div>
+            {% endif %}
             <div id="chart" class="chart"></div>
         </div>
     </div>

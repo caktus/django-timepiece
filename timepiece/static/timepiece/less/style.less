@@ -280,17 +280,8 @@ body {
         cursor: pointer;
     }
 
-    .chart {
-        width: 100%;
-        min-height: 500px;
-    }
-
     .hidden {
         display: none;
-    }
-
-    .timeline {
-
     }
 
     #active-popover {
@@ -301,13 +292,6 @@ body {
 
     #ui-datepicker-div {
         font-size: 80%;
-    }
-
-    /*
-    Dashboard styles
-    */
-    #timeline {
-        height: 100px;
     }
 
     /*****************************************
@@ -413,6 +397,10 @@ body {
     }
 
     &#billable-hours {
+        .chart {
+            width: 100%;
+           min-height: 500px;
+        }
         .filter {
             margin: 0px 0px 20px;
 
@@ -481,6 +469,16 @@ body {
 
         .hours {
             text-align: center !important;
+        }
+    }
+
+    &#productivity-report {
+        #productivity-summary {
+            margin-top: 10px;
+            font-size: 16px;
+            span {
+                font-weight: bold;
+            }
         }
     }
 
