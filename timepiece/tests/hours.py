@@ -375,9 +375,12 @@ class ProjectHoursEditTestCase(ProjectHoursTestCase):
 
         self.assertEquals(len(data['project_hours']), 2)
         self.assertEquals(len(data['projects']), 1)
-
-        self.assertEquals(data['project_hours'][0]['hours'], 15.0)
-        self.assertEquals(data['project_hours'][1]['hours'], 2.0)
+        correct_hours = {
+            self.manager.id: 2.0,
+            self.user.id: 15.0
+        }
+        for entry in data['project_hours']:
+            self.assertEqual(entry['hours'], correct_hours[entry['user']])
 
     def test_ajax_create_successful(self):
         """
