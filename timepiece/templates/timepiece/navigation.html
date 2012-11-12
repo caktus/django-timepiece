@@ -90,7 +90,7 @@
                 {% if user.is_authenticated %}
                     <ul class="nav pull-right">
                         <li class="dropdown">
-                            <a href="" class="dropdown-toggle" data-toggle="dropdown"><icon class="icon-user icon-white"></icon> {{ user.first_name }} <b class="caret"></b></a>
+                            <a href="" class="dropdown-toggle" data-toggle="dropdown"><i class="icon-user icon-white"></i> {{ user.first_name }} <b class="caret"></b></a>
                             <ul class="dropdown-menu">
                                 {% if user.is_staff %}
                                     <li><a href="{% url 'admin:index' %}">Admin</a></li>
