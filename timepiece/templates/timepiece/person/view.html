@@ -44,12 +44,12 @@
                         {{ relationship.project.name }}
                         {% if perms.timepiece.change_projectrelationship %}
                             {% with caption="Edit "|add:person.get_full_name|add:"'s relationship to "|add:relationship.project.name project=relationship.project %}
-                                <a title="{{ caption }}" href="{% url 'edit_project_relationship' project_id=project.id user_id=person.id %}?next={% url 'view_person' person_id=person.id %}"><img alt="{{ caption }}" src="{{ STATIC_URL }}/images/icons/pencil.png"></a>
+                                <a title="{{ caption }}" href="{% url 'edit_project_relationship' project_id=project.id user_id=person.id %}?next={% url 'view_person' person_id=person.id %}"><i alt="{{ caption }}" class="icon-pencil"></i></a>
                             {% endwith %}
                         {% endif %}
                         {% if perms.timepiece.delete_projectrelationship %}
                             {% with caption="Remove "|add:person.get_full_name|add:" from "|add:relationship.project.name project=relationship.project %}
-                                <a title="{{ caption }}" href="{% url 'remove_project_relationship' project_id=project.id user_id=person.id %}?next={% url 'view_person' person_id=person.id %}"><img alt="{{ caption }}" src="{{ STATIC_URL }}images/icons/delete.png"></a>
+                                <a title="{{ caption }}" href="{% url 'remove_project_relationship' project_id=project.id user_id=person.id %}?next={% url 'view_person' person_id=person.id %}"><i alt="{{ caption }}" class="icon-remove"></i></a>
                             {% endwith %}
                         {% endif %}
                     </li>
