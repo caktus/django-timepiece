@@ -32,8 +32,9 @@ function drawChart() {
             containerId: 'chart'
         });
         wrapper.draw();
-    } else {
-        container = $('#chart');
-        container.text('');
+    } else if (report.length === 1) {
+        var container = $('#chart'),
+            text = $('<p>No data to display.</p>');
+        container.append(text);
     }
 }
