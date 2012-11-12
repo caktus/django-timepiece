@@ -1787,15 +1787,15 @@ def productivity_report(request):
         projections = timepiece.ProjectHours.objects.filter(project=project)
 
         if organize_by == 'week':
-            report.append(['Week', 'Actual Hours', 'Assigned Hours'])
-
+            # Determine the project's time range.
             amax = actuals.aggregate(Max('start_time'))['start_time__max']
             amin = actuals.aggregate(Min('start_time'))['start_time__min']
             pmax = projections.aggregate(Max('week_start'))['week_start__max']
             pmin = projections.aggregate(Min('week_start'))['week_start__min']
-
             latest = max(utils.get_week_start(amax).date(), pmax)
             current = min(utils.get_week_start(amin).date(), pmin)
+
+            # Report for each week during the project's time range.
             while current <= latest:
                 next_week = current + relativedelta(days=7)
                 actual_hours = actuals.filter(start_time__gte=current,
@@ -1808,21 +1808,26 @@ def productivity_report(request):
                         actual_hours or 0, projected_hours or 0])
                 current += relativedelta(days=7)
 
-        elif organize_by == 'people':
-            report.append(['Person', 'Actual Hours', 'Assigned Hours'])
-
-            vals = ('user__first_name', 'user__last_name', 'user')
+        elif organize_by == 'person':
+            # Determine all people who worked on or were assigned to the
+            # project.
+            vals = ('user', 'user__first_name', 'user__last_name')
             apeople = list(actuals.values_list(*vals).distinct())
             ppeople = list(projections.values_list(*vals).distinct())
+            key = lambda x: (x[1] + x[2]).lower()  # Sort by name
+            people = sorted(list(set(apeople + ppeople)), key=key)
 
-            people = sorted(list(set(apeople + ppeople)))
+            # Report for each person.
             for person in people:
-                actual_hours = actuals.filter(user=person[2]).aggregate(
+                actual_hours = actuals.filter(user=person[0]).aggregate(
                         Sum('hours'))['hours__sum']
-                projected_hours = projections.filter(user=person[2]).aggregate(
+                projected_hours = projections.filter(user=person[0]).aggregate(
                         Sum('hours'))['hours__sum']
-                report.append(['{0} {1}'.format(person[0], person[1]),
+                report.append(['{0} {1}'.format(person[1], person[2]),
                         actual_hours or 0, projected_hours or 0])
+
+        col_headers = [organize_by.title(), 'Worked Hours', 'Assigned Hours']
+        report.insert(0, col_headers)
 
         if export:
             response = HttpResponse(content_type='text/csv')
@@ -1837,4 +1842,5 @@ def productivity_report(request):
     return render(request, 'timepiece/time-sheet/reports/productivity.html', {
         'form': form,
         'report': json.dumps(report, cls=DecimalEncoder),
+        'type': organize_by,
     })

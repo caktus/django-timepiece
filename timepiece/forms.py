@@ -644,7 +644,7 @@ class ProductivityReportForm(forms.Form):
     DATE_FORMAT = '%Y-%m-%d'
     ORGANIZE_BY_CHOICES = (
         ('week', 'Week'),
-        ('people', 'People'),
+        ('person', 'People'),
     )
     project = selectable_forms.AutoCompleteSelectField(ProjectLookup)
     organize_by = forms.ChoiceField(choices=ORGANIZE_BY_CHOICES,

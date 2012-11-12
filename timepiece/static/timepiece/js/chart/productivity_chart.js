@@ -1,29 +1,33 @@
 var scripts = document.getElementsByTagName('script'),
-    script = scripts[scripts.length - 1];
-
-var report = JSON.parse(script.getAttribute('data-report'));
+    script = scripts[scripts.length - 1],
+    report = JSON.parse(script.getAttribute('data-report')),
+    type = script.getAttribute('data-type');
 
 google.load('visualization', '1.0', {'packages':['corechart']});
 google.setOnLoadCallback(drawChart);
 
-var wrapper;
-
 function drawChart() {
     if(report.length > 1) {
-        wrapper = new google.visualization.ChartWrapper({
+        var chart_height = (report.length - 1) * 20,
+            reverse = type === 'week' ? true : false,
+            wrapper = new google.visualization.ChartWrapper({
             chartType: 'BarChart',
             dataTable: google.visualization.arrayToDataTable(report),
             options: {
-                bar: {
-                    groupWidth: '50%'
-                },
                 chartArea: {
-                    top: '5%',
-                    bottom: '5%'
+                    bottom: 50,
+                    height: chart_height,
+                    left: '10%',
+                    right: '10%',
+                    top: 50,
+                    width: '90%'
                 },
+                height: chart_height + 100,
                 legend: {
-                    position: 'bottom'
-                }
+                    alignment: 'center',
+                    position: 'top'
+                },
+                reverseCategories: reverse
             },
             containerId: 'chart'
         });

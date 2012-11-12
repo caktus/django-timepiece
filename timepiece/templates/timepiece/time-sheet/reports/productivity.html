@@ -9,7 +9,7 @@
 {% block extrajs %}
     {{ block.super }}
     <script type="text/javascript" src="https://www.google.com/jsapi"></script>
-    <script type="text/javascript" src="{{ STATIC_URL }}timepiece/js/chart/productivity_chart.js" data-report="{{ report }}"></script>
+    <script type="text/javascript" src="{{ STATIC_URL }}timepiece/js/chart/productivity_chart.js" data-report="{{ report }}" data-type="{{ type }}"></script>
 {% endblock extrajs %}
 
 {% block crumbs %}
