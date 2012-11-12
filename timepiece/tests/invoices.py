@@ -30,7 +30,8 @@ class InvoiceViewPreviousTestCase(TimepieceDataTestCase):
             project = projects[index % len(projects)]  # Alternate projects
             self.log_time(start=start, status='approved', project=project)
 
-    def create_invoice(self, project=None, data={}):
+    def create_invoice(self, project=None, data=None):
+        data = data or {}
         if not project:
             project = self.project
         to_date = utils.add_timezone(datetime.datetime(2011, 1, 31))

@@ -15,7 +15,7 @@ from django.contrib.contenttypes.models import ContentType
 from django.core import exceptions
 from django.core.urlresolvers import reverse, resolve
 from django.db import DatabaseError, transaction
-from django.db.models import Sum, Q, F
+from django.db.models import Sum, Q, F, Min, Max
 from django.http import HttpResponse, HttpResponseRedirect
 from django.http import  Http404, HttpResponseForbidden
 from django.shortcuts import get_object_or_404, redirect, render
@@ -1769,3 +1769,87 @@ class ProjectHoursDetailView(ProjectHoursMixin, View):
                 return HttpResponse('ok', mimetype='text/plain')
 
         return HttpResponse('', status=500)
+
+
+@login_required
+@permission_required('timepiece.view_entry_summary')
+def productivity_report(request):
+    report = []
+    organize_by = None
+
+    form = timepiece_forms.ProductivityReportForm(request.GET or None)
+    if form.is_valid():
+        project = form.cleaned_data['project']
+        organize_by = form.cleaned_data['organize_by']
+        export = request.GET.get('export', False)
+
+        actuals = timepiece.Entry.objects.filter(project=project,
+                end_time__isnull=False)
+        projections = timepiece.ProjectHours.objects.filter(project=project)
+        entry_count = actuals.count() + projections.count()
+
+        if organize_by == 'week' and entry_count > 0:
+            # Determine the project's time range.
+            amin = None; amax = None; pmin = None; pmax = None
+            if actuals.count() > 0:
+                amin = actuals.aggregate(Min('start_time'))['start_time__min']
+                amin = utils.get_week_start(amin).date()
+                amax = actuals.aggregate(Max('start_time'))['start_time__max']
+                amax = utils.get_week_start(amax).date()
+            if projections.count() > 0:
+                pmin = projections.aggregate(
+                        Min('week_start'))['week_start__min']
+                pmax = projections.aggregate(
+                        Max('week_start'))['week_start__max']
+            current = min(amin, pmin) if (amin and pmin) else (amin or pmin)
+            latest = max(amax, pmax) if (amax and pmax) else (amax or pmax)
+
+            # Report for each week during the project's time range.
+            while current <= latest:
+                next_week = current + relativedelta(days=7)
+                actual_hours = actuals.filter(start_time__gte=current,
+                        start_time__lt=next_week).aggregate(
+                        Sum('hours'))['hours__sum']
+                projected_hours = projections.filter(week_start__gte=current,
+                        week_start__lt=next_week).aggregate(
+                        Sum('hours'))['hours__sum']
+                report.append([current.strftime('%Y-%m-%d'),
+                        actual_hours or 0, projected_hours or 0])
+                current = next_week
+
+        elif organize_by == 'person' and entry_count > 0:
+            # Determine all people who worked on or were assigned to the
+            # project.
+            vals = ('user', 'user__first_name', 'user__last_name')
+            apeople = list(actuals.values_list(*vals).distinct())
+            ppeople = list(projections.values_list(*vals).distinct())
+            key = lambda x: (x[1] + x[2]).lower()  # Sort by name
+            people = sorted(list(set(apeople + ppeople)), key=key)
+
+            # Report for each person.
+            for person in people:
+                actual_hours = actuals.filter(user=person[0]).aggregate(
+                        Sum('hours'))['hours__sum']
+                projected_hours = projections.filter(user=person[0]).aggregate(
+                        Sum('hours'))['hours__sum']
+                report.append(['{0} {1}'.format(person[1], person[2]),
+                        actual_hours or 0, projected_hours or 0])
+
+        col_headers = [organize_by.title(), 'Worked Hours', 'Assigned Hours']
+        report.insert(0, col_headers)
+
+        if export:
+            response = HttpResponse(content_type='text/csv')
+            filename = '{0}_productivity'.format(project.name)
+            content_disp = 'attachment; filename={0}.csv'.format(filename)
+            response['Content-Disposition'] = content_disp
+            writer = csv.writer(response)
+            for row in report:
+                writer.writerow(row)
+            return response
+
+    return render(request, 'timepiece/time-sheet/reports/productivity.html', {
+        'form': form,
+        'report': json.dumps(report, cls=DecimalEncoder),
+        'type': organize_by or '',
+    })
