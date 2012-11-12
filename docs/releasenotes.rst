@@ -51,6 +51,7 @@ Release Notes
 * Split up settings files in example project to use base and local settings
 * Removed unused jqplot library
 * Moved ``multiply`` template tag to timepiece_tags and removed math_tags file
+* Removed most of custom icon set in favor of Bootstrap's Glyphicons
 
 0.6.0 (Released 10-04-2012)
 ---------------------------
