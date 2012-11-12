@@ -74,9 +74,9 @@
                             {% for project in project_progress %}
                                 <tr>
                                     <td><a href="{% url 'timepiece-clock-in' %}?project_id={{ project.pk }}">{{ project.name }}</a></td>
-                                    <td>{{ project.worked|humanize_hours }}</td>
-                                    <td>{{ project.assigned|humanize_hours }}</td>
-                                    <td>{{ project.remaining|humanize_hours }}</td>
+                                    <td>{{ project.worked|humanize_hours|slice:":-3" }}</td>
+                                    <td>{{ project.assigned|humanize_hours|slice:":-3" }}</td>
+                                    <td>{{ project.remaining|humanize_hours|slice:":-3" }}</td>
                                     <td class="project_progress_bar"
                                         data-worked = "{{ project.worked }}"
                                         data-assigned = "{{ project.assigned }}">
@@ -125,7 +125,7 @@
                                 <td class="time break">{{ entry.start_time|date:"g:i a" }}</td>
                                 <td class="time break">{{ entry.end_time|date:"g:i a" }}</td>
                                 <td class="time break">{{ entry.seconds_paused|humanize_seconds }}</td>
-                                <td class="time break">{{ entry.get_seconds|humanize_seconds:"%H:%M" }}</td>
+                                <td class="time break">{{ entry.get_seconds|humanize_seconds|slice:":-3" }}</td>
                             </tr>
                         {% endfor %}
                         </tbody>
