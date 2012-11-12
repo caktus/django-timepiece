@@ -29,6 +29,9 @@ Release Notes
     assigned this week)
   - Use "humanized" hours display (1:30) rather than decimal (1.5)
 
+* Added productivity report, which compares the hours worked on a project to
+  the hours that were assigned to it
+
 *Bug Fixes*
 
 * Updated to latest version of Bootstrap
