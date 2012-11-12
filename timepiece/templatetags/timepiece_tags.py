@@ -118,11 +118,9 @@ def humanize_seconds(total_seconds):
     minutes = seconds // 60
     seconds %= 60
     prefix = u'-' if total_seconds < 0 else u''
-    return prefix + reduce(lambda a, b: u':'.join((a, b)),
-        map(lambda u: unicode(u) if u > 9 else u'0' + unicode(u),
-            (hours, minutes, seconds)
-        )
-    )
+    return prefix + u':'.join([
+        u'{0:02d}'.format(time_unit) for time_unit in (hours, minutes, seconds)
+    ])
 
 
 @register.filter
