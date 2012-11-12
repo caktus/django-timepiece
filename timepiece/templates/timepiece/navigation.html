@@ -13,7 +13,7 @@
                             <a href="#" class="dropdown-toggle" data-toggle="dropdown"><i class="icon-time icon-white"> </i><b class="caret"></b> </a>
                             <ul class="dropdown-menu">
                                 {% for project in quick_clock_in_projects %}
-                                    <li><a href="{% url 'timepiece-clock-in' %}?project_id={{ project.id }}">{{ project.name }}</a></li>
+                                    <li><a href="{% url 'timepiece-clock-in' %}?project={{ project.id }}">{{ project.name }}</a></li>
                                 {% endfor %}
                             </ul>
                         {% endif %}
