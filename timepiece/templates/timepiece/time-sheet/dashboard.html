@@ -2,7 +2,7 @@
 {% load url from future %}
 {% load timepiece_tags %}
 
-{% block title %}Timepiece Dashboard{% endblock title %}
+{% block title %}Dashboard{% endblock title %}
 
 {% block bodyid %}dashboard{% endblock bodyid %}
 
@@ -50,7 +50,7 @@
 
         <ul class="nav nav-tabs">
             <li class="active"><a href="#progress" data-toggle="tab">Progress</a></li>
-            <li><a href="#entries" data-toggle="tab">Entries</a></li>
+            <li><a href="#entries" data-toggle="tab">All Entries</a></li>
             <li><a href="#online-users" data-toggle="tab">Online Users</a></li>
         </ul>
 
@@ -75,7 +75,7 @@
                         <tbody>
                             {% for project in project_progress %}
                                 <tr>
-                                    <td><a href="{% url 'timepiece-clock-in' %}?project_id={{ project.pk }}">{{ project.name }}</a></td>
+                                    <td><a href="{% url 'timepiece-clock-in' %}?project={{ project.pk }}">{{ project.name }}</a></td>
                                     <td>{{ project.worked|humanize_hours }}</td>
                                     <td>{{ project.assigned|humanize_hours }}</td>
                                     <td{% if project.remaining < 0 %} class="overtime"{% endif %}>
@@ -119,10 +119,10 @@
                                 {% endifchanged %}
                                 <td class="project">
                                     {% if entry.status == "unverified" %}
-                                       <a href="{% url 'timepiece-update' entry.id %}?next={{ request.get_full_path|urlencode }}"><icon class="icon-pencil"></icon></a>
-                                        <a href="{% url 'timepiece-delete' entry.id %}?next={{ request.get_full_path|urlencode }}"><icon class="icon-remove"></icon></a>
+                                       <a href="{% url 'timepiece-update' entry.id %}?next={{ request.get_full_path|urlencode }}"><i class="icon-pencil"></i></a>
+                                        <a href="{% url 'timepiece-delete' entry.id %}?next={{ request.get_full_path|urlencode }}"><i class="icon-remove"></i></a>
                                     {% else %}
-                                        <icon class="icon-ok"></icon>
+                                        <i class="icon-ok"></i>
                                     {% endif %}
                                     {{ entry.activity.name }} on {{ entry.project.name }}
                                 </td>
