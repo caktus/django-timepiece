@@ -1786,15 +1786,23 @@ def productivity_report(request):
         actuals = timepiece.Entry.objects.filter(project=project,
                 end_time__isnull=False)
         projections = timepiece.ProjectHours.objects.filter(project=project)
+        entry_count = actuals.count() + projections.count()
 
-        if organize_by == 'week':
+        if organize_by == 'week' and entry_count > 0:
             # Determine the project's time range.
-            amax = actuals.aggregate(Max('start_time'))['start_time__max']
-            amin = actuals.aggregate(Min('start_time'))['start_time__min']
-            pmax = projections.aggregate(Max('week_start'))['week_start__max']
-            pmin = projections.aggregate(Min('week_start'))['week_start__min']
-            latest = max(utils.get_week_start(amax).date(), pmax)
-            current = min(utils.get_week_start(amin).date(), pmin)
+            amin = None; amax = None; pmin = None; pmax = None
+            if actuals.count() > 0:
+                amin = actuals.aggregate(Min('start_time'))['start_time__min']
+                amin = utils.get_week_start(amin).date()
+                amax = actuals.aggregate(Max('start_time'))['start_time__max']
+                amax = utils.get_week_start(amax).date()
+            if projections.count() > 0:
+                pmin = projections.aggregate(
+                        Min('week_start'))['week_start__min']
+                pmax = projections.aggregate(
+                        Max('week_start'))['week_start__max']
+            current = min(amin, pmin) if (amin and pmin) else (amin or pmin)
+            latest = max(amax, pmax) if (amax and pmax) else (amax or pmax)
 
             # Report for each week during the project's time range.
             while current <= latest:
@@ -1807,9 +1815,9 @@ def productivity_report(request):
                         Sum('hours'))['hours__sum']
                 report.append([current.strftime('%Y-%m-%d'),
                         actual_hours or 0, projected_hours or 0])
-                current += relativedelta(days=7)
+                current = next_week
 
-        elif organize_by == 'person':
+        elif organize_by == 'person' and entry_count > 0:
             # Determine all people who worked on or were assigned to the
             # project.
             vals = ('user', 'user__first_name', 'user__last_name')
