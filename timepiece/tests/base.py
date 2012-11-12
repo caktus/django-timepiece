@@ -35,16 +35,6 @@ class TimepieceDataTestCase(TestCase):
         chars = string.letters + extra_chars
         return ''.join([random.choice(chars) for i in range(length)])
 
-    def create_person(self, data=None):
-        data = data or {}
-        defaults = {
-            'username': self.random_string(20),
-            'first_name': self.random_string(20),
-            'last_name': self.random_string(20),
-        }
-        defaults.update(data)
-        return User.objects.create(**defaults)
-
     def create_project_type(self, data=None):
         data = data or {}
         defaults = {
@@ -86,7 +76,7 @@ class TimepieceDataTestCase(TestCase):
         defaults = {}
         defaults.update(data)
         if 'user' not in defaults:
-            defaults['user'] = self.create_person()
+            defaults['user'] = self.create_user()
         if 'project' not in defaults:
             defaults['project'] = self.create_project()
         relationship = timepiece.ProjectRelationship.objects.create(**defaults)
@@ -160,7 +150,7 @@ class TimepieceDataTestCase(TestCase):
         defaults = {}
         defaults.update(data)
         if 'user' not in defaults:
-            user = self.create_person()
+            user = self.create_user()
         if 'contract' not in defaults:
             defaults['contract'] = self.create_project()
         defaults['start_date'] = defaults['contract'].start_date
