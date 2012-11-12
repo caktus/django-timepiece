@@ -73,7 +73,7 @@ class DeleteObjectsTest(TimepieceDataTestCase):
         """Delete urls should not be accessed by regular users"""
         self.client.login(username='user', password='abc')
 
-        person = self.create_person()
+        person = self.create_user()
         url = reverse('delete_person', args=(person.pk,))
 
         response = self.client.get(url)
@@ -110,7 +110,7 @@ class DeleteObjectsTest(TimepieceDataTestCase):
 
     def test_delete_person(self):
         """A superuser should be able to access the delete page"""
-        person = self.create_person()
+        person = self.create_user()
         url = reverse('delete_person', args=(person.pk,))
 
         response = self.client.get(url)
