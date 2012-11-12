@@ -1775,6 +1775,7 @@ class ProjectHoursDetailView(ProjectHoursMixin, View):
 @permission_required('timepiece.view_entry_summary')
 def productivity_report(request):
     report = []
+    organize_by = None
 
     form = timepiece_forms.ProductivityReportForm(request.GET or None)
     if form.is_valid():
@@ -1842,5 +1843,5 @@ def productivity_report(request):
     return render(request, 'timepiece/time-sheet/reports/productivity.html', {
         'form': form,
         'report': json.dumps(report, cls=DecimalEncoder),
-        'type': organize_by,
+        'type': organize_by or '',
     })
