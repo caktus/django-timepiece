@@ -13,16 +13,16 @@
     <div class="row-fluid">
         <div class="span12">
             <h2>{{ project }}</h2>
-            <ul class="unstyled subnav">
+            <ul class="nav nav-pills">
                 {% if perms.timepiece.change_project %}
-                    <li><a href='{% url 'edit_project' project_id=project.id %}'>Edit project</a></li>
-                    <li><a href="{% url 'delete_project' project.id %}">Delete project</a></li>
+                    <li><a href="{% url 'edit_project' project_id=project.id %}">Edit Project</a></li>
+                    <li><a href="{% url 'delete_project' project.id %}">Delete Project</a></li>
                 {% endif %}
                 {% if perms.timepiece.view_businesses %}
-                    <li><a href='{% url 'view_business' business=project.business.id %}'>Return to {{ project.business.name }}</a></li>
+                    <li><a href="{% url 'view_business' business=project.business.id %}">Return to {{ project.business.name }}</a></li>
                 {% endif %}
                 {% if perms.timepiece.view_project_time_sheet %}
-                    <li><a href='{% url 'project_time_sheet' project.id %}'>Project Time Sheet</a></li>
+                    <li><a href="{% url 'project_time_sheet' project.id %}">View Project Time Sheet</a></li>
                 {% endif %}
             </ul>
         </div>
@@ -30,55 +30,41 @@
 
     <div class="row-fluid">
         <div class="span6">
-            <table class='table table-bordered table-striped'>
-                <tr>
-                    <th>Type</th>
-                    <td>{{ project.type }}</td>
-                </tr>
-                <tr>
-                    <th>Status</th>
-                    <td>{{ project.status }}</td>
-                </tr>
-                <tr>
-                    <th>Billable</th>
-                    <td>{{ project.billable }}</td>
-                </tr>
-                <tr>
-                    <th>Point Person</th>
-                    <td>{{ project.point_person }}</td>
-                </tr>
-                <tr>
-                    <th>Description</th>
-                    <td>{{ project.description|linebreaks }}</td>
-                </tr>
+            <table class="table table-bordered table-striped">
+                <tr><th>Type</th><td>{{ project.type }}</td></tr>
+                <tr><th>Status</th><td>{{ project.status }}</td></tr>
+                <tr><th>Billable</th><td>{{ project.billable }}</td></tr>
+                <tr><th>Point Person</th><td>{{ project.point_person }}</td></tr>
+                <tr><th>Description</th><td>{{ project.description|linebreaks }}</td></tr>
                 {% if project.tracker_url %}
-                <tr>
-                    <th>Tracker URL</th>
-                    <td>{{ project.tracker_url }}</td>
-                </tr>
+                    <tr><th>Tracker URL</th><td>{{ project.tracker_url }}</td></tr>
                 {% endif %}
             </table>
         </div>
 
         <div class="span4 offset1">
             <h3>Contacts</h3>
-            <ul class='people'>
+            <ul class="people">
             {% ifnotequal project.users.count 0 %}
             {% for user in project.users.select_related.all %}
                 <li>
                     {{ user.get_full_name }}
                     {% if perms.timepiece.change_projectrelationship %}
-                        <a title="Edit {{ user.get_full_name }}'s relationship to {{ project }}" href='{% url 'edit_project_relationship' project_id=project.id user_id=user.id %}?next={% url 'view_project' project_id=project.id %}'><img alt="Edit {{ user.get_full_name }}'s relationship to {{ project }}" src='{{ FAMFAMFAM_URL }}pencil.png' /></a>
+                        {% with caption="Edit "|add:user.get_full_name|add:"'s relationship to "|add:project.name %}
+                            <a title="{{ caption }}" href="{% url 'edit_project_relationship' project_id=project.id user_id=user.id %}?next={% url 'view_project' project_id=project.id %}"><img alt="{{ caption }}" src="{{ STATIC_URL }}images/icons/pencil.png" /></a>
+                        {% endwith %}
                     {% endif %}
                     {% if perms.timepiece.delete_projectrelationship %}
-                        <a title='Remove {{ user.get_full_name }}' href='{% url 'remove_user_from_project' project_id=project.id user_id=user.id %}?next={% url 'view_project' project_id=project.id %}'><img alt='Remove {{ user.get_full_name }}' src='{{ FAMFAMFAM_URL }}/delete.png' /></a>
+                        {% with caption="Remove "|add:user.get_full_name|add:" from "|add:project.name %}
+                            <a title="{{ caption }}" href="{% url 'remove_project_relationship' project_id=project.id user_id=user.id %}?next={% url 'view_project' project_id=project.id %}"><img alt="{{ caption }}" src="{{ STATIC_URL }}images/icons/delete.png" /></a>
+                        {% endwith %}
                     {% endif %}
                 </li>
             {% endfor %}
             {% endifnotequal %}
             </ul>
             {% if perms.timepiece.add_projectrelationship %}
-            <form class="form-inline" action='{% url 'add_user_to_project' project_id=project.id %}?next={% url 'view_project' project_id=project.id %}' method="post" accept-charset="utf-8">
+            <form class="form-inline" action="{% url 'add_user_to_project' project_id=project.id %}?next={% url 'view_project' project_id=project.id %}" method="post" accept-charset="utf-8">
                 {% csrf_token %}
                 {{ add_user_form|as_bootstrap:"inline" }}
                 <input class="btn" type="submit" name="submit" id="submit" value="Add" />

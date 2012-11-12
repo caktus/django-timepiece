@@ -1,16 +1,6 @@
-from django.conf import settings
-
 from timepiece import models as timepiece
+from timepiece import utils
 from timepiece.forms import QuickSearchForm
-
-
-def timepiece_settings(request):
-    default_famfamfam_url = settings.STATIC_URL + 'images/icons/'
-    famfamfam_url = getattr(settings, 'FAMFAMFAM_URL', default_famfamfam_url)
-    context = {
-        'FAMFAMFAM_URL': famfamfam_url,
-    }
-    return context
 
 
 def quick_search(request):
@@ -19,23 +9,28 @@ def quick_search(request):
     }
 
 
-def active_entries(request):
-    active_entries = None
-
-    if request.user.is_authenticated():
-        active_entries = timepiece.Entry.objects.filter(
-            end_time__isnull=True,
-        ).exclude(
-            user=request.user,
-        ).select_related('user', 'project', 'activity')
+def quick_clock_in(request):
+    user = request.user
+    projects = []
+    if user.is_authenticated() and user.is_active:
+        vacation_ids = utils.get_setting(
+                'TIMEPIECE_PAID_LEAVE_PROJECTS').values()
+        vacation_projects = timepiece.Project.objects.filter(
+                users=user, id__in=vacation_ids) \
+            .order_by('name').values('name', 'id')
+        work_projects = timepiece.Project.objects.filter(
+                users=user, status__enable_timetracking=True,
+                type__enable_timetracking=True) \
+            .exclude(id__in=vacation_ids) \
+            .order_by('name').values('name', 'id')
+        projects = list(work_projects) + list(vacation_projects)
 
     return {
-        'active_entries': active_entries,
+        'quick_clock_in_projects': projects,
     }
 
 
 def extra_nav(request):
-    context = {
-        'extra_nav': getattr(settings, 'EXTRA_NAV', {})
+    return {
+        'timepiece_extra_nav': utils.get_setting('TIMEPIECE_EXTRA_NAV'),
     }
-    return context

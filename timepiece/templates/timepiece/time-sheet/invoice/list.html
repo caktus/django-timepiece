@@ -13,11 +13,12 @@
     <div class="row-fluid">
         <div class="span12">
             <h2>Invoice Summary</h2>
-            <ul class="unstyled subnav">
+            <ul class="nav nav-pills">
                 <li>
                     <a href="{% url 'invoice_projects' %}">Create Invoice</a>
                 </li>
-                <li>
+                {# Not sure why the below is here if it doesn't link to anywhere. Adding inline styling for now until that question is answered. #}
+                <li style="padding: 8px;">
                     Previous Invoices
                 </li>
             </ul>

@@ -1,7 +1,7 @@
 import datetime
+from decimal import Decimal
 from dateutil.relativedelta import relativedelta
 from dateutil import rrule
-from decimal import Decimal
 import urllib
 
 from django import template
@@ -12,41 +12,20 @@ try:
 except ImportError:
     from timepiece import timezone
 
-import timepiece.models as timepiece
-from timepiece.utils import get_week_start
+from timepiece import utils
 
 
 register = template.Library()
 
 
 @register.filter
+def multiply(a, b):
+    return float(a) * float(b)
+
+
+@register.filter
 def seconds_to_hours(seconds):
     return round(seconds / 3600.0, 2)
-
-
-@register.inclusion_tag('timepiece/time-sheet/bar_graph.html',
-                        takes_context=True)
-def bar_graph(context, name, worked, total, width=None, suffix=None):
-    if not width:
-        width = 400
-        suffix = 'px'
-    left = total - worked
-    over = 0
-    over_total = 0
-    error = ''
-    if worked < 0:
-        error = 'Somehow you\'ve logged %s negative hours for %s this week.' \
-        % (abs(worked), name)
-    if left < 0:
-        over = abs(left)
-        left = 0
-        total = over + total
-    return {
-        'name': name, 'worked': worked,
-        'total': total, 'left': left,
-        'over': over, 'width': width,
-        'suffix': suffix, 'error': error,
-        }
 
 
 @register.inclusion_tag('timepiece/time-sheet/_date_filters.html')
@@ -112,18 +91,7 @@ def invoice_subheaders(context, current):
 
 @register.simple_tag
 def week_start(date):
-    return get_week_start(date).strftime('%m/%d/%Y')
-
-
-@register.simple_tag
-def get_active_hours(entry):
-    """Use with active entries to obtain time worked so far"""
-    if not entry.end_time:
-        if entry.is_paused:
-            entry.end_time = entry.pause_time
-        else:
-            entry.end_time = timezone.now()
-    return Decimal('%.2f' % round(entry.total_hours, 2))
+    return utils.get_week_start(date).strftime('%m/%d/%Y')
 
 
 @register.simple_tag
@@ -133,6 +101,27 @@ def get_uninvoiced_hours(entries):
         if entry['status'] != 'invoiced' and entry['status'] != 'not-invoiced':
             hours_uninvoiced += entry['s']
     return hours_uninvoiced
+
+
+@register.filter
+def humanize_hours(total_hours, format='%H:%M'):
+    """
+    Given time in Decimal(hours), return a string in `format`, which defaults
+    to %H:%M
+    """
+    return humanize_seconds(int(float(total_hours) * 3600), format)
+
+
+@register.filter
+def humanize_seconds(total_seconds, format='%H:%M:%S'):
+    """
+    Given time in int(seconds), return a string in `format`, which defaults to
+    %H:%M:%S
+    """
+    delta = datetime.timedelta(seconds=abs(total_seconds))
+    dt = datetime.datetime(1901, 1, 1) + delta
+    result = dt.time().strftime(format)
+    return result if total_seconds >= 0 else '-' + result
 
 
 @register.filter

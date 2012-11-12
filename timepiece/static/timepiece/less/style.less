@@ -67,18 +67,24 @@ body {
         width: 16px;
     }
 
-    ul {
-        &.subnav {
-            margin-top: 3px;
-
-            li {
-                display: inline;
-                border-left: 1px solid @lightgray;
-                padding: 0px 10px;
-
-                &:first-child {
-                    padding-left: 0px;
-                    border-left: 0px;
+    .quick-buttons {
+        margin-bottom: 20px;
+        ul {
+            &.subnav {
+                margin-top: 3px;
+                li {
+                    .pull-left;
+                    padding: 0px 10px 0 0;
+                    @media(max-width: 480px) {
+                        padding: 0 5px 0 0;
+                    }
+                    a {
+                        &.add-entry {
+                            @media(max-width: 430px) {
+                                margin-top: 10px;
+                            }
+                        }
+                    }
                 }
             }
         }
@@ -132,7 +138,11 @@ body {
         @blue: #BBBFDD;
         @lightblue: #DFDFEF;
         @lightgray: #AAAAAA;
-
+        .desktop {
+            @media (max-width: 767px){
+                .hide;
+            }
+        }
         tr {
 
             td {
@@ -204,16 +214,6 @@ body {
      * Start general site-wide classes/ids
      *****************************************/
 
-    #content.container-fluid {
-        width: 92%;
-        margin: 60px auto;
-
-        @media (max-width: 979px) {
-            margin: 20px auto;
-            width: 97%;
-        }
-    }
-
     .right {
         float: right;
     }
@@ -259,15 +259,23 @@ body {
         cursor: pointer;
     }
 
-    .popover-inner {
+    .popover {
         width: auto;
-
-        .popover-content {
+        margin-top: 15px !important;
+        .popover-inner {
             width: auto;
+            h3.popover-title {
+                font-size: 18px;
+                font-weight: bold;
+            }
+            .popover-content {
+                width: auto;
+                padding: 15px 15px 0 15px;
+            }
         }
     }
 
-    .popover-toggle:hover {
+    a#popover-toggle {
         cursor: hand;
         cursor: pointer;
     }
@@ -281,6 +289,10 @@ body {
         display: none;
     }
 
+    .timeline {
+
+    }
+
     #active-popover {
         .popover-title {
             display: none;
@@ -291,8 +303,40 @@ body {
         font-size: 80%;
     }
 
+    /*
+    Dashboard styles
+    */
+    #timeline {
+        height: 100px;
+    }
+
     /*****************************************
      * End general site-wide classes
+     *****************************************/
+
+    /*****************************************
+     * Start navbar classes
+     *****************************************/
+
+     .navbar {
+        .navbar-search {
+            input[type="text"]{
+                font-family: Helvetica, Arial, sans-serif;
+                color: @grayLight;
+                font-weight: normal;
+                line-height: 1;
+                margin-bottom: 0;
+                width: 100px;
+                border: 1px solid @black;
+                &:focus {
+                    width: 150px;
+                }
+            }
+        }
+     }
+
+    /*****************************************
+     * End navbar classes
      *****************************************/
 
     /*****************************************
@@ -300,8 +344,59 @@ body {
      *****************************************/
 
     &#dashboard {
-        .active.paused, #active-entries .paused {
-            color: #999;
+        #active-entry {
+            margin-bottom: 25px;
+            #active-header {
+                margin-bottom: 10px;
+                margin-top: 10px;
+            }
+        }
+        #overall-label {
+            float: left;
+            padding: 1px;
+            margin-right: 10px;
+            height: 28px;
+            line-height: 28px;
+            font-size: 26px;
+            font-weight: bold;
+            vertical-align: middle;
+            text-align: center;
+        }
+        .progress {
+            height: 28px;
+            border: 1px solid #DDDDDD;
+            .bar, .remaining {
+                vertical-align: middle;
+                font-size: 18px;
+                line-height: 28px;
+            }
+            .remaining {
+                text-align: center;
+                float: left;
+            }
+        }
+        .progress-wrapper {
+            width: auto;
+            border: 1px solid #CCCCCC;
+            background-color: @white;
+            > div {
+                background-color: @green;
+                display: block;
+                text-indent: 100%;
+                white-space: nowrap;
+                overflow: hidden;
+            }
+        }
+        #entries {
+            #add-entry {
+                margin-bottom: 10px;
+            }
+        }
+        #project-progress {
+            .overtime {
+                color: @red;
+                font-weight: bold;
+            }
         }
     }
 

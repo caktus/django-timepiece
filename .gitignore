@@ -1,11 +1,12 @@
 *.pyc
 *.egg*
-local_settings.py
+local.py
 *.db
 dist/
 _build/
 build/
 .tox/
 /reports/
-/timepiece/static/CACHE
+*/static/CACHE/
 *.swp
+*.DS_Store

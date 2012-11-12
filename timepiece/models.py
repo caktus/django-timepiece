@@ -3,7 +3,6 @@ from dateutil.relativedelta import relativedelta
 from decimal import Decimal
 import logging
 
-from django.conf import settings
 from django.contrib.auth.models import User
 from django.core.exceptions import ValidationError
 from django.db import models
@@ -112,9 +111,6 @@ class Project(models.Model):
 
     def __unicode__(self):
         return self.name
-
-    def trac_url(self):
-        return settings.TRAC_URL % self.tracker_url
 
 
 class RelationshipType(models.Model):
@@ -289,7 +285,7 @@ class EntryQuerySet(models.query.QuerySet):
                                                       'date')
         return qs
 
-    def timespan(self, from_date, to_date=None, span=None):
+    def timespan(self, from_date, to_date=None, span=None, current=False):
         """
         Takes a beginning date a filters entries. An optional to_date can be
         specified, or a span, which is one of ('month', 'week', 'day').
@@ -305,10 +301,9 @@ class EntryQuerySet(models.query.QuerySet):
                 diff = relativedelta(days=1)
             if diff is not None:
                 to_date = from_date + diff
-
-        datesQ = Q()
-        datesQ &= Q(end_time__gte=from_date)
+        datesQ = Q(end_time__gte=from_date)
         datesQ &= Q(end_time__lt=to_date) if to_date else Q()
+        datesQ |= Q(end_time__isnull=True) if current else Q()
         return self.filter(datesQ)
 
 
@@ -339,7 +334,7 @@ class EntryWorkedManager(models.Manager):
 
     def get_query_set(self):
         qs = EntryQuerySet(self.model)
-        projects = getattr(settings, 'TIMEPIECE_PROJECTS', {})
+        projects = utils.get_setting('TIMEPIECE_PAID_LEAVE_PROJECTS')
         return qs.exclude(project__in=projects.values())
 
 
@@ -559,7 +554,17 @@ class Entry(models.Model):
 
         return seconds + (delta.days * 86400)
 
-    def __total_hours(self):
+    def get_active_seconds(self):
+        """Use with active entries to obtain the seconds worked so far."""
+        if not self.end_time:
+            if self.is_paused:
+                self.end_time = self.pause_time
+            else:
+                self.end_time = timezone.now()
+        return self.get_seconds()
+
+    @property
+    def total_hours(self):
         """
         Determined the total number of hours worked in this entry
         """
@@ -568,14 +573,13 @@ class Entry(models.Model):
         if total < 0:
             total = 0
         return total
-    total_hours = property(__total_hours)
 
-    def __is_paused(self):
+    @property
+    def is_paused(self):
         """
         Determine whether or not this entry is paused
         """
         return bool(self.pause_time)
-    is_paused = property(__is_paused)
 
     def pause(self):
         """
@@ -612,12 +616,12 @@ class Entry(models.Model):
         else:
             self.pause()
 
-    def __is_closed(self):
+    @property
+    def is_closed(self):
         """
         Determine whether this entry has been closed or not
         """
         return bool(self.end_time)
-    is_closed = property(__is_closed)
 
     def clock_in(self, user, project):
         """
@@ -629,11 +633,12 @@ class Entry(models.Model):
             if not self.start_time:
                 self.start_time = timezone.now()
 
-    def __is_editable(self):
+    @property
+    def is_editable(self):
         return self.status == 'unverified'
-    is_editable = property(__is_editable)
 
-    def __delete_key(self):
+    @property
+    def delete_key(self):
         """
         Make it a little more interesting for deleting logs
         """
@@ -647,18 +652,18 @@ class Entry(models.Model):
         else:
             key = hashlib.sha1(salt).hexdigest()
         return key
-    delete_key = property(__delete_key)
 
     @staticmethod
     def summary(user, date, end_date):
         """
         Returns a summary of hours worked in the given time frame, for this
-        user.  The setting TIMEPIECE_PROJECTS can be used to separate out hours
-        for paid leave that should not be included in the total worked (e.g.,
-        sick time, vacation time, etc.).  Those hours will be added to the
-        summary separately using the dictionary key set in TIMEPIECE_PROJECTS.
+        user.  The setting TIMEPIECE_PAID_LEAVE_PROJECTS can be used to
+        separate out hours for paid leave that should not be included in the
+        total worked (e.g., sick time, vacation time, etc.).  Those hours will
+        be added to the summary separately using the dictionary key set in
+        TIMEPIECE_PAID_LEAVE_PROJECTS.
         """
-        projects = getattr(settings, 'TIMEPIECE_PROJECTS', {})
+        projects = utils.get_setting('TIMEPIECE_PAID_LEAVE_PROJECTS')
         entries = user.timepiece_entries.filter(
             end_time__gt=date, end_time__lt=end_date)
         data = {

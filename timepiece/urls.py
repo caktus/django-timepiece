@@ -7,9 +7,7 @@ from timepiece import views
 
 
 urlpatterns = patterns('',
-    url(r'^$', views.view_entries, name='timepiece-entries'),
-    url(r'^period/(?P<delta>\d+)/$', views.view_entries,
-        name='timepiece-previous-entries'),
+    url(r'^$', views.dashboard, name='dashboard'),
     url(r'^clockin/$', views.clock_in, name='timepiece-clock-in'),
     url(r'^clockout/(?P<entry_id>\d+)/$', views.clock_out,
         name='timepiece-clock-out'),
@@ -24,7 +22,13 @@ urlpatterns = patterns('',
         name='timepiece-delete'),
     url(r'^search/$', views.quick_search, name='quick_search'),
 
-    url(r'^person/list/$', views.list_people, name='list_people'),
+
+    ### Person ###
+    url(
+        r'^person/list/$',
+        views.list_people,
+        name='list_people',
+    ),
     url(
         r'^person/(?P<person_id>\d+)/$',
         views.view_person,
@@ -40,11 +44,18 @@ urlpatterns = patterns('',
         views.create_edit_person,
         name='edit_person',
     ),
-    url(r'^business/list/$', views.list_businesses, name='list_businesses'),
     url(
-        r'^business/create/$',
-        views.create_edit_business,
-        name='create_business',
+        r'^person/(?P<pk>\d+)/delete/$',
+        views.DeletePersonView.as_view(),
+        name='delete_person',
+    ),
+
+
+    ### Business ###
+    url(
+        r'^business/list/$',
+        views.list_businesses,
+        name='list_businesses',
     ),
     url(
         r'^business/(?P<business>\d+)/$',
@@ -52,11 +63,28 @@ urlpatterns = patterns('',
         name='view_business',
     ),
     url(
+        r'^business/create/$',
+        views.create_edit_business,
+        name='create_business',
+    ),
+    url(
         r'^business/(?P<business>\d+)/edit/$',
         views.create_edit_business,
         name='edit_business',
     ),
-    url(r'^project/list/$', views.list_projects, name='list_projects'),
+    url(
+        r'^business/(?P<pk>\d+)/delete/$',
+        views.DeleteBusinessView.as_view(),
+        name='delete_business',
+    ),
+
+
+    ### Project ###
+    url(
+        r'^project/list/$',
+        views.list_projects,
+        name='list_projects',
+    ),
     url(
         r'^project/(?P<project_id>\d+)/$',
         views.view_project,
@@ -73,37 +101,34 @@ urlpatterns = patterns('',
         name='edit_project',
     ),
     url(
-        r'^project/(?P<project_id>\d+)/user/add/$',
-        views.add_user_to_project,
-        name='add_user_to_project',
-    ),
-    url(
-        r'^project/(?P<project_id>\d+)/user/(?P<user_id>\d+)/remove/$',
-        views.remove_user_from_project,
-        name='remove_user_from_project',
-    ),
-    url(
-        r'^project/(?P<project_id>\d+)/user/(?P<user_id>\d+)/edit/$',
-        views.edit_project_relationship,
-        name='edit_project_relationship',
-    ),
-
-
-    url(
         r'^project/(?P<pk>\d+)/delete/$',
         views.DeleteProjectView.as_view(),
         name='delete_project',
     ),
+
+
+    ### Project/Person Relationship ###
     url(
-        r'^business/(?P<pk>\d+)/delete/$',
-        views.DeleteBusinessView.as_view(),
-        name='delete_business',
+        r'^relationship/user/(?P<user_id>\d+)/add/$',
+        views.add_project_relationship,
+        name='add_project_to_user',
     ),
     url(
-        r'^person/(?P<pk>\d+)/delete/$',
-        views.DeletePersonView.as_view(),
-        name='delete_person',
+        r'^relationship/project/(?P<project_id>\d+)/add/$',
+        views.add_project_relationship,
+        name='add_user_to_project',
     ),
+    url(
+        r'^relationship/(?P<project_id>\d+)/(?P<user_id>\d+)/remove/$',
+        views.remove_project_relationship,
+        name='remove_project_relationship',
+    ),
+    url(
+        r'^relationship/(?P<project_id>\d+)/(?P<user_id>\d+)/edit/$',
+        views.edit_project_relationship,
+        name='edit_project_relationship',
+    ),
+
 
     ### time sheets ###
 
