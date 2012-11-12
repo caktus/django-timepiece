@@ -51,12 +51,12 @@
                     {{ user.get_full_name }}
                     {% if perms.timepiece.change_projectrelationship %}
                         {% with caption="Edit "|add:user.get_full_name|add:"'s relationship to "|add:project.name %}
-                            <a title="{{ caption }}" href="{% url 'edit_project_relationship' project_id=project.id user_id=user.id %}?next={% url 'view_project' project_id=project.id %}"><icon alt="{{ caption }}" class="icon-pencil"></icon></a>
+                            <a title="{{ caption }}" href="{% url 'edit_project_relationship' project_id=project.id user_id=user.id %}?next={% url 'view_project' project_id=project.id %}"><i alt="{{ caption }}" class="icon-pencil"></i></a>
                         {% endwith %}
                     {% endif %}
                     {% if perms.timepiece.delete_projectrelationship %}
                         {% with caption="Remove "|add:user.get_full_name|add:" from "|add:project.name %}
-                            <a title="{{ caption }}" href="{% url 'remove_project_relationship' project_id=project.id user_id=user.id %}?next={% url 'view_project' project_id=project.id %}"><icon alt="{{ caption }}" class="icon-remove"></icon></a>
+                            <a title="{{ caption }}" href="{% url 'remove_project_relationship' project_id=project.id user_id=user.id %}?next={% url 'view_project' project_id=project.id %}"><i alt="{{ caption }}" class="icon-remove"></i></a>
                         {% endwith %}
                     {% endif %}
                 </li>
