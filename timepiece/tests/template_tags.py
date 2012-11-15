@@ -12,8 +12,8 @@ class HumanizeSecondsTestCase(TimepieceDataTestCase):
 
     def test_negative_seconds(self):
         seconds_display = tags.humanize_seconds((-2.5 * 3600) - 4)
-        self.assertEqual(seconds_display, u'-02:30:04',
-            "Should return u'-02:30:04', returned {0}".format(seconds_display)
+        self.assertEqual(seconds_display, u'(02:30:04)',
+            "Should return u'(02:30:04)', returned {0}".format(seconds_display)
         )
 
     def test_overnight(self):
@@ -22,26 +22,28 @@ class HumanizeSecondsTestCase(TimepieceDataTestCase):
             "Should return u'30:00:02', returned {0}".format(seconds_display)
         )
 
+    def test_format(self):
+        seconds_display = tags.humanize_seconds(120, '%M:%M:%M')
+        expected = u'02:02:02'
+        self.assertEqual(seconds_display, expected,
+            "Should return {0}, return {1}".format(expected, seconds_display)
+        )
 
-class HumanizeHoursTestCase(TimepieceDataTestCase):
+
+class ConvertHoursToSecondsTestCase(TimepieceDataTestCase):
 
     def test_usual(self):
-        hours_display = tags.humanize_hours('3.25')
-        self.assertEqual(hours_display, u'03:15:00',
-            "Given 3.25 hours, returned {0}, expected u'03:15:00'".format(
-                hours_display)
+        seconds = tags.convert_hours_to_seconds('3.25')
+        expected = int(3.25 * 3600)
+        self.assertEqual(seconds, expected,
+            "Given 3.25 hours, returned {0}, expected {1}".format(
+                seconds, expected)
         )
 
     def test_negative_seconds(self):
-        hours_display = tags.humanize_hours('-2.75')
-        self.assertEqual(hours_display, u'-02:45:00',
-            "Given -2.75 hours, returned {0}, expected u'-02:45:00'".format(
-                hours_display)
-        )
-
-    def test_overnight(self):
-        hours_display = tags.humanize_hours('25.5')
-        self.assertEqual(hours_display, u'25:30:00',
-            "Given 25.5 hours, returned {0}, expected u'25:30:00'".format(
-                hours_display)
+        seconds = tags.convert_hours_to_seconds('-2.75')
+        expected = int(-2.75 * 3600)
+        self.assertEqual(seconds, expected,
+            "Given -2.75 hours, returned {0}, expected {1}".format(
+                seconds, expected)
         )

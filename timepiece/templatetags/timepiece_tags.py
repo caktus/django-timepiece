@@ -104,23 +104,32 @@ def get_uninvoiced_hours(entries):
 
 
 @register.filter
-def humanize_hours(total_hours):
+def convert_hours_to_seconds(total_hours):
     """Given time in Decimal(hours), return a unicode in %H:%M:%S format."""
-    return humanize_seconds(float(total_hours) * 3600)
+    return int(float(total_hours) * 3600)
 
 
 @register.filter
-def humanize_seconds(total_seconds):
+def humanize_seconds(total_seconds, format='%H:%M:%S'):
     """Given time in int(seconds), return a unicode in %H:%M:%S format."""
     seconds = abs(int(total_seconds))
     hours = seconds // 3600
     seconds %= 3600
     minutes = seconds // 60
     seconds %= 60
-    prefix = u'-' if total_seconds < 0 else u''
-    return prefix + u':'.join([
-        u'{0:02d}'.format(time_unit) for time_unit in (hours, minutes, seconds)
+    format_mapping = {
+        '%H': hours,
+        '%M': minutes,
+        '%S': seconds,
+    }
+    time_units = [
+        format_mapping[token] for token in format.split(':')
+        if token in format_mapping
+    ]
+    result = ':'.join([
+        u'{0:02d}'.format(time_unit) for time_unit in time_units
     ])
+    return result if total_seconds >= 0 else '({0})'.format(result)
 
 
 @register.filter

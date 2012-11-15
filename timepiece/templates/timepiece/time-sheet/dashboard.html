@@ -76,10 +76,10 @@
                             {% for project in project_progress %}
                                 <tr>
                                     <td><a href="{% url 'timepiece-clock-in' %}?project={{ project.pk }}">{{ project.name }}</a></td>
-                                    <td>{{ project.worked|humanize_hours|slice:":-3" }}</td>
-                                    <td>{{ project.assigned|humanize_hours|slice:":-3" }}</td>
-                                    <td{% if project.remaining < 0 %} class="overtime"{% endif %}>
-                                        {{ project.remaining|humanize_hours|slice:":-3" }}
+                                    <td>{{ project.worked|convert_hours_to_seconds|humanize_seconds:"%H:%M" }}</td>
+                                    <td>{{ project.assigned|convert_hours_to_seconds|humanize_seconds:"%H:%M" }}</td>
+                                    <td>
+                                        {{ project.remaining|convert_hours_to_seconds|humanize_seconds:"%H:%M" }}
                                     </td>
                                     <td class="project_progress_bar"
                                         data-worked = "{{ project.worked }}"
