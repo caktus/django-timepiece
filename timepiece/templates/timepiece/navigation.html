@@ -20,13 +20,7 @@
                 {% endblock %}
 
                     {% if perms.timepiece.add_entry %}
-                        <li class="dropdown">
-                            <a href="#" class="dropdown-toggle" data-toggle="dropdown">Time Tracking<b class="caret"></b></a>
-                            <ul class="dropdown-menu">
-                                <li><a href="{% url 'dashboard' %}">Weekly Dashboard</a></li>
-                                <li><a href="{% url 'view_person_time_sheet' request.user.pk %}">Monthly Ledger</a></li>
-                            </ul>
-                        </li>
+                        <li><a href="{% url 'view_person_time_sheet' request.user.pk %}">Time Sheet</a></li>
                     {% endif %}
                     {% if perms.timepiece.view_project or perms.auth.view_user or perms.timepiece.view_business %}
                         <li class="dropdown">
