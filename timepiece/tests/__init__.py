@@ -1,5 +1,4 @@
 from timepiece.tests.crmcontent import *
-from timepiece.tests.dashboard import *
 from timepiece.tests.general_ledger import *
 from timepiece.tests.hours import *
 from timepiece.tests.invoices import *
@@ -10,6 +9,8 @@ from timepiece.tests.project_list import *
 from timepiece.tests.relationships import *
 from timepiece.tests.reports import *
 from timepiece.tests.search import *
-from timepiece.tests.timesheet import *
+from timepiece.tests.tracking.dashboard import *
+from timepiece.tests.tracking.timesheet import *
 from timepiece.tests.user_settings import *
 from timepiece.tests.utils import *
+from timepiece.tests.template_tags import *

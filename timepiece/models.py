@@ -285,7 +285,7 @@ class EntryQuerySet(models.query.QuerySet):
                                                       'date')
         return qs
 
-    def timespan(self, from_date, to_date=None, span=None):
+    def timespan(self, from_date, to_date=None, span=None, current=False):
         """
         Takes a beginning date a filters entries. An optional to_date can be
         specified, or a span, which is one of ('month', 'week', 'day').
@@ -301,10 +301,9 @@ class EntryQuerySet(models.query.QuerySet):
                 diff = relativedelta(days=1)
             if diff is not None:
                 to_date = from_date + diff
-
-        datesQ = Q()
-        datesQ &= Q(end_time__gte=from_date)
+        datesQ = Q(end_time__gte=from_date)
         datesQ &= Q(end_time__lt=to_date) if to_date else Q()
+        datesQ |= Q(end_time__isnull=True) if current else Q()
         return self.filter(datesQ)
 
 
@@ -555,6 +554,15 @@ class Entry(models.Model):
 
         return seconds + (delta.days * 86400)
 
+    def get_active_seconds(self):
+        """Use with active entries to obtain the seconds worked so far."""
+        if not self.end_time:
+            if self.is_paused:
+                self.end_time = self.pause_time
+            else:
+                self.end_time = timezone.now()
+        return self.get_seconds()
+
     @property
     def total_hours(self):
         """
@@ -697,6 +705,7 @@ class Entry(models.Model):
         return '%s on %s' % (self.user, self.project)
 
     class Meta:
+        ordering = ('-start_time',)
         verbose_name_plural = 'entries'
         permissions = (
             ('can_clock_in', 'Can use Pendulum to clock in'),

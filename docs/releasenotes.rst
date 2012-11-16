@@ -1,19 +1,63 @@
 Release Notes
 =============
 
-0.6.1 (Unreleased)
-------------------
+0.7.0 (Released 11-16-2012)
+---------------------------
 
 *Features*
 
-* Added search to project list in admin
-* Can create project relationship from person detail view
+* Added search to Project list view in admin
+* Added project relationship information on Person detail view
+* Updated the navigation bar
+
+  - Added "Quick Clock In" pulldown to allow link to project-specific clock
+    in form from anywhere on the site
+  - Replaced "Dashboard" pulldown with a link to the user's monthly time
+    sheet. The dashboard is accessible via the "Timepiece" link in the top
+    left corner.
+  - Renamed "Reports" dropdown to "Management", and moved link to the admin
+    from the user pulldown
+  - Moved "Online Users" info to weekly dashboard view & removed the
+    ``active_entries`` context processor
+  - Made search box smaller unless it is the focused element
+  - Use user's first name instead of email address on user pulldown
+
+* Redesigned the weekly dashboard view
+
+  - Active entry section allows convenient summary & manipulation of the
+    current entry
+  - Visualization of overall progress (out of hours set in
+    ``UserProfile.hours_per_week``)
+  - Visualization of hours worked on each project (out of ProjectHours
+    assigned this week)
+  - Use "humanized" hours display (1:30) rather than decimal (1.5)
+
+* Added productivity report, which compares the hours worked on a project to
+  the hours that were assigned to it
+
+*Bug Fixes*
+
+* Updated to latest version of Bootstrap
+* Updated django-compressor from 1.1.2 -> 1.2 & updated run_tests settings to
+  avoid masking primary errors in tests
+* Set ``USE_TZ = False`` in example_project settings because we don't
+  currently support use of timezones
+* Added missing app and context processors to settings in example_project and
+  run_tests
+* Updated example_project settings & README to reflect that INTERNAL_IPS must
+  be set in order to ensure that Bootstrap Glyphicons can be found
+* Fixed bug when copying the previous week's ProjectHours entries to
+  current week when entries for the current week already exist.
+* Fixed bug when removing ProjectRelationship through the front end
 
 *Code Quality*
 
-* Added missing app and context processors to settings in example project and run_tests
-* Removed unnecessary settings from example project and run_tests
+* Renamed the 'timepiece-entries' URL to 'dashboard'
+* Removed unnecessary settings from example_project and run_tests
 * Split up settings files in example project to use base and local settings
+* Removed unused jqplot library
+* Moved ``multiply`` template tag to timepiece_tags and removed math_tags file
+* Removed most of custom icon set in favor of Bootstrap's Glyphicons
 
 0.6.0 (Released 10-04-2012)
 ---------------------------

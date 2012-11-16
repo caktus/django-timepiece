@@ -7,7 +7,7 @@ from timepiece import views
 
 
 urlpatterns = patterns('',
-    url(r'^$', views.view_entries, name='timepiece-entries'),
+    url(r'^$', views.dashboard, name='dashboard'),
     url(r'^clockin/$', views.clock_in, name='timepiece-clock-in'),
     url(r'^clockout/(?P<entry_id>\d+)/$', views.clock_out,
         name='timepiece-clock-out'),
@@ -270,5 +270,11 @@ urlpatterns = patterns('',
         r'^ajax/hours/(?P<pk>\d+)/$',
         views.ProjectHoursDetailView.as_view(),
         name='project_hours_detail_view',
+    ),
+
+    url(
+        r'reports/productivity/$',
+        views.productivity_report,
+        name='productivity_report',
     ),
 )

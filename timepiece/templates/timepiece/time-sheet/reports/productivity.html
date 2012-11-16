@@ -1,0 +1,48 @@
+{% extends "timepiece/time-sheet/reports/base.html" %}
+{% load timepiece_tags bootstrap_toolkit %}
+{% load url from future %}
+
+{% block title %}Productivity Report{% endblock title %}
+
+{% block bodyid %}productivity-report{% endblock bodyid %}
+
+{% block extrajs %}
+    {{ block.super }}
+    <script type="text/javascript" src="https://www.google.com/jsapi"></script>
+    <script type="text/javascript" src="{{ STATIC_URL }}timepiece/js/chart/productivity_chart.js" data-report="{{ report }}" data-type="{{ type }}"></script>
+{% endblock extrajs %}
+
+{% block crumbs %}
+    {{ block.super }}
+    <li><span class="divider">/</span> <a href="{% url 'productivity_report' %}">Productivity Report</a></li>
+{% endblock crumbs %}
+
+{% block report_nav %}
+    {% with 'productivity_report' as active %}
+        {{ block.super }}
+    {% endwith %}
+{% endblock report_nav %}
+
+{% block report_content %}
+    <div class="row-fluid">
+        <div class="span12">
+            <form class="form-horizontal" action="" method="GET">
+                {{ form|as_bootstrap:"horizontal" }}
+                <button type="submit" class="btn btn-primary">Submit</button>
+                <button type="submit" class="btn" name="export" value="True">Export as CSV</button>
+            </form>
+        </div>
+    </div>
+
+    <div class="row-fluid">
+        <div class="span12">
+            {% if type %}
+                <div id="productivity-summary">
+                    <p><span>Total Worked:</span> {{ total_worked|floatformat:0 }} hours</p>
+                    <p><span>Total Assigned:</span> {{ total_assigned|floatformat:0 }} hours</p>
+                </div>
+            {% endif %}
+            <div id="chart" class="chart"></div>
+        </div>
+    </div>
+{% endblock report_content %}

@@ -10,9 +10,9 @@
     <div class="row-fluid">
         <div class="span12">
             <h2>Schedule for the Week of {{ week|date:'F j, Y' }}</h2>
-            <ul class="unstyled subnav">
-                <li><a href="{% url 'project_hours' %}?week_start={{ prev_week|date:'Y-m-d' }}">Prev. Week</a></li>
-                <li><a href="{% url 'project_hours' %}?week_start={{ next_week|date:'Y-m-d' }}">Next Week</a></li>
+            <ul class="nav nav-pills">
+                <li><a href="{% url 'project_hours' %}?week_start={{ prev_week|date:'Y-m-d' }}">&larr; Prev Week</a></li>
+                <li><a href="{% url 'project_hours' %}?week_start={{ next_week|date:'Y-m-d' }}">Next Week &rarr;</a></li>
             </ul>
         </div>
     </div>
