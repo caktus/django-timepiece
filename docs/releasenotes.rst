@@ -1,7 +1,7 @@
 Release Notes
 =============
 
-0.6.1 (Unreleased)
+0.7 (Released 11-16-2012)
 ------------------
 
 *Features*
@@ -12,8 +12,9 @@ Release Notes
 
   - Added "Quick Clock In" pulldown to allow link to project-specific clock
     in form from anywhere on the site
-  - Renamed "Dashboard" pulldown to "Time Tracking", and its children to
-    "Weekly Dashboard" and "Monthly Ledger"
+  - Replaced "Dashboard" pulldown with a "Time Sheet" link to the user's
+    monthly ledger. The dashboard is accessible via the "Timepiece" link in the
+    top left corner.
   - Moved "Online Users" info to weekly dashboard view & removed the
     ``active_entries`` context processor
   - Made search box smaller unless it is the focused element
