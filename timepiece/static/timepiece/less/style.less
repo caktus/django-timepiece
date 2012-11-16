@@ -341,6 +341,75 @@ body {
                 margin-top: 10px;
             }
         }
+
+        .totals {
+            border: 0px;
+            empty-cells: hide;
+            border-radius: 0px;
+            -webkit-border-radius: 0px;
+            -moz-border-radius: 0px;
+
+            td {
+                border-bottom: 1px solid #DDD;
+                empty-cells: show;
+                &:last-child {
+                    border-right: 1px solid #DDD;
+                }
+            }
+        }
+
+        #full-timesheet {
+            width: 100%;
+            min-width: 800px;
+
+            table {
+                width: 100%;
+                table-layout: fixed;
+
+                th, td {
+                    width: 10%;
+                    overflow-x: auto;
+
+                    &.comments {
+                        width: 25%;
+                    }
+
+                    &.time {
+                        width: 7%;
+                        .word-wrap(false);
+                    }
+
+                    &.aux {
+                        width: 5%;
+                    }
+
+                    &.project {
+                        width: 13%;
+                    }
+
+                    &.activity {
+                        width: 15%;
+                    }
+                }
+            }
+        }
+
+        #hourly-summary {
+            table {
+                width: 100%;
+                table-layout: fixed;
+
+                th, td {
+                    &.billable, &.non-billable {
+                        width: 20%;
+                    }
+
+                    &.total {
+                        width: 15%;
+                    }
+                }
+            }
+        }
     }
 
     &#dashboard {
@@ -601,83 +670,6 @@ body {
          * End general content
          *****************************************/
 
-
-        /*****************************************
-         * Start Ledger
-         *****************************************/
-
-        .totals {
-            border: 0px;
-            empty-cells: hide;
-            border-radius: 0px;
-            -webkit-border-radius: 0px;
-            -moz-border-radius: 0px;
-
-            td {
-                border-bottom: 1px solid #DDD;
-                empty-cells: show;
-                &:last-child {
-                    border-right: 1px solid #DDD;
-                }
-            }
-        }
-
-        #full-timesheet {
-            width: 100%;
-            min-width: 800px;
-
-            table {
-                width: 100%;
-                table-layout: fixed;
-
-                th, td {
-                    width: 10%;
-                    overflow-x: auto;
-
-                    &.comments {
-                        width: 25%;
-                    }
-
-                    &.time {
-                        width: 7%;
-                        .word-wrap(false);
-                    }
-
-                    &.aux {
-                        width: 5%;
-                    }
-
-                    &.project {
-                        width: 13%;
-                    }
-
-                    &.activity {
-                        width: 15%;
-                    }
-                }
-            }
-        }
-
-        #hourly-summary {
-            table {
-                width: 100%;
-                table-layout: fixed;
-
-                th, td {
-                    &.billable, &.non-billable {
-                        width: 20%;
-                    }
-
-                    &.total {
-                        width: 15%;
-                    }
-                }
-            }
-        }
-
-        /*****************************************
-         * End Ledger
-         *****************************************/
 
         /*****************************************
          * Start Reports
