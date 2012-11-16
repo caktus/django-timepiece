@@ -12,9 +12,11 @@ Release Notes
 
   - Added "Quick Clock In" pulldown to allow link to project-specific clock
     in form from anywhere on the site
-  - Replaced "Dashboard" pulldown with a "Time Sheet" link to the user's
-    monthly ledger. The dashboard is accessible via the "Timepiece" link in the
-    top left corner.
+  - Replaced "Dashboard" pulldown with a link to the user's monthly time
+    sheet. The dashboard is accessible via the "Timepiece" link in the top
+    left corner.
+  - Renamed "Reports" dropdown to "Management", and moved link to the admin
+    from the user pulldown
   - Moved "Online Users" info to weekly dashboard view & removed the
     ``active_entries`` context processor
   - Made search box smaller unless it is the focused element
