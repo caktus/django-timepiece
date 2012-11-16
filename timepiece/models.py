@@ -705,6 +705,7 @@ class Entry(models.Model):
         return '%s on %s' % (self.user, self.project)
 
     class Meta:
+        ordering = ('-start_time',)
         verbose_name_plural = 'entries'
         permissions = (
             ('can_clock_in', 'Can use Pendulum to clock in'),
