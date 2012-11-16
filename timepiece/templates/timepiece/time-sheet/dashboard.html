@@ -108,17 +108,17 @@
                         <tbody>
                         {% for entry in week_entries %}
                             <tr>
-                                {% ifchanged entry.start_time|date %}
-                                    <td>{{ entry.start_time|date:"D" }}</td>
-                                {% else %}
-                                    <td></td>
-                                {% endifchanged %}
+                                <td>
+                                    {% ifchanged entry.start_time|date %}
+                                        {{ entry.start_time|date:"D" }}
+                                    {% endifchanged %}
+                                </td>
                                 <td class="project">
                                     {% if entry.status == "unverified" %}
                                        <a href="{% url 'timepiece-update' entry.id %}?next={{ request.get_full_path|urlencode }}"><i class="icon-pencil"></i></a>
                                         <a href="{% url 'timepiece-delete' entry.id %}?next={{ request.get_full_path|urlencode }}"><i class="icon-remove"></i></a>
                                     {% else %}
-                                        <i class="icon-ok"></i>
+                                        <span class="label label-success"><i class="icon-ok icon-white"></i></span>
                                     {% endif %}
                                     <span class="desktop">{{ entry.activity.name }} on </span>{{ entry.project.name }}
                                 </td>
