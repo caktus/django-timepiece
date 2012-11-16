@@ -7,51 +7,46 @@
     <script src="{{ STATIC_URL }}bootstrap/js/bootstrap-tab.js" type="text/javascript" charset="utf-8"></script>
 {% endblock %}
 
-{% block crumbs %}
-    {{ block.super }}
-    <li><span class="divider">/</span> <a href="{% url 'view_person_time_sheet' user.pk %}">My Ledger</a></li>
-{% endblock crumbs %}
+{% block breadcrumb %}{% endblock breadcrumb %}
 
 {% block title %}
     {% if timesheet_user.get_full_name %}
-        {{ timesheet_user.get_full_name }}'s
+        {{ timesheet_user.get_full_name }}
     {% else %}
-        {{ timesheet_user.username }}'s
+        {{ timesheet_user.username }}
     {% endif %}
-    Time Sheet
+    - Time Sheet for {{ from_date|date:"F Y" }}
 {% endblock %}
 
+{% block bodyid %}person-timesheet{% endblock bodyid %}
+
 {% block content %}
-    <div class="row-fluid">
-        <div class="span12">
-            <h2>
-                {% if timesheet_user.get_full_name %}
-                    {{ timesheet_user.get_full_name }}'s
-                {% else %}
-                    {{ timesheet_user.username }}'s
-                {% endif %}
-                TimeSheet
-                ({{ from_date|date:"N j, Y" }} &mdash; {{ to_date|date:"N j, Y" }})
-            </h2>
-            <ul class="nav nav-pills">
-                {% if perms.timepiece.view_user %}
-                    <li><a href="{% url 'view_person' timesheet_user.pk %}">User Information</a></li>
-                {% endif %}
-                {% if show_verify %}
-                    <li><a href="{% url 'change_person_time_sheet' 'verify' timesheet_user.id from_date|date:"Y-m-d" %}">Verify Time Sheet</a></li>
-                {% endif %}
-                {% if show_approve %}
-                    <li><a href="{% url 'change_person_time_sheet' 'approve' timesheet_user.id from_date|date:"Y-m-d" %}">Approve Time Sheet</a></li>
-                {% endif %}
-                {% if perms.timepiece.view_payroll_summary %}
-                    <li><a href="{% url 'timepiece-reject-entries' timesheet_user.pk %}?month={{ from_date|date:'n' }}&amp;year={{ from_date|date:'Y' }}">Reject All Entries</a></li>
-                {% endif %}
-            </ul>
-        </div>
-    </div>
+    <h2>
+        {% if timesheet_user.get_full_name %}
+            {{ timesheet_user.get_full_name }}
+        {% else %}
+            {{ timesheet_user.username }}
+        {% endif %}
+        - Time Sheet for {{ from_date|date:"F Y" }}
+    </h2>
 
     <div class="row-fluid">
-        <div class="span12">
+        <div class="span12" id="header">
+            <div id="options-buttons">
+               {% if show_verify %}
+                    <a class="btn btn-primary" href="{% url 'change_person_time_sheet' 'verify' timesheet_user.id from_date|date:"Y-m-d" %}">Verify All Entries</a>
+                {% endif %}
+                {% if show_approve %}
+                    <a class="btn btn-primary" href="{% url 'change_person_time_sheet' 'approve' timesheet_user.id from_date|date:"Y-m-d" %}">Approve All Entries</a>
+                {% endif %}
+                {% if perms.timepiece.view_payroll_summary %}
+                    <a class="btn btn-primary" href="{% url 'timepiece-reject-entries' timesheet_user.pk %}?month={{ from_date|date:'n' }}&amp;year={{ from_date|date:'Y' }}">Reject All Entries</a>
+                {% endif %}
+                {% if perms.timepiece.view_user %}
+                    <a class="btn btn-primary" href="{% url 'view_person' timesheet_user.pk %}">View/Edit User</a>
+                {% endif %}
+           </div>
+
             {# We have to duplicate the form so the hidden fields are not in the same form #}
             <form class="form-inline visible-desktop" method="get" action="" accept-charset="utf-8">
                 {{ year_month_form|as_bootstrap:"inline" }}
@@ -68,8 +63,8 @@
         <div class="span12">
             <ul class="nav nav-tabs">
                 <li class="active"><a href="#overview" data-toggle="tab">Overview</a></li>
-                <li><a href="#full-timesheet" data-toggle="tab">Full Timesheet</a></li>
-                <li><a href="#hourly-summary" data-toggle="tab">Hourly Summary</a></li>
+                <li><a href="#full-timesheet" data-toggle="tab">All Entries</a></li>
+                <li><a href="#hourly-summary" data-toggle="tab">Daily Summary</a></li>
             </ul>
             <div class="tab-content">
                 <div class="tab-pane active" id="overview">
@@ -168,8 +163,8 @@
                                 <td class="activity">{{ entry.activity__name }}</td>
                                 <td>{{ entry.location__name }}</td>
                                 <td>{{ entry.status|title }}</td>
-                                <td class="time break">{{ entry.start_time|date:"P" }}</td>
-                                <td class="time break">{{ entry.end_time|date:"P" }}</td>
+                                <td class="time break">{{ entry.start_time|date:"g:i A" }}</td>
+                                <td class="time break">{{ entry.end_time|date:"g:i A" }}</td>
                                 <td class="hours time">{{ entry.seconds_paused|seconds_to_hours|floatformat:2 }}</td>
                                 <td class="hours time">{{ entry.hours|floatformat:2 }}</td>
                                 <td class="comments" title="{{entry.comments}}">{{ entry.comments|truncatewords:12|urlizetrunc:25|safe }}</td>
@@ -219,9 +214,9 @@
                         {% for week, week_totals, days in grouped_totals %}
                             <table class="table table-bordered table-condensed">
                                 <tr class="ledger_header">
-                                    <th colspan="2">Week of {{ week|date:"m/d/Y (D)" }} </th>
+                                    <th colspan="2">Week of {{ week|date:"m/d/Y" }} </th>
                                     <th>Billable</th>
-                                    <th>Non Billable</th>
+                                    <th>Non-Billable</th>
                                     <th>Total</th>
                                 </tr>
                                 {% for day, projects in days %}

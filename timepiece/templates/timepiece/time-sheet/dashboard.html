@@ -32,7 +32,7 @@
                     {% if active_entry %}
                         You have been clocked into
                         <a href="{% url 'view_project' active_entry.project.pk %}">{{ active_entry.project.name }}</a>
-                        since {{ active_entry.start_time|date:"g:i a" }}
+                        since {{ active_entry.start_time|date:"g:i A" }}
                         {% ifnotequal active_entry.start_time.date today %}
                             {% if active_entry.start_time.date < week_start or active_entry.start_time.date > week_end %}
                                 on {{ active_entry.start_time|date:"F j" }}
@@ -67,21 +67,17 @@
                     <table id="project-progress" class="table table-striped table-bordered">
                         <thead>
                             <th>Project</th>
-                            <th>Hours Worked</th>
                             <th>Hours Assigned</th>
-                            <th>Hours Remaining</th>
+                            <th>Hours Worked</th>
                             <th class="desktop">Progress</th>
                         </thead>
                         <tbody>
                             {% for project in project_progress %}
                                 <tr>
                                     <td><a href="{% url 'timepiece-clock-in' %}?project={{ project.pk }}">{{ project.name }}</a></td>
-                                    <td>{{ project.worked|convert_hours_to_seconds|humanize_seconds:"%H:%M" }}</td>
                                     <td>{{ project.assigned|convert_hours_to_seconds|humanize_seconds:"%H:%M" }}</td>
-                                    <td>
-                                        {{ project.remaining|convert_hours_to_seconds|humanize_seconds:"%H:%M" }}
-                                    </td>
-                                    <td class="project_progress_bar"
+                                    <td>{{ project.worked|convert_hours_to_seconds|humanize_seconds:"%H:%M" }}</td>
+                                    <td class="desktop project_progress_bar"
                                         data-worked = "{{ project.worked }}"
                                         data-assigned = "{{ project.assigned }}">
                                     </td>
@@ -103,33 +99,33 @@
                             <tr>
                                 <th>Date</th>
                                 <th>Entry</th>
-                                <th>Clock In</th>
-                                <th>Clock Out</th>
-                                <th>Pause Time</th>
-                                <th>Total Time</th>
+                                <th>From</th>
+                                <th>To</th>
+                                <th class="desktop">Pause Time</th>
+                                <th class="desktop">Total Time</th>
                             </tr>
                         </thead>
                         <tbody>
                         {% for entry in week_entries %}
                             <tr>
-                                {% ifchanged entry.start_time|date %}
-                                    <td>{{ entry.start_time|date:"D" }}</td>
-                                {% else %}
-                                    <td></td>
-                                {% endifchanged %}
+                                <td>
+                                    {% ifchanged entry.start_time|date %}
+                                        {{ entry.start_time|date:"D" }}
+                                    {% endifchanged %}
+                                </td>
                                 <td class="project">
                                     {% if entry.status == "unverified" %}
                                        <a href="{% url 'timepiece-update' entry.id %}?next={{ request.get_full_path|urlencode }}"><i class="icon-pencil"></i></a>
                                         <a href="{% url 'timepiece-delete' entry.id %}?next={{ request.get_full_path|urlencode }}"><i class="icon-remove"></i></a>
                                     {% else %}
-                                        <i class="icon-ok"></i>
+                                        <span class="label label-success"><i class="icon-ok icon-white"></i></span>
                                     {% endif %}
-                                    {{ entry.activity.name }} on {{ entry.project.name }}
+                                    <span class="desktop">{{ entry.activity.name }} on </span>{{ entry.project.name }}
                                 </td>
-                                <td class="time break">{{ entry.start_time|date:"g:i a" }}</td>
-                                <td class="time break">{{ entry.end_time|date:"g:i a" }}</td>
-                                <td class="time break">{{ entry.seconds_paused|humanize_seconds }}</td>
-                                <td class="time break">{{ entry.get_seconds|humanize_seconds|slice:":-3" }}</td>
+                                <td class="time break">{{ entry.start_time|date:"g:i A" }}</td>
+                                <td class="time break">{{ entry.end_time|date:"g:i A" }}</td>
+                                <td class="desktop time break">{{ entry.seconds_paused|humanize_seconds }}</td>
+                                <td class="desktop time break">{{ entry.get_seconds|humanize_seconds|slice:":-3" }}</td>
                             </tr>
                         {% endfor %}
                         </tbody>
@@ -144,16 +140,16 @@
                     <table class="table table-striped table-bordered">
                         <thead>
                             <th>Name</th>
-                            <th>Entry</th>
-                            <th>Since</th>
+                            <th>Project</th>
+                            <th class="desktop">Since</th>
                         </thead>
                         <tbody>
                             {% for entry in others_active_entries %}
                                 <tr>
                                     <td><i class="icon-user"></i> {{ entry.user__first_name }} {{ entry.user__last_name }}</td>
-                                    <td>{{ entry.activity__name }} on {{ entry.project__name }}</td>
-                                    <td>
-                                        {{ entry.start_time|date:"g:i a" }}
+                                    <td><span class="desktop">{{ entry.activity__name }} on </span>{{ entry.project__name }}</td>
+                                    <td class="desktop">
+                                        {{ entry.start_time|date:"g:i A" }}
                                         {% ifnotequal entry.start_time.date today %}
                                             {% if entry.start_time.date < week_start or entry.start_time.date > week_end %}
                                                 on {{ entry.start_time|date:"N j" }}

@@ -443,8 +443,8 @@ def get_hours_per_week(user):
 
 def process_progress(entries, assignments):
     """
-    Returns a list of progress summary data (pk, name, hours worked, hours
-    assigned, and hours remaining) for each project either worked or assigned.
+    Returns a list of progress summary data (pk, name, hours worked, and hours
+    assigned) for each project either worked or assigned.
     The list is ordered by project name.
     """
     Project = get_model('timepiece', 'Project')
@@ -455,7 +455,7 @@ def process_progress(entries, assignments):
     project_q |= Q(id__in=entries.values_list('project__id', flat=True))
     projects = Project.objects.filter(project_q).values('pk', 'name')
 
-    # Worked/remaining hours per project.
+    # Hours per project.
     project_data = {}
     for project in projects:
         try:
@@ -466,7 +466,6 @@ def process_progress(entries, assignments):
             'pk': project['pk'],
             'name': project['name'],
             'assigned': assigned,
-            'remaining': assigned,
             'worked': Decimal('0.00'),
         }
 
@@ -474,7 +473,6 @@ def process_progress(entries, assignments):
         pk = entry.project_id
         hours = Decimal('%.2f' % round(entry.get_active_seconds() / 3600.0, 2))
         project_data[pk]['worked'] += hours
-        project_data[pk]['remaining'] -= hours
 
     # Sort by maximum of worked or assigned hours (highest first).
     key = lambda x: x['name'].lower()

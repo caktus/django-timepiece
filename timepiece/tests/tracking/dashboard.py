@@ -190,11 +190,10 @@ class ProcessProgressTestCase(TimepieceDataTestCase):
         assignments = ProjectHours.objects.all()
         return utils.process_progress(entries, assignments)
 
-    def _check_progress(self, progress, project, assigned, remaining, worked):
+    def _check_progress(self, progress, project, assigned, worked):
         self.assertEqual(progress['pk'], project.pk)
         self.assertEqual(progress['name'], project.name)
         self.assertEqual(progress['assigned'], assigned)
-        self.assertEqual(progress['remaining'], remaining)
         self.assertEqual(progress['worked'], worked)
 
     def test_progress(self):
@@ -209,7 +208,7 @@ class ProcessProgressTestCase(TimepieceDataTestCase):
         progress = self._get_progress()
         self.assertEqual(len(progress), 1)
         self._check_progress(progress[0], self.project,
-                assigned_hours, assigned_hours - worked_hours, worked_hours)
+                assigned_hours, worked_hours)
 
     def test_work_with_no_assignment(self):
         """Progress when work has been done on an unassigned project."""
@@ -220,8 +219,7 @@ class ProcessProgressTestCase(TimepieceDataTestCase):
 
         progress = self._get_progress()
         self.assertEqual(len(progress), 1)
-        self._check_progress(progress[0], self.project,
-                0, -1 * worked_hours, worked_hours)
+        self._check_progress(progress[0], self.project, 0, worked_hours)
 
     def test_assignment_with_no_work(self):
         """Progress when no work has been done on an assigned project."""
@@ -230,8 +228,7 @@ class ProcessProgressTestCase(TimepieceDataTestCase):
 
         progress = self._get_progress()
         self.assertEqual(len(progress), 1)
-        self._check_progress(progress[0], self.project,
-                assigned_hours, assigned_hours, 0)
+        self._check_progress(progress[0], self.project, assigned_hours, 0)
 
     def test_ordering(self):
         """Progress list should be ordered by project name."""
