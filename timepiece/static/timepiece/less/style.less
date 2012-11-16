@@ -7,6 +7,12 @@
 // ref: https://github.com/twitter/bootstrap/pull/3764/
 @import "fluidoffsetmixin.less";
 
+/*
+Change default sprite path to point inside of static/bootstrap instead of
+static/timepiece.
+*/
+@iconSpritePath: "../../bootstrap/img/glyphicons-halflings.png";
+
 // Variables & Mixins
 @white: #FFFFFF;
 @lightgray: #DDDDDD;
@@ -702,3 +708,4 @@ body {
      * End content
      *****************************************/
 }
+
