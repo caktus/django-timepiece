@@ -14,7 +14,7 @@
 
         <div class="row-fluid">
             <div class="span12" id="active-entry">
-                <div id="active-header">
+                <div id="active-buttons">
                     <a class="btn btn-primary" href="{% url 'timepiece-clock-in' %}">
                         {% if active_entry %}Switch Entry{% else %}Clock In{% endif %}
                     </a>
@@ -28,7 +28,7 @@
                     {% endif %}
                 </div>
 
-                <p>
+                <div id="active-text">
                     {% if active_entry %}
                         You have been clocked into
                         <a href="{% url 'view_project' active_entry.project.pk %}">{{ active_entry.project.name }}</a>
@@ -44,7 +44,7 @@
                     {% else %}
                         You are not currently clocked into a project.
                     {% endif %}
-                </p>
+                </div>
             </div>
         </div>
 
