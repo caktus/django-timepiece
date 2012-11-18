@@ -31,7 +31,7 @@
                 <div id="active-text">
                     {% if active_entry %}
                         You have been clocked into
-                        <a href="{% url 'view_project' active_entry.project.pk %}">{{ active_entry.project.name }}</a>
+                        <strong>{{ active_entry.activity.name }} on {{ active_entry.project.name }}</strong>
                         since {{ active_entry.start_time|date:"g:i A" }}
                         {% ifnotequal active_entry.start_time.date today %}
                             {% if active_entry.start_time.date < week_start or active_entry.start_time.date > week_end %}
