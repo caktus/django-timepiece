@@ -104,10 +104,6 @@ def dashboard(request):
     total_assigned = utils.get_hours_per_week(user)
     total_worked = sum([p['worked'] for p in project_progress])
 
-    # Query for list of all complete entries this week.
-    week_entries = week_entries.exclude(end_time__isnull=True) \
-            .order_by('-start_time')
-
     # Others' active entries
     active_entry_values = ('user__first_name', 'user__last_name',
             'project__name', 'activity__name', 'start_time')

@@ -471,7 +471,7 @@ def process_progress(entries, assignments):
 
     for entry in entries:
         pk = entry.project_id
-        hours = Decimal('%.2f' % round(entry.get_active_seconds() / 3600.0, 2))
+        hours = Decimal('%.2f' % round(entry.get_seconds() / 3600.0, 2))
         project_data[pk]['worked'] += hours
 
     # Sort by maximum of worked or assigned hours (highest first).

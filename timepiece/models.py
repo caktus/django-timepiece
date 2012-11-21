@@ -541,27 +541,18 @@ class Entry(models.Model):
 
     def get_seconds(self):
         """
-        Determines the difference between the starting and ending time.  The
-        result is returned as an integer of seconds.
+        Determines the total number of seconds between the starting and
+        ending times of this entry. If the entry is paused, the end_time is
+        assumed to be the pause time. If the entry is active but not paused,
+        the end_time is assumed to be now.
         """
-        if self.start_time and self.end_time:
-            # only calculate when the start and end are defined
-            delta = self.end_time - self.start_time
-            seconds = delta.seconds - self.seconds_paused
-        else:
-            seconds = 0
-            delta = datetime.timedelta(days=0)
-
+        start = self.start_time
+        end = self.end_time
+        if not end:
+            end = self.pause_time if self.is_paused else timezone.now()
+        delta = end - start
+        seconds = delta.seconds - self.seconds_paused
         return seconds + (delta.days * 86400)
-
-    def get_active_seconds(self):
-        """Use with active entries to obtain the seconds worked so far."""
-        if not self.end_time:
-            if self.is_paused:
-                self.end_time = self.pause_time
-            else:
-                self.end_time = timezone.now()
-        return self.get_seconds()
 
     @property
     def total_hours(self):
