@@ -134,7 +134,7 @@
                 <ul class="nav">
                     {% if perms.timepiece.add_entry %}
                         <li><a href="{% url 'dashboard' %}">Dashboard</a></li>
-                        <li><a href="{% url 'view_person_time_sheet' request.user.pk %}">My Ledger</a></li>
+                        <li><a href="{% url 'view_person_time_sheet' request.user.pk %}">Time Sheet</a></li>
                         <li><a href="{% url 'timepiece-add' %}">Add Entry</a></li>
                         <li><a href="{% url 'auth_logout' %}">Logout</a></li>
                     {% endif %}
