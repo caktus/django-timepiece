@@ -1211,8 +1211,8 @@ def payroll_summary(request):
         'date_headers': date_headers,
         'weekly_totals': weekly_totals,
         'monthly_totals': monthly_totals,
-        'unverified': unverified.values_list(*user_values).distinct(),
-        'unapproved': unapproved.values_list(*user_values).distinct(),
+        'unverified': unverified,
+        'unapproved': unapproved,
         'labels': labels,
     })
 
