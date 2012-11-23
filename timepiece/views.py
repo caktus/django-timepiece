@@ -1199,19 +1199,20 @@ def payroll_summary(request):
     month_entries_valid = month_entries.filter(monthQ, statusQ, workQ)
     labels, monthly_totals = utils.payroll_totals(month_entries_valid, leave)
     # Unapproved and unverified hours
-    entries = timepiece.Entry.objects.filter(monthQ)
+    entries = timepiece.Entry.objects.filter(monthQ).order_by() # No ordering
     user_values = ['user__pk', 'user__first_name', 'user__last_name']
-    unverified = entries.filter(monthQ, status='unverified',
-                                user__is_active=True)
-    unapproved = entries.filter(monthQ, status='verified')
+    unverified = entries.filter(status='unverified', user__is_active=True) \
+                        .values_list(*user_values).distinct()
+    unapproved = entries.filter(status='verified') \
+                        .values_list(*user_values).distinct()
     return render(request, 'timepiece/time-sheet/reports/summary.html', {
         'from_date': from_date,
         'year_month_form': year_month_form,
         'date_headers': date_headers,
         'weekly_totals': weekly_totals,
         'monthly_totals': monthly_totals,
-        'unverified': unverified.values_list(*user_values).distinct(),
-        'unapproved': unapproved.values_list(*user_values).distinct(),
+        'unverified': unverified,
+        'unapproved': unapproved,
         'labels': labels,
     })
 
