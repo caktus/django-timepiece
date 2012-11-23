@@ -40,7 +40,7 @@
                                 on {{ active_entry.start_time|date:"l" }}
                             {% endif %}
                         {% endifnotequal %}
-                        ({{ active_entry.get_seconds|humanize_seconds }} time clocked{% if active_entry.seconds_paused or active_entry.is_paused %} and {{ active_entry.seconds_paused|humanize_seconds }} paused{% endif %}).
+                        ({{ active_entry.get_total_seconds|humanize_seconds }} time clocked{% if active_entry.seconds_paused or active_entry.is_paused %} and {{ active_entry.get_paused_seconds|humanize_seconds }} paused{% endif %}).
                     {% else %}
                         You are not currently clocked into a project.
                     {% endif %}
@@ -130,8 +130,8 @@
                                         current
                                     {% endif %}
                                 </td>
-                                <td class="desktop time break">{{ entry.seconds_paused|humanize_seconds }}</td>
-                                <td class="desktop time break">{{ entry.get_seconds|humanize_seconds|slice:":-3" }}</td>
+                                <td class="desktop time break">{{ entry.get_paused_seconds|humanize_seconds }}</td>
+                                <td class="desktop time break">{{ entry.get_total_seconds|humanize_seconds|slice:":-3" }}</td>
                             </tr>
                         {% endfor %}
                         </tbody>
