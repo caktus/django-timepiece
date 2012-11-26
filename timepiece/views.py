@@ -109,11 +109,8 @@ def dashboard(request):
             .order_by('-start_time')
 
     # Others' active entries
-    active_entry_values = ('user__first_name', 'user__last_name',
-            'project__name', 'activity__name', 'start_time')
     others_active_entries = Entry.objects.filter(end_time__isnull=True) \
-            .exclude(user=user) \
-            .values(*active_entry_values)
+            .exclude(user=user).select_related('user', 'project', 'activity')
 
     return render(request, 'timepiece/time-sheet/dashboard.html', {
         'today': today,
