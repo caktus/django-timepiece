@@ -431,40 +431,31 @@ body {
                 font-size: 16px;
             }
         }
-        #overall-label {
-            float: left;
-            padding: 1px;
-            margin-right: 10px;
-            height: 28px;
-            line-height: 28px;
-            font-size: 26px;
-            font-weight: bold;
-            vertical-align: middle;
-            text-align: center;
-        }
-        .progress {
-            height: 28px;
-            border: 1px solid #DDDDDD;
+        #overall-progress {
+            #overall-label {
+                float: left;
+                padding: 1px;
+                margin-right: 10px;
+                height: 28px;
+                line-height: 28px;
+                font-size: 26px;
+                font-weight: bold;
+                vertical-align: middle;
+                text-align: center;
+            }
+            .progress {
+                height: 28px;
+                border: 1px solid @lightgray;
+            }
             .bar, .remaining {
                 vertical-align: middle;
                 font-size: 18px;
                 line-height: 28px;
-            }
-            .remaining {
                 text-align: center;
                 float: left;
             }
-        }
-        .progress-wrapper {
-            width: auto;
-            border: 1px solid #CCCCCC;
-            background-color: @white;
-            > div {
-                background-color: @green;
-                display: block;
-                text-indent: 100%;
-                white-space: nowrap;
-                overflow: hidden;
+            .bar-danger {
+                #gradient > .vertical(#458745, #346534);
             }
         }
         #project-progress {
@@ -474,6 +465,24 @@ body {
             }
             .progress-col {
                 width: 50%;
+                .progress-wrapper {
+                    border: 1px solid #CCCCCC;
+                    div {
+                        text-indent: 100%;
+                        white-space: nowrap;
+                        overflow: hidden;
+                    }
+                    .worked {
+                        #gradient > .vertical(#62c462, #57a957);
+                        float: left;
+                    }
+                    .overtime {
+                        #gradient > .vertical(#458745, #346534);
+                    }
+                    .remaining {
+                        background-color: @white;
+                    }
+                }
             }
         }
         #entries {

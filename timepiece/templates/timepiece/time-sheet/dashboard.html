@@ -56,9 +56,9 @@
 
         <div class="tab-content">
             <div class="tab-pane active" id="progress">
-                <div>
+                <div id="overall-progress">
                     <div id="overall-label">Overall</div>
-                    <div id="progress-all"
+                    <div id="overall-bar"
                         data-worked="{{ total_worked }}"
                         data-assigned="{{ total_assigned }}">
                     </div>
@@ -77,7 +77,7 @@
                                     <td><a href="{% url 'timepiece-clock-in' %}?project={{ project.pk }}">{{ project.name }}</a></td>
                                     <td>{{ project.assigned|convert_hours_to_seconds|humanize_seconds:"%H:%M" }}</td>
                                     <td>{{ project.worked|convert_hours_to_seconds|humanize_seconds:"%H:%M" }}</td>
-                                    <td class="desktop progress-col project_progress_bar"
+                                    <td class="desktop progress-col project-bar"
                                         data-worked = "{{ project.worked }}"
                                         data-assigned = "{{ project.assigned }}">
                                     </td>
