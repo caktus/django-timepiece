@@ -40,7 +40,7 @@ function createOverallProgress(worked, assigned) {
             worked_percent = Math.min(1, assigned / worked);
             worked_text = humanizeTime(assigned) + ' Worked';
         }
-        worked_percent = Math.floor(worked_percent * 100);
+        worked_percent = Math.floor(worked_percent.toFixed(5) * 100);
         chart.append(createBar('bar bar-success', worked_percent, worked_text));
     }
 
@@ -48,7 +48,7 @@ function createOverallProgress(worked, assigned) {
     if (worked > assigned) {
         var overtime_percent = Math.min(1, 1 - assigned / worked),
             overtime_text = humanizeTime(worked - assigned) + ' Overtime';
-        overtime_percent = Math.ceil(overtime_percent * 100);
+        overtime_percent = Math.ceil(overtime_percent.toFixed(5) * 100);
         chart.append(createBar('bar bar-danger', overtime_percent, overtime_text));
     }
 
@@ -56,7 +56,7 @@ function createOverallProgress(worked, assigned) {
     if (worked < assigned) {
         var remaining_percent = Math.min(1, 1 - worked / assigned),
             remaining_text = humanizeTime(assigned - worked) + ' Remaining';
-        remaining_percent = Math.ceil(remaining_percent * 100);
+        remaining_percent = Math.ceil(remaining_percent.toFixed(5) * 100);
         chart.append(createBar('remaining', remaining_percent, remaining_text));
     }
 
@@ -79,21 +79,21 @@ function createProjectProgress(worked, assigned) {
         } else {
             worked_percent = Math.min(1, assigned / worked);
         }
-        worked_percent = Math.floor(worked_percent * 100);
+        worked_percent = Math.floor(worked_percent.toFixed(5) * 100);
         chart.append(createBar('worked', worked_percent, '&nbsp'));
     }
 
     // Overtime bar.
     if (worked > assigned) {
         var overtime_percent = Math.min(1, 1 - assigned / worked);
-        overtime_percent = Math.ceil(overtime_percent * 100);
+        overtime_percent = Math.ceil(overtime_percent.toFixed(5) * 100);
         chart.append(createBar('overtime', overtime_percent, '&nbsp'));
     }
 
     // Remaining bar.
     if (worked < assigned) {
         var remaining_percent = Math.min(1, 1 - worked / assigned);
-        remaining_percent = Math.ceil(remaining_percent * 100);
+        remaining_percent = Math.ceil(remaining_percent.toFixed(5) * 100);
         chart.append(createBar('remaining', remaining_percent, '&nbsp'));
     }
 
