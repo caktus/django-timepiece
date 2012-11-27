@@ -8,10 +8,12 @@
 @import "fluidoffsetmixin.less";
 
 /*
-Change default sprite path to point inside of static/bootstrap instead of
+Change default sprite paths to point inside of static/bootstrap instead of
 static/timepiece.
 */
-@iconSpritePath: "../../bootstrap/img/glyphicons-halflings.png";
+@iconSpritePath:      "../../bootstrap/img/glyphicons-halflings.png";
+@iconWhiteSpritePath: "../../bootstrap/img/glyphicons-halflings-white.png";
+
 
 // Variables & Mixins
 @white: #FFFFFF;
@@ -421,45 +423,67 @@ body {
     &#dashboard {
         #active-entry {
             margin-bottom: 25px;
-            #active-header {
+            #active-buttons {
                 margin-bottom: 10px;
                 margin-top: 10px;
             }
+            #active-text {
+                font-size: 16px;
+            }
         }
-        #overall-label {
-            float: left;
-            padding: 1px;
-            margin-right: 10px;
-            height: 28px;
-            line-height: 28px;
-            font-size: 26px;
-            font-weight: bold;
-            vertical-align: middle;
-            text-align: center;
-        }
-        .progress {
-            height: 28px;
-            border: 1px solid #DDDDDD;
+        #overall-progress {
+            #overall-label {
+                float: left;
+                padding: 1px;
+                margin-right: 10px;
+                height: 28px;
+                line-height: 28px;
+                font-size: 26px;
+                font-weight: bold;
+                vertical-align: middle;
+                text-align: center;
+            }
+            .progress {
+                height: 28px;
+                border: 1px solid @lightgray;
+            }
             .bar, .remaining {
                 vertical-align: middle;
                 font-size: 18px;
                 line-height: 28px;
-            }
-            .remaining {
                 text-align: center;
                 float: left;
+                overflow: hidden;
+            }
+            .bar-danger {
+                #gradient > .vertical(#458745, #346534);
             }
         }
-        .progress-wrapper {
-            width: auto;
-            border: 1px solid #CCCCCC;
-            background-color: @white;
-            > div {
-                background-color: @green;
-                display: block;
-                text-indent: 100%;
-                white-space: nowrap;
+        #project-progress {
+            table-layout: fixed;
+            td, th {
                 overflow: hidden;
+            }
+            .progress-col {
+                width: 50%;
+                .progress-wrapper {
+                    border: 1px solid #CCCCCC;
+                    div {
+                        text-indent: 100%;
+                        white-space: nowrap;
+                        overflow: hidden;
+                    }
+                    .worked {
+                        #gradient > .vertical(#62c462, #57a957);
+                        float: left;
+                    }
+                    .overtime {
+                        #gradient > .vertical(#458745, #346534);
+                    }
+                    .remaining {
+                        background-color: @white;
+                    }
+                }
             }
         }
         #entries {
