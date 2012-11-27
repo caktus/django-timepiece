@@ -44,7 +44,7 @@ class Attribute(models.Model):
 
 
 class Business(models.Model):
-    name = models.CharField(max_length=255, blank=True)
+    name = models.CharField(max_length=255)
     slug = models.SlugField(max_length=255, unique=True, blank=True)
     display_name = models.CharField(max_length=255, blank=True)
     email = models.EmailField(blank=True)
