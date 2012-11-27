@@ -98,7 +98,8 @@
                         <thead>
                             <tr>
                                 <th>Date</th>
-                                <th>Entry</th>
+                                <th>Project</th>
+                                <th class="desktop">Activity</th>
                                 <th>From</th>
                                 <th>To</th>
                                 <th class="desktop">Pause Time</th>
@@ -113,15 +114,16 @@
                                         {{ entry.start_time|date:"D" }}
                                     {% endifchanged %}
                                 </td>
-                                <td class="project">
+                                <td>
                                     {% if entry.status == "unverified" %}
                                        <a href="{% url 'timepiece-update' entry.id %}?next={{ request.get_full_path|urlencode }}"><i class="icon-pencil"></i></a>
                                         <a href="{% url 'timepiece-delete' entry.id %}?next={{ request.get_full_path|urlencode }}"><i class="icon-remove"></i></a>
                                     {% else %}
                                         <span class="label label-success"><i class="icon-ok icon-white"></i></span>
                                     {% endif %}
-                                    <span class="desktop">{{ entry.activity.name }} for </span>{{ entry.project }}
+                                    {{ entry.project }}
                                 </td>
+                                <td class="desktop">{{ entry.activity.name }}</td>
                                 <td class="time break">{{ entry.start_time|date:"g:i A" }}</td>
                                 <td class="time break">
                                     {% if entry.end_time %}
