@@ -191,8 +191,7 @@ class ProcessProgressTestCase(TimepieceDataTestCase):
         return utils.process_progress(entries, assignments)
 
     def _check_progress(self, progress, project, assigned, worked):
-        self.assertEqual(progress['pk'], project.pk)
-        self.assertEqual(progress['name'], project.name)
+        self.assertEqual(progress['project'], project)
         self.assertEqual(progress['assigned'], assigned)
         self.assertEqual(progress['worked'], worked)
 
@@ -245,6 +244,6 @@ class ProcessProgressTestCase(TimepieceDataTestCase):
 
         progress = self._get_progress()
         self.assertEqual(len(progress), 3)
-        self.assertEqual(progress[0]['name'], 'a')
-        self.assertEqual(progress[1]['name'], 'b')
-        self.assertEqual(progress[2]['name'], 'c')
+        self.assertEqual(progress[0]['project'], projects[0])
+        self.assertEqual(progress[1]['project'], projects[1])
+        self.assertEqual(progress[2]['project'], projects[2])
