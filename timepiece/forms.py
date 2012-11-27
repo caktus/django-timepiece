@@ -444,7 +444,7 @@ class UserYearMonthForm(YearMonthForm):
 class BusinessForm(forms.ModelForm):
     class Meta:
         model = timepiece.Business
-        fields = ('name', 'display_name', 'email', 'description', 'notes',)
+        fields = ('name', 'short_name', 'email', 'description', 'notes',)
 
 
 class ProjectForm(forms.ModelForm):
