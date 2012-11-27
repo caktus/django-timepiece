@@ -31,7 +31,7 @@
                 <div id="active-text">
                     {% if active_entry %}
                         You have been clocked into
-                        <strong>{{ active_entry.activity.name }} for {{ active_entry.project.name }}</strong>
+                        <strong>{{ active_entry.activity.name }} for {{ active_entry.project }}</strong>
                         since {{ active_entry.start_time|date:"g:i A" }}
                         {% ifnotequal active_entry.start_time.date today %}
                             {% if active_entry.start_time.date < week_start or active_entry.start_time.date > week_end %}
@@ -72,14 +72,14 @@
                             <th class="desktop progress-col">Progress</th>
                         </thead>
                         <tbody>
-                            {% for project in project_progress %}
+                            {% for data in project_progress %}
                                 <tr>
-                                    <td><a href="{% url 'timepiece-clock-in' %}?project={{ project.pk }}">{{ project.name }}</a></td>
-                                    <td>{{ project.assigned|convert_hours_to_seconds|humanize_seconds:"%H:%M" }}</td>
-                                    <td>{{ project.worked|convert_hours_to_seconds|humanize_seconds:"%H:%M" }}</td>
+                                    <td><a href="{% url 'timepiece-clock-in' %}?project={{ data.project.pk }}">{{ data.project }}</a></td>
+                                    <td>{{ data.assigned|convert_hours_to_seconds|humanize_seconds:"%H:%M" }}</td>
+                                    <td>{{ data.worked|convert_hours_to_seconds|humanize_seconds:"%H:%M" }}</td>
                                     <td class="desktop progress-col project-bar"
-                                        data-worked = "{{ project.worked }}"
-                                        data-assigned = "{{ project.assigned }}">
+                                        data-worked = "{{ data.worked }}"
+                                        data-assigned = "{{ data.assigned }}">
                                     </td>
                                 </tr>
                             {% endfor %}
@@ -120,7 +120,7 @@
                                     {% else %}
                                         <span class="label label-success"><i class="icon-ok icon-white"></i></span>
                                     {% endif %}
-                                    <span class="desktop">{{ entry.activity.name }} for </span>{{ entry.project.name }}
+                                    <span class="desktop">{{ entry.activity.name }} for </span>{{ entry.project }}
                                 </td>
                                 <td class="time break">{{ entry.start_time|date:"g:i A" }}</td>
                                 <td class="time break">
@@ -152,8 +152,8 @@
                         <tbody>
                             {% for entry in others_active_entries %}
                                 <tr>
-                                    <td><i class="icon-user"></i> {{ entry.user__first_name }} {{ entry.user__last_name }}</td>
-                                    <td><span class="desktop">{{ entry.activity__name }} for </span>{{ entry.project__name }}</td>
+                                    <td><i class="icon-user"></i> {{ entry.user.first_name }} {{ entry.user.last_name }}</td>
+                                    <td><span class="desktop">{{ entry.activity.name }} for </span>{{ entry.project }}</td>
                                     <td class="desktop">
                                         {{ entry.start_time|date:"g:i A" }}
                                         {% ifnotequal entry.start_time.date today %}

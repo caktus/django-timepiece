@@ -105,11 +105,8 @@ def dashboard(request):
     total_worked = sum([p['worked'] for p in project_progress])
 
     # Others' active entries
-    active_entry_values = ('user__first_name', 'user__last_name',
-            'project__name', 'activity__name', 'start_time')
     others_active_entries = Entry.objects.filter(end_time__isnull=True) \
-            .exclude(user=user) \
-            .values(*active_entry_values)
+            .exclude(user=user).select_related('user', 'project', 'activity')
 
     return render(request, 'timepiece/time-sheet/dashboard.html', {
         'today': today,
@@ -706,26 +703,26 @@ def confirm_invoice_project(request, project_id, to_date, from_date=None):
 
 @permission_required('timepiece.change_entrygroup')
 def invoice_projects(request):
-    date = utils.add_timezone(datetime.datetime.today())
-    to_date = utils.get_month_start(date).date()
     from_date = None
+    to_date = utils.get_month_start().date()
     defaults = {
         'to_date': (to_date - relativedelta(days=1)).strftime('%m/%d/%Y'),
     }
     date_form = timepiece_forms.DateForm(request.GET or defaults)
     if request.GET and date_form.is_valid():
         from_date, to_date = date_form.save()
+
     datesQ = Q()
     datesQ &= Q(end_time__gte=from_date)  if from_date else Q()
     datesQ &= Q(end_time__lt=to_date)  if to_date else Q()
-    entries = timepiece.Entry.objects.filter(datesQ)
-    project_totals = entries.filter(status='approved',
-        project__type__billable=True, project__status__billable=True).values(
-        'project__type__pk', 'project__type__label', 'project__name', 'hours',
-        'project__pk', 'status', 'project__status__label'
-    ).annotate(s=Sum('hours')).order_by('project__type__label',
-                                        'project__status__label',
-                                        'project__name', 'status')
+    billableQ = Q(project__type__billable=True, project__status__billable=True)
+    statusQ = Q(status='approved')
+    ordering = ('project__type__label', 'project__status__label',
+            'project__business__display_name', 'project__name', 'status')
+
+    entries = timepiece.Entry.objects.filter(datesQ, billableQ, statusQ)
+    project_totals = entries.order_by(*ordering)
+
     return render(request, 'timepiece/time-sheet/invoice/make_invoice.html', {
         'date_form': date_form,
         'project_totals': project_totals if to_date else [],
@@ -1195,19 +1192,20 @@ def payroll_summary(request):
     month_entries_valid = month_entries.filter(monthQ, statusQ, workQ)
     labels, monthly_totals = utils.payroll_totals(month_entries_valid, leave)
     # Unapproved and unverified hours
-    entries = timepiece.Entry.objects.filter(monthQ)
+    entries = timepiece.Entry.objects.filter(monthQ).order_by() # No ordering
     user_values = ['user__pk', 'user__first_name', 'user__last_name']
-    unverified = entries.filter(monthQ, status='unverified',
-                                user__is_active=True)
-    unapproved = entries.filter(monthQ, status='verified')
+    unverified = entries.filter(status='unverified', user__is_active=True) \
+                        .values_list(*user_values).distinct()
+    unapproved = entries.filter(status='verified') \
+                        .values_list(*user_values).distinct()
     return render(request, 'timepiece/time-sheet/reports/summary.html', {
         'from_date': from_date,
         'year_month_form': year_month_form,
         'date_headers': date_headers,
         'weekly_totals': weekly_totals,
         'monthly_totals': monthly_totals,
-        'unverified': unverified.values_list(*user_values).distinct(),
-        'unapproved': unapproved.values_list(*user_values).distinct(),
+        'unverified': unverified,
+        'unapproved': unapproved,
         'labels': labels,
     })
 

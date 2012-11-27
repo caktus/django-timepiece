@@ -46,6 +46,7 @@ class Attribute(models.Model):
 class Business(models.Model):
     name = models.CharField(max_length=255, blank=True)
     slug = models.SlugField(max_length=255, unique=True, blank=True)
+    display_name = models.CharField(max_length=255, blank=True)
     email = models.EmailField(blank=True)
     description = models.TextField(blank=True)
     notes = models.TextField(blank=True)
@@ -57,6 +58,8 @@ class Business(models.Model):
             if self.id:
                 queryset = queryset.exclude(id__exact=self.id)
             self.slug = utils.slugify_uniquely(self.name, queryset, 'slug')
+        if not self.display_name:
+            self.display_name = self.name
         super(Business, self).save(*args, **kwargs)
 
     def __unicode__(self):
@@ -64,6 +67,7 @@ class Business(models.Model):
 
     class Meta:
         ordering = ('name',)
+        verbose_name_plural = 'Businesses'
 
 
 class Project(models.Model):
@@ -110,7 +114,7 @@ class Project(models.Model):
         )
 
     def __unicode__(self):
-        return self.name
+        return '{0} ({1})'.format(self.name, self.business.display_name)
 
 
 class RelationshipType(models.Model):

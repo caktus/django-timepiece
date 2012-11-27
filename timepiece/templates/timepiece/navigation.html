@@ -15,11 +15,11 @@
                                 <li><a href="{% url 'timepiece-clock-in' %}">Clock in...</a></li>
                                 <li class="divider"></li>
                                 {% for project in work_projects %}
-                                    <li><a href="{% url 'timepiece-clock-in' %}?project={{ project.id }}">{{ project.name }}</a></li>
+                                    <li><a href="{% url 'timepiece-clock-in' %}?project={{ project.id }}">{{ project }}</a></li>
                                 {% endfor %}
                                 <li class="divider"></li>
                                 {% for project in leave_projects %}
-                                    <li><a href="{% url 'timepiece-clock-in' %}?project={{ project.id }}">{{ project.name }}</a></li>
+                                    <li><a href="{% url 'timepiece-clock-in' %}?project={{ project.id }}">{{ project }}</a></li>
                                 {% endfor %}
                             </ul>
                         {% endif %}
