@@ -284,9 +284,8 @@ class InvoiceCreateTestCase(TimepieceDataTestCase):
         to_date = utils.add_timezone(datetime.datetime(2011, 1, 31, 0, 0, 0))
         params = {'to_date': to_date.strftime('%m/%d/%Y')}
         response = self.client.get(url, params)
-        # The number of projects should be 2 because entry4 has billable=False
-        num_project_totals = len(response.context['project_totals'])
-        self.assertEquals(num_project_totals, 2)
+        # The number of projects should be 3 because entry4 has billable=False
+        self.assertEquals(response.context['project_totals'].count(), 3)
         # Verify that the date on the mark as invoiced links will be correct
         to_date_str = response.context['to_date'].strftime('%Y %m %d')
         self.assertEquals(to_date_str, '2011 01 31')
