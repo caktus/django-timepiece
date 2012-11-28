@@ -57,7 +57,7 @@ class DashboardViewTestCase(TimepieceDataTestCase):
         return self.create_entry(data=data)
 
     def _create_active_entry(self):
-        start_time = datetime.date(2012, 11, 9)
+        start_time = datetime.datetime(2012, 11, 9, 0)
         return self._create_entry(start_time)
 
     def _create_entries(self):
@@ -114,12 +114,13 @@ class DashboardViewTestCase(TimepieceDataTestCase):
         self.assertEqual(response.context['active_entry'], None)
 
     def test_weeks_entries(self):
-        """Week's entries list should exclude active entry."""
+        """Week's entries list should include active entry."""
         entry_count = self._create_entries()
         active_entry = self._create_active_entry()
+        entry_count += 1
         response = self.client.get(self.url)
         self.assertEqual(response.status_code, 200)
-        self.assertFalse(active_entry in response.context['week_entries'])
+        self.assertTrue(active_entry in response.context['week_entries'])
         self.assertEqual(len(response.context['week_entries']), entry_count)
 
     def test_no_weeks_entries(self):
@@ -191,8 +192,7 @@ class ProcessProgressTestCase(TimepieceDataTestCase):
         return utils.process_progress(entries, assignments)
 
     def _check_progress(self, progress, project, assigned, worked):
-        self.assertEqual(progress['pk'], project.pk)
-        self.assertEqual(progress['name'], project.name)
+        self.assertEqual(progress['project'], project)
         self.assertEqual(progress['assigned'], assigned)
         self.assertEqual(progress['worked'], worked)
 
@@ -245,6 +245,6 @@ class ProcessProgressTestCase(TimepieceDataTestCase):
 
         progress = self._get_progress()
         self.assertEqual(len(progress), 3)
-        self.assertEqual(progress[0]['name'], 'a')
-        self.assertEqual(progress[1]['name'], 'b')
-        self.assertEqual(progress[2]['name'], 'c')
+        self.assertEqual(progress[0]['project'], projects[0])
+        self.assertEqual(progress[1]['project'], projects[1])
+        self.assertEqual(progress[2]['project'], projects[2])

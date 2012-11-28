@@ -453,29 +453,28 @@ def process_progress(entries, assignments):
     # Determine all projects either worked or assigned.
     project_q = Q(id__in=assignments.values_list('project__id', flat=True))
     project_q |= Q(id__in=entries.values_list('project__id', flat=True))
-    projects = Project.objects.filter(project_q).values('pk', 'name')
+    projects = Project.objects.filter(project_q).select_related('business')
 
     # Hours per project.
     project_data = {}
     for project in projects:
         try:
-            assigned = assignments.get(project__id=project['pk']).hours
+            assigned = assignments.get(project__id=project.pk).hours
         except ProjectHours.DoesNotExist:
             assigned = Decimal('0.00')
-        project_data[project['pk']] = {
-            'pk': project['pk'],
-            'name': project['name'],
+        project_data[project.pk] = {
+            'project': project,
             'assigned': assigned,
             'worked': Decimal('0.00'),
         }
 
     for entry in entries:
         pk = entry.project_id
-        hours = Decimal('%.2f' % round(entry.get_active_seconds() / 3600.0, 2))
+        hours = Decimal('%.2f' % round(entry.get_total_seconds() / 3600.0, 2))
         project_data[pk]['worked'] += hours
 
     # Sort by maximum of worked or assigned hours (highest first).
-    key = lambda x: x['name'].lower()
+    key = lambda x: x['project'].name.lower()
     project_progress = sorted(project_data.values(), key=key)
 
     return project_progress

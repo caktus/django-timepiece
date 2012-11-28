@@ -96,11 +96,9 @@ def week_start(date):
 
 @register.simple_tag
 def get_uninvoiced_hours(entries):
-    hours_uninvoiced = 0
-    for entry in entries:
-        if entry['status'] != 'invoiced' and entry['status'] != 'not-invoiced':
-            hours_uninvoiced += entry['s']
-    return hours_uninvoiced
+    statuses = ('invoiced', 'not-invoiced')
+    hours = sum([e.hours for e in entries if e.status not in statuses])
+    return hours
 
 
 @register.filter

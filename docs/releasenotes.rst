@@ -1,6 +1,45 @@
 Release Notes
 =============
 
+0.7.1 (Released 11-28-2012)
+------------------
+
+Related issues are in the `0.7.1 milestone
+<https://github.com/caktus/django-timepiece/issues?milestone=29&page=1&state=closed>`_.
+
+* Fixed path to white Glyphicons
+* Fixed duplicates in unverified list on Payroll Summary report
+* Removed unused ``timepiece/time-sheet/_entry_list.html`` template
+* Made ``Business.name`` field required
+* Schema migration to add ``Business.short_name`` field
+* Add ``Business.get_display_name()`` to retrieve first of ``short_name`` or
+  ``name``
+* Show business short name with project name on the dashboard, clock in,
+  clock out, and outstanding invoices pages
+* Added ``Entry.get_paused_seconds()`` - gets total time paused on any entry,
+  regardless of whether it is currently active or paused
+* Removed ``Entry.get_active_seconds()``
+* Moved ``Entry.get_seconds()`` to ``Entry.get_total_seconds()`` - updated to
+  get total worked seconds for any entry, regardless of whether it is
+  currently active or paused, also taking into account the amount of time
+  paused
+* Dashboard tweaks and bug fixes
+
+  - Fixed pause time bug
+  - Fixed incorrect link name in mobile navbar
+  - Fixed floating point errors in progress bar width calculations
+  - Fixed overall progress bar styling when worked width = 0%
+  - Fixed project progress bar responsiveness when resizing or zooming the
+    page
+  - Show overtime on project progress bars
+  - Use dark green instead of red on overtime bars
+  - Separated the "Project" and "Activity" columns in the all entries list
+  - Include active entry in the all entries list
+  - Increased the prominence of the active entry section
+  - Show the current activity name in the active entry section
+  - Removed link to the active project from the active entry section
+  - Use "for" instead of "on" when describing entries
+
 0.7.0 (Released 11-16-2012)
 ---------------------------
 

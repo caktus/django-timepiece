@@ -45,27 +45,33 @@
 
     <div class="row-fluid">
         <div class="span12">
-            {% regroup project_totals by project__type__label as type_list %}
+            {# Display each project type as a separate table. #}
+            {# For each table, order by project status, then business display name, then project name. #}
+            {% regroup project_totals by project.type.label as type_list %}
             {% for type in type_list %}
                 <h3>Summary of {{ type.grouper }} Entries</h3>
+
                 <table class="table table-bordered table-condensed table-striped">
                     <tr>
-                        <th>Project name</th>
+                        <th>Project</th>
+                        <th>Business</th>
                         <th>Status</th>
                         <th>Uninvoiced Hours</th>
                         <th></th>
                     </tr>
-                    {% regroup type.list by project__name as project_list %}
+                    {% regroup type.list by project.name as project_list %}
                     {% for project in project_list %}
                         <tr>
-                            <td><a href="{% timesheet_url 'project' project.list.0.project__pk to_date %}">{{ project.grouper }}</a></td>
-                            <td>{{ project.list.0.project__status__label|title }}</td>
+                            <td><a href="{% timesheet_url 'project' project.list.0.project.pk to_date %}">{{ project.grouper }}</a></td>
+                            <td>
+                            {{ project.list.0.project.business.get_display_name }}</td>
+                            <td>{{ project.list.0.project.status.label|title }}</td>
                             <td class="hours">{% get_uninvoiced_hours project.list %}</td>
                             <td>
                                 {% if from_date %}
-                                    <a href="{% url 'confirm_invoice_project' project.list.0.project__pk to_date|date:'Y-m-d' from_date|date:'Y-m-d' %}">Make Invoice</a>
+                                    <a href="{% url 'confirm_invoice_project' project.list.0.project.pk to_date|date:'Y-m-d' from_date|date:'Y-m-d' %}">Make Invoice</a>
                                 {% else %}
-                                    <a href="{% url 'confirm_invoice_project' project.list.0.project__pk to_date|date:'Y-m-d' %}">Make Invoice</a>
+                                    <a href="{% url 'confirm_invoice_project' project.list.0.project.pk to_date|date:'Y-m-d' %}">Make Invoice</a>
                                 {% endif %}
                             </td>
                         </tr>
