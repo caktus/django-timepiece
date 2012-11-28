@@ -30,8 +30,8 @@ admin.site.register(timepiece.RelationshipType, RelationshipTypeAdmin)
 
 
 class BusinessAdmin(admin.ModelAdmin):
-    list_display = ['name', 'display_name']
-    search_fields = ['name', 'display_name']
+    list_display = ['name', 'short_name']
+    search_fields = ['name', 'short_name']
 admin.site.register(timepiece.Business, BusinessAdmin)
 
 

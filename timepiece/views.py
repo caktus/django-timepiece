@@ -718,7 +718,7 @@ def invoice_projects(request):
     billableQ = Q(project__type__billable=True, project__status__billable=True)
     statusQ = Q(status='approved')
     ordering = ('project__type__label', 'project__status__label',
-            'project__business__display_name', 'project__name', 'status')
+            'project__business__name', 'project__name', 'status')
 
     entries = timepiece.Entry.objects.filter(datesQ, billableQ, statusQ)
     project_totals = entries.order_by(*ordering)
