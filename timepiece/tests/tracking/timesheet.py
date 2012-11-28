@@ -388,7 +388,7 @@ class ClockInTest(TimepieceDataTestCase):
         response = self.client.post(self.url, data)
         err_msg = 'Ending time exceeds starting time by 12 hours ' \
             'or more for {0} on {1} at {2} to {3} at {4}.'.format(
-                entry1.project.name,
+                entry1.project,
                 entry1.start_time.strftime('%m/%d/%Y'),
                 entry1.start_time.strftime('%H:%M:%S'),
                 end_time.strftime('%m/%d/%Y'),
@@ -670,7 +670,7 @@ class ClockOutTest(TimepieceDataTestCase):
         response = self.client.post(self.url, data)
         err_msg = 'Ending time exceeds starting time by 12 hours ' \
             'or more for {0} on {1} at {2} to {3} at {4}.'.format(
-                self.entry.project.name,
+                self.entry.project,
                 self.entry.start_time.strftime('%m/%d/%Y'),
                 self.entry.start_time.strftime('%H:%M:%S'),
                 end_time.strftime('%m/%d/%Y'),
@@ -693,7 +693,7 @@ class ClockOutTest(TimepieceDataTestCase):
             reverse('timepiece-clock-out', args=[paused_entry.pk]), data)
         err_msg = 'Ending time exceeds starting time by 12 hours ' \
             'or more for {0} on {1} at {2} to {3} at {4}.'.format(
-                self.entry.project.name,
+                self.entry.project,
                 paused_entry.start_time.strftime('%m/%d/%Y'),
                 paused_entry.start_time.strftime('%H:%M:%S'),
                 self.default_end_time.strftime('%m/%d/%Y'),
@@ -981,7 +981,7 @@ class CreateEditEntry(TimepieceDataTestCase):
         response = self.client.post(self.create_url, long_entry, follow=True)
         err_msg = 'Ending time exceeds starting time by 12 hours ' \
             'or more for {0} on {1} at {2} to {3} at {4}.'.format(
-                self.project.name,
+                self.project,
                 self.now.strftime('%m/%d/%Y'),
                 self.now.strftime('%H:%M:%S'),
                 end_time.strftime('%m/%d/%Y'),
