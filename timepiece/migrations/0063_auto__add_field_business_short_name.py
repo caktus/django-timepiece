@@ -8,9 +8,6 @@ from django.db import models
 class Migration(SchemaMigration):
 
     def forwards(self, orm):
-        # Deleting field 'Business.display_name'
-        db.delete_column('timepiece_business', 'display_name')
-
         # Adding field 'Business.short_name'
         db.add_column('timepiece_business', 'short_name',
                       self.gf('django.db.models.fields.CharField')(default='', max_length=255, blank=True),
@@ -18,11 +15,6 @@ class Migration(SchemaMigration):
 
 
     def backwards(self, orm):
-        # Adding field 'Business.display_name'
-        db.add_column('timepiece_business', 'display_name',
-                      self.gf('django.db.models.fields.CharField')(default='', max_length=255, blank=True),
-                      keep_default=False)
-
         # Deleting field 'Business.short_name'
         db.delete_column('timepiece_business', 'short_name')
 
