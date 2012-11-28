@@ -44,13 +44,16 @@ class Attribute(models.Model):
 
 
 class Business(models.Model):
-    name = models.CharField(max_length=255, blank=True)
+    name = models.CharField(max_length=255)
     slug = models.SlugField(max_length=255, unique=True, blank=True)
-    display_name = models.CharField(max_length=255, blank=True)
+    short_name = models.CharField(max_length=255, blank=True)
     email = models.EmailField(blank=True)
     description = models.TextField(blank=True)
     notes = models.TextField(blank=True)
     external_id = models.CharField(max_length=32, blank=True)
+
+    def get_display_name(self):
+        return self.short_name or self.name
 
     def save(self, *args, **kwargs):
         queryset = Business.objects.all()
@@ -58,8 +61,6 @@ class Business(models.Model):
             if self.id:
                 queryset = queryset.exclude(id__exact=self.id)
             self.slug = utils.slugify_uniquely(self.name, queryset, 'slug')
-        if not self.display_name:
-            self.display_name = self.name
         super(Business, self).save(*args, **kwargs)
 
     def __unicode__(self):
@@ -114,7 +115,7 @@ class Project(models.Model):
         )
 
     def __unicode__(self):
-        return '{0} ({1})'.format(self.name, self.business.display_name)
+        return '{0} ({1})'.format(self.name, self.business.get_display_name())
 
 
 class RelationshipType(models.Model):

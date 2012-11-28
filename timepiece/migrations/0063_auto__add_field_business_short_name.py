@@ -8,15 +8,15 @@ from django.db import models
 class Migration(SchemaMigration):
 
     def forwards(self, orm):
-        # Adding field 'Business.display_name'
-        db.add_column('timepiece_business', 'display_name',
+        # Adding field 'Business.short_name'
+        db.add_column('timepiece_business', 'short_name',
                       self.gf('django.db.models.fields.CharField')(default='', max_length=255, blank=True),
                       keep_default=False)
 
 
     def backwards(self, orm):
-        # Deleting field 'Business.display_name'
-        db.delete_column('timepiece_business', 'display_name')
+        # Deleting field 'Business.short_name'
+        db.delete_column('timepiece_business', 'short_name')
 
 
     models = {
@@ -81,12 +81,12 @@ class Migration(SchemaMigration):
         'timepiece.business': {
             'Meta': {'ordering': "('name',)", 'object_name': 'Business'},
             'description': ('django.db.models.fields.TextField', [], {'blank': 'True'}),
-            'display_name': ('django.db.models.fields.CharField', [], {'max_length': '255', 'blank': 'True'}),
             'email': ('django.db.models.fields.EmailField', [], {'max_length': '75', 'blank': 'True'}),
             'external_id': ('django.db.models.fields.CharField', [], {'max_length': '32', 'blank': 'True'}),
             'id': ('django.db.models.fields.AutoField', [], {'primary_key': 'True'}),
-            'name': ('django.db.models.fields.CharField', [], {'max_length': '255', 'blank': 'True'}),
+            'name': ('django.db.models.fields.CharField', [], {'max_length': '255'}),
             'notes': ('django.db.models.fields.TextField', [], {'blank': 'True'}),
+            'short_name': ('django.db.models.fields.CharField', [], {'max_length': '255', 'blank': 'True'}),
             'slug': ('django.db.models.fields.SlugField', [], {'unique': 'True', 'max_length': '255', 'blank': 'True'})
         },
         'timepiece.contractassignment': {

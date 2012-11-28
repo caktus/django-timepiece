@@ -63,7 +63,8 @@
                     {% for project in project_list %}
                         <tr>
                             <td><a href="{% timesheet_url 'project' project.list.0.project.pk to_date %}">{{ project.grouper }}</a></td>
-                            <td>{{ project.list.0.project.business.display_name }}</td>
+                            <td>
+                            {{ project.list.0.project.business.get_display_name }}</td>
                             <td>{{ project.list.0.project.status.label|title }}</td>
                             <td class="hours">{% get_uninvoiced_hours project.list %}</td>
                             <td>
