@@ -1,8 +1,13 @@
 Release Notes
 =============
 
+0.7.2 (Released 11-28-2012)
+---------------------------
+
+* Fixed test failures that resulted from changes to the display of project names when clocking time.
+
 0.7.1 (Released 11-28-2012)
-------------------
+---------------------------
 
 Related issues are in the `0.7.1 milestone
 <https://github.com/caktus/django-timepiece/issues?milestone=29&page=1&state=closed>`_.
