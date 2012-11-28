@@ -10,14 +10,16 @@ Related issues are in the `0.7.1 milestone
 * Fixed path to white Glyphicons
 * Fixed duplicates in unverified list on Payroll Summary report
 * Removed unused ``timepiece/time-sheet/_entry_list.html`` template
-* Schema migration to add ``Business.display_name`` field and data migration
-  to copy ``Business.name`` to ``Business.display_name``
-* Show business display name with project name on the dashboard, clock in,
+* Made ``Business.name`` field required
+* Schema migration to add ``Business.short_name`` field
+* Add ``Business.get_display_name()`` to retrieve first of ``short_name`` or
+  ``name``
+* Show business short name with project name on the dashboard, clock in,
   clock out, and outstanding invoices pages
-* Added ``Entry.get_paused_seconds`` - gets total time paused on any entry,
+* Added ``Entry.get_paused_seconds()`` - gets total time paused on any entry,
   regardless of whether it is currently active or paused
-* Removed ``Entry.get_active_seconds``
-* Moved ``Entry.get_seconds`` to ``Entry.get_total_seconds`` - updated to
+* Removed ``Entry.get_active_seconds()``
+* Moved ``Entry.get_seconds()`` to ``Entry.get_total_seconds()`` - updated to
   get total worked seconds for any entry, regardless of whether it is
   currently active or paused, also taking into account the amount of time
   paused
