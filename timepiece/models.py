@@ -513,7 +513,7 @@ class Entry(models.Model):
         if delta_secs > limit_secs or self.seconds_paused > limit_secs:
             err_msg = 'Ending time exceeds starting time by 12 hours or more '\
                 'for {0} on {1} at {2} to {3} at {4}.'.format(
-                    self.project.name,
+                    self.project,
                     start.strftime('%m/%d/%Y'),
                     start.strftime('%H:%M:%S'),
                     end.strftime('%m/%d/%Y'),

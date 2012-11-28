@@ -93,7 +93,7 @@ class ProjectContractAdmin(admin.ModelAdmin):
     list_per_page = 20
 
     def _project(self, obj):
-        return obj.project.name
+        return obj.project
     _project.admin_order_field = 'project__name'
     _project.short_description = 'Project'
 

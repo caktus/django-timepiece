@@ -141,7 +141,7 @@ def clock_in(request):
     if form.is_valid():
         entry = form.save()
         message = 'You have clocked into {0} on {1}.'.format(
-                entry.activity.name, entry.project.name)
+                entry.activity.name, entry.project)
         messages.info(request, message)
         return HttpResponseRedirect(reverse('dashboard'))
 
@@ -164,7 +164,7 @@ def clock_out(request, entry_id):
         if form.is_valid():
             entry = form.save()
             message = "You have clocked out of {0} on {1}.".format(
-                    entry.activity.name, entry.project.name)
+                    entry.activity.name, entry.project)
             messages.info(request, message)
             return HttpResponseRedirect(reverse('dashboard'))
         else:
@@ -196,7 +196,7 @@ def toggle_paused(request, entry_id):
     # create a message that can be displayed to the user
     action = 'paused' if entry.is_paused else 'resumed'
     message = 'Your entry, {0} on {1}, has been {2}.'.format(
-            entry.activity.name, entry.project.name, action)
+            entry.activity.name, entry.project, action)
     messages.info(request, message)
 
     # redirect to the log entry list
