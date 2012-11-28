@@ -1,7 +1,7 @@
 Release Notes
 =============
 
-0.7.1 (Unreleased)
+0.7.1 (Released 11-28-2012)
 ------------------
 
 Related issues are in the `0.7.1 milestone
