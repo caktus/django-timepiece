@@ -49,13 +49,19 @@
         </div>
 
         <ul class="nav nav-tabs">
-            <li class="active"><a href="#progress" data-toggle="tab">Progress</a></li>
-            <li><a href="#entries" data-toggle="tab">All Entries</a></li>
-            <li><a href="#online-users" data-toggle="tab">Online Users</a></li>
+            <li{% if active_tab == 'progress' %} class="active"{% endif %}>
+                <a class="tab-link" href="progress">Progress</a>
+            </li>
+            <li{% if active_tab == 'all-entries' %} class="active"{% endif %}>
+                <a class="tab-link" href="all-entries">All Entries</a>
+            </li>
+            <li{% if active_tab == 'online-users' %} class="active"{% endif %}>
+                <a class="tab-link" href="online-users">Online Users</a>
+            </li>
         </ul>
 
         <div class="tab-content">
-            <div class="tab-pane active" id="progress">
+            <div class="tab-pane{% if active_tab == 'progress' %} active{% endif %}" id="progress">
                 <div id="overall-progress">
                     <div id="overall-label">Overall</div>
                     <div id="overall-bar"
@@ -91,7 +97,7 @@
             </div>
             <script src="{{ STATIC_URL }}timepiece/js/dashboard.js"></script>
 
-            <div class="tab-pane" id="entries">
+            <div class="tab-pane{% if active_tab == 'all-entries' %} active{% endif %}" id="all-entries">
                 <a class="btn add-entry" href="{% url 'timepiece-add' %}" id="add-entry">Add Entry</a>
                 {% if week_entries %}
                     <table class="table table-striped table-bordered" style="margin-top:10px;">
@@ -116,8 +122,9 @@
                                 </td>
                                 <td>
                                     {% if entry.status == "unverified" %}
-                                       <a href="{% url 'timepiece-update' entry.id %}?next={{ request.get_full_path|urlencode }}"><i class="icon-pencil"></i></a>
-                                        <a href="{% url 'timepiece-delete' entry.id %}?next={{ request.get_full_path|urlencode }}"><i class="icon-remove"></i></a>
+                                        {% url 'dashboard' active_tab='all-entries' as next %}
+                                        <a href="{% url 'timepiece-update' entry.id %}?next={{ next|urlencode }}"><i class="icon-pencil"></i></a>
+                                        <a href="{% url 'timepiece-delete' entry.id %}?next={{ next|urlencode }}"><i class="icon-remove"></i></a>
                                     {% else %}
                                         <span class="label label-success"><i class="icon-ok icon-white"></i></span>
                                     {% endif %}
@@ -143,7 +150,7 @@
                 {% endif %}
             </div>
 
-            <div class="tab-pane" id="online-users">
+            <div class="tab-pane{% if active_tab == 'online-users' %} active{% endif %}" id="online-users">
                 {% if others_active_entries %}
                     <table class="table table-striped table-bordered">
                         <thead>
@@ -176,4 +183,48 @@
             </div>
         </div>
     {% endif %}
+
+    <script>
+        // JavaScript to create permanent links to the dashboard tabs.
+        // When the user clicks on another dashboard tab, the browser location
+        // will change without reloading the page.
+
+        var basePath = "{% url 'dashboard' %}",
+            tabIds = new Array('progress', 'all-entries', 'online-users')
+
+        function changeActiveTab(to) {
+            // Change active tab.
+            $('.nav-tabs li.active').removeClass('active');
+            $('.nav-tabs a[href=' + to + ']').parent().addClass('active');
+
+            // Change active tab content.
+            $('.tab-pane.active').removeClass('active');
+            $('.tab-pane#' + to).addClass('active');
+        };
+
+        // Called when the user moves through browser history.
+        window.onpopstate = function(event) {
+            var path = window.location.pathname,
+                to = 'progress';  // Default
+            if (path.indexOf(basePath) > -1) {
+                var tail = path.substring(basePath.length),
+                    parts = tail.split('/');
+                if (parts.length <= 2 && tabIds.indexOf(parts[0]) > -1) {
+                    to = parts[0];
+                }
+            }
+            changeActiveTab(to);
+        };
+
+        //  Called when the user clicks on a tab link.
+        $('.tab-link').click(function(event) {
+            event.preventDefault();
+            self = $(this)
+            if (!self.parent().hasClass('active')) {
+                to = self.attr('href');
+                history.pushState({}, '', basePath + to + '/');
+                changeActiveTab(to);
+            }
+        });
+    </script>
 {% endblock content %}

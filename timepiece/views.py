@@ -68,7 +68,8 @@ class CSVMixin(object):
 
 
 @login_required
-def dashboard(request):
+def dashboard(request, active_tab):
+    active_tab = active_tab or 'progress'
     user = request.user
     Entry = timepiece.Entry
     ProjectHours = timepiece.ProjectHours
@@ -109,6 +110,7 @@ def dashboard(request):
             .exclude(user=user).select_related('user', 'project', 'activity')
 
     return render(request, 'timepiece/time-sheet/dashboard.html', {
+        'active_tab': active_tab,
         'today': today,
         'week_start': week_start.date(),
         'week_end': week_end.date(),
@@ -216,7 +218,7 @@ def create_edit_entry(request, entry_id=None):
     else:
         entry = None
 
-    if request.POST:
+    if request.method == 'POST':
         form = timepiece_forms.AddUpdateEntryForm(
             request.POST,
             instance=entry,
@@ -286,8 +288,7 @@ def reject_entries(request, user_id):
     """
     This allows admins to reject all entries, instead of just one
     """
-    form = timepiece_forms.YearMonthForm(request.GET
-        or request.POST)
+    form = timepiece_forms.YearMonthForm(request.GET or request.POST)
     user = User.objects.get(pk=user_id)
     if form.is_valid():
         from_date, to_date = form.save()
@@ -303,19 +304,17 @@ def reject_entries(request, user_id):
                 msg = 'There are no verified entries to reject.'
             messages.info(request, msg)
         else:
-            context = {
+            template = 'timepiece/time-sheet/entry/reject_entries.html',
+            return render(request, template, {
                 'date': from_date,
                 'timesheet_user': user
-            }
-            return render(request,
-                    'timepiece/time-sheet/entry/reject_entries.html', context)
+            })
     else:
         msg = 'You must provide a month and year for entries to be rejected.'
         messages.error(request, msg)
 
-    return HttpResponseRedirect(reverse('view_person_time_sheet',
-        args=(user_id,))
-    )
+    url = reverse('view_person_time_sheet', args=(user_id,))
+    return HttpResponseRedirect(url)
 
 
 @permission_required('timepiece.delete_entry')
@@ -323,26 +322,26 @@ def delete_entry(request, entry_id):
     """
     Give the user the ability to delete a log entry, with a confirmation
     beforehand.  If this method is invoked via a GET request, a form asking
-    for a confirmation of intent will be presented to the user.  If this method
+    for a confirmation of intent will be presented to the user. If this method
     is invoked via a POST request, the entry will be deleted.
     """
-
     try:
-        # retrieve the log entry
-        entry = timepiece.Entry.no_join.get(pk=entry_id,
-                                  user=request.user)
-    except:
-        # entry does not exist
-        message = 'No such log entry.'
+        entry = timepiece.Entry.no_join.get(pk=entry_id, user=request.user)
+    except timepiece.Entry.DoesNotExist:
+        message = 'No such entry found.'
         messages.info(request, message)
-        return HttpResponseRedirect(reverse('dashboard'))
+        url = request.REQUEST.get('next', reverse('dashboard'))
+        return HttpResponseRedirect(url)
+
     if request.method == 'POST':
         key = request.POST.get('key', None)
         if key and key == entry.delete_key:
             entry.delete()
-            message = 'Entry deleted.'
+            message = 'Deleted {0} for {1}.'.format(entry.activity.name,
+                    entry.project)
             messages.info(request, message)
-            return HttpResponseRedirect(reverse('dashboard'))
+            url = request.REQUEST.get('next', reverse('dashboard'))
+            return HttpResponseRedirect(url)
         else:
             message = 'You are not authorized to delete this entry!'
             messages.error(request, message)
