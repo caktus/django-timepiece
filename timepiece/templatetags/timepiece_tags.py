@@ -149,3 +149,15 @@ def timesheet_url(type, pk, date):
     params = {'month': date.month, 'year': date.year} if date else {}
 
     return '?'.join((url, urllib.urlencode(params),))
+
+
+@register.simple_tag(takes_context=True)
+def get_max_hours(context):
+    """
+    Returns the largest number of hours worked or assigned on any project.
+    """
+    project_progress = context['project_progress']
+    max_hours = 0
+    for project in project_progress:
+        max_hours = max(max_hours, project['worked'], project['assigned'])
+    return str(max_hours)
