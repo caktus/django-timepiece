@@ -15,7 +15,7 @@
 
             <br style="clear: both;" />
 
-            <form class="form-inline" action="{% url 'timepiece-delete' entry.id %}" method="post">
+            <form class="form-inline" action="" method="post">
                 {% csrf_token %}
                 <h3>Are you sure you want to delete this entry?</h3>
                 <input type="hidden" name="key" value="{{ entry.delete_key }}" />
