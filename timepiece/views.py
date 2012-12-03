@@ -38,13 +38,20 @@ from timepiece.templatetags.timepiece_tags import seconds_to_hours
 
 @login_required
 def quick_search(request):
-    if request.GET:
-        form = timepiece_forms.QuickSearchForm(request.GET)
-        if form.is_valid():
-            return HttpResponseRedirect(form.save())
+    form = timepiece_forms.QuickSearchForm(request.GET or None)
+    if form.is_valid():
+        return HttpResponseRedirect(form.save())
     return render(request, 'timepiece/search_results.html', {
         'form': form,
     })
+
+
+class DecimalEncoder(json.JSONEncoder):
+
+    def default(self, obj):
+        if isinstance(obj, Decimal):
+            return float(obj)
+        return super(DecimalEncoder, self).default(obj)
 
 
 class CSVMixin(object):
@@ -60,11 +67,11 @@ class CSVMixin(object):
         return response
 
     def get_filename(self, context):
-        raise NotImplemented("You must implement this in the subclass")
+        raise NotImplemented('You must implement this in the subclass')
 
     def convert_context_to_csv(self, context):
-        "Convert the context dictionary into a CSV file"
-        raise NotImplemented("You must implement this in the subclass")
+        """Convert the context dictionary into a CSV file"""
+        raise NotImplemented('You must implement this in the subclass')
 
 
 @login_required
@@ -91,12 +98,12 @@ def dashboard(request, active_tab):
     except Entry.DoesNotExist:
         active_entry = None
     except Entry.MultipleObjectsReturned:
-        raise Exception("Only one active entry is allowed.")
+        raise Exception('Only one active entry is allowed.')
 
     # Process this week's entries to determine assignment progress.
     week_entries = Entry.objects.filter(user=user) \
-        .timespan(week_start, span='week', current=True) \
-        .select_related('project')
+            .timespan(week_start, span='week', current=True) \
+            .select_related('project')
     assignments = ProjectHours.objects.filter(user=user,
             week_start=week_start.date())
     project_progress = utils.process_progress(week_entries, assignments)
@@ -105,7 +112,7 @@ def dashboard(request, active_tab):
     total_assigned = utils.get_hours_per_week(user)
     total_worked = sum([p['worked'] for p in project_progress])
 
-    # Others' active entries
+    # Others' active entries.
     others_active_entries = Entry.objects.filter(end_time__isnull=True) \
             .exclude(user=user).select_related('user', 'project', 'activity')
 
@@ -135,7 +142,7 @@ def clock_in(request):
     except Entry.DoesNotExist:
         active_entry = None
     except Entry.MultipleObjectsReturned:
-        raise Exception("Only one active entry is allowed.")
+        raise Exception('Only one active entry is allowed.')
 
     initial = dict([(k, v) for k, v in request.GET.items()])
     form = timepiece_forms.ClockInForm(request.POST or None, initial=initial,
@@ -165,7 +172,7 @@ def clock_out(request, entry_id):
         form = timepiece_forms.ClockOutForm(request.POST, instance=entry)
         if form.is_valid():
             entry = form.save()
-            message = "You have clocked out of {0} on {1}.".format(
+            message = 'You have clocked out of {0} on {1}.'.format(
                     entry.activity.name, entry.project)
             messages.info(request, message)
             return HttpResponseRedirect(reverse('dashboard'))
@@ -267,14 +274,14 @@ def reject_entry(request, entry_id):
         return redirect(return_url)
 
     if entry.status == 'unverified' or entry.status == 'invoiced':
-        msg_text = 'This entry is unverified or is already invoiced'
+        msg_text = 'This entry is unverified or is already invoiced.'
         messages.error(request, msg_text)
         return redirect(return_url)
 
     if request.POST.get('Yes'):
         entry.status = 'unverified'
         entry.save()
-        msg_text = "The entry's status was set to unverified"
+        msg_text = 'The entry\'s status was set to unverified.'
         messages.info(request, msg_text)
         return redirect(return_url)
     return render(request, 'timepiece/time-sheet/entry/reject_entry.html', {
@@ -304,7 +311,7 @@ def reject_entries(request, user_id):
                 msg = 'There are no verified entries to reject.'
             messages.info(request, msg)
         else:
-            template = 'timepiece/time-sheet/entry/reject_entries.html',
+            template = 'timepiece/time-sheet/entry/reject_entries.html'
             return render(request, template, {
                 'date': from_date,
                 'timesheet_user': user
@@ -435,8 +442,7 @@ class ProjectTimesheet(DetailView):
         extra_values = ('start_time', 'end_time', 'comments', 'seconds_paused',
                 'id', 'location__name', 'project__name', 'activity__name',
                 'status')
-        month_entries = entries_qs.date_trunc('month',
-                extra_values).order_by('start_time')
+        month_entries = entries_qs.date_trunc('month', extra_values)
         total = entries_qs.aggregate(hours=Sum('hours'))['hours']
         user_entries = entries_qs.order_by().values(
             'user__first_name', 'user__last_name').annotate(
@@ -462,8 +468,8 @@ class ProjectTimesheetCSV(CSVMixin, ProjectTimesheet):
 
     def get_filename(self, context):
         project = self.object.name
-        to_date_str = context['to_date'].strftime("%m-%d-%Y")
-        return "Project_timesheet {0} {1}".format(project, to_date_str)
+        to_date_str = context['to_date'].strftime('%m-%d-%Y')
+        return 'Project_timesheet {0} {1}'.format(project, to_date_str)
 
     def convert_context_to_csv(self, context):
         rows = []
@@ -480,8 +486,7 @@ class ProjectTimesheetCSV(CSVMixin, ProjectTimesheet):
         for entry in context['entries']:
             data = [
                 entry['start_time'].strftime('%x'),
-                ' '.join((entry['user__first_name'],
-                          entry['user__last_name'])),
+                entry['user__first_name'] + ' ' + entry['user__last_name'],
                 entry['activity__name'],
                 entry['location__name'],
                 entry['start_time'].strftime('%X'),
@@ -660,8 +665,6 @@ def confirm_invoice_project(request, project_id, to_date, from_date=None):
         if from_date:
             from_date = utils.add_timezone(
                 datetime.datetime.strptime(from_date, '%Y-%m-%d'))
-        else:
-            from_date = None
     except (ValueError, OverflowError):
         raise Http404
     project = get_object_or_404(timepiece.Project, pk=project_id)
@@ -672,7 +675,7 @@ def confirm_invoice_project(request, project_id, to_date, from_date=None):
         'to_date': to_date,
     }
     entries_query = {
-        'status': "approved",
+        'status': 'approved',
         'end_time__lt': to_date + relativedelta(days=1),
         'project__id': project.id
     }
@@ -786,8 +789,8 @@ class InvoiceCSV(CSVMixin, InvoiceDetail):
     def get_filename(self, context):
         invoice = context['invoice']
         project = str(invoice.project).replace(' ', '_')
-        end_day = invoice.end.strftime("%m-%d-%Y")
-        return "Invoice-{0}-{1}".format(project, end_day)
+        end_day = invoice.end.strftime('%m-%d-%Y')
+        return 'Invoice-{0}-{1}'.format(project, end_day)
 
     def convert_context_to_csv(self, context):
         rows = []
@@ -884,20 +887,16 @@ def remove_invoice_entry(request, invoice_id, entry_id):
 @permission_required('timepiece.view_business')
 def list_businesses(request):
     form = timepiece_forms.SearchForm(request.GET)
+    businesses = timepiece.Business.objects.all()
     if form.is_valid() and 'search' in request.GET:
         search = form.cleaned_data['search']
-        businesses = timepiece.Business.objects.filter(
-            Q(name__icontains=search) |
-            Q(description__icontains=search)
-        )
+        searchQ = Q(name__icontains=search) | Q(description__icontains=search)
+        businesses = businesses.filter(searchQ)
         if businesses.count() == 1:
             url_kwargs = {'business': businesses[0].pk}
             url = request.REQUEST.get('next',
                     reverse('view_business', kwargs=url_kwargs))
             return HttpResponseRedirect(url)
-    else:
-        businesses = timepiece.Business.objects.all()
-
     return render(request, 'timepiece/business/list.html', {
         'form': form,
         'businesses': businesses,
@@ -916,45 +915,33 @@ def view_business(request, business):
 def create_edit_business(request, business=None):
     if business:
         business = get_object_or_404(timepiece.Business, pk=business)
-    if request.POST:
-        business_form = timepiece_forms.BusinessForm(
-            request.POST,
-            instance=business,
-        )
-        if business_form.is_valid():
-            business = business_form.save()
-            return HttpResponseRedirect(
-                reverse('view_business', args=(business.pk,))
-            )
-    else:
-        business_form = timepiece_forms.BusinessForm(
-            instance=business
-        )
+    form = timepiece_forms.BusinessForm(request.POST or None,
+            instance=business)
+    if form.is_valid():
+        business = form.save()
+        url = reverse('view_business', args=(business.pk,))
+        return HttpResponseRedirect(url)
     return render(request, 'timepiece/business/create_edit.html', {
         'business': business,
-        'business_form': business_form,
+        'business_form': form,
     })
 
 
 @permission_required('auth.view_user')
 def list_people(request):
     form = timepiece_forms.SearchForm(request.GET)
+    people = User.objects.all().order_by('last_name')
     if form.is_valid() and 'search' in request.GET:
         search = form.cleaned_data['search']
-        people = User.objects.filter(
+        people = people.filter(
             Q(first_name__icontains=search) |
             Q(last_name__icontains=search) |
             Q(email__icontains=search)
         )
         if people.count() == 1:
-            url_kwargs = {
-                'person_id': people[0].id,
-            }
             url = request.REQUEST.get('next',
-                    reverse('view_person', kwargs=url_kwargs))
+                    reverse('view_person', args=(people[0].id,)))
             return HttpResponseRedirect(url)
-    else:
-        people = User.objects.all().order_by('last_name')
     return render(request, 'timepiece/person/list.html', {
         'form': form,
         'people': people.select_related(),
@@ -966,71 +953,41 @@ def list_people(request):
 def view_person(request, person_id):
     person = get_object_or_404(User, pk=person_id)
     add_project_form = timepiece_forms.SelectProjectForm()
-    context = {
+    return render(request, 'timepiece/person/view.html', {
         'person': person,
         'add_project_form': add_project_form,
-    }
-    try:
-        from ledger.models import Exchange
-        context['exchanges'] = Exchange.objects.filter(
-            transactions__project=project,
-        ).distinct().select_related().order_by('type', '-date', '-id',)
-        context['show_delivered_column'] = \
-            context['exchanges'].filter(type__deliverable=True).count() > 0
-    except ImportError:
-        pass
-    return render(request, 'timepiece/person/view.html', context)
+    })
 
 
 @permission_required('auth.add_user')
 @permission_required('auth.change_user')
 def create_edit_person(request, person_id=None):
-    if person_id:
-        person = get_object_or_404(User, pk=person_id)
-    else:
-        person = None
-    if request.POST:
-        if person:
-            person_form = timepiece_forms.EditPersonForm(
-                request.POST,
-                instance=person,
-            )
-        else:
-            person_form = timepiece_forms.CreatePersonForm(request.POST,)
-        if person_form.is_valid():
-            person = person_form.save()
-            url = request.REQUEST.get('next',
-                    reverse('view_person', args=(person.id,)))
-            return HttpResponseRedirect(url)
-    else:
-        if person:
-            person_form = timepiece_forms.EditPersonForm(
-                instance=person,
-            )
-        else:
-            person_form = timepiece_forms.CreatePersonForm()
-
+    person = get_object_or_404(User, pk=person_id) if person_id else None
+    form = timepiece_forms.EditPersonForm(request.POST or None,
+            instance=person)
+    if form.is_valid():
+        person = form.save()
+        url = request.REQUEST.get('next',
+                reverse('view_person', args=(person.id,)))
+        return HttpResponseRedirect(url)
     return render(request, 'timepiece/person/create_edit.html', {
         'person': person,
-        'person_form': person_form,
+        'person_form': form,
     })
 
 
 @permission_required('timepiece.view_project')
 def list_projects(request):
-    form = timepiece_forms.ProjectSearchForm(request.GET)
+    form = timepiece_forms.ProjectSearchForm(request.GET or None)
     if form.is_valid() and ('search' in request.GET or 'status' in
             request.GET):
         search, status = form.save()
-        projects = timepiece.Project.objects.filter(
-            Q(name__icontains=search) | Q(description__icontains=search))
+        query = Q(name__icontains=search) | Q(description__icontains=search)
+        projects = timepiece.Project.objects.filter(query)
         projects = projects.filter(status=status) if status else projects
         if projects.count() == 1:
-            url_kwargs = {
-                'project_id': projects[0].id,
-            }
             url = request.REQUEST.get('next',
-                    reverse('view_project', kwargs=url_kwargs))
+                    reverse('view_project', args=(projects.get().id,)))
             return HttpResponseRedirect(url)
     else:
         projects = timepiece.Project.objects.all()
@@ -1046,21 +1003,10 @@ def list_projects(request):
 def view_project(request, project_id):
     project = get_object_or_404(timepiece.Project, pk=project_id)
     add_user_form = timepiece_forms.SelectUserForm()
-    context = {
+    return render(request, 'timepiece/project/view.html', {
         'project': project,
         'add_user_form': add_user_form,
-    }
-    try:
-        from ledger.models import Exchange
-        context['exchanges'] = Exchange.objects.filter(
-            transactions__project=project,
-        ).distinct().select_related().order_by('type', '-date', '-id',)
-        context['show_delivered_column'] = \
-            context['exchanges'].filter(type__deliverable=True).count() > 0
-    except ImportError:
-        pass
-
-    return render(request, 'timepiece/project/view.html', context)
+    })
 
 
 @csrf_exempt
@@ -1088,7 +1034,7 @@ def add_project_relationship(request, project_id=None, user_id=None):
         timepiece.ProjectRelationship.objects.get_or_create(
                 user=user, project=project)
 
-    if 'next' in request.REQUEST and request.REQUEST['next']:
+    if request.REQUEST.get('next', None):
         return HttpResponseRedirect(request.REQUEST['next'])
     if project_id:
         project_url = reverse('view_project', args=(project_id,))
@@ -1102,19 +1048,15 @@ def add_project_relationship(request, project_id=None, user_id=None):
 @transaction.commit_on_success
 def remove_project_relationship(request, project_id, user_id):
     rel = get_object_or_404(timepiece.ProjectRelationship,
-        user__id=user_id, project__id=project_id
-    )
-    if request.POST:
+            user__id=user_id, project__id=project_id)
+    if request.method == 'POST':
         rel.delete()
-        if request.REQUEST.get('next', ''):
-            return HttpResponseRedirect(request.REQUEST['next'])
-        return HttpResponseRedirect(
-            reverse('view_project', args=(rel.project.pk,))
-        )
+        url = request.REQUEST.get('next',
+                reverse('view_project', args=(rel.project.pk,)))
+        return HttpResponseRedirect(url)
     return render(request, 'timepiece/project/relationship_remove.html', {
         'user': rel.user,
         'project': rel.project,
-        'next': request.REQUEST.get('next', '')
     })
 
 
@@ -1123,21 +1065,17 @@ def remove_project_relationship(request, project_id, user_id):
 def edit_project_relationship(request, project_id, user_id):
     rel = get_object_or_404(timepiece.ProjectRelationship,
             user__id=user_id, project__id=project_id)
-
     data = request.POST if request.method == 'POST' else None
-    relationship_form = timepiece_forms.ProjectRelationshipForm(
-            data, instance=rel)
-    if request.method == 'POST' and relationship_form.is_valid():
-        rel = relationship_form.save()
-        if 'next' in request.REQUEST and request.REQUEST['next']:
-            return HttpResponseRedirect(request.REQUEST['next'])
-        return HttpResponseRedirect(reverse('view_project',
-                args=(project_id,)))
-
+    form = timepiece_forms.ProjectRelationshipForm(data, instance=rel)
+    if request.method == 'POST' and form.is_valid():
+        rel = form.save()
+        url = request.REQUEST.get('next',
+                reverse('view_project', args=(project_id,)))
+        return HttpResponseRedirect(url)
     return render(request, 'timepiece/project/relationship.html', {
         'user': rel.user,
         'project': rel.project,
-        'relationship_form': relationship_form,
+        'relationship_form': form,
     })
 
 
@@ -1211,30 +1149,27 @@ def payroll_summary(request):
 
 @login_required
 def edit_settings(request):
-    next_url = None
-    if request.GET and 'next' in request.GET:
-        next_url = request.GET['next']
-        try:
-            view_info = resolve(next_url)
-        except Http404:
-            next_url = None
-    if not next_url:
-        next_url = reverse('dashboard')
-    profile, created = timepiece.UserProfile.objects.get_or_create(
-        user=request.user)
-    if request.POST:
-        user_form = timepiece_forms.UserForm(
-            request.POST, instance=request.user)
+    user = request.user
+    profile, created = timepiece.UserProfile.objects.get_or_create(user=user)
+    if request.method == 'POST':
+        user_form = timepiece_forms.UserForm(request.POST, instance=user)
         profile_form = timepiece_forms.UserProfileForm(
-            request.POST, instance=profile)
+                request.POST, instance=profile)
         if user_form.is_valid() and profile_form.is_valid():
             user_form.save()
             profile_form.save()
-            messages.info(request, 'Your settings have been updated')
+            messages.info(request, 'Your settings have been updated.')
+            next_url = request.REQUEST.get('next', None)
+            if next_url:
+                try:
+                    resolve(next_url)
+                except Http404:
+                    next_url = None
+            next_url = next_url or reverse('dashboard')
             return HttpResponseRedirect(next_url)
     else:
         profile_form = timepiece_forms.UserProfileForm(instance=profile)
-        user_form = timepiece_forms.UserForm(instance=request.user)
+        user_form = timepiece_forms.UserForm(instance=user)
     return render(request, 'timepiece/person/settings.html', {
         'profile_form': profile_form,
         'user_form': user_form,
@@ -1255,13 +1190,8 @@ class ContractList(ListView):
     template_name = 'timepiece/time-sheet/contract/list.html'
     model = timepiece.ProjectContract
     context_object_name = 'contracts'
-    queryset = timepiece.ProjectContract.objects.filter(
-        status='current'
-    ).select_related(
-        'project'
-    ).order_by(
-        'project__name'
-    )
+    queryset = timepiece.ProjectContract.objects.filter(status='current')\
+            .select_related('project').order_by('project__name')
 
     @method_decorator(permission_required('timepiece.add_project_contract'))
     def dispatch(self, *args, **kwargs):
@@ -1279,7 +1209,7 @@ class DeleteView(TemplateView):
         for permission in self.permissions:
             if not request.user.has_perm(permission):
                 messages.info(request,
-                        'You do not have permission to access that')
+                        'You do not have permission to access that.')
                 return HttpResponseRedirect(
                         utils.reverse_lazy('dashboard'))
         return super(DeleteView, self).dispatch(request, *args, **kwargs)
@@ -1287,11 +1217,11 @@ class DeleteView(TemplateView):
     def post(self, request, *args, **kwargs):
         instance = self.get_queryset(**kwargs)
         form = self.form_class(request.POST, instance=instance)
-        msg = '{0} could not be successfully deleted'.format(instance)
+        msg = '{0} could not be successfully deleted.'.format(instance)
 
         if form.is_valid():
             if form.save():
-                msg = '{0} was successfully deleted'.format(instance)
+                msg = '{0} was successfully deleted.'.format(instance)
 
         messages.info(request, msg)
         return HttpResponseRedirect(utils.reverse_lazy(self.url_name))
@@ -1328,14 +1258,8 @@ class DeleteProjectView(DeleteView):
     permissions = ('timepiece.add_project', 'timepiece.change_project',)
 
 
-class DecimalEncoder(json.JSONEncoder):
-    def default(self, obj):
-        if isinstance(obj, Decimal):
-            return float(obj)
-        return super(DecimalEncoder, self).default(obj)
-
-
 class ReportMixin(object):
+
     @method_decorator(permission_required('timepiece.view_entry_summary'))
     def dispatch(self, request, *args, **kwargs):
         return super(ReportMixin, self).dispatch(request, *args, **kwargs)
@@ -1344,8 +1268,8 @@ class ReportMixin(object):
         context = super(ReportMixin, self).get_context_data(**kwargs)
 
         end = utils.get_month_start(timezone.now())
-        from_date, to_date = utils.process_dates(self.request.GET,
-            end - relativedelta(months=1), end)
+        start = end - relativedelta(months=1)
+        from_date, to_date = utils.process_dates(self.request.GET, start, end)
 
         date_form = timepiece_forms.DateForm({
             'from_date': from_date,
@@ -1404,7 +1328,7 @@ class HourlyReport(ReportMixin, CSVMixin, TemplateView):
             context['trunc'])
 
     def convert_context_to_csv(self, context):
-        "Convert the context dictionary into a CSV file"
+        """Convert the context dictionary into a CSV file"""
         content = []
         date_headers = context['date_headers']
 
@@ -1536,9 +1460,8 @@ class ProjectHoursView(ProjectHoursMixin, TemplateView):
     def get_context_data(self, **kwargs):
         context = super(ProjectHoursView, self).get_context_data(**kwargs)
 
-        form = timepiece_forms.ProjectHoursSearchForm(initial={
-            'week_start': self.week_start
-        })
+        initial = {'week_start': self.week_start}
+        form = timepiece_forms.ProjectHoursSearchForm(initial=initial)
 
         project_hours = utils.get_project_hours_for_week(self.week_start) \
             .filter(published=True)
@@ -1747,19 +1670,12 @@ class ProjectHoursDetailView(ProjectHoursMixin, View):
     permissions = ('timepiece.add_projecthours',)
 
     def delete(self, request, *args, **kwargs):
-        """
-        Remove a project from the database
-        """
+        """Remove a project from the database."""
         pk = kwargs.get('pk', None)
 
         if pk:
-            try:
-                ph = timepiece.ProjectHours.objects.get(pk=pk)
-            except timepiece.ProjectHours.DoesNotExist:
-                pass
-            else:
-                ph.delete()
-                return HttpResponse('ok', mimetype='text/plain')
+            timepiece.ProjectHours.objects.filter(pk=pk).delete()
+            return HttpResponse('ok', mimetype='text/plain')
 
         return HttpResponse('', status=500)
 
