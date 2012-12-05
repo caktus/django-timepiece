@@ -65,14 +65,10 @@ function createOverallProgress(worked, assigned) {
 
 
 function createProjectProgress(worked, assigned) {
-    if (assigned <= 0) {
-        return 'You have no assigned hours for this project this week.';
-    }
-
     var chart = $('<div class="progress-wrapper" />');
 
     // Worked bar.
-    if (worked > 0) {  // Skip if only overtime bar is needed.
+    if (worked > 0 && assigned > 0) {  // Skip if only overtime bar is needed.
         var worked_percent;
         if (worked <= assigned) {
             worked_percent = Math.min(1, worked / assigned);
@@ -112,7 +108,12 @@ function createProjectProgress(worked, assigned) {
     $.each($('.project-bar'), function() {
         var self = $(this),
             worked = self.data('worked'),
-            assigned = self.data('assigned');
-        self.append(createProjectProgress(worked, assigned));
+            assigned = self.data('assigned'),
+            local_max = Math.max(worked, assigned),
+            width = Math.min(100, local_max / max_hours * 100),
+            bar = createProjectProgress(worked, assigned);
+
+        bar.attr('style', 'width: ' + width + '%');
+        self.append(bar);
     });
 })();
