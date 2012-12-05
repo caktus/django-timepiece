@@ -63,6 +63,10 @@
                         data-assigned="{{ total_assigned }}">
                     </div>
                 </div>
+                <script>
+                    // The largest number of hours worked or assigned on any project.
+                    var max_hours = {% get_max_hours %};
+                </script>
                 {% if project_progress %}
                     <table id="project-progress" class="table table-striped table-bordered">
                         <thead>
