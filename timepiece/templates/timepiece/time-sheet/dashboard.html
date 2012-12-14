@@ -85,8 +85,8 @@
                             {% for data in project_progress %}
                                 <tr>
                                     <td><a href="{% url 'timepiece-clock-in' %}?project={{ data.project.pk }}">{{ data.project }}</a></td>
-                                    <td>{{ data.assigned|convert_hours_to_seconds|humanize_seconds:"%H:%M" }}</td>
-                                    <td>{{ data.worked|convert_hours_to_seconds|humanize_seconds:"%H:%M" }}</td>
+                                    <td class="nowrap">{{ data.assigned|convert_hours_to_seconds|humanize_seconds:"%H:%M" }}</td>
+                                    <td class="nowrap">{{ data.worked|convert_hours_to_seconds|humanize_seconds:"%H:%M" }}</td>
                                     <td class="desktop progress-col project-bar"
                                         data-worked = "{{ data.worked }}"
                                         data-assigned = "{{ data.assigned }}">
@@ -114,12 +114,13 @@
                                 <th>To</th>
                                 <th class="desktop">Pause Time</th>
                                 <th class="desktop">Total Time</th>
+                                <th class="desktop">Comment</th>
                             </tr>
                         </thead>
                         <tbody>
                         {% for entry in week_entries %}
-                            <tr>
-                                <td>
+                            <tr rel="tooltip" title="{{ entry.comments|escape }}">
+                                <td class="nowrap">
                                     {% ifchanged entry.start_time|date %}
                                         {{ entry.start_time|date:"D" }}
                                     {% endifchanged %}
@@ -135,16 +136,23 @@
                                     {{ entry.project }}
                                 </td>
                                 <td class="desktop">{{ entry.activity.name }}</td>
-                                <td class="time break">{{ entry.start_time|date:"g:i A" }}</td>
-                                <td class="time break">
+                                <td class="nowrap">{{ entry.start_time|date:"h:i A" }}</td>
+                                <td class="nowrap">
                                     {% if entry.end_time %}
-                                        {{ entry.end_time|date:"g:i A" }}
+                                        {{ entry.end_time|date:"h:i A" }}
                                     {% else %}
                                         current
                                     {% endif %}
                                 </td>
-                                <td class="desktop time break">{{ entry.get_paused_seconds|humanize_seconds }}</td>
-                                <td class="desktop time break">{{ entry.get_total_seconds|humanize_seconds|slice:":-3" }}</td>
+                                <td class="desktop nowrap">
+                                    {% with entry.get_paused_seconds as pause_time %}
+                                        {% if pause_time %}
+                                            {{ pause_time|humanize_seconds }}
+                                        {% endif %}
+                                    {% endwith %}
+                                </td>
+                                <td class="desktop nowrap">{{ entry.get_total_seconds|humanize_seconds|slice:":-3" }}</td>
+                                <td class="desktop">{{ entry.comments|truncatechars:40 }}</td>
                             </tr>
                         {% endfor %}
                         </tbody>
@@ -167,7 +175,7 @@
                                 <tr>
                                     <td><i class="icon-user"></i> {{ entry.user.first_name }} {{ entry.user.last_name }}</td>
                                     <td><span class="desktop">{{ entry.activity.name }} for </span>{{ entry.project }}</td>
-                                    <td class="desktop">
+                                    <td class="desktop nowrap">
                                         {{ entry.start_time|date:"g:i A" }}
                                         {% ifnotequal entry.start_time.date today %}
                                             {% if entry.start_time.date < week_start or entry.start_time.date > week_end %}
