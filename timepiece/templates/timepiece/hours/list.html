@@ -34,7 +34,12 @@
     <div class="row-fluid">
         <div class="span12">
             {% if projects %}
-                <table class="table-striped table-bordered table-condensed">
+                <table id="schedule" class="table table-bordered table-condensed">
+                    {# Number of columns = len(people) + 1 #}
+                    <colgroup></colgroup>
+                    {% for person in people %}
+                        <colgroup></colgroup>
+                    {% endfor %}
                     <thead>
                         <tr>
                             <th>Project</th>
@@ -46,7 +51,7 @@
                     <tbody>
                         {% for id, name, entries in projects %}
                             <tr>
-                                <td><strong>{{ name }}</strong></td>
+                                <th>{{ name }}</th>
                                 {% for entry in entries %}
                                     <td class="hours">
                                         {% if entry %}{{ entry|floatformat:0 }}{% endif %}
@@ -56,6 +61,19 @@
                         {% endfor %}
                     </tbody>
                 </table>
+                <script>
+                    // Highlight the current row & column in the schedule.
+                    $('#schedule').delegate('td, th', 'mouseover mouseout', function(event) {
+                        var self = $(this);
+                        if (event.type === 'mouseover') {
+                            self.parent().addClass('hover');
+                            $('colgroup').eq(self.index()).addClass('hover');
+                        } else {
+                            self.parent().removeClass('hover');
+                            $('colgroup').eq(self.index()).removeClass('hover');
+                        }
+                    });
+                </script>
             {% else %}
                 <p>There are no entries this week.</p>
             {% endif %}
