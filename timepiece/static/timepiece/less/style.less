@@ -580,8 +580,12 @@ body {
             text-align: center !important;
         }
         #schedule {
+            // Manual table striping with lighter-than-default color.
+            tbody tr:nth-child(odd) td, tbody tr:nth-child(odd) th {
+                background-color: #eeeeee;
+            }
             .hover {
-                background-color: #eee;
+                background-color: #e2e2f3 !important;
             }
         }
     }

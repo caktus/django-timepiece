@@ -35,11 +35,6 @@
         <div class="span12">
             {% if projects %}
                 <table id="schedule" class="table table-bordered table-condensed">
-                    {# Number of columns = len(people) + 1 #}
-                    <colgroup></colgroup>
-                    {% for person in people %}
-                        <colgroup></colgroup>
-                    {% endfor %}
                     <thead>
                         <tr>
                             <th>Project</th>
@@ -62,15 +57,17 @@
                     </tbody>
                 </table>
                 <script>
-                    // Highlight the current row & column in the schedule.
+                    // Highlight the current row & column in the schedule on hover.
                     $('#schedule').delegate('td, th', 'mouseover mouseout', function(event) {
                         var self = $(this);
                         if (event.type === 'mouseover') {
-                            self.parent().addClass('hover');
-                            $('colgroup').eq(self.index()).addClass('hover');
+                            self.parent().find('td, th').addClass('hover');
+                            $('#schedule tr td:nth-child(' + (self.index() + 1) + ')').addClass('hover');
+                            $('#schedule tr th:nth-child(' + (self.index() + 1) + ')').addClass('hover');
                         } else {
-                            self.parent().removeClass('hover');
-                            $('colgroup').eq(self.index()).removeClass('hover');
+                            self.parent().find('td, th').removeClass('hover');
+                            $('#schedule tr td:nth-child(' + (self.index() + 1) + ')').removeClass('hover');
+                            $('#schedule tr th:nth-child(' + (self.index() + 1) +')').removeClass('hover');
                         }
                     });
                 </script>
