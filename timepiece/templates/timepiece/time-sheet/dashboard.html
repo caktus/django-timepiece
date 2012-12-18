@@ -102,61 +102,64 @@
             <script src="{{ STATIC_URL }}timepiece/js/dashboard.js"></script>
 
             <div class="tab-pane{% if active_tab == 'all-entries' %} active{% endif %}" id="all-entries">
-                <a class="btn add-entry" href="{% url 'timepiece-add' %}" id="add-entry">Add Entry</a>
                 {% if week_entries %}
-                    <table class="table table-striped table-bordered" style="margin-top:10px;">
-                        <thead>
-                            <tr>
-                                <th>Date</th>
-                                <th>Project</th>
-                                <th class="desktop">Activity</th>
-                                <th>From</th>
-                                <th>To</th>
-                                <th class="desktop">Pause Time</th>
-                                <th class="desktop">Total Time</th>
-                                <th class="desktop">Comment</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                        {% for entry in week_entries %}
-                            <tr rel="tooltip" title="{{ entry.comments|escape }}">
-                                <td class="nowrap">
-                                    {% ifchanged entry.start_time|date %}
-                                        {{ entry.start_time|date:"D" }}
-                                    {% endifchanged %}
-                                </td>
-                                <td>
-                                    {% if entry.status == "unverified" %}
-                                        {% url 'dashboard' active_tab='all-entries' as next %}
-                                        <a href="{% url 'timepiece-update' entry.id %}?next={{ next|urlencode }}"><i class="icon-pencil"></i></a>
-                                        <a href="{% url 'timepiece-delete' entry.id %}?next={{ next|urlencode }}"><i class="icon-remove"></i></a>
-                                    {% else %}
-                                        <span class="label label-success"><i class="icon-ok icon-white"></i></span>
-                                    {% endif %}
-                                    {{ entry.project }}
-                                </td>
-                                <td class="desktop">{{ entry.activity.name }}</td>
-                                <td class="nowrap">{{ entry.start_time|date:"h:i A" }}</td>
-                                <td class="nowrap">
-                                    {% if entry.end_time %}
-                                        {{ entry.end_time|date:"h:i A" }}
-                                    {% else %}
-                                        current
-                                    {% endif %}
-                                </td>
-                                <td class="desktop nowrap">
-                                    {% with entry.get_paused_seconds as pause_time %}
-                                        {% if pause_time %}
-                                            {{ pause_time|humanize_seconds }}
-                                        {% endif %}
-                                    {% endwith %}
-                                </td>
-                                <td class="desktop nowrap">{{ entry.get_total_seconds|humanize_seconds|slice:":-3" }}</td>
-                                <td class="desktop">{{ entry.comments|truncatechars:40 }}</td>
-                            </tr>
-                        {% endfor %}
-                        </tbody>
-                    </table>
+                    {% regroup week_entries by start_time|date:'l, F j' as daily_entries %}
+                    {% for day in daily_entries %}
+                        <h4>{{ day.grouper }}</h4>
+                        <table class="table table-striped table-bordered" style="margin-top:10px;">
+                            <thead>
+                                <tr>
+                                    <th>Project</th>
+                                    <th class="desktop">Activity</th>
+                                    <th>From</th>
+                                    <th>To</th>
+                                    <th class="desktop">Pause Time</th>
+                                    <th class="desktop">Total Time</th>
+                                    <th class="desktop">Comment</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for entry in day.list %}
+                                    <tr rel="tooltip" title="{{ entry.comments|escape }}">
+                                        <td>
+                                            {% if entry.status == "unverified" %}
+                                                {% url 'dashboard' active_tab='all-entries' as next %}
+                                                <a href="{% url 'timepiece-update' entry.id %}?next={{ next|urlencode }}"><i class="icon-pencil"></i></a>
+                                                <a href="{% url 'timepiece-delete' entry.id %}?next={{ next|urlencode }}"><i class="icon-remove"></i></a>
+                                            {% else %}
+                                                <span class="label label-success"><i class="icon-ok icon-white"></i></span>
+                                            {% endif %}
+                                            {{ entry.project }}
+                                        </td>
+                                        <td class="desktop">{{ entry.activity.name }}</td>
+                                        <td class="nowrap">{{ entry.start_time|date:"h:i A" }}</td>
+                                        <td class="nowrap">
+                                            {% if entry.end_time %}
+                                                {{ entry.end_time|date:"h:i A" }}
+                                            {% else %}
+                                                current
+                                            {% endif %}
+                                        </td>
+                                        <td class="desktop nowrap">
+                                            {% with entry.get_paused_seconds as pause_time %}
+                                                {% if pause_time %}
+                                                    {{ pause_time|humanize_seconds }}
+                                                {% endif %}
+                                            {% endwith %}
+                                        </td>
+                                        <td class="desktop nowrap">{{ entry.get_total_seconds|humanize_seconds|slice:":-3" }}</td>
+                                        <td class="desktop">{{ entry.comments|truncatechars:50 }}</td>
+                                    </tr>
+                                {% endfor %}
+                                {% sum_hours day.list as daily_total %}
+                                <tr class="desktop">
+                                    <th colspan="5" style="text-align: right;">Total:</th>
+                                    <td>{{ daily_total|humanize_seconds|slice:":-3" }}</td>
+                                    <td></td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    {% endfor %}
                 {% else %}
                     <p>No entries exist for this week.</p>
                 {% endif %}
