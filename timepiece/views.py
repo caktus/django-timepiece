@@ -1129,7 +1129,7 @@ def payroll_summary(request):
     month_entries_valid = month_entries.filter(monthQ, statusQ, workQ)
     labels, monthly_totals = utils.payroll_totals(month_entries_valid, leave)
     # Unapproved and unverified hours
-    entries = timepiece.Entry.objects.filter(monthQ).order_by() # No ordering
+    entries = timepiece.Entry.objects.filter(monthQ).order_by()  # No ordering
     user_values = ['user__pk', 'user__first_name', 'user__last_name']
     unverified = entries.filter(status='unverified', user__is_active=True) \
                         .values_list(*user_values).distinct()
@@ -1699,7 +1699,7 @@ def productivity_report(request):
 
         if organize_by == 'week' and entry_count > 0:
             # Determine the project's time range.
-            amin = None; amax = None; pmin = None; pmax = None
+            amin, amax, pmin, pmax = (None, None, None, None)
             if actuals.count() > 0:
                 amin = actuals.aggregate(Min('start_time')).values()[0]
                 amin = utils.get_week_start(amin).date()

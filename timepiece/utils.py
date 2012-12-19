@@ -22,6 +22,8 @@ reverse_lazy = lazy(reverse, str)
 
 
 defaults = TimepieceDefaults()
+
+
 def get_setting(name, **kwargs):
     if hasattr(settings, name):
         return getattr(settings, name)

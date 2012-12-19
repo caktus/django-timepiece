@@ -25,7 +25,8 @@ class ProjectHoursTestCase(TimepieceDataTestCase):
         )
         self.user.user_permissions = permissions
         self.user.save()
-        self.superuser = self.create_user('super', 's@abc.com', 'abc', is_superuser=True)
+        self.superuser = self.create_user('super', 's@abc.com', 'abc',
+                is_superuser=True)
 
         self.tracked_status = self.create_project_status(data={
                 'label': 'Current', 'billable': True,
