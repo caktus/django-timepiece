@@ -28,11 +28,12 @@ function createBar(type, percent, label) {
 }
 
 function createOverallProgress(worked, assigned) {
-    var chart = $('<div class="progress" />');
+    var chart = $('<div class="progress" />'),
+        worked_percent = 0;
 
     // Worked bar.
     if (worked > 0 && assigned > 0) {  // Skip if only remaining or overtime bar is needed.
-        var worked_percent, worked_text;
+        var worked_text;
         if (worked <= assigned) {
             worked_percent = Math.min(1, worked / assigned);
             worked_text = humanizeTime(worked) + ' Worked';
@@ -40,23 +41,21 @@ function createOverallProgress(worked, assigned) {
             worked_percent = Math.min(1, assigned / worked);
             worked_text = humanizeTime(assigned) + ' Worked';
         }
-        worked_percent = Math.floor(worked_percent.toFixed(5) * 100);
+        worked_percent = Math.floor(worked_percent * 100);
         chart.append(createBar('bar bar-success', worked_percent, worked_text));
     }
 
     // Overtime bar.
     if (worked > assigned) {
-        var overtime_percent = Math.min(1, 1 - assigned / worked),
+        var overtime_percent = 100 - worked_percent,
             overtime_text = humanizeTime(worked - assigned) + ' Overtime';
-        overtime_percent = Math.ceil(overtime_percent.toFixed(5) * 100);
         chart.append(createBar('bar bar-danger', overtime_percent, overtime_text));
     }
 
     // Remaining bar.
     if (worked < assigned) {
-        var remaining_percent = Math.min(1, 1 - worked / assigned),
+        var remaining_percent = 100 - worked_percent,
             remaining_text = humanizeTime(assigned - worked) + ' Remaining';
-        remaining_percent = Math.ceil(remaining_percent.toFixed(5) * 100);
         chart.append(createBar('remaining', remaining_percent, remaining_text));
     }
 
@@ -65,7 +64,8 @@ function createOverallProgress(worked, assigned) {
 
 
 function createProjectProgress(worked, assigned) {
-    var chart = $('<div class="progress-wrapper" />');
+    var chart = $('<div class="progress-wrapper" />'),
+        worked_percent = 0;
 
     // Worked bar.
     if (worked > 0 && assigned > 0) {  // Skip if only overtime bar is needed.
@@ -75,21 +75,19 @@ function createProjectProgress(worked, assigned) {
         } else {
             worked_percent = Math.min(1, assigned / worked);
         }
-        worked_percent = Math.floor(worked_percent.toFixed(5) * 100);
+        worked_percent = Math.floor(worked_percent * 100);
         chart.append(createBar('worked', worked_percent, '&nbsp'));
     }
 
     // Overtime bar.
     if (worked > assigned) {
-        var overtime_percent = Math.min(1, 1 - assigned / worked);
-        overtime_percent = Math.ceil(overtime_percent.toFixed(5) * 100);
+        var overtime_percent = 100 - worked_percent;
         chart.append(createBar('overtime', overtime_percent, '&nbsp'));
     }
 
     // Remaining bar.
     if (worked < assigned) {
-        var remaining_percent = Math.min(1, 1 - worked / assigned);
-        remaining_percent = Math.ceil(remaining_percent.toFixed(5) * 100);
+        var remaining_percent = 100 - worked_percent;
         chart.append(createBar('remaining', remaining_percent, '&nbsp'));
     }
 
