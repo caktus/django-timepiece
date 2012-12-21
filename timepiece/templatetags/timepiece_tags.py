@@ -18,6 +18,11 @@ from timepiece import utils
 register = template.Library()
 
 
+@register.assignment_tag
+def sum_hours(entries):
+    return sum([e.get_total_seconds() for e in entries])
+
+
 @register.filter
 def multiply(a, b):
     return float(a) * float(b)
