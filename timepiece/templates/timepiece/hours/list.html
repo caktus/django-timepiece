@@ -34,7 +34,7 @@
     <div class="row-fluid">
         <div class="span12">
             {% if projects %}
-                <table class="table-striped table-bordered table-condensed">
+                <table id="schedule" class="table table-bordered table-condensed">
                     <thead>
                         <tr>
                             <th>Project</th>
@@ -46,7 +46,7 @@
                     <tbody>
                         {% for id, name, entries in projects %}
                             <tr>
-                                <td><strong>{{ name }}</strong></td>
+                                <th>{{ name }}</th>
                                 {% for entry in entries %}
                                     <td class="hours">
                                         {% if entry %}{{ entry|floatformat:0 }}{% endif %}
@@ -56,6 +56,21 @@
                         {% endfor %}
                     </tbody>
                 </table>
+                <script>
+                    // Highlight the current row & column in the schedule on hover.
+                    $('#schedule').delegate('td, th', 'mouseover mouseout', function(event) {
+                        var self = $(this);
+                        if (event.type === 'mouseover') {
+                            self.parent().find('td, th').addClass('hover');
+                            $('#schedule tr td:nth-child(' + (self.index() + 1) + ')').addClass('hover');
+                            $('#schedule tr th:nth-child(' + (self.index() + 1) + ')').addClass('hover');
+                        } else {
+                            self.parent().find('td, th').removeClass('hover');
+                            $('#schedule tr td:nth-child(' + (self.index() + 1) + ')').removeClass('hover');
+                            $('#schedule tr th:nth-child(' + (self.index() + 1) +')').removeClass('hover');
+                        }
+                    });
+                </script>
             {% else %}
                 <p>There are no entries this week.</p>
             {% endif %}
