@@ -10,6 +10,7 @@ Related issues are in the `0.7.3 milestone
 *Features*
 
 * Row and column highlighting on weekly schedule
+* Use checkbox select multiple for editing groups on person add/edit forms
 * Permanent links to dashboard tabs
 * Dashboard project progress table
 
@@ -35,6 +36,7 @@ Related issues are in the `0.7.3 milestone
 * Prevent negative worked/assigned time on project progress bars
 * Fix project progress bar behavior when worked = 0 and assigned = 0 (e.g.,
   just after clocking into an unassigned project)
+* Allow editing groups on person edit page
 
 0.7.2 (Released 11-28-2012)
 ---------------------------
