@@ -14,11 +14,11 @@
                             <ul class="dropdown-menu">
                                 <li><a href="{% url 'timepiece-clock-in' %}">Clock in...</a></li>
                                 <li><a href="{% url 'timepiece-add' %}">Add Entry...</a></li>
-                                <li class="divider"></li>
+                                {% if work_projects %}<li class="divider"></li>{% endif %}
                                 {% for project in work_projects %}
                                     <li><a href="{% url 'timepiece-clock-in' %}?project={{ project.id }}">{{ project }}</a></li>
                                 {% endfor %}
-                                <li class="divider"></li>
+                                {% if leave_projects %}<li class="divider"></li>{% endif %}
                                 {% for project in leave_projects %}
                                     <li><a href="{% url 'timepiece-clock-in' %}?project={{ project.id }}">{{ project }}</a></li>
                                 {% endfor %}

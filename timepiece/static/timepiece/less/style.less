@@ -490,18 +490,20 @@ body {
         }
         #project-progress {
             margin-top: 18px;
-            table-layout: fixed;
-            td, th {
-                overflow: hidden;
-            }
-            #active-project {
-                background-color: #F2FBEF;
-            }
-            .progress-col {
-                width: 50%;
-                .bar, .remaining {
-                    text-indent: 100%;
-                    white-space: nowrap;
+            table {
+                table-layout: fixed;
+                td, th {
+                    overflow: hidden;
+                }
+                #active-project {
+                    background-color: #F2FBEF;
+                }
+                .progress-col {
+                    width: 50%;
+                    .bar, .remaining {
+                        text-indent: 100%;
+                        white-space: nowrap;
+                    }
                 }
             }
         }
