@@ -49,14 +49,14 @@ function createProgressChart(worked, assigned) {
         }
         worked_percent = Math.floor(worked_percent * 100);
         worked_percent = Math.max(1, worked_percent)  // Display minimum of 1%.
-        chart.append(createBar('bar bar-success', worked_percent, worked_text));
+        chart.append(createBar('bar bar-worked', worked_percent, worked_text));
     }
 
     // Overtime bar.
     if (worked >= assigned) {
         var overtime_percent = 100 - worked_percent,
             overtime_text = humanizeTime(worked - assigned) + ' Overtime';
-        chart.append(createBar('bar bar-danger', overtime_percent, overtime_text));
+        chart.append(createBar('bar bar-overtime', overtime_percent, overtime_text));
     }
 
     // Remaining bar.
