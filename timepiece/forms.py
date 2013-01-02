@@ -59,12 +59,17 @@ class ProjectFiltersForm(forms.Form):
 
 
 class CreatePersonForm(auth_forms.UserCreationForm):
+
+    def __init__(self, *args, **kwargs):
+        super(CreatePersonForm, self).__init__(*args, **kwargs)
+
+        self.fields['groups'].widget = forms.CheckboxSelectMultiple()
+        self.fields['groups'].help_text = None
+
     class Meta:
         model = auth_models.User
-        fields = (
-            "username", "first_name", "last_name",
-            "email", "is_active", "is_staff", "groups"
-        )
+        fields = ('username', 'first_name', 'last_name', 'email', 'is_active',
+                'is_staff', 'groups')
 
 
 class EditPersonForm(auth_forms.UserChangeForm):
@@ -76,6 +81,9 @@ class EditPersonForm(auth_forms.UserChangeForm):
 
     def __init__(self, *args, **kwargs):
         super(EditPersonForm, self).__init__(*args, **kwargs)
+
+        self.fields['groups'].widget = forms.CheckboxSelectMultiple()
+        self.fields['groups'].help_text = None
 
         # In 1.4 this field is created even if it is excluded in Meta.
         if 'password' in self.fields:
@@ -106,7 +114,7 @@ class EditPersonForm(auth_forms.UserChangeForm):
     class Meta:
         model = auth_models.User
         fields = ('username', 'first_name', 'last_name', 'email', 'is_active',
-                'is_staff')
+                'is_staff', 'groups')
 
 
 class QuickSearchForm(forms.Form):
