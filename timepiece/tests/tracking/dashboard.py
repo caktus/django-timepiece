@@ -241,7 +241,7 @@ class ProcessProgressTestCase(TimepieceDataTestCase):
             start_time = datetime.datetime(2012, 11, 5 + i, 8, 0)
             end_time = datetime.datetime(2012, 11, 5 + i, 12, 0)
             entry = self._create_entry(start_time, end_time, projects[i])
-            assignment = self._create_hours(5 + 5*i, projects[i])
+            assignment = self._create_hours(5 + 5 * i, projects[i])
 
         progress = self._get_progress()
         self.assertEqual(len(progress), 3)

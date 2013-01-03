@@ -1,3 +1,6 @@
+from django.core.urlresolvers import reverse
+from django.http import HttpResponsePermanentRedirect
+
 try:
     from django.conf.urls import patterns, include, url
 except ImportError:
@@ -7,7 +10,10 @@ from timepiece import views
 
 
 urlpatterns = patterns('',
-    url(r'^$', views.dashboard, name='dashboard'),
+    url(r'^$', lambda request: HttpResponsePermanentRedirect(reverse('dashboard'))),
+    url(r'^dashboard/(?:(?P<active_tab>progress|all-entries|online-users)/)?$',
+        views.dashboard, name='dashboard'),
+
     url(r'^clockin/$', views.clock_in, name='timepiece-clock-in'),
     url(r'^clockout/(?P<entry_id>\d+)/$', views.clock_out,
         name='timepiece-clock-out'),

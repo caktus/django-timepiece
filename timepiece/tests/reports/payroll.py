@@ -1,4 +1,5 @@
 import datetime
+from dateutil.relativedelta import relativedelta
 from decimal import Decimal
 
 from django.conf import settings
@@ -14,8 +15,6 @@ from timepiece import models as timepiece
 from timepiece import forms as timepiece_forms
 from timepiece import utils
 from timepiece.tests.base import TimepieceDataTestCase
-
-from dateutil.relativedelta import relativedelta
 
 
 class PayrollTest(TimepieceDataTestCase):
