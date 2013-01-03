@@ -22,6 +22,7 @@ from timepiece import utils
 
 
 class TimepieceDataTestCase(TestCase):
+
     def create_business(self, data=None):
         data = data or {}
         name = self.random_string(30, extra_chars=' ')
