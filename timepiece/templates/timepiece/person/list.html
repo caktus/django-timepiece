@@ -39,6 +39,7 @@
                         <th>Last Name</th>
                         <th>Email</th>
                         <th>Timesheet</th>
+                        <th>Active</th>
                     </tr>
                 </thead>
                 <tbody>
@@ -50,6 +51,13 @@
                             <td>{{ person.email }}</td>
 
                             <td><a href="{% url 'view_person_time_sheet' person.pk %}">View Timesheet</a></td>
+                            <td>
+                                {% if person.is_active %}
+                                    <span class="label label-success"><i class="icon-white icon-ok"></i></span>
+                                {% else %}
+                                    <span class="label label-important"><i class="icon-white icon-remove"></i></span>
+                                {% endif %}
+                            </td>
                         </tr>
                     {% endfor %}
                 </tbody>
