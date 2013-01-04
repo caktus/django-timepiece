@@ -1,8 +1,8 @@
 Release Notes
 =============
 
-0.7.3 (Unreleased)
-------------------
+0.7.3 (Released 01-04-2013)
+---------------------------
 
 Related issues are in the `0.7.3 milestone
 <https://github.com/caktus/django-timepiece/issues?milestone=30&page=1&state=closed>`_.
@@ -29,6 +29,10 @@ Related issues are in the `0.7.3 milestone
 
 *Bugfixes*
 
+* Fixed bugs in handling filters on the hourly report
+* Only summarize entries in the time period requested on hourly & billable
+  reports (previously, entries for the entire week which includes the from
+  date were included)
 * Fixed bug which prevented projects being removed from the hourly report filter
 * Keep GET parameters when deleting entry (allows proper redirection)
 * Use ``history.back()`` on cancel buttons on clock in, clock out, and add
