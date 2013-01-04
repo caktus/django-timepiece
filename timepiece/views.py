@@ -1422,13 +1422,8 @@ class BillableHours(ReportMixin, TemplateView):
 
 
 class ProjectHoursMixin(object):
-    permissions = None
 
     def dispatch(self, request, *args, **kwargs):
-        for perm in self.permissions:
-            if not request.user.has_perm(perm):
-                return HttpResponseRedirect(reverse('auth_login'))
-
         # Since we use get param in multiple places, attach it to the class
         default_week = utils.get_week_start(datetime.date.today()).date()
 
@@ -1443,7 +1438,7 @@ class ProjectHoursMixin(object):
                 week_start_str, '%Y-%m-%d').date())
 
         return super(ProjectHoursMixin, self).dispatch(request, *args,
-            **kwargs)
+                **kwargs)
 
     def get_hours_for_week(self, start=None):
         week_start = start if start else self.week_start
@@ -1455,7 +1450,12 @@ class ProjectHoursMixin(object):
 
 class ProjectHoursView(ProjectHoursMixin, TemplateView):
     template_name = 'timepiece/hours/list.html'
-    permissions = ('timepiece.can_clock_in',)
+
+    def dispatch(self, request, *args, **kwargs):
+        if not request.user.has_perm('timepiece.can_clock_in'):
+            return HttpResponseRedirect(reverse('auth_login'))
+
+        return super(ProjectHoursView, self).dispatch(request, *args, **kwargs)
 
     def get_context_data(self, **kwargs):
         context = super(ProjectHoursView, self).get_context_data(**kwargs)
@@ -1495,7 +1495,13 @@ class ProjectHoursView(ProjectHoursMixin, TemplateView):
 
 class EditProjectHoursView(ProjectHoursMixin, TemplateView):
     template_name = 'timepiece/hours/edit.html'
-    permissions = ('timepiece.add_projecthours',)
+
+    def dispatch(self, request, *args, **kwargs):
+        if not request.user.has_perm('timepiece.add_projecthours'):
+            return HttpResponseRedirect(reverse('project_hours'))
+
+        return super(EditProjectHoursView, self).dispatch(request, *args,
+                **kwargs)
 
     def get_context_data(self, **kwargs):
         context = super(EditProjectHoursView, self).get_context_data(**kwargs)
