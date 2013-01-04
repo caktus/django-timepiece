@@ -1259,76 +1259,135 @@ class DeleteProjectView(DeleteView):
 
 
 class ReportMixin(object):
+    """Common data for the Hourly & Billable Hours reports."""
 
     @method_decorator(permission_required('timepiece.view_entry_summary'))
     def dispatch(self, request, *args, **kwargs):
         return super(ReportMixin, self).dispatch(request, *args, **kwargs)
 
     def get_context_data(self, **kwargs):
+        """Processes form data to get relevant entries & date_headers."""
         context = super(ReportMixin, self).get_context_data(**kwargs)
 
-        end = utils.get_month_start(timezone.now())
-        start = end - relativedelta(months=1)
-        from_date, to_date = utils.process_dates(self.request.GET, start, end)
+        form = self.get_form()
+        if form.is_valid():
+            data = form.cleaned_data
+            start, end = form.save()
+            entryQ = self.get_entry_query(start, end, data)
+            trunc = data['trunc']
+            if entryQ:
+                vals = ('activity', 'project__status', 'pk')
+                entries = timepiece.Entry.objects.date_trunc(trunc,
+                        extra_values=vals).filter(entryQ)
+            else:
+                entries = timepiece.Entry.objects.none()
 
-        date_form = timepiece_forms.DateForm({
-            'from_date': from_date,
-            'to_date': to_date
-        })
-        if date_form.is_valid():
-            from_date, to_date = date_form.save()
+            end = end - relativedelta(days=1)
+            date_headers = utils.generate_dates(start, end, by=trunc)
+            context.update({
+                'from_date': start,
+                'to_date': end,
+                'date_headers': date_headers,
+                'entries': entries,
+                'filter_form': form,
+                'trunc': trunc,
+            })
+        else:
+            context.update({
+                'from_date': None,
+                'to_date': None,
+                'date_headers': [],
+                'entries': timepiece.Entry.objects.none(),
+                'filter_form': form,
+                'trunc': '',
+            })
 
-        header_to = to_date - relativedelta(days=1)
-        trunc = timepiece_forms.ProjectFiltersForm.DEFAULT_TRUNC
-        query = Q(end_time__gt=utils.get_week_start(from_date),
-                  end_time__lt=to_date)
-
-        data = self.request.GET or None
-        project_form = timepiece_forms.ProjectFiltersForm(data)
-
-        if project_form.is_valid():
-            trunc = project_form.cleaned_data['trunc']
-            if not project_form.cleaned_data['paid_leave']:
-                projects = utils.get_setting('TIMEPIECE_PAID_LEAVE_PROJECTS')
-                query &= ~Q(project__in=projects.values())
-            if project_form.cleaned_data['pj_select']:
-                query &= Q(project__in=project_form.cleaned_data['pj_select'])
-
-        entries = timepiece.Entry.objects.date_trunc(trunc,
-            extra_values=('activity', 'project__status')).filter(query)
-        date_headers = utils.generate_dates(from_date, header_to, by=trunc)
-
-        context.update({
-            'date_form': date_form,
-            'from_date': from_date,
-            'to_date': to_date,
-            'date_headers': date_headers,
-            'trunc': trunc,
-            'entries': entries,
-            'pj_filters': project_form
-        })
         return context
+
+    def get_entry_query(self, start, end, data):
+        """Builds timepiece.Entry query from form data."""
+        # Entry types.
+        incl_billable = data.get('billable', True)
+        incl_nonbillable = data.get('non_billable', True)
+        incl_leave = data.get('paid_leave', True)
+
+        # If no types are selected, shortcut & return nothing.
+        if not any((incl_billable, incl_nonbillable, incl_leave)):
+            return None
+
+        # All entries must meet time period requirements.
+        basicQ = Q(end_time__gte=start, end_time__lt=end)
+
+        # Filter by project for HourlyReport.
+        projects = data.get('projects', None)
+        basicQ &= Q(project__in=projects) if projects else Q()
+
+        # Filter by user, activity, and project type for BillableReport.
+        if 'people' in data:
+            basicQ &= Q(user__in=data.get('people'))
+        if 'activities' in data:
+            basicQ &= Q(activity__in=data.get('activities'))
+        if 'project_types' in data:
+            basicQ &= Q(project__type__in=data.get('project_types'))
+
+        # If all types are selected, no further filtering is required.
+        if all((incl_billable, incl_nonbillable, incl_leave)):
+            return basicQ
+
+        # Filter by whether a project is billable or non-billable.
+        billableQ = None
+        if incl_billable and not incl_nonbillable:
+            billableQ = Q(activity__billable=True,
+                    project__type__billable=True)
+        if incl_nonbillable and not incl_billable:
+            billableQ = Q(activity__billable=False) |\
+                    Q(project__type__billable=False)
+
+        # Filter by whether the entry is paid leave.
+        leave_ids = utils.get_setting('TIMEPIECE_PAID_LEAVE_PROJECTS').values()
+        leaveQ = Q(project__in=leave_ids)
+        if incl_leave:
+            extraQ = (leaveQ | billableQ) if billableQ else leaveQ
+        else:
+            extraQ = (~leaveQ & billableQ) if billableQ else ~leaveQ
+
+        return basicQ & extraQ
+
+    def get_headers(self, date_headers, from_date, to_date, trunc):
+        """Adjust date headers & get range headers."""
+        date_headers = list(date_headers)
+
+        # Earliest date should be no earlier than from_date.
+        if date_headers and date_headers[0] < from_date:
+            date_headers[0] = from_date
+
+        # When organizing by week or month, create a list of the range for
+        # each date header.
+        if date_headers and trunc != 'day':
+            count = len(date_headers)
+            range_headers = [0] * count
+            for i in range(count - 1):
+                header = date_headers[i]
+                range_headers[i] = (date_headers[i], date_headers[i + 1] -
+                        relativedelta(days=1))
+            range_headers[count - 1] = (date_headers[count - 1], to_date)
+        else:
+            range_headers = date_headers
+        return date_headers, range_headers
+
+    def get_previous_month(self):
+        """Returns date range for the previous full month."""
+        end = utils.get_month_start() - relativedelta(days=1)
+        end = utils.to_datetime(end)
+        start = utils.get_month_start(end)
+        return start, end
 
 
 class HourlyReport(ReportMixin, CSVMixin, TemplateView):
     template_name = 'timepiece/time-sheet/reports/hourly.html'
 
-    def get(self, request, *args, **kwargs):
-        export = request.GET.get('export', False)
-        context = self.get_context_data()
-
-        kls = CSVMixin if export else TemplateView
-        return kls.render_to_response(self, context)
-
-    def get_filename(self, context):
-        request = self.request.GET.copy()
-        from_date = request.get('from_date')
-        to_date = request.get('to_date')
-        return 'hours_{0}_to_{1}_by_{2}.csv'.format(from_date, to_date,
-            context['trunc'])
-
     def convert_context_to_csv(self, context):
-        """Convert the context dictionary into a CSV file"""
+        """Convert the context dictionary into a CSV file."""
         content = []
         date_headers = context['date_headers']
 
@@ -1347,79 +1406,133 @@ class HourlyReport(ReportMixin, CSVMixin, TemplateView):
             content.append(total)
         return content
 
+    @property
+    def defaults(self):
+        """Default filter form data when no GET data is provided."""
+        start, end = self.get_previous_month()
+        return {
+            'from_date': start,
+            'to_date': end,
+            'billable': True,
+            'non_billable': True,
+            'paid_leave': True,
+            'trunc': 'week',
+            'projects': [],
+        }
+
+    def get(self, request, *args, **kwargs):
+        export = request.GET.get('export', False)
+        context = self.get_context_data()
+        kls = CSVMixin if export else TemplateView
+        return kls.render_to_response(self, context)
+
     def get_context_data(self, **kwargs):
         context = super(HourlyReport, self).get_context_data(**kwargs)
+
+        # Sum the hours totals for each person & interval.
         entries = context['entries']
         date_headers = context['date_headers']
-        hour_type = context['pj_filters'].get_hour_type()
+        project_totals = utils.project_totals(entries, date_headers, 'total',
+                total_column=True) if entries else []
 
-        project_totals = utils.project_totals(entries, date_headers, hour_type,
-            total_column=True) if entries else ''
+        # Adjust date headers & create range headers.
+        from_date = context['from_date']
+        from_date = utils.add_timezone(from_date) if from_date else None
+        to_date = context['to_date']
+        to_date = utils.add_timezone(to_date) if to_date else None
+        trunc = context['trunc']
+        date_headers, range_headers = self.get_headers(date_headers,
+                from_date, to_date, trunc)
 
         context.update({
+            'date_headers': date_headers,
             'project_totals': project_totals,
+            'range_headers': range_headers,
         })
         return context
+
+    def get_filename(self, context):
+        request = self.request.GET.copy()
+        from_date = request.get('from_date')
+        to_date = request.get('to_date')
+        return 'hours_{0}_to_{1}_by_{2}.csv'.format(from_date, to_date,
+            context.get('trunc', ''))
+
+    def get_form(self):
+        data = self.request.GET or self.defaults
+        return timepiece_forms.ProjectFiltersForm(data)
 
 
 class BillableHours(ReportMixin, TemplateView):
     template_name = 'timepiece/time-sheet/reports/billable_hours.html'
 
-    def get_hours_data(self, data, entries, date_headers):
-        default_users = timepiece.Entry.no_join.values('user__pk',)
-        users = data.get('people', '') or default_users
-
-        activities = data.get('activities', '') or \
-            timepiece.Activity.objects.values_list('pk', flat=True)
-
-        types = data.get('project_types', '') or \
-            timepiece.Attribute.objects.values_list('pk', flat=True)
-
-        filtered_entries = entries.filter(user__in=users,
-            activity__in=activities, project__status__in=types)
-
-        project_data = utils.project_totals(filtered_entries, date_headers,
-            total_column=False)
-
-        hours_data = {}
-        dates = []
-
-        for rows, totals in project_data:
-            for user, user_id, hours in rows:
-                hours_data[user] = []
-
-                for hour in hours:
-                    date = hour['day'].strftime('%m/%d/%Y')
-                    if date not in dates:
-                        dates.append(date)
-
-                    hours_data.get(user, []).append({
-                        'date': date,
-                        'billable': hour['billable'],
-                        'nonbillable': hour['nonbillable'],
-                        'total': hour['total'],
-                    })
-
-        return dates, hours_data
+    @property
+    def defaults(self):
+        """Default filter form data when no GET data is provided."""
+        start, end = self.get_previous_month()
+        return {
+            'from_date': start,
+            'to_date': end,
+            'trunc': 'week',
+        }
 
     def get_context_data(self, **kwargs):
         context = super(BillableHours, self).get_context_data(**kwargs)
+
         entries = context['entries']
         date_headers = context['date_headers']
+        data_map = self.get_hours_data(entries, date_headers)
 
-        form = timepiece_forms.BillableHoursForm(self.request.GET or None)
+        from_date = context['from_date']
+        to_date = context['to_date']
+        trunc = context['trunc']
+        kwargs = {trunc + 's': 1}  # For relativedelta
 
-        form_data = form.save() if form.is_valid() else {}
-        dates, hours_data = self.get_hours_data(form_data, entries,
-            date_headers)
+        keys = sorted(data_map.keys())
+        data_list = [['Date', 'Billable', 'Non-billable']]
+        for i in range(len(keys)):
+            start = keys[i]
+            start = start if start >= from_date else from_date
+            end = start + relativedelta(**kwargs) - relativedelta(days=1)
+            end = end if end <= to_date else to_date
+
+            if start != end:
+                label = ' - '.join([d.strftime('%b %d') for d in (start, end)])
+            else:
+                label = start.strftime('%b %d')
+            billable = data_map[keys[i]]['billable']
+            nonbillable = data_map[keys[i]]['nonbillable']
+            data_list.append([label, billable, nonbillable])
 
         context.update({
-            'billable_form': form,
-            'data': json.dumps(hours_data, cls=DecimalEncoder),
-            'dates': json.dumps(dates),
+            'data': json.dumps(data_list, cls=DecimalEncoder),
         })
         return context
 
+    def get_form(self):
+        if self.request.GET:
+            return timepiece_forms.BillableHoursForm(self.request.GET)
+        else:
+            # Select all available users, activities, and project types.
+            return timepiece_forms.BillableHoursForm(self.defaults,
+                    select_all=True)
+
+    def get_hours_data(self, entries, date_headers):
+        """Sum billable and non-billable hours across all users."""
+        project_totals = utils.project_totals(entries, date_headers,
+                total_column=False) if entries else []
+
+        data_map = {}
+        for rows, totals in project_totals:
+            for user, user_id, periods in rows:
+                for period in periods:
+                    day = period['day']
+                    if day not in data_map:
+                        data_map[day] = {'billable': 0, 'nonbillable': 0}
+                    data_map[day]['billable'] += period['billable']
+                    data_map[day]['nonbillable'] += period['nonbillable']
+
+        return data_map
 
 class ProjectHoursMixin(object):
 
