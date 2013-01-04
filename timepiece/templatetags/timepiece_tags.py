@@ -85,15 +85,6 @@ def date_filters(form_id, options=None, use_range=True):
     return {'filters': filters, 'form_id': form_id}
 
 
-@register.inclusion_tag('timepiece/time-sheet/invoice/_invoice_subheader.html',
-                        takes_context=True)
-def invoice_subheaders(context, current):
-    return {
-        'current': current,
-        'invoice': context['invoice'],
-    }
-
-
 @register.simple_tag
 def week_start(date):
     return utils.get_week_start(date).strftime('%m/%d/%Y')

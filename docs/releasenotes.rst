@@ -10,7 +10,9 @@ Related issues are in the `0.7.3 milestone
 *Features*
 
 * Row and column highlighting on weekly schedule
+* Redirect regular users to schedule view from schedule edit (rather than redirecting to login)
 * Use checkbox select multiple for editing groups on person add/edit forms
+* Added "active" column to front-end user list & detail views
 * Permanent links to dashboard tabs
 * Dashboard project progress table
 
@@ -37,6 +39,7 @@ Related issues are in the `0.7.3 milestone
 * Fix project progress bar behavior when worked = 0 and assigned = 0 (e.g.,
   just after clocking into an unassigned project)
 * Allow editing groups on person edit page
+* Fixed subnav rendering on invoice pages
 
 0.7.2 (Released 11-28-2012)
 ---------------------------

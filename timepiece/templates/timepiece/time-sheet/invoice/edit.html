@@ -12,7 +12,7 @@
 {% block content %}
     <div class="row-fluid">
         <div class="span12">
-            {% invoice_subheaders 'edit' %}
+            {% include "timepiece/time-sheet/invoice/_subnav.html" with invoice=invoice current="edit" %}
         </div>
     </div>
 
