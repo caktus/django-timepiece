@@ -1540,6 +1540,13 @@ class EditProjectHoursView(ProjectHoursMixin, TemplateView):
 class ProjectHoursAjaxView(ProjectHoursMixin, View):
     permissions = ('timepiece.add_projecthours',)
 
+    def dispatch(self, request, *args, **kwargs):
+        if not request.user.has_perm('timepiece.add_projecthours'):
+            return HttpResponseRedirect(reverse('auth_login'))
+
+        return super(ProjectHoursAjaxView, self).dispatch(request, *args,
+                **kwargs)
+
     def get_instance(self, data, week_start):
         try:
             user = User.objects.get(pk=data.get('user', None))
