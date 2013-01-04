@@ -14,7 +14,8 @@
     {% if invoice.start %}
         from {{ invoice.start }} to {{ invoice.end }}
     {% else %}
-        through {{ invoice.end }}{% endif %}
+        through {{ invoice.end }}
+    {% endif %}
 </h2>
 <ul class="nav nav-pills">
     <li>
@@ -24,21 +25,21 @@
         {% if current != 'detail' %}
             <a href="{% url 'view_invoice' invoice.id %}">View Invoice</a>
         {% else %}
-            View Invoice
+            <span>View Invoice</span>
         {% endif %}
     </li>
     <li>
         {% if current != 'edit' %}
             <a href="{% url 'edit_invoice' invoice.id %}">Edit Invoice</a>
         {% else %}
-            Edit Invoice
+            <span>Edit Invoice</span>
         {% endif %}
     </li>
     <li>
         {% if current != 'entries' %}
             <a href="{% url 'view_invoice_entries' invoice.id %}">Entries</a>
         {% else %}
-            Entries
+            <span>Entries</span>
         {% endif %}
     </li>
     <li>
