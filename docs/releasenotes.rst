@@ -39,6 +39,7 @@ Related issues are in the `0.7.3 milestone
 * Fix project progress bar behavior when worked = 0 and assigned = 0 (e.g.,
   just after clocking into an unassigned project)
 * Allow editing groups on person edit page
+* Fixed subnav rendering on invoice pages
 
 0.7.2 (Released 11-28-2012)
 ---------------------------
