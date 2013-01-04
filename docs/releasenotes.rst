@@ -10,7 +10,9 @@ Related issues are in the `0.7.3 milestone
 *Features*
 
 * Row and column highlighting on weekly schedule
+* Redirect regular users to schedule view from schedule edit (rather than redirecting to login)
 * Use checkbox select multiple for editing groups on person add/edit forms
+* Added "active" column to front-end user list & detail views
 * Permanent links to dashboard tabs
 * Dashboard project progress table
 
