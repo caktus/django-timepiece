@@ -529,12 +529,16 @@ body {
     }
 
     &#billable-hours {
-        .chart {
-            width: 100%;
-           min-height: 500px;
+        #chart-container {
+            margin-top: 10px;
+            margin-bottom: 20px;
+            #chart {
+                width: 100%;
+                min-height: 500px;
+            }
         }
         .filter {
-            margin: 0px 0px 20px;
+            margin: 0px 0px 20px 20px;
 
             label.control-label, p > label {
                 font-size: 1.5em;
@@ -543,6 +547,11 @@ body {
 
             ul {
                 list-style-type: none;
+                margin-left: 10px;
+
+                input {
+                    margin-top: -4px;
+                }
             }
 
             span {
@@ -572,10 +581,6 @@ body {
                     ul li:nth-child(even) {
                         float: right;
                     }
-                }
-
-                &.group-by {
-                    width: 10%;
                 }
             }
 

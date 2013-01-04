@@ -18,9 +18,11 @@ from timepiece import utils
 register = template.Library()
 
 
-@register.assignment_tag
-def sum_hours(entries):
-    return sum([e.get_total_seconds() for e in entries])
+# This is a good candidate for an assignment_tag, once we no longer
+# have to support Django 1.3.
+@register.simple_tag(takes_context=True)
+def sum_hours(context, entries, variable='daily_total'):
+    context[variable] = sum([e.get_total_seconds() for e in entries])
 
 
 @register.filter

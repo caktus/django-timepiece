@@ -8,14 +8,14 @@
                 <h2>Reports</h2>
                 <ul class="nav nav-pills">
                     {% if perms.timepiece.view_entry_summary %}
-                        <li{% ifequal active 'hourly_report' %} class="active"{% endifequal %}>
-                            <a href="{% ifequal active 'hourly_report' %}#{% else %}{% url 'hourly_report' %}{% endifequal %}">Hourly</a>
-                        </li>
                         <li{% ifequal active 'billable_hours' %} class="active"{% endifequal %}>
                             <a href="{% ifequal active 'billable_hours' %}#{% else %}{% url 'billable_hours' %}{% endifequal %}">Billable Hours</a>
                         </li>
                         <li{% ifequal active 'timepiece-summary' %} class="active"{% endifequal %}>
                             <a href="{% ifequal active 'timepiece-summary' %}#{% else %}{% url 'timepiece-summary' %}{% endifequal %}">General Ledger</a>
+                        </li>
+                        <li{% ifequal active 'hourly_report' %} class="active"{% endifequal %}>
+                            <a href="{% ifequal active 'hourly_report' %}#{% else %}{% url 'hourly_report' %}{% endifequal %}">Hourly</a>
                         </li>
                     {% endif %}
                     {% if perms.timepiece.view_payroll_summary %}

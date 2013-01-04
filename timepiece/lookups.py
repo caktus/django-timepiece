@@ -10,13 +10,14 @@ from timepiece import models as timepiece
 
 class ProjectLookup(ModelLookup):
     model = timepiece.Project
-    search_fields = ('name__icontains',)
+    search_fields = ('name__icontains', 'business__name__icontains',
+            'business__short_name__icontains')
 registry.register(ProjectLookup)
 
 
 class BusinessLookup(ModelLookup):
     model = timepiece.Business
-    search_fields = ('name__icontains',)
+    search_fields = ('name__icontains', 'short_name__icontains')
 
     def get_item_label(self, business):
         return '<span class="business">%s</span>' % business.name
@@ -26,12 +27,8 @@ registry.register(BusinessLookup)
 
 class UserLookup(ModelLookup):
     model = auth_models.User
-    search_fields = (
-        'username__icontains',
-        'first_name__icontains',
-        'last_name__icontains',
-        'email__icontains'
-    )
+    search_fields = ('username__icontains', 'first_name__icontains',
+            'last_name__icontains', 'email__icontains')
 
     def format_result(self, user):
         """
@@ -64,6 +61,7 @@ class SearchResult(object):
 
 
 class QuickLookup(LookupBase):
+
     def get_query(self, request, q):
         """
         return a query set (or a fake one).  you also have access to
