@@ -1,7 +1,0 @@
-{% extends "timepiece/time-sheet/base.html" %}
-{% load url from future %}
-
-{% block crumbs %}
-    {{ block.super }}
-    <li><span class="divider">/</span> <a href="{% url 'list_contracts' %}">Contracts</a></li>
-{% endblock crumbs %}

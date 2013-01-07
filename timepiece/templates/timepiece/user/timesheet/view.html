@@ -1,0 +1,276 @@
+{% extends "timepiece/base.html" %}
+{% load timepiece_tags %}
+{% load bootstrap_toolkit %}
+{% load url from future %}
+
+{% block extrajs %}
+    <script src="{{ STATIC_URL }}bootstrap/js/bootstrap-tab.js" type="text/javascript" charset="utf-8"></script>
+{% endblock %}
+
+{% block breadcrumb %}{% endblock breadcrumb %}
+
+{% block title %}
+    {% if timesheet_user.get_full_name %}
+        {{ timesheet_user.get_full_name }}
+    {% else %}
+        {{ timesheet_user.username }}
+    {% endif %}
+    - Time Sheet for {{ from_date|date:"F Y" }}
+{% endblock %}
+
+{% block bodyid %}person-timesheet{% endblock bodyid %}
+
+{% block content %}
+    <h2>
+        {% if timesheet_user.get_full_name %}
+            {{ timesheet_user.get_full_name }}
+        {% else %}
+            {{ timesheet_user.username }}
+        {% endif %}
+        - Time Sheet for {{ from_date|date:"F Y" }}
+    </h2>
+
+    <div class="row-fluid">
+        <div class="span12" id="header">
+            <div id="options-buttons">
+               {% if show_verify %}
+                    <a class="btn btn-primary" href="{% url 'change_user_timesheet' action='verify' pk=timesheet_user.id %}?from_date={{ from_date|date:"Y-m-d" }}">Verify All Entries</a>
+                {% endif %}
+                {% if show_approve %}
+                    <a class="btn btn-primary" href="{% url 'change_user_timesheet' action='approve' pk=timesheet_user.id %}?from_date={{ from_date|date:"Y-m-d" }}">Approve All Entries</a>
+                {% endif %}
+                {% if perms.timepiece.view_payroll_summary %}
+                    <a class="btn btn-primary" href="{% url 'reject_user_timesheet' timesheet_user.pk %}?month={{ from_date|date:'n' }}&amp;year={{ from_date|date:'Y' }}">Reject All Entries</a>
+                {% endif %}
+                {% if perms.timepiece.view_user %}
+                    <a class="btn btn-primary" href="{% url 'view_user' timesheet_user.pk %}">View/Edit User</a>
+                {% endif %}
+           </div>
+
+            {# We have to duplicate the form so the hidden fields are not in the same form #}
+            <form class="form-inline visible-desktop" method="get" action="" accept-charset="utf-8">
+                {{ year_month_form|as_bootstrap:"inline" }}
+                <input type="submit" name="yearmonth" class="btn" value="Update" />
+            </form>
+            <form class="hidden-desktop" method="get" action="" accept-charset="utf-8">
+                {{ year_month_form|as_bootstrap }}
+                <input type="submit" name="yearmonth" class="btn" value="Update" />
+            </form>
+        </div>
+    </div>
+
+    <div class="row-fluid">
+        <div class="span12">
+            <ul class="nav nav-tabs">
+                <li class="active"><a href="#overview" data-toggle="tab">Overview</a></li>
+                <li><a href="#full-timesheet" data-toggle="tab">All Entries</a></li>
+                <li><a href="#hourly-summary" data-toggle="tab">Daily Summary</a></li>
+            </ul>
+            <div class="tab-content">
+                <div class="tab-pane active" id="overview">
+                    <div class="row-fluid">
+                        {% if project_entries %}
+                            <div class="span6">
+                                <h3>Project Summary</h3>
+                                <table class="table table-bordered table-striped table-condensed">
+                                    <thead>
+                                        <tr>
+                                            <th>Project</th>
+                                            <th>Hours</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        {% for entry in project_entries %}
+                                            <tr>
+                                                <td>{{ entry.project__name}} </td>
+                                                <td class="hours">{{ entry.sum|floatformat:2 }}</td>
+                                            </tr>
+                                        {% endfor %}
+                                    </tbody>
+                                </table>
+                            </div>
+                        {% endif %}
+                        {% if entries %}
+                            <div class="span6">
+                                <h3>Billable Summary</h3>
+                                <table class="table table-bordered table-striped table-condensed">
+                                    <thead>
+                                        <tr>
+                                            <th width="70%">Category</th>
+                                            <th width="30%">Hours</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        <tr>
+                                            <td>Billable</td><td class="hours">{{summary.billable|floatformat:2 }}</td>
+                                        </tr>
+                                        <tr>
+                                           <td>Non-billable</td><td class="hours">{{summary.non_billable|floatformat:2 }}</td>
+                                        </tr>
+                                        <tr>
+                                            <td>Invoiced</td><td class="hours">{{summary.invoiced|floatformat:2 }}</td>
+                                        </tr>
+                                        <tr>
+                                            <td>Uninvoiced</td><td class="hours">{{summary.uninvoiced|floatformat:2 }}</td>
+                                        </tr>
+                                    </tbody>
+                                </table>
+                            </div>
+                        {% else %}
+                            <div class="span12">
+                                <p>No entries exist for this time sheet.</p>
+                            </div>
+                        {% endif %}
+                    </div>
+                </div>
+                <div class="tab-pane" id="full-timesheet">
+                    {% if entries %}
+                        {% for entry in entries %}
+                            {% ifchanged entry.start_time|date:"W" %}
+                                {# Close table before new table starts (ignore first table) #}
+                                {% if entry.start_time.weekday == 0 and not forloop.first %}
+                                        </tbody>
+                                    </table>
+                                {% endif %}
+                                <table id="entries" class="table table-bordered table-condensed table-striped">
+                                    <thead>
+                                        <tr>
+                                            <th>Date</th>
+                                            <th class="project">Project</th>
+                                            <th class="activity">Activity</th>
+                                            <th>Location</th>
+                                            <th>Status</th>
+                                            <th class="time">Time In</th>
+                                            <th class="time">Time Out</th>
+                                            <th class="time">Breaks</th>
+                                            <th class="time">Hours</th>
+                                            <th class="comments">Comments</th>
+                                            <th class="aux"></th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        <tr class="ledger_header">
+                                            <th colspan="11">Week of {% week_start entry.start_time %} </th>
+                                        </tr>
+                            {% endifchanged %}
+                            <tr>
+                                {% ifchanged entry.start_time|date %}
+                                <td>{{ entry.start_time|date:"m/d/Y (D)" }}</td>
+                                {% else %}
+                                <td></td>
+                                {% endifchanged %}
+                                <td class="project">{{ entry.project__name }}</td>
+                                <td class="activity">{{ entry.activity__name }}</td>
+                                <td>{{ entry.location__name }}</td>
+                                <td>{{ entry.status|title }}</td>
+                                <td class="time break">{{ entry.start_time|date:"g:i A" }}</td>
+                                <td class="time break">{{ entry.end_time|date:"g:i A" }}</td>
+                                <td class="hours time">{{ entry.seconds_paused|seconds_to_hours|floatformat:2 }}</td>
+                                <td class="hours time">{{ entry.hours|floatformat:2 }}</td>
+                                <td class="comments" title="{{entry.comments}}">{{ entry.comments|truncatewords:12|urlizetrunc:25|safe }}</td>
+                                <td class="aux">
+                                    {% if entry.status == "unverified" or entry.status != 'invoiced' and perms.timepiece.view_payroll_summary %}
+                                        <a href="{% url 'edit_entry' entry.id %}?next={{ request.get_full_path|urlencode }}#full-timesheet">Edit</a>
+                                    {% endif %}
+                                    {% if perms.timepiece.view_payroll_summary and entry.status != "unverified" and entry.status != "invoiced" %}
+                                        | <a href="{% url 'reject_entry' entry.id %}?next={{ request.get_full_path|urlencode }}#full-timesheet">Reject</a>
+                                    {% endif %}
+                                </td>
+                            </tr>
+                            {# Close the last table #}
+                            {% if forloop.last %}
+                                    </tbody>
+                                </table>
+                            {% endif %}
+                        {% endfor %}
+
+                        <table class="table table-bordered table-condensed totals">
+                            <thead>
+                                <tr>
+                                    <th></th>
+                                    <th></th>
+                                    <th></th>
+                                    <th></th>
+                                    <th class="time"></th>
+                                    <th class="time"></th>
+                                    <th class="time"></th>
+                                    <th class="time"></th>
+                                    <th class="comments"></th>
+                                    <th class="aux"></th>
+                                </tr>
+                            </thead>
+                            <tr >
+                                <td colspan="7"><strong>Overall total for the period:</strong></td>
+                                <td class="hours">{{ summary.total|floatformat:2 }}</td>
+                                <td colspan="2"></td>
+                            </tr>
+                        </table>
+                    {% else %}
+                        <p>No entries exist for this time sheet.</p>
+                    {% endif %}
+                </div>
+                <div class="tab-pane" id="hourly-summary">
+                    {% if grouped_totals %}
+                        {% for week, week_totals, days in grouped_totals %}
+                            <table class="table table-bordered table-condensed">
+                                <tr class="ledger_header">
+                                    <th colspan="2">Week of {{ week|date:"m/d/Y" }} </th>
+                                    <th>Billable</th>
+                                    <th>Non-Billable</th>
+                                    <th>Total</th>
+                                </tr>
+                                {% for day, projects in days %}
+                                    {% for project, totals in projects.1.iteritems %}
+                                        <tr class="{% if day < from_date %}before_from_date{% endif %}">
+                                            <td>
+                                                {% if forloop.counter == 1 %}
+                                                    {{day|date:"m/d/Y (D)"}}
+                                                {% endif %}
+                                            </td>
+                                            <td>
+                                                {{project}}
+                                            </td>
+                                            <td class="hours">{{ totals.billable|floatformat:2 }}</td>
+                                            <td class="hours">{{ totals.non_billable|floatformat:2 }}</td>
+                                            <td class="hours">{{ totals.total|floatformat:2 }}</td>
+                                        </tr>
+                                    {% endfor %}
+                                    <tr class="daily_total {% if day < from_date %}before_from_date{% endif %}">
+                                        <td></td>
+                                        <td class="hours"><strong>{{day|date:"D"}}:</strong></td>
+                                        <td class="hours">{{ projects.0.billable|floatformat:2 }}</td>
+                                        <td class="hours">{{ projects.0.non_billable|floatformat:2 }}</td>
+                                        <td class="hours">{{ projects.0.total|floatformat:2 }}</td>
+                                    <tr/>
+                                {% endfor %}
+                                <tr class="weekly_total">
+                                    <th colspan="2">Totals for this week:</th>
+                                    <td class="hours">{{ week_totals.billable|floatformat:2 }}</td>
+                                    <td class="hours">{{ week_totals.non_billable|floatformat:2 }}</td>
+                                    <td class="hours">{{ week_totals.total|floatformat:2 }}</td>
+                                </tr>
+                            </table>
+                        {% endfor %}
+                        <table class="table table-bordered table-condensed totals">
+                            <thead>
+                                <tr>
+                                    <th></th>
+                                    <th></th>
+                                    <th class="billable"></th>
+                                    <th class="non-billable"></th>
+                                    <th class="total"></th>
+                                </tr>
+                            </thead>
+                            <tr>
+                                <td colspan="4"><strong>Overall total for the period:</strong></th>
+                                <td class="hours">{{ summary.total|floatformat:2 }}</td>
+                            </tr>
+                        </table>
+                    {% else %}
+                        <p>No entries exist for this time sheet.</p>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+{% endblock %}
