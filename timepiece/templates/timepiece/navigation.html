@@ -12,22 +12,22 @@
                         <li class="dropdown">
                             <a href="#" class="dropdown-toggle" data-toggle="dropdown"><i class="icon-time icon-white"> </i><b class="caret"></b> </a>
                             <ul class="dropdown-menu">
-                                <li><a href="{% url 'timepiece-clock-in' %}">Clock in...</a></li>
-                                <li><a href="{% url 'timepiece-add' %}">Add Entry...</a></li>
+                                <li><a href="{% url 'clock_in' %}">Clock in...</a></li>
+                                <li><a href="{% url 'create_entry' %}">Add Entry...</a></li>
                                 {% if work_projects %}<li class="divider"></li>{% endif %}
                                 {% for project in work_projects %}
-                                    <li><a href="{% url 'timepiece-clock-in' %}?project={{ project.id }}">{{ project }}</a></li>
+                                    <li><a href="{% url 'clock_in' %}?project={{ project.id }}">{{ project }}</a></li>
                                 {% endfor %}
                                 {% if leave_projects %}<li class="divider"></li>{% endif %}
                                 {% for project in leave_projects %}
-                                    <li><a href="{% url 'timepiece-clock-in' %}?project={{ project.id }}">{{ project }}</a></li>
+                                    <li><a href="{% url 'clock_in' %}?project={{ project.id }}">{{ project }}</a></li>
                                 {% endfor %}
                             </ul>
                         {% endif %}
                 {% endblock %}
 
                     {% if perms.timepiece.add_entry %}
-                        <li><a href="{% url 'view_person_time_sheet' request.user.pk %}">Time Sheet</a></li>
+                        <li><a href="{% url 'view_user_timesheet' request.user.pk %}">Time Sheet</a></li>
                     {% endif %}
                     {% if perms.timepiece.view_project or perms.auth.view_user or perms.timepiece.view_business or persm.timepiece.add_project_contract %}
                         <li class="dropdown">
@@ -37,7 +37,7 @@
                                     <li><a href="{% url 'list_projects' %}">Projects</a></li>
                                 {% endif %}
                                 {% if perms.auth.view_user %}
-                                    <li><a href="{% url 'list_people' %}">People</a></li>
+                                    <li><a href="{% url 'list_users' %}">People</a></li>
                                 {% endif %}
                                 {% if perms.timepiece.view_business %}
                                     <li><a href="{% url 'list_businesses' %}">Businesses</a></li>
@@ -53,13 +53,13 @@
                             <a href="#" class="dropdown-toggle" data-toggle="dropdown">Management <b class="caret"></b></a>
                             <ul class="dropdown-menu">
                                 {% if perms.timepiece.view_entry_summary %}
-                                    <li><a href="{% url 'billable_hours' %}">Billable Hours</a></li>
-                                    <li><a href="{% url 'timepiece-summary' %}">General Ledger</a></li>
-                                    <li><a href="{% url 'hourly_report' %}">Hourly</a></li>
+                                    <li><a href="{% url 'report_billable_hours' %}">Billable Hours</a></li>
+                                    <li><a href="{% url 'report_general_ledger' %}">General Ledger</a></li>
+                                    <li><a href="{% url 'report_hourly' %}">Hourly</a></li>
                                 {% endif %}
                                 {% if perms.timepiece.view_payroll_summary %}
-                                    <li><a href="{% url 'payroll_summary' %}">Payroll Summary</a></li>
-                                    <li><a href="{% url 'productivity_report' %}">Productivity</a></li>
+                                    <li><a href="{% url 'report_payroll_summary' %}">Payroll Summary</a></li>
+                                    <li><a href="{% url 'report_productivity' %}">Productivity</a></li>
                                 {% endif %}
                                 {% if perms.timepiece.view_payroll_summary %}
                                     {% if user.is_staff or perms.timepiece.change_entrygroup or perms.timepiece.can_clock_in %}
@@ -70,10 +70,10 @@
                                     <li><a href="{% url 'admin:index' %}">Admin</a></li>
                                 {% endif %}
                                 {% if perms.timepiece.change_entrygroup %}
-                                    <li><a href="{% url 'invoice_projects' %}">Invoices</a></li>
+                                    <li><a href="{% url 'list_outstanding_invoices' %}">Invoices</a></li>
                                 {% endif %}
                                 {% if perms.timepiece.can_clock_in %}
-                                    <li><a href="{% url 'project_hours' %}">Weekly Schedule</a></li>
+                                    <li><a href="{% url 'view_schedule' %}">Weekly Schedule</a></li>
                                 {% endif %}
                             </ul>
                         </li>
@@ -112,7 +112,7 @@
 
                 {% block quick-search %}
                     {% if perms.timepiece.view_business %}
-                        <form class="navbar-search pull-right" action="{% url 'quick_search' %}" method="get" accept-charset="utf-8">
+                        <form class="navbar-search pull-right" action="{% url 'search' %}" method="get" accept-charset="utf-8">
                             {{ quick_search_form.quick_search }}
                         </form>
                     {% endif %}
@@ -135,8 +135,8 @@
                 <ul class="nav">
                     {% if perms.timepiece.add_entry %}
                         <li><a href="{% url 'dashboard' %}">Dashboard</a></li>
-                        <li><a href="{% url 'view_person_time_sheet' request.user.pk %}">Time Sheet</a></li>
-                        <li><a href="{% url 'timepiece-add' %}">Add Entry</a></li>
+                        <li><a href="{% url 'view_user_timesheet' request.user.pk %}">Time Sheet</a></li>
+                        <li><a href="{% url 'create_entry' %}">Add Entry</a></li>
                         <li><a href="{% url 'auth_logout' %}">Logout</a></li>
                     {% endif %}
                 </ul>

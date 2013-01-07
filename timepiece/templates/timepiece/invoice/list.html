@@ -1,0 +1,74 @@
+{% extends 'timepiece/invoice/base.html' %}
+{% load timepiece_tags bootstrap_toolkit %}
+{% load url from future %}
+
+{% block title %}Invoices{% endblock %}
+
+{% block content %}
+    <div class="row-fluid">
+        <div class="span12">
+            <h2>All Invoices</h2>
+            <ul class="nav nav-pills">
+                <li>
+                    <a href="{% url 'list_outstanding_invoices' %}">Outstanding Hours</a>
+                </li>
+                <li>
+                    <span>Previous Invoices</span>
+                </li>
+            </ul>
+        </div>
+    </div>
+
+    <div class="row-fluid">
+        <div class="span12">
+            <form class="form-inline" accept-charset="UTF-8" method="get" action="">
+                {{ search_form|as_bootstrap:"inline" }}
+                <button type="submit" class="btn">Search</button>
+            </form>
+        </div>
+    </div>
+
+    {% load pagination_tags %}
+
+    <div class="row-fluid">
+        <div class="span12">
+            {% if invoices %}
+                {% autopaginate invoices %}
+                {% paginate %}
+                <table class="table table-bordered table-striped table-condensed">
+                    <thead>
+                        <tr>
+                            <th>Invoice</th>
+                            <th>Reference</th>
+                            <th>Project</th>
+                            <th>Status</th>
+                            <th>Invoiced by</th>
+                            <th>Created on</th>
+                            <th>Starting on</th>
+                            <th>Ending on</th>
+                            <th>Comments</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for invoice in invoices %}
+                            <tr>
+                                <td><a href="{% url 'view_invoice' invoice.pk %}">{{ invoice.pk }}</a></td>
+                                <td>{{ invoice.number|default:'' }}</td>
+                                <td>{{ invoice.project }}</td>
+                                <td>{{ invoice.status|capfirst }}</td>
+                                <td>{{ invoice.user.get_full_name }}</td>
+                                <td>{{ invoice.created|date:"M d Y P" }}</td>
+                                <td>{{ invoice.start|date:"M d Y" }}</td>
+                                <td>{{ invoice.end|date:"M d Y" }}</td>
+                                <td title="{{ invoice.comments }} ">{{ invoice.comments|truncatewords:12 }}</td>
+                            </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+                {% paginate %}
+            {% else %}
+                <p>There are no invoices.</p>
+            {% endif %}
+        </div>
+    </div>
+{% endblock %}

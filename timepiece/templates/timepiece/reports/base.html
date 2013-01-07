@@ -1,0 +1,36 @@
+{% extends "timepiece/base.html" %}
+{% load url from future %}
+
+{% block content %}
+    {% block report_nav %}
+        <div class="row-fluid">
+            <div class="span12">
+                <h2>Reports</h2>
+                <ul class="nav nav-pills">
+                    {% if perms.timepiece.view_entry_summary %}
+                        <li{% ifequal active 'billable_hours' %} class="active"{% endifequal %}>
+                            <a href="{% ifequal active 'billable_hours' %}#{% else %}{% url 'report_billable_hours' %}{% endifequal %}">Billable Hours</a>
+                        </li>
+                        <li{% ifequal active 'timepiece-summary' %} class="active"{% endifequal %}>
+                            <a href="{% ifequal active 'timepiece-summary' %}#{% else %}{% url 'report_general_ledger' %}{% endifequal %}">General Ledger</a>
+                        </li>
+                        <li{% ifequal active 'hourly_report' %} class="active"{% endifequal %}>
+                            <a href="{% ifequal active 'hourly_report' %}#{% else %}{% url 'report_hourly' %}{% endifequal %}">Hourly</a>
+                        </li>
+                    {% endif %}
+                    {% if perms.timepiece.view_payroll_summary %}
+                        <li{% ifequal active 'payroll_summary' %} class="active"{% endifequal %}>
+                            <a href="{% ifequal active 'payroll_summary' %}#{% else %}{% url 'report_payroll_summary' %}{% endifequal %}">Payroll Summary</a>
+                        </li>
+                        <li{% ifequal active 'productivity_report' %} class="active"{% endifequal %}>
+                            <a href="{% ifequal active 'productivity_report' %}#{% else %}{% url 'report_productivity' %}{% endifequal %}">Productivity</a>
+                        </li>
+                    {% endif %}
+                </ul>
+            </div>
+        </div>
+    {% endblock report_nav %}
+
+    {% block report_content %}
+    {% endblock report_content %}
+{% endblock content %}
