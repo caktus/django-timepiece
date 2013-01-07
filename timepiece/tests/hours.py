@@ -25,7 +25,8 @@ class ProjectHoursTestCase(TimepieceDataTestCase):
         )
         self.user.user_permissions = permissions
         self.user.save()
-        self.superuser = self.create_user('super', 's@abc.com', 'abc', is_superuser=True)
+        self.superuser = self.create_user('super', 's@abc.com', 'abc',
+                is_superuser=True)
 
         self.tracked_status = self.create_project_status(data={
                 'label': 'Current', 'billable': True,
@@ -287,8 +288,8 @@ class ProjectHoursEditTestCase(ProjectHoursTestCase):
 
     def test_no_permission_access(self):
         """
-        If you are a regular user, you shouldnt be able to view the edit page
-        or request any ajax data
+        If you are a regular user, edit view should redirect to regular view
+        and you should not be able to request any ajax data.
         """
         self.client.login(username='basic', password='abc')
 

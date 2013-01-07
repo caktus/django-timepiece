@@ -9,7 +9,7 @@ from django.core.urlresolvers import reverse
 from django.db.models import Q
 from django.utils.translation import ugettext_lazy as _
 
-from selectable import forms as selectable_forms
+from selectable import forms as selectable
 
 from timepiece import models as timepiece
 from timepiece import utils
@@ -20,51 +20,18 @@ from timepiece.models import Project, Entry, Activity, UserProfile, Attribute
 from timepiece.models import ProjectHours
 
 
-class ProjectFiltersForm(forms.Form):
-    TRUNC_CHOICES = [
-        ('day', 'Day'),
-        ('week', 'Week'),
-        ('month', 'Month'),
-    ]
-    DEFAULT_TRUNC = TRUNC_CHOICES[1][0]
-    billable = forms.BooleanField(initial=True, required=False)
-    non_billable = forms.BooleanField(label='Non-Billable', initial=True,
-                                      required=False)
-    paid_leave = forms.BooleanField(initial=True, required=False)
-    trunc = forms.ChoiceField(label='Group Totals By:', choices=TRUNC_CHOICES,
-                              widget=forms.RadioSelect(), required=False,
-                              initial=DEFAULT_TRUNC)
-    pj_select = selectable_forms.AutoCompleteSelectMultipleField(ProjectLookup,
-        label='Project Name:', required=False)
-
-    def clean_trunc(self):
-        trunc = self.cleaned_data.get('trunc', '')
-        if not trunc:
-            trunc = self.DEFAULT_TRUNC
-        return trunc
-
-    def get_hour_type(self):
-        try:
-            billable = self.cleaned_data.get('billable', False)
-            non_billable = self.cleaned_data.get('non_billable', False)
-        except AttributeError:
-            return 'total'
-        if billable and non_billable:
-            return 'total'
-        elif billable:
-            return 'billable'
-        elif non_billable:
-            return 'non_billable'
-        return 'nothing'
-
-
 class CreatePersonForm(auth_forms.UserCreationForm):
+
+    def __init__(self, *args, **kwargs):
+        super(CreatePersonForm, self).__init__(*args, **kwargs)
+
+        self.fields['groups'].widget = forms.CheckboxSelectMultiple()
+        self.fields['groups'].help_text = None
+
     class Meta:
         model = auth_models.User
-        fields = (
-            "username", "first_name", "last_name",
-            "email", "is_active", "is_staff", "groups"
-        )
+        fields = ('username', 'first_name', 'last_name', 'email', 'is_active',
+                'is_staff', 'groups')
 
 
 class EditPersonForm(auth_forms.UserChangeForm):
@@ -76,6 +43,9 @@ class EditPersonForm(auth_forms.UserChangeForm):
 
     def __init__(self, *args, **kwargs):
         super(EditPersonForm, self).__init__(*args, **kwargs)
+
+        self.fields['groups'].widget = forms.CheckboxSelectMultiple()
+        self.fields['groups'].help_text = None
 
         # In 1.4 this field is created even if it is excluded in Meta.
         if 'password' in self.fields:
@@ -106,11 +76,11 @@ class EditPersonForm(auth_forms.UserChangeForm):
     class Meta:
         model = auth_models.User
         fields = ('username', 'first_name', 'last_name', 'email', 'is_active',
-                'is_staff')
+                'is_staff', 'groups')
 
 
 class QuickSearchForm(forms.Form):
-    quick_search = selectable_forms.AutoCompleteSelectField(
+    quick_search = selectable.AutoCompleteSelectField(
         QuickLookup,
         label='Quick Search',
         required=False
@@ -153,7 +123,7 @@ class QuickSearchForm(forms.Form):
 
 
 class SelectUserForm(forms.Form):
-    user = selectable_forms.AutoCompleteSelectField(UserLookup, label="")
+    user = selectable.AutoCompleteSelectField(UserLookup, label='')
     user.widget.attrs['placeholder'] = 'Add User'
 
     def save(self):
@@ -161,7 +131,7 @@ class SelectUserForm(forms.Form):
 
 
 class SelectProjectForm(forms.Form):
-    project = selectable_forms.AutoCompleteSelectField(ProjectLookup, label="")
+    project = selectable.AutoCompleteSelectField(ProjectLookup, label='')
     project.widget.attrs['placeholder'] = 'Add Project'
 
     def save(self):
@@ -366,10 +336,10 @@ STATUS_CHOICES.extend(timepiece.ENTRY_STATUS)
 class DateForm(forms.Form):
     DATE_FORMAT = '%m/%d/%Y'
 
-    from_date = forms.DateField(label="From", required=False,
+    from_date = forms.DateField(label='From', required=False,
         input_formats=(DATE_FORMAT,),
         widget=forms.DateInput(format=DATE_FORMAT))
-    to_date = forms.DateField(label="To", required=False,
+    to_date = forms.DateField(label='To', required=False,
         input_formats=(DATE_FORMAT,),
         widget=forms.DateInput(format=DATE_FORMAT))
 
@@ -461,7 +431,7 @@ class ProjectForm(forms.ModelForm):
             'description',
         )
 
-    business = selectable_forms.AutoCompleteSelectField(
+    business = selectable.AutoCompleteSelectField(
         BusinessLookup,
         label='Business',
         required=True
@@ -542,7 +512,7 @@ class ProjectSearchForm(SearchForm):
         super(ProjectSearchForm, self).__init__(*args, **kwargs)
         PROJ_STATUS_CHOICES = [('', 'Any Status')]
         PROJ_STATUS_CHOICES.extend([(a.pk, a.label) for a
-                in Attribute.objects.all().filter(type="project-status")])
+                in Attribute.objects.all().filter(type='project-status')])
         self.fields['status'].choices = PROJ_STATUS_CHOICES
 
     def save(self):
@@ -570,56 +540,50 @@ class DeleteForm(forms.Form):
         return False
 
 
-class BillableHoursForm(forms.Form):
+class BillableHoursForm(DateForm):
     TRUNC_CHOICES = (
         ('day', 'Day'),
         ('week', 'Week'),
         ('month', 'Month'),
     )
-    trunc = forms.ChoiceField(
-        label='Group By',
-        choices=TRUNC_CHOICES,
-        widget=forms.RadioSelect(),
-        required=False,
-        initial=TRUNC_CHOICES[1][0])
-    people = forms.MultipleChoiceField(
-        required=False,
-        widget=forms.CheckboxSelectMultiple()
-    )
-    activities = forms.ModelMultipleChoiceField(
-        widget=forms.CheckboxSelectMultiple(),
-        queryset=timepiece.Activity.objects.all(),
-        required=False,
-        initial=timepiece.Activity.objects.all()
-    )
-    project_types = forms.ModelMultipleChoiceField(
-        widget=forms.CheckboxSelectMultiple(),
-        queryset=timepiece.Attribute.objects.all(),
-        required=False,
-        initial=timepiece.Attribute.objects.all()
-    )
+
+    trunc = forms.ChoiceField(label='Group Totals By', choices=TRUNC_CHOICES,
+            widget=forms.RadioSelect())
+    people = forms.ModelMultipleChoiceField(required=False, queryset=None,
+            widget=forms.CheckboxSelectMultiple())
+    activities = forms.ModelMultipleChoiceField(required=False, queryset=None,
+            widget=forms.CheckboxSelectMultiple())
+    project_types = forms.ModelMultipleChoiceField(required=False, queryset=None,
+            widget=forms.CheckboxSelectMultiple())
 
     def __init__(self, *args, **kwargs):
+        """
+        If the 'select_all' argument is given, any data values for people,
+        activities, and project_types are overwritten with all available
+        choices.
+        """
+        select_all = kwargs.pop('select_all', False)
+
         super(BillableHoursForm, self).__init__(*args, **kwargs)
+        self.fields['from_date'].required = True
+        self.fields['to_date'].required = True
 
-        people = []
-        users = timepiece.Entry.no_join.values('user', 'user__first_name',
-            'user__last_name').distinct().order_by('user__first_name',
-            'user__last_name')
-        for u in users:
-            name = ' '.join([u['user__first_name'], u['user__last_name']])
-            person = (u['user'], name,)
-            people.append(person)
+        user_ids = timepiece.Entry.no_join.values_list('user', flat=True)
+        people = auth_models.User.objects.filter(id__in=user_ids)
+        activities = timepiece.Activity.objects.all()
+        project_types = timepiece.Attribute.objects.all()
 
-        self.fields['people'].choices = people
-        self.fields['people'].initial = [p[0] for p in people]
+        self.fields['people'].queryset = people
+        self.fields['people'].label_from_instance = lambda p: p.get_full_name()
+        self.fields['activities'].queryset = activities
+        self.fields['project_types'].queryset = project_types
 
-    def save(self):
-        return {
-            'people': self.cleaned_data['people'],
-            'activities': self.cleaned_data['activities'],
-            'project_types': self.cleaned_data['project_types']
-        }
+        if select_all:
+            self.data['people'] = list(people.values_list('id', flat=True))
+            self.data['activities'] = list(activities.values_list('id',
+                    flat=True))
+            self.data['project_types'] = list(project_types.values_list('id',
+                    flat=True))
 
 
 class ProjectHoursSearchForm(forms.Form):
@@ -633,8 +597,6 @@ class ProjectHoursSearchForm(forms.Form):
 
 
 class ProjectHoursForm(forms.ModelForm):
-    def __init__(self, *args, **kwargs):
-        super(ProjectHoursForm, self).__init__(*args, **kwargs)
 
     class Meta:
         model = ProjectHours
@@ -646,6 +608,27 @@ class ProductivityReportForm(forms.Form):
         ('week', 'Week'),
         ('person', 'People'),
     )
-    project = selectable_forms.AutoCompleteSelectField(ProjectLookup)
+    project = selectable.AutoCompleteSelectField(ProjectLookup)
     organize_by = forms.ChoiceField(choices=ORGANIZE_BY_CHOICES,
             widget=forms.RadioSelect(), initial=ORGANIZE_BY_CHOICES[0][0])
+
+
+class ProjectFiltersForm(DateForm):
+    TRUNC_CHOICES = (
+        ('day', 'Day'),
+        ('week', 'Week'),
+        ('month', 'Month'),
+    )
+
+    billable = forms.BooleanField(required=False)
+    non_billable = forms.BooleanField(label='Non-billable', required=False)
+    paid_leave = forms.BooleanField(required=False)
+    trunc = forms.ChoiceField(label='Group Totals By', choices=TRUNC_CHOICES,
+            widget=forms.RadioSelect())
+    projects = selectable.AutoCompleteSelectMultipleField(ProjectLookup,
+            label='Project Name', required=False)
+
+    def __init__(self, *args, **kwargs):
+        super(ProjectFiltersForm, self).__init__(*args, **kwargs)
+        self.fields['from_date'].required = True
+        self.fields['to_date'].required = True

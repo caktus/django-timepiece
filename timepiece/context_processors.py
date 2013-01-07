@@ -39,7 +39,7 @@ def quick_clock_in(request):
         work_ids = []
         for i in project_ids:
             if len(work_ids) > 10:
-                break;
+                break
             if i in valid_ids and i not in work_ids:
                 work_ids.append(i)
         work_projects = [valid_projects.get(pk=i) for i in work_ids]

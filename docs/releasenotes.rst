@@ -1,10 +1,55 @@
 Release Notes
 =============
 
+0.7.3 (Released 01-07-2013)
+---------------------------
+
+Related issues are in the `0.7.3 milestone
+<https://github.com/caktus/django-timepiece/issues?milestone=30&page=1&state=closed>`_.
+
+*Features*
+
+* Row and column highlighting on weekly schedule
+* Redirect regular users to schedule view from schedule edit (rather than redirecting to login)
+* Use checkbox select multiple for editing groups on person add/edit forms
+* Added "active" column to front-end user list & detail views
+* Permanent links to dashboard tabs
+* Dashboard project progress table
+
+  - Highlight row of active project
+  - Made width of bars relative to maximum worked or assigned hours
+  - Show overtime bar for work on unassigned projects
+
+* Dashboard "All Entries" tab
+
+  - Moved "Add Entry" button to top right of page, and clock in dropdown
+  - Split entries by day into separate tables, with a summary row
+  - Added comment column, and included comment in row tooltip
+  - Hide pause time unless it is greater than 0
+
+*Bugfixes*
+
+* Fixed bugs in handling filters on the hourly report
+* Only summarize entries in the time period requested on hourly & billable
+  reports (previously, entries for the entire week which includes the from
+  date were included)
+* Fixed bug which prevented projects being removed from the hourly report filter
+* Keep GET parameters when deleting entry (allows proper redirection)
+* Use ``history.back()`` on cancel buttons on clock in, clock out, and add
+  entry pages
+* Fixed floating point errors that caused project progress bars to display
+  over two lines
+* Prevent negative worked/assigned time on project progress bars
+* Fix project progress bar behavior when worked = 0 and assigned = 0 (e.g.,
+  just after clocking into an unassigned project)
+* Allow editing groups on person edit page
+* Fixed subnav rendering on invoice pages
+
 0.7.2 (Released 11-28-2012)
 ---------------------------
 
-* Fixed test failures that resulted from changes to the display of project names when clocking time.
+* Fixed test failures that resulted from changes to the display of project
+  names when clocking time.
 
 0.7.1 (Released 11-28-2012)
 ---------------------------
