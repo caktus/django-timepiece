@@ -6,7 +6,7 @@
 
 {% block crumbs %}
     {{ block.super }}
-    <li><span class="divider">/</span> <a href="{% url 'change_user_timesheet' action=action pk=timesheet_user.id %}?from_date={{ from_date|date:"Y-m-d" }}">{{ action.capitalize }} Time Sheet</a></li>
+    <li><span class="divider">/</span> <a href="{% url 'change_user_timesheet' timesheet_user.id action %}?from_date={{ from_date|date:"Y-m-d" }}">{{ action.capitalize }} Time Sheet</a></li>
 {% endblock crumbs %}
 
 {% block content %}

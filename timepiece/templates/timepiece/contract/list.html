@@ -25,7 +25,7 @@
                             <td>
                                 <a href="{% url 'view_contract' contract.id %}">{{ contract.project }}</a>
                             </td>
-                            <td>{{ contract.start_date|date:'M d Y' }} - {{ contract.end_date|date:'M d Y' }}</td>
+                            <td>{{ contract.start_date|date:'M d, Y' }} - {{ contract.end_date|date:'M d, Y' }}</td>
                             <td class="hours">
                                 <a href="{% url 'view_project_timesheet' contract.project.id %}">{{ contract.hours_worked }}</a>
                             </td>

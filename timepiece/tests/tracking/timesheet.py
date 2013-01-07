@@ -57,7 +57,7 @@ class MyLedgerTest(TimepieceDataTestCase):
 
     def setUp(self):
         super(MyLedgerTest, self).setUp()
-        self.url = reverse('view_user_timesheet', kwargs={'pk': self.user.pk})
+        self.url = reverse('view_user_timesheet', args=(self.user.pk,))
 
     def login_with_permissions(self):
         view_entry_summary = Permission.objects.get(
@@ -1125,8 +1125,7 @@ class StatusTest(TimepieceDataTestCase):
         self.client.login(username='user', password='abc')
         self.now = timezone.now()
         self.from_date = utils.get_month_start(self.now)
-        self.sheet_url = reverse('view_user_timesheet',
-            args=[self.user.pk])
+        self.sheet_url = reverse('view_user_timesheet', args=[self.user.pk])
 
     def verify_url(self, user=None, from_date=None):
         user = user or self.user

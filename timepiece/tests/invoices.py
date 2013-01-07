@@ -130,7 +130,7 @@ class InvoiceViewPreviousTestCase(TimepieceDataTestCase):
 
     def test_invoice_edit_post(self):
         invoice = self.get_invoice()
-        url = reverse('edit_invoice', kwargs={'pk': invoice.id})
+        url = reverse('edit_invoice', args=(invoice.id,))
         status = 'invoiced' if invoice.status != 'invoiced' else 'not-invoiced'
         params = {
             'number': int(invoice.number) + 1,

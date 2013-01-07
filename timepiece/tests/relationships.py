@@ -28,13 +28,13 @@ class RelationshipTestBase(TimepieceDataTestCase):
 
     def _get(self, url_name=None, url_kwargs=None, get_kwargs=None, *args,
                 **kwargs):
-        get_kwargs = get_kwargs if get_kwargs != None else self._get_kwargs()
+        get_kwargs = self._get_kwargs() if get_kwargs is None else get_kwargs
         url = self._url(url_name, url_kwargs, get_kwargs)
         return self.client.get(url, *args, **kwargs)
 
     def _post(self, url_name=None, url_kwargs=None, get_kwargs=None, *args,
                 **kwargs):
-        get_kwargs = get_kwargs if get_kwargs != None else self._get_kwargs()
+        get_kwargs = self._get_kwargs() if get_kwargs is None else get_kwargs
         url = self._url(url_name, url_kwargs, get_kwargs)
         return self.client.post(url, *args, **kwargs)
 
@@ -64,8 +64,7 @@ class AddProjectToUserTestCase(RelationshipTestBase):
 
     def test_permission(self):
         """Permission is required to add a project relationship."""
-        for perm in self.permissions:
-            self.user.user_permissions.remove(perm)
+        self.user.user_permissions.remove(*self.permissions)
 
         response = self._post()
         self.assertEquals(response.status_code, 302)
@@ -96,7 +95,7 @@ class AddProjectToUserTestCase(RelationshipTestBase):
 
     def test_redirect_to_user_page(self):
         """Adding a relationship should redirect to user page by default."""
-        user_url = reverse('view_user', kwargs={'pk': self.user.pk})
+        user_url = reverse('view_user', args=(self.user.pk,))
 
         response = self._post(data=self._data())
         self._assertRedirectsNoFollow(response, user_url)
@@ -135,8 +134,7 @@ class AddUserToProjectTestCase(RelationshipTestBase):
 
     def test_permission(self):
         """Permission is required to add a project relationship."""
-        for perm in self.permissions:
-            self.user.user_permissions.remove(perm)
+        self.user.user_permissions.remove(*self.permissions)
 
         response = self._post()
         self.assertEquals(response.status_code, 302)
@@ -167,7 +165,7 @@ class AddUserToProjectTestCase(RelationshipTestBase):
 
     def test_redirect_to_project_page(self):
         """Adding a relationship hould redirect to person page by default."""
-        project_url = reverse('view_project', kwargs={'pk': self.project.pk})
+        project_url = reverse('view_project', args=(self.project.pk,))
 
         response = self._post(data=self._data())
         self._assertRedirectsNoFollow(response, project_url)
@@ -205,8 +203,7 @@ class EditRelationshipTestCase(RelationshipTestBase):
 
     def test_permission(self):
         """Permission is required to edit a project relationship."""
-        for perm in self.permissions:
-            self.user.user_permissions.remove(perm)
+        self.user.user_permissions.remove(*self.permissions)
 
         for method in (self._get, self._post):
             response = method()
@@ -255,7 +252,7 @@ class EditRelationshipTestCase(RelationshipTestBase):
 
     def test_redirect_to_project_page(self):
         """Editing a relationship should redirect to project by default."""
-        project_url = reverse('view_project', kwargs={'pk': self.project.pk})
+        project_url = reverse('view_project', args=(self.project.pk,))
 
         response = self._post(data=self._data())
         self._assertRedirectsNoFollow(response, project_url)
@@ -300,8 +297,7 @@ class DeleteRelationshipTestCase(RelationshipTestBase):
 
     def test_permission(self):
         """Permission is required to delete a project relationship."""
-        for perm in self.permissions:
-            self.user.user_permissions.remove(perm)
+        self.user.user_permissions.remove(*self.permissions)
         response = self._post()
         self.assertEquals(response.status_code, 302)
         self.assertEquals(ProjectRelationship.objects.count(), 1)

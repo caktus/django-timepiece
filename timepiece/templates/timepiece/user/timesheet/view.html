@@ -34,10 +34,10 @@
         <div class="span12" id="header">
             <div id="options-buttons">
                {% if show_verify %}
-                    <a class="btn btn-primary" href="{% url 'change_user_timesheet' action='verify' pk=timesheet_user.id %}?from_date={{ from_date|date:"Y-m-d" }}">Verify All Entries</a>
+                    <a class="btn btn-primary" href="{% url 'change_user_timesheet' timesheet_user.id 'verify' %}?from_date={{ from_date|date:"Y-m-d" }}">Verify All Entries</a>
                 {% endif %}
                 {% if show_approve %}
-                    <a class="btn btn-primary" href="{% url 'change_user_timesheet' action='approve' pk=timesheet_user.id %}?from_date={{ from_date|date:"Y-m-d" }}">Approve All Entries</a>
+                    <a class="btn btn-primary" href="{% url 'change_user_timesheet' timesheet_user.id 'approve' %}?from_date={{ from_date|date:"Y-m-d" }}">Approve All Entries</a>
                 {% endif %}
                 {% if perms.timepiece.view_payroll_summary %}
                     <a class="btn btn-primary" href="{% url 'reject_user_timesheet' timesheet_user.pk %}?month={{ from_date|date:'n' }}&amp;year={{ from_date|date:'Y' }}">Reject All Entries</a>

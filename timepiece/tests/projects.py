@@ -21,9 +21,7 @@ class ProjectTestCase(TimepieceDataTestCase):
         self.p2 = self.create_project(billable=False, name='2')
         self.p4 = self.create_project(billable=True, name='4')
         self.p3 = self.create_project(billable=False, name='1')
-        self.url = reverse('view_project_timesheet',
-                           kwargs={'pk': self.p1.pk}
-        )
+        self.url = reverse('view_project_timesheet', args=(self.p1.pk,))
 
     def make_entries(self):
         days = [

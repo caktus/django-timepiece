@@ -167,12 +167,7 @@ def clock_out(request):
 
 @permission_required('timepiece.can_pause')
 def toggle_pause(request):
-    """
-    Allow the user to pause and unpause their open entries.  If this method is
-    invoked on an entry that is not paused, it will become paused.  If this
-    method is invoked on an entry that is already paused, it will unpause it.
-    Then the user will be redirected to their log entry list.
-    """
+    """Allow the user to pause and unpause the active entry."""
     entry = utils.get_active_entry(request.user)
     if not entry:
         raise Http404
@@ -192,10 +187,10 @@ def toggle_pause(request):
 
 
 @permission_required('timepiece.change_entry')
-def create_edit_entry(request, pk=None):
-    if pk:
+def create_edit_entry(request, entry_id=None):
+    if entry_id:
         try:
-            entry = timepiece.Entry.no_join.get(pk=pk)
+            entry = timepiece.Entry.no_join.get(pk=entry_id)
             if not (entry.is_editable or
                     request.user.has_perm('timepiece.view_payroll_summary')):
                 raise Http404
@@ -212,7 +207,7 @@ def create_edit_entry(request, pk=None):
         )
         if form.is_valid():
             entry = form.save()
-            if pk:
+            if entry_id:
                 message = 'The entry has been updated successfully.'
             else:
                 message = 'The entry has been created successfully.'
@@ -237,7 +232,7 @@ def create_edit_entry(request, pk=None):
 
 
 @permission_required('timepiece.view_payroll_summary')
-def reject_entry(request, pk):
+def reject_entry(request, entry_id):
     """
     Admins can reject an entry that has been verified or approved but not
     invoiced to set its status to 'unverified' for the user to fix.
@@ -245,7 +240,7 @@ def reject_entry(request, pk):
     user = request.user
     return_url = request.REQUEST.get('next', reverse('dashboard'))
     try:
-        entry = timepiece.Entry.no_join.get(pk=pk)
+        entry = timepiece.Entry.no_join.get(pk=entry_id)
     except:
         message = 'No such log entry.'
         messages.error(request, message)
@@ -269,12 +264,12 @@ def reject_entry(request, pk):
 
 
 @permission_required('timepiece.view_payroll_summary')
-def reject_user_timesheet(request, pk):
+def reject_user_timesheet(request, user_id):
     """
     This allows admins to reject all entries, instead of just one
     """
     form = timepiece_forms.YearMonthForm(request.GET or request.POST)
-    user = User.objects.get(pk=pk)
+    user = User.objects.get(pk=user_id)
     if form.is_valid():
         from_date, to_date = form.save()
         entries = timepiece.Entry.no_join.filter(status='verified', user=user,
@@ -297,12 +292,12 @@ def reject_user_timesheet(request, pk):
         msg = 'You must provide a month and year for entries to be rejected.'
         messages.error(request, msg)
 
-    url = reverse('view_user_timesheet', args=(pk,))
+    url = reverse('view_user_timesheet', args=(user_id,))
     return HttpResponseRedirect(url)
 
 
 @permission_required('timepiece.delete_entry')
-def delete_entry(request, pk):
+def delete_entry(request, entry_id):
     """
     Give the user the ability to delete a log entry, with a confirmation
     beforehand.  If this method is invoked via a GET request, a form asking
@@ -310,7 +305,7 @@ def delete_entry(request, pk):
     is invoked via a POST request, the entry will be deleted.
     """
     try:
-        entry = timepiece.Entry.no_join.get(pk=pk, user=request.user)
+        entry = timepiece.Entry.no_join.get(pk=entry_id, user=request.user)
     except timepiece.Entry.DoesNotExist:
         message = 'No such entry found.'
         messages.info(request, message)
@@ -385,6 +380,10 @@ class ProjectTimesheet(DetailView):
     template_name = 'timepiece/project/timesheet.html'
     model = timepiece.Project
     context_object_name = 'project'
+    pk_url_kwarg = 'pk'  # This parameter was introduced in Django 1.4.
+                         # When we drop support for Django 1.3, we can
+                         # change this to project_id for consistency of the
+                         # URL structure.
 
     @method_decorator(permission_required('timepiece.view_project_time_sheet'))
     def dispatch(self, *args, **kwargs):
@@ -395,7 +394,7 @@ class ProjectTimesheet(DetailView):
             request_get = self.request.GET.copy()
             request_get.pop('csv')
             return_url = reverse('view_project_timesheet_csv',
-                                 kwargs={'pk': self.get_object().pk})
+                                 args=(self.get_object().pk,))
             return_url += '?%s' % urllib.urlencode(request_get)
             return redirect(return_url)
         return super(ProjectTimesheet, self).get(*args, **kwargs)
@@ -477,8 +476,8 @@ class ProjectTimesheetCSV(CSVMixin, ProjectTimesheet):
 
 
 @login_required
-def view_user_timesheet(request, pk):
-    user = get_object_or_404(User, pk=pk)
+def view_user_timesheet(request, user_id):
+    user = get_object_or_404(User, pk=user_id)
     if not (request.user.has_perm('timepiece.view_entry_summary') or \
         user.pk == request.user.pk):
         return HttpResponseForbidden('Forbidden')
@@ -560,8 +559,8 @@ def view_user_timesheet(request, pk):
 
 
 @login_required
-def change_user_timesheet(request, pk, action):
-    user = get_object_or_404(User, pk=pk)
+def change_user_timesheet(request, user_id, action):
+    user = get_object_or_404(User, pk=user_id)
     admin_verify = request.user.has_perm('timepiece.view_entry_summary')
     perm = True
 
@@ -581,11 +580,11 @@ def change_user_timesheet(request, pk, action):
     except (ValueError, OverflowError, KeyError):
         raise Http404
     to_date = from_date + relativedelta(months=1)
-    entries = timepiece.Entry.no_join.filter(user=pk,
+    entries = timepiece.Entry.no_join.filter(user=user_id,
                                              end_time__gte=from_date,
                                              end_time__lt=to_date)
     active_entries = timepiece.Entry.no_join.filter(
-        user=pk,
+        user=user_id,
         start_time__lt=to_date,
         end_time=None,
         status='unverified'
@@ -596,7 +595,7 @@ def change_user_timesheet(request, pk, action):
     }
     entries = entries.filter(status=filter_status[action])
 
-    return_url = reverse('view_user_timesheet', kwargs={'pk': pk})
+    return_url = reverse('view_user_timesheet', args=(user_id,))
     return_url += '?%s' % urllib.urlencode({
         'year': from_date.year,
         'month': from_date.month,
@@ -735,6 +734,10 @@ class InvoiceDetail(DetailView):
     template_name = 'timepiece/invoice/view.html'
     model = timepiece.EntryGroup
     context_object_name = 'invoice'
+    pk_url_kwarg = 'pk'  # This parameter was introduced in Django 1.4.
+                         # When we drop support for Django 1.3, we can
+                         # change this to invoice_id for consistency of the
+                         # URL structure.
 
     @method_decorator(permission_required('timepiece.change_entrygroup'))
     def dispatch(self, *args, **kwargs):
@@ -766,7 +769,7 @@ class InvoiceEntriesDetail(InvoiceDetail):
         return context
 
 
-class InvoiceCSV(CSVMixin, InvoiceDetail):
+class InvoiceDetailCSV(CSVMixin, InvoiceDetail):
 
     def get_filename(self, context):
         invoice = context['invoice']
@@ -815,7 +818,7 @@ class InvoiceEdit(InvoiceDetail):
         return context
 
     def post(self, request, **kwargs):
-        invoice = get_object_or_404(timepiece.EntryGroup, pk=kwargs.get('pk'))
+        invoice = get_object_or_404(timepiece.EntryGroup, pk=kwargs.get(self.pk_url_kwarg))
         self.object = invoice
         initial = {
             'project': invoice.project,
@@ -841,7 +844,7 @@ class InvoiceDelete(InvoiceDetail):
     template_name = 'timepiece/invoice/delete.html'
 
     def post(self, request, **kwargs):
-        invoice = get_object_or_404(timepiece.EntryGroup, pk=kwargs.get('pk'))
+        invoice = get_object_or_404(timepiece.EntryGroup, pk=kwargs.get(self.pk_url_kwarg))
         if 'delete' in request.POST:
             invoice.delete()
             return HttpResponseRedirect(reverse('list_invoices'))
@@ -850,15 +853,14 @@ class InvoiceDelete(InvoiceDetail):
 
 
 @permission_required('timepiece.change_entrygroup')
-def delete_invoice_entry(request, pk, entry_pk):
-    invoice = get_object_or_404(timepiece.EntryGroup, pk=pk)
-    entry = get_object_or_404(timepiece.Entry, pk=entry_pk)
+def delete_invoice_entry(request, invoice_id, entry_id):
+    invoice = get_object_or_404(timepiece.EntryGroup, pk=invoice_id)
+    entry = get_object_or_404(timepiece.Entry, pk=entry_id)
     if request.POST:
         entry.status = 'approved'
         entry.entry_group = None
         entry.save()
-        kwargs = {'pk': pk}
-        return HttpResponseRedirect(reverse('edit_invoice', kwargs=kwargs))
+        return HttpResponseRedirect(reverse('edit_invoice', args=(invoice_id,)))
     return render(request, 'timepiece/invoice/delete_entry.html', {
         'invoice': invoice,
         'entry': entry,
@@ -876,7 +878,7 @@ def list_businesses(request):
         if businesses.count() == 1:
             url_kwargs = {'business': businesses[0].pk}
             url = request.REQUEST.get('next',
-                    reverse('view_business', kwargs=url_kwargs))
+                    reverse('view_business', args=(businesses[0].pk,)))
             return HttpResponseRedirect(url)
     return render(request, 'timepiece/business/list.html', {
         'form': form,
@@ -885,16 +887,16 @@ def list_businesses(request):
 
 
 @permission_required('timepiece.view_business')
-def view_business(request, pk):
-    business = get_object_or_404(timepiece.Business, pk=pk)
+def view_business(request, business_id):
+    business = get_object_or_404(timepiece.Business, pk=business_id)
     return render(request, 'timepiece/business/view.html', {
         'business': business,
     })
 
 
 @permission_required('timepiece.add_business')
-def create_edit_business(request, pk=None):
-    business = get_object_or_404(timepiece.Business, pk=pk) if pk else None
+def create_edit_business(request, business_id=None):
+    business = get_object_or_404(timepiece.Business, pk=business_id) if business_id else None
     form = timepiece_forms.BusinessForm(request.POST or None,
             instance=business)
     if form.is_valid():
@@ -930,8 +932,8 @@ def list_users(request):
 
 @permission_required('auth.view_user')
 @transaction.commit_on_success
-def view_user(request, pk):
-    user = get_object_or_404(User, pk=pk)
+def view_user(request, user_id):
+    user = get_object_or_404(User, pk=user_id)
     add_project_form = timepiece_forms.SelectProjectForm()
     return render(request, 'timepiece/user/view.html', {
         'user': user,
@@ -941,8 +943,8 @@ def view_user(request, pk):
 
 @permission_required('auth.add_user')
 @permission_required('auth.change_user')
-def create_edit_user(request, pk=None):
-    user = get_object_or_404(User, pk=pk) if pk else None
+def create_edit_user(request, user_id=None):
+    user = get_object_or_404(User, pk=user_id) if user_id else None
     form = timepiece_forms.EditPersonForm(request.POST or None,
             instance=user)
     if form.is_valid():
@@ -980,8 +982,8 @@ def list_projects(request):
 
 @permission_required('timepiece.view_project')
 @transaction.commit_on_success
-def view_project(request, pk):
-    project = get_object_or_404(timepiece.Project, pk=pk)
+def view_project(request, project_id):
+    project = get_object_or_404(timepiece.Project, pk=project_id)
     add_user_form = timepiece_forms.SelectUserForm()
     return render(request, 'timepiece/project/view.html', {
         'project': project,
@@ -1066,8 +1068,8 @@ def edit_relationship(request):
 
 @permission_required('timepiece.add_project')
 @permission_required('timepiece.change_project')
-def create_edit_project(request, pk=None):
-    project = get_object_or_404(timepiece.Project, pk=pk) if pk else None
+def create_edit_project(request, project_id=None):
+    project = get_object_or_404(timepiece.Project, pk=project_id) if project_id else None
     form = timepiece_forms.ProjectForm(request.POST or None, instance=project)
     if request.POST and form.is_valid():
         project = form.save()
@@ -1164,6 +1166,10 @@ class ContractDetail(DetailView):
     template_name = 'timepiece/contract/view.html'
     model = timepiece.ProjectContract
     context_object_name = 'contract'
+    pk_url_kwarg = 'pk'  # This parameter was introduced in Django 1.4.
+                         # When we drop support for Django 1.3, we can
+                         # change this to contract_id for consistency of the
+                         # URL structure.
 
     @method_decorator(permission_required('timepiece.add_project_contract'))
     def dispatch(self, *args, **kwargs):
@@ -1188,6 +1194,7 @@ class DeleteView(TemplateView):
     permissions = None
     form_class = timepiece_forms.DeleteForm
     template_name = 'timepiece/delete_object.html'
+    param = None
 
     def dispatch(self, request, *args, **kwargs):
         for permission in self.permissions:
@@ -1215,7 +1222,7 @@ class DeleteView(TemplateView):
         return self.render_to_response(context)
 
     def get_queryset(self, **kwargs):
-        pk = kwargs.get('pk', None)
+        pk = kwargs.get(self.param, None)
         return get_object_or_404(self.model, pk=pk)
 
     def get_context_data(self, *args, **kwargs):
@@ -1228,18 +1235,21 @@ class DeleteUserView(DeleteView):
     model = User
     url_name = 'list_users'
     permissions = ('auth.add_user', 'auth.change_user',)
+    param = 'user_id'
 
 
 class DeleteBusinessView(DeleteView):
     model = timepiece.Business
     url_name = 'list_businesses'
     permissions = ('timepiece.add_business',)
+    param = 'business_id'
 
 
 class DeleteProjectView(DeleteView):
     model = timepiece.Project
     url_name = 'list_projects'
     permissions = ('timepiece.add_project', 'timepiece.change_project',)
+    param = 'project_id'
 
 
 class ReportMixin(object):
@@ -1781,10 +1791,10 @@ class ScheduleDetailView(ScheduleMixin, View):
 
     def delete(self, request, *args, **kwargs):
         """Remove a project from the database."""
-        pk = kwargs.get('pk', None)
+        assignment_id = kwargs.get('assignment_id', None)
 
-        if pk:
-            timepiece.ProjectHours.objects.filter(pk=pk).delete()
+        if assignment_id:
+            timepiece.ProjectHours.objects.filter(pk=assignment_id).delete()
             return HttpResponse('ok', mimetype='text/plain')
 
         return HttpResponse('', status=500)
