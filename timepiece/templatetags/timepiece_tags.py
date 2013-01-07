@@ -18,6 +18,13 @@ from timepiece import utils
 register = template.Library()
 
 
+# This is a good candidate for an assignment_tag, once we no longer
+# have to support Django 1.3.
+@register.simple_tag(takes_context=True)
+def sum_hours(context, entries, variable='daily_total'):
+    context[variable] = sum([e.get_total_seconds() for e in entries])
+
+
 @register.filter
 def multiply(a, b):
     return float(a) * float(b)
@@ -80,15 +87,6 @@ def date_filters(form_id, options=None, use_range=True):
     return {'filters': filters, 'form_id': form_id}
 
 
-@register.inclusion_tag('timepiece/time-sheet/invoice/_invoice_subheader.html',
-                        takes_context=True)
-def invoice_subheaders(context, current):
-    return {
-        'current': current,
-        'invoice': context['invoice'],
-    }
-
-
 @register.simple_tag
 def week_start(date):
     return utils.get_week_start(date).strftime('%m/%d/%Y')
@@ -149,3 +147,15 @@ def timesheet_url(type, pk, date):
     params = {'month': date.month, 'year': date.year} if date else {}
 
     return '?'.join((url, urllib.urlencode(params),))
+
+
+@register.simple_tag(takes_context=True)
+def get_max_hours(context):
+    """
+    Returns the largest number of hours worked or assigned on any project.
+    """
+    project_progress = context['project_progress']
+    max_hours = 0
+    for project in project_progress:
+        max_hours = max(max_hours, project['worked'], project['assigned'])
+    return str(max_hours)

@@ -32,6 +32,15 @@
                 <tr><th>First Name</th><td>{{ person.first_name }}</td></tr>
                 <tr><th>Last Name</th><td>{{ person.last_name }}</td></tr>
                 <tr><th>Email</th><td>{{ person.email }}</td></tr>
+                <tr>
+                    <th>Active</th>
+                    <td>
+                        {% if person.is_active %}
+                            <span class="label label-success"><i class="icon-white icon-ok"></i></span>
+                        {% else %}
+                            <span class="label label-important"><i class="icon-white icon-remove"></i></span>
+                        {% endif %}
+                    </td>
             </table>
         </div>
 
