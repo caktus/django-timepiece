@@ -300,9 +300,9 @@ class EntryQuerySet(models.query.QuerySet):
             diff = None
             if span == 'month':
                 diff = relativedelta(months=1)
-            if span == 'week':
+            elif span == 'week':
                 diff = relativedelta(days=7)
-            if span == 'day':
+            elif span == 'day':
                 diff = relativedelta(days=1)
             if diff is not None:
                 to_date = from_date + diff
@@ -404,7 +404,8 @@ class Entry(models.Model):
                 min_start = min(entry_a.start_time, entry_b.start_time)
                 diff = max_end - min_start
                 diff = diff.seconds + diff.days * 86400
-                total = entry_a.get_total_seconds() + entry_b.get_total_seconds() - 1
+                total = entry_a.get_total_seconds() + \
+                        entry_b.get_total_seconds() - 1
                 if total >= diff:
                     return True
             return False

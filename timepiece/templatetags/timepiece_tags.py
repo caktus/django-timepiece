@@ -18,6 +18,11 @@ from timepiece import utils
 register = template.Library()
 
 
+@register.assignment_tag
+def sum_hours(entries):
+    return sum([e.get_total_seconds() for e in entries])
+
+
 @register.filter
 def multiply(a, b):
     return float(a) * float(b)
@@ -28,7 +33,7 @@ def seconds_to_hours(seconds):
     return round(seconds / 3600.0, 2)
 
 
-@register.inclusion_tag('timepiece/time-sheet/_date_filters.html')
+@register.inclusion_tag('timepiece/date_filters.html')
 def date_filters(form_id, options=None, use_range=True):
     if not options:
         options = ('months', 'quarters', 'years')
@@ -78,15 +83,6 @@ def date_filters(form_id, options=None, use_range=True):
             ))
 
     return {'filters': filters, 'form_id': form_id}
-
-
-@register.inclusion_tag('timepiece/time-sheet/invoice/_invoice_subheader.html',
-                        takes_context=True)
-def invoice_subheaders(context, current):
-    return {
-        'current': current,
-        'invoice': context['invoice'],
-    }
 
 
 @register.simple_tag
@@ -141,11 +137,23 @@ def work_days(end):
 @register.simple_tag
 def timesheet_url(type, pk, date):
     if type == 'project':
-        name = 'project_time_sheet'
+        name = 'view_project_timesheet'
     elif type == 'user':
-        name = 'view_person_time_sheet'
+        name = 'view_user_timesheet'
 
     url = reverse(name, args=(pk,))
     params = {'month': date.month, 'year': date.year} if date else {}
 
     return '?'.join((url, urllib.urlencode(params),))
+
+
+@register.simple_tag(takes_context=True)
+def get_max_hours(context):
+    """
+    Returns the largest number of hours worked or assigned on any project.
+    """
+    project_progress = context['project_progress']
+    max_hours = 0
+    for project in project_progress:
+        max_hours = max(max_hours, project['worked'], project['assigned'])
+    return str(max_hours)

@@ -6,7 +6,7 @@
 
 {% block crumbs %}
     {{ block.super }}
-    <li><span class="divider">/</span> <a href="{% url 'view_project' project.pk %}">Project Detail</a></li>
+    <li><span class="divider">/</span> <a href="">{{ project }}</a></li>
 {% endblock crumbs %}
 
 {% block content %}
@@ -15,14 +15,14 @@
             <h2>{{ project }}</h2>
             <ul class="nav nav-pills">
                 {% if perms.timepiece.change_project %}
-                    <li><a href="{% url 'edit_project' project_id=project.id %}">Edit Project</a></li>
-                    <li><a href="{% url 'delete_project' project.id %}">Delete Project</a></li>
+                    <li><a href="{% url 'edit_project' project.id %}">Edit</a></li>
+                    <li><a href="{% url 'delete_project' project.id %}">Delete</a></li>
                 {% endif %}
                 {% if perms.timepiece.view_businesses %}
-                    <li><a href="{% url 'view_business' business=project.business.id %}">Return to {{ project.business.name }}</a></li>
+                    <li><a href="{% url 'view_business' project.business.id %}">Return to {{ project.business.name }}</a></li>
                 {% endif %}
                 {% if perms.timepiece.view_project_time_sheet %}
-                    <li><a href="{% url 'project_time_sheet' project.id %}">View Project Time Sheet</a></li>
+                    <li><a href="{% url 'view_project_timesheet' project.id %}">View Time Sheet</a></li>
                 {% endif %}
             </ul>
         </div>
@@ -51,12 +51,12 @@
                     {{ user.get_full_name }}
                     {% if perms.timepiece.change_projectrelationship %}
                         {% with caption="Edit "|add:user.get_full_name|add:"'s relationship to "|add:project.name %}
-                            <a title="{{ caption }}" href="{% url 'edit_project_relationship' project_id=project.id user_id=user.id %}?next={% url 'view_project' project_id=project.id %}"><i alt="{{ caption }}" class="icon-pencil"></i></a>
+                            <a title="{{ caption }}" href="{% url 'edit_relationship' %}?project_id={{ project.id}}&user_id={{ user.id }}&next={% url 'view_project' project.id %}"><i alt="{{ caption }}" class="icon-pencil"></i></a>
                         {% endwith %}
                     {% endif %}
                     {% if perms.timepiece.delete_projectrelationship %}
                         {% with caption="Remove "|add:user.get_full_name|add:" from "|add:project.name %}
-                            <a title="{{ caption }}" href="{% url 'remove_project_relationship' project_id=project.id user_id=user.id %}?next={% url 'view_project' project_id=project.id %}"><i alt="{{ caption }}" class="icon-remove"></i></a>
+                            <a title="{{ caption }}" href="{% url 'delete_relationship' %}?project_id={{ project.id }}&user_id={{ user.id }}&next={% url 'view_project' project.id %}"><i alt="{{ caption }}" class="icon-remove"></i></a>
                         {% endwith %}
                     {% endif %}
                 </li>
@@ -64,7 +64,7 @@
             {% endifnotequal %}
             </ul>
             {% if perms.timepiece.add_projectrelationship %}
-            <form class="form-inline" action="{% url 'add_user_to_project' project_id=project.id %}?next={% url 'view_project' project_id=project.id %}" method="post" accept-charset="utf-8">
+            <form class="form-inline" action="{% url 'create_relationship' %}?project_id={{ project.id }}&next={% url 'view_project' project.id %}" method="post" accept-charset="utf-8">
                 {% csrf_token %}
                 {{ add_user_form|as_bootstrap:"inline" }}
                 <input class="btn" type="submit" name="submit" id="submit" value="Add" />
@@ -72,5 +72,4 @@
             {% endif %}
         </div>
     </div>
-
 {% endblock %}

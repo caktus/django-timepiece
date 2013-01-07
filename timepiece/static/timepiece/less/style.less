@@ -228,6 +228,13 @@ body {
      * Start general site-wide classes/ids
      *****************************************/
 
+    .nav-pills li span {
+        display: block;
+        line-height: 14px;
+        padding: 8px 12px 8px 12px;
+        margin: 2px 2px 2px 0px;
+    }
+
     .right {
         float: right;
     }
@@ -421,14 +428,49 @@ body {
     }
 
     &#dashboard {
+        .table-striped {
+            tbody tr:nth-child(odd) td, tbody tr:nth-child(odd) th {
+                background-color: #eeeeee;
+            }
+        }
+        .table-hover {
+            tbody {
+                tr:hover td, tr:hover th {
+                    background-color: #e2e2f3;
+                }
+            }
+        }
+        .nowrap {
+            white-space: nowrap;
+        }
         #active-entry {
-            margin-bottom: 25px;
+            margin-bottom: 35px;
             #active-buttons {
-                margin-bottom: 10px;
-                margin-top: 10px;
+                white-space: nowrap;
+                display: inline;
+                div {
+                    margin-bottom: 10px;
+                    margin-top: 5px;
+                }
             }
             #active-text {
                 font-size: 16px;
+            }
+        }
+        #progress {
+            .progress {
+                border: 1px solid @lightgray;
+                margin-bottom: 0px;
+            }
+            .bar, .remaining {
+                float: left;
+                overflow: hidden;
+            }
+            .bar-worked {
+                #gradient > .vertical(#62c462, #57a957);  // green
+            }
+            .bar-overtime {
+                #gradient > .vertical(#458745, #346534);  // dark green
             }
         }
         #overall-progress {
@@ -445,50 +487,31 @@ body {
             }
             .progress {
                 height: 28px;
-                border: 1px solid @lightgray;
             }
             .bar, .remaining {
                 vertical-align: middle;
                 font-size: 18px;
                 line-height: 28px;
                 text-align: center;
-                float: left;
-                overflow: hidden;
-            }
-            .bar-danger {
-                #gradient > .vertical(#458745, #346534);
             }
         }
         #project-progress {
-            table-layout: fixed;
-            td, th {
-                overflow: hidden;
-            }
-            .progress-col {
-                width: 50%;
-                .progress-wrapper {
-                    border: 1px solid #CCCCCC;
-                    div {
+            margin-top: 18px;
+            table {
+                table-layout: fixed;
+                td, th {
+                    overflow: hidden;
+                }
+                #active-project {
+                    background-color: #F2FBEF;
+                }
+                .progress-col {
+                    width: 50%;
+                    .bar, .remaining {
                         text-indent: 100%;
                         white-space: nowrap;
-                        overflow: hidden;
-                    }
-                    .worked {
-                        #gradient > .vertical(#62c462, #57a957);
-                        float: left;
-                    }
-                    .overtime {
-                        #gradient > .vertical(#458745, #346534);
-                    }
-                    .remaining {
-                        background-color: @white;
                     }
                 }
-            }
-        }
-        #entries {
-            #add-entry {
-                margin-bottom: 10px;
             }
         }
     }
@@ -579,6 +602,15 @@ body {
         .hours {
             text-align: center !important;
         }
+        #schedule {
+            // Manual table striping with lighter-than-default color.
+            tbody tr:nth-child(odd) td, tbody tr:nth-child(odd) th {
+                background-color: #eeeeee;
+            }
+            .hover {
+                background-color: #e2e2f3 !important;
+            }
+        }
     }
 
     &#productivity-report {
@@ -588,6 +620,12 @@ body {
             span {
                 font-weight: bold;
             }
+        }
+    }
+
+    &#hourly-report {
+        .controls {
+            width: 100%;
         }
     }
 

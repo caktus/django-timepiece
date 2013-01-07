@@ -3,6 +3,7 @@ from dateutil import rrule
 from dateutil.relativedelta import relativedelta
 from decimal import Decimal
 from itertools import groupby
+import json
 
 from django.conf import settings
 from django.core.urlresolvers import reverse
@@ -22,6 +23,16 @@ reverse_lazy = lazy(reverse, str)
 
 
 defaults = TimepieceDefaults()
+
+
+class DecimalEncoder(json.JSONEncoder):
+
+    def default(self, obj):
+        if isinstance(obj, Decimal):
+            return float(obj)
+        return super(DecimalEncoder, self).default(obj)
+
+
 def get_setting(name, **kwargs):
     if hasattr(settings, name):
         return getattr(settings, name)
@@ -478,3 +489,15 @@ def process_progress(entries, assignments):
     project_progress = sorted(project_data.values(), key=key)
 
     return project_progress
+
+
+def get_active_entry(user):
+    Entry = get_model('timepiece', 'Entry')
+    try:
+        entry = Entry.no_join.get(user=user, end_time__isnull=True)
+    except Entry.DoesNotExist:
+        entry = None
+    except Entry.MultipleObjectsReeturned:
+        # TODO: create specific exception?
+        raise Exception('Only one active entry is allowed.')
+    return entry
