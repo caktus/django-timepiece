@@ -2,7 +2,6 @@ from datetime import datetime, timedelta
 from StringIO import StringIO
 from dateutil.relativedelta import relativedelta
 
-from django.core.urlresolvers import reverse
 from django.contrib.auth.models import User, Permission
 from django.core.exceptions import ValidationError
 

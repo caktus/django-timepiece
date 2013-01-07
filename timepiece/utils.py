@@ -485,7 +485,7 @@ def get_active_entry(user):
         entry = Entry.no_join.get(user=user, end_time__isnull=True)
     except Entry.DoesNotExist:
         entry = None
-    except Entry.MultipleObjectsReeturned:
+    except Entry.MultipleObjectsReturned:
         # TODO: create specific exception?
         raise Exception('Only one active entry is allowed.')
     return entry

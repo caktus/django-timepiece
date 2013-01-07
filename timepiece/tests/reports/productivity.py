@@ -11,7 +11,7 @@ from timepiece.tests.base import TimepieceDataTestCase
 
 
 class TestProductivityReport(TimepieceDataTestCase):
-    url_name = 'productivity_report'
+    url_name = 'report_productivity'
 
     def setUp(self):
         self.username = 'test_user'

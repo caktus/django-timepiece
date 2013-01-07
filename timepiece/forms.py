@@ -107,17 +107,11 @@ class QuickSearchForm(forms.Form):
         type, pk = self.cleaned_data['quick_search']
 
         if type == 'individual':
-            return reverse('view_person', kwargs={
-                'person_id': pk
-            })
+            return reverse('view_user', kwargs={'pk': pk})
         elif type == 'business':
-            return reverse('view_business', kwargs={
-                'business': pk
-            })
+            return reverse('view_business', kwargs={'pk': pk})
         elif type == 'project':
-            return reverse('view_project', kwargs={
-                'project_id': pk
-            })
+            return reverse('view_project', kwargs={'pk': pk})
 
         raise forms.ValidationError('Must be a user, project, or business')
 

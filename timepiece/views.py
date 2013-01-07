@@ -894,8 +894,7 @@ def view_business(request, pk):
 
 @permission_required('timepiece.add_business')
 def create_edit_business(request, pk=None):
-    if pk:
-        business = get_object_or_404(timepiece.Business, pk=pk)
+    business = get_object_or_404(timepiece.Business, pk=pk) if pk else None
     form = timepiece_forms.BusinessForm(request.POST or None,
             instance=business)
     if form.is_valid():
@@ -997,33 +996,32 @@ def view_project(request, pk):
 def create_relationship(request):
     user_id = request.REQUEST.get('user_id', None)
     project_id = request.REQUEST.get('project_id', None)
-    user = None
-    if user_id:
-        user = get_object_or_404(User, pk=user_id)
-    if not user:
-        user_form = timepiece_forms.SelectUserForm(request.POST)
-        if user_form.is_valid():
-            user = user_form.save()
+    url = reverse('dashboard')  # Default if nothing else comes up
 
     project = None
     if project_id:
         project = get_object_or_404(timepiece.Project, pk=project_id)
-    if not project:
+        url = reverse('view_project', args=(project_id,))
+    else:  # Adding a user to a specific project
         project_form = timepiece_forms.SelectProjectForm(request.POST)
         if project_form.is_valid():
             project = project_form.save()
+
+    user = None
+    if user_id:
+        user = get_object_or_404(User, pk=user_id)
+        url = reverse('view_user', args=(user_id,))
+    else:  # Adding a project to a specific user
+        user_form = timepiece_forms.SelectUserForm(request.POST)
+        if user_form.is_valid():
+            user = user_form.save()
 
     if user and project:
         timepiece.ProjectRelationship.objects.get_or_create(
                 user=user, project=project)
 
-    if request.REQUEST.get('next', None):
-        return HttpResponseRedirect(request.REQUEST['next'])
-    if project_id:
-        project_url = reverse('view_project', args=(project_id,))
-        return HttpResponseRedirect(project_url)
-    person_url = reverse('view_user', args=(user_id,))
-    return HttpResponseRedirect(person_url)
+    url = request.REQUEST.get('next', url)
+    return HttpResponseRedirect(url)
 
 
 @csrf_exempt
@@ -1450,7 +1448,7 @@ class HourlyReport(ReportMixin, CSVMixin, TemplateView):
 
 
 class BillableHours(ReportMixin, TemplateView):
-    template_name = 'timepiece/reports/billable_hourss.html'
+    template_name = 'timepiece/reports/billable_hours.html'
 
     @property
     def defaults(self):

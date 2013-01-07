@@ -37,7 +37,7 @@
                                     <li><a href="{% url 'list_projects' %}">Projects</a></li>
                                 {% endif %}
                                 {% if perms.auth.view_user %}
-                                    <li><a href="{% url 'list_users' %}">People</a></li>
+                                    <li><a href="{% url 'list_users' %}">Users</a></li>
                                 {% endif %}
                                 {% if perms.timepiece.view_business %}
                                     <li><a href="{% url 'list_businesses' %}">Businesses</a></li>

@@ -91,7 +91,7 @@ class ProjectHoursListViewTestCase(ProjectHoursTestCase):
         for i in range(5):
             self.create_project_hours_entry(self.past_week, published=True)
             self.create_project_hours_entry(self.current_week, published=True)
-        self.url = reverse('project_hours')
+        self.url = reverse('view_schedule')
         self.client.login(username='user', password='abc')
         self.date_format = '%Y-%m-%d'
 
@@ -175,8 +175,8 @@ class ProjectHoursEditTestCase(ProjectHoursTestCase):
             codename='add_projecthours')
         self.manager = self.create_user('manager', 'e@e.com', 'abc')
         self.manager.user_permissions = self.permission
-        self.view_url = reverse('edit_project_hours')
-        self.ajax_url = reverse('project_hours_ajax_view')
+        self.view_url = reverse('edit_schedule')
+        self.ajax_url = reverse('ajax_schedule')
         self.week_start = utils.get_week_start(datetime.date.today())
         self.next_week = self.week_start + relativedelta(days=7)
         self.future = self.week_start + relativedelta(days=14)
@@ -474,7 +474,7 @@ class ProjectHoursEditTestCase(ProjectHoursTestCase):
             user=self.manager
         )
 
-        url = reverse('project_hours_detail_view', args=(ph.pk,))
+        url = reverse('ajax_schedule_detail', args=(ph.pk,))
 
         response = self.client.delete(url)
         self.assertEquals(response.status_code, 200)
