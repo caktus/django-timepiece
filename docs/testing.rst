@@ -7,6 +7,8 @@ django-timepiece includes several different alternatives for testing. Test can b
 
 A Python module, ``run_tests.py``, is included if you do not want to run tests using Tox. This is the Python module used to run tests when executing ``python setup.py test``. The tests are run through Django, using Django's default test runner. It accepts an optional argument, ``run_tests.py jenkins``, that runs the tests using django-jenkins. Running the tests with django-jenkins also requires you to install `coverage <http://pypi.python.org/pypi/coverage>`_ and `pep8 <http://pypi.python.org/pypi/pep8/>`_.
 
+To run a subset of the Django tests for django-timepiece, you can pass their names to ``run_tests.py`` as you would for ``django-admin.py test``, e.g. ``run_tests.py timepiece.TestClassName [...]``.
+
 django-timepiece inclues a Tox configuration file to run tests in a variety of environments:
 
  * `py26-1.3` - Test using Python 2.6 and Django 1.3.x
