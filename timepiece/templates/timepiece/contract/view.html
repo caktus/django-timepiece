@@ -19,8 +19,12 @@
 
             <table class='table table-bordered'>
                 <tr>
-                    <th>Project</th>
-                    <td>{{ contract.project }}</td>
+                    <th>Projects</th>
+                    <td>
+                        {% for project in contract.projects.all %}
+                            <a href="{% timesheet_url 'project' project.pk '' %}">{{ project }}</a><br />
+                        {% endfor %}
+                    </td>
                 </tr>
                 <tr>
                     <th>Time Frame</th>

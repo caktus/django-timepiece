@@ -1181,7 +1181,7 @@ class ContractList(ListView):
     model = timepiece.ProjectContract
     context_object_name = 'contracts'
     queryset = timepiece.ProjectContract.objects.filter(status='current')\
-            .select_related('project').order_by('project__name')
+            .order_by('name')
 
     @method_decorator(permission_required('timepiece.add_project_contract'))
     def dispatch(self, *args, **kwargs):
