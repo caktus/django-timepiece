@@ -28,8 +28,7 @@
                 <tr><th>Hours Remaining</th><td>{{ contract.hours_assigned|floatformat:2 }}</td></tr>
             </table>
         </div>
-        <div class="span1"></div>
-        <div class="span7">
+        <div class="span7 offset1">
             <h3>Projects</h3>
             {% if contract.projects.exists %}
                 <table class="table table-bordered">
