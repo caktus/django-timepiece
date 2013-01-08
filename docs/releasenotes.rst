@@ -1,7 +1,7 @@
 Release Notes
 =============
 
-0.7.3 (Released 01-04-2013)
+0.7.3 (Released 01-07-2013)
 ---------------------------
 
 Related issues are in the `0.7.3 milestone
