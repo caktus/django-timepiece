@@ -1,10 +1,8 @@
 import datetime
 from dateutil.relativedelta import relativedelta
 import json
-from urllib import urlencode
 
 from django.contrib.auth.models import Permission
-from django.core.urlresolvers import reverse
 
 from timepiece import models as timepiece
 from timepiece.tests.base import TimepieceDataTestCase

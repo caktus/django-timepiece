@@ -1,5 +1,3 @@
-import urllib
-
 from django.contrib.auth.models import Permission
 from django.core.urlresolvers import reverse
 
@@ -14,7 +12,8 @@ class RelationshipTestBase(TimepieceDataTestCase):
         self.password = self.random_string(25)
         self.user = self.create_user(username=self.username,
                 password=self.password)
-        self.permissions = [Permission.objects.get(codename=n) for n in self.perm_names]
+        self.permissions = [Permission.objects.get(codename=n) for n in
+                self.perm_names]
         self.user.user_permissions.add(*self.permissions)
         self.client.login(username=self.username, password=self.password)
 
