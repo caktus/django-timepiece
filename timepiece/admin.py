@@ -84,10 +84,11 @@ class ProjectContractAdmin(admin.ModelAdmin):
     list_display = ('name', 'start_date', 'end_date', 'status',
                     'num_hours', 'hours_assigned', 'hours_unassigned',
                     'hours_worked')
-    inlines = (ContractAssignmentInline)
+    inlines = (ContractAssignmentInline,)
     list_filter = ('status',)
     filter_horizontal = ('projects',)
     list_per_page = 20
+    search_fields = ('name', 'projects__name', 'projects__business__name')
 
     def hours_unassigned(self, obj):
         return obj.num_hours - obj.hours_assigned

@@ -64,7 +64,7 @@ class Business(models.Model):
         super(Business, self).save(*args, **kwargs)
 
     def __unicode__(self):
-        return self.name
+        return self.get_display_name()
 
     class Meta:
         ordering = ('name',)
