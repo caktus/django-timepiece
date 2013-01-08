@@ -766,7 +766,7 @@ class ProjectContract(models.Model):
         ('complete', 'Complete'),
     )
 
-    name = models.CharField(max_length=50)
+    name = models.CharField(max_length=255)
     projects = models.ManyToManyField(Project, related_name='contracts')
     start_date = models.DateField()
     end_date = models.DateField()
@@ -812,67 +812,6 @@ class ProjectContract(models.Model):
             # TODO put this in a .extra w/a subselect
             self._worked = self.entries.aggregate(s=Sum('hours'))['s'] or 0
         return self._worked or 0
-
-
-class ContractMilestone(models.Model):
-    contract = models.ForeignKey(ProjectContract, related_name='milestones')
-    name = models.CharField(max_length=255)
-    start_date = models.DateField()
-    end_date = models.DateField()
-    hours = models.DecimalField(max_digits=8, decimal_places=2, default=0)
-
-    class Meta(object):
-        ordering = ('end_date',)
-
-    @property
-    def entries(self):
-        """
-        All Entries worked on projects in this contract during the milestone
-        period.
-        """
-        return Entry.objects.filter(project__in=self.contract.projects.all(),
-                start_time__gte=self.start_date,
-                end_time__lt=self.end_date + datetime.timedelta(days=1))
-
-    @property
-    def hours_remaining(self):
-        """Number of hours remaining in this milestone."""
-        return self.hours - self.hours_worked
-
-    @property
-    def hours_worked(self):
-        """Number of hours worked on this milestone."""
-        if not hasattr(self, '_worked'):
-            self._worked = self.entries.aggregate(s=Sum('hours'))['s'] or 0
-        return self._worked or 0
-
-    def is_before(self):
-        return self.start_date > datetime.date.today()
-
-    def is_complete(self):
-        return self.end_date < datetime.date.today()
-
-    def total_budget(self):
-        """Number of hours on the contract through this milestone."""
-        if not hasattr(self, '_total_budget'):
-            end_date = self.end_date + datetime.timedelta(days=1)
-            previous = self.contract.milestones.filter(end_date__lt=end_date)
-            self._total_budget = previous.aggregate(s=Sum('hours'))['s'] or 0
-        return self._total_budget or 0
-
-    def total_hours_remaining(self):
-        """Number of hours left remaining through this milestone."""
-        return self.total_budget() - self.total_hours_worked()
-
-    def total_hours_worked(self):
-        """Number of hours worked on the contract through this milestone."""
-        if not hasattr(self, '_total_hours_worked'):
-            self._total_hours_worked = Entry.objects.filter(
-                project__in=self.contract.projects.all(),
-                start_time__gte=self.contract.start_date,
-                end_time__lt=self.end_date + datetime.timedelta(days=1),
-            ).aggregate(s=Sum('hours'))['s'] or 0
-        return self._total_hours_worked or 0
 
 
 class ContractAssignment(models.Model):

@@ -79,16 +79,12 @@ class ContractAssignmentInline(admin.TabularInline):
         return qs.select_related()
 
 
-class ContractMilestoneInline(admin.TabularInline):
-    model = timepiece.ContractMilestone
-
-
 class ProjectContractAdmin(admin.ModelAdmin):
     model = timepiece.ProjectContract
     list_display = ('name', 'start_date', 'end_date', 'status',
                     'num_hours', 'hours_assigned', 'hours_unassigned',
                     'hours_worked')
-    inlines = (ContractAssignmentInline, ContractMilestoneInline)
+    inlines = (ContractAssignmentInline)
     list_filter = ('status',)
     filter_horizontal = ('projects',)
     list_per_page = 20
