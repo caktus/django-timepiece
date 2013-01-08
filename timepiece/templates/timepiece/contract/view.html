@@ -44,7 +44,7 @@
                         {% for project in contract.projects.all %}
                             {% project_hours_for_contract contract project %}
                             <tr>
-                                <td>{{ project.name }}</td>
+                                <td><a href="{% url 'view_project' project.pk %}">{{ project.name }}</a></td>
                                 <td>{{ project_hours|floatformat:'2' }}</td>
                                 <td><a href="{% timesheet_url 'project' project.id '' %}">Time Sheet</a></td>
                                 <td><a href="{% project_report_url_for_contract contract project %}">Hours Report</a></td>
