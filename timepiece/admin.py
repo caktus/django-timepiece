@@ -99,17 +99,10 @@ class ProjectContractAdmin(admin.ModelAdmin):
 admin.site.register(timepiece.ProjectContract, ProjectContractAdmin)
 
 
-class ProjectContractInline(admin.TabularInline):
-    model = timepiece.ProjectContract
-    extra = 0
-
-
 class ProjectAdmin(admin.ModelAdmin):
-    model = timepiece.Project
     raw_id_fields = ('business',)
-    list_display = ('name', 'business', 'point_person', 'status', 'type',)
+    list_display = ('name', 'business', 'point_person', 'status', 'type')
     list_filter = ('type', 'status')
-    inlines = (ProjectContractInline,)
     search_fields = ('name', 'business__name', 'point_person__username',
             'point_person__first_name', 'point_person__last_name',
             'description')

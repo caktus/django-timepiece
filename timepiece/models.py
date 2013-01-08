@@ -776,6 +776,7 @@ class ProjectContract(models.Model):
 
     class Meta:
         ordering = ('-end_date',)
+        verbose_name = 'contract'
 
     def __unicode__(self):
         return unicode(self.name)
