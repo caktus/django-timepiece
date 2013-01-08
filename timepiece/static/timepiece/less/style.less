@@ -61,8 +61,8 @@ body {
     h2 {
         border-bottom: 1px solid #593E1A;
 
-        &.skinny {
-            width: 60%;
+        &.page-title {
+            margin-bottom: 20px;
         }
     }
 
@@ -124,11 +124,6 @@ body {
     ul {
         &.people {
             li {
-                &.add {
-                    .list-icon('user_add.png');
-                    padding-top: 1em;
-                }
-
                 .list-icon('user.png');
             }
         }
@@ -273,6 +268,10 @@ body {
 
     .inline {
         display: inline;
+    }
+
+    .nowrap {
+        white-space: nowrap
     }
 
     .paste:hover {
@@ -439,9 +438,6 @@ body {
                     background-color: #e2e2f3;
                 }
             }
-        }
-        .nowrap {
-            white-space: nowrap;
         }
         #active-entry {
             margin-bottom: 35px;

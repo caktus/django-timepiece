@@ -1,10 +1,8 @@
 import datetime
 from dateutil.relativedelta import relativedelta
 import json
-from urllib import urlencode
 
 from django.contrib.auth.models import Permission
-from django.core.urlresolvers import reverse
 
 from timepiece import models as timepiece
 from timepiece.tests.base import TimepieceDataTestCase
@@ -50,14 +48,6 @@ class TestProductivityReport(TimepieceDataTestCase):
                 data = {'user': user, 'week_start': week_start,
                         'project': self.project, 'hours': 2}
                 self.create_project_hours_entry(**data)
-
-    def _get(self, url_name=None, url_kwargs=None, get_kwargs=None, **kwargs):
-        """Convenience wrapper for test client GET request."""
-        url_name = url_name or self.url_name
-        url = reverse(url_name, kwargs=url_kwargs)
-        if get_kwargs:
-            url += '?' + urlencode(get_kwargs)
-        return self.client.get(url, **kwargs)
 
     def _unpack(self, response):
         form = response.context['form']
