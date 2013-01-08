@@ -1171,7 +1171,7 @@ class ContractDetail(DetailView):
                          # change this to contract_id for consistency of the
                          # URL structure.
 
-    @method_decorator(permission_required('timepiece.add_project_contract'))
+    @method_decorator(permission_required('timepiece.add_projectcontract'))
     def dispatch(self, *args, **kwargs):
         return super(ContractDetail, self).dispatch(*args, **kwargs)
 
@@ -1181,9 +1181,9 @@ class ContractList(ListView):
     model = timepiece.ProjectContract
     context_object_name = 'contracts'
     queryset = timepiece.ProjectContract.objects.filter(status='current')\
-            .select_related('project').order_by('project__name')
+            .order_by('name')
 
-    @method_decorator(permission_required('timepiece.add_project_contract'))
+    @method_decorator(permission_required('timepiece.add_projectcontract'))
     def dispatch(self, *args, **kwargs):
         return super(ContractList, self).dispatch(*args, **kwargs)
 

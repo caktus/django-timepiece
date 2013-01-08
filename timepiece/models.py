@@ -64,7 +64,7 @@ class Business(models.Model):
         super(Business, self).save(*args, **kwargs)
 
     def __unicode__(self):
-        return self.name
+        return self.get_display_name()
 
     class Meta:
         ordering = ('name',)
@@ -74,7 +74,7 @@ class Business(models.Model):
 class Project(models.Model):
     name = models.CharField(max_length=255)
     tracker_url = models.CharField(max_length=255, blank=True, null=False,
-        default="")
+            default="")
     business = models.ForeignKey(
         Business,
         related_name='new_business_projects',
@@ -766,204 +766,83 @@ class ProjectContract(models.Model):
         ('complete', 'Complete'),
     )
 
-    project = models.ForeignKey(Project, related_name='contracts')
+    name = models.CharField(max_length=255)
+    projects = models.ManyToManyField(Project, related_name='contracts')
     start_date = models.DateField()
     end_date = models.DateField()
-    num_hours = models.DecimalField(max_digits=8, decimal_places=2,
-                                    default=0)
-    status = models.CharField(choices=CONTRACT_STATUS, default='upcomming',
+    num_hours = models.DecimalField(max_digits=8, decimal_places=2, default=0)
+    status = models.CharField(choices=CONTRACT_STATUS, default='upcoming',
                               max_length=32)
 
-    def hours_worked(self):
-        # TODO put this in a .extra w/a subselect
-        if not hasattr(self, '_hours_worked'):
-            self._hours_worked = Entry.objects.filter(
-                project=self.project,
+    class Meta:
+        ordering = ('-end_date',)
+        verbose_name = 'contract'
+
+    def __unicode__(self):
+        return unicode(self.name)
+
+    @property
+    def entries(self):
+        """
+        All Entries worked on projects in this contract during the contract
+        period.
+        """
+        return Entry.objects.filter(project__in=self.projects.all(),
                 start_time__gte=self.start_date,
-                end_time__lt=self.end_date + datetime.timedelta(days=1),
-            ).aggregate(sum=Sum('hours'))['sum']
-        return self._hours_worked or 0
+                end_time__lt=self.end_date + datetime.timedelta(days=1))
 
     @property
     def hours_assigned(self):
-        # TODO put this in a .extra w/a subselect
-        if not hasattr(self, '_hours_assigned'):
-            self._hours_assigned =\
-              self.assignments.aggregate(sum=Sum('num_hours'))['sum']
-        return self._hours_assigned or 0
+        """Total assigned hours for this contract."""
+        if not hasattr(self, '_assigned'):
+            # TODO put this in a .extra w/a subselect
+            assignments = self.assignments.aggregate(s=Sum('num_hours'))
+            self._assigned = assignments['s'] or 0
+        return self._assigned or 0
 
     @property
     def hours_remaining(self):
-        return self.num_hours - self.hours_worked()
+        """Number of hours remaining on the contract."""
+        return self.num_hours - self.hours_worked
 
     @property
-    def weeks_remaining(self):
-        return utils.generate_dates(end=self.end_date, by='week')
-
-    def __unicode__(self):
-        return unicode(self.project)
-
-
-class ContractMilestone(models.Model):
-    contract = models.ForeignKey(ProjectContract, related_name='milestones')
-    name = models.CharField(max_length=255)
-    start_date = models.DateField()
-    end_date = models.DateField()
-    hours = models.DecimalField(max_digits=8, decimal_places=2,
-                                default=0)
-
-    class Meta(object):
-        ordering = ('end_date',)
-
     def hours_worked(self):
-        """Hours worked during this milestone"""
-        if not hasattr(self, '_hours_worked'):
-            self._hours_worked = Entry.objects.filter(
-                project=self.contract.project,
-                start_time__gte=self.start_date,
-                end_time__lt=self.end_date + datetime.timedelta(days=1),
-            ).aggregate(sum=Sum('hours'))['sum']
-        return self._hours_worked or 0
-
-    def total_budget(self):
-        """Total budget through the end of this milestone"""
-        if not hasattr(self, '_total_budget'):
-            end_date = self.end_date + datetime.timedelta(days=1)
-            previous = self.contract.milestones.filter(end_date__lt=end_date)
-            self._total_budget = previous.aggregate(sum=Sum('hours'))['sum']
-        return self._total_budget or 0
-
-    def total_hours_worked(self):
-        """Total hours worked on project through the end of this milestone"""
-        if not hasattr(self, '_total_hours_worked'):
-            self._total_hours_worked = Entry.objects.filter(
-                project=self.contract.project,
-                start_time__gte=self.contract.start_date,
-                end_time__lt=self.end_date + datetime.timedelta(days=1),
-            ).aggregate(sum=Sum('hours'))['sum']
-        return self._total_hours_worked or 0
-
-    def hours_remaining(self):
-        """Hours over the milestone budget"""
-        return self.hours - self.hours_worked()
-
-    def total_hours_remaining(self):
-        """Hours over the entire project budget"""
-        return self.total_budget() - self.total_hours_worked()
-
-    def is_before(self):
-        return self.start_date > datetime.date.today()
-
-    def is_complete(self):
-        return self.end_date < datetime.date.today()
-
-
-class AssignmentManager(models.Manager):
-
-    def active_during_week(self, week, next_week):
-        q = Q(contract__end_date__gte=week, contract__end_date__lt=next_week)
-        q |= Q(contract__start_date__gte=week,
-            contract__start_date__lt=next_week)
-        q |= Q(contract__start_date__lt=week, contract__end_date__gt=next_week)
-        return self.get_query_set().filter(q)
-
-    def sort_by_priority(self):
-        return sorted(self.get_query_set().all(),
-            key=lambda contract: contract.this_weeks_priority_number)
-
-
-# contract assignment logger
-logger = logging.getLogger('timepiece.ca')
+        """Number of hours worked on the contract."""
+        if not hasattr(self, '_worked'):
+            # TODO put this in a .extra w/a subselect
+            self._worked = self.entries.aggregate(s=Sum('hours'))['s'] or 0
+        return self._worked or 0
 
 
 class ContractAssignment(models.Model):
     contract = models.ForeignKey(ProjectContract, related_name='assignments')
-    user = models.ForeignKey(
-        User,
-        related_name='assignments',
-    )
+    user = models.ForeignKey(User, related_name='assignments')
     start_date = models.DateField()
     end_date = models.DateField()
-    num_hours = models.DecimalField(max_digits=8, decimal_places=2,
-                                    default=0)
+    num_hours = models.DecimalField(max_digits=8, decimal_places=2, default=0)
     min_hours_per_week = models.IntegerField(default=0)
 
-    objects = AssignmentManager()
+    class Meta:
+        unique_together = (('contract', 'user'),)
 
-    def _log(self, msg):
-        logger.debug('{0} - {1}'.format(self, msg))
-
-    def _filtered_hours_worked(self, end_date):
-        return Entry.objects.filter(
-            user=self.user,
-            project=self.contract.project,
-            start_time__gte=self.start_date,
-            end_time__lt=end_date,
-        ).aggregate(sum=Sum('hours'))['sum'] or 0
-
-    def filtered_hours_worked_with_in_window(self, start_date, end_date):
-        return Entry.objects.filter(
-            user=self.user,
-            project=self.contract.project,
-            start_time__gte=start_date,
-            end_time__lt=end_date,
-        ).aggregate(sum=Sum('hours'))['sum'] or 0
+    def __unicode__(self):
+        return u'{0} / {1}'.format(self.user, self.contract)
 
     @property
-    def hours_worked(self):
-        if not hasattr(self, '_hours_worked'):
-            date = self.end_date + datetime.timedelta(days=1)
-            self._hours_worked = self._filtered_hours_worked(date)
-        return self._hours_worked or 0
+    def entries(self):
+        return Entry.objects.filter(project__in=self.contract.projects.all(),
+                user=self.user, start_time__gte=self.start_date,
+                end_time__lt=self.end_date + datetime.timedelta(days=1))
 
     @property
     def hours_remaining(self):
         return self.num_hours - self.hours_worked
 
     @property
-    def this_weeks_priority_number(self):
-        """
-        Only works if already filtered to the current week. Otherwise groups
-        outside the range will be listed as ongoing instead of befor or after.
-        """
-        if not hasattr(self, '_priority_type'):
-            weeks = utils.get_week_window(timezone.now())
-            try:
-                end_date = self.end_date.date()
-                start_date = self.start_date.date()
-            except:
-                end_date = self.end_date
-                start_date = self.start_date
-            if end_date < weeks[1].date() \
-            and end_date >= weeks[0].date():
-                self._priority_type = 0
-            elif start_date < weeks[1].date() \
-            and start_date >= weeks[0].date():
-                self._priority_type = 1
-            else:
-                self._priority_type = 2
-        return self._priority_type
-
-    @property
-    def this_weeks_priority_type(self):
-        type_list = ['ending', 'starting', 'ongoing', ]
-        return type_list[self.this_weeks_priority_number]
-
-    def remaining_contracts(self):
-        assignments = ContractAssignment.objects.exclude(pk=self.pk)
-        assignments = assignments.filter(end_date__gte=self.end_date,
-                                         user=self.user)
-        return assignments.order_by('-end_date')
-
-    def remaining_min_hours(self):
-        return self.remaining_contracts().aggregate(
-            s=Sum('min_hours_per_week'))['s'] or 0
-
-    class Meta:
-        unique_together = (('contract', 'user'),)
-
-    def __unicode__(self):
-        return u'%s / %s' % (self.user, self.contract.project)
+    def hours_worked(self):
+        if not hasattr(self, '_worked'):
+            self._worked = self.entries.aggregate(s=Sum('hours'))['s'] or 0
+        return self._worked or 0
 
 
 class UserProfile(models.Model):

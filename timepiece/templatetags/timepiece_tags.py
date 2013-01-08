@@ -6,6 +6,7 @@ import urllib
 
 from django import template
 from django.core.urlresolvers import reverse
+from django.db.models import Sum
 
 try:
     from django.utils import timezone
@@ -23,6 +24,7 @@ register = template.Library()
 @register.simple_tag(takes_context=True)
 def sum_hours(context, entries, variable='daily_total'):
     context[variable] = sum([e.get_total_seconds() for e in entries])
+    return ''
 
 
 @register.filter
@@ -159,3 +161,29 @@ def get_max_hours(context):
     for project in project_progress:
         max_hours = max(max_hours, project['worked'], project['assigned'])
     return str(max_hours)
+
+
+# This is a good candidate for an assignment_tag, once we no longer
+# have to support Django 1.3.
+@register.simple_tag(takes_context=True)
+def project_hours_for_contract(context, contract, project,
+        variable='project_hours'):
+    """Total hours worked on project for contract."""
+    hours = contract.entries.filter(project=project)\
+                           .aggregate(s=Sum('hours'))['s'] or 0
+    context[variable] = hours
+    return ''
+
+
+@register.simple_tag
+def project_report_url_for_contract(contract, project):
+    data = {
+        'from_date': contract.start_date.strftime('%m/%d/%Y'),
+        'to_date': contract.end_date.strftime('%m/%d/%Y'),
+        'billable': 1,
+        'non_billable': 1,
+        'paid_leave': 1,
+        'trunc': 'month',
+        'projects_1': project.id,
+    }
+    return '{0}?{1}'.format(reverse('report_hourly'), urllib.urlencode(data))
