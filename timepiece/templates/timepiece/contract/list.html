@@ -7,26 +7,28 @@
 {% block content %}
     <div class="row-fluid">
         <div class="span12">
-            <h2>Current Contracts</h2>
+            <h2 class="page-title">Current Contracts</h2>
 
             <table class='table table-bordered table-striped table-condensed'>
                 <thead>
                     <tr>
                         <th>Name</th>
-                        <th>Time Frame</th>
-                        <th>Hours Worked</th>
+                        <th>Start Date</th>
+                        <th>End Date</th>
                         <th>Contract Hours</th>
-                        <th>Percent Complete</th>
+                        <th>Hours Worked</th>
+                        <th>Percent</th>
                     </tr>
                 </thead>
                 <tbody>
                     {% for contract in contracts %}
                         <tr>
                             <td><a href="{% url 'view_contract' contract.id %}">{{ contract.name }}</a></td>
-                            <td>{{ contract.start_date|date:'M d, Y' }} - {{ contract.end_date|date:'M d, Y' }}</td>
-                            <td class="hours">{{ contract.hours_worked }}</td>
-                            <td class="hours">{{ contract.num_hours }}</td>
-                            <td class="hours">{% widthratio contract.hours_worked contract.num_hours 100 %}%</td>
+                            <td class="nowrap">{{ contract.start_date|date:'N d, Y' }}</td>
+                            <td class="nowrap">{{ contract.end_date|date:'N d, Y' }}</td>
+                            <td class="nowrap hours">{{ contract.num_hours|floatformat:2 }}</td>
+                            <td class="nowrap hours">{{ contract.hours_worked|floatformat:2 }}</td>
+                            <td class="nowrap hours">{% widthratio contract.hours_worked contract.num_hours 100 %}%</td>
                         </tr>
                     {% endfor %}
                 </tbody>

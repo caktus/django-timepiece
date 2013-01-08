@@ -795,7 +795,8 @@ class ProjectContract(models.Model):
         """Total assigned hours for this contract."""
         if not hasattr(self, '_assigned'):
             # TODO put this in a .extra w/a subselect
-            self._assigned = self.assignments.aggregate(s=Sum('num_hours'))['s']
+            assignments = self.assignments.aggregate(s=Sum('num_hours'))
+            self._assigned = assignments['s'] or 0
         return self._assigned or 0
 
     @property
@@ -808,7 +809,7 @@ class ProjectContract(models.Model):
         """Number of hours worked on the contract."""
         if not hasattr(self, '_worked'):
             # TODO put this in a .extra w/a subselect
-            self._worked = self.entries.aggregate(s=Sum('hours'))['s']
+            self._worked = self.entries.aggregate(s=Sum('hours'))['s'] or 0
         return self._worked or 0
 
 
@@ -841,7 +842,7 @@ class ContractMilestone(models.Model):
     def hours_worked(self):
         """Number of hours worked on this milestone."""
         if not hasattr(self, '_worked'):
-            self._worked = self.entries.aggregate(s=Sum('hours'))['s']
+            self._worked = self.entries.aggregate(s=Sum('hours'))['s'] or 0
         return self._worked or 0
 
     def is_before(self):
@@ -855,7 +856,7 @@ class ContractMilestone(models.Model):
         if not hasattr(self, '_total_budget'):
             end_date = self.end_date + datetime.timedelta(days=1)
             previous = self.contract.milestones.filter(end_date__lt=end_date)
-            self._total_budget = previous.aggregate(sum=Sum('hours'))['sum']
+            self._total_budget = previous.aggregate(s=Sum('hours'))['s'] or 0
         return self._total_budget or 0
 
     def total_hours_remaining(self):
@@ -869,7 +870,7 @@ class ContractMilestone(models.Model):
                 project__in=self.contract.projects.all(),
                 start_time__gte=self.contract.start_date,
                 end_time__lt=self.end_date + datetime.timedelta(days=1),
-            ).aggregate(sum=Sum('hours'))['sum']
+            ).aggregate(s=Sum('hours'))['s'] or 0
         return self._total_hours_worked or 0
 
 
@@ -900,7 +901,7 @@ class ContractAssignment(models.Model):
     @property
     def hours_worked(self):
         if not hasattr(self, '_worked'):
-            self._worked = self.entries.aggregate(s=Sum('hours'))['s']
+            self._worked = self.entries.aggregate(s=Sum('hours'))['s'] or 0
         return self._worked or 0
 
 

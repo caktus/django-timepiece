@@ -6,6 +6,7 @@ import urllib
 
 from django import template
 from django.core.urlresolvers import reverse
+from django.db.models import Sum
 
 try:
     from django.utils import timezone
@@ -23,6 +24,7 @@ register = template.Library()
 @register.simple_tag(takes_context=True)
 def sum_hours(context, entries, variable='daily_total'):
     context[variable] = sum([e.get_total_seconds() for e in entries])
+    return ''
 
 
 @register.filter
@@ -159,3 +161,13 @@ def get_max_hours(context):
     for project in project_progress:
         max_hours = max(max_hours, project['worked'], project['assigned'])
     return str(max_hours)
+
+
+# This is a good candidate for an assignment_tag, once we no longer
+# have to support Django 1.3.
+@register.simple_tag(takes_context=True)
+def get_contract_hours(context, contract, project, variable='project_hours'):
+    hours = contract.entries.filter(project=project)\
+                           .aggregate(s=Sum('hours'))['s'] or 0
+    context[variable] = hours
+    return ''
