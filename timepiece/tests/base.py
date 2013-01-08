@@ -1,6 +1,7 @@
 import datetime
 import random
 import string
+import urllib
 
 from dateutil.relativedelta import relativedelta
 from decimal import Decimal
@@ -22,6 +23,43 @@ from timepiece import utils
 
 
 class TimepieceDataTestCase(TestCase):
+    url_name = ''
+    url_kwargs = {}
+    url_args = {}
+    get_kwargs = {}
+    post_data = {}
+
+    def _url(self, url_name=None, url_args=None, url_kwargs=None, get_kwargs=None):
+        url_name = url_name or self.url_name
+        url_args = self.url_args if url_args is None else url_args
+        url_kwargs = self.url_kwargs if url_kwargs is None else url_kwargs
+        get_kwargs = self.get_kwargs if get_kwargs is None else get_kwargs
+
+        url = reverse(url_name, args=url_args, kwargs=url_kwargs)
+        if get_kwargs:
+            url = '{0}?{1}'.format(url, urllib.urlencode(get_kwargs))
+        return url
+
+    def _get(self, url_name=None, url_args=None, url_kwargs=None,
+            get_kwargs=None, url=None, *args, **kwargs):
+        """Convenience wrapper for self.client.get.
+
+        If url is not passed, it is built using url_name, url_args, url_kwargs.
+        Get parameters may be added from get_kwargs.
+        """
+        url = url or self._url(url_name, url_args, url_kwargs, get_kwargs)
+        return self.client.get(path=url, *args, **kwargs)
+
+    def _post(self, data=None, url_name=None, url_args=None,
+            url_kwargs=None, get_kwargs=None, url=None, *args, **kwargs):
+        """Convenience wrapper for self.client.post.
+
+        If url is not passed, it is built using url_name, url_args, url_kwargs.
+        Get parameters may be added from get_kwargs.
+        """
+        url = url or self._url(url_name, url_args, url_kwargs, get_kwargs)
+        data = self.post_data if data is None else data
+        return self.client.post(path=url, data=data, *args, **kwargs)
 
     def create_business(self, data=None):
         data = data or {}
@@ -133,18 +171,18 @@ class TimepieceDataTestCase(TestCase):
             defaults['status'] = 'unverified'
         return timepiece.Entry.objects.create(**defaults)
 
-    def create_project_contract(self, data=None):
-        data = data or {}
+    def create_contract(self, projects=None, **kwargs):
         defaults = {
+            'name': self.random_string(25),
             'start_date': datetime.date.today(),
             'end_date': datetime.date.today() + datetime.timedelta(weeks=2),
             'num_hours': random.randint(10, 400),
             'status': 'current',
         }
-        defaults.update(data)
-        if 'project' not in defaults:
-            defaults['project'] = self.create_project()
-        return timepiece.ProjectContract.objects.create(**defaults)
+        defaults.update(kwargs)
+        contract = timepiece.ProjectContract.objects.create(**defaults)
+        contract.projects.add(*(projects or []))
+        return contract
 
     def create_contract_assignment(self, data=None):
         data = data or {}

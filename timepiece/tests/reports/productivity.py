@@ -51,14 +51,6 @@ class TestProductivityReport(TimepieceDataTestCase):
                         'project': self.project, 'hours': 2}
                 self.create_project_hours_entry(**data)
 
-    def _get(self, url_name=None, url_kwargs=None, get_kwargs=None, **kwargs):
-        """Convenience wrapper for test client GET request."""
-        url_name = url_name or self.url_name
-        url = reverse(url_name, kwargs=url_kwargs)
-        if get_kwargs:
-            url += '?' + urlencode(get_kwargs)
-        return self.client.get(url, **kwargs)
-
     def _unpack(self, response):
         form = response.context['form']
         report = json.loads(response.context['report'])
