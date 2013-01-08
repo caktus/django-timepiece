@@ -35,7 +35,7 @@ def seconds_to_hours(seconds):
     return round(seconds / 3600.0, 2)
 
 
-@register.inclusion_tag('timepiece/time-sheet/_date_filters.html')
+@register.inclusion_tag('timepiece/date_filters.html')
 def date_filters(form_id, options=None, use_range=True):
     if not options:
         options = ('months', 'quarters', 'years')
@@ -139,9 +139,9 @@ def work_days(end):
 @register.simple_tag
 def timesheet_url(type, pk, date):
     if type == 'project':
-        name = 'project_time_sheet'
+        name = 'view_project_timesheet'
     elif type == 'user':
-        name = 'view_person_time_sheet'
+        name = 'view_user_timesheet'
 
     url = reverse(name, args=(pk,))
     params = {'month': date.month, 'year': date.year} if date else {}

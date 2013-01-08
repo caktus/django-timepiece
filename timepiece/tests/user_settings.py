@@ -1,4 +1,3 @@
-from django.test import Client
 from django.core.urlresolvers import reverse
 
 from django.contrib.auth import models as auth_models
@@ -9,9 +8,9 @@ from timepiece.tests.base import TimepieceDataTestCase
 
 
 class EditSettingsTest(TimepieceDataTestCase):
+
     def setUp(self):
         super(EditSettingsTest, self).setUp()
-        self.client = Client()
         self.url = reverse('edit_settings')
         self.client.login(username='user', password='abc')
         self.activities = []
@@ -36,7 +35,7 @@ class EditSettingsTest(TimepieceDataTestCase):
         for k, v in data.iteritems():
             value = getattr(self.user, k)
             self.assertEquals(value, v)
-        next = reverse('timepiece-clock-in')
+        next = reverse('clock_in')
         next_query_url = '%s?next=%s' % (self.url, next)
         data = {
             'first_name': 'Terry',
@@ -48,10 +47,11 @@ class EditSettingsTest(TimepieceDataTestCase):
         self.profile = timepiece.UserProfile.objects.get(user=self.user)
 
 
-class EditPersonTest(TimepieceDataTestCase):
+class EditUserTest(TimepieceDataTestCase):
+
     def setUp(self):
-        super(EditPersonTest, self).setUp()
-        self.url = reverse('edit_person', args=(self.user.pk,))
+        super(EditUserTest, self).setUp()
+        self.url = reverse('edit_user', args=(self.user.pk,))
         self.data = {
             'username': self.user.username,
             'first_name': self.user.first_name,
@@ -98,5 +98,5 @@ class EditPersonTest(TimepieceDataTestCase):
         self.data['password_two'] = 'password2'
 
         response = self.client.post(self.url, data=self.data)
-        form = response.context['person_form']
+        form = response.context['form']
         self.assertEquals(form.non_field_errors(), ['Passwords Must Match.'])
