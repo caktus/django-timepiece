@@ -6,7 +6,7 @@
 
 {% block crumbs %}
     {{ block.super }}
-    <li><span class="divider">/</span> <a href="{% url 'view_business' business.pk %}">Business Detail</a></li>
+    <li><span class="divider">/</span> <a href="">{{ business.name }}</a></li>
 {% endblock crumbs %}
 
 {% block content %}
@@ -15,8 +15,8 @@
             <h2>{{ business.name }}</h2>
             <ul class="nav nav-pills">
                 {% if perms.timepiece.change_business %}
-                    <li><a href='{% url 'edit_business' business.pk %}'>Edit business</a></li>
-                    <li><a href="{% url 'delete_business' business.pk %}">Delete business</a></li>
+                    <li><a href='{% url 'edit_business' business.pk %}'>Edit</a></li>
+                    <li><a href="{% url 'delete_business' business.pk %}">Delete</a></li>
                 {% endif %}
             </ul>
         </div>
@@ -25,22 +25,10 @@
     <div class="row-fluid">
         <div class="span12">
             <table class='table table-bordered table-striped'>
-                <tr>
-                    <th>Short name:</th>
-                    <td>{{ business.short_name }}</td>
-                </tr>
-                <tr>
-                    <th>Email:</th>
-                    <td>{{ business.email }}</td>
-                </tr>
-                <tr>
-                    <th>Description:</th>
-                    <td>{{ business.description|linebreaks }}</td>
-                </tr>
-                <tr>
-                    <th>Notes:</th>
-                    <td>{{ business.notes|linebreaks }}</td>
-                </tr>
+                <tr><th>Short name:</th><td>{{ business.short_name }}</td></tr>
+                <tr><th>Email:</th><td>{{ business.email }}</td></tr>
+                <tr><th>Description:</th><td>{{ business.description|linebreaks }}</td></tr>
+                <tr><th>Notes:</th><td>{{ business.notes|linebreaks }}</td></tr>
             </table>
         </div>
     </div>

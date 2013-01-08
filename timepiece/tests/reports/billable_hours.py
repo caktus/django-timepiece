@@ -18,7 +18,7 @@ class TestBillableHours(ReportsTestBase):
         self.to_date = datetime.datetime(2011, 1, 4)
         self.dates_data = ['12/27/2010', '01/03/2011']
 
-        self.url = reverse('billable_hours')
+        self.url = reverse('report_billable_hours')
         self.perm = Permission.objects.filter(codename='view_entry_summary')
         self.admin = self.create_user('admin', 'e@e.com', 'abc')
         self.admin.user_permissions = self.perm

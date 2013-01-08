@@ -10,277 +10,185 @@ from timepiece import views
 
 
 urlpatterns = patterns('',
-    url(r'^$', lambda request: HttpResponsePermanentRedirect(reverse('dashboard'))),
+    # Redirect the base URL to the dashboard.
+    url(r'^$', lambda r: HttpResponsePermanentRedirect(reverse('dashboard'))),
     url(r'^dashboard/(?:(?P<active_tab>progress|all-entries|online-users)/)?$',
-        views.dashboard, name='dashboard'),
+        views.dashboard,
+        name='dashboard'),
+    url(r'^search/$',
+        views.search,
+        name='search'),
 
-    url(r'^clockin/$', views.clock_in, name='timepiece-clock-in'),
-    url(r'^clockout/(?P<entry_id>\d+)/$', views.clock_out,
-        name='timepiece-clock-out'),
-    url(r'^toggle/(?P<entry_id>\d+)/$', views.toggle_paused,
-        name='timepiece-toggle-paused'),
-    url(r'^add/$', views.create_edit_entry, name='timepiece-add'),
-    url(r'^update/(?P<entry_id>\d+)/$', views.create_edit_entry,
-        name='timepiece-update'),
-    url(r'^reject/(?P<entry_id>\d+)/$', views.reject_entry,
-        name='timepiece-reject-entry'),
-    url(r'^delete/(?P<entry_id>\d+)/$', views.delete_entry,
-        name='timepiece-delete'),
-    url(r'^search/$', views.quick_search, name='quick_search'),
+    # Active entry
+    url(r'^entry/clock_in/$',
+        views.clock_in,
+        name='clock_in'),
+    url(r'^entry/clock_out/$',
+        views.clock_out,
+        name='clock_out'),
+    url(r'^entry/toggle_pause/$',
+        views.toggle_pause,
+        name='toggle_pause'),
 
+    # Entries
+    url(r'^entry/add/$',
+        views.create_edit_entry,
+        name='create_entry'),
+    url(r'^entry/(?P<entry_id>\d+)/edit/$',
+        views.create_edit_entry,
+        name='edit_entry'),
+    url(r'^entry/(?P<entry_id>\d+)/reject/$',
+        views.reject_entry,
+        name='reject_entry'),
+    url(r'^entry/(?P<entry_id>\d+)/delete/$',
+        views.delete_entry,
+        name='delete_entry'),
 
-    ### Person ###
-    url(
-        r'^person/list/$',
-        views.list_people,
-        name='list_people',
-    ),
-    url(
-        r'^person/(?P<person_id>\d+)/$',
-        views.view_person,
-        name='view_person',
-    ),
-    url(
-        r'^person/create/$',
-        views.create_edit_person,
-        name='create_person',
-    ),
-    url(
-        r'^person/(?P<person_id>\d+)/edit/$',
-        views.create_edit_person,
-        name='edit_person',
-    ),
-    url(
-        r'^person/(?P<pk>\d+)/delete/$',
-        views.DeletePersonView.as_view(),
-        name='delete_person',
-    ),
-
-
-    ### Business ###
-    url(
-        r'^business/list/$',
-        views.list_businesses,
-        name='list_businesses',
-    ),
-    url(
-        r'^business/(?P<business>\d+)/$',
-        views.view_business,
-        name='view_business',
-    ),
-    url(
-        r'^business/create/$',
-        views.create_edit_business,
-        name='create_business',
-    ),
-    url(
-        r'^business/(?P<business>\d+)/edit/$',
-        views.create_edit_business,
-        name='edit_business',
-    ),
-    url(
-        r'^business/(?P<pk>\d+)/delete/$',
-        views.DeleteBusinessView.as_view(),
-        name='delete_business',
-    ),
-
-
-    ### Project ###
-    url(
-        r'^project/list/$',
-        views.list_projects,
-        name='list_projects',
-    ),
-    url(
-        r'^project/(?P<project_id>\d+)/$',
-        views.view_project,
-        name='view_project',
-    ),
-    url(
-        r'^project/create/$',
-        views.create_edit_project,
-        name='create_project',
-    ),
-    url(
-        r'^project/(?P<project_id>\d+)/edit/$',
-        views.create_edit_project,
-        name='edit_project',
-    ),
-    url(
-        r'^project/(?P<pk>\d+)/delete/$',
-        views.DeleteProjectView.as_view(),
-        name='delete_project',
-    ),
-
-
-    ### Project/Person Relationship ###
-    url(
-        r'^relationship/user/(?P<user_id>\d+)/add/$',
-        views.add_project_relationship,
-        name='add_project_to_user',
-    ),
-    url(
-        r'^relationship/project/(?P<project_id>\d+)/add/$',
-        views.add_project_relationship,
-        name='add_user_to_project',
-    ),
-    url(
-        r'^relationship/(?P<project_id>\d+)/(?P<user_id>\d+)/remove/$',
-        views.remove_project_relationship,
-        name='remove_project_relationship',
-    ),
-    url(
-        r'^relationship/(?P<project_id>\d+)/(?P<user_id>\d+)/edit/$',
-        views.edit_project_relationship,
-        name='edit_project_relationship',
-    ),
-
-
-    ### time sheets ###
-
-    # Reports
-    url(
-        r'^reports/$',
-        views.HourlyReport.as_view(),
-        name='hourly_report',
-    ),
-    url(
-        r'^reports/summary/$',
-        views.summary,
-        name='timepiece-summary',
-    ),
-    url(
-        r'^reports/payroll/$',
-        views.payroll_summary,
-        name='payroll_summary',
-    ),
-    url(
-        r'^reports/billable/$',
-        views.BillableHours.as_view(),
-        name='billable_hours',
-    ),
-
-    # People
-    url(
-        r'time-sheet/people/(?P<user_id>\d+)/$',
-        views.view_person_time_sheet,
-        name='view_person_time_sheet',
-    ),
-    url(
-        r'^time-sheet/reject/(?P<user_id>\d+)/$',
-        views.reject_entries,
-        name='timepiece-reject-entries',
-    ),
-    url(
-        r'^time-sheet/(?P<action>verify|approve)/(?P<user_id>\d+)/' +
-        r'(?P<from_date>\d\d\d\d-\d\d-\d\d)/$',
-        views.change_person_time_sheet,
-        name='change_person_time_sheet',
-    ),
+    # Users
+    url(r'^user/settings/$',
+        views.edit_settings,
+        name='edit_settings'),
+    url(r'^user/$',
+        views.list_users,
+        name='list_users'),
+    url(r'^user/create/$',
+        views.create_edit_user,
+        name='create_user'),
+    url(r'^user/(?P<user_id>\d+)/$',
+        views.view_user,
+        name='view_user'),
+    url(r'^user/(?P<user_id>\d+)/edit/$',
+        views.create_edit_user,
+        name='edit_user'),
+    url(r'^user/(?P<user_id>\d+)/delete/$',
+        views.DeleteUserView.as_view(),
+        name='delete_user'),
+    url(r'^user/(?P<user_id>\d+)/timesheet/$',
+        views.view_user_timesheet,
+        name='view_user_timesheet'),
+    url(r'^user/(?P<user_id>\d+)/timesheet/reject/$',
+        views.reject_user_timesheet,
+        name='reject_user_timesheet'),
+    url(r'^user/(?P<user_id>\d+)/timesheet/(?P<action>verify|approve)/$',
+        views.change_user_timesheet,
+        name='change_user_timesheet'),
 
     # Projects
-    url(
-        r'^time-sheet/project/(?P<pk>\d+)/$',
+    url(r'^project/$',
+        views.list_projects,
+        name='list_projects'),
+    url(r'^project/create/$',
+        views.create_edit_project,
+        name='create_project'),
+    url(r'^project/(?P<project_id>\d+)/$',
+        views.view_project,
+        name='view_project'),
+    url(r'^project/(?P<project_id>\d+)/edit/$',
+        views.create_edit_project,
+        name='edit_project'),
+    url(r'^project/(?P<project_id>\d+)/delete/$',
+        views.DeleteProjectView.as_view(),
+        name='delete_project'),
+    url(r'^project/(?P<pk>\d+)/timesheet/$',
         views.ProjectTimesheet.as_view(),
-        name='project_time_sheet',
-    ),
-    url(
-        r'^time-sheet/project/(?P<pk>\d+)/csv/$',
+        name='view_project_timesheet'),
+    url(r'^project/(?P<pk>\d+)/timesheet/csv/$',
         views.ProjectTimesheetCSV.as_view(),
-        name='export_project_time_sheet',
-    ),
-    url(
-        r'^edit-settings/$',
-        views.edit_settings,
-        name='edit_settings',
-    ),
+        name='view_project_timesheet_csv'),
 
-    ### Invoices ###
-    url(
-        r'^invoice/outstanding/$',
-        views.invoice_projects,
-        name='invoice_projects',
-    ),
-    url(
-        r'invoice/project/(?P<project_id>\d+)/create/' +
-        r'(?P<to_date>\d\d\d\d-\d\d-\d\d)/' +
-        r'(?:(?P<from_date>\d\d\d\d-\d\d-\d\d)/)?$',
-        views.confirm_invoice_project,
-        name='confirm_invoice_project',
-    ),
-    url(
-        r'^invoice/list/$',
-        views.list_invoices,
-        name='list_invoices',
-    ),
-    url(
-        r'^invoice/(?P<pk>\d+)/$',
-        views.InvoiceDetail.as_view(),
-        name='view_invoice',
-    ),
-    url(
-        r'^invoice/(?P<pk>\d+)/entries/$',
-        views.InvoiceEntryDetail.as_view(),
-        name='view_invoice_entries',
-    ),
-    url(
-        r'^invoice/(?P<pk>\d+)/csv/$',
-        views.InvoiceCSV.as_view(),
-        name='view_invoice_csv',
-    ),
-    url(
-        r'^invoice/edit/(?P<pk>\d+)/$',
-        views.InvoiceEdit.as_view(),
-        name='edit_invoice',
-    ),
-    url(
-        r'^invoice/delete/(?P<pk>\d+)/$',
-        views.InvoiceDelete.as_view(),
-        name='delete_invoice',
-    ),
-    url(
-        r'^invoice/remove-entry/(?P<invoice_id>\d+)/(?P<entry_id>\d+)/$',
-        views.remove_invoice_entry,
-        name='remove_invoice_entry',
-    ),
-    # contracts
-    url(
-        r'^contract/(?P<pk>\d+)/$',
-        views.ContractDetail.as_view(),
-        name='view_contract',
-    ),
-    url(
-        r'^contract/list/$',
+    # Businesses
+    url(r'^business/$',
+        views.list_businesses,
+        name='list_businesses'),
+    url(r'^business/create/$',
+        views.create_edit_business,
+        name='create_business'),
+    url(r'^business/(?P<business_id>\d+)/$',
+        views.view_business,
+        name='view_business'),
+    url(r'^business/(?P<business_id>\d+)/edit/$',
+        views.create_edit_business,
+        name='edit_business'),
+    url(r'^business/(?P<business_id>\d+)/delete/$',
+        views.DeleteBusinessView.as_view(),
+        name='delete_business'),
+
+    # Project relationships
+    url(r'^relationship/create/$',
+        views.create_relationship,
+        name='create_relationship'),
+    url(r'^relationship/edit/$',
+        views.edit_relationship,
+        name='edit_relationship'),
+    url(r'^relationship/delete/$',
+        views.delete_relationship,
+        name='delete_relationship'),
+
+    # Reports
+    url(r'^reports/hourly/$',
+        views.HourlyReport.as_view(),
+        name='report_hourly'),
+    url(r'^reports/general_ledger/$',
+        views.report_general_ledger,
+        name='report_general_ledger'),
+    url(r'^reports/payroll/$',
+        views.report_payroll_summary,
+        name='report_payroll_summary'),
+    url(r'^reports/billable_hours/$',
+        views.BillableHours.as_view(),
+        name='report_billable_hours'),
+    url(r'^reports/productivity/$',
+        views.report_productivity,
+        name='report_productivity'),
+
+    # Schedule
+    url(r'^schedule/$',
+        views.ScheduleView.as_view(),
+        name='view_schedule'),
+    url(r'^schedule/edit/$',
+        views.EditScheduleView.as_view(),
+        name='edit_schedule'),
+    url(r'^schedule/ajax/$',
+        views.ScheduleAjaxView.as_view(),
+        name='ajax_schedule'),
+    url(r'^schedule/ajax/(?P<assignment_id>\d+)/$',
+        views.ScheduleDetailView.as_view(),
+        name='ajax_schedule_detail'),
+
+    # Contracts
+    url(r'^contract/$',
         views.ContractList.as_view(),
-        name='list_contracts',
-    ),
-    # project hours
-    url(
-        r'^schedule/$',
-        views.ProjectHoursView.as_view(),
-        name='project_hours',
-    ),
-    url(
-        r'^schedule/edit/$',
-        views.EditProjectHoursView.as_view(),
-        name='edit_project_hours',
-    ),
+        name='list_contracts'),
+    url(r'^contract/(?P<pk>\d+)/$',
+        views.ContractDetail.as_view(),
+        name='view_contract'),
 
-    # ajax views
-    url(
-        r'^ajax/hours/$',
-        views.ProjectHoursAjaxView.as_view(),
-        name='project_hours_ajax_view',
-    ),
-    url(
-        r'^ajax/hours/(?P<pk>\d+)/$',
-        views.ProjectHoursDetailView.as_view(),
-        name='project_hours_detail_view',
-    ),
-
-    url(
-        r'reports/productivity/$',
-        views.productivity_report,
-        name='productivity_report',
-    ),
+    # Invoices
+    url(r'invoice/$',
+        views.list_invoices,
+        name='list_invoices'),
+    url(r'invoice/oustanding/$',
+        views.list_outstanding_invoices,
+        name='list_outstanding_invoices'),
+    url(r'invoice/create/$',
+        views.create_invoice,
+        name='create_invoice'),
+    url(r'invoice/(?P<pk>\d+)/$',
+        views.InvoiceDetail.as_view(),
+        name='view_invoice'),
+    url(r'invoice/(?P<pk>\d+)/csv/$',
+        views.InvoiceDetailCSV.as_view(),
+        name='view_invoice_csv'),
+    url(r'invoice/(?P<pk>\d+)/entries/$',
+        views.InvoiceEntriesDetail.as_view(),
+        name='view_invoice_entries'),
+    url(r'invoice/(?P<invoice_id>\d+)/entries/(?P<entry_id>\d+)/remove/$',
+        views.delete_invoice_entry,
+        name='delete_invoice_entry'),
+    url(r'invoice/(?P<pk>\d+)/edit/$',
+        views.InvoiceEdit.as_view(),
+        name='edit_invoice'),
+    url(r'invoice/(?P<pk>\d+)/delete/$',
+        views.InvoiceDelete.as_view(),
+        name='delete_invoice'),
 )

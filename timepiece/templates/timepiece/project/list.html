@@ -37,16 +37,16 @@
                         <th>Name</th>
                         <th>Business</th>
                         <th>Description</th>
-                        <th>Timesheet</th>
+                        <th>Time Sheet</th>
                     </tr>
                 </thead>
                 <tbody>
                     {% for project in projects %}
                         <tr>
-                            <td><a href="{% url 'view_project' project_id=project.id %}">{{ project.name }}</a></td>
+                            <td><a href="{% url 'view_project' project.id %}">{{ project.name }}</a></td>
                             <td>{{ project.business }}</td>
                             <td>{{ project.description|truncatewords:8 }}</td>
-                            <td><a href="{% url 'project_time_sheet' project.id %}">Timesheet</a></td>
+                            <td><a href="{% url 'view_project_timesheet' project.id %}">Time Sheet</a></td>
                         </tr>
                     {% endfor %}
                 </tbody>

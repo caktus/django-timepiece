@@ -20,7 +20,7 @@ class TestHourlyReport(ReportsTestBase):
 
     def setUp(self):
         super(TestHourlyReport, self).setUp()
-        self.url = reverse('hourly_report')
+        self.url = reverse('report_hourly')
 
     def test_generate_months(self):
         dates = [utils.add_timezone(datetime.datetime(2011, month, 1))

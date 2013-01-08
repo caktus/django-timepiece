@@ -10,7 +10,7 @@ class TestGeneralLedger(TimepieceDataTestCase):
 
     def setUp(self):
         super(TestGeneralLedger, self).setUp()
-        self.url = reverse('timepiece-summary')
+        self.url = reverse('report_general_ledger')
 
     def testNoPermission(self):
         """
