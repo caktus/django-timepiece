@@ -2,7 +2,7 @@
 {% load timepiece_tags %}
 {% load url from future %}
 
-{% block title %}Contract for {{ contract }}{% endblock %}
+{% block title %}{{ contract }}{% endblock %}
 
 {% block crumbs %}
     {{ block.super }}
@@ -12,28 +12,48 @@
 {% block content %}
     <div class="row-fluid">
         <div class="span12">
-            <h2 class="page-title">Contract for {{ contract }} - {{ contract.start_date|date:'N d, Y' }} to {{ contract.end_date|date:'N d, Y' }}</h2>
+            <h2 class="page-title">{{ contract }}</h2>
         </div>
     </div>
 
     <div class="row-fluid">
-        <div class="span12">
+        <div class="span4">
+            <h3>Contract Info</h3>
             <table class="table table-bordered">
                 <tr><th>Status</th><td>{{ contract.get_status_display }}</td></tr>
+                <tr><th>Start Date</th><td>{{ contract.start_date|date:'N d, Y' }}</td></tr>
+                <tr><th>End Date</th><td>{{ contract.end_date|date:'N d, Y' }}</td></tr>
                 <tr><th>Contract Hours</th><td>{{ contract.num_hours|floatformat:2 }}</td></tr>
                 <tr><th>Hours Worked</th><td>{{ contract.hours_worked|floatformat:2 }} ({% widthratio contract.hours_worked contract.num_hours 100 %}%)</td></tr>
                 <tr><th>Hours Remaining</th><td>{{ contract.hours_assigned|floatformat:2 }}</td></tr>
-                <tr>
-                    <th>Projects</th>
-                    <td>
-                        {% for project in contract.projects.all %}
-                            <a href="{% timesheet_url 'project' project.id '' %}">{{ project }}</a>
-                            {% get_contract_hours contract project %}
-                            ({{ project_hours|floatformat:2 }} hours)<br />
-                        {% endfor %}
-                    </td>
-                </tr>
             </table>
+        </div>
+        <div class="span1"></div>
+        <div class="span7">
+            <h3>Projects</h3>
+            {% if contract.projects.exists %}
+                <table class="table table-bordered">
+                    <thead>
+                        <tr>
+                            <th>Name</th>
+                            <th>Hours Worked</th>
+                            <th>Time Sheet</th>
+                            <th>Hours Report</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for project in contract.projects.all %}
+                            {% project_hours_for_contract contract project %}
+                            <tr>
+                                <td>{{ project.name }}</td>
+                                <td>{{ project_hours|floatformat:'2' }}</td>
+                                <td><a href="{% timesheet_url 'project' project.id '' %}">Time Sheet</a></td>
+                                <td><a href="{% project_report_url_for_contract contract project %}">Hours Report</a></td>
+                            </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            {% endif %}
         </div>
     </div>
 
