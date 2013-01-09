@@ -12,44 +12,62 @@
 {% block content %}
     <div class="row-fluid">
         <div class="span12">
-        <h1>OH PLEASE OH PLEASE FIX ME</h1>
             <h2 class="page-title">{{ contract }}</h2>
-            <ul class="nav nav-pills">
-                <li><a href="{% url 'list_contracts' %}">Contracts</a></li>
-            </ul>
+        </div>
+    </div>
 
-            <table class='table table-bordered'>
-                <tr>
-                    <th>Status</th>
-                    <td>{{ contract.get_status_display }}</td>
-                </tr>
-                <tr>
-                    <th>Total Contract Hours</th>
-                    <td class="hours">
-                        {{ contract.contracted_hours }}
+    <div class="row-fluid">
+        <div class="span4">
+            <h3>Contract Info</h3>
+            <table class="table table-bordered">
+                <tr><th>Status</th><td>{{ contract.get_status_display }}</td></tr>
+                <tr><th>Start Date</th><td>{{ contract.start_date|date:'N d, Y' }}</td></tr>
+                <tr><th>End Date</th><td>{{ contract.end_date|date:'N d, Y' }}</td></tr>
+                <tr><th>Contract Hours</th>
+                    <td>
+                        {{ contract.contracted_hours|floatformat:2 }}
                         {% if contract.pending_hours %}
-                            <span class="pending">(+ {{ contract.pending_hours }})</span>
+                            <span class="pending_hours">(+ {{ contract.pending_hours }})</span>
                         {%  endif %}</td>
+                    </td>
                 </tr>
-                <tr>
-                    <th>Hours Worked</th>
-                    <td class="hours">{{ contract.hours_worked }}</td>
+                <tr><th>Hours Worked</th>
+                    <td>
+                        {{ contract.hours_worked|floatformat:2 }}
+                        ({% widthratio contract.hours_worked contract.contracted_hours 100 %}%)
+                    </td>
                 </tr>
-                <tr>
-                    <th>Hours Remaining</th>
-                    <td class="hours">{{ contract.hours_remaining }}</td>
-                </tr>
-                <tr>
-                    <th>Type</th>
-                    <td>{{  contract.get_type_display }}</td>
-                </tr>
-
-                {# old lines #}
-                <tr>
-                    <th>Time Frame</th>
-                    <td>{{ contract.start_date|date }} &mdash; {{ contract.end_date }}</td>
-                </tr>
+                <tr><th>Hours Remaining</th><td>{{ contract.hours_assigned|floatformat:2 }}</td></tr>
+                <tr><th>Type</th><td>{{  contract.get_type_display }}</td></tr>
             </table>
+        </div>
+        <div class="span7 offset1">
+            <h3>Projects</h3>
+            {% if contract.projects.exists %}
+                <table class="table table-bordered">
+                    <thead>
+                    <tr>
+                        <th>Name</th>
+                        <th>Hours Worked</th>
+                        <th>Time Sheet</th>
+                        <th>Hours Report</th>
+                    </tr>
+                    </thead>
+                    <tbody>
+                    {% for project in contract.projects.all %}
+                        {% project_hours_for_contract contract project %}
+                        <tr>
+                            <td><a href="{% url 'view_project' project.pk %}">{{ project.name }}</a></td>
+                            <td class="hours">{{ project_hours|floatformat:'2' }}</td>
+                            <td><a href="{% timesheet_url 'project' project.id '' %}">Time Sheet</a></td>
+                            <td><a href="{% project_report_url_for_contract contract project %}">Hours Report</a></td>
+                        </tr>
+                    {% endfor %}
+                    </tbody>
+                </table>
+            {% else %}
+                <p>This contract is not associated with any projects.</p>
+            {% endif %}
         </div>
     </div>
 
@@ -77,45 +95,5 @@
         </div>
     </div>
 
-    <div class="row-fluid">
-        <div class="span4">
-            <h3>Contract Info</h3>
-            <table class="table table-bordered">
-                <tr><th>Status</th><td>{{ contract.get_status_display }}</td></tr>
-                <tr><th>Start Date</th><td>{{ contract.start_date|date:'N d, Y' }}</td></tr>
-                <tr><th>End Date</th><td>{{ contract.end_date|date:'N d, Y' }}</td></tr>
-                <tr><th>Contract Hours</th><td>{{ contract.num_hours|floatformat:2 }}</td></tr>
-                <tr><th>Hours Worked</th><td>{{ contract.hours_worked|floatformat:2 }} ({% widthratio contract.hours_worked contract.num_hours 100 %}%)</td></tr>
-                <tr><th>Hours Remaining</th><td>{{ contract.hours_assigned|floatformat:2 }}</td></tr>
-            </table>
-        </div>
-        <div class="span7 offset1">
-            <h3>Projects</h3>
-            {% if contract.projects.exists %}
-                <table class="table table-bordered">
-                    <thead>
-                        <tr>
-                            <th>Name</th>
-                            <th>Hours Worked</th>
-                            <th>Time Sheet</th>
-                            <th>Hours Report</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        {% for project in contract.projects.all %}
-                            {% project_hours_for_contract contract project %}
-                            <tr>
-                                <td><a href="{% url 'view_project' project.pk %}">{{ project.name }}</a></td>
-                                <td>{{ project_hours|floatformat:'2' }}</td>
-                                <td><a href="{% timesheet_url 'project' project.id '' %}">Time Sheet</a></td>
-                                <td><a href="{% project_report_url_for_contract contract project %}">Hours Report</a></td>
-                            </tr>
-                        {% endfor %}
-                    </tbody>
-                </table>
-            {% else %}
-                <p>This contract is not associated with any projects.</p>
-            {% endif %}
-        </div>
-    </div>
+
 {% endblock %}

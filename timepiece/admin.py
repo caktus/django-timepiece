@@ -85,10 +85,11 @@ class ContractHourInline(admin.TabularInline):
 class ProjectContractAdmin(admin.ModelAdmin):
     model = timepiece.ProjectContract
     list_display = ('name', 'start_date', 'end_date', 'status',
-                    'num_hours', 'hours_assigned', 'hours_unassigned',
+                    'contracted_hours', 'pending_hours',
+                    'hours_assigned', 'hours_unassigned',
                     'hours_worked',
                     'type')
-    inlines = (ContractAssignmentInline, , ContractHourInline)
+    inlines = (ContractAssignmentInline, ContractHourInline)
     list_filter = ('status', 'type')
     filter_horizontal = ('projects',)
     list_per_page = 20
