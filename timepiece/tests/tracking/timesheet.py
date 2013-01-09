@@ -1131,14 +1131,16 @@ class StatusTest(TimepieceDataTestCase):
         user = user or self.user
         from_date = from_date or self.from_date
         base_url = reverse('change_user_timesheet', args=(user.pk, 'verify'))
-        params = urllib.urlencode({'from_date': from_date.strftime('%Y-%m-%d')})
+        params = {'from_date': from_date.strftime('%Y-%m-%d')}
+        params = urllib.urlencode(params)
         return '{0}?{1}'.format(base_url, params)
 
     def approve_url(self, user=None, from_date=None):
         user = user or self.user
         from_date = from_date or self.from_date
         base_url = reverse('change_user_timesheet', args=(user.pk, 'approve'))
-        params = urllib.urlencode({'from_date': from_date.strftime('%Y-%m-%d')})
+        params = {'from_date': from_date.strftime('%Y-%m-%d')}
+        params = urllib.urlencode(params)
         return '{0}?{1}'.format(base_url, params)
 
     def get_reject_url(self, entry_id):

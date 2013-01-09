@@ -118,19 +118,22 @@ class ContractViewTestCase(TimepieceDataTestCase):
         self.assertEqual(response.status_code, 404)
 
     def test_current_contract(self):
-        contract = self.create_contract(projects=self.projects, status='current')
+        contract = self.create_contract(projects=self.projects,
+                status='current')
         response = self._get(url_args=(contract.pk,))
         self.assertEqual(response.status_code, 200)
         self.assertEqual(contract, response.context['contract'])
 
     def test_upcoming_contract(self):
-        contract = self.create_contract(projects=self.projects, status='upcoming')
+        contract = self.create_contract(projects=self.projects,
+                status='upcoming')
         response = self._get(url_args=(contract.pk,))
         self.assertEqual(response.status_code, 200)
         self.assertEqual(contract, response.context['contract'])
 
     def test_complete_contract(self):
-        contract = self.create_contract(projects=self.projects, status='complete')
+        contract = self.create_contract(projects=self.projects,
+                status='complete')
         response = self._get(url_args=(contract.pk,))
         self.assertEqual(response.status_code, 200)
         self.assertEqual(contract, response.context['contract'])

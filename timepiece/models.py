@@ -166,7 +166,7 @@ class Activity(models.Model):
     code = models.CharField(
         max_length=5,
         unique=True,
-        help_text='Enter a short code to describe the type of ' + \
+        help_text='Enter a short code to describe the type of ' +
             'activity that took place.'
     )
     name = models.CharField(
@@ -184,6 +184,7 @@ class Activity(models.Model):
 
 
 class HourGroupManager(models.Manager):
+
     def summaries(self, entries):
         #Get the list of bundle names and hour sums
         bundled_entries = entries.values('activity__activity_bundle',
@@ -212,7 +213,7 @@ class HourGroupManager(models.Manager):
         other_values = ()
         for bundle in bundled_totals:
             bundle_key, bundle_value = bundle[0], bundle[2]
-            act_values = [(act[0], act[2]) for act in activity_totals \
+            act_values = [(act[0], act[2]) for act in activity_totals
                           if act[1] == bundle[1]]
             if bundle_key is not None:
                 totals[bundle_key] = (bundle_value, act_values)
@@ -413,8 +414,8 @@ class Entry(models.Model):
     def is_overlapping(self):
         if self.start_time and self.end_time:
             entries = self.user.timepiece_entries.filter(
-            Q(end_time__range=(self.start_time, self.end_time)) | \
-            Q(start_time__range=(self.start_time, self.end_time)) | \
+            Q(end_time__range=(self.start_time, self.end_time)) |
+            Q(start_time__range=(self.start_time, self.end_time)) |
             Q(start_time__lte=self.start_time, end_time__gte=self.end_time))
 
             totals = entries.aggregate(
@@ -447,8 +448,8 @@ class Entry(models.Model):
         else:
             end = start + datetime.timedelta(seconds=1)
         entries = self.user.timepiece_entries.filter(
-            Q(end_time__range=(start, end)) | \
-            Q(start_time__range=(start, end)) | \
+            Q(end_time__range=(start, end)) |
+            Q(start_time__range=(start, end)) |
             Q(start_time__lte=start, end_time__gte=end))
         #An entry can not conflict with itself so remove it from the list
         if self.id:
@@ -724,7 +725,7 @@ class Entry(models.Model):
 
 class EntryGroup(models.Model):
     VALID_STATUS = ('invoiced', 'not-invoiced')
-    STATUS_CHOICES = [status for status in ENTRY_STATUS \
+    STATUS_CHOICES = [status for status in ENTRY_STATUS
                       if status[0] in VALID_STATUS]
     user = models.ForeignKey(User, related_name='entry_group')
     project = models.ForeignKey(Project, related_name='entry_group')

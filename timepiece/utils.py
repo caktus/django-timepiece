@@ -74,7 +74,7 @@ def add_timezone(value, tz=None):
 
     If no timezone is given, timezone.get_current_timezone() is used.
     """
-    if tz == None:
+    if tz is None:
         tz = timezone.get_current_timezone()
     try:
         if timezone.is_naive(value):

@@ -357,7 +357,7 @@ class DateForm(forms.Form):
 
 
 class YearMonthForm(forms.Form):
-    MONTH_CHOICES = [(i, time.strftime('%B', time.strptime(str(i), '%m'))) \
+    MONTH_CHOICES = [(i, time.strftime('%B', time.strptime(str(i), '%m')))
                      for i in xrange(1, 13)]
     month = forms.ChoiceField(choices=MONTH_CHOICES, label='')
     year = forms.ChoiceField(label='')
@@ -547,8 +547,8 @@ class BillableHoursForm(DateForm):
             widget=forms.CheckboxSelectMultiple())
     activities = forms.ModelMultipleChoiceField(required=False, queryset=None,
             widget=forms.CheckboxSelectMultiple())
-    project_types = forms.ModelMultipleChoiceField(required=False, queryset=None,
-            widget=forms.CheckboxSelectMultiple())
+    project_types = forms.ModelMultipleChoiceField(required=False,
+            queryset=None, widget=forms.CheckboxSelectMultiple())
 
     def __init__(self, *args, **kwargs):
         """
