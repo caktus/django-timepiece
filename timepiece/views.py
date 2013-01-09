@@ -14,10 +14,10 @@ from django.contrib.auth.models import User, Permission
 from django.contrib.contenttypes.models import ContentType
 from django.core import exceptions
 from django.core.urlresolvers import reverse, resolve
-from django.db import DatabaseError, transaction
-from django.db.models import Sum, Q, F, Min, Max
+from django.db import transaction
+from django.db.models import Sum, Q, Min, Max
 from django.http import HttpResponse, HttpResponseRedirect
-from django.http import  Http404, HttpResponseForbidden
+from django.http import Http404, HttpResponseForbidden
 from django.shortcuts import get_object_or_404, redirect, render
 from django.utils.decorators import method_decorator
 from django.views.decorators.csrf import csrf_exempt
@@ -237,7 +237,6 @@ def reject_entry(request, entry_id):
     Admins can reject an entry that has been verified or approved but not
     invoiced to set its status to 'unverified' for the user to fix.
     """
-    user = request.user
     return_url = request.REQUEST.get('next', reverse('dashboard'))
     try:
         entry = timepiece.Entry.no_join.get(pk=entry_id)
@@ -381,7 +380,7 @@ class ProjectTimesheet(DetailView):
             'activity__name').annotate(
             sum=Sum('hours')).order_by('-sum'
         )
-        return {
+        context.update({
             'project': project,
             'year_month_form': year_month_form,
             'from_date': from_date,
@@ -390,7 +389,8 @@ class ProjectTimesheet(DetailView):
             'total': total,
             'user_entries': user_entries,
             'activity_entries': activity_entries,
-        }
+        })
+        return context
 
 
 class ProjectTimesheetCSV(CSVMixin, ProjectTimesheet):
@@ -650,8 +650,8 @@ def list_outstanding_invoices(request):
         from_date, to_date = date_form.save()
 
     datesQ = Q()
-    datesQ &= Q(end_time__gte=from_date)  if from_date else Q()
-    datesQ &= Q(end_time__lt=to_date)  if to_date else Q()
+    datesQ &= Q(end_time__gte=from_date) if from_date else Q()
+    datesQ &= Q(end_time__lt=to_date) if to_date else Q()
     billableQ = Q(project__type__billable=True, project__status__billable=True)
     statusQ = Q(status='approved')
     ordering = ('project__type__label', 'project__status__label',
@@ -830,7 +830,6 @@ def list_businesses(request):
         searchQ = Q(name__icontains=search) | Q(description__icontains=search)
         businesses = businesses.filter(searchQ)
         if businesses.count() == 1:
-            url_kwargs = {'business': businesses[0].pk}
             url = request.REQUEST.get('next',
                     reverse('view_business', args=(businesses[0].pk,)))
             return HttpResponseRedirect(url)
@@ -1056,8 +1055,9 @@ def report_payroll_summary(request):
     workQ = ~Q(project__in=projects.values())
     statusQ = Q(status='invoiced') | Q(status='approved')
     # Weekly totals
-    week_entries = timepiece.Entry.objects.date_trunc('week')
-    week_entries = week_entries.filter(weekQ, statusQ, workQ)
+    week_entries = timepiece.Entry.objects.date_trunc('week').filter(
+        weekQ, statusQ, workQ
+    )
     date_headers = utils.generate_dates(from_date, last_billable, by='week')
     weekly_totals = list(utils.project_totals(week_entries, date_headers,
                                               'total', overtime=True))
@@ -1316,7 +1316,6 @@ class ReportMixin(object):
             count = len(date_headers)
             range_headers = [0] * count
             for i in range(count - 1):
-                header = date_headers[i]
                 range_headers[i] = (date_headers[i], date_headers[i + 1] -
                         relativedelta(days=1))
             range_headers[count - 1] = (date_headers[count - 1], to_date)
@@ -1503,6 +1502,7 @@ class BillableHours(ReportMixin, TemplateView):
                     data_map[day]['nonbillable'] += period['nonbillable']
 
         return data_map
+
 
 class ScheduleMixin(object):
 
