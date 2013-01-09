@@ -14,7 +14,7 @@
         <div class="span12">
             <h2>{{ user.get_full_name }}</h2>
             <ul class="nav nav-pills">
-                {% if perms.auth.change_person %}
+                {% if perms.auth.change_user %}
                     <li><a href="{% url 'edit_user' user.pk %}">Edit</a></li>
                     <li><a href="{% url 'delete_user' user.pk %}">Delete</a></li>
                 {% endif %}

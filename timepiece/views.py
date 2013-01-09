@@ -404,7 +404,7 @@ class ProjectTimesheetCSV(CSVMixin, ProjectTimesheet):
         rows = []
         rows.append([
             'Date',
-            'Person',
+            'User',
             'Activity',
             'Location',
             'Time In',
@@ -900,7 +900,7 @@ def view_user(request, user_id):
 @permission_required('auth.change_user')
 def create_edit_user(request, user_id=None):
     user = get_object_or_404(User, pk=user_id) if user_id else None
-    form = timepiece_forms.EditPersonForm(request.POST or None,
+    form = timepiece_forms.EditUserForm(request.POST or None,
             instance=user)
     if form.is_valid():
         user = form.save()
@@ -1274,8 +1274,8 @@ class ReportMixin(object):
         basicQ &= Q(project__in=projects) if projects else Q()
 
         # Filter by user, activity, and project type for BillableReport.
-        if 'people' in data:
-            basicQ &= Q(user__in=data.get('people'))
+        if 'users' in data:
+            basicQ &= Q(user__in=data.get('users'))
         if 'activities' in data:
             basicQ &= Q(activity__in=data.get('activities'))
         if 'project_types' in data:
@@ -1393,7 +1393,7 @@ class HourlyReport(ReportMixin, CSVMixin, TemplateView):
     def get_context_data(self, **kwargs):
         context = super(HourlyReport, self).get_context_data(**kwargs)
 
-        # Sum the hours totals for each person & interval.
+        # Sum the hours totals for each user & interval.
         entries = context['entries']
         date_headers = context['date_headers']
 
@@ -1550,8 +1550,8 @@ class ScheduleView(ScheduleMixin, TemplateView):
 
         project_hours = utils.get_project_hours_for_week(self.week_start) \
             .filter(published=True)
-        people = utils.get_people_from_project_hours(project_hours)
-        id_list = [person[0] for person in people]
+        users = utils.get_users_from_project_hours(project_hours)
+        id_list = [user[0] for user in users]
         projects = []
 
         func = lambda o: o['project__id']
@@ -1571,7 +1571,7 @@ class ScheduleView(ScheduleMixin, TemplateView):
             'week': self.week_start,
             'prev_week': self.week_start - relativedelta(days=7),
             'next_week': self.week_start + relativedelta(days=7),
-            'people': people,
+            'users': users,
             'project_hours': project_hours,
             'projects': projects
         })
@@ -1822,21 +1822,21 @@ def report_productivity(request):
                         actual_hours or 0, projected_hours or 0])
                 current = next_week
 
-        elif organize_by == 'person' and entry_count > 0:
-            # Determine all people who worked on or were assigned to the
+        elif organize_by == 'user' and entry_count > 0:
+            # Determine all users who worked on or were assigned to the
             # project.
             vals = ('user', 'user__first_name', 'user__last_name')
-            apeople = list(actuals.values_list(*vals).distinct())
-            ppeople = list(projections.values_list(*vals).distinct())
+            ausers = list(actuals.values_list(*vals).distinct())
+            pusers = list(projections.values_list(*vals).distinct())
             key = lambda x: (x[1] + x[2]).lower()  # Sort by name
-            people = sorted(list(set(apeople + ppeople)), key=key)
+            users = sorted(list(set(ausers + pusers)), key=key)
 
-            # Report for each person.
-            for person in people:
-                name = '{0} {1}'.format(person[1], person[2])
-                actual_hours = actuals.filter(user=person[0]) \
+            # Report for each user.
+            for user in users:
+                name = '{0} {1}'.format(user[1], user[2])
+                actual_hours = actuals.filter(user=user[0]) \
                         .aggregate(Sum('hours')).values()[0]
-                projected_hours = projections.filter(user=person[0]) \
+                projected_hours = projections.filter(user=user[0]) \
                         .aggregate(Sum('hours')).values()[0]
                 report.append([name, actual_hours or 0, projected_hours or 0])
 

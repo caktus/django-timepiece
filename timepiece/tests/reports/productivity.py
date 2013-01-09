@@ -22,9 +22,9 @@ class TestProductivityReport(TimepieceDataTestCase):
 
         self.project = self.create_project()
         self.users = []
-        self.users.append(self.create_user(first_name='Person', last_name='1'))
-        self.users.append(self.create_user(first_name='Person', last_name='2'))
-        self.users.append(self.create_user(first_name='Person', last_name='3'))
+        self.users.append(self.create_user(first_name='User', last_name='1'))
+        self.users.append(self.create_user(first_name='User', last_name='2'))
+        self.users.append(self.create_user(first_name='User', last_name='3'))
         self.weeks = []
         self.weeks.append(datetime.datetime(2012, 9, 24))
         self.weeks.append(datetime.datetime(2012, 10, 1))
@@ -168,20 +168,20 @@ class TestProductivityReport(TimepieceDataTestCase):
         self._check_row(report[3], ['2012-10-08', 0.0, 0.0])
         self._check_row(report[4], ['2012-10-15', 4.0, 0.0])
 
-    def test_organize_by_people(self):
+    def test_organize_by_users(self):
         """Report should contain hours per peron on the project."""
-        data = {'project_1': self.project.pk, 'organize_by': 'person'}
+        data = {'project_1': self.project.pk, 'organize_by': 'user'}
         response = self._get(data=data)
         self.assertEqual(response.status_code, 200)
         form, report, organize_by, worked, assigned = self._unpack(response)
         self.assertEqual(len(form.errors), 0)
-        self.assertEqual(organize_by, 'person')
+        self.assertEqual(organize_by, 'user')
         self.assertEqual(float(worked), 8.0)
         self.assertEqual(float(assigned), 8.0)
         self.assertEqual(len(report), 1 + 3)  # Include header row
-        self._check_row(report[1], ['Person 1', 0.0, 4.0])
-        self._check_row(report[2], ['Person 2', 4.0, 4.0])
-        self._check_row(report[3], ['Person 3', 4.0, 0.0])
+        self._check_row(report[1], ['User 1', 0.0, 4.0])
+        self._check_row(report[2], ['User 2', 4.0, 4.0])
+        self._check_row(report[3], ['User 3', 4.0, 0.0])
 
     def test_export(self):
         """Data should be exported in CSV format."""

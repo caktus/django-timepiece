@@ -69,12 +69,12 @@ class DeleteObjectsTest(TimepieceDataTestCase):
         response = self.client.post(url, data={'delete': 'delete'})
         self.assertEquals(timepiece.Business.objects.count(), 1)
 
-    def test_no_permissions_person(self):
+    def test_no_permissions_user(self):
         """Delete urls should not be accessed by regular users"""
         self.client.login(username='user', password='abc')
 
-        person = self.create_user()
-        url = reverse('delete_user', args=(person.pk,))
+        user = self.create_user()
+        url = reverse('delete_user', args=(user.pk,))
 
         response = self.client.get(url)
         self.assertEquals(response.status_code, 302)
@@ -108,14 +108,14 @@ class DeleteObjectsTest(TimepieceDataTestCase):
         response = self.client.post(url, data={'delete': 'delete'})
         self.assertEquals(timepiece.Business.objects.count(), 0)
 
-    def test_delete_person(self):
+    def test_delete_user(self):
         """A superuser should be able to access the delete page"""
-        person = self.create_user()
-        url = reverse('delete_user', args=(person.pk,))
+        user = self.create_user()
+        url = reverse('delete_user', args=(user.pk,))
 
         response = self.client.get(url)
         self.assertEquals(response.status_code, 200)
-        self.assertEquals(response.context['object'], person)
+        self.assertEquals(response.context['object'], user)
 
         self.assertEquals(User.objects.count(), 5)
         response = self.client.post(url, data={'delete': 'delete'})

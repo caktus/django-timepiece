@@ -124,7 +124,7 @@ class ProjectHoursListViewTestCase(ProjectHoursTestCase):
         self.assertEquals(response.context['week'].date(), self.past_week)
 
         all_entries = utils.get_project_hours_for_week(self.past_week)
-        people = response.context['people']
+        users = response.context['users']
         projects = response.context['projects']
         count = 0
 
@@ -134,7 +134,7 @@ class ProjectHoursListViewTestCase(ProjectHoursTestCase):
                 if entry:
                     count += 1
                     self.assertTrue(all_entries.filter(project__id=proj_id,
-                            user__id=people[i][0], hours=entry).exists())
+                            user__id=users[i][0], hours=entry).exists())
         self.assertEquals(count, all_entries.count())
 
     def test_week_filter_midweek(self):
@@ -156,16 +156,16 @@ class ProjectHoursListViewTestCase(ProjectHoursTestCase):
         }
         response = self.client.get(self.url, data)
         self.assertEquals(len(response.context['projects']), 0)
-        self.assertEquals(len(response.context['people']), 0)
+        self.assertEquals(len(response.context['users']), 0)
 
-    def test_all_people_for_project(self):
-        """Each project should list hours for every person."""
+    def test_all_users_for_project(self):
+        """Each project should list hours for every user."""
         response = self.client.get(self.url)
         projects = response.context['projects']
-        people = response.context['people']
+        users = response.context['users']
 
         for proj_id, name, entries in projects:
-            self.assertEquals(len(entries), len(people))
+            self.assertEquals(len(entries), len(users))
 
 
 class ProjectHoursEditTestCase(ProjectHoursTestCase):

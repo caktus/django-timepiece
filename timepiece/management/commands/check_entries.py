@@ -92,9 +92,9 @@ For options type:
         """
         verbosity = kwargs.get('verbosity', 1)
         start = self.find_start(**kwargs)
-        people = self.find_people(*args)
+        users = self.find_users(*args)
         self.show_init(start, *args, **kwargs)
-        all_entries = self.find_entries(people, start, *args, **kwargs)
+        all_entries = self.find_entries(users, start, *args, **kwargs)
         all_overlaps = self.check_all(all_entries, *args, **kwargs)
         if verbosity >= 1:
             print 'Total overlapping entries: %d' % all_overlaps
@@ -106,12 +106,12 @@ For options type:
         all_overlaps = 0
         while True:
             try:
-                person_entries = all_entries.next()
+                user_entries = all_entries.next()
             except StopIteration:
                 return all_overlaps
             else:
                 user_total_overlaps = self.check_entry(
-                    person_entries, *args, **kwargs)
+                    user_entries, *args, **kwargs)
                 all_overlaps += user_total_overlaps
 
     def check_entry(self, entries, *args, **kwargs):
@@ -165,7 +165,7 @@ For options type:
         start -= relativedelta(hour=0, minute=0, second=0, microsecond=0)
         return start
 
-    def find_people(self, *args):
+    def find_users(self, *args):
         """
         Returns the users to search given names as args.
         Return all users if there are no args provided.
@@ -174,12 +174,12 @@ For options type:
             names = reduce(lambda query, arg: query |
                 (Q(first_name__icontains=arg) | Q(last_name__icontains=arg)),
                 args, Q())
-            people = auth_models.User.objects.filter(names)
+            users = auth_models.User.objects.filter(names)
         #If no args given, check every user
         else:
-            people = auth_models.User.objects.all()
+            users = auth_models.User.objects.all()
         #Display errors if no user was found
-        if not people.count() and args:
+        if not users.count() and args:
             if len(args) == 1:
                 raise CommandError('No user was found with the name %s' \
                 % args[0])
@@ -187,22 +187,22 @@ For options type:
                 arg_list = ', '.join(args)
                 raise CommandError('No users found with the names: %s' \
                 % arg_list)
-        return people
+        return users
 
-    def find_entries(self, people, start, *args, **kwargs):
+    def find_entries(self, users, start, *args, **kwargs):
         """
         Find all entries for all users, from a given starting point.
         If no starting point is provided, all entries are returned.
         """
         forever = kwargs.get('all', False)
-        for person in people:
+        for user in users:
             if forever:
                 entries = timepiece.Entry.objects.filter(
-                    user=person).order_by(
+                    user=user).order_by(
                     'start_time')
             else:
                 entries = timepiece.Entry.objects.filter(
-                    user=person, start_time__gte=start).order_by(
+                    user=user, start_time__gte=start).order_by(
                     'start_time')
             yield entries
 
@@ -219,9 +219,9 @@ For options type:
                 print 'Checking overlap starting on: ' + \
                     start.strftime('%m/%d/%Y')
 
-    def show_name(self, person):
+    def show_name(self, user):
         print 'Checking %s %s...' % \
-        (person.first_name, person.last_name)
+        (user.first_name, user.last_name)
 
     def show_overlap(self, entry_a, entry_b=None, **kwargs):
         def make_output_data(entry):
