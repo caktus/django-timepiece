@@ -4,7 +4,12 @@
 {% load url from future %}
 
 {% block extrajs %}
-    <script src="{{ STATIC_URL }}bootstrap/js/bootstrap-tab.js" type="text/javascript" charset="utf-8"></script>
+    <script>
+        var basePath = "{% url 'view_user_timesheet' timesheet_user.pk %}",
+            tabIds = new Array('overview', 'all-entries', 'daily-summary'),
+            defaultTab = 'overview';
+    </script>
+    <script src="{{ STATIC_URL }}timepiece/js/permanent_tabs.js" type="text/javascript" charset="utf-8"></script>
 {% endblock %}
 
 {% block breadcrumb %}{% endblock breadcrumb %}
@@ -62,12 +67,18 @@
     <div class="row-fluid">
         <div class="span12">
             <ul class="nav nav-tabs">
-                <li class="active"><a href="#overview" data-toggle="tab">Overview</a></li>
-                <li><a href="#full-timesheet" data-toggle="tab">All Entries</a></li>
-                <li><a href="#hourly-summary" data-toggle="tab">Daily Summary</a></li>
+                <li{% if active_tab == 'overview' %} class="active"{% endif %}>
+                    <a class="tab-link" href="overview">Overview</a>
+                </li>
+                <li{% if active_tab == 'all-entries' %} class="active"{% endif %}>
+                    <a class="tab-link" href="all-entries">All Entries</a>
+                </li>
+                <li{% if active_tab == 'daily-summary' %} class="active"{% endif %}>
+                    <a class="tab-link" href="daily-summary">Daily Summary</a>
+                </li>
             </ul>
             <div class="tab-content">
-                <div class="tab-pane active" id="overview">
+                <div class="tab-pane{% if active_tab == 'overview' %} active{% endif %}" id="overview">
                     <div class="row-fluid">
                         {% if project_entries %}
                             <div class="span6">
@@ -123,7 +134,7 @@
                         {% endif %}
                     </div>
                 </div>
-                <div class="tab-pane" id="full-timesheet">
+                <div class="tab-pane{% if active_tab == 'all-entries' %} active{% endif %}" id="all-entries">
                     {% if entries %}
                         {% for entry in entries %}
                             {% ifchanged entry.start_time|date:"W" %}
@@ -170,10 +181,10 @@
                                 <td class="comments" title="{{entry.comments}}">{{ entry.comments|truncatewords:12|urlizetrunc:25|safe }}</td>
                                 <td class="aux">
                                     {% if entry.status == "unverified" or entry.status != 'invoiced' and perms.timepiece.view_payroll_summary %}
-                                        <a href="{% url 'edit_entry' entry.id %}?next={{ request.get_full_path|urlencode }}#full-timesheet">Edit</a>
+                                        <a href="{% url 'edit_entry' entry.id %}?next={% url 'view_user_timesheet' timesheet_user.pk 'all-entries' %}">Edit</a>
                                     {% endif %}
                                     {% if perms.timepiece.view_payroll_summary and entry.status != "unverified" and entry.status != "invoiced" %}
-                                        | <a href="{% url 'reject_entry' entry.id %}?next={{ request.get_full_path|urlencode }}#full-timesheet">Reject</a>
+                                        | <a href="{% url 'reject_entry' entry.id %}?next={% url 'view_user_timesheet' timesheet_user.pk 'all-entries' %}">Reject</a>
                                     {% endif %}
                                 </td>
                             </tr>
@@ -209,7 +220,7 @@
                         <p>No entries exist for this time sheet.</p>
                     {% endif %}
                 </div>
-                <div class="tab-pane" id="hourly-summary">
+                <div class="tab-pane{% if active_tab == 'daily-summary' %} active{% endif %}" id="daily-summary">
                     {% if grouped_totals %}
                         {% for week, week_totals, days in grouped_totals %}
                             <table class="table table-bordered table-condensed">
