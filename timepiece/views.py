@@ -673,12 +673,10 @@ def list_invoices(request):
     query = Q()
     if search_form.is_valid():
         search = search_form.save()
-        query |= Q(
-            Q(user__username__icontains=search) |
-            Q(project__name__icontains=search) |
-            Q(comments__icontains=search) |
-            Q(number__icontains=search)
-        )
+        query |= Q(user__username__icontains=search)
+        query |= Q(project__name__icontains=search)
+        query |= Q(comments__icontains=search)
+        query |= Q(number__icontains=search)
     invoices = timepiece.EntryGroup.objects.filter(query).order_by('-created')
     return render(request, 'timepiece/invoice/list.html', {
         'invoices': invoices,
