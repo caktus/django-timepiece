@@ -11,7 +11,7 @@
 {% block extrajs %}
     <script>
         var basePath = "{% url 'dashboard' %}",
-            tabIds = new Array('progress', 'all-entries', 'online-users'),
+            tabIds = ['progress', 'all-entries', 'online-users'],
             defaultTab = 'progress';
     </script>
     <script src="{{ STATIC_URL }}timepiece/js/permanent_tabs.js" type="text/javascript" charset="utf-8"></script>

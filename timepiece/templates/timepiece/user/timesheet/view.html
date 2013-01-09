@@ -6,7 +6,7 @@
 {% block extrajs %}
     <script>
         var basePath = "{% url 'view_user_timesheet' timesheet_user.pk %}",
-            tabIds = new Array('overview', 'all-entries', 'daily-summary'),
+            tabIds = ['overview', 'all-entries', 'daily-summary'],
             defaultTab = 'overview';
     </script>
     <script src="{{ STATIC_URL }}timepiece/js/permanent_tabs.js" type="text/javascript" charset="utf-8"></script>
