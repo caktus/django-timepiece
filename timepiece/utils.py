@@ -223,30 +223,37 @@ def get_hour_summaries(hours):
         return [(0, 0), (0, 0), 0]
 
 
-def user_date_totals(user_entries):
+def date_totals(entries, by):
     """Yield a user's name and a dictionary of their hours"""
     date_dict = {}
-    for date, date_entries in groupby(user_entries, lambda x: x['date']):
+    for date, date_entries in groupby(entries, lambda x: x['date']):
         if isinstance(date, datetime.datetime):
             date = date.date()
         d_entries = list(date_entries)
-        name = ' '.join((d_entries[0]['user__first_name'],
-                        d_entries[0]['user__last_name']))
-        user_id = d_entries[0]['user']
+
+        if by == 'user':
+            name = ' '.join((d_entries[0]['user__first_name'],
+                    d_entries[0]['user__last_name']))
+        elif by == 'project':
+            name = d_entries[0]['project__name']
+        else:
+            name = d_entries[0][by]
+
+        pk = d_entries[0][by]
         hours = get_hours(d_entries)
         date_dict[date] = hours
-    return name, user_id, date_dict
+    return name, pk, date_dict
 
 
 def project_totals(entries, date_headers, hour_type=None, overtime=False,
-                   total_column=False):
+                   total_column=False, by='user'):
     """
     Yield hour totals grouped by user and date. Optionally including overtime.
     """
     totals = [0 for date in date_headers]
     rows = []
-    for user, user_entries in groupby(entries, lambda x: x['user']):
-        name, user_id, date_dict = user_date_totals(user_entries)
+    for thing, thing_entries in groupby(entries, lambda x: x[by]):
+        name, thing_id, date_dict = date_totals(thing_entries, by)
         dates = []
         for index, day in enumerate(date_headers):
             if isinstance(day, datetime.datetime):
@@ -270,7 +277,7 @@ def project_totals(entries, date_headers, hour_type=None, overtime=False,
         if overtime:
             dates.append(find_overtime(dates))
         dates = [date or '' for date in dates]
-        rows.append((name, user_id, dates))
+        rows.append((name, thing_id, dates))
     if total_column:
         totals.append(sum(totals))
     totals = [total or '' for total in totals]
