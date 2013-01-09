@@ -2,11 +2,17 @@ import datetime
 from dateutil.relativedelta import relativedelta
 from decimal import Decimal
 import logging
+from django.conf import settings
 
 from django.contrib.auth.models import User
+from django.contrib.sites.models import Site
 from django.core.exceptions import ValidationError
+from django.core.mail import send_mail
 from django.db import models
 from django.db.models import Q, Sum, Max, Min
+from django.template import Context
+from django.template.loader import get_template
+
 
 try:
     from django.utils import timezone
@@ -766,13 +772,46 @@ class ProjectContract(models.Model):
         ('complete', 'Complete'),
     )
 
+    PROJECT_UNSET = 0  # Have to set existing contracts to something...
+    PROJECT_FIXED = 1
+    PROJECT_PRE_PAID_HOURLY = 2
+    PROJECT_POST_PAID_HOURLY = 3
+    PROJECT_TYPE = (
+        (PROJECT_UNSET, 'Unset'),
+        (PROJECT_FIXED, 'Fixed'),
+        (PROJECT_PRE_PAID_HOURLY, 'Pre-paid Hourly'),
+        (PROJECT_POST_PAID_HOURLY, 'Post-paid Hourly')
+    )
+
     project = models.ForeignKey(Project, related_name='contracts')
     start_date = models.DateField()
     end_date = models.DateField()
     num_hours = models.DecimalField(max_digits=8, decimal_places=2,
                                     default=0)
-    status = models.CharField(choices=CONTRACT_STATUS, default='upcomming',
+    status = models.CharField(choices=CONTRACT_STATUS, default='upcoming',
                               max_length=32)
+    type = models.IntegerField(choices=PROJECT_TYPE, default=PROJECT_UNSET)  # FIXME - we really shouldn't let them save it with this unset, it's just what we'll use in the migration initially
+
+    def contracted_hours(self, approved_only=True):
+        """Compute the hours contracted for this contract.
+        (This replaces the old `num_hours` field.)
+
+        :param boolean approved_only: If true, only include approved contract hours; if false, include pending ones too.
+        :returns: The sum of the contracted hours, subject to the `approved_only` parameter.
+        :rtype: Decimal
+        """
+
+        qset = self.contract_hours
+        if approved_only:
+            qset = qset.filter(status=ContractHour.APPROVED_STATUS)
+        result = qset.aggregate(sum=Sum('hours'))['sum']
+        return result or 0
+
+    def pending_hours(self):
+        """Compute the contract hours still in pending status for this contract"""
+        qset = self.contract_hours.filter(status=ContractHour.PENDING_STATUS)
+        result = qset.aggregate(sum=Sum('hours'))['sum']
+        return result or 0
 
     def hours_worked(self):
         # TODO put this in a .extra w/a subselect
@@ -794,7 +833,7 @@ class ProjectContract(models.Model):
 
     @property
     def hours_remaining(self):
-        return self.num_hours - self.hours_worked()
+        return self.contracted_hours() - self.hours_worked()
 
     @property
     def weeks_remaining(self):
@@ -803,6 +842,99 @@ class ProjectContract(models.Model):
     def __unicode__(self):
         return unicode(self.project)
 
+
+class ContractHour(models.Model):
+    PENDING_STATUS = 1
+    APPROVED_STATUS = 2
+    CONTRACT_HOUR_STATUS = (
+        (PENDING_STATUS, 'pending'), # default
+        (APPROVED_STATUS, 'approved')
+        )
+
+    hours = models.DecimalField(max_digits=8, decimal_places=2,
+        default=0)
+    contract = models.ForeignKey(ProjectContract, related_name='contract_hours')
+    date_requested = models.DateField()
+    date_approved = models.DateField(blank=True, null=True)
+    status = models.IntegerField(choices=CONTRACT_HOUR_STATUS,
+        default=PENDING_STATUS)
+    notes = models.TextField(blank=True)
+
+    def __init__(self, *args, **kwargs):
+        super(ContractHour, self).__init__(*args, **kwargs)
+        # Save the current values so we can report changes later
+        self._original = {
+            'hours': self.hours,
+            'notes': self.notes,
+            'status': self.status,
+            'get_status_display': self.get_status_display(),
+            'date_requested': self.date_requested,
+            'date_approved': self.date_approved,
+            'contract': self.contract if self.contract_id else None,
+        }
+
+    @models.permalink
+    def get_absolute_url(self):
+        return ('admin:timepiece_contracthour_change', [self.pk])
+
+    def clean(self):
+        # Note: this is called when editing in the admin, but not otherwise
+        if self.status == self.PENDING_STATUS and self.date_approved:
+            raise ValidationError("Pending contracthours should not have an approved date, did you mean to change status to approved?")
+
+    def _send_mail(self, subject, ctx):
+        # Don't go to the work unless we have a place to send it
+        if not hasattr(settings, 'ACCOUNTING_EMAIL') or not settings.ACCOUNTING_EMAIL:
+            return
+        template = get_template('timepiece/contract/hours_email.txt')
+        context = Context(ctx)
+        msg = template.render(context)
+        send_mail(
+            subject=subject,
+            message=msg,
+            from_email=settings.DEFAULT_FROM_EMAIL,
+            recipient_list=[settings.ACCOUNTING_EMAIL]
+        )
+
+    def save(self, *args, **kwargs):
+        # Let the date_approved default to today if it's been set approved and doesn't have one
+        if self.status == self.APPROVED_STATUS and not self.date_approved:
+            self.date_approved = datetime.date.today()
+
+        # If we have an email address to send to, and this record was or is in pending status,
+        # we'll send an email about the change.
+        if ContractHour.PENDING_STATUS in (self.status, self._original['status']):
+            is_new = self.pk is None
+        super(ContractHour, self).save(*args, **kwargs)
+        if ContractHour.PENDING_STATUS in (self.status, self._original['status']):
+            ctx = {
+                'new': is_new,
+                'changed': not is_new,
+                'deleted': False,
+                'current': self,
+                'previous': self._original,
+                'link': 'https://%s%s' % (Site.objects.get_current().domain, self.get_absolute_url())
+            }
+            prefix = "New" if is_new else "Changed"
+            subject = "%s pending ContractHour for %s" % (prefix, self.contract)
+            self._send_mail(subject, ctx)
+
+    def delete(self, *args, **kwargs):
+        # Note: this gets called when you delete a single item using the red Delete button at the
+        # bottom while editing it in the admin - but not when you delete one or more from the change
+        # list using the admin action.
+        super(ContractHour, self).delete(*args, **kwargs)
+        # If we have an email address to send to, and this record was in pending status,
+        # we'll send an email about the change.
+        if ContractHour.PENDING_STATUS in (self.status, self._original['status']):
+            ctx = {
+                'deleted': True,
+                'new': False,
+                'changed': False,
+                'previous': self._original
+            }
+            subject = "Deleted pending ContractHour for %s" % self._original['contract']
+            self._send_mail(subject, ctx)
 
 class ContractMilestone(models.Model):
     contract = models.ForeignKey(ProjectContract, related_name='milestones')

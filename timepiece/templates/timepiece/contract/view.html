@@ -2,7 +2,7 @@
 {% load timepiece_tags %}
 {% load url from future %}
 
-{% block title %}{{ contract }} Report{% endblock %}
+{% block title %}{{ contract }}{% endblock %}
 
 {% block crumbs %}
     {{ block.super }}
@@ -11,25 +11,67 @@
 
 {% block content %}
     <div class="row-fluid">
-        <div class="span12">
-            <h2>{{ contract }} Report</h2>
+        <div class="span4">
+            <h2>{{ contract }}</h2>
             <ul class="nav nav-pills">
                 <li><a href="{% url 'list_contracts' %}">Contracts</a></li>
             </ul>
 
             <table class='table table-bordered'>
                 <tr>
-                    <th>Project</th>
-                    <td>{{ contract.project }}</td>
+                    <th>Status</th>
+                    <td>{{ contract.get_status_display }}</td>
                 </tr>
+                <tr>
+                    <th>Total Contract Hours</th>
+                    <td class="hours">
+                        {{ contract.contracted_hours }}
+                        {% if contract.pending_hours %}
+                            <span class="pending">(+ {{ contract.pending_hours }})</span>
+                        {%  endif %}</td>
+                </tr>
+                <tr>
+                    <th>Hours Worked</th>
+                    <td class="hours">{{ contract.hours_worked }}</td>
+                </tr>
+                <tr>
+                    <th>Hours Remaining</th>
+                    <td class="hours">{{ contract.hours_remaining }}</td>
+                </tr>
+                <tr>
+                    <th>Type</th>
+                    <td>{{  contract.get_type_display }}</td>
+                </tr>
+
+                {# old lines #}
                 <tr>
                     <th>Time Frame</th>
                     <td>{{ contract.start_date|date }} &mdash; {{ contract.end_date }}</td>
                 </tr>
+            </table>
+        </div>
+    </div>
+
+    <div class="row-fluid">
+        <div class="span12">
+            <h3>Contract Hours</h3>
+            <table class='table table-bordered'>
                 <tr>
+                    <th>Date Requested</th>
                     <th>Hours</th>
-                    <td>Worked {{ contract.hours_worked }} of {{ contract.num_hours }} ({% widthratio contract.hours_worked contract.num_hours 100 %}%)</td>
+                    <th>Status</th>
+                    <th>Date Approved</th>
+                    <th>Notes</th>
                 </tr>
+                {% for hour in contract.contract_hours.all %}
+                    <tr>
+                        <td>{{ hour.date_requested }}</td>
+                        <td class="hours">{{ hour.hours }}</td>
+                        <td>{{ hour.get_status_display }}</td>
+                        <td>{{ hour.date_approved }}</td>
+                        <td>{{ hour.notes }}</td>
+                    </tr>
+                {% endfor %}
             </table>
         </div>
     </div>

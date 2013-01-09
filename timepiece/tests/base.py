@@ -133,6 +133,17 @@ class TimepieceDataTestCase(TestCase):
             defaults['status'] = 'unverified'
         return timepiece.Entry.objects.create(**defaults)
 
+    def create_contract_hour(self, data=None):
+        defaults = {
+            'date_requested': datetime.date.today(),
+            'status': timepiece.ContractHour.APPROVED_STATUS
+        }
+        defaults.update(data or {})
+        if not 'contract' in defaults:
+            defaults['contract'] = self.create_project_contract()
+        return timepiece.ContractHour.objects.create(**defaults)
+
+
     def create_project_contract(self, data=None):
         data = data or {}
         defaults = {
@@ -140,11 +151,21 @@ class TimepieceDataTestCase(TestCase):
             'end_date': datetime.date.today() + datetime.timedelta(weeks=2),
             'num_hours': random.randint(10, 400),
             'status': 'current',
+            'type': timepiece.ProjectContract.PROJECT_PRE_PAID_HOURLY,
         }
         defaults.update(data)
         if 'project' not in defaults:
             defaults['project'] = self.create_project()
-        return timepiece.ProjectContract.objects.create(**defaults)
+        num_hours = defaults.pop('num_hours')
+        project_contract = timepiece.ProjectContract.objects.create(**defaults)
+        # Create 2 ContractHour objects that add up to the hours we want
+        for i in (1, 2):
+            self.create_contract_hour({
+                'hours': Decimal(num_hours / 2.0),
+                'contract': project_contract,
+                'status': timepiece.ContractHour.APPROVED_STATUS
+            })
+        return project_contract
 
     def create_contract_assignment(self, data=None):
         data = data or {}

@@ -82,15 +82,19 @@ class ContractAssignmentInline(admin.TabularInline):
 class ContractMilestoneInline(admin.TabularInline):
     model = timepiece.ContractMilestone
 
+class ContractHourInline(admin.TabularInline):
+    model = timepiece.ContractHour
 
 class ProjectContractAdmin(admin.ModelAdmin):
     model = timepiece.ProjectContract
     list_display = ('_project', 'start_date', 'end_date', 'status',
-                    'num_hours', 'hours_assigned', 'hours_unassigned',
-                    'hours_worked')
+                    'contracted_hours', 'pending_hours',
+                    'hours_assigned', 'hours_unassigned',
+                    'hours_worked',
+                    'type')
     ordering = ('-end_date',)
-    inlines = (ContractAssignmentInline, ContractMilestoneInline)
-    list_filter = ('status',)
+    inlines = (ContractAssignmentInline, ContractMilestoneInline, ContractHourInline)
+    list_filter = ('status', 'type')
     raw_id_fields = ('project',)
     list_per_page = 20
 
@@ -100,7 +104,7 @@ class ProjectContractAdmin(admin.ModelAdmin):
     _project.short_description = 'Project'
 
     def hours_unassigned(self, obj):
-        return obj.num_hours - obj.hours_assigned
+        return obj.contracted_hours() - obj.hours_assigned
 
 admin.site.register(timepiece.ProjectContract, ProjectContractAdmin)
 
@@ -165,3 +169,11 @@ admin.site.register(timepiece.ProjectHours, ProjectHoursAdmin)
 class UserProfileAdmin(admin.ModelAdmin):
     list_display = ('user', 'hours_per_week')
 admin.site.register(timepiece.UserProfile, UserProfileAdmin)
+
+
+class ContractHourAdmin(admin.ModelAdmin):
+    list_display = ('contract', 'hours', 'date_requested', 'date_approved', 'status')
+    list_filter = ('status',)
+    raw_id_fields = ('contract',)
+
+admin.site.register(timepiece.ContractHour, ContractHourAdmin)
