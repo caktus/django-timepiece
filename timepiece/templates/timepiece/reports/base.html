@@ -11,9 +11,6 @@
                         <li{% ifequal active 'billable_hours' %} class="active"{% endifequal %}>
                             <a href="{% ifequal active 'billable_hours' %}#{% else %}{% url 'report_billable_hours' %}{% endifequal %}">Billable Hours</a>
                         </li>
-                        <li{% ifequal active 'timepiece-summary' %} class="active"{% endifequal %}>
-                            <a href="{% ifequal active 'timepiece-summary' %}#{% else %}{% url 'report_general_ledger' %}{% endifequal %}">General Ledger</a>
-                        </li>
                         <li{% ifequal active 'hourly_report' %} class="active"{% endifequal %}>
                             <a href="{% ifequal active 'hourly_report' %}#{% else %}{% url 'report_hourly' %}{% endifequal %}">Hourly</a>
                         </li>

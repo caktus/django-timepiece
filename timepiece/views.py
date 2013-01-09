@@ -330,52 +330,6 @@ def delete_entry(request, entry_id):
     })
 
 
-@permission_required('timepiece.view_entry_summary')
-def report_general_ledger(request):
-    date = timezone.now() - relativedelta(months=1)
-    from_date = utils.get_month_start(date).date()
-    to_date = from_date + relativedelta(months=1)
-
-    form = timepiece_forms.YearMonthForm(request.GET or None, initial={
-        'month': from_date.month,
-        'year': from_date.year
-    })
-
-    if form.is_valid():
-        from_date, to_date = form.save()
-
-    entries = timepiece.Entry.no_join.values(
-        'project__id',
-        'project__business__id',
-        'project__name',
-    ).order_by(
-        'project__id',
-        'project__business__id',
-        'project__name',
-    )
-    dates = Q()
-    if from_date:
-        dates &= Q(start_time__gte=from_date)
-    if to_date:
-        dates &= Q(end_time__lte=to_date)
-    project_totals = entries.filter(dates).annotate(total_hours=Sum('hours'))
-    project_totals = project_totals.order_by('project__name')
-    total_hours = timepiece.Entry.objects.filter(dates).aggregate(
-        hours=Sum('hours')
-    )['hours']
-    people_totals = timepiece.Entry.no_join.values('user', 'user__first_name',
-                                                   'user__last_name')
-    people_totals = people_totals.order_by('user__last_name').filter(dates)
-    people_totals = people_totals.annotate(total_hours=Sum('hours'))
-    return render(request, 'timepiece/reports/general_ledger.html', {
-        'form': form,
-        'project_totals': project_totals,
-        'total_hours': total_hours,
-        'people_totals': people_totals,
-        'from_date': from_date
-    })
-
-
 class ProjectTimesheet(DetailView):
     template_name = 'timepiece/project/timesheet.html'
     model = timepiece.Project
