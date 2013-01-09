@@ -1365,14 +1365,14 @@ class HourlyReport(ReportMixin, CSVMixin, TemplateView):
     @property
     def defaults(self):
         """Default filter form data when no GET data is provided."""
-        start, end = self.get_previous_month()
+        (start, end) = utils.get_week_window()
         return {
             'from_date': start,
             'to_date': end,
             'billable': True,
             'non_billable': True,
             'paid_leave': True,
-            'trunc': 'week',
+            'trunc': 'day',
             'projects': [],
         }
 
