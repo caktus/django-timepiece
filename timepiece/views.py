@@ -430,7 +430,8 @@ class ProjectTimesheetCSV(CSVMixin, ProjectTimesheet):
 
 
 @login_required
-def view_user_timesheet(request, user_id):
+def view_user_timesheet(request, user_id, active_tab):
+    active_tab = active_tab or 'overview'
     user = get_object_or_404(User, pk=user_id)
     if not (request.user.has_perm('timepiece.view_entry_summary') or \
         user.pk == request.user.pk):
@@ -499,6 +500,7 @@ def view_user_timesheet(request, user_id):
         show_approve = verified_count + approved_count == total_statuses \
         and verified_count > 0 and total_statuses != 0
     return render(request, 'timepiece/user/timesheet/view.html', {
+        'active_tab': active_tab,
         'year_month_form': year_month_form,
         'from_date': from_date,
         'to_date': to_date - datetime.timedelta(days=1),
