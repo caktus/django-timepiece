@@ -7,36 +7,33 @@
 {% block content %}
     <div class="row-fluid">
         <div class="span12">
-            <h2>Current Contracts</h2>
+            <h2 class="page-title">Current Contracts</h2>
 
             <table class='table table-bordered table-striped table-condensed'>
                 <thead>
                     <tr>
-                        <th>Project</th>
-                        <th>Time Frame</th>
-                        <th>Hours Worked</th>
+                        <th>Name</th>
+                        <th>Start Date</th>
+                        <th>End Date</th>
                         <th>Contract Hours</th>
+                        <th>Hours Worked</th>
                         <th>Contract Type</th>
                     </tr>
                 </thead>
                 <tbody>
                     {% for contract in contracts %}
                         <tr>
-                            <td>
-                                <a href="{% url 'view_contract' contract.id %}">{{ contract.project }}</a>
-                            </td>
-                            <td>{{ contract.start_date|date:'M d, Y' }} - {{ contract.end_date|date:'M d, Y' }}</td>
-                            <td class="hours">
-                                <a href="{% url 'view_project_timesheet' contract.project.id %}">{{ contract.hours_worked }}</a>
-                                ({% widthratio contract.hours_worked contract.contracted_hours 100 %}%)
-                            </td>
-                            <td class="hours">
-                                {{ contract.contracted_hours }}
+                            <td><a href="{% url 'view_contract' contract.id %}">{{ contract.name }}</a></td>
+                            <td class="nowrap">{{ contract.start_date|date:'N d, Y' }}</td>
+                            <td class="nowrap">{{ contract.end_date|date:'N d, Y' }}</td>
+                            <td class="nowrap hours">
+                                {{ contract.contracted_hours|floatformat:2 }}
                                 {% if contract.pending_hours %}
-                                    <span class="pending">(+ {{ contract.pending_hours }})</span>
+                                    <span class="pending">(+ {{ contract.pending_hours|floatformat:2 }})</span>
                                 {%  endif %}
                             </td>
-                            <td>{{ contract.get_type_display }}</td>
+                            <td class="nowrap hours">{{ contract.hours_worked|floatformat:2 }} ({% widthratio contract.hours_worked contract.contracted_hours 100 %}%)</td>
+                            <td class="nowrap">{{ contract.get_type_display }}</td>
                         </tr>
                     {% endfor %}
                 </tbody>

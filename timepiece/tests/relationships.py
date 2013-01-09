@@ -1,5 +1,3 @@
-import urllib
-
 from django.contrib.auth.models import Permission
 from django.core.urlresolvers import reverse
 
@@ -14,29 +12,12 @@ class RelationshipTestBase(TimepieceDataTestCase):
         self.password = self.random_string(25)
         self.user = self.create_user(username=self.username,
                 password=self.password)
-        self.permissions = [Permission.objects.get(codename=n) for n in self.perm_names]
+        self.permissions = [Permission.objects.get(codename=n) for n in
+                self.perm_names]
         self.user.user_permissions.add(*self.permissions)
         self.client.login(username=self.username, password=self.password)
 
         self.project = self.create_project()
-
-    def _url(self, url_name=None, url_kwargs=None, get_kwargs=None):
-        url_name = url_name or self.url_name
-        base_url = reverse(url_name, kwargs=url_kwargs)
-        params = urllib.urlencode(get_kwargs) if get_kwargs else ''
-        return '{0}?{1}'.format(base_url, params)
-
-    def _get(self, url_name=None, url_kwargs=None, get_kwargs=None, *args,
-                **kwargs):
-        get_kwargs = self._get_kwargs() if get_kwargs is None else get_kwargs
-        url = self._url(url_name, url_kwargs, get_kwargs)
-        return self.client.get(url, *args, **kwargs)
-
-    def _post(self, url_name=None, url_kwargs=None, get_kwargs=None, *args,
-                **kwargs):
-        get_kwargs = self._get_kwargs() if get_kwargs is None else get_kwargs
-        url = self._url(url_name, url_kwargs, get_kwargs)
-        return self.client.post(url, *args, **kwargs)
 
     def _assertRedirectsNoFollow(self, response, url):
         self.assertEquals(response.status_code, 302)
@@ -48,7 +29,8 @@ class AddProjectToUserTestCase(RelationshipTestBase):
     url_name = 'create_relationship'
     perm_names = ['add_projectrelationship']
 
-    def _get_kwargs(self):
+    @property
+    def get_kwargs(self):
         return {'user_id': self.user.pk}
 
     def _data(self):
@@ -105,7 +87,7 @@ class AddProjectToUserTestCase(RelationshipTestBase):
 
     def test_redirect_to_next(self):
         """Adding a relationship should redirect to next url if available."""
-        get_kwargs = self._get_kwargs()
+        get_kwargs = self.get_kwargs
         get_kwargs.update({'next': '/hello'})
         response = self._post(data=self._data(), get_kwargs=get_kwargs)
         self._assertRedirectsNoFollow(response, '/hello')
@@ -118,7 +100,8 @@ class AddUserToProjectTestCase(RelationshipTestBase):
     url_name = 'create_relationship'
     perm_names = ['change_projectrelationship', 'add_projectrelationship']
 
-    def _get_kwargs(self):
+    @property
+    def get_kwargs(self):
         return {'project_id': self.project.pk}
 
     def _data(self):
@@ -175,7 +158,7 @@ class AddUserToProjectTestCase(RelationshipTestBase):
 
     def test_redirect_to_next(self):
         """Adding a relationship should redirect to next url if available."""
-        get_kwargs = self._get_kwargs()
+        get_kwargs = self.get_kwargs
         get_kwargs.update({'next': '/hello'})
         response = self._post(data=self._data(), get_kwargs=get_kwargs)
         self._assertRedirectsNoFollow(response, '/hello')
@@ -188,7 +171,8 @@ class EditRelationshipTestCase(RelationshipTestBase):
     url_name = 'edit_relationship'
     perm_names = ['change_projectrelationship']
 
-    def _get_kwargs(self):
+    @property
+    def get_kwargs(self):
         return {'project_id': self.project.pk, 'user_id': self.user.pk}
 
     def _data(self):
@@ -265,7 +249,7 @@ class EditRelationshipTestCase(RelationshipTestBase):
 
     def test_redirect_to_next(self):
         """Editing a relationship should redirect to next url if available."""
-        get_kwargs = self._get_kwargs()
+        get_kwargs = self.get_kwargs
         get_kwargs.update({'next': '/hello'})
         response = self._post(data=self._data(), get_kwargs=get_kwargs)
         self._assertRedirectsNoFollow(response, '/hello')
@@ -286,7 +270,8 @@ class DeleteRelationshipTestCase(RelationshipTestBase):
         rel_data = {'project': self.project, 'user': self.user}
         self.relationship = self.create_project_relationship(data=rel_data)
 
-    def _get_kwargs(self):
+    @property
+    def get_kwargs(self):
         return {'project_id': self.project.pk, 'user_id': self.user.pk}
 
     def test_get_no_delete(self):

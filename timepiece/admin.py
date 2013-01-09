@@ -79,29 +79,20 @@ class ContractAssignmentInline(admin.TabularInline):
         return qs.select_related()
 
 
-class ContractMilestoneInline(admin.TabularInline):
-    model = timepiece.ContractMilestone
-
 class ContractHourInline(admin.TabularInline):
     model = timepiece.ContractHour
 
 class ProjectContractAdmin(admin.ModelAdmin):
     model = timepiece.ProjectContract
-    list_display = ('_project', 'start_date', 'end_date', 'status',
-                    'contracted_hours', 'pending_hours',
-                    'hours_assigned', 'hours_unassigned',
+    list_display = ('name', 'start_date', 'end_date', 'status',
+                    'num_hours', 'hours_assigned', 'hours_unassigned',
                     'hours_worked',
                     'type')
-    ordering = ('-end_date',)
-    inlines = (ContractAssignmentInline, ContractMilestoneInline, ContractHourInline)
+    inlines = (ContractAssignmentInline, , ContractHourInline)
     list_filter = ('status', 'type')
-    raw_id_fields = ('project',)
+    filter_horizontal = ('projects',)
     list_per_page = 20
-
-    def _project(self, obj):
-        return obj.project
-    _project.admin_order_field = 'project__name'
-    _project.short_description = 'Project'
+    search_fields = ('name', 'projects__name', 'projects__business__name')
 
     def hours_unassigned(self, obj):
         return obj.contracted_hours() - obj.hours_assigned
@@ -109,17 +100,10 @@ class ProjectContractAdmin(admin.ModelAdmin):
 admin.site.register(timepiece.ProjectContract, ProjectContractAdmin)
 
 
-class ProjectContractInline(admin.TabularInline):
-    model = timepiece.ProjectContract
-    extra = 0
-
-
 class ProjectAdmin(admin.ModelAdmin):
-    model = timepiece.Project
     raw_id_fields = ('business',)
-    list_display = ('name', 'business', 'point_person', 'status', 'type',)
+    list_display = ('name', 'business', 'point_person', 'status', 'type')
     list_filter = ('type', 'status')
-    inlines = (ProjectContractInline,)
     search_fields = ('name', 'business__name', 'point_person__username',
             'point_person__first_name', 'point_person__last_name',
             'description')
