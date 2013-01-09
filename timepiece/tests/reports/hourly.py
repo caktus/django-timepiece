@@ -17,10 +17,7 @@ from timepiece.tests.reports.base import ReportsTestBase
 
 
 class TestHourlyReport(ReportsTestBase):
-
-    def setUp(self):
-        super(TestHourlyReport, self).setUp()
-        self.url = reverse('report_hourly')
+    url_name = 'report_hourly'
 
     def test_generate_months(self):
         dates = [utils.add_timezone(datetime.datetime(2011, month, 1))
@@ -176,7 +173,7 @@ class TestHourlyReport(ReportsTestBase):
     def make_totals(self, args={}):
         """Return CSV from hourly report for verification in tests"""
         self.client.login(username='superuser', password='abc')
-        response = self.client.get(self.url, args, follow=True)
+        response = self._get(data=args, follow=True)
         return [item.split(',') \
                 for item in response.content.split('\r\n')][:-1]
 
@@ -395,7 +392,7 @@ class TestHourlyReport(ReportsTestBase):
     def test_no_permission(self):
         """view_entry_summary permission is required to view this report."""
         self.client.login(username='user', password='abc')
-        response = self.client.get(self.url)
+        response = self._get()
         self.assertEqual(response.status_code, 302)
 
     def test_entry_summary_permission(self):
@@ -404,5 +401,5 @@ class TestHourlyReport(ReportsTestBase):
         entry_summ_perm = Permission.objects.get(codename='view_entry_summary')
         self.user.user_permissions.add(entry_summ_perm)
         self.user.save()
-        response = self.client.get(self.url)
+        response = self._get()
         self.assertEqual(response.status_code, 200)

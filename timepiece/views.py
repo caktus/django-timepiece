@@ -1270,7 +1270,8 @@ class ReportMixin(object):
             entryQ = self.get_entry_query(start, end, data)
             trunc = data['trunc']
             if entryQ:
-                vals = ('activity', 'project__status', 'pk')
+                vals = ('pk', 'activity', 'project', 'project__name',
+                        'project__status')
                 entries = timepiece.Entry.objects.date_trunc(trunc,
                         extra_values=vals).filter(entryQ)
             else:
@@ -1390,7 +1391,14 @@ class HourlyReport(ReportMixin, CSVMixin, TemplateView):
         headers.append('Total')
         content.append(headers)
 
-        for rows, totals in context['project_totals']:
+        if self.export_projects:
+            key = 'By Project'
+        else:
+            key = 'By User'
+
+        summaries = context['summaries']
+        summary = summaries[key] if key in summaries else []
+        for rows, totals in summary:
             for name, user_id, hours in rows:
                 data = [name]
                 data.extend(hours)
@@ -1415,9 +1423,13 @@ class HourlyReport(ReportMixin, CSVMixin, TemplateView):
         }
 
     def get(self, request, *args, **kwargs):
-        export = request.GET.get('export', False)
+        self.export_users = request.GET.get('export_users', False)
+        self.export_projects = request.GET.get('export_projects', False)
         context = self.get_context_data()
-        kls = CSVMixin if export else TemplateView
+        if self.export_users or self.export_projects:
+            kls = CSVMixin
+        else:
+            kls = TemplateView
         return kls.render_to_response(self, context)
 
     def get_context_data(self, **kwargs):
@@ -1426,8 +1438,15 @@ class HourlyReport(ReportMixin, CSVMixin, TemplateView):
         # Sum the hours totals for each person & interval.
         entries = context['entries']
         date_headers = context['date_headers']
-        project_totals = utils.project_totals(entries, date_headers, 'total',
-                total_column=True) if entries else []
+
+        summaries = {}
+        if context['entries']:
+            summaries['By User'] = utils.project_totals(
+                    entries.order_by('user__last_name', 'user__id', 'date'),
+                    date_headers, 'total', total_column=True, by='user')
+            summaries['By Project'] = utils.project_totals(
+                    entries.order_by('project__name', 'project__id', 'date'),
+                    date_headers, 'total', total_column=True, by='project')
 
         # Adjust date headers & create range headers.
         from_date = context['from_date']
@@ -1440,7 +1459,7 @@ class HourlyReport(ReportMixin, CSVMixin, TemplateView):
 
         context.update({
             'date_headers': date_headers,
-            'project_totals': project_totals,
+            'summaries': summaries,
             'range_headers': range_headers,
         })
         return context
