@@ -637,14 +637,15 @@ class ContractHourTestCase(ProjectHoursTestCase):
         # If we create some Contract Hour objects and then go to the
         # project contract and get contracted_hours(), it gives the sum
         # of the hours
-        pc = self.create_project_contract(data={'num_hours': 40})
-        self.assertEqual(40, pc.contracted_hours())
+        pc = self.create_contract(num_hours=4)
+        self.assertEqual(4, pc.contracted_hours())
+        self.assertEqual(0, pc.pending_hours())
 
     def test_pending_hours(self):
         # If we create some pending Contract Hour objects and then go to the
         # project contract and get pending_hours(), it gives the sum
         # of the hours
-        pc = self.create_project_contract(data={'num_hours': 4})
+        pc = self.create_contract(num_hours=4)
         ch = self.create_contract_hour({
             'contract': pc,
             'hours': 27,
@@ -653,6 +654,7 @@ class ContractHourTestCase(ProjectHoursTestCase):
         self.assertEqual(4, pc.contracted_hours())
         self.assertEqual(27, pc.pending_hours())
         ch.delete()
+        self.assertEqual(4, pc.contracted_hours())
         self.assertEqual(0, pc.pending_hours())
 
     def test_validation(self):

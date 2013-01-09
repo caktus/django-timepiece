@@ -178,10 +178,10 @@ class TimepieceDataTestCase(TestCase):
         }
         defaults.update(data or {})
         if not 'contract' in defaults:
-            defaults['contract'] = self.create_project_contract()
+            defaults['contract'] = self.create_contract()
         return timepiece.ContractHour.objects.create(**defaults)
 
-    def create_project_contract(self, projects=None, **kwargs):
+    def create_contract(self, projects=None, **kwargs):
         defaults = {
             'name': self.random_string(25),
             'start_date': datetime.date.today(),
