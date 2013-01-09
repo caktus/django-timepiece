@@ -1365,7 +1365,10 @@ class HourlyReport(ReportMixin, CSVMixin, TemplateView):
     @property
     def defaults(self):
         """Default filter form data when no GET data is provided."""
-        (start, end) = utils.get_week_window()
+        # Set default date span to previous week.
+        (start, end) = utils.get_week_window(
+            timezone.now() - relativedelta(days=7)
+        )
         return {
             'from_date': start,
             'to_date': end,
