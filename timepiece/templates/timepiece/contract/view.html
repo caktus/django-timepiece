@@ -12,7 +12,7 @@
 {% block content %}
     <div class="row-fluid">
         <div class="span12">
-            <h2 class="page-title">{{ contract }}</h2>
+            <h2>{{ contract }}</h2>
             <ul class="nav nav-pills">
                 {% if perms.timepiece.change_contract %}
                     <li><a href="{{ contract.get_admin_url }}">Edit</a></li>
