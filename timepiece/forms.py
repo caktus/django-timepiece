@@ -71,6 +71,7 @@ class EditPersonForm(auth_forms.UserChangeForm):
             instance.set_password(password_one)
         if commit:
             instance.save()
+            self.save_m2m()
         return instance
 
     class Meta:
