@@ -2,7 +2,6 @@ import datetime
 from dateutil.relativedelta import relativedelta
 from decimal import Decimal
 import logging
-from django.conf import settings
 
 from django.contrib.auth.models import User
 from django.contrib.sites.models import Site
@@ -896,17 +895,18 @@ class ContractHour(models.Model):
 
     def _send_mail(self, subject, ctx):
         # Don't go to the work unless we have a place to send it
-        if not hasattr(settings, 'ACCOUNTING_EMAILS') \
-           or not settings.ACCOUNTING_EMAILS:
+        emails = utils.get_setting('TIMEPIECE_ACCOUNTING_EMAILS')
+        if not emails:
             return
+        from_email = utils.get_setting('DEFAULT_FROM_EMAIL')
         template = get_template('timepiece/contract/hours_email.txt')
         context = Context(ctx)
         msg = template.render(context)
         send_mail(
             subject=subject,
             message=msg,
-            from_email=settings.DEFAULT_FROM_EMAIL,
-            recipient_list=settings.ACCOUNTING_EMAILS
+            from_email=from_email,
+            recipient_list=emails
         )
 
     def save(self, *args, **kwargs):
@@ -922,13 +922,15 @@ class ContractHour(models.Model):
         super(ContractHour, self).save(*args, **kwargs)
         if ContractHour.PENDING_STATUS in (self.status, self._original['status']):
             domain = Site.objects.get_current().domain
+            method = 'https' if utils.get_setting('TIMEPIECE_EMAILS_USE_HTTPS')\
+                else 'http'
             ctx = {
                 'new': is_new,
                 'changed': not is_new,
                 'deleted': False,
                 'current': self,
                 'previous': self._original,
-                'link': 'https://%s%s' % (domain, self.get_absolute_url())
+                'link': '%s://%s%s' % (method, domain, self.get_absolute_url())
             }
             prefix = "New" if is_new else "Changed"
             subject = "%s pending ContractHour for %s" % (prefix, self.contract)
