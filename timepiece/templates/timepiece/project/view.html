@@ -42,7 +42,7 @@
                 <tr><th>Status</th><td>{{ project.status }}</td></tr>
                 <tr><th>Billable</th><td>{{ project.billable }}</td></tr>
                 <tr>
-                    <th>Point User</th>
+                    <th>Point Person</th>
                     <td>
                         {% if perms.auth.view_user %}
                             <a href="{% url 'view_user' project.point_person.pk %}">{{ project.point_person.get_full_name }}</a>
