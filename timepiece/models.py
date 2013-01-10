@@ -796,6 +796,14 @@ class ProjectContract(models.Model):
     def __unicode__(self):
         return unicode(self.name)
 
+    @models.permalink
+    def get_admin_url(self):
+        return ('admin:timepiece_projectcontract_change', [self.pk])
+
+    @models.permalink
+    def get_absolute_url(self):
+        return ('view_contract', [self.pk])
+
     @property
     def entries(self):
         """
@@ -928,13 +936,14 @@ class ContractHour(models.Model):
             domain = Site.objects.get_current().domain
             method = 'https' if utils.get_setting('TIMEPIECE_EMAILS_USE_HTTPS')\
                 else 'http'
+            url = self.contract.get_absolute_url()
             ctx = {
                 'new': is_new,
                 'changed': not is_new,
                 'deleted': False,
                 'current': self,
                 'previous': self._original,
-                'link': '%s://%s%s' % (method, domain, self.get_absolute_url())
+                'link': '%s://%s%s' % (method, domain, url)
             }
             prefix = "New" if is_new else "Changed"
             name = self._meta.verbose_name
@@ -950,11 +959,16 @@ class ContractHour(models.Model):
         # If we have an email address to send to, and this record was in
         # pending status, we'll send an email about the change.
         if ContractHour.PENDING_STATUS in (self.status, self._original['status']):
+            domain = Site.objects.get_current().domain
+            method = 'https' if utils.get_setting('TIMEPIECE_EMAILS_USE_HTTPS')\
+                else 'http'
+            url = self.contract.get_absolute_url()
             ctx = {
                 'deleted': True,
                 'new': False,
                 'changed': False,
-                'previous': self._original
+                'previous': self._original,
+                'link': '%s://%s%s' % (method, domain, url)
             }
             contract = self._original['contract']
             name = self._meta.verbose_name

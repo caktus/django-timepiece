@@ -111,30 +111,6 @@ class ProjectAdmin(admin.ModelAdmin):
 admin.site.register(timepiece.Project, ProjectAdmin)
 
 
-class ContractAssignmentAdmin(admin.ModelAdmin):
-    list_display = ('id', 'contract', 'user', 'start_date',
-                    'end_date', 'min_hours_per_week', 'num_hours', 'worked',
-                    'remaining')
-    list_filter = ('contract',)
-    ordering = ('-start_date',)
-
-    def queryset(self, request):
-        qs = super(ContractAssignmentAdmin, self).queryset(request)
-        return qs.exclude(contract__status='complete')
-
-    def worked(self, obj):
-        hours_worked = float(obj.hours_worked)
-        if obj.num_hours:
-            percent = hours_worked * 100.0 / float(obj.num_hours)
-            return "%.2f (%.2f%%)" % (hours_worked, percent)
-        return ""
-
-    def remaining(self, obj):
-        return "%.2f" % (obj.hours_remaining,)
-
-admin.site.register(timepiece.ContractAssignment, ContractAssignmentAdmin)
-
-
 class LocationAdmin(admin.ModelAdmin):
     list_display = ('id', 'name')
 admin.site.register(timepiece.Location, LocationAdmin)
@@ -154,12 +130,3 @@ admin.site.register(timepiece.ProjectHours, ProjectHoursAdmin)
 class UserProfileAdmin(admin.ModelAdmin):
     list_display = ('user', 'hours_per_week')
 admin.site.register(timepiece.UserProfile, UserProfileAdmin)
-
-
-class ContractHourAdmin(admin.ModelAdmin):
-    list_display = ('contract', 'hours', 'date_requested', 'date_approved',
-                    'status')
-    list_filter = ('status',)
-    raw_id_fields = ('contract',)
-
-admin.site.register(timepiece.ContractHour, ContractHourAdmin)

@@ -13,6 +13,11 @@
     <div class="row-fluid">
         <div class="span12">
             <h2 class="page-title">{{ contract }}</h2>
+            <ul class="nav nav-pills">
+                {% if perms.timepiece.change_contract %}
+                    <li><a href="{{ contract.get_admin_url }}">Edit</a></li>
+                {% endif %}
+            </ul>
         </div>
     </div>
 
