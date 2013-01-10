@@ -157,7 +157,8 @@ admin.site.register(timepiece.UserProfile, UserProfileAdmin)
 
 
 class ContractHourAdmin(admin.ModelAdmin):
-    list_display = ('contract', 'hours', 'date_requested', 'date_approved', 'status')
+    list_display = ('contract', 'hours', 'date_requested', 'date_approved',
+                    'status')
     list_filter = ('status',)
     raw_id_fields = ('contract',)
 

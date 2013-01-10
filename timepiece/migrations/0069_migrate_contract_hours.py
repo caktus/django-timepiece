@@ -16,15 +16,18 @@ class Migration(DataMigration):
 
     def forwards(self, orm):
         """
-        For each contract that has hours, creates a new ContractHour object capturing those hours.
-        (We'll be deleting the .num_hours field from contracts in the next migration.)
+        For each contract that has hours, creates a new ContractHour object
+        capturing those hours. (We'll be deleting the .num_hours field from
+        contracts in the next migration.)
         """
         ContractHour = orm['timepiece.ContractHour']
+        ProjectContract = orm['timepiece.ProjectContract']
 
         # Remove any existing contract hours
         ContractHour.objects.all().delete()
 
-        for contract in orm['timepiece.ProjectContract'].objects.exclude(num_hours=0):
+        contracts = ProjectContract.objects.exclude(num_hours=0)
+        for contract in contracts:
             # Create a ContractHour object representing those hours
             ContractHour.objects.create(
                 hours=contract.num_hours,
@@ -45,8 +48,12 @@ class Migration(DataMigration):
         ContractHour = orm['timepiece.ContractHour']
         ProjectContract = orm['timepiece.ProjectContract']
 
-        if ContractHour.objects.filter(status=PENDING_STATUS).exclude(hours=0).exists():
-            raise Exception("There are pending hours that we cannot migrate backwards; aborting to avoid data loss")
+        pending = ContractHour.objects.filter(status=PENDING_STATUS)
+        if pending.exclude(hours=0).exists():
+            raise Exception(
+                "There are pending hours that we cannot migrate backwards;"
+                " aborting to avoid data loss"
+            )
 
         # Start with zero hours, then add in each ContractHour's hours
         ProjectContract.objects.all().update(num_hours=0)

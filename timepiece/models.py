@@ -811,8 +811,10 @@ class ProjectContract(models.Model):
         """Compute the hours contracted for this contract.
         (This replaces the old `num_hours` field.)
 
-        :param boolean approved_only: If true, only include approved contract hours; if false, include pending ones too.
-        :returns: The sum of the contracted hours, subject to the `approved_only` parameter.
+        :param boolean approved_only: If true, only include approved
+            contract hours; if false, include pending ones too.
+        :returns: The sum of the contracted hours, subject to the
+            `approved_only` parameter.
         :rtype: Decimal
         """
 
@@ -823,7 +825,7 @@ class ProjectContract(models.Model):
         return result or 0
 
     def pending_hours(self):
-        """Compute the contract hours still in pending status for this contract"""
+        """Compute the contract hours still in pending status"""
         qset = self.contract_hours.filter(status=ContractHour.PENDING_STATUS)
         result = qset.aggregate(sum=Sum('hours'))['sum']
         return result or 0
@@ -887,11 +889,15 @@ class ContractHour(models.Model):
     def clean(self):
         # Note: this is called when editing in the admin, but not otherwise
         if self.status == self.PENDING_STATUS and self.date_approved:
-            raise ValidationError("Pending contracthours should not have an approved date, did you mean to change status to approved?")
+            raise ValidationError(
+                "Pending contracthours should not have an approved date, did "
+                "you mean to change status to approved?"
+            )
 
     def _send_mail(self, subject, ctx):
         # Don't go to the work unless we have a place to send it
-        if not hasattr(settings, 'ACCOUNTING_EMAIL') or not settings.ACCOUNTING_EMAIL:
+        if not hasattr(settings, 'ACCOUNTING_EMAIL') \
+           or not settings.ACCOUNTING_EMAIL:
             return
         template = get_template('timepiece/contract/hours_email.txt')
         context = Context(ctx)
@@ -904,35 +910,38 @@ class ContractHour(models.Model):
         )
 
     def save(self, *args, **kwargs):
-        # Let the date_approved default to today if it's been set approved and doesn't have one
+        # Let the date_approved default to today if it's been set approved
+        # and doesn't have one
         if self.status == self.APPROVED_STATUS and not self.date_approved:
             self.date_approved = datetime.date.today()
 
-        # If we have an email address to send to, and this record was or is in pending status,
-        # we'll send an email about the change.
+        # If we have an email address to send to, and this record was
+        # or is in pending status, we'll send an email about the change.
         if ContractHour.PENDING_STATUS in (self.status, self._original['status']):
             is_new = self.pk is None
         super(ContractHour, self).save(*args, **kwargs)
         if ContractHour.PENDING_STATUS in (self.status, self._original['status']):
+            domain = Site.objects.get_current().domain
             ctx = {
                 'new': is_new,
                 'changed': not is_new,
                 'deleted': False,
                 'current': self,
                 'previous': self._original,
-                'link': 'https://%s%s' % (Site.objects.get_current().domain, self.get_absolute_url())
+                'link': 'https://%s%s' % (domain, self.get_absolute_url())
             }
             prefix = "New" if is_new else "Changed"
             subject = "%s pending ContractHour for %s" % (prefix, self.contract)
             self._send_mail(subject, ctx)
 
     def delete(self, *args, **kwargs):
-        # Note: this gets called when you delete a single item using the red Delete button at the
-        # bottom while editing it in the admin - but not when you delete one or more from the change
-        # list using the admin action.
+        # Note: this gets called when you delete a single item using the red
+        # Delete button at the bottom while editing it in the admin - but not
+        # when you delete one or more from the change list using the admin
+        # action.
         super(ContractHour, self).delete(*args, **kwargs)
-        # If we have an email address to send to, and this record was in pending status,
-        # we'll send an email about the change.
+        # If we have an email address to send to, and this record was in
+        # pending status, we'll send an email about the change.
         if ContractHour.PENDING_STATUS in (self.status, self._original['status']):
             ctx = {
                 'deleted': True,
@@ -940,7 +949,8 @@ class ContractHour(models.Model):
                 'changed': False,
                 'previous': self._original
             }
-            subject = "Deleted pending ContractHour for %s" % self._original['contract']
+            contract = self._original['contract']
+            subject = "Deleted pending ContractHour for %s" % contract
             self._send_mail(subject, ctx)
 
 
