@@ -14,10 +14,10 @@ from django.contrib.auth.models import User, Permission
 from django.contrib.contenttypes.models import ContentType
 from django.core import exceptions
 from django.core.urlresolvers import reverse, resolve
-from django.db import DatabaseError, transaction
-from django.db.models import Sum, Q, F, Min, Max
+from django.db import transaction
+from django.db.models import Sum, Q, Min, Max
 from django.http import HttpResponse, HttpResponseRedirect
-from django.http import  Http404, HttpResponseForbidden
+from django.http import Http404, HttpResponseForbidden
 from django.shortcuts import get_object_or_404, redirect, render
 from django.utils.decorators import method_decorator
 from django.views.decorators.csrf import csrf_exempt
@@ -237,7 +237,6 @@ def reject_entry(request, entry_id):
     Admins can reject an entry that has been verified or approved but not
     invoiced to set its status to 'unverified' for the user to fix.
     """
-    user = request.user
     return_url = request.REQUEST.get('next', reverse('dashboard'))
     try:
         entry = timepiece.Entry.no_join.get(pk=entry_id)
@@ -330,52 +329,6 @@ def delete_entry(request, entry_id):
     })
 
 
-@permission_required('timepiece.view_entry_summary')
-def report_general_ledger(request):
-    date = timezone.now() - relativedelta(months=1)
-    from_date = utils.get_month_start(date).date()
-    to_date = from_date + relativedelta(months=1)
-
-    form = timepiece_forms.YearMonthForm(request.GET or None, initial={
-        'month': from_date.month,
-        'year': from_date.year
-    })
-
-    if form.is_valid():
-        from_date, to_date = form.save()
-
-    entries = timepiece.Entry.no_join.values(
-        'project__id',
-        'project__business__id',
-        'project__name',
-    ).order_by(
-        'project__id',
-        'project__business__id',
-        'project__name',
-    )
-    dates = Q()
-    if from_date:
-        dates &= Q(start_time__gte=from_date)
-    if to_date:
-        dates &= Q(end_time__lte=to_date)
-    project_totals = entries.filter(dates).annotate(total_hours=Sum('hours'))
-    project_totals = project_totals.order_by('project__name')
-    total_hours = timepiece.Entry.objects.filter(dates).aggregate(
-        hours=Sum('hours')
-    )['hours']
-    people_totals = timepiece.Entry.no_join.values('user', 'user__first_name',
-                                                   'user__last_name')
-    people_totals = people_totals.order_by('user__last_name').filter(dates)
-    people_totals = people_totals.annotate(total_hours=Sum('hours'))
-    return render(request, 'timepiece/reports/general_ledger.html', {
-        'form': form,
-        'project_totals': project_totals,
-        'total_hours': total_hours,
-        'people_totals': people_totals,
-        'from_date': from_date
-    })
-
-
 class ProjectTimesheet(DetailView):
     template_name = 'timepiece/project/timesheet.html'
     model = timepiece.Project
@@ -427,7 +380,7 @@ class ProjectTimesheet(DetailView):
             'activity__name').annotate(
             sum=Sum('hours')).order_by('-sum'
         )
-        return {
+        context.update({
             'project': project,
             'year_month_form': year_month_form,
             'from_date': from_date,
@@ -436,7 +389,8 @@ class ProjectTimesheet(DetailView):
             'total': total,
             'user_entries': user_entries,
             'activity_entries': activity_entries,
-        }
+        })
+        return context
 
 
 class ProjectTimesheetCSV(CSVMixin, ProjectTimesheet):
@@ -476,7 +430,8 @@ class ProjectTimesheetCSV(CSVMixin, ProjectTimesheet):
 
 
 @login_required
-def view_user_timesheet(request, user_id):
+def view_user_timesheet(request, user_id, active_tab):
+    active_tab = active_tab or 'overview'
     user = get_object_or_404(User, pk=user_id)
     if not (request.user.has_perm('timepiece.view_entry_summary') or \
         user.pk == request.user.pk):
@@ -545,6 +500,7 @@ def view_user_timesheet(request, user_id):
         show_approve = verified_count + approved_count == total_statuses \
         and verified_count > 0 and total_statuses != 0
     return render(request, 'timepiece/user/timesheet/view.html', {
+        'active_tab': active_tab,
         'year_month_form': year_month_form,
         'from_date': from_date,
         'to_date': to_date - datetime.timedelta(days=1),
@@ -696,8 +652,8 @@ def list_outstanding_invoices(request):
         from_date, to_date = date_form.save()
 
     datesQ = Q()
-    datesQ &= Q(end_time__gte=from_date)  if from_date else Q()
-    datesQ &= Q(end_time__lt=to_date)  if to_date else Q()
+    datesQ &= Q(end_time__gte=from_date) if from_date else Q()
+    datesQ &= Q(end_time__lt=to_date) if to_date else Q()
     billableQ = Q(project__type__billable=True, project__status__billable=True)
     statusQ = Q(status='approved')
     ordering = ('project__type__label', 'project__status__label',
@@ -876,7 +832,6 @@ def list_businesses(request):
         searchQ = Q(name__icontains=search) | Q(description__icontains=search)
         businesses = businesses.filter(searchQ)
         if businesses.count() == 1:
-            url_kwargs = {'business': businesses[0].pk}
             url = request.REQUEST.get('next',
                     reverse('view_business', args=(businesses[0].pk,)))
             return HttpResponseRedirect(url)
@@ -1102,8 +1057,9 @@ def report_payroll_summary(request):
     workQ = ~Q(project__in=projects.values())
     statusQ = Q(status='invoiced') | Q(status='approved')
     # Weekly totals
-    week_entries = timepiece.Entry.objects.date_trunc('week')
-    week_entries = week_entries.filter(weekQ, statusQ, workQ)
+    week_entries = timepiece.Entry.objects.date_trunc('week').filter(
+        weekQ, statusQ, workQ
+    )
     date_headers = utils.generate_dates(from_date, last_billable, by='week')
     weekly_totals = list(utils.project_totals(week_entries, date_headers,
                                               'total', overtime=True))
@@ -1270,7 +1226,8 @@ class ReportMixin(object):
             entryQ = self.get_entry_query(start, end, data)
             trunc = data['trunc']
             if entryQ:
-                vals = ('activity', 'project__status', 'pk')
+                vals = ('pk', 'activity', 'project', 'project__name',
+                        'project__status')
                 entries = timepiece.Entry.objects.date_trunc(trunc,
                         extra_values=vals).filter(entryQ)
             else:
@@ -1361,7 +1318,6 @@ class ReportMixin(object):
             count = len(date_headers)
             range_headers = [0] * count
             for i in range(count - 1):
-                header = date_headers[i]
                 range_headers[i] = (date_headers[i], date_headers[i + 1] -
                         relativedelta(days=1))
             range_headers[count - 1] = (date_headers[count - 1], to_date)
@@ -1390,7 +1346,14 @@ class HourlyReport(ReportMixin, CSVMixin, TemplateView):
         headers.append('Total')
         content.append(headers)
 
-        for rows, totals in context['project_totals']:
+        if self.export_projects:
+            key = 'By Project'
+        else:
+            key = 'By User'
+
+        summaries = context['summaries']
+        summary = summaries[key] if key in summaries else []
+        for rows, totals in summary:
             for name, user_id, hours in rows:
                 data = [name]
                 data.extend(hours)
@@ -1403,21 +1366,28 @@ class HourlyReport(ReportMixin, CSVMixin, TemplateView):
     @property
     def defaults(self):
         """Default filter form data when no GET data is provided."""
-        start, end = self.get_previous_month()
+        # Set default date span to previous week.
+        (start, end) = utils.get_week_window(
+            timezone.now() - relativedelta(days=7)
+        )
         return {
             'from_date': start,
             'to_date': end,
             'billable': True,
             'non_billable': True,
             'paid_leave': True,
-            'trunc': 'week',
+            'trunc': 'day',
             'projects': [],
         }
 
     def get(self, request, *args, **kwargs):
-        export = request.GET.get('export', False)
+        self.export_users = request.GET.get('export_users', False)
+        self.export_projects = request.GET.get('export_projects', False)
         context = self.get_context_data()
-        kls = CSVMixin if export else TemplateView
+        if self.export_users or self.export_projects:
+            kls = CSVMixin
+        else:
+            kls = TemplateView
         return kls.render_to_response(self, context)
 
     def get_context_data(self, **kwargs):
@@ -1426,8 +1396,15 @@ class HourlyReport(ReportMixin, CSVMixin, TemplateView):
         # Sum the hours totals for each person & interval.
         entries = context['entries']
         date_headers = context['date_headers']
-        project_totals = utils.project_totals(entries, date_headers, 'total',
-                total_column=True) if entries else []
+
+        summaries = {}
+        if context['entries']:
+            summaries['By User'] = utils.project_totals(
+                    entries.order_by('user__last_name', 'user__id', 'date'),
+                    date_headers, 'total', total_column=True, by='user')
+            summaries['By Project'] = utils.project_totals(
+                    entries.order_by('project__name', 'project__id', 'date'),
+                    date_headers, 'total', total_column=True, by='project')
 
         # Adjust date headers & create range headers.
         from_date = context['from_date']
@@ -1440,7 +1417,7 @@ class HourlyReport(ReportMixin, CSVMixin, TemplateView):
 
         context.update({
             'date_headers': date_headers,
-            'project_totals': project_totals,
+            'summaries': summaries,
             'range_headers': range_headers,
         })
         return context
@@ -1527,6 +1504,7 @@ class BillableHours(ReportMixin, TemplateView):
                     data_map[day]['nonbillable'] += period['nonbillable']
 
         return data_map
+
 
 class ScheduleMixin(object):
 

@@ -8,6 +8,15 @@
 
 {% block breadcrumb %}{% endblock breadcrumb %}
 
+{% block extrajs %}
+    <script>
+        var basePath = "{% url 'dashboard' %}",
+            tabIds = new Array('progress', 'all-entries', 'online-users'),
+            defaultTab = 'progress';
+    </script>
+    <script src="{{ STATIC_URL }}timepiece/js/permanent_tabs.js" type="text/javascript" charset="utf-8"></script>
+{% endblock %}
+
 {% block content %}
     {% if perms.timepiece.can_clock_in %}
         <h2>{{ week_start|date:'F j' }} to {{ week_end|date:'F j' }}</h2>
@@ -211,48 +220,4 @@
             </div>
         </div>
     {% endif %}
-
-    <script>
-        // JavaScript to create permanent links to the dashboard tabs.
-        // When the user clicks on another dashboard tab, the browser location
-        // will change without reloading the page.
-
-        var basePath = "{% url 'dashboard' %}",
-            tabIds = new Array('progress', 'all-entries', 'online-users')
-
-        function changeActiveTab(to) {
-            // Change active tab.
-            $('.nav-tabs li.active').removeClass('active');
-            $('.nav-tabs a[href=' + to + ']').parent().addClass('active');
-
-            // Change active tab content.
-            $('.tab-pane.active').removeClass('active');
-            $('.tab-pane#' + to).addClass('active');
-        };
-
-        // Called when the user moves through browser history.
-        window.onpopstate = function(event) {
-            var path = window.location.pathname,
-                to = 'progress';  // Default
-            if (path.indexOf(basePath) > -1) {
-                var tail = path.substring(basePath.length),
-                    parts = tail.split('/');
-                if (parts.length <= 2 && tabIds.indexOf(parts[0]) > -1) {
-                    to = parts[0];
-                }
-            }
-            changeActiveTab(to);
-        };
-
-        //  Called when the user clicks on a tab link.
-        $('.tab-link').click(function(event) {
-            event.preventDefault();
-            self = $(this)
-            if (!self.parent().hasClass('active')) {
-                to = self.attr('href');
-                history.pushState({}, '', basePath + to + '/');
-                changeActiveTab(to);
-            }
-        });
-    </script>
 {% endblock content %}
