@@ -868,6 +868,10 @@ class ContractHour(models.Model):
         default=PENDING_STATUS)
     notes = models.TextField(blank=True)
 
+    class Meta(object):
+        verbose_name = 'contracted hours'
+        verbose_name_plural = verbose_name
+
     def __init__(self, *args, **kwargs):
         super(ContractHour, self).__init__(*args, **kwargs)
         # Save the current values so we can report changes later
@@ -933,7 +937,8 @@ class ContractHour(models.Model):
                 'link': '%s://%s%s' % (method, domain, self.get_absolute_url())
             }
             prefix = "New" if is_new else "Changed"
-            subject = "%s pending ContractHour for %s" % (prefix, self.contract)
+            name = self._meta.verbose_name
+            subject = "%s pending %s for %s" % (prefix, name, self.contract)
             self._send_mail(subject, ctx)
 
     def delete(self, *args, **kwargs):
@@ -952,7 +957,8 @@ class ContractHour(models.Model):
                 'previous': self._original
             }
             contract = self._original['contract']
-            subject = "Deleted pending ContractHour for %s" % contract
+            name = self._meta.verbose_name
+            subject = "Deleted pending %s for %s" % (name, contract)
             self._send_mail(subject, ctx)
 
 
