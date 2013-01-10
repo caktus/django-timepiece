@@ -896,8 +896,8 @@ class ContractHour(models.Model):
 
     def _send_mail(self, subject, ctx):
         # Don't go to the work unless we have a place to send it
-        if not hasattr(settings, 'ACCOUNTING_EMAIL') \
-           or not settings.ACCOUNTING_EMAIL:
+        if not hasattr(settings, 'ACCOUNTING_EMAILS') \
+           or not settings.ACCOUNTING_EMAILS:
             return
         template = get_template('timepiece/contract/hours_email.txt')
         context = Context(ctx)
@@ -906,7 +906,7 @@ class ContractHour(models.Model):
             subject=subject,
             message=msg,
             from_email=settings.DEFAULT_FROM_EMAIL,
-            recipient_list=[settings.ACCOUNTING_EMAIL]
+            recipient_list=settings.ACCOUNTING_EMAILS
         )
 
     def save(self, *args, **kwargs):
