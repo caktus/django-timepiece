@@ -130,18 +130,6 @@ class TimeTagTestCase(TestCase):
         start = tags.week_start(datetime.date(2013, 1, 10))
         self.assertEqual("01/07/2013", start)
 
-    def test_work_days(self):
-        # Note: I'd prefer to use known dates and mock datetime so the
-        # code thinks 'today' is whatever I want, but we can't mock
-        # datetime because it's a native module. Boo.
-
-        today = datetime.date.today()
-        # Same day next week
-        week_later = today + datetime.timedelta(days=7)
-        num = tags.work_days(week_later)
-        # from any day this week to the same day next week is 6 workdays,
-        self.assertEqual(6, num)
-
 
 class MiscTagTestCase(TestCase):
 
