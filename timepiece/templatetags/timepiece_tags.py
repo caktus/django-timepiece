@@ -1,7 +1,5 @@
 import datetime
-from decimal import Decimal
 from dateutil.relativedelta import relativedelta
-from dateutil import rrule
 import urllib
 
 from django import template
@@ -131,20 +129,6 @@ def humanize_seconds(total_seconds, format='%H:%M:%S'):
         u'{0:02d}'.format(time_unit) for time_unit in time_units
     ])
     return result if total_seconds >= 0 else '({0})'.format(result)
-
-
-@register.filter
-def work_days(end):
-    """Return the number of workdays between today and the given date.
-    Both of those dates are included, so e.g. if today is a Thursday
-    and the end date is the next day (Friday), it returns 2. If today is
-    Friday and the end day is the next Monday, it also returns 2.
-    """
-    weekdays = (rrule.MO, rrule.TU, rrule.WE, rrule.TH, rrule.FR)
-    days = rrule.rrule(rrule.DAILY, byweekday=weekdays,
-                       dtstart=datetime.date.today(), until=end)
-    # FIXME: this could just return days.count()
-    return len(list(days))
 
 
 @register.simple_tag
