@@ -91,6 +91,9 @@ def date_filters(form_id, options=None, use_range=True):
 
 @register.simple_tag
 def week_start(date):
+    """Given a Python date/datetime object, return the starting day of that
+    week in "mm/dd/yyyy" format.
+    """
     return utils.get_week_start(date).strftime('%m/%d/%Y')
 
 
@@ -132,9 +135,15 @@ def humanize_seconds(total_seconds, format='%H:%M:%S'):
 
 @register.filter
 def work_days(end):
+    """Return the number of workdays between today and the given date.
+    Both of those dates are included, so e.g. if today is a Thursday
+    and the end date is the next day (Friday), it returns 2. If today is
+    Friday and the end day is the next Monday, it also returns 2.
+    """
     weekdays = (rrule.MO, rrule.TU, rrule.WE, rrule.TH, rrule.FR)
     days = rrule.rrule(rrule.DAILY, byweekday=weekdays,
                        dtstart=datetime.date.today(), until=end)
+    # FIXME: this could just return days.count()
     return len(list(days))
 
 
