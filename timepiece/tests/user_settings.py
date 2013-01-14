@@ -100,3 +100,19 @@ class EditUserTest(TimepieceDataTestCase):
         response = self.client.post(self.url, data=self.data)
         form = response.context['form']
         self.assertEquals(form.non_field_errors(), ['Passwords Must Match.'])
+
+    def test_edit_user_groups(self):
+        """
+        A user should be able to successfully edit someone if the information
+        is correct
+        """
+        self.login_with_permission()
+        group1 = self.create_auth_group()
+        group2 = self.create_auth_group()
+        self.data['groups'] = (group1.id,)
+        response = self.client.post(self.url, data=self.data)
+        self.assertEqual(response.status_code, 302)
+        user = auth_models.User.objects.get(pk=self.user.pk)
+        user_groups = user.groups.all()
+        self.assertTrue(group1 in user_groups)
+        self.assertTrue(group2 not in user_groups)
