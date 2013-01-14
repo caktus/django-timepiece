@@ -7,6 +7,7 @@ from django.contrib.auth.models import User
 from django.core.exceptions import ValidationError
 from django.db import models
 from django.db.models import Q, Sum, Max, Min
+from django.db import connection
 
 try:
     from django.utils import timezone
@@ -276,9 +277,9 @@ class EntryQuerySet(models.query.QuerySet):
     """QuerySet extension to provide filtering by billable status"""
 
     def date_trunc(self, key='month', extra_values=None):
-        select = {"day": {"date": """DATE_TRUNC('day', end_time)"""},
-                  "week": {"date": """DATE_TRUNC('week', end_time)"""},
-                  "month": {"date": """DATE_TRUNC('month', end_time)"""},
+        select = {"day" : {"date" : connection.ops.date_trunc_sql('day', 'end_time')},
+                  "week" : {"date" : connection.ops.date_trunc_sql('week', 'end_time')},
+                  "month" : {"date" : connection.ops.date_trunc_sql('month', 'end_time')},
         }
         basic_values = (
             'user', 'date', 'user__first_name', 'user__last_name', 'billable',

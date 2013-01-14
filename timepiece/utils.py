@@ -7,6 +7,7 @@ from itertools import groupby
 from django.conf import settings
 from django.core.urlresolvers import reverse
 from django.db.models import Sum, get_model, Q
+from django.db import connection
 from django.template.defaultfilters import slugify
 from django.utils.functional import lazy
 
@@ -164,8 +165,8 @@ def daily_summary(day_entries):
 
 
 def grouped_totals(entries):
-    select = {"day": {"date": """DATE_TRUNC('day', end_time)"""},
-              "week": {"date": """DATE_TRUNC('week', end_time)"""}}
+    select = {"day" : {"date" : connection.ops.date_trunc_sql('day', 'end_time')},
+              "week" : {"date" : connection.ops.date_trunc_sql('week', 'end_time')}}
     weekly = entries.extra(select=select["week"]).values('date', 'billable')
     weekly = weekly.annotate(hours=Sum('hours')).order_by('date')
     daily = entries.extra(select=select["day"]).values('date', 'project__name',
