@@ -50,7 +50,7 @@ class TestBillableHours(ReportsTestBase):
             'from_date': self.from_date.strftime('%m/%d/%Y'),
             'to_date': self.to_date.strftime('%m/%d/%Y'),
             'trunc': 'week',
-            'people': list(Entry.objects.values_list('user', flat=True)),
+            'users': list(Entry.objects.values_list('user', flat=True)),
             'activities': list(Entry.objects.values_list('activity',
                     flat=True)),
             'project_types': list(Entry.objects.values_list('project__type',

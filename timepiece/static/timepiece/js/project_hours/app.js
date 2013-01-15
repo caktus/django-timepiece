@@ -9,7 +9,7 @@ var project_hours = new ProjectHoursCollection();
 function showError(msg) {
     var html = '<div class="alert alert-error">' + msg +
         '<a class="close" data-dismiss="alert" href="#">&times;</a></div>';
-    
+
     $('#alerts').append(html);
     $('.alert').alert();
 }
@@ -45,7 +45,7 @@ function processData(data) {
     for(i = 0; i < project_hours.length; i++) {
         var ph = project_hours[i],
             project = this.all_projects.get_by_id(ph.project);
-        
+
         project.row = project.row || dataTable.length;
 
         // Add project to table if it doesnt already exist
@@ -159,7 +159,7 @@ $.del = function(url, success, error) {
 $(function() {
     var table = $('.dataTable').handsontable({
         rows: 3,
-        
+
         fillHandle: false,
 
         minSpareRows: 1,
@@ -216,18 +216,18 @@ $(function() {
 
         onBeforeChange: function(changes) {
             if(changes.length > 4) { return; }
-            
+
             var row = changes[0],
                 col = changes[1],
                 before = changes[2],
                 after = changes[3],
                 project, user, hours;
-            
+
             if(row === 0) {
                 if(!users.get_by_display_name(after)) {
                     // Adding a user
                     user = all_users.get_by_display_name(after);
-                    
+
                     user.col = col;
                     users.add(user);
                 } else {
@@ -311,7 +311,7 @@ $(function() {
 
         onChange: function(changes, source) {
             if(source === 'loadData') { return; }
-            
+
             for(j = 0; j < changes.length; j++) {
                 var row = changes[j][0],
                     col = changes[j][1],
@@ -386,12 +386,12 @@ $(function() {
 
     // Make sure they really want to copy project hours
     $('#copy').click(function(e) {
-        var copy = confirm('This will overwrite a person\'s project hours if they exist. Are you sure you want to do this?');
-        
+        var copy = confirm('This will overwrite a user\'s project hours if they exist. Are you sure you want to do this?');
+
         if(copy) {
             return true;
         }
-        
+
         return false;
     });
 });

@@ -147,7 +147,7 @@ class AddUserToProjectTestCase(RelationshipTestBase):
         self.assertEquals(rel.user, self.user)
 
     def test_redirect_to_project_page(self):
-        """Adding a relationship hould redirect to person page by default."""
+        """Adding a relationship hould redirect to user page by default."""
         project_url = reverse('view_project', args=(self.project.pk,))
 
         response = self._post(data=self._data())
