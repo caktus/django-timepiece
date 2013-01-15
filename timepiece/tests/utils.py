@@ -1,6 +1,9 @@
 import datetime
 
 from django.test import TestCase
+from timepiece.tests import TimepieceDataTestCase
+from timepiece.utils import get_active_entry, ActiveEntryError
+
 
 try:
     from django.utils import timezone
@@ -34,3 +37,28 @@ class UtilityFunctionsTest(TestCase):
         for idx, date in enumerate(self.dates):
             self.assertEquals(self.last_billable[idx],
                 utils.get_last_billable_day(date))
+
+
+class GetActiveEntryTest(TimepieceDataTestCase):
+    def setUp(self):
+        self.user = self.create_user()
+
+    def test_get_active_entry_none(self):
+        self.assertIsNone(get_active_entry(self.user))
+
+    def test_get_active_entry_single(self):
+        now = datetime.datetime.now()
+        entry = self.create_entry({'user': self.user, 'start_time': now})
+        # not active
+        self.create_entry({'user': self.user, 'start_time': now,
+                           'end_time': now})
+        # different user
+        self.create_entry({'user': self.create_user(), 'start_time': now})
+        self.assertEqual(entry, get_active_entry(self.user))
+
+    def test_get_active_entry_multiple(self):
+        now = datetime.datetime.now()
+        # two active entries for same user
+        self.create_entry({'user': self.user, 'start_time': now})
+        self.create_entry({'user': self.user, 'start_time': now})
+        self.assertRaises(ActiveEntryError, get_active_entry, self.user)

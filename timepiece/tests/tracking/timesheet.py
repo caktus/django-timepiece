@@ -237,7 +237,7 @@ class ClockInTest(TimepieceDataTestCase):
         })
         try:
             response = self.client.post(self.url, data)
-        except Exception as e:
+        except utils.ActiveEntryError as e:
             self.assertEqual(str(e), "Only one active entry is allowed.")
         else:
             self.fail("Only one active entry should be allowed.")
@@ -694,13 +694,13 @@ class ClockOutTest(TimepieceDataTestCase):
         """
         # Create a closed and valid entry
         now = timezone.now() - datetime.timedelta(hours=5)
-        entry1_data = ({
+        entry1_data = {
             'user': self.user,
             'project': self.project,
             'activity': self.devl_activity,
             'start_time': now,
             'end_time': self.default_end_time
-        })
+        }
         entry1 = self.create_entry(entry1_data)
         entry1_data.update({
             'st_str': entry1.start_time.strftime('%H:%M:%S'),

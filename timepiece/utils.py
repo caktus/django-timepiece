@@ -25,6 +25,10 @@ reverse_lazy = lazy(reverse, str)
 defaults = TimepieceDefaults()
 
 
+class ActiveEntryError(Exception):
+    pass
+
+
 class DecimalEncoder(json.JSONEncoder):
 
     def default(self, obj):
@@ -493,6 +497,5 @@ def get_active_entry(user):
     except Entry.DoesNotExist:
         entry = None
     except Entry.MultipleObjectsReturned:
-        # TODO: create specific exception?
-        raise Exception('Only one active entry is allowed.')
+        raise ActiveEntryError('Only one active entry is allowed.')
     return entry
