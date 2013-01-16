@@ -198,7 +198,7 @@ class TimepieceDataTestCase(TestCase):
         # Create 2 ContractHour objects that add up to the hours we want
         for i in (1, 2):
             self.create_contract_hour({
-                'hours': Decimal(num_hours / 2.0),
+                'hours': Decimal(str(num_hours / 2.0)),
                 'contract': contract,
                 'status': timepiece.ContractHour.APPROVED_STATUS
             })
