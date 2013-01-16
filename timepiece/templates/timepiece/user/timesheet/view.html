@@ -181,10 +181,11 @@
                                 <td class="comments" title="{{entry.comments}}">{{ entry.comments|truncatewords:12|urlizetrunc:25|safe }}</td>
                                 <td class="aux">
                                     {% if entry.status == "unverified" or entry.status != 'invoiced' and perms.timepiece.view_payroll_summary %}
-                                        <a href="{% url 'edit_entry' entry.id %}?next={% url 'view_user_timesheet' timesheet_user.pk 'all-entries' %}">Edit</a>
+                                        <a class="redirect-next" href="{% url 'edit_entry' entry.id %}">Edit</a>
+
                                     {% endif %}
                                     {% if perms.timepiece.view_payroll_summary and entry.status != "unverified" and entry.status != "invoiced" %}
-                                        | <a href="{% url 'reject_entry' entry.id %}?next={% url 'view_user_timesheet' timesheet_user.pk 'all-entries' %}">Reject</a>
+                                        | <a class="redirect-next" href="{% url 'reject_entry' entry.id %}">Reject</a>
                                     {% endif %}
                                 </td>
                             </tr>
