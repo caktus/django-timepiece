@@ -20,10 +20,10 @@ from timepiece.models import Project, Entry, Activity, UserProfile, Attribute
 from timepiece.models import ProjectHours
 
 
-class CreatePersonForm(auth_forms.UserCreationForm):
+class CreateUserForm(auth_forms.UserCreationForm):
 
     def __init__(self, *args, **kwargs):
-        super(CreatePersonForm, self).__init__(*args, **kwargs)
+        super(CreateUserForm, self).__init__(*args, **kwargs)
 
         self.fields['groups'].widget = forms.CheckboxSelectMultiple()
         self.fields['groups'].help_text = None
@@ -34,7 +34,7 @@ class CreatePersonForm(auth_forms.UserCreationForm):
                 'is_staff', 'groups')
 
 
-class EditPersonForm(auth_forms.UserChangeForm):
+class EditUserForm(auth_forms.UserChangeForm):
     password_one = forms.CharField(required=False, max_length=36,
         label=_(u'Password'), widget=forms.PasswordInput(render_value=False))
     password_two = forms.CharField(required=False, max_length=36,
@@ -42,7 +42,7 @@ class EditPersonForm(auth_forms.UserChangeForm):
         widget=forms.PasswordInput(render_value=False))
 
     def __init__(self, *args, **kwargs):
-        super(EditPersonForm, self).__init__(*args, **kwargs)
+        super(EditUserForm, self).__init__(*args, **kwargs)
 
         self.fields['groups'].widget = forms.CheckboxSelectMultiple()
         self.fields['groups'].help_text = None
@@ -55,7 +55,7 @@ class EditPersonForm(auth_forms.UserChangeForm):
         return self.cleaned_data.get('password_one', None)
 
     def clean(self):
-        super(EditPersonForm, self).clean()
+        super(EditUserForm, self).clean()
         password_one = self.cleaned_data.get('password_one', None)
         password_two = self.cleaned_data.get('password_two', None)
         if password_one and password_one != password_two:
@@ -65,7 +65,7 @@ class EditPersonForm(auth_forms.UserChangeForm):
     def save(self, *args, **kwargs):
         commit = kwargs.get('commit', True)
         kwargs['commit'] = False
-        instance = super(EditPersonForm, self).save(*args, **kwargs)
+        instance = super(EditUserForm, self).save(*args, **kwargs)
         password_one = self.cleaned_data.get('password_one', None)
         if password_one:
             instance.set_password(password_one)
@@ -358,7 +358,7 @@ class DateForm(forms.Form):
 
 
 class YearMonthForm(forms.Form):
-    MONTH_CHOICES = [(i, time.strftime('%B', time.strptime(str(i), '%m'))) \
+    MONTH_CHOICES = [(i, time.strftime('%B', time.strptime(str(i), '%m')))
                      for i in xrange(1, 13)]
     month = forms.ChoiceField(choices=MONTH_CHOICES, label='')
     year = forms.ChoiceField(label='')
@@ -544,16 +544,16 @@ class BillableHoursForm(DateForm):
 
     trunc = forms.ChoiceField(label='Group Totals By', choices=TRUNC_CHOICES,
             widget=forms.RadioSelect())
-    people = forms.ModelMultipleChoiceField(required=False, queryset=None,
+    users = forms.ModelMultipleChoiceField(required=False, queryset=None,
             widget=forms.CheckboxSelectMultiple())
     activities = forms.ModelMultipleChoiceField(required=False, queryset=None,
             widget=forms.CheckboxSelectMultiple())
-    project_types = forms.ModelMultipleChoiceField(required=False, queryset=None,
-            widget=forms.CheckboxSelectMultiple())
+    project_types = forms.ModelMultipleChoiceField(required=False,
+            queryset=None, widget=forms.CheckboxSelectMultiple())
 
     def __init__(self, *args, **kwargs):
         """
-        If the 'select_all' argument is given, any data values for people,
+        If the 'select_all' argument is given, any data values for users,
         activities, and project_types are overwritten with all available
         choices.
         """
@@ -564,17 +564,17 @@ class BillableHoursForm(DateForm):
         self.fields['to_date'].required = True
 
         user_ids = timepiece.Entry.no_join.values_list('user', flat=True)
-        people = auth_models.User.objects.filter(id__in=user_ids)
+        users = auth_models.User.objects.filter(id__in=user_ids)
         activities = timepiece.Activity.objects.all()
         project_types = timepiece.Attribute.objects.all()
 
-        self.fields['people'].queryset = people
-        self.fields['people'].label_from_instance = lambda p: p.get_full_name()
+        self.fields['users'].queryset = users
+        self.fields['users'].label_from_instance = lambda p: p.get_full_name()
         self.fields['activities'].queryset = activities
         self.fields['project_types'].queryset = project_types
 
         if select_all:
-            self.data['people'] = list(people.values_list('id', flat=True))
+            self.data['users'] = list(users.values_list('id', flat=True))
             self.data['activities'] = list(activities.values_list('id',
                     flat=True))
             self.data['project_types'] = list(project_types.values_list('id',
@@ -601,7 +601,7 @@ class ProductivityReportForm(forms.Form):
     DATE_FORMAT = '%Y-%m-%d'
     ORGANIZE_BY_CHOICES = (
         ('week', 'Week'),
-        ('person', 'People'),
+        ('user', 'User'),
     )
     project = selectable.AutoCompleteSelectField(ProjectLookup)
     organize_by = forms.ChoiceField(choices=ORGANIZE_BY_CHOICES,

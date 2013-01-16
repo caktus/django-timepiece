@@ -29,7 +29,8 @@ class TimepieceDataTestCase(TestCase):
     get_kwargs = {}
     post_data = {}
 
-    def _url(self, url_name=None, url_args=None, url_kwargs=None, get_kwargs=None):
+    def _url(self, url_name=None, url_args=None, url_kwargs=None,
+            get_kwargs=None):
         url_name = url_name or self.url_name
         url_args = self.url_args if url_args is None else url_args
         url_kwargs = self.url_kwargs if url_kwargs is None else url_kwargs

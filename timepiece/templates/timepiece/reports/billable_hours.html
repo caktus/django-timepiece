@@ -65,7 +65,7 @@
 
                 {% for field in filter_form %}
                     {% if field.name != 'from_date' and field.name != 'to_date' and field.name != 'trunc' %}
-                        <div class="control-group{% if field.errors %} error{% endif %}{% if field.name == 'people' %} people{% endif %}">
+                        <div class="control-group{% if field.errors %} error{% endif %}{% if field.name == 'users' %} users{% endif %}">
                             <label class="control-label">
                                 {{ field.label }}
                                 <span>

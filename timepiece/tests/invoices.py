@@ -332,7 +332,8 @@ class InvoiceCreateTestCase(TimepieceDataTestCase):
         """A regular user should not be able to access this page"""
         self.client.login(username='user2', password='abc')
         to_date = utils.add_timezone(datetime.datetime(2011, 1, 31))
-        url = self.get_create_url(project=self.project_billable.pk, to_date=to_date.strftime('%Y-%m-%d'))
+        url = self.get_create_url(project=self.project_billable.pk,
+                to_date=to_date.strftime('%Y-%m-%d'))
 
         response = self.client.get(url)
         self.assertEquals(response.status_code, 403)
@@ -344,14 +345,16 @@ class InvoiceCreateTestCase(TimepieceDataTestCase):
         """
         self.login_with_permission()
         to_date = utils.add_timezone(datetime.datetime(2011, 1, 31))
-        url = self.get_create_url(project=self.project_billable.pk, to_date=to_date.strftime('%Y-%m-%d'))
+        url = self.get_create_url(project=self.project_billable.pk,
+                to_date=to_date.strftime('%Y-%m-%d'))
 
         response = self.client.get(url)
         self.assertEquals(response.status_code, 200)
 
     def test_invoice_confirm_view(self):
         to_date = utils.add_timezone(datetime.datetime(2011, 1, 31))
-        url = self.get_create_url(project=self.project_billable.pk, to_date=to_date.strftime('%Y-%m-%d'))
+        url = self.get_create_url(project=self.project_billable.pk,
+                to_date=to_date.strftime('%Y-%m-%d'))
         response = self.client.get(url)
         self.assertEqual(response.status_code, 200)
         to_date_str = response.context['to_date'].strftime('%Y %m %d')

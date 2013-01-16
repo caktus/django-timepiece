@@ -404,7 +404,7 @@ class ProjectTimesheetCSV(CSVMixin, ProjectTimesheet):
         rows = []
         rows.append([
             'Date',
-            'Person',
+            'User',
             'Activity',
             'Location',
             'Time In',
@@ -433,13 +433,12 @@ class ProjectTimesheetCSV(CSVMixin, ProjectTimesheet):
 def view_user_timesheet(request, user_id, active_tab):
     active_tab = active_tab or 'overview'
     user = get_object_or_404(User, pk=user_id)
-    if not (request.user.has_perm('timepiece.view_entry_summary') or \
-        user.pk == request.user.pk):
+    if not (request.user.has_perm('timepiece.view_entry_summary') or
+            user.pk == request.user.pk):
         return HttpResponseForbidden('Forbidden')
-    today_reset = utils.add_timezone(datetime.datetime.today())
-    today_reset = today_reset.replace(hour=0, minute=0, second=0, \
-        microsecond=0)
-    from_date = utils.get_month_start(today_reset)
+    today = utils.add_timezone(datetime.datetime.today())
+    today = today.replace(hour=0, minute=0, second=0, microsecond=0)
+    from_date = utils.get_month_start(today)
     to_date = from_date + relativedelta(months=1)
     can_view_summary = request.user and \
         request.user.has_perm('timepiece.view_entry_summary')
@@ -526,8 +525,8 @@ def change_user_timesheet(request, user_id, action):
         perm = False
 
     if not perm:
-        return HttpResponseForbidden('Forbidden: You cannot {0} this ' \
-            'timesheet.'.format(action))
+        return HttpResponseForbidden('Forbidden: You cannot {0} this '
+                'timesheet.'.format(action))
 
     try:
         from_date = request.GET.get('from_date')
@@ -774,7 +773,8 @@ class InvoiceEdit(InvoiceDetail):
         return context
 
     def post(self, request, **kwargs):
-        invoice = get_object_or_404(timepiece.EntryGroup, pk=kwargs.get(self.pk_url_kwarg))
+        pk = kwargs.get(self.pk_url_kwarg)
+        invoice = get_object_or_404(timepiece.EntryGroup, pk=pk)
         self.object = invoice
         initial = {
             'project': invoice.project,
@@ -800,7 +800,8 @@ class InvoiceDelete(InvoiceDetail):
     template_name = 'timepiece/invoice/delete.html'
 
     def post(self, request, **kwargs):
-        invoice = get_object_or_404(timepiece.EntryGroup, pk=kwargs.get(self.pk_url_kwarg))
+        pk = kwargs.get(self.pk_url_kwarg)
+        invoice = get_object_or_404(timepiece.EntryGroup, pk=pk)
         if 'delete' in request.POST:
             invoice.delete()
             return HttpResponseRedirect(reverse('list_invoices'))
@@ -816,7 +817,8 @@ def delete_invoice_entry(request, invoice_id, entry_id):
         entry.status = 'approved'
         entry.entry_group = None
         entry.save()
-        return HttpResponseRedirect(reverse('edit_invoice', args=(invoice_id,)))
+        url = reverse('edit_invoice', args=(invoice_id,))
+        return HttpResponseRedirect(url)
     return render(request, 'timepiece/invoice/delete_entry.html', {
         'invoice': invoice,
         'entry': entry,
@@ -851,7 +853,9 @@ def view_business(request, business_id):
 
 @permission_required('timepiece.add_business')
 def create_edit_business(request, business_id=None):
-    business = get_object_or_404(timepiece.Business, pk=business_id) if business_id else None
+    business = None
+    if business_id:
+        business = get_object_or_404(timepiece.Business, pk=business_id)
     form = timepiece_forms.BusinessForm(request.POST or None,
             instance=business)
     if form.is_valid():
@@ -900,7 +904,7 @@ def view_user(request, user_id):
 @permission_required('auth.change_user')
 def create_edit_user(request, user_id=None):
     user = get_object_or_404(User, pk=user_id) if user_id else None
-    form = timepiece_forms.EditPersonForm(request.POST or None,
+    form = timepiece_forms.EditUserForm(request.POST or None,
             instance=user)
     if form.is_valid():
         user = form.save()
@@ -1024,7 +1028,9 @@ def edit_relationship(request):
 @permission_required('timepiece.add_project')
 @permission_required('timepiece.change_project')
 def create_edit_project(request, project_id=None):
-    project = get_object_or_404(timepiece.Project, pk=project_id) if project_id else None
+    project = None
+    if project_id:
+        project = get_object_or_404(timepiece.Project, pk=project_id)
     form = timepiece_forms.ProjectForm(request.POST or None, instance=project)
     if request.POST and form.is_valid():
         project = form.save()
@@ -1274,8 +1280,8 @@ class ReportMixin(object):
         basicQ &= Q(project__in=projects) if projects else Q()
 
         # Filter by user, activity, and project type for BillableReport.
-        if 'people' in data:
-            basicQ &= Q(user__in=data.get('people'))
+        if 'users' in data:
+            basicQ &= Q(user__in=data.get('users'))
         if 'activities' in data:
             basicQ &= Q(activity__in=data.get('activities'))
         if 'project_types' in data:
@@ -1393,7 +1399,7 @@ class HourlyReport(ReportMixin, CSVMixin, TemplateView):
     def get_context_data(self, **kwargs):
         context = super(HourlyReport, self).get_context_data(**kwargs)
 
-        # Sum the hours totals for each person & interval.
+        # Sum the hours totals for each user & interval.
         entries = context['entries']
         date_headers = context['date_headers']
 
@@ -1550,8 +1556,8 @@ class ScheduleView(ScheduleMixin, TemplateView):
 
         project_hours = utils.get_project_hours_for_week(self.week_start) \
             .filter(published=True)
-        people = utils.get_people_from_project_hours(project_hours)
-        id_list = [person[0] for person in people]
+        users = utils.get_users_from_project_hours(project_hours)
+        id_list = [user[0] for user in users]
         projects = []
 
         func = lambda o: o['project__id']
@@ -1571,7 +1577,7 @@ class ScheduleView(ScheduleMixin, TemplateView):
             'week': self.week_start,
             'prev_week': self.week_start - relativedelta(days=7),
             'next_week': self.week_start + relativedelta(days=7),
-            'people': people,
+            'users': users,
             'project_hours': project_hours,
             'projects': projects
         })
@@ -1822,21 +1828,21 @@ def report_productivity(request):
                         actual_hours or 0, projected_hours or 0])
                 current = next_week
 
-        elif organize_by == 'person' and entry_count > 0:
-            # Determine all people who worked on or were assigned to the
+        elif organize_by == 'user' and entry_count > 0:
+            # Determine all users who worked on or were assigned to the
             # project.
             vals = ('user', 'user__first_name', 'user__last_name')
-            apeople = list(actuals.values_list(*vals).distinct())
-            ppeople = list(projections.values_list(*vals).distinct())
+            ausers = list(actuals.values_list(*vals).distinct())
+            pusers = list(projections.values_list(*vals).distinct())
             key = lambda x: (x[1] + x[2]).lower()  # Sort by name
-            people = sorted(list(set(apeople + ppeople)), key=key)
+            users = sorted(list(set(ausers + pusers)), key=key)
 
-            # Report for each person.
-            for person in people:
-                name = '{0} {1}'.format(person[1], person[2])
-                actual_hours = actuals.filter(user=person[0]) \
+            # Report for each user.
+            for user in users:
+                name = '{0} {1}'.format(user[1], user[2])
+                actual_hours = actuals.filter(user=user[0]) \
                         .aggregate(Sum('hours')).values()[0]
-                projected_hours = projections.filter(user=person[0]) \
+                projected_hours = projections.filter(user=user[0]) \
                         .aggregate(Sum('hours')).values()[0]
                 report.append([name, actual_hours or 0, projected_hours or 0])
 
