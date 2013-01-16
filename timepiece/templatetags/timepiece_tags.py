@@ -1,7 +1,5 @@
 import datetime
-from decimal import Decimal
 from dateutil.relativedelta import relativedelta
-from dateutil import rrule
 import urllib
 
 from django import template
@@ -91,6 +89,9 @@ def date_filters(form_id, options=None, use_range=True):
 
 @register.simple_tag
 def week_start(date):
+    """Given a Python date/datetime object, return the starting day of that
+    week in "mm/dd/yyyy" format.
+    """
     return utils.get_week_start(date).strftime('%m/%d/%Y')
 
 
@@ -128,14 +129,6 @@ def humanize_seconds(total_seconds, format='%H:%M:%S'):
         u'{0:02d}'.format(time_unit) for time_unit in time_units
     ])
     return result if total_seconds >= 0 else '({0})'.format(result)
-
-
-@register.filter
-def work_days(end):
-    weekdays = (rrule.MO, rrule.TU, rrule.WE, rrule.TH, rrule.FR)
-    days = rrule.rrule(rrule.DAILY, byweekday=weekdays,
-                       dtstart=datetime.date.today(), until=end)
-    return len(list(days))
 
 
 @register.simple_tag

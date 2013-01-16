@@ -36,7 +36,7 @@
         {% if user_entries %}
             <div class="span3">
                 <table class='table table-bordered table-striped'>
-                    <caption>Person Summary</caption>
+                    <caption>User Summary</caption>
                 {% for entry in user_entries %}
                     <tr>
                         <td>{{ entry.user__first_name }} {{ entry.user__last_name }}</td>
@@ -69,7 +69,7 @@
                 <table class="table table-bordered table-striped">
                     <tr>
                         <th>Date</th>
-                        <th>Person</th>
+                        <th>User</th>
                         <th>Activity</th>
                         <th>Location</th>
                         <th>Time In</th>

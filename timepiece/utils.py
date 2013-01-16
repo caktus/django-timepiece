@@ -25,6 +25,10 @@ reverse_lazy = lazy(reverse, str)
 defaults = TimepieceDefaults()
 
 
+class ActiveEntryError(Exception):
+    pass
+
+
 class DecimalEncoder(json.JSONEncoder):
 
     def default(self, obj):
@@ -74,7 +78,7 @@ def add_timezone(value, tz=None):
 
     If no timezone is given, timezone.get_current_timezone() is used.
     """
-    if tz == None:
+    if tz is None:
         tz = timezone.get_current_timezone()
     try:
         if timezone.is_naive(value):
@@ -417,15 +421,15 @@ def get_project_hours_for_week(week_start):
     return qs
 
 
-def get_people_from_project_hours(project_hours):
+def get_users_from_project_hours(project_hours):
     """
-    Gets a list of the distinct people included in the project hours entries,
+    Gets a list of the distinct users included in the project hours entries,
     ordered by name.
     """
-    people = project_hours.values_list('user__id', 'user__first_name',
+    users = project_hours.values_list('user__id', 'user__first_name',
             'user__last_name').distinct().order_by('user__first_name',
             'user__last_name')
-    return people
+    return users
 
 
 def get_total_seconds(td):
@@ -493,6 +497,5 @@ def get_active_entry(user):
     except Entry.DoesNotExist:
         entry = None
     except Entry.MultipleObjectsReturned:
-        # TODO: create specific exception?
-        raise Exception('Only one active entry is allowed.')
+        raise ActiveEntryError('Only one active entry is allowed.')
     return entry

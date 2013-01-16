@@ -117,12 +117,12 @@ admin.site.register(timepiece.Location, LocationAdmin)
 
 
 class ProjectHoursAdmin(admin.ModelAdmin):
-    list_display = ('_person', 'project', 'week_start', 'hours', 'published')
+    list_display = ('_user', 'project', 'week_start', 'hours', 'published')
 
-    def _person(self, obj):
+    def _user(self, obj):
         return obj.user.get_full_name()
-    _person.short_description = 'Person'
-    _person.admin_order_field = 'user__last_name'
+    _user.short_description = 'User'
+    _user.admin_order_field = 'user__last_name'
 
 admin.site.register(timepiece.ProjectHours, ProjectHoursAdmin)
 

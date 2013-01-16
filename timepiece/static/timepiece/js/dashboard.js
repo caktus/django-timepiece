@@ -70,7 +70,7 @@ function createProgressChart(worked, assigned) {
 }
 
 // Entry point to create overall progress chart and per-project progress charts.
-(function() {
+$(function() {
     var container = $('#overall-bar'),
         worked = parseFloat(container.attr('data-worked')),
         assigned = parseFloat(container.attr('data-assigned'));
@@ -88,4 +88,4 @@ function createProgressChart(worked, assigned) {
         bar.attr('style', 'width: ' + width + '%');
         self.append(bar);
     });
-})();
+});

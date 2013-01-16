@@ -51,7 +51,8 @@ class ProjectTestCase(TimepieceDataTestCase):
 
     def testNoProject(self):
         self.client.login(username='superuser', password='abc')
-        response = self.client.get(reverse('view_project_timesheet', args=(999, )))
+        url = reverse('view_project_timesheet', args=(999,))
+        response = self.client.get(url)
         self.assertEqual(response.status_code, 404)
 
     def testEmptyProjectTimesheet(self):
