@@ -39,6 +39,7 @@ Related issues are in the `0.8.0 milestone
 * Used slightly darker highlight color for active project on dashboard's Progress tab
 * Removed paste styles from `styles.less`
 * Updated contributing docs to indicate that pull requests should be made to `caktus:develop`
+* Removed some unused images, renamed a couple of others.
 
 0.7.3 (Released 01-07-2013)
 ---------------------------
