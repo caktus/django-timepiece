@@ -581,53 +581,40 @@ class Entry(models.Model):
         return total
 
     @property
+    def is_active(self):
+        """Returns True if this entry has no end time."""
+        return bool(not self.end_time)
+
+    @property
+    def is_closed(self):
+        """Returns True if this entry has an end time."""
+        return bool(self.end_time)
+
+    @property
     def is_paused(self):
-        """
-        Determine whether or not this entry is paused
-        """
+        """Returns True if this entry is currently paused."""
         return bool(self.pause_time)
 
     def pause(self):
-        """
-        If this entry is not paused, pause it.
-        """
+        """Pause this entry if it is currently active and not paused."""
+        if self.is_closed:  # TODO: more specific exception
+            raise Exception('You cannot pause a closed entry.')
         if not self.is_paused:
             self.pause_time = timezone.now()
 
-    def pause_all(self):
-        """
-        Pause all open entries
-        """
-        entries = self.user.timepiece_entries.filter(
-        end_time__isnull=True).all()
-        for entry in entries:
-            entry.pause()
-            entry.save()
-
     def unpause(self, date=None):
+        """Unpause this entry if it is currently active and is paused."""
+        if self.is_closed:  # TODO: more specific exception
+            raise Exception('You cannot unpause a closed entry.')
         if self.is_paused:
-            if not date:
-                date = timezone.now()
+            date = date or timezone.now()
             delta = date - self.pause_time
             self.seconds_paused += delta.seconds
             self.pause_time = None
 
     def toggle_paused(self):
-        """
-        Toggle the paused state of this entry.  If the entry is already paused,
-        it will be unpaused; if it is not paused, it will be paused.
-        """
-        if self.is_paused:
-            self.unpause()
-        else:
-            self.pause()
-
-    @property
-    def is_closed(self):
-        """
-        Determine whether this entry has been closed or not
-        """
-        return bool(self.end_time)
+        """Toggle the paused state of this entry."""
+        self.unpause() if self.is_paused else self.pause()
 
     def clock_in(self, user, project):
         """

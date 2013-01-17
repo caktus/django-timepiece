@@ -165,14 +165,16 @@ def clock_out(request):
     })
 
 
+@login_required
 @permission_required('timepiece.can_pause')
-def toggle_pause(request):
+@require_POST
+@csrf_exempt
+def ajax_toggle_pause(request):
     """Allow the user to pause and unpause the active entry."""
     entry = utils.get_active_entry(request.user)
     if not entry:
-        raise Http404
+        return HttpResponse('No active entry.', status=404)
 
-    # toggle the paused state
     entry.toggle_paused()
     entry.save()
 
@@ -182,8 +184,8 @@ def toggle_pause(request):
             entry.activity.name, entry.project, action)
     messages.info(request, message)
 
-    # redirect to the log entry list
-    return HttpResponseRedirect(reverse('dashboard'))
+    response = str(1 if entry.is_paused else 0)
+    return HttpResponse(response, mimetype='text/plain')
 
 
 @permission_required('timepiece.change_entry')

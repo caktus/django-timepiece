@@ -13,6 +13,24 @@
         var basePath = "{% url 'dashboard' %}",
             tabIds = ['progress', 'all-entries', 'online-users'],
             defaultTab = 'progress';
+
+        $(function () {
+            $('#toggle-pause').click(function(event) {
+                event.preventDefault();
+                self = $(this);
+                $.post(self.attr('href'), function(data) {
+                    if (data == '1') {  // Entry is paused
+                        self.removeClass('btn-primary');
+                        self.addClass('btn-inverse');
+                        self.text('Resume');
+                    } else if (data == '0') {  // Entry is unpaused
+                        self.removeClass('btn-inverse');
+                        self.addClass('btn-primary');
+                        self.text('Pause');
+                    }
+                });
+            });
+        });
     </script>
     <script src="{{ STATIC_URL }}timepiece/js/permanent_tabs.js" type="text/javascript" charset="utf-8"></script>
     <script type="text/javascript" charset="utf-8">
@@ -36,8 +54,8 @@
                         </a>
                         {% if active_entry %}
                             <a class="btn btn-primary" href="{% url 'clock_out' %}">Clock Out</a>
-                            <a class="btn btn-{% if active_entry.is_paused %}inverse{% else %}primary{% endif %}"
-                                    href="{% url 'toggle_pause' %}">
+                            <a id="toggle-pause" class="btn btn-{% if active_entry.is_paused %}inverse{% else %}primary{% endif %}"
+                                    href="{% url 'ajax_toggle_pause' %}">
                                 {% if active_entry.is_paused %}Resume{% else %}Pause{% endif %}
                             </a>
                             <a class="btn btn-primary" href="{% url 'edit_entry' active_entry.pk %}">Edit</a>
