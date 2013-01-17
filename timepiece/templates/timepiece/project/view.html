@@ -45,9 +45,9 @@
                     <th>Point Person</th>
                     <td>
                         {% if perms.auth.view_user %}
-                            <a href="{% url 'view_user' project.point_person.pk %}">{{ project.point_person.get_full_name }}</a>
+                            <a href="{% url 'view_user' project.point_person.pk %}">{{ project.point_person.get_name_or_username }}</a>
                         {% else %}
-                            {{ project.point_person.get_full_name }}
+                            {{ project.point_person.get_name_or_username }}
                         {% endif %}
                     </td>
                 </tr>
@@ -75,14 +75,14 @@
             <ul class="users">
                 {% for user in project.users.all %}
                     <li>
-                        {{ user.get_full_name }}
+                        {{ user.get_name_or_username }}
                         {% if perms.timepiece.change_projectrelationship %}
-                            {% with caption="Edit "|add:user.get_full_name|add:"'s relationship to "|add:project.name %}
+                            {% with caption="Edit "|add:user.get_name_or_username|add:"'s relationship to "|add:project.name %}
                                 <a title="{{ caption }}" href="{% url 'edit_relationship' %}?project_id={{ project.id}}&user_id={{ user.id }}&next={% url 'view_project' project.id %}"><i alt="{{ caption }}" class="icon-pencil"></i></a>
                             {% endwith %}
                         {% endif %}
                         {% if perms.timepiece.delete_projectrelationship %}
-                            {% with caption="Remove "|add:user.get_full_name|add:" from "|add:project.name %}
+                            {% with caption="Remove "|add:user.get_name_or_username|add:" from "|add:project.name %}
                                 <a title="{{ caption }}" href="{% url 'delete_relationship' %}?project_id={{ project.id }}&user_id={{ user.id }}&next={% url 'view_project' project.id %}"><i alt="{{ caption }}" class="icon-remove"></i></a>
                             {% endwith %}
                         {% endif %}
