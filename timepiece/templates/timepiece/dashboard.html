@@ -146,8 +146,9 @@
                                     <tr rel="tooltip" title="{{ entry.comments|escape }}">
                                         <td>
                                             {% if entry.status == "unverified" %}
-                                                <a class="redirect-next" href="{% url 'edit_entry' entry.id %}"><i class="icon-pencil"></i></a>
-                                                <a class="redirect-next" href="{% url 'delete_entry' entry.id %}"><i class="icon-remove"></i></a>
+                                                {% url 'dashboard' active_tab='all-entries' as next %}
+                                                <a href="{% url 'edit_entry' entry.id %}?next={{ next|urlencode }}"><i class="icon-pencil"></i></a>
+                                                <a href="{% url 'delete_entry' entry.id %}?next={{ next|urlencode }}"><i class="icon-remove"></i></a>
                                             {% else %}
                                                 <span class="label label-success"><i class="icon-ok icon-white"></i></span>
                                             {% endif %}
