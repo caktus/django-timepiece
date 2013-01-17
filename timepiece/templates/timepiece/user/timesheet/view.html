@@ -128,6 +128,7 @@
                 </div>
                 <div class="tab-pane{% if active_tab == 'all-entries' %} active{% endif %}" id="all-entries">
                     {% if entries %}
+                        {% url 'view_user_timesheet' timesheet_user.pk 'all-entries' as next_url %}
                         {% for entry in entries %}
                             {% ifchanged entry.start_time|date:"W" %}
                                 {# Close table before new table starts (ignore first table) #}
@@ -173,10 +174,10 @@
                                 <td class="comments" title="{{entry.comments}}">{{ entry.comments|truncatewords:12|urlizetrunc:25|safe }}</td>
                                 <td class="aux">
                                     {% if entry.status == "unverified" or entry.status != 'invoiced' and perms.timepiece.view_payroll_summary %}
-                                        <a href="{% url 'edit_entry' entry.id %}?next={% url 'view_user_timesheet' timesheet_user.pk 'all-entries' %}">Edit</a>
+                                        <a href="{% url 'edit_entry' entry.id %}?next={{ next_url|add_parameters:request.GET|urlencode }}">Edit</a>
                                     {% endif %}
                                     {% if perms.timepiece.view_payroll_summary and entry.status != "unverified" and entry.status != "invoiced" %}
-                                        | <a href="{% url 'reject_entry' entry.id %}?next={% url 'view_user_timesheet' timesheet_user.pk 'all-entries' %}">Reject</a>
+                                        | <a href="{% url 'reject_entry' entry.id %}?next={{ next_url|add_parameters:request.GET|urlencode }}">Reject</a>
                                     {% endif %}
                                 </td>
                             </tr>
