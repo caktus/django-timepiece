@@ -8,7 +8,6 @@ from decimal import Decimal
 
 from django.test import TestCase
 from django.core.urlresolvers import reverse
-from django.template.defaultfilters import slugify
 from django.contrib.auth.models import User, Permission, Group
 from django.contrib.contenttypes.models import ContentType
 from django.db.models import Q
@@ -127,7 +126,6 @@ class TimepieceDataTestCase(TestCase):
         data = data or {}
         defaults = {
             'name': self.random_string(25),
-            'slug': self.random_string(25),
         }
         defaults.update(data)
         return timepiece.RelationshipType.objects.create(**defaults)
@@ -172,6 +170,16 @@ class TimepieceDataTestCase(TestCase):
             defaults['status'] = 'unverified'
         return timepiece.Entry.objects.create(**defaults)
 
+    def create_contract_hour(self, data=None):
+        defaults = {
+            'date_requested': datetime.date.today(),
+            'status': timepiece.ContractHour.APPROVED_STATUS
+        }
+        defaults.update(data or {})
+        if not 'contract' in defaults:
+            defaults['contract'] = self.create_contract()
+        return timepiece.ContractHour.objects.create(**defaults)
+
     def create_contract(self, projects=None, **kwargs):
         defaults = {
             'name': self.random_string(25),
@@ -179,10 +187,19 @@ class TimepieceDataTestCase(TestCase):
             'end_date': datetime.date.today() + datetime.timedelta(weeks=2),
             'num_hours': random.randint(10, 400),
             'status': 'current',
+            'type': timepiece.ProjectContract.PROJECT_PRE_PAID_HOURLY,
         }
         defaults.update(kwargs)
+        num_hours = defaults.pop('num_hours')
         contract = timepiece.ProjectContract.objects.create(**defaults)
         contract.projects.add(*(projects or []))
+        # Create 2 ContractHour objects that add up to the hours we want
+        for i in (1, 2):
+            self.create_contract_hour({
+                'hours': Decimal(str(num_hours / 2.0)),
+                'contract': contract,
+                'status': timepiece.ContractHour.APPROVED_STATUS
+            })
         return contract
 
     def create_contract_assignment(self, data=None):

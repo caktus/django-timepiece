@@ -17,7 +17,7 @@
                         <th>End Date</th>
                         <th>Contract Hours</th>
                         <th>Hours Worked</th>
-                        <th>Percent</th>
+                        <th>Contract Type</th>
                     </tr>
                 </thead>
                 <tbody>
@@ -26,9 +26,14 @@
                             <td><a href="{% url 'view_contract' contract.id %}">{{ contract.name }}</a></td>
                             <td class="nowrap">{{ contract.start_date|date:'N d, Y' }}</td>
                             <td class="nowrap">{{ contract.end_date|date:'N d, Y' }}</td>
-                            <td class="nowrap hours">{{ contract.num_hours|floatformat:2 }}</td>
-                            <td class="nowrap hours">{{ contract.hours_worked|floatformat:2 }}</td>
-                            <td class="nowrap hours">{% widthratio contract.hours_worked contract.num_hours 100 %}%</td>
+                            <td class="nowrap hours">
+                                {{ contract.contracted_hours|floatformat:2 }}
+                                {% if contract.pending_hours %}
+                                    <span class="pending_hours">(+ {{ contract.pending_hours|floatformat:2 }})</span>
+                                {%  endif %}
+                            </td>
+                            <td class="nowrap hours">{{ contract.hours_worked|floatformat:2 }} ({% widthratio contract.hours_worked contract.contracted_hours 100 %}%)</td>
+                            <td class="nowrap">{{ contract.get_type_display }}</td>
                         </tr>
                     {% endfor %}
                 </tbody>
