@@ -36,7 +36,7 @@ class UserLookup(ModelLookup):
         may contain html and multi-lines
         """
         return u"<span class='%s'>%s</span>" % ('individual',
-            user.get_full_name())
+            user.get_name_or_username())
 
     def get_item_label(self, user):
         return self.format_result(user)
@@ -45,7 +45,7 @@ class UserLookup(ModelLookup):
         return user.pk
 
     def get_item_value(self, user):
-        return user.get_full_name()
+        return user.get_name_or_username()
 
 registry.register(UserLookup)
 
@@ -72,11 +72,12 @@ class QuickLookup(LookupBase):
         users = auth_models.User.objects.filter(
             Q(first_name__icontains=q) |
             Q(last_name__icontains=q) |
+            Q(username__icontains=q) |
             Q(email__icontains=q)
         ).select_related().order_by('last_name')[:10]
 
         for user in users:
-            name = user.get_full_name()
+            name = user.get_name_or_username()
             results.append(
                 SearchResult(user.pk, 'individual', name)
             )

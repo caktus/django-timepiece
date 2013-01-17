@@ -299,3 +299,41 @@ class TestProjectHoursForContract(TimepieceDataTestCase):
             self.project_without_hours)
         self.assertEqual('', retval)
         self.assertEqual(0, ctx['project_hours'])
+
+
+class AddParametersTest(TimepieceDataTestCase):
+
+    def test_new_parameters(self):
+        """Tag should add parameters to base URL after a '?'."""
+        url = '/hello/'
+        params = {'foo': 'bar'}
+        retval = tags.add_parameters(url, params)
+        self.assertEqual(retval, url + '?foo=bar')
+
+    def test_additional_parameters(self):
+        """Tag should add parameters to base URL after a '&'."""
+        url = '/hello/?user=1'
+        params = {'foo': 'bar'}
+        retval = tags.add_parameters(url, params)
+        self.assertEqual(retval, url + '&foo=bar')
+
+    def test_repeat_parameters(self):
+        """Tag should append param even if another value exists for it."""
+        url = '/hello/?foo=bar'
+        params = {'foo': 'bar'}
+        retval = tags.add_parameters(url, params)
+        self.assertEqual(retval, url + '&foo=bar')
+
+    def test_no_parameters(self):
+        """Tag should return base URL when no parameters are given."""
+        url = '/hello/'
+        params = {}
+        retval = tags.add_parameters(url, params)
+        self.assertEqual(retval, url)
+
+    def test_special_chars(self):
+        """Tag should escape HTML entities."""
+        url = '/hello/'
+        params = {'foo': '?'}
+        retval = tags.add_parameters(url, params)
+        self.assertEqual(retval, url + '?foo=%3F')

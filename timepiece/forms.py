@@ -569,7 +569,7 @@ class BillableHoursForm(DateForm):
         project_types = timepiece.Attribute.objects.all()
 
         self.fields['users'].queryset = users
-        self.fields['users'].label_from_instance = lambda p: p.get_full_name()
+        self.fields['users'].label_from_instance = lambda p: p.get_name_or_username()
         self.fields['activities'].queryset = activities
         self.fields['project_types'].queryset = project_types
 

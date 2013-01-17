@@ -181,3 +181,26 @@ def project_report_url_for_contract(contract, project):
         'projects_1': project.id,
     }
     return '{0}?{1}'.format(reverse('report_hourly'), urllib.urlencode(data))
+
+
+@register.filter
+def add_parameters(url, parameters):
+    """
+    Appends URL-encoded parameters to the base URL. It appends after '&' if
+    '?' is found in the URL; otherwise it appends using '?'. Keep in mind that
+    this tag does not take into account the value of existing params; it is
+    therefore possible to add another value for a pre-existing parameter.
+
+    For example::
+
+        {% url 'this_view' as current_url %}
+        {% with complete_url=current_url|add_parameters:request.GET %}
+            The <a href="{% url 'other' %}?next={{ complete_url|urlencode }}">
+            next page</a> will redirect back to the current page (including
+            any GET parameters).
+        {% endwith %}
+    """
+    if parameters:
+        sep = '&' if '?' in url else '?'
+        return '{0}{1}{2}'.format(url, sep, urllib.urlencode(parameters))
+    return url

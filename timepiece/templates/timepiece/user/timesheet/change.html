@@ -14,8 +14,8 @@
         <div class="span12">
             <h2>{{ action.capitalize }} Hours for Time Sheet</h2>
             <h3>
-                Are you sure you want to {{ action }} all of {{ timesheet_user.get_full_name }}'s time sheet,
-                from {{ from_date|date:'M j, Y' }} to {{ to_date|date:'M j, Y' }}, which includes a total of {{ hours }} hours?
+                Are you sure you want to {{ action }} all of {{ timesheet_user.get_name_or_username }}'s time sheet,
+                from {{ from_date|date:"N j, Y" }} to {{ to_date|date:"N j, Y" }}, which includes a total of {{ hours }} hours?
             </h3>
             {% if action == "approve" %}
                 <p>After entries have been approved they are ready to be submitted for payroll.</p>

@@ -3,7 +3,7 @@
 {% load bootstrap_toolkit %}
 
 {% block title %}
-    {% if not user %}Create User{% else %}Edit {{ user.get_full_name }}{% endif %}
+    {% if not user %}Create User{% else %}Edit {{ user.get_name_or_username }}{% endif %}
 {% endblock %}
 
 {% block crumbs %}
@@ -13,7 +13,7 @@
         {% if not user %}
             <a href="{% url 'create_user' %}">Create User</a>
         {% else %}
-            <a href="{% url 'edit_user' user.pk %}">Edit {{ user.get_full_name }}</a>
+            <a href="{% url 'edit_user' user.pk %}">Edit {{ user.get_name_or_username }}</a>
         {% endif %}
     </li>
 {% endblock crumbs %}
@@ -21,7 +21,7 @@
 {% block content %}
     <div class="row-fluid">
         <div class="span12">
-            <h2>{% if not user %}Create User{% else %}Edit {{ user.get_full_name }}{% endif %}</h2>
+            <h2>{% if not user %}Create User{% else %}Edit {{ user.get_name_or_username }}{% endif %}</h2>
 
             <form class="form-horizontal" action="" method="post" accept-charset="utf-8">
                 {% csrf_token %}
