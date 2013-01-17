@@ -185,9 +185,10 @@ def project_report_url_for_contract(contract, project):
 @register.filter
 def add_parameters(url, parameters):
     """
-    Appends URL-encoded parameters to the base URL. Keep in mind that this
-    tag does not take into account whether the base URL has any GET params of
-    its own.
+    Appends URL-encoded parameters to the base URL. It appends after '&' if
+    '?' is found in the URL; otherwise it appends using '?'. Keep in mind that
+    this tag does not take into account the value of existing params; it is
+    therefore possible to add another value for a pre-existing parameter.
 
     For example::
 
@@ -199,5 +200,6 @@ def add_parameters(url, parameters):
         {% endwith %}
     """
     if parameters:
-        return '{0}?{1}'.format(url, urllib.urlencode(parameters))
+        sep = '&' if '?' in url else '?'
+        return '{0}{1}{2}'.format(url, sep, urllib.urlencode(parameters))
     return url
