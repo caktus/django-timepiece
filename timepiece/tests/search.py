@@ -17,7 +17,7 @@ class QuickSearchTest(TimepieceDataTestCase):
         url = reverse('search')
 
         response = self.client.get(url, data={
-            'quick_search_0': '%s' % self.superuser.get_full_name(),
+            'quick_search_0': '%s' % self.superuser.get_name_or_username(),
             'quick_search_1': 'individual-%d' % self.superuser.pk
         }, follow=True)
 
@@ -42,7 +42,7 @@ class QuickSearchTest(TimepieceDataTestCase):
         url = reverse('search')
 
         response = self.client.get(url, data={
-            'quick_search_0': '%s' % self.superuser.get_full_name(),
+            'quick_search_0': '%s' % self.superuser.get_name_or_username(),
             'quick_search_1': 'individual'
         }, follow=True)
 
@@ -52,7 +52,7 @@ class QuickSearchTest(TimepieceDataTestCase):
             ['User, business, or project does not exist'])
 
         response = self.client.get(url, data={
-            'quick_search_0': '%s' % self.superuser.get_full_name(),
+            'quick_search_0': '%s' % self.superuser.get_name_or_username(),
             'quick_search_1': ''
         }, follow=True)
 
@@ -62,7 +62,7 @@ class QuickSearchTest(TimepieceDataTestCase):
             ['User, business, or project does not exist'])
 
         response = self.client.get(url, data={
-            'quick_search_0': '%s' % self.superuser.get_full_name(),
+            'quick_search_0': '%s' % self.superuser.get_name_or_username(),
             'quick_search_1': '-%d' % self.superuser.pk
         }, follow=True)
 
@@ -72,7 +72,7 @@ class QuickSearchTest(TimepieceDataTestCase):
             ['User, business, or project does not exist'])
 
         response = self.client.get(url, data={
-            'quick_search_0': '%s' % self.superuser.get_full_name(),
+            'quick_search_0': '%s' % self.superuser.get_name_or_username(),
             'quick_search_1': '-'
         }, follow=True)
 

@@ -558,7 +558,7 @@ def change_user_timesheet(request, user_id, action):
     if active_entries:
         msg = 'You cannot verify/approve this timesheet while the user {0} ' \
             'has an active entry. Please have them close any active ' \
-            'entries.'.format(user.get_full_name())
+            'entries.'.format(user.get_name_or_username())
         messages.error(request, msg)
         return redirect(return_url)
     if request.POST.get('do_action') == 'Yes':
@@ -748,7 +748,7 @@ class InvoiceDetailCSV(CSVMixin, InvoiceDetail):
             data = [
                 entry.start_time.strftime('%x'),
                 entry.start_time.strftime('%A'),
-                entry.user.get_full_name(),
+                entry.user.get_name_or_username(),
                 entry.location,
                 entry.start_time.strftime('%X'),
                 entry.end_time.strftime('%X'),

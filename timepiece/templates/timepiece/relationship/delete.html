@@ -15,7 +15,7 @@
             <br style="clear: both;" />
             <form class="form-inline" id="remove-project-relationship" action="" method="post" accept-charset="utf-8">
                 {% csrf_token %}
-                <h3>Are you sure you want to remove the assignment of {{ project }} to {{ user.get_full_name }}?</h3>
+                <h3>Are you sure you want to remove the assignment of {{ project }} to {{ user.get_name_or_username }}?</h3>
                 <div class="form-actions">
                     <input class="btn btn-primary" type='submit' name='submit' value='Confirm' />
                     <input class="btn" type='button' value='Cancel' onclick='history.go(-1)' />
