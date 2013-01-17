@@ -111,12 +111,12 @@ body {
         }
 
         &.business {
-            .bg-icon('building.png');
+            .bg-icon('business.png');
             padding-left: 20px;
         }
 
         &.project {
-            .bg-icon('report.png');
+            .bg-icon('project.png');
             padding-left: 20px;
         }
     }
@@ -130,14 +130,14 @@ body {
 
         &.businesses {
             li {
-                .list-icon('building.png');
+                .list-icon('business.png');
                 padding: 0.2em;
             }
         }
 
         &.projects {
             li {
-                .list-icon('report.png');
+                .list-icon('project.png');
                 padding: 0.2em;
             }
         }
@@ -267,11 +267,6 @@ body {
 
     .nowrap {
         white-space: nowrap
-    }
-
-    .paste:hover {
-        cursor: hand;
-        cursor: pointer;
     }
 
     .popover {
@@ -507,18 +502,6 @@ body {
         }
     }
 
-    &#paste {
-        pre {
-            white-space: pre;
-        }
-
-        textarea {
-            width: 100%;
-            height: 25em;
-            font-family: 'Monaco', 'Nimbus Mono L', 'DejaVu Sans Mono', 'Courier New';
-        }
-    }
-
     &#billable-hours {
         #chart-container {
             margin-top: 10px;
@@ -732,33 +715,6 @@ body {
 
         /*****************************************
          * End general content
-         *****************************************/
-
-
-        /*****************************************
-         * Start Reports
-         *****************************************/
-
-        ul {
-            &.reports {
-                font-size: 110%;
-
-                li {
-                    .list-icon('chart_bar.png');
-                    margin-bottom: 0.2em;
-
-                }
-            }
-
-            &.parent {
-                ul {
-                    list-style-type: none;
-                }
-            }
-        }
-
-        /*****************************************
-         * End Reports
          *****************************************/
     }
 

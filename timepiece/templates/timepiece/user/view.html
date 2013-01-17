@@ -2,17 +2,17 @@
 {% load timepiece_tags markup bootstrap_toolkit %}
 {% load url from future %}
 
-{% block title %}{{ user.get_full_name }}{% endblock %}
+{% block title %}{{ user.get_name_or_username }}{% endblock %}
 
 {% block crumbs %}
     {{ block.super }}
-    <li><span class="divider">/</span> <a href="">{{ user.get_full_name }}</a></li>
+    <li><span class="divider">/</span> <a href="">{{ user.get_name_or_username }}</a></li>
 {% endblock crumbs %}
 
 {% block content %}
     <div class="row-fluid">
         <div class="span12">
-            <h2>{{ user.get_full_name }}</h2>
+            <h2>{{ user.get_name_or_username }}</h2>
             <ul class="nav nav-pills">
                 {% if perms.auth.change_user %}
                     <li><a href="{% url 'edit_user' user.pk %}">Edit</a></li>
@@ -53,12 +53,12 @@
                     <li>
                         {{ relationship.project.name }}
                         {% if perms.timepiece.change_projectrelationship %}
-                            {% with caption="Edit "|add:user.get_full_name|add:"'s relationship to "|add:relationship.project.name project=relationship.project %}
+                            {% with caption="Edit "|add:user.get_name_or_username|add:"'s relationship to "|add:relationship.project.name project=relationship.project %}
                                 <a title="{{ caption }}" href="{% url 'edit_relationship' %}?project_id={{ project.id }}&user_id={{ user.pk }}&next={{ next_url|add_parameters:request.GET|urlencode }}"><i alt="{{ caption }}" class="icon-pencil"></i></a>
                             {% endwith %}
                         {% endif %}
                         {% if perms.timepiece.delete_projectrelationship %}
-                            {% with caption="Remove "|add:user.get_full_name|add:" from "|add:relationship.project.name project=relationship.project %}
+                            {% with caption="Remove "|add:user.get_name_or_username|add:" from "|add:relationship.project.name project=relationship.project %}
                                 <a title="{{ caption }}" href="{% url 'delete_relationship' %}?project_id={{ project.id }}&user_id={{ user.pk }}&next={{ next_url|add_parameters:request.GET|urlencode }}"><i alt="{{ caption }}" class="icon-remove"></i></a>
                             {% endwith %}
                         {% endif %}
