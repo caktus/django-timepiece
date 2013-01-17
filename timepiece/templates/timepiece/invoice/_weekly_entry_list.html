@@ -25,7 +25,7 @@
                     {% else %}
                         <td></td>
                     {% endifchanged %}
-                <td>{{ entry.user.get_full_name }} </td>
+                <td>{{ entry.user.get_name_or_username }}</td>
                 <td>{{ entry.start_time|date:"P" }} - {{ entry.end_time|date:"P" }} </td>
                 <td>{{ entry.project.name }}</td>
                 <td>{{ entry.activity.name }}</td>

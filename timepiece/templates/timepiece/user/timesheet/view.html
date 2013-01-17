@@ -15,11 +15,7 @@
 {% block breadcrumb %}{% endblock breadcrumb %}
 
 {% block title %}
-    {% if timesheet_user.get_full_name %}
-        {{ timesheet_user.get_full_name }}
-    {% else %}
-        {{ timesheet_user.username }}
-    {% endif %}
+    {{ timesheet_user.get_name_or_username }}
     - Time Sheet for {{ from_date|date:"F Y" }}
 {% endblock %}
 
@@ -27,11 +23,7 @@
 
 {% block content %}
     <h2>
-        {% if timesheet_user.get_full_name %}
-            {{ timesheet_user.get_full_name }}
-        {% else %}
-            {{ timesheet_user.username }}
-        {% endif %}
+        {{ timesheet_user.get_name_or_username }}
         - Time Sheet for {{ from_date|date:"F Y" }}
     </h2>
 

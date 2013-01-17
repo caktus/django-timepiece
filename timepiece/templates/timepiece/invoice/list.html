@@ -56,7 +56,7 @@
                                 <td>{{ invoice.number|default:'' }}</td>
                                 <td>{{ invoice.project }}</td>
                                 <td>{{ invoice.status|capfirst }}</td>
-                                <td>{{ invoice.user.get_full_name }}</td>
+                                <td>{{ invoice.user.get_name_or_username }}</td>
                                 <td>{{ invoice.created|date:"M d Y P" }}</td>
                                 <td>{{ invoice.start|date:"M d Y" }}</td>
                                 <td>{{ invoice.end|date:"M d Y" }}</td>
