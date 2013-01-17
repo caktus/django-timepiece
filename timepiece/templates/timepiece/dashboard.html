@@ -126,6 +126,8 @@
 
             <div class="tab-pane{% if active_tab == 'all-entries' %} active{% endif %}" id="all-entries">
                 {% if week_entries %}
+                    {% url 'dashboard' active_tab='all-entries' as next_url %}
+                    {% with next_url=next_url|add:'?'|add:request.GET.urlencode|urlencode %}
                     {% regroup week_entries by start_time|date:'l, F j' as daily_entries %}
                     {% for day in daily_entries %}
                         <h4>{{ day.grouper }}</h4>
@@ -146,9 +148,8 @@
                                     <tr rel="tooltip" title="{{ entry.comments|escape }}">
                                         <td>
                                             {% if entry.status == "unverified" %}
-                                                {% url 'dashboard' active_tab='all-entries' as next %}
-                                                <a href="{% url 'edit_entry' entry.id %}?next={{ next|urlencode }}"><i class="icon-pencil"></i></a>
-                                                <a href="{% url 'delete_entry' entry.id %}?next={{ next|urlencode }}"><i class="icon-remove"></i></a>
+                                                <a href="{% url 'edit_entry' entry.id %}?next={{ next_url }}"><i class="icon-pencil"></i></a>
+                                                <a href="{% url 'delete_entry' entry.id %}?next={{ next_url }}"><i class="icon-remove"></i></a>
                                             {% else %}
                                                 <span class="label label-success"><i class="icon-ok icon-white"></i></span>
                                             {% endif %}
@@ -184,6 +185,7 @@
                             </tbody>
                         </table>
                     {% endfor %}
+                    {% endwith %}
                 {% else %}
                     <p>No entries exist for this week.</p>
                 {% endif %}
