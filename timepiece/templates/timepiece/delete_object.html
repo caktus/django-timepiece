@@ -7,8 +7,8 @@
 {% block content %}
     <div class="row-fluid">
         <div class="span12">
-            {% if object.get_full_name %}
-                <h3>Are you sure you want to delete {{ object.get_full_name }}?</h3>
+            {% if object.get_name_or_username %}
+                <h3>Are you sure you want to delete {{ object.get_name_or_username }}?</h3>
             {% else %}
                 <h3>Are you sure you want to delete {{ object }}?</h3>
             {% endif %}

@@ -158,7 +158,7 @@ class ProjectRelationship(models.Model):
     def __unicode__(self):
         return "%s's relationship to %s" % (
             self.project.name,
-            self.user.get_full_name(),
+            self.user.get_name_or_username(),
         )
 
 
@@ -764,6 +764,10 @@ User.clocked_in = property(lambda user: user.timepiece_entries.filter(
     end_time__isnull=True).count() > 0)
 
 
+# Utility method to get user's name, falling back to username.
+User.get_name_or_username = lambda user: user.get_full_name() or user.username
+
+
 class ProjectContract(models.Model):
     CONTRACT_STATUS = (
         ('upcoming', 'Upcoming'),
@@ -1026,7 +1030,8 @@ class ProjectHours(models.Model):
     published = models.BooleanField(default=False)
 
     def __unicode__(self):
-        return "{0} on {1} for Week of {2}".format(self.user.get_full_name(),
+        return "{0} on {1} for Week of {2}".format(
+                self.user.get_name_or_username(),
                 self.project, self.week_start.strftime('%B %d, %Y'))
 
     def save(self, *args, **kwargs):

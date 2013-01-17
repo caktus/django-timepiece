@@ -120,7 +120,7 @@ class ProjectHoursAdmin(admin.ModelAdmin):
     list_display = ('_user', 'project', 'week_start', 'hours', 'published')
 
     def _user(self, obj):
-        return obj.user.get_full_name()
+        return obj.user.get_name_or_username()
     _user.short_description = 'User'
     _user.admin_order_field = 'user__last_name'
 

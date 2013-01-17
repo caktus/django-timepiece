@@ -30,15 +30,16 @@ $(function () {
         changeActiveTab(to);
     };
 
-    //  Called when the user clicks on a tab link.
+    // Called when the user clicks on a tab link.
     $('.tab-link').click(function(event) {
         event.preventDefault();
         self = $(this)
         if (!self.parent().hasClass('active')) {
-            to = self.attr('href');
-            history.pushState({}, '', basePath + to + '/');
+            var to = self.attr('href'),
+                search = window.location.search;
+            history.pushState({}, '', basePath + to + '/' + search);
             changeActiveTab(to);
         }
-    })
+    });
 });
 

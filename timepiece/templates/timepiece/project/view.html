@@ -45,9 +45,9 @@
                     <th>Point Person</th>
                     <td>
                         {% if perms.auth.view_user %}
-                            <a href="{% url 'view_user' project.point_person.pk %}">{{ project.point_person.get_full_name }}</a>
+                            <a href="{% url 'view_user' project.point_person.pk %}">{{ project.point_person.get_name_or_username }}</a>
                         {% else %}
-                            {{ project.point_person.get_full_name }}
+                            {{ project.point_person.get_name_or_username }}
                         {% endif %}
                     </td>
                 </tr>
@@ -71,26 +71,27 @@
         </div>
 
         <div class="span4 offset2">
+            {% url 'view_project' project.id as next_url %}
             <h3>Users</h3>
             <ul class="users">
                 {% for user in project.users.all %}
                     <li>
-                        {{ user.get_full_name }}
+                        {{ user.get_name_or_username }}
                         {% if perms.timepiece.change_projectrelationship %}
-                            {% with caption="Edit "|add:user.get_full_name|add:"'s relationship to "|add:project.name %}
-                                <a title="{{ caption }}" href="{% url 'edit_relationship' %}?project_id={{ project.id}}&user_id={{ user.id }}&next={% url 'view_project' project.id %}"><i alt="{{ caption }}" class="icon-pencil"></i></a>
+                            {% with caption="Edit "|add:user.get_name_or_username|add:"'s relationship to "|add:project.name %}
+                                <a title="{{ caption }}" href="{% url 'edit_relationship' %}?project_id={{ project.id}}&user_id={{ user.id }}&next={{ next_url|add_parameters:request.GET|urlencode }}"><i alt="{{ caption }}" class="icon-pencil"></i></a>
                             {% endwith %}
                         {% endif %}
                         {% if perms.timepiece.delete_projectrelationship %}
-                            {% with caption="Remove "|add:user.get_full_name|add:" from "|add:project.name %}
-                                <a title="{{ caption }}" href="{% url 'delete_relationship' %}?project_id={{ project.id }}&user_id={{ user.id }}&next={% url 'view_project' project.id %}"><i alt="{{ caption }}" class="icon-remove"></i></a>
+                            {% with caption="Remove "|add:user.get_name_or_username|add:" from "|add:project.name %}
+                                <a title="{{ caption }}" href="{% url 'delete_relationship' %}?project_id={{ project.id }}&user_id={{ user.id }}&next={{ next_url|add_parameters:request.GET|urlencode }}"><i alt="{{ caption }}" class="icon-remove"></i></a>
                             {% endwith %}
                         {% endif %}
                     </li>
                 {% endfor %}
             </ul>
             {% if perms.timepiece.add_projectrelationship %}
-                <form class="form-inline" action="{% url 'create_relationship' %}?project_id={{ project.id }}&next={% url 'view_project' project.id %}" method="post" accept-charset="utf-8">
+                <form class="form-inline" action="{% url 'create_relationship' %}?project_id={{ project.id }}&next={{ next_url|add_parameters:request.GET|urlencode }}" method="post" accept-charset="utf-8">
                     {% csrf_token %}
                     {{ add_user_form|as_bootstrap:"inline" }}
                     <input class="btn" type="submit" value="Add" />
