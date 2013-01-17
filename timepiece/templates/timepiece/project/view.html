@@ -60,7 +60,7 @@
                     <td>
                         {% for contract in project.contracts.all %}
                             <a href="{% url 'view_contract' contract.pk %}">{{ contract }}</a>
-                            ({{ contract.start_date|date:'N d, Y' }} - {{ contract.end_date|date:'N d, Y' }})
+                            ({{ contract.start_date|date:'M j, Y'}} - {{ contract.end_date|date:'M j, Y'}})
                             <br />
                         {% empty %}
                             This project is not associated with any contracts.

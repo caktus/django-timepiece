@@ -169,7 +169,7 @@ class ClockInForm(forms.ModelForm):
         self.fields['start_time'].initial = datetime.now()
         self.fields['start_time'].widget = forms.SplitDateTimeWidget(
             attrs={'class': 'timepiece-time'},
-            date_format='%m/%d/%Y',
+            date_format='%m/%d/%Y',  # Has to match jquery-ui.DatePicker
         )
         self.fields['project'].queryset = timepiece.Project.objects.filter(
             users=self.user, status__enable_timetracking=True,
@@ -329,7 +329,7 @@ STATUS_CHOICES.extend(timepiece.ENTRY_STATUS)
 
 
 class DateForm(forms.Form):
-    DATE_FORMAT = '%m/%d/%Y'
+    DATE_FORMAT = '%Y-%m-%d'
 
     from_date = forms.DateField(label='From', required=False,
         input_formats=(DATE_FORMAT,),
@@ -358,7 +358,7 @@ class DateForm(forms.Form):
 
 
 class YearMonthForm(forms.Form):
-    MONTH_CHOICES = [(i, time.strftime('%B', time.strptime(str(i), '%m')))
+    MONTH_CHOICES = [(i, time.strftime('%b', time.strptime(str(i), '%m')))
                      for i in xrange(1, 13)]
     month = forms.ChoiceField(choices=MONTH_CHOICES, label='')
     year = forms.ChoiceField(label='')

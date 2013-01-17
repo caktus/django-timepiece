@@ -2,7 +2,7 @@
 {% load url from future %}
 {% load timepiece_tags %}
 
-{% block title %}{{ project }} - Time Sheet for {{ from_date|date:"F Y" }}{% endblock %}
+{% block title %}{{ project }} - Time Sheet for {{ from_date|date:'M Y' }}{% endblock %}
 
 {% block crumbs %}
     {{ block.super }}
@@ -13,7 +13,7 @@
 {% block content %}
     <div class="row-fluid">
         <div class="span12">
-            <h2>{{ project }} - Time Sheet for {{ from_date|date:"F Y" }}</h2>
+            <h2>{{ project }} - Time Sheet for {{ from_date|date:'M Y' }}</h2>
             <ul class="nav nav-pills">
                 <li><a href='{% url 'view_project' project.id %}'>Project Information</a></li>
             </ul>
@@ -84,8 +84,8 @@
                         <td>{{ entry.user__first_name }} {{ entry.user__last_name }}</td>
                         <td>{{ entry.activity__name }}</td>
                         <td>{{ entry.location__name }}</td>
-                        <td>{{ entry.start_time|date:"P" }}</td>
-                        <td>{{ entry.end_time|date:"P" }}</td>
+                        <td>{{ entry.start_time|time }}</td>
+                        <td>{{ entry.end_time|time }}</td>
                         <td>{{ entry.seconds_paused|seconds_to_hours }}</td>
                         <td>{{ entry.hours }}</td>
                         <td title="{{entry.comments}}">{{ entry.comments|truncatewords:12 }}</td>

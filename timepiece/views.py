@@ -19,6 +19,7 @@ from django.db.models import Sum, Q, Min, Max
 from django.http import HttpResponse, HttpResponseRedirect
 from django.http import Http404, HttpResponseForbidden
 from django.shortcuts import get_object_or_404, redirect, render
+from django.template.defaultfilters import date as date_format_filter
 from django.utils.decorators import method_decorator
 from django.views.decorators.csrf import csrf_exempt
 from django.views.decorators.http import require_POST
@@ -644,7 +645,7 @@ def list_outstanding_invoices(request):
     from_date = None
     to_date = utils.get_month_start().date()
     defaults = {
-        'to_date': (to_date - relativedelta(days=1)).strftime('%m/%d/%Y'),
+        'to_date': (to_date - relativedelta(days=1)).strftime('%Y-%m-%d'),
     }
     date_form = timepiece_forms.DateForm(request.GET or defaults)
     if request.GET and date_form.is_valid():
@@ -1474,9 +1475,9 @@ class BillableHours(ReportMixin, TemplateView):
             end = end if end <= to_date else to_date
 
             if start != end:
-                label = ' - '.join([d.strftime('%b %d') for d in (start, end)])
+                label = ' - '.join([date_format_filter(d, 'M j') for d in (start, end)])
             else:
-                label = start.strftime('%b %d')
+                label = date_format_filter(start, 'M j')
             billable = data_map[keys[i]]['billable']
             nonbillable = data_map[keys[i]]['nonbillable']
             data_list.append([label, billable, nonbillable])
@@ -1824,7 +1825,7 @@ def report_productivity(request):
                 projected_hours = projections.filter(week_start__gte=current,
                         week_start__lt=next_week).aggregate(
                         Sum('hours')).values()[0]
-                report.append([current.strftime('%Y-%m-%d'),
+                report.append([date_format_filter(current, 'M j, Y'),
                         actual_hours or 0, projected_hours or 0])
                 current = next_week
 

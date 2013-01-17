@@ -20,7 +20,7 @@
     {% else %}
         {{ timesheet_user.username }}
     {% endif %}
-    - Time Sheet for {{ from_date|date:"F Y" }}
+    - Time Sheet for {{ from_date|date:'M Y' }}
 {% endblock %}
 
 {% block bodyid %}user-timesheet{% endblock bodyid %}
@@ -32,7 +32,7 @@
         {% else %}
             {{ timesheet_user.username }}
         {% endif %}
-        - Time Sheet for {{ from_date|date:"F Y" }}
+        - Time Sheet for {{ from_date|date:'M Y' }}
     </h2>
 
     <div class="row-fluid">
@@ -165,7 +165,7 @@
                                         </tr>
                             {% endifchanged %}
                             <tr>
-                                {% ifchanged entry.start_time|date %}
+                                {% ifchanged entry.start_time|date:'M j, Y'%}
                                 <td>{{ entry.start_time|date:"m/d/Y (D)" }}</td>
                                 {% else %}
                                 <td></td>
@@ -174,8 +174,8 @@
                                 <td class="activity">{{ entry.activity__name }}</td>
                                 <td>{{ entry.location__name }}</td>
                                 <td>{{ entry.status|title }}</td>
-                                <td class="time break">{{ entry.start_time|date:"g:i A" }}</td>
-                                <td class="time break">{{ entry.end_time|date:"g:i A" }}</td>
+                                <td class="time break">{{ entry.start_time|time }}</td>
+                                <td class="time break">{{ entry.end_time|time }}</td>
                                 <td class="hours time">{{ entry.seconds_paused|seconds_to_hours|floatformat:2 }}</td>
                                 <td class="hours time">{{ entry.hours|floatformat:2 }}</td>
                                 <td class="comments" title="{{entry.comments}}">{{ entry.comments|truncatewords:12|urlizetrunc:25|safe }}</td>
@@ -225,7 +225,7 @@
                         {% for week, week_totals, days in grouped_totals %}
                             <table class="table table-bordered table-condensed">
                                 <tr class="ledger_header">
-                                    <th colspan="2">Week of {{ week|date:"m/d/Y" }} </th>
+                                    <th colspan="2">Week of {{ week|date:'M j, Y'}} </th>
                                     <th>Billable</th>
                                     <th>Non-Billable</th>
                                     <th>Total</th>

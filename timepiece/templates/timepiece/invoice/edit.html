@@ -48,13 +48,13 @@
                             </tr>
                         {% endifchanged %}
                         <tr>
-                            {% ifchanged entry.start_time|date %}
+                            {% ifchanged entry.start_time|date:'M j, Y'%}
                                 <td>{{ entry.start_time|date:"m/d/Y (D)" }}</td>
                             {% else %}
                                 <td></td>
                             {% endifchanged %}
                         <td>{{ entry.user.get_full_name }} </td>
-                        <td>{{ entry.start_time|date:"P" }} - {{ entry.end_time|date:"P" }} </td>
+                        <td>{{ entry.start_time|time }} - {{ entry.end_time|time }} </td>
                         <td>{{ entry.project.name }}</td>
                         <td>{{ entry.activity.name }}</td>
                         <td class="hours">{{ entry.hours }}</td>
