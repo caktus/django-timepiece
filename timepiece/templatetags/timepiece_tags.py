@@ -180,3 +180,24 @@ def project_report_url_for_contract(contract, project):
         'projects_1': project.id,
     }
     return '{0}?{1}'.format(reverse('report_hourly'), urllib.urlencode(data))
+
+
+@register.filter
+def add_parameters(url, parameters):
+    """
+    Appends URL-encoded parameters to the base URL. Keep in mind that this
+    tag does not take into account whether the base URL has any GET params of
+    its own.
+
+    For example::
+
+        {% url 'this_view' as current_url %}
+        {% with complete_url=current_url|add_parameters:request.GET %}
+            The <a href="{% url 'other' %}?next={{ complete_url|urlencode }}">
+            next page</a> will redirect back to the current page (including
+            any GET parameters).
+        {% endwith %}
+    """
+    if parameters:
+        return '{0}?{1}'.format(url, urllib.urlencode(parameters))
+    return url
