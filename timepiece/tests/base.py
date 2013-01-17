@@ -8,7 +8,6 @@ from decimal import Decimal
 
 from django.test import TestCase
 from django.core.urlresolvers import reverse
-from django.template.defaultfilters import slugify
 from django.contrib.auth.models import User, Permission, Group
 from django.contrib.contenttypes.models import ContentType
 from django.db.models import Q
@@ -127,7 +126,6 @@ class TimepieceDataTestCase(TestCase):
         data = data or {}
         defaults = {
             'name': self.random_string(25),
-            'slug': self.random_string(25),
         }
         defaults.update(data)
         return timepiece.RelationshipType.objects.create(**defaults)
