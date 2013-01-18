@@ -25,6 +25,8 @@ from django.views.decorators.csrf import csrf_exempt
 from django.views.decorators.http import require_POST
 from django.views.generic import ListView, DetailView, View
 from django.views.generic.base import TemplateView
+from timepiece.forms import DATE_FORM_FORMAT
+
 
 try:
     from django.utils import timezone
@@ -645,7 +647,7 @@ def list_outstanding_invoices(request):
     from_date = None
     to_date = utils.get_month_start().date()
     defaults = {
-        'to_date': (to_date - relativedelta(days=1)).strftime('%Y-%m-%d'),
+        'to_date': (to_date - relativedelta(days=1)).strftime(DATE_FORM_FORMAT),
     }
     date_form = timepiece_forms.DateForm(request.GET or defaults)
     if request.GET and date_form.is_valid():
@@ -1621,7 +1623,7 @@ class EditScheduleView(ScheduleMixin, TemplateView):
         messages.info(request, msg)
 
         param = {
-            'week_start': self.week_start.strftime('%Y-%m-%d')
+            'week_start': self.week_start.strftime(DATE_FORM_FORMAT)
         }
         url = '?'.join((reverse('edit_schedule'),
             urllib.urlencode(param),))
@@ -1645,7 +1647,7 @@ class ScheduleAjaxView(ScheduleMixin, View):
             project = timepiece.Project.objects.get(
                 pk=data.get('project', None))
             hours = data.get('hours', None)
-            week = datetime.datetime.strptime(week_start, '%Y-%m-%d').date()
+            week = datetime.datetime.strptime(week_start, DATE_FORM_FORMAT).date()
 
             ph = timepiece.ProjectHours.objects.get(user=user, project=project,
                 week_start=week)
@@ -1712,7 +1714,7 @@ class ScheduleAjaxView(ScheduleMixin, View):
             msg = 'Project hours were copied'
             messages.info(self.request, msg)
 
-        this_week = datetime.datetime.strptime(week_update, '%Y-%m-%d').date()
+        this_week = datetime.datetime.strptime(week_update, DATE_FORM_FORMAT).date()
         prev_week = this_week - relativedelta(days=7)
         prev_week_qs = self.get_hours_for_week(prev_week)
         this_week_qs = self.get_hours_for_week(this_week)

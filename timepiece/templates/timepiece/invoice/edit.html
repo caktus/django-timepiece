@@ -48,7 +48,7 @@
                             </tr>
                         {% endifchanged %}
                         <tr>
-                            {% ifchanged entry.start_time|date:'M j, Y'%}
+                            {% ifchanged entry.start_time|date %}
                                 <td>{{ entry.start_time|date:"m/d/Y (D)" }}</td>
                             {% else %}
                                 <td></td>
