@@ -12,6 +12,10 @@ required_packages = [
     'pytz==2012c'
 ]
 
+test_packages = [
+    'Mock==1.0.1'
+]
+
 setup(
     name='django-timepiece',
     version=__import__('timepiece').__version__,
@@ -36,7 +40,7 @@ setup(
         'Development Status :: 4 - Beta',
         'Operating System :: OS Independent',
     ],
-    tests_require=required_packages,
+    tests_require=required_packages + test_packages,
     test_suite='run_tests.run',
     install_requires=required_packages,
 )

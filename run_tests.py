@@ -32,6 +32,7 @@ if not settings.configured:
             'django.contrib.sessions',
             'django.contrib.messages',
             'django.contrib.markup',
+            'django.contrib.sites',
             'bootstrap_toolkit',
             'compressor',
             'pagination',
