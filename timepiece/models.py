@@ -851,8 +851,8 @@ class ContractHour(models.Model):
     PENDING_STATUS = 1
     APPROVED_STATUS = 2
     CONTRACT_HOUR_STATUS = (
-        (PENDING_STATUS, 'pending'), # default
-        (APPROVED_STATUS, 'approved')
+        (PENDING_STATUS, 'Pending'), # default
+        (APPROVED_STATUS, 'Approved')
         )
 
     hours = models.DecimalField(max_digits=8, decimal_places=2,

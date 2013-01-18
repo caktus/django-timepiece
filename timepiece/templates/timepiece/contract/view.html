@@ -32,7 +32,7 @@
                     <td>
                         {{ contract.contracted_hours|floatformat:2 }}
                         {% if contract.pending_hours %}
-                            <span class="pending_hours">(+ {{ contract.pending_hours }})</span>
+                            <span class="pending_hours">(+{{ contract.pending_hours }})</span>
                         {%  endif %}</td>
                     </td>
                 </tr>
@@ -92,7 +92,7 @@
                         <td>{{ hour.date_requested }}</td>
                         <td class="hours">{{ hour.hours }}</td>
                         <td>{{ hour.get_status_display }}</td>
-                        <td>{{ hour.date_approved }}</td>
+                        <td>{% if hour.date_approved %}{{ hour.date_approved }}{% endif %}</td>
                         <td>{{ hour.notes }}</td>
                     </tr>
                 {% endfor %}
