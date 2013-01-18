@@ -178,12 +178,6 @@ def ajax_toggle_pause(request):
     entry.toggle_paused()
     entry.save()
 
-    # create a message that can be displayed to the user
-    action = 'paused' if entry.is_paused else 'resumed'
-    message = 'Your entry, {0} on {1}, has been {2}.'.format(
-            entry.activity.name, entry.project, action)
-    messages.info(request, message)
-
     response = str(1 if entry.is_paused else 0)
     return HttpResponse(response, mimetype='text/plain')
 
