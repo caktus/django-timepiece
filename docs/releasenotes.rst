@@ -12,6 +12,7 @@ Related issues are in the `0.8.0 milestone
 * Cleaned up the URL and template structure (This will break many existing bookmarks!)
 * Removed the General Ledger report in favor of adding a summary by project on the Hourly Report page
 * Default to showing entries from the previous week grouped by day on the Hourly Report
+* Fall back to displaying username when a user's first & last name are unavailable
 * Added name field to ProjectContract model
 * Made ProjectContract <-> Project a many-to-many relationship
 * Added additional information on ProjectContract detail page
@@ -32,6 +33,7 @@ Related issues are in the `0.8.0 milestone
 * Removed unused methods from ProjectContract and ContractAssignment models
 * Removed unused ContractMilestone model
 * Removed unused AssignmentManager class
+* Removed unused `slug` fields from Business & RelationshipType models
 * Removed ProjectContract from Project admin
 * Improved test coverage of template tags
 * Changed references to person/people to user/users for consistency with data model
