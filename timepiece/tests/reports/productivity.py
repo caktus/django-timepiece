@@ -1,3 +1,4 @@
+import csv
 import datetime
 from dateutil.relativedelta import relativedelta
 import json
@@ -163,10 +164,10 @@ class TestProductivityReport(TimepieceDataTestCase):
         self.assertEqual(float(worked), 8.0)
         self.assertEqual(float(assigned), 8.0)
         self.assertEqual(len(report), 1 + 4)  # Include header row
-        self._check_row(report[1], ['2012-09-24', 0.0, 4.0])
-        self._check_row(report[2], ['2012-10-01', 4.0, 4.0])
-        self._check_row(report[3], ['2012-10-08', 0.0, 0.0])
-        self._check_row(report[4], ['2012-10-15', 4.0, 0.0])
+        self._check_row(report[1], [u'Sep 24, 2012', 0.0, 4.0])
+        self._check_row(report[2], [u'Oct 1, 2012', 4.0, 4.0])
+        self._check_row(report[3], [u'Oct 8, 2012', 0.0, 0.0])
+        self._check_row(report[4], [u'Oct 15, 2012', 4.0, 0.0])
 
     def test_organize_by_users(self):
         """Report should contain hours per peron on the project."""
@@ -196,7 +197,13 @@ class TestProductivityReport(TimepieceDataTestCase):
         self.assertTrue(data['Content-Disposition'].startswith(disposition))
         report = response.content.splitlines()
         self.assertEqual(len(report), 1 + 4)  # Include header row
-        self._check_row(report[1].split(','), ['2012-09-24', 0.0, 4.0])
-        self._check_row(report[2].split(','), ['2012-10-01', 4.0, 4.0])
-        self._check_row(report[3].split(','), ['2012-10-08', 0.0, 0.0])
-        self._check_row(report[4].split(','), ['2012-10-15', 4.0, 0.0])
+
+        def parse_csv_row(s):
+            """Given a string in CSV format, return a list of strings that
+            represent the fields from the CSV line, with e.g. quotes removed"""
+            return csv.reader([s]).next()
+
+        self._check_row(parse_csv_row(report[1]), [u'Sep 24, 2012', 0.0, 4.0])
+        self._check_row(parse_csv_row(report[2]), [u'Oct 1, 2012', 4.0, 4.0])
+        self._check_row(parse_csv_row(report[3]), [u'Oct 8, 2012', 0.0, 0.0])
+        self._check_row(parse_csv_row(report[4]), [u'Oct 15, 2012', 4.0, 0.0])

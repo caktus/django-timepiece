@@ -17,7 +17,7 @@ function drawChart() {
                 chartArea: {
                     bottom: 50,
                     height: chart_height,
-                    left: '10%',
+                    left: '15%',
                     right: '10%',
                     top: 50,
                     width: '90%'

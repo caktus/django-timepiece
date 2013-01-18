@@ -19,11 +19,14 @@ from django.db.models import Sum, Q, Min, Max
 from django.http import HttpResponse, HttpResponseRedirect
 from django.http import Http404, HttpResponseForbidden
 from django.shortcuts import get_object_or_404, redirect, render
+from django.template.defaultfilters import date as date_format_filter
 from django.utils.decorators import method_decorator
 from django.views.decorators.csrf import csrf_exempt
 from django.views.decorators.http import require_POST
 from django.views.generic import ListView, DetailView, View
 from django.views.generic.base import TemplateView
+from timepiece.forms import DATE_FORM_FORMAT
+
 
 try:
     from django.utils import timezone
@@ -644,7 +647,7 @@ def list_outstanding_invoices(request):
     from_date = None
     to_date = utils.get_month_start().date()
     defaults = {
-        'to_date': (to_date - relativedelta(days=1)).strftime('%m/%d/%Y'),
+        'to_date': (to_date - relativedelta(days=1)).strftime(DATE_FORM_FORMAT),
     }
     date_form = timepiece_forms.DateForm(request.GET or defaults)
     if request.GET and date_form.is_valid():
@@ -1474,9 +1477,9 @@ class BillableHours(ReportMixin, TemplateView):
             end = end if end <= to_date else to_date
 
             if start != end:
-                label = ' - '.join([d.strftime('%b %d') for d in (start, end)])
+                label = ' - '.join([date_format_filter(d, 'M j') for d in (start, end)])
             else:
-                label = start.strftime('%b %d')
+                label = date_format_filter(start, 'M j')
             billable = data_map[keys[i]]['billable']
             nonbillable = data_map[keys[i]]['nonbillable']
             data_list.append([label, billable, nonbillable])
@@ -1620,7 +1623,7 @@ class EditScheduleView(ScheduleMixin, TemplateView):
         messages.info(request, msg)
 
         param = {
-            'week_start': self.week_start.strftime('%Y-%m-%d')
+            'week_start': self.week_start.strftime(DATE_FORM_FORMAT)
         }
         url = '?'.join((reverse('edit_schedule'),
             urllib.urlencode(param),))
@@ -1644,7 +1647,7 @@ class ScheduleAjaxView(ScheduleMixin, View):
             project = timepiece.Project.objects.get(
                 pk=data.get('project', None))
             hours = data.get('hours', None)
-            week = datetime.datetime.strptime(week_start, '%Y-%m-%d').date()
+            week = datetime.datetime.strptime(week_start, DATE_FORM_FORMAT).date()
 
             ph = timepiece.ProjectHours.objects.get(user=user, project=project,
                 week_start=week)
@@ -1711,7 +1714,7 @@ class ScheduleAjaxView(ScheduleMixin, View):
             msg = 'Project hours were copied'
             messages.info(self.request, msg)
 
-        this_week = datetime.datetime.strptime(week_update, '%Y-%m-%d').date()
+        this_week = datetime.datetime.strptime(week_update, DATE_FORM_FORMAT).date()
         prev_week = this_week - relativedelta(days=7)
         prev_week_qs = self.get_hours_for_week(prev_week)
         this_week_qs = self.get_hours_for_week(this_week)
@@ -1824,7 +1827,7 @@ def report_productivity(request):
                 projected_hours = projections.filter(week_start__gte=current,
                         week_start__lt=next_week).aggregate(
                         Sum('hours')).values()[0]
-                report.append([current.strftime('%Y-%m-%d'),
+                report.append([date_format_filter(current, 'M j, Y'),
                         actual_hours or 0, projected_hours or 0])
                 current = next_week
 

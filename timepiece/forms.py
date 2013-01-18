@@ -20,6 +20,9 @@ from timepiece.models import Project, Entry, Activity, UserProfile, Attribute
 from timepiece.models import ProjectHours
 
 
+DATE_FORM_FORMAT = '%Y-%m-%d'
+
+
 class CreateUserForm(auth_forms.UserCreationForm):
 
     def __init__(self, *args, **kwargs):
@@ -169,7 +172,7 @@ class ClockInForm(forms.ModelForm):
         self.fields['start_time'].initial = datetime.now()
         self.fields['start_time'].widget = forms.SplitDateTimeWidget(
             attrs={'class': 'timepiece-time'},
-            date_format='%m/%d/%Y',
+            date_format=DATE_FORM_FORMAT
         )
         self.fields['project'].queryset = timepiece.Project.objects.filter(
             users=self.user, status__enable_timetracking=True,
@@ -232,14 +235,14 @@ class ClockOutForm(forms.ModelForm):
         self.fields['start_time'] = forms.DateTimeField(
             widget=forms.SplitDateTimeWidget(
                 attrs={'class': 'timepiece-time'},
-                date_format='%m/%d/%Y',
+                date_format=DATE_FORM_FORMAT,
             )
 
         )
         self.fields['end_time'] = forms.DateTimeField(
             widget=forms.SplitDateTimeWidget(
                 attrs={'class': 'timepiece-time'},
-                date_format='%m/%d/%Y',
+                date_format=DATE_FORM_FORMAT,
             ),
         )
 
@@ -264,13 +267,13 @@ class AddUpdateEntryForm(forms.ModelForm):
     start_time = forms.DateTimeField(
         widget=forms.SplitDateTimeWidget(
             attrs={'class': 'timepiece-time'},
-            date_format='%m/%d/%Y',
+            date_format=DATE_FORM_FORMAT,
         )
     )
     end_time = forms.DateTimeField(
         widget=forms.SplitDateTimeWidget(
             attrs={'class': 'timepiece-time'},
-            date_format='%m/%d/%Y',
+            date_format=DATE_FORM_FORMAT,
         )
     )
 
@@ -329,7 +332,7 @@ STATUS_CHOICES.extend(timepiece.ENTRY_STATUS)
 
 
 class DateForm(forms.Form):
-    DATE_FORMAT = '%m/%d/%Y'
+    DATE_FORMAT = DATE_FORM_FORMAT
 
     from_date = forms.DateField(label='From', required=False,
         input_formats=(DATE_FORMAT,),
@@ -358,7 +361,7 @@ class DateForm(forms.Form):
 
 
 class YearMonthForm(forms.Form):
-    MONTH_CHOICES = [(i, time.strftime('%B', time.strptime(str(i), '%m')))
+    MONTH_CHOICES = [(i, time.strftime('%b', time.strptime(str(i), '%m')))
                      for i in xrange(1, 13)]
     month = forms.ChoiceField(choices=MONTH_CHOICES, label='')
     year = forms.ChoiceField(label='')
@@ -583,8 +586,8 @@ class BillableHoursForm(DateForm):
 
 class ProjectHoursSearchForm(forms.Form):
     week_start = forms.DateField(label='Week of', required=False,
-            input_formats=('%Y-%m-%d',),
-            widget=forms.DateInput(format='%Y-%m-%d'))
+            input_formats=(DATE_FORM_FORMAT,),
+            widget=forms.DateInput(format=DATE_FORM_FORMAT))
 
     def clean_week_start(self):
         week_start = self.cleaned_data.get('week_start', None)
@@ -598,7 +601,7 @@ class ProjectHoursForm(forms.ModelForm):
 
 
 class ProductivityReportForm(forms.Form):
-    DATE_FORMAT = '%Y-%m-%d'
+    DATE_FORMAT = DATE_FORM_FORMAT
     ORGANIZE_BY_CHOICES = (
         ('week', 'Week'),
         ('user', 'User'),
