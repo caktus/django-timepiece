@@ -24,8 +24,8 @@
                     {% for contract in contracts %}
                         <tr>
                             <td><a href="{% url 'view_contract' contract.id %}">{{ contract.name }}</a></td>
-                            <td class="nowrap">{{ contract.start_date|date:'N d, Y' }}</td>
-                            <td class="nowrap">{{ contract.end_date|date:'N d, Y' }}</td>
+                            <td class="nowrap">{{ contract.start_date|date:'M j, Y' }}</td>
+                            <td class="nowrap">{{ contract.end_date|date:'M j, Y' }}</td>
                             <td class="nowrap hours">
                                 {{ contract.contracted_hours|floatformat:2 }}
                                 {% if contract.pending_hours %}

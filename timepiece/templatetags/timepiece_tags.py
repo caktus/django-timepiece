@@ -5,6 +5,9 @@ import urllib
 from django import template
 from django.core.urlresolvers import reverse
 from django.db.models import Sum
+from django.template.defaultfilters import date as date_format_filter
+from timepiece.forms import DATE_FORM_FORMAT
+
 
 try:
     from django.utils import timezone
@@ -40,7 +43,7 @@ def date_filters(form_id, options=None, use_range=True):
     if not options:
         options = ('months', 'quarters', 'years')
     filters = {}
-    date_format = '%m/%d/%Y'
+    date_format = DATE_FORM_FORMAT  # Expected for dates used in code
     today = datetime.date.today()
     single_day = relativedelta(days=1)
     single_month = relativedelta(months=1)
@@ -54,9 +57,9 @@ def date_filters(form_id, options=None, use_range=True):
             from_date = to_date - single_month
             to_date = to_date - single_day
             filters['Past 12 Months'].append((
-                    from_date.strftime("%b '%y"),
-                    from_date.strftime(date_format) if use_range else "",
-                    to_date.strftime(date_format)
+                    date_format_filter(from_date, 'M Y'),  # displayed
+                    from_date.strftime(date_format) if use_range else "",  # used in code
+                    to_date.strftime(date_format)  # used in code
             ))
         filters['Past 12 Months'].reverse()
 
@@ -90,9 +93,9 @@ def date_filters(form_id, options=None, use_range=True):
 @register.simple_tag
 def week_start(date):
     """Given a Python date/datetime object, return the starting day of that
-    week in "mm/dd/yyyy" format.
+    week as a date object formatted by the |date filter.
     """
-    return utils.get_week_start(date).strftime('%m/%d/%Y')
+    return date_format_filter(utils.get_week_start(date))
 
 
 @register.simple_tag
@@ -171,8 +174,8 @@ def project_hours_for_contract(context, contract, project,
 @register.simple_tag
 def project_report_url_for_contract(contract, project):
     data = {
-        'from_date': contract.start_date.strftime('%m/%d/%Y'),
-        'to_date': contract.end_date.strftime('%m/%d/%Y'),
+        'from_date': contract.start_date.strftime(DATE_FORM_FORMAT),
+        'to_date': contract.end_date.strftime(DATE_FORM_FORMAT),
         'billable': 1,
         'non_billable': 1,
         'paid_leave': 1,

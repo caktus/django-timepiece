@@ -22,22 +22,22 @@
     </tr>
     <tr>
         <th>Created on:</th>
-        <td>{{ invoice.created|date:"M d Y P" }}</td>
+        <td>{{ invoice.created|date:'M j, Y P' }}</td>
     </tr>
     <tr>
         <th>Last modified:</th>
-        <td>{{ invoice.modified|date:"M d Y P" }}</td>
+        <td>{{ invoice.modified|date:'M j, Y P' }}</td>
     </tr>
 
     {% if invoice.start %}
         <tr>
             <th>Starting on:</th>
-            <td>{{ invoice.start|date:"M d Y"|default:"Not specified" }}</td>
+            <td>{{ invoice.start|date|default:"Not specified" }}</td>
         </tr>
     {% endif %}
     <tr>
         <th>Ending on:</th>
-        <td>{{ invoice.end|date:"M d Y" }}</td>
+        <td>{{ invoice.end|date:'M j, Y'}}</td>
     </tr>
     {% if invoice.comments %}
         <tr>
