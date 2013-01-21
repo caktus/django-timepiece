@@ -21,6 +21,8 @@ Related issues are in the `0.8.0 milestone
 * Created a `get_active_entry` utility which raises `ActiveEntryError` if a user has more than one active entry
 * Permanent tabs for user time sheet tabs
 * Upgrade less from 1.3.0 -> 1.3.3
+* New model ContractHours allows tracking whether specific blocks of hours on
+  a contract have been approved.
 
 *Bugfixes*
 
