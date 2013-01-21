@@ -57,9 +57,9 @@
                                 <td>{{ invoice.project }}</td>
                                 <td>{{ invoice.status|capfirst }}</td>
                                 <td>{{ invoice.user.get_name_or_username }}</td>
-                                <td>{{ invoice.created|date:"M d Y P" }}</td>
-                                <td>{{ invoice.start|date:"M d Y" }}</td>
-                                <td>{{ invoice.end|date:"M d Y" }}</td>
+                                <td>{{ invoice.created|date:'M j, Y P' }}</td>
+                                <td>{{ invoice.start|date:'M j, Y'}}</td>
+                                <td>{{ invoice.end|date:'M j, Y'}}</td>
                                 <td title="{{ invoice.comments }} ">{{ invoice.comments|truncatewords:12 }}</td>
                             </tr>
                         {% endfor %}

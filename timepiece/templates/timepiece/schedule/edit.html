@@ -2,7 +2,7 @@
 {% load url from future %}
 {% load bootstrap_toolkit %}
 
-{% block title %}Schedule for the Week of {{ week|date:'F j, Y' }}{% endblock %}
+{% block title %}Schedule for the Week of {{ week|date:'M j, Y'}}{% endblock %}
 
 {% block extrajs %}
     <script type="text/javascript">
@@ -33,7 +33,7 @@
 
     <div class="row-fluid">
         <div class="span12">
-            <h2 data-date="{{ week|date:'Y-m-d' }}">Schedule for the Week of {{ week|date:'F j, Y' }}</h2>
+            <h2 data-date="{{ week|date:'Y-m-d' }}">Schedule for the Week of {{ week|date:'M j, Y'}}</h2>
         </div>
     </div>
 

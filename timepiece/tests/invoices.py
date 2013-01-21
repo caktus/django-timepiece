@@ -7,6 +7,7 @@ from django.core.urlresolvers import reverse
 
 from timepiece import models as timepiece
 from timepiece import utils
+from timepiece.forms import DATE_FORM_FORMAT
 from timepiece.tests.base import TimepieceDataTestCase
 
 
@@ -292,7 +293,7 @@ class InvoiceCreateTestCase(TimepieceDataTestCase):
         """
         url = reverse('list_outstanding_invoices')
         to_date = utils.add_timezone(datetime.datetime(2011, 1, 31, 0, 0, 0))
-        params = {'to_date': to_date.strftime('%m/%d/%Y')}
+        params = {'to_date': to_date.strftime(DATE_FORM_FORMAT)}
         response = self.client.get(url, params)
         # The number of projects should be 3 because entry4 has billable=False
         self.assertEquals(response.context['project_totals'].count(), 3)
@@ -315,8 +316,8 @@ class InvoiceCreateTestCase(TimepieceDataTestCase):
         from_date = utils.add_timezone(datetime.datetime(2011, 1, 1, 0, 0, 0))
         to_date = utils.add_timezone(datetime.datetime(2011, 1, 31, 0, 0, 0))
         params = {
-            'from_date': from_date.strftime('%m/%d/%Y'),
-            'to_date': to_date.strftime('%m/%d/%Y'),
+            'from_date': from_date.strftime(DATE_FORM_FORMAT),
+            'to_date': to_date.strftime(DATE_FORM_FORMAT),
         }
         response = self.client.get(url, params)
         # From date filters out one entry
@@ -333,7 +334,7 @@ class InvoiceCreateTestCase(TimepieceDataTestCase):
         self.client.login(username='user2', password='abc')
         to_date = utils.add_timezone(datetime.datetime(2011, 1, 31))
         url = self.get_create_url(project=self.project_billable.pk,
-                to_date=to_date.strftime('%Y-%m-%d'))
+                to_date=to_date.strftime(DATE_FORM_FORMAT))
 
         response = self.client.get(url)
         self.assertEquals(response.status_code, 403)
@@ -346,7 +347,7 @@ class InvoiceCreateTestCase(TimepieceDataTestCase):
         self.login_with_permission()
         to_date = utils.add_timezone(datetime.datetime(2011, 1, 31))
         url = self.get_create_url(project=self.project_billable.pk,
-                to_date=to_date.strftime('%Y-%m-%d'))
+                to_date=to_date.strftime(DATE_FORM_FORMAT))
 
         response = self.client.get(url)
         self.assertEquals(response.status_code, 200)
@@ -354,7 +355,7 @@ class InvoiceCreateTestCase(TimepieceDataTestCase):
     def test_invoice_confirm_view(self):
         to_date = utils.add_timezone(datetime.datetime(2011, 1, 31))
         url = self.get_create_url(project=self.project_billable.pk,
-                to_date=to_date.strftime('%Y-%m-%d'))
+                to_date=to_date.strftime(DATE_FORM_FORMAT))
         response = self.client.get(url)
         self.assertEqual(response.status_code, 200)
         to_date_str = response.context['to_date'].strftime('%Y %m %d')
@@ -363,8 +364,8 @@ class InvoiceCreateTestCase(TimepieceDataTestCase):
         from_date = utils.add_timezone(datetime.datetime(2011, 1, 1))
         kwargs = {
             'project': self.project_billable.id,
-            'to_date': to_date.strftime('%Y-%m-%d'),
-            'from_date': from_date.strftime('%Y-%m-%d'),
+            'to_date': to_date.strftime(DATE_FORM_FORMAT),
+            'from_date': from_date.strftime(DATE_FORM_FORMAT),
         }
         url = self.get_create_url(**kwargs)
         response = self.client.get(url)
@@ -395,7 +396,7 @@ class InvoiceCreateTestCase(TimepieceDataTestCase):
         to_date = datetime.datetime(2011, 1, 31)
         kwargs = {
             'project': self.project_billable.id,
-            'to_date': to_date.strftime('%Y-%m-%d'),
+            'to_date': to_date.strftime(DATE_FORM_FORMAT),
         }
         url = self.get_create_url(**kwargs)
         response = self.client.get(url)
@@ -436,7 +437,7 @@ class InvoiceCreateTestCase(TimepieceDataTestCase):
         to_date = utils.add_timezone(datetime.datetime(2011, 1, 31))
         kwargs = {
             'project': self.project_billable.id,
-            'to_date': to_date.strftime('%Y-%m-%d'),
+            'to_date': to_date.strftime(DATE_FORM_FORMAT),
         }
         url = self.get_create_url(**kwargs)
         response = self.client.post(url, {'number': '3', 'status': 'invoiced'})
@@ -462,8 +463,8 @@ class InvoiceCreateTestCase(TimepieceDataTestCase):
         to_date = utils.add_timezone(datetime.datetime(2011, 1, 31))
         kwargs = {
             'project': self.project_billable.id,
-            'to_date': to_date.strftime('%Y-%m-%d'),
-            'from_date': from_date.strftime('%Y-%m-%d'),
+            'to_date': to_date.strftime(DATE_FORM_FORMAT),
+            'from_date': from_date.strftime(DATE_FORM_FORMAT),
         }
         url = self.get_create_url(**kwargs)
         response = self.client.post(url, {'number': '5',

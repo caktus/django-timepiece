@@ -1564,14 +1564,15 @@ class HourlySummaryTest(TimepieceDataTestCase):
         })
 
     def test_start_of_week(self):
-        """Test that the entries start being labled on the first week, ISO"""
+        """Test that the entries start being labeled on the first week, ISO"""
         self.create_month_entries()
 
         response = self.client.get(self.url)
         self.assertEquals(response.status_code, 200)
 
         start_date = utils.get_week_start(self.month)
-        msg = 'Week of {0}'.format(start_date.strftime('%m/%d/%Y'))
+        # Week of {{ week|date:'M j, Y'}}
+        msg = 'Week of {0}'.format(start_date.strftime('%b %d, %Y')).replace(" 0", " ")
         self.assertContains(response, msg)
 
     def test_contains_only_current_entries(self):

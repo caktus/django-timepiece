@@ -72,12 +72,12 @@ class DateFiltersTagTestCase(TestCase):
         filter = retval['filters']['Past 12 Months']
         self.assertEqual(12, len(filter))
         for name, first_date, last_date in filter:
-            # same month
-            self.assertEqual(first_date[:3], last_date[:3])
+            # same month  "20xx-mm-dd"
+            self.assertEqual(first_date[4:7], last_date[4:7])
             # same year
-            self.assertEqual(first_date[-5:], last_date[-5:])
+            self.assertEqual(first_date[:5], last_date[:5])
             # starts on the first
-            self.assertEqual("/01/", first_date[2:6])
+            self.assertEqual("-01", first_date[-3:])
 
     def test_years(self):
         # Look more closely at years response
@@ -85,13 +85,13 @@ class DateFiltersTagTestCase(TestCase):
         filter = retval['filters']['Years']
         self.assertEqual(4, len(filter))
         for year, first_date, last_date in filter:
-            # start on jan 1, 20xx
-            self.assertTrue(first_date.startswith("01/01/20"))
-            # end on Dec. 31, 20xx
-            self.assertTrue(last_date.startswith("12/31/20"))
-            # start and end in same year, "....../20xx"
-            self.assertEqual(year, first_date[-4:])
-            self.assertEqual(year, last_date[-4:])
+            # start on jan 1, 20xx  "20xx-01-01"
+            self.assertTrue(first_date.startswith("20") and first_date.endswith("-01-01"))
+            # end on Dec. 31, 20xx  "20xx-12-31"
+            self.assertTrue(last_date.startswith("20") and last_date.endswith("-12-31"))
+            # start and end in same year, "20xx-"
+            self.assertEqual(year, first_date[:4])
+            self.assertEqual(year, last_date[:4])
 
     def test_quarters(self):
         # Look more closely at quarters response
@@ -100,12 +100,12 @@ class DateFiltersTagTestCase(TestCase):
         self.assertEqual(8, len(filter))
         for name, first_date, last_date in filter:
             self.assertTrue(name.startswith("Q"))
-            # starts on the first
-            self.assertEqual("/01/", first_date[2:6])
+            # starts on the first  "20xx-yy-01"
+            self.assertEqual("-01", first_date[-3:])
             # start in the quarter we claim to
-            self.assertEqual(name[-4:], first_date[-4:])
+            self.assertEqual(name[-4:], first_date[:4])
             # start and end in same year
-            self.assertEqual(first_date[-4:], last_date[-4:])
+            self.assertEqual(first_date[:5], last_date[:5])
 
     def test_no_use_range(self):
         # sniff test of turning off use_range
@@ -128,7 +128,7 @@ class TimeTagTestCase(TestCase):
 
     def test_week_start(self):
         start = tags.week_start(datetime.date(2013, 1, 10))
-        self.assertEqual("01/07/2013", start)
+        self.assertEqual(u'Jan. 7, 2013', start)
 
 
 class MiscTagTestCase(TestCase):
@@ -177,7 +177,7 @@ class MiscTagTestCase(TestCase):
             project = mock.Mock(id=54)
             retval = tags.project_report_url_for_contract(contract, project)
             url = 'Boo?billable=1&projects_1=54&from_date=' \
-                '01%2F10%2F2013&to_date=01%2F10%2F2013&non_billable=1' \
+                '2013-01-10&to_date=2013-01-10&non_billable=1' \
                 '&paid_leave=1&trunc=month'
             self.assertEqual(url, retval)
             self.assertEqual('report_hourly', reverse.call_args[0][0])

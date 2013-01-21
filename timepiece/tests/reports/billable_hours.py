@@ -5,6 +5,7 @@ import json
 from django.contrib.auth.models import Permission
 from django.core.urlresolvers import reverse
 from django.db.models import Q
+from timepiece.forms import DATE_FORM_FORMAT
 
 from timepiece.models import Entry
 from timepiece.tests.reports.base import ReportsTestBase
@@ -47,8 +48,8 @@ class TestBillableHours(ReportsTestBase):
         self.client.login(username='admin', password='abc')
 
         response = self.client.get(self.url, data={
-            'from_date': self.from_date.strftime('%m/%d/%Y'),
-            'to_date': self.to_date.strftime('%m/%d/%Y'),
+            'from_date': self.from_date.strftime(DATE_FORM_FORMAT),
+            'to_date': self.to_date.strftime(DATE_FORM_FORMAT),
             'trunc': 'week',
             'users': list(Entry.objects.values_list('user', flat=True)),
             'activities': list(Entry.objects.values_list('activity',

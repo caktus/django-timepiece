@@ -12,7 +12,7 @@
 {% block content %}
     <div class="row-fluid">
         <div class="span12">
-            <h2>Invoice {{ project.name }} Hours {% if from_date %}from {{ from_date.date }} to {{ to_date.date }}{% else %}through {{ to_date.date }}{% endif %}</h2>
+            <h2>Invoice {{ project.name }} Hours {% if from_date %}from {{ from_date.date|date:'M j, Y' }} to {{ to_date.date|date:'M j, Y' }}{% else %}through {{ to_date.date|date:'M j, Y' }}{% endif %}</h2>
         </div>
     </div>
 

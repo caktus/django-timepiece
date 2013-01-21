@@ -5,11 +5,11 @@
 {% block content %}
     <div class="row-fluid">
         <div class="span12">
-            <h2>Reject Entries for {{ date|date:"F Y" }}</h2>
+            <h2>Reject Entries for {{ date|date:'M j' }}</h2>
 
             <form class="form-inline" action="" method="post">
                 {% csrf_token %}
-                <h3>Are you sure you want to reject {{ user.first_name }}'s entries for {{ date|date:"F Y" }}?</h3>
+                <h3>Are you sure you want to reject {{ user.first_name }}'s entries for {{ date|date:'M j' }}?</h3>
                 <input type="hidden" name="month" value="{{ date|date:'n' }}" />
                 <input type="hidden" name="year" value="{{ date|date:'Y' }}" />
                 <div class="form-actions">
