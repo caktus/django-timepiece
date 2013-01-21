@@ -4,9 +4,13 @@ from decimal import Decimal
 import logging
 
 from django.contrib.auth.models import User
+from django.contrib.sites.models import Site
 from django.core.exceptions import ValidationError
+from django.core.mail import send_mail
 from django.db import models
 from django.db.models import Q, Sum, Max, Min
+from django.template import Context
+from django.template.loader import get_template
 
 try:
     from django.utils import timezone
@@ -45,7 +49,6 @@ class Attribute(models.Model):
 
 class Business(models.Model):
     name = models.CharField(max_length=255)
-    slug = models.SlugField(max_length=255, unique=True, blank=True)
     short_name = models.CharField(max_length=255, blank=True)
     email = models.EmailField(blank=True)
     description = models.TextField(blank=True)
@@ -55,16 +58,8 @@ class Business(models.Model):
     def get_display_name(self):
         return self.short_name or self.name
 
-    def save(self, *args, **kwargs):
-        queryset = Business.objects.all()
-        if not self.slug:
-            if self.id:
-                queryset = queryset.exclude(id__exact=self.id)
-            self.slug = utils.slugify_uniquely(self.name, queryset, 'slug')
-        super(Business, self).save(*args, **kwargs)
-
     def __unicode__(self):
-        return self.name
+        return self.get_display_name()
 
     class Meta:
         ordering = ('name',)
@@ -74,7 +69,7 @@ class Business(models.Model):
 class Project(models.Model):
     name = models.CharField(max_length=255)
     tracker_url = models.CharField(max_length=255, blank=True, null=False,
-        default="")
+            default="")
     business = models.ForeignKey(
         Business,
         related_name='new_business_projects',
@@ -120,14 +115,6 @@ class Project(models.Model):
 
 class RelationshipType(models.Model):
     name = models.CharField(max_length=255, unique=True)
-    slug = models.CharField(max_length=255, unique=True, editable=False)
-
-    def save(self, *args, **kwargs):
-        queryset = RelationshipType.objects.all()
-        if self.id:
-            queryset = queryset.exclude(id__exact=self.id)
-        self.slug = utils.slugify_uniquely(self.name, queryset, 'slug')
-        super(RelationshipType, self).save(*args, **kwargs)
 
     def __unicode__(self):
         return self.name
@@ -154,7 +141,7 @@ class ProjectRelationship(models.Model):
     def __unicode__(self):
         return "%s's relationship to %s" % (
             self.project.name,
-            self.user.get_full_name(),
+            self.user.get_name_or_username(),
         )
 
 
@@ -166,7 +153,7 @@ class Activity(models.Model):
     code = models.CharField(
         max_length=5,
         unique=True,
-        help_text='Enter a short code to describe the type of ' + \
+        help_text='Enter a short code to describe the type of ' +
             'activity that took place.'
     )
     name = models.CharField(
@@ -184,6 +171,7 @@ class Activity(models.Model):
 
 
 class HourGroupManager(models.Manager):
+
     def summaries(self, entries):
         #Get the list of bundle names and hour sums
         bundled_entries = entries.values('activity__activity_bundle',
@@ -212,7 +200,7 @@ class HourGroupManager(models.Manager):
         other_values = ()
         for bundle in bundled_totals:
             bundle_key, bundle_value = bundle[0], bundle[2]
-            act_values = [(act[0], act[2]) for act in activity_totals \
+            act_values = [(act[0], act[2]) for act in activity_totals
                           if act[1] == bundle[1]]
             if bundle_key is not None:
                 totals[bundle_key] = (bundle_value, act_values)
@@ -413,8 +401,8 @@ class Entry(models.Model):
     def is_overlapping(self):
         if self.start_time and self.end_time:
             entries = self.user.timepiece_entries.filter(
-            Q(end_time__range=(self.start_time, self.end_time)) | \
-            Q(start_time__range=(self.start_time, self.end_time)) | \
+            Q(end_time__range=(self.start_time, self.end_time)) |
+            Q(start_time__range=(self.start_time, self.end_time)) |
             Q(start_time__lte=self.start_time, end_time__gte=self.end_time))
 
             totals = entries.aggregate(
@@ -447,8 +435,8 @@ class Entry(models.Model):
         else:
             end = start + datetime.timedelta(seconds=1)
         entries = self.user.timepiece_entries.filter(
-            Q(end_time__range=(start, end)) | \
-            Q(start_time__range=(start, end)) | \
+            Q(end_time__range=(start, end)) |
+            Q(start_time__range=(start, end)) |
             Q(start_time__lte=start, end_time__gte=end))
         #An entry can not conflict with itself so remove it from the list
         if self.id:
@@ -724,7 +712,7 @@ class Entry(models.Model):
 
 class EntryGroup(models.Model):
     VALID_STATUS = ('invoiced', 'not-invoiced')
-    STATUS_CHOICES = [status for status in ENTRY_STATUS \
+    STATUS_CHOICES = [status for status in ENTRY_STATUS
                       if status[0] in VALID_STATUS]
     user = models.ForeignKey(User, related_name='entry_group')
     project = models.ForeignKey(Project, related_name='entry_group')
@@ -759,6 +747,10 @@ User.clocked_in = property(lambda user: user.timepiece_entries.filter(
     end_time__isnull=True).count() > 0)
 
 
+# Utility method to get user's name, falling back to username.
+User.get_name_or_username = lambda user: user.get_full_name() or user.username
+
+
 class ProjectContract(models.Model):
     CONTRACT_STATUS = (
         ('upcoming', 'Upcoming'),
@@ -766,204 +758,242 @@ class ProjectContract(models.Model):
         ('complete', 'Complete'),
     )
 
-    project = models.ForeignKey(Project, related_name='contracts')
+    PROJECT_UNSET = 0  # Have to set existing contracts to something...
+    PROJECT_FIXED = 1
+    PROJECT_PRE_PAID_HOURLY = 2
+    PROJECT_POST_PAID_HOURLY = 3
+    PROJECT_TYPE = (
+        (PROJECT_UNSET, 'Unset'),
+        (PROJECT_FIXED, 'Fixed'),
+        (PROJECT_PRE_PAID_HOURLY, 'Pre-paid Hourly'),
+        (PROJECT_POST_PAID_HOURLY, 'Post-paid Hourly')
+    )
+
+    name = models.CharField(max_length=255)
+    projects = models.ManyToManyField(Project, related_name='contracts')
     start_date = models.DateField()
     end_date = models.DateField()
-    num_hours = models.DecimalField(max_digits=8, decimal_places=2,
-                                    default=0)
-    status = models.CharField(choices=CONTRACT_STATUS, default='upcomming',
+    status = models.CharField(choices=CONTRACT_STATUS, default='upcoming',
                               max_length=32)
+    type = models.IntegerField(choices=PROJECT_TYPE, default=PROJECT_UNSET)  # FIXME - we really shouldn't let them save it with this unset, it's just what we'll use in the migration initially
 
-    def hours_worked(self):
-        # TODO put this in a .extra w/a subselect
-        if not hasattr(self, '_hours_worked'):
-            self._hours_worked = Entry.objects.filter(
-                project=self.project,
+    class Meta:
+        ordering = ('-end_date',)
+        verbose_name = 'contract'
+
+    def __unicode__(self):
+        return unicode(self.name)
+
+    @models.permalink
+    def get_admin_url(self):
+        return ('admin:timepiece_projectcontract_change', [self.pk])
+
+    @models.permalink
+    def get_absolute_url(self):
+        return ('view_contract', [self.pk])
+
+    @property
+    def entries(self):
+        """
+        All Entries worked on projects in this contract during the contract
+        period.
+        """
+        return Entry.objects.filter(project__in=self.projects.all(),
                 start_time__gte=self.start_date,
-                end_time__lt=self.end_date + datetime.timedelta(days=1),
-            ).aggregate(sum=Sum('hours'))['sum']
-        return self._hours_worked or 0
+                end_time__lt=self.end_date + datetime.timedelta(days=1))
+
+    def contracted_hours(self, approved_only=True):
+        """Compute the hours contracted for this contract.
+        (This replaces the old `num_hours` field.)
+
+        :param boolean approved_only: If true, only include approved
+            contract hours; if false, include pending ones too.
+        :returns: The sum of the contracted hours, subject to the
+            `approved_only` parameter.
+        :rtype: Decimal
+        """
+
+        qset = self.contract_hours
+        if approved_only:
+            qset = qset.filter(status=ContractHour.APPROVED_STATUS)
+        result = qset.aggregate(sum=Sum('hours'))['sum']
+        return result or 0
+
+    def pending_hours(self):
+        """Compute the contract hours still in pending status"""
+        qset = self.contract_hours.filter(status=ContractHour.PENDING_STATUS)
+        result = qset.aggregate(sum=Sum('hours'))['sum']
+        return result or 0
 
     @property
     def hours_assigned(self):
-        # TODO put this in a .extra w/a subselect
-        if not hasattr(self, '_hours_assigned'):
-            self._hours_assigned =\
-              self.assignments.aggregate(sum=Sum('num_hours'))['sum']
-        return self._hours_assigned or 0
+        """Total assigned hours for this contract."""
+        if not hasattr(self, '_assigned'):
+            # TODO put this in a .extra w/a subselect
+            assignments = self.assignments.aggregate(s=Sum('num_hours'))
+            self._assigned = assignments['s'] or 0
+        return self._assigned or 0
 
     @property
     def hours_remaining(self):
-        return self.num_hours - self.hours_worked()
+        return self.contracted_hours() - self.hours_worked
 
     @property
-    def weeks_remaining(self):
-        return utils.generate_dates(end=self.end_date, by='week')
+    def hours_worked(self):
+        """Number of hours worked on the contract."""
+        if not hasattr(self, '_worked'):
+            # TODO put this in a .extra w/a subselect
+            self._worked = self.entries.aggregate(s=Sum('hours'))['s'] or 0
+        return self._worked or 0
 
-    def __unicode__(self):
-        return unicode(self.project)
 
+class ContractHour(models.Model):
+    PENDING_STATUS = 1
+    APPROVED_STATUS = 2
+    CONTRACT_HOUR_STATUS = (
+        (PENDING_STATUS, 'Pending'), # default
+        (APPROVED_STATUS, 'Approved')
+        )
 
-class ContractMilestone(models.Model):
-    contract = models.ForeignKey(ProjectContract, related_name='milestones')
-    name = models.CharField(max_length=255)
-    start_date = models.DateField()
-    end_date = models.DateField()
     hours = models.DecimalField(max_digits=8, decimal_places=2,
-                                default=0)
+        default=0)
+    contract = models.ForeignKey(ProjectContract, related_name='contract_hours')
+    date_requested = models.DateField()
+    date_approved = models.DateField(blank=True, null=True)
+    status = models.IntegerField(choices=CONTRACT_HOUR_STATUS,
+        default=PENDING_STATUS)
+    notes = models.TextField(blank=True)
 
     class Meta(object):
-        ordering = ('end_date',)
+        verbose_name = 'contracted hours'
+        verbose_name_plural = verbose_name
 
-    def hours_worked(self):
-        """Hours worked during this milestone"""
-        if not hasattr(self, '_hours_worked'):
-            self._hours_worked = Entry.objects.filter(
-                project=self.contract.project,
-                start_time__gte=self.start_date,
-                end_time__lt=self.end_date + datetime.timedelta(days=1),
-            ).aggregate(sum=Sum('hours'))['sum']
-        return self._hours_worked or 0
+    def __init__(self, *args, **kwargs):
+        super(ContractHour, self).__init__(*args, **kwargs)
+        # Save the current values so we can report changes later
+        self._original = {
+            'hours': self.hours,
+            'notes': self.notes,
+            'status': self.status,
+            'get_status_display': self.get_status_display(),
+            'date_requested': self.date_requested,
+            'date_approved': self.date_approved,
+            'contract': self.contract if self.contract_id else None,
+            }
 
-    def total_budget(self):
-        """Total budget through the end of this milestone"""
-        if not hasattr(self, '_total_budget'):
-            end_date = self.end_date + datetime.timedelta(days=1)
-            previous = self.contract.milestones.filter(end_date__lt=end_date)
-            self._total_budget = previous.aggregate(sum=Sum('hours'))['sum']
-        return self._total_budget or 0
+    @models.permalink
+    def get_absolute_url(self):
+        return ('admin:timepiece_contracthour_change', [self.pk])
 
-    def total_hours_worked(self):
-        """Total hours worked on project through the end of this milestone"""
-        if not hasattr(self, '_total_hours_worked'):
-            self._total_hours_worked = Entry.objects.filter(
-                project=self.contract.project,
-                start_time__gte=self.contract.start_date,
-                end_time__lt=self.end_date + datetime.timedelta(days=1),
-            ).aggregate(sum=Sum('hours'))['sum']
-        return self._total_hours_worked or 0
+    def clean(self):
+        # Note: this is called when editing in the admin, but not otherwise
+        if self.status == self.PENDING_STATUS and self.date_approved:
+            raise ValidationError(
+                "Pending contracthours should not have an approved date, did "
+                "you mean to change status to approved?"
+            )
 
-    def hours_remaining(self):
-        """Hours over the milestone budget"""
-        return self.hours - self.hours_worked()
+    def _send_mail(self, subject, ctx):
+        # Don't go to the work unless we have a place to send it
+        emails = utils.get_setting('TIMEPIECE_ACCOUNTING_EMAILS')
+        if not emails:
+            return
+        from_email = utils.get_setting('DEFAULT_FROM_EMAIL')
+        template = get_template('timepiece/contract/hours_email.txt')
+        context = Context(ctx)
+        msg = template.render(context)
+        send_mail(
+            subject=subject,
+            message=msg,
+            from_email=from_email,
+            recipient_list=emails
+        )
 
-    def total_hours_remaining(self):
-        """Hours over the entire project budget"""
-        return self.total_budget() - self.total_hours_worked()
+    def save(self, *args, **kwargs):
+        # Let the date_approved default to today if it's been set approved
+        # and doesn't have one
+        if self.status == self.APPROVED_STATUS and not self.date_approved:
+            self.date_approved = datetime.date.today()
 
-    def is_before(self):
-        return self.start_date > datetime.date.today()
+        # If we have an email address to send to, and this record was
+        # or is in pending status, we'll send an email about the change.
+        if ContractHour.PENDING_STATUS in (self.status, self._original['status']):
+            is_new = self.pk is None
+        super(ContractHour, self).save(*args, **kwargs)
+        if ContractHour.PENDING_STATUS in (self.status, self._original['status']):
+            domain = Site.objects.get_current().domain
+            method = 'https' if utils.get_setting('TIMEPIECE_EMAILS_USE_HTTPS')\
+                else 'http'
+            url = self.contract.get_absolute_url()
+            ctx = {
+                'new': is_new,
+                'changed': not is_new,
+                'deleted': False,
+                'current': self,
+                'previous': self._original,
+                'link': '%s://%s%s' % (method, domain, url)
+            }
+            prefix = "New" if is_new else "Changed"
+            name = self._meta.verbose_name
+            subject = "%s pending %s for %s" % (prefix, name, self.contract)
+            self._send_mail(subject, ctx)
 
-    def is_complete(self):
-        return self.end_date < datetime.date.today()
+    def delete(self, *args, **kwargs):
+        # Note: this gets called when you delete a single item using the red
+        # Delete button at the bottom while editing it in the admin - but not
+        # when you delete one or more from the change list using the admin
+        # action.
+        super(ContractHour, self).delete(*args, **kwargs)
+        # If we have an email address to send to, and this record was in
+        # pending status, we'll send an email about the change.
+        if ContractHour.PENDING_STATUS in (self.status, self._original['status']):
+            domain = Site.objects.get_current().domain
+            method = 'https' if utils.get_setting('TIMEPIECE_EMAILS_USE_HTTPS')\
+                else 'http'
+            url = self.contract.get_absolute_url()
+            ctx = {
+                'deleted': True,
+                'new': False,
+                'changed': False,
+                'previous': self._original,
+                'link': '%s://%s%s' % (method, domain, url)
+            }
+            contract = self._original['contract']
+            name = self._meta.verbose_name
+            subject = "Deleted pending %s for %s" % (name, contract)
+            self._send_mail(subject, ctx)
 
-
-class AssignmentManager(models.Manager):
-
-    def active_during_week(self, week, next_week):
-        q = Q(contract__end_date__gte=week, contract__end_date__lt=next_week)
-        q |= Q(contract__start_date__gte=week,
-            contract__start_date__lt=next_week)
-        q |= Q(contract__start_date__lt=week, contract__end_date__gt=next_week)
-        return self.get_query_set().filter(q)
-
-    def sort_by_priority(self):
-        return sorted(self.get_query_set().all(),
-            key=lambda contract: contract.this_weeks_priority_number)
-
-
-# contract assignment logger
-logger = logging.getLogger('timepiece.ca')
 
 
 class ContractAssignment(models.Model):
     contract = models.ForeignKey(ProjectContract, related_name='assignments')
-    user = models.ForeignKey(
-        User,
-        related_name='assignments',
-    )
+    user = models.ForeignKey(User, related_name='assignments')
     start_date = models.DateField()
     end_date = models.DateField()
-    num_hours = models.DecimalField(max_digits=8, decimal_places=2,
-                                    default=0)
+    num_hours = models.DecimalField(max_digits=8, decimal_places=2, default=0)
     min_hours_per_week = models.IntegerField(default=0)
 
-    objects = AssignmentManager()
+    class Meta:
+        unique_together = (('contract', 'user'),)
 
-    def _log(self, msg):
-        logger.debug('{0} - {1}'.format(self, msg))
-
-    def _filtered_hours_worked(self, end_date):
-        return Entry.objects.filter(
-            user=self.user,
-            project=self.contract.project,
-            start_time__gte=self.start_date,
-            end_time__lt=end_date,
-        ).aggregate(sum=Sum('hours'))['sum'] or 0
-
-    def filtered_hours_worked_with_in_window(self, start_date, end_date):
-        return Entry.objects.filter(
-            user=self.user,
-            project=self.contract.project,
-            start_time__gte=start_date,
-            end_time__lt=end_date,
-        ).aggregate(sum=Sum('hours'))['sum'] or 0
+    def __unicode__(self):
+        return u'{0} / {1}'.format(self.user, self.contract)
 
     @property
-    def hours_worked(self):
-        if not hasattr(self, '_hours_worked'):
-            date = self.end_date + datetime.timedelta(days=1)
-            self._hours_worked = self._filtered_hours_worked(date)
-        return self._hours_worked or 0
+    def entries(self):
+        return Entry.objects.filter(project__in=self.contract.projects.all(),
+                user=self.user, start_time__gte=self.start_date,
+                end_time__lt=self.end_date + datetime.timedelta(days=1))
 
     @property
     def hours_remaining(self):
         return self.num_hours - self.hours_worked
 
     @property
-    def this_weeks_priority_number(self):
-        """
-        Only works if already filtered to the current week. Otherwise groups
-        outside the range will be listed as ongoing instead of befor or after.
-        """
-        if not hasattr(self, '_priority_type'):
-            weeks = utils.get_week_window(timezone.now())
-            try:
-                end_date = self.end_date.date()
-                start_date = self.start_date.date()
-            except:
-                end_date = self.end_date
-                start_date = self.start_date
-            if end_date < weeks[1].date() \
-            and end_date >= weeks[0].date():
-                self._priority_type = 0
-            elif start_date < weeks[1].date() \
-            and start_date >= weeks[0].date():
-                self._priority_type = 1
-            else:
-                self._priority_type = 2
-        return self._priority_type
-
-    @property
-    def this_weeks_priority_type(self):
-        type_list = ['ending', 'starting', 'ongoing', ]
-        return type_list[self.this_weeks_priority_number]
-
-    def remaining_contracts(self):
-        assignments = ContractAssignment.objects.exclude(pk=self.pk)
-        assignments = assignments.filter(end_date__gte=self.end_date,
-                                         user=self.user)
-        return assignments.order_by('-end_date')
-
-    def remaining_min_hours(self):
-        return self.remaining_contracts().aggregate(
-            s=Sum('min_hours_per_week'))['s'] or 0
-
-    class Meta:
-        unique_together = (('contract', 'user'),)
-
-    def __unicode__(self):
-        return u'%s / %s' % (self.user, self.contract.project)
+    def hours_worked(self):
+        if not hasattr(self, '_worked'):
+            self._worked = self.entries.aggregate(s=Sum('hours'))['s'] or 0
+        return self._worked or 0
 
 
 class UserProfile(models.Model):
@@ -983,7 +1013,8 @@ class ProjectHours(models.Model):
     published = models.BooleanField(default=False)
 
     def __unicode__(self):
-        return "{0} on {1} for Week of {2}".format(self.user.get_full_name(),
+        return "{0} on {1} for Week of {2}".format(
+                self.user.get_name_or_username(),
                 self.project, self.week_start.strftime('%B %d, %Y'))
 
     def save(self, *args, **kwargs):

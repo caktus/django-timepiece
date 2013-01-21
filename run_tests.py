@@ -32,6 +32,7 @@ if not settings.configured:
             'django.contrib.sessions',
             'django.contrib.messages',
             'django.contrib.markup',
+            'django.contrib.sites',
             'bootstrap_toolkit',
             'compressor',
             'pagination',
@@ -102,7 +103,7 @@ def run_django_tests():
     from django.test.utils import get_runner
     TestRunner = get_runner(settings)
     test_runner = TestRunner(verbosity=1, interactive=True, failfast=False)
-    failures = test_runner.run_tests(['timepiece'])
+    failures = test_runner.run_tests(args or ['timepiece'])
     sys.exit(failures)
 
 

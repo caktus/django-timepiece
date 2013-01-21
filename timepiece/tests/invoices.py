@@ -1,11 +1,13 @@
 import datetime
 import random
+import urllib
 
 from django.contrib.auth.models import User, Permission
 from django.core.urlresolvers import reverse
 
 from timepiece import models as timepiece
 from timepiece import utils
+from timepiece.forms import DATE_FORM_FORMAT
 from timepiece.tests.base import TimepieceDataTestCase
 
 
@@ -23,6 +25,11 @@ class InvoiceViewPreviousTestCase(TimepieceDataTestCase):
         self.create_invoice(self.project, {'static': 'invoiced'})
         self.create_invoice(self.project2, {'status': 'not-invoiced'})
 
+    def get_create_url(self, **kwargs):
+        base_url = reverse('create_invoice')
+        params = urllib.urlencode(kwargs)
+        return '{0}?{1}'.format(base_url, params)
+
     def log_many(self, projects, num_entries=20):
         start = utils.add_timezone(datetime.datetime(2011, 1, 1, 0, 0, 0))
         for index in xrange(0, num_entries):
@@ -35,8 +42,7 @@ class InvoiceViewPreviousTestCase(TimepieceDataTestCase):
         if not project:
             project = self.project
         to_date = utils.add_timezone(datetime.datetime(2011, 1, 31))
-        args = [project.id, to_date.strftime('%Y-%m-%d')]
-        url = reverse('confirm_invoice_project', args=args)
+        url = self.get_create_url(project=project.id, to_date=to_date.strftime('%Y-%m-%d'))
         params = {
             'number': str(random.randint(999, 9999)),
             'status': 'invoiced',
@@ -125,7 +131,7 @@ class InvoiceViewPreviousTestCase(TimepieceDataTestCase):
 
     def test_invoice_edit_post(self):
         invoice = self.get_invoice()
-        url = reverse('edit_invoice', kwargs={'pk': invoice.id})
+        url = reverse('edit_invoice', args=(invoice.id,))
         status = 'invoiced' if invoice.status != 'invoiced' else 'not-invoiced'
         params = {
             'number': int(invoice.number) + 1,
@@ -186,7 +192,7 @@ class InvoiceViewPreviousTestCase(TimepieceDataTestCase):
     def test_rm_invoice_entry_get(self):
         invoice = self.get_invoice()
         entry = self.get_entry(invoice)
-        url = reverse('remove_invoice_entry', args=[invoice.id, entry.id])
+        url = reverse('delete_invoice_entry', args=[invoice.id, entry.id])
         response = self.client.get(url)
         self.assertEqual(response.status_code, 200)
         self.assertEqual(response.context['invoice'], invoice)
@@ -195,17 +201,17 @@ class InvoiceViewPreviousTestCase(TimepieceDataTestCase):
     def test_rm_invoice_entry_get_bad_id(self):
         invoice = self.get_invoice()
         entry = self.get_entry(invoice)
-        url = reverse('remove_invoice_entry', args=[invoice.id, 999999])
+        url = reverse('delete_invoice_entry', args=[invoice.id, 999999])
         response = self.client.get(url)
         self.assertEqual(response.status_code, 404)
-        url = reverse('remove_invoice_entry', args=[9999, entry.id])
+        url = reverse('delete_invoice_entry', args=[9999, entry.id])
         response = self.client.get(url)
         self.assertEqual(response.status_code, 404)
 
     def test_rm_invoice_entry_post(self):
         invoice = self.get_invoice()
         entry = self.get_entry(invoice)
-        url = reverse('remove_invoice_entry', args=[invoice.id, entry.id])
+        url = reverse('delete_invoice_entry', args=[invoice.id, entry.id])
         response = self.client.post(url, {'submit': ''})
         self.assertEqual(response.status_code, 302)
         new_invoice = timepiece.EntryGroup.objects.get(pk=invoice.pk)
@@ -257,6 +263,11 @@ class InvoiceCreateTestCase(TimepieceDataTestCase):
             'status': 'approved',
         })
 
+    def get_create_url(self, **kwargs):
+        base_url = reverse('create_invoice')
+        params = urllib.urlencode(kwargs)
+        return '{0}?{1}'.format(base_url, params)
+
     def make_hourgroups(self):
         """
         Make several hour groups, one for each activity, and one that contains
@@ -280,9 +291,9 @@ class InvoiceCreateTestCase(TimepieceDataTestCase):
         Verify that only billable projects appear on the create invoice and
         that the links have accurate date information
         """
-        url = reverse('invoice_projects')
+        url = reverse('list_outstanding_invoices')
         to_date = utils.add_timezone(datetime.datetime(2011, 1, 31, 0, 0, 0))
-        params = {'to_date': to_date.strftime('%m/%d/%Y')}
+        params = {'to_date': to_date.strftime(DATE_FORM_FORMAT)}
         response = self.client.get(url, params)
         # The number of projects should be 3 because entry4 has billable=False
         self.assertEquals(response.context['project_totals'].count(), 3)
@@ -292,7 +303,7 @@ class InvoiceCreateTestCase(TimepieceDataTestCase):
 
     def test_invoice_create_requires_to(self):
         """Verify that create invoice links are blank without a to date"""
-        url = reverse('invoice_projects')
+        url = reverse('list_outstanding_invoices')
         params = {'to_date': ''}
         response = self.client.get(url, params)
         # The number of projects should be 1 because entry3 has billable=False
@@ -301,12 +312,12 @@ class InvoiceCreateTestCase(TimepieceDataTestCase):
 
     def test_invoice_create_with_from(self):
         # Add another entry and make sure from filters it out
-        url = reverse('invoice_projects')
+        url = reverse('list_outstanding_invoices')
         from_date = utils.add_timezone(datetime.datetime(2011, 1, 1, 0, 0, 0))
         to_date = utils.add_timezone(datetime.datetime(2011, 1, 31, 0, 0, 0))
         params = {
-            'from_date': from_date.strftime('%m/%d/%Y'),
-            'to_date': to_date.strftime('%m/%d/%Y'),
+            'from_date': from_date.strftime(DATE_FORM_FORMAT),
+            'to_date': to_date.strftime(DATE_FORM_FORMAT),
         }
         response = self.client.get(url, params)
         # From date filters out one entry
@@ -322,10 +333,8 @@ class InvoiceCreateTestCase(TimepieceDataTestCase):
         """A regular user should not be able to access this page"""
         self.client.login(username='user2', password='abc')
         to_date = utils.add_timezone(datetime.datetime(2011, 1, 31))
-        url = reverse('confirm_invoice_project', args=(
-            self.project_billable.pk,
-            to_date.strftime('%Y-%m-%d'),
-        ))
+        url = self.get_create_url(project=self.project_billable.pk,
+                to_date=to_date.strftime(DATE_FORM_FORMAT))
 
         response = self.client.get(url)
         self.assertEquals(response.status_code, 403)
@@ -337,30 +346,28 @@ class InvoiceCreateTestCase(TimepieceDataTestCase):
         """
         self.login_with_permission()
         to_date = utils.add_timezone(datetime.datetime(2011, 1, 31))
-        url = reverse('confirm_invoice_project', args=(
-            self.project_billable.pk,
-            to_date.strftime('%Y-%m-%d'),
-        ))
+        url = self.get_create_url(project=self.project_billable.pk,
+                to_date=to_date.strftime(DATE_FORM_FORMAT))
 
         response = self.client.get(url)
         self.assertEquals(response.status_code, 200)
 
     def test_invoice_confirm_view(self):
         to_date = utils.add_timezone(datetime.datetime(2011, 1, 31))
-        args = [self.project_billable.id, to_date.strftime('%Y-%m-%d')]
-        url = reverse('confirm_invoice_project', args=args)
+        url = self.get_create_url(project=self.project_billable.pk,
+                to_date=to_date.strftime(DATE_FORM_FORMAT))
         response = self.client.get(url)
         self.assertEqual(response.status_code, 200)
         to_date_str = response.context['to_date'].strftime('%Y %m %d')
         self.assertEqual(to_date_str, '2011 01 31')
         # View can also take from date
         from_date = utils.add_timezone(datetime.datetime(2011, 1, 1))
-        args = [
-            self.project_billable.id,
-            to_date.strftime('%Y-%m-%d'),
-            from_date.strftime('%Y-%m-%d')
-        ]
-        url = reverse('confirm_invoice_project', args=args)
+        kwargs = {
+            'project': self.project_billable.id,
+            'to_date': to_date.strftime(DATE_FORM_FORMAT),
+            'from_date': from_date.strftime(DATE_FORM_FORMAT),
+        }
+        url = self.get_create_url(**kwargs)
         response = self.client.get(url)
         self.assertEqual(response.status_code, 200)
         from_date_str = response.context['from_date'].strftime('%Y %m %d')
@@ -387,8 +394,11 @@ class InvoiceCreateTestCase(TimepieceDataTestCase):
             })
         self.make_hourgroups()
         to_date = datetime.datetime(2011, 1, 31)
-        args = [self.project_billable.id, to_date.strftime('%Y-%m-%d')]
-        url = reverse('confirm_invoice_project', args=args)
+        kwargs = {
+            'project': self.project_billable.id,
+            'to_date': to_date.strftime(DATE_FORM_FORMAT),
+        }
+        url = self.get_create_url(**kwargs)
         response = self.client.get(url)
         self.assertEqual(response.status_code, 200)
         for name, hours_activities in response.context['totals']:
@@ -407,20 +417,29 @@ class InvoiceCreateTestCase(TimepieceDataTestCase):
 
     def test_invoice_confirm_bad_args(self):
         # A year/month/project with no entries should raise a 404
-        args = [self.project_billable.id, '2008-01-13']
-        url = reverse('confirm_invoice_project', args=args)
+        kwargs = {
+            'project': self.project_billable.id,
+            'to_date': '2008-01-13',
+        }
+        url = self.get_create_url(**kwargs)
         response = self.client.get(url)
         self.assertEqual(response.status_code, 404)
         # A year/month with bad/overflow values should raise a 404
-        args = [self.project_billable.id, '9999-13-01']
-        url = reverse('confirm_invoice_project', args=args)
+        kwargs = {
+            'project': self.project_billable.id,
+            'to_date': '9999-13-01',
+        }
+        url = self.get_create_url(**kwargs)
         response = self.client.get(url)
         self.assertEqual(response.status_code, 404)
 
     def test_make_invoice(self):
         to_date = utils.add_timezone(datetime.datetime(2011, 1, 31))
-        args = [self.project_billable.id, to_date.strftime('%Y-%m-%d')]
-        url = reverse('confirm_invoice_project', args=args)
+        kwargs = {
+            'project': self.project_billable.id,
+            'to_date': to_date.strftime(DATE_FORM_FORMAT),
+        }
+        url = self.get_create_url(**kwargs)
         response = self.client.post(url, {'number': '3', 'status': 'invoiced'})
         self.assertEqual(response.status_code, 302)
         # Verify an invoice was created with the correct attributes
@@ -442,12 +461,12 @@ class InvoiceCreateTestCase(TimepieceDataTestCase):
     def test_make_invoice_with_from_uninvoiced(self):
         from_date = utils.add_timezone(datetime.datetime(2011, 1, 1))
         to_date = utils.add_timezone(datetime.datetime(2011, 1, 31))
-        args = [
-            self.project_billable.id,
-            to_date.strftime('%Y-%m-%d'),
-            from_date.strftime('%Y-%m-%d')
-        ]
-        url = reverse('confirm_invoice_project', args=args)
+        kwargs = {
+            'project': self.project_billable.id,
+            'to_date': to_date.strftime(DATE_FORM_FORMAT),
+            'from_date': from_date.strftime(DATE_FORM_FORMAT),
+        }
+        url = self.get_create_url(**kwargs)
         response = self.client.post(url, {'number': '5',
                                           'status': 'not-invoiced'})
         self.assertEqual(response.status_code, 302)

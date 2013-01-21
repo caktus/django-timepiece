@@ -1,6 +1,50 @@
 Release Notes
 =============
 
+0.8.0 (Released 01-21-2013)
+---------------------------
+
+Related issues are in the `0.8.0 milestone
+<https://github.com/caktus/django-timepiece/issues?milestone=31&page=1&state=closed>`_.
+
+*Features*
+
+* Cleaned up the URL and template structure (This will break many existing bookmarks!)
+* Removed the General Ledger report in favor of adding a summary by project on the Hourly Report page
+* Default to showing entries from the previous week grouped by day on the Hourly Report
+* Fall back to displaying username when a user's first & last name are unavailable
+* Added name field to ProjectContract model
+* Made ProjectContract <-> Project a many-to-many relationship
+* Added additional information on ProjectContract detail page
+* Added list of contracts on Project detail page
+* Allow running a subset of tests through `runtests.py` (now in accordance with existing documentation)
+* Created a `get_active_entry` utility which raises `ActiveEntryError` if a user has more than one active entry
+* Permanent tabs for user time sheet tabs
+* Upgrade less from 1.3.0 -> 1.3.3
+* New model ContractHours allows tracking whether specific blocks of hours on
+  a contract have been approved.
+
+*Bugfixes*
+
+* Prevent "None" from appearing under date headers on dashboard's All Entries tab
+* Save Auth groups when adding/editing a user
+* Include current GET parameters when using 'next' in a URL
+
+*Other Changes*
+
+* Removed unused methods from ProjectContract and ContractAssignment models
+* Removed unused ContractMilestone model
+* Removed unused AssignmentManager class
+* Removed unused `slug` fields from Business & RelationshipType models
+* Removed ProjectContract from Project admin
+* Improved test coverage of template tags
+* Changed references to person/people to user/users for consistency with data model
+* Removed unused `clear_form.js`
+* Used slightly darker highlight color for active project on dashboard's Progress tab
+* Removed paste styles from `styles.less`
+* Updated contributing docs to indicate that pull requests should be made to `caktus:develop`
+* Removed some unused images, renamed a couple of others.
+
 0.7.3 (Released 01-07-2013)
 ---------------------------
 

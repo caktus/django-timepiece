@@ -38,7 +38,7 @@ class PayrollTest(TimepieceDataTestCase):
             self.overtime_before, self.first, self.first_week, self.middle,
             self.last, self.last_billable, self.next
         ]
-        self.url = reverse('payroll_summary')
+        self.url = reverse('report_payroll_summary')
         self.args = {
             'year': self.first.year,
             'month': self.first.month,

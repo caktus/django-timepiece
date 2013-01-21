@@ -2,7 +2,6 @@ from datetime import datetime, timedelta
 from StringIO import StringIO
 from dateutil.relativedelta import relativedelta
 
-from django.core.urlresolvers import reverse
 from django.contrib.auth.models import User, Permission
 from django.core.exceptions import ValidationError
 
@@ -125,28 +124,28 @@ class CheckEntries(TimepieceDataTestCase):
         self.assertEqual(start_of_month, thismonth)
         self.assertEqual(start_of_year, thisyear)
 
-    def testFindPeople(self):
+    def testFindUsers(self):
         """
-        With args, find_people should search and return those user objects
-        Without args, find_people should return all user objects
+        With args, find_users should search and return those user objects
+        Without args, find_users should return all user objects
         """
-        #Find one person by icontains first or last name, return all if no args
-        people1 = check_entries.Command().find_people('firsT1')
-        people2 = check_entries.Command().find_people('LasT2')
-        all_people = check_entries.Command().find_people()
+        #Find one user by icontains first or last name, return all if no args
+        users1 = check_entries.Command().find_users('firsT1')
+        users2 = check_entries.Command().find_users('LasT2')
+        all_users = check_entries.Command().find_users()
         #obtain instances from the querysets
-        person1 = people1.get(pk=self.user.pk)
-        person2 = people2.get(pk=self.user2.pk)
-        all_1 = all_people.get(pk=self.user.pk)
-        all_2 = all_people.get(pk=self.user2.pk)
-        all_3 = all_people.get(pk=self.superuser.pk)
-        self.assertEqual(people1.count(), 1)
-        self.assertEqual(people2.count(), 1)
-        self.assertEqual(all_people.count(), 3)
-        self.assertEqual(person1, self.user)
-        self.assertEqual(person2, self.user2)
-        self.assertEqual(all_1, person1)
-        self.assertEqual(all_2, person2)
+        user1 = users1.get(pk=self.user.pk)
+        user2 = users2.get(pk=self.user2.pk)
+        all_1 = all_users.get(pk=self.user.pk)
+        all_2 = all_users.get(pk=self.user2.pk)
+        all_3 = all_users.get(pk=self.superuser.pk)
+        self.assertEqual(users1.count(), 1)
+        self.assertEqual(users2.count(), 1)
+        self.assertEqual(all_users.count(), 3)
+        self.assertEqual(user1, self.user)
+        self.assertEqual(user2, self.user2)
+        self.assertEqual(all_1, user1)
+        self.assertEqual(all_2, user2)
         self.assertEqual(all_3, self.superuser)
 
     def testFindEntries(self):
@@ -157,8 +156,8 @@ class CheckEntries(TimepieceDataTestCase):
         start = check_entries.Command().find_start()
         if start.day == 1:
             start += timedelta(days=1)
-        all_people = check_entries.Command().find_people()
-        entries = check_entries.Command().find_entries(all_people, start)
+        all_users = check_entries.Command().find_users()
+        entries = check_entries.Command().find_entries(all_users, start)
         #Determine the number of days checked
         today = timezone.now() - \
             relativedelta(hour=0, minute=0, second=0, microsecond=0)
@@ -167,8 +166,8 @@ class CheckEntries(TimepieceDataTestCase):
         total_entries = 0
         while True:
             try:
-                person_entries = entries.next()
-                for entry in person_entries:
+                user_entries = entries.next()
+                for entry in user_entries:
                     total_entries += 1
             except StopIteration:
                 #Verify that every entry from the start point was returned
@@ -182,17 +181,17 @@ class CheckEntries(TimepieceDataTestCase):
         overlapping entries.
         """
         start = check_entries.Command().find_start()
-        all_people = check_entries.Command().find_people()
-        entries = check_entries.Command().find_entries(all_people, start)
+        all_users = check_entries.Command().find_users()
+        entries = check_entries.Command().find_entries(all_users, start)
         total_overlaps = 0
         #make some bad entries
         num_days = 5
         self.make_entry_bulk(self.all_users, num_days)
         while True:
             try:
-                person_entries = entries.next()
+                user_entries = entries.next()
                 user_overlaps = check_entries.Command().check_entry(
-                    person_entries, verbosity=0)
+                    user_entries, verbosity=0)
                 total_overlaps += user_overlaps
             except StopIteration:
                 self.assertEqual(

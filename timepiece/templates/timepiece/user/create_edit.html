@@ -1,0 +1,36 @@
+{% extends "timepiece/user/base.html" %}
+{% load url from future %}
+{% load bootstrap_toolkit %}
+
+{% block title %}
+    {% if not user %}Create User{% else %}Edit {{ user.get_name_or_username }}{% endif %}
+{% endblock %}
+
+{% block crumbs %}
+    {{ block.super }}
+    <li>
+        <span class="divider">/</span>
+        {% if not user %}
+            <a href="{% url 'create_user' %}">Create User</a>
+        {% else %}
+            <a href="{% url 'edit_user' user.pk %}">Edit {{ user.get_name_or_username }}</a>
+        {% endif %}
+    </li>
+{% endblock crumbs %}
+
+{% block content %}
+    <div class="row-fluid">
+        <div class="span12">
+            <h2>{% if not user %}Create User{% else %}Edit {{ user.get_name_or_username }}{% endif %}</h2>
+
+            <form class="form-horizontal" action="" method="post" accept-charset="utf-8">
+                {% csrf_token %}
+                {{ form|as_bootstrap:"horizontal" }}
+                <div class="form-actions">
+                    <input class="btn btn-primary" type="submit" value="Save" name="submit" />
+                    <input class="btn" type="button" onclick="history.go(-1)" value="Cancel" />
+                </div>
+            </form>
+        </div>
+    </div>
+{% endblock %}

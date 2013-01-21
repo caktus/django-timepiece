@@ -77,3 +77,20 @@ number of 'worked' hours.  For example::
 
 where each key is an arbitrary slug for the project and each value is the
 primary key of the associated project.
+
+TIMEPIECE_ACCCOUNTING_EMAILS
+----------------------------
+
+:Default: ``[]``
+
+When pending contract hours are created or changed, an email can be sent
+to notify someone. This setting is a list of the email addresses where those
+emails should be sent.
+
+TIMEPIECE_EMAILS_USE_HTTPS
+--------------------------
+
+:Default: ``True``
+
+Whether links in emails that timepiece sends should use https://.  The
+default is True, but if set to False, links will use http://.

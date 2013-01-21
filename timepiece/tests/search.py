@@ -14,15 +14,15 @@ class QuickSearchTest(TimepieceDataTestCase):
         """
         self.client.login(username='superuser', password='abc')
 
-        url = reverse('quick_search')
+        url = reverse('search')
 
         response = self.client.get(url, data={
-            'quick_search_0': '%s' % self.superuser.get_full_name(),
+            'quick_search_0': '%s' % self.superuser.get_name_or_username(),
             'quick_search_1': 'individual-%d' % self.superuser.pk
         }, follow=True)
 
         self.assertEquals(response.status_code, 200)
-        self.assertEquals(response.context['person'].username, 'superuser')
+        self.assertEquals(response.context['user'].username, 'superuser')
 
         # quick_search_0 can be anything (an artifact of django-selectable?)
         response = self.client.get(url, data={
@@ -31,7 +31,7 @@ class QuickSearchTest(TimepieceDataTestCase):
         }, follow=True)
 
         self.assertEquals(response.status_code, 200)
-        self.assertEquals(response.context['person'].username, 'superuser')
+        self.assertEquals(response.context['user'].username, 'superuser')
 
     def testMalformedUserSearch(self):
         """
@@ -39,10 +39,10 @@ class QuickSearchTest(TimepieceDataTestCase):
         """
         self.client.login(username='superuser', password='abc')
 
-        url = reverse('quick_search')
+        url = reverse('search')
 
         response = self.client.get(url, data={
-            'quick_search_0': '%s' % self.superuser.get_full_name(),
+            'quick_search_0': '%s' % self.superuser.get_name_or_username(),
             'quick_search_1': 'individual'
         }, follow=True)
 
@@ -52,7 +52,7 @@ class QuickSearchTest(TimepieceDataTestCase):
             ['User, business, or project does not exist'])
 
         response = self.client.get(url, data={
-            'quick_search_0': '%s' % self.superuser.get_full_name(),
+            'quick_search_0': '%s' % self.superuser.get_name_or_username(),
             'quick_search_1': ''
         }, follow=True)
 
@@ -62,7 +62,7 @@ class QuickSearchTest(TimepieceDataTestCase):
             ['User, business, or project does not exist'])
 
         response = self.client.get(url, data={
-            'quick_search_0': '%s' % self.superuser.get_full_name(),
+            'quick_search_0': '%s' % self.superuser.get_name_or_username(),
             'quick_search_1': '-%d' % self.superuser.pk
         }, follow=True)
 
@@ -72,7 +72,7 @@ class QuickSearchTest(TimepieceDataTestCase):
             ['User, business, or project does not exist'])
 
         response = self.client.get(url, data={
-            'quick_search_0': '%s' % self.superuser.get_full_name(),
+            'quick_search_0': '%s' % self.superuser.get_name_or_username(),
             'quick_search_1': '-'
         }, follow=True)
 

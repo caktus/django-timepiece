@@ -43,7 +43,7 @@ pull request to have it merged in. Here's a quick guide:
 
 #. We'll love you forever if you include documentation!
 
-#. Push to your fork and submit a pull request.
+#. Push to your fork and submit a pull request to `caktus:develop`.
 
 #. Now you're waiting on us. We'll typically review and comment on your pull
    request within 3 business days. We may suggest some changes, improvements,

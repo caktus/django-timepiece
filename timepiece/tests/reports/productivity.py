@@ -1,17 +1,16 @@
+import csv
 import datetime
 from dateutil.relativedelta import relativedelta
 import json
-from urllib import urlencode
 
 from django.contrib.auth.models import Permission
-from django.core.urlresolvers import reverse
 
 from timepiece import models as timepiece
 from timepiece.tests.base import TimepieceDataTestCase
 
 
 class TestProductivityReport(TimepieceDataTestCase):
-    url_name = 'productivity_report'
+    url_name = 'report_productivity'
 
     def setUp(self):
         self.username = 'test_user'
@@ -24,9 +23,9 @@ class TestProductivityReport(TimepieceDataTestCase):
 
         self.project = self.create_project()
         self.users = []
-        self.users.append(self.create_user(first_name='Person', last_name='1'))
-        self.users.append(self.create_user(first_name='Person', last_name='2'))
-        self.users.append(self.create_user(first_name='Person', last_name='3'))
+        self.users.append(self.create_user(first_name='User', last_name='1'))
+        self.users.append(self.create_user(first_name='User', last_name='2'))
+        self.users.append(self.create_user(first_name='User', last_name='3'))
         self.weeks = []
         self.weeks.append(datetime.datetime(2012, 9, 24))
         self.weeks.append(datetime.datetime(2012, 10, 1))
@@ -50,14 +49,6 @@ class TestProductivityReport(TimepieceDataTestCase):
                 data = {'user': user, 'week_start': week_start,
                         'project': self.project, 'hours': 2}
                 self.create_project_hours_entry(**data)
-
-    def _get(self, url_name=None, url_kwargs=None, get_kwargs=None, **kwargs):
-        """Convenience wrapper for test client GET request."""
-        url_name = url_name or self.url_name
-        url = reverse(url_name, kwargs=url_kwargs)
-        if get_kwargs:
-            url += '?' + urlencode(get_kwargs)
-        return self.client.get(url, **kwargs)
 
     def _unpack(self, response):
         form = response.context['form']
@@ -173,25 +164,25 @@ class TestProductivityReport(TimepieceDataTestCase):
         self.assertEqual(float(worked), 8.0)
         self.assertEqual(float(assigned), 8.0)
         self.assertEqual(len(report), 1 + 4)  # Include header row
-        self._check_row(report[1], ['2012-09-24', 0.0, 4.0])
-        self._check_row(report[2], ['2012-10-01', 4.0, 4.0])
-        self._check_row(report[3], ['2012-10-08', 0.0, 0.0])
-        self._check_row(report[4], ['2012-10-15', 4.0, 0.0])
+        self._check_row(report[1], [u'Sep 24, 2012', 0.0, 4.0])
+        self._check_row(report[2], [u'Oct 1, 2012', 4.0, 4.0])
+        self._check_row(report[3], [u'Oct 8, 2012', 0.0, 0.0])
+        self._check_row(report[4], [u'Oct 15, 2012', 4.0, 0.0])
 
-    def test_organize_by_people(self):
+    def test_organize_by_users(self):
         """Report should contain hours per peron on the project."""
-        data = {'project_1': self.project.pk, 'organize_by': 'person'}
+        data = {'project_1': self.project.pk, 'organize_by': 'user'}
         response = self._get(data=data)
         self.assertEqual(response.status_code, 200)
         form, report, organize_by, worked, assigned = self._unpack(response)
         self.assertEqual(len(form.errors), 0)
-        self.assertEqual(organize_by, 'person')
+        self.assertEqual(organize_by, 'user')
         self.assertEqual(float(worked), 8.0)
         self.assertEqual(float(assigned), 8.0)
         self.assertEqual(len(report), 1 + 3)  # Include header row
-        self._check_row(report[1], ['Person 1', 0.0, 4.0])
-        self._check_row(report[2], ['Person 2', 4.0, 4.0])
-        self._check_row(report[3], ['Person 3', 4.0, 0.0])
+        self._check_row(report[1], ['User 1', 0.0, 4.0])
+        self._check_row(report[2], ['User 2', 4.0, 4.0])
+        self._check_row(report[3], ['User 3', 4.0, 0.0])
 
     def test_export(self):
         """Data should be exported in CSV format."""
@@ -206,7 +197,13 @@ class TestProductivityReport(TimepieceDataTestCase):
         self.assertTrue(data['Content-Disposition'].startswith(disposition))
         report = response.content.splitlines()
         self.assertEqual(len(report), 1 + 4)  # Include header row
-        self._check_row(report[1].split(','), ['2012-09-24', 0.0, 4.0])
-        self._check_row(report[2].split(','), ['2012-10-01', 4.0, 4.0])
-        self._check_row(report[3].split(','), ['2012-10-08', 0.0, 0.0])
-        self._check_row(report[4].split(','), ['2012-10-15', 4.0, 0.0])
+
+        def parse_csv_row(s):
+            """Given a string in CSV format, return a list of strings that
+            represent the fields from the CSV line, with e.g. quotes removed"""
+            return csv.reader([s]).next()
+
+        self._check_row(parse_csv_row(report[1]), [u'Sep 24, 2012', 0.0, 4.0])
+        self._check_row(parse_csv_row(report[2]), [u'Oct 1, 2012', 4.0, 4.0])
+        self._check_row(parse_csv_row(report[3]), [u'Oct 8, 2012', 0.0, 0.0])
+        self._check_row(parse_csv_row(report[4]), [u'Oct 15, 2012', 4.0, 0.0])

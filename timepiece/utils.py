@@ -3,11 +3,11 @@ from dateutil import rrule
 from dateutil.relativedelta import relativedelta
 from decimal import Decimal
 from itertools import groupby
+import json
 
 from django.conf import settings
 from django.core.urlresolvers import reverse
 from django.db.models import Sum, get_model, Q
-from django.template.defaultfilters import slugify
 from django.utils.functional import lazy
 
 try:
@@ -24,6 +24,18 @@ reverse_lazy = lazy(reverse, str)
 defaults = TimepieceDefaults()
 
 
+class ActiveEntryError(Exception):
+    pass
+
+
+class DecimalEncoder(json.JSONEncoder):
+
+    def default(self, obj):
+        if isinstance(obj, Decimal):
+            return float(obj)
+        return super(DecimalEncoder, self).default(obj)
+
+
 def get_setting(name, **kwargs):
     if hasattr(settings, name):
         return getattr(settings, name)
@@ -33,26 +45,6 @@ def get_setting(name, **kwargs):
         return getattr(defaults, name)
     msg = '{0} must be specified in your project settings.'.format(name)
     raise AttributeError(msg)
-
-
-def slugify_uniquely(s, queryset=None, field='slug'):
-    """
-    Returns a slug based on 's' that is unique for all instances of the given
-    field in the given queryset.
-
-    If no string is given or the given string contains no slugify-able
-    characters, default to the given field name + N where N is the number of
-    default slugs already in the database.
-    """
-    new_slug = new_slug_base = slugify(s)
-    if queryset:
-        queryset = queryset.filter(**{'%s__startswith' % field: new_slug_base})
-        similar_slugs = [value[0] for value in queryset.values_list(field)]
-        i = 1
-        while new_slug in similar_slugs:
-            new_slug = "%s%d" % (new_slug_base, i)
-            i += 1
-    return new_slug
 
 
 def to_datetime(date):
@@ -65,7 +57,7 @@ def add_timezone(value, tz=None):
 
     If no timezone is given, timezone.get_current_timezone() is used.
     """
-    if tz == None:
+    if tz is None:
         tz = timezone.get_current_timezone()
     try:
         if timezone.is_naive(value):
@@ -214,30 +206,37 @@ def get_hour_summaries(hours):
         return [(0, 0), (0, 0), 0]
 
 
-def user_date_totals(user_entries):
+def date_totals(entries, by):
     """Yield a user's name and a dictionary of their hours"""
     date_dict = {}
-    for date, date_entries in groupby(user_entries, lambda x: x['date']):
+    for date, date_entries in groupby(entries, lambda x: x['date']):
         if isinstance(date, datetime.datetime):
             date = date.date()
         d_entries = list(date_entries)
-        name = ' '.join((d_entries[0]['user__first_name'],
-                        d_entries[0]['user__last_name']))
-        user_id = d_entries[0]['user']
+
+        if by == 'user':
+            name = ' '.join((d_entries[0]['user__first_name'],
+                    d_entries[0]['user__last_name']))
+        elif by == 'project':
+            name = d_entries[0]['project__name']
+        else:
+            name = d_entries[0][by]
+
+        pk = d_entries[0][by]
         hours = get_hours(d_entries)
         date_dict[date] = hours
-    return name, user_id, date_dict
+    return name, pk, date_dict
 
 
 def project_totals(entries, date_headers, hour_type=None, overtime=False,
-                   total_column=False):
+                   total_column=False, by='user'):
     """
     Yield hour totals grouped by user and date. Optionally including overtime.
     """
     totals = [0 for date in date_headers]
     rows = []
-    for user, user_entries in groupby(entries, lambda x: x['user']):
-        name, user_id, date_dict = user_date_totals(user_entries)
+    for thing, thing_entries in groupby(entries, lambda x: x[by]):
+        name, thing_id, date_dict = date_totals(thing_entries, by)
         dates = []
         for index, day in enumerate(date_headers):
             if isinstance(day, datetime.datetime):
@@ -261,7 +260,7 @@ def project_totals(entries, date_headers, hour_type=None, overtime=False,
         if overtime:
             dates.append(find_overtime(dates))
         dates = [date or '' for date in dates]
-        rows.append((name, user_id, dates))
+        rows.append((name, thing_id, dates))
     if total_column:
         totals.append(sum(totals))
     totals = [total or '' for total in totals]
@@ -401,15 +400,15 @@ def get_project_hours_for_week(week_start):
     return qs
 
 
-def get_people_from_project_hours(project_hours):
+def get_users_from_project_hours(project_hours):
     """
-    Gets a list of the distinct people included in the project hours entries,
+    Gets a list of the distinct users included in the project hours entries,
     ordered by name.
     """
-    people = project_hours.values_list('user__id', 'user__first_name',
+    users = project_hours.values_list('user__id', 'user__first_name',
             'user__last_name').distinct().order_by('user__first_name',
             'user__last_name')
-    return people
+    return users
 
 
 def get_total_seconds(td):
@@ -468,3 +467,14 @@ def process_progress(entries, assignments):
     project_progress = sorted(project_data.values(), key=key)
 
     return project_progress
+
+
+def get_active_entry(user):
+    Entry = get_model('timepiece', 'Entry')
+    try:
+        entry = Entry.no_join.get(user=user, end_time__isnull=True)
+    except Entry.DoesNotExist:
+        entry = None
+    except Entry.MultipleObjectsReturned:
+        raise ActiveEntryError('Only one active entry is allowed.')
+    return entry

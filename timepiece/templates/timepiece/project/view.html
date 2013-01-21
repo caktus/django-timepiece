@@ -6,7 +6,7 @@
 
 {% block crumbs %}
     {{ block.super }}
-    <li><span class="divider">/</span> <a href="{% url 'view_project' project.pk %}">Project Detail</a></li>
+    <li><span class="divider">/</span> <a href="">{{ project }}</a></li>
 {% endblock crumbs %}
 
 {% block content %}
@@ -15,14 +15,11 @@
             <h2>{{ project }}</h2>
             <ul class="nav nav-pills">
                 {% if perms.timepiece.change_project %}
-                    <li><a href="{% url 'edit_project' project_id=project.id %}">Edit Project</a></li>
-                    <li><a href="{% url 'delete_project' project.id %}">Delete Project</a></li>
-                {% endif %}
-                {% if perms.timepiece.view_businesses %}
-                    <li><a href="{% url 'view_business' business=project.business.id %}">Return to {{ project.business.name }}</a></li>
+                    <li><a href="{% url 'edit_project' project.id %}">Edit</a></li>
+                    <li><a href="{% url 'delete_project' project.id %}">Delete</a></li>
                 {% endif %}
                 {% if perms.timepiece.view_project_time_sheet %}
-                    <li><a href="{% url 'project_time_sheet' project.id %}">View Project Time Sheet</a></li>
+                    <li><a href="{% url 'view_project_timesheet' project.id %}">View Time Sheet</a></li>
                 {% endif %}
             </ul>
         </div>
@@ -30,47 +27,76 @@
 
     <div class="row-fluid">
         <div class="span6">
-            <table class="table table-bordered table-striped">
+            <table class="table table-bordered">
                 <tr><th>Type</th><td>{{ project.type }}</td></tr>
+                <tr>
+                    <th>Business</th>
+                    <td>
+                        {% if perms.timepiece.view_business  %}
+                            <a href="{% url 'view_business' project.business.pk %}">{{ project.business }}</a>
+                        {% else %}
+                            {{ project.business }}
+                        {% endif %}
+                    </td>
+                </tr>
                 <tr><th>Status</th><td>{{ project.status }}</td></tr>
                 <tr><th>Billable</th><td>{{ project.billable }}</td></tr>
-                <tr><th>Point Person</th><td>{{ project.point_person }}</td></tr>
+                <tr>
+                    <th>Point Person</th>
+                    <td>
+                        {% if perms.auth.view_user %}
+                            <a href="{% url 'view_user' project.point_person.pk %}">{{ project.point_person.get_name_or_username }}</a>
+                        {% else %}
+                            {{ project.point_person.get_name_or_username }}
+                        {% endif %}
+                    </td>
+                </tr>
                 <tr><th>Description</th><td>{{ project.description|linebreaks }}</td></tr>
                 {% if project.tracker_url %}
                     <tr><th>Tracker URL</th><td>{{ project.tracker_url }}</td></tr>
                 {% endif %}
+                <tr>
+                    <th>Contracts</th>
+                    <td>
+                        {% for contract in project.contracts.all %}
+                            <a href="{% url 'view_contract' contract.pk %}">{{ contract }}</a>
+                            ({{ contract.start_date|date:'M j, Y'}} - {{ contract.end_date|date:'M j, Y'}})
+                            <br />
+                        {% empty %}
+                            This project is not associated with any contracts.
+                        {% endfor %}
+                    </td>
+                </tr>
             </table>
         </div>
 
-        <div class="span4 offset1">
-            <h3>Contacts</h3>
-            <ul class="people">
-            {% ifnotequal project.users.count 0 %}
-            {% for user in project.users.select_related.all %}
-                <li>
-                    {{ user.get_full_name }}
-                    {% if perms.timepiece.change_projectrelationship %}
-                        {% with caption="Edit "|add:user.get_full_name|add:"'s relationship to "|add:project.name %}
-                            <a title="{{ caption }}" href="{% url 'edit_project_relationship' project_id=project.id user_id=user.id %}?next={% url 'view_project' project_id=project.id %}"><i alt="{{ caption }}" class="icon-pencil"></i></a>
-                        {% endwith %}
-                    {% endif %}
-                    {% if perms.timepiece.delete_projectrelationship %}
-                        {% with caption="Remove "|add:user.get_full_name|add:" from "|add:project.name %}
-                            <a title="{{ caption }}" href="{% url 'remove_project_relationship' project_id=project.id user_id=user.id %}?next={% url 'view_project' project_id=project.id %}"><i alt="{{ caption }}" class="icon-remove"></i></a>
-                        {% endwith %}
-                    {% endif %}
-                </li>
-            {% endfor %}
-            {% endifnotequal %}
+        <div class="span4 offset2">
+            {% url 'view_project' project.id as next_url %}
+            <h3>Users</h3>
+            <ul class="users">
+                {% for user in project.users.all %}
+                    <li>
+                        {{ user.get_name_or_username }}
+                        {% if perms.timepiece.change_projectrelationship %}
+                            {% with caption="Edit "|add:user.get_name_or_username|add:"'s relationship to "|add:project.name %}
+                                <a title="{{ caption }}" href="{% url 'edit_relationship' %}?project_id={{ project.id}}&user_id={{ user.id }}&next={{ next_url|add_parameters:request.GET|urlencode }}"><i alt="{{ caption }}" class="icon-pencil"></i></a>
+                            {% endwith %}
+                        {% endif %}
+                        {% if perms.timepiece.delete_projectrelationship %}
+                            {% with caption="Remove "|add:user.get_name_or_username|add:" from "|add:project.name %}
+                                <a title="{{ caption }}" href="{% url 'delete_relationship' %}?project_id={{ project.id }}&user_id={{ user.id }}&next={{ next_url|add_parameters:request.GET|urlencode }}"><i alt="{{ caption }}" class="icon-remove"></i></a>
+                            {% endwith %}
+                        {% endif %}
+                    </li>
+                {% endfor %}
             </ul>
             {% if perms.timepiece.add_projectrelationship %}
-            <form class="form-inline" action="{% url 'add_user_to_project' project_id=project.id %}?next={% url 'view_project' project_id=project.id %}" method="post" accept-charset="utf-8">
-                {% csrf_token %}
-                {{ add_user_form|as_bootstrap:"inline" }}
-                <input class="btn" type="submit" name="submit" id="submit" value="Add" />
-            </form>
+                <form class="form-inline" action="{% url 'create_relationship' %}?project_id={{ project.id }}&next={{ next_url|add_parameters:request.GET|urlencode }}" method="post" accept-charset="utf-8">
+                    {% csrf_token %}
+                    {{ add_user_form|as_bootstrap:"inline" }}
+                    <input class="btn" type="submit" value="Add" />
+                </form>
             {% endif %}
         </div>
     </div>
-
 {% endblock %}

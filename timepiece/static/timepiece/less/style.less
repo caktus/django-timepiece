@@ -61,8 +61,8 @@ body {
     h2 {
         border-bottom: 1px solid #593E1A;
 
-        &.skinny {
-            width: 60%;
+        &.page-title {
+            margin-bottom: 20px;
         }
     }
 
@@ -111,38 +111,33 @@ body {
         }
 
         &.business {
-            .bg-icon('building.png');
+            .bg-icon('business.png');
             padding-left: 20px;
         }
 
         &.project {
-            .bg-icon('report.png');
+            .bg-icon('project.png');
             padding-left: 20px;
         }
     }
 
     ul {
-        &.people {
+        &.users {
             li {
-                &.add {
-                    .list-icon('user_add.png');
-                    padding-top: 1em;
-                }
-
                 .list-icon('user.png');
             }
         }
 
         &.businesses {
             li {
-                .list-icon('building.png');
+                .list-icon('business.png');
                 padding: 0.2em;
             }
         }
 
         &.projects {
             li {
-                .list-icon('report.png');
+                .list-icon('project.png');
                 padding: 0.2em;
             }
         }
@@ -239,11 +234,6 @@ body {
         float: right;
     }
 
-    .scroll {
-        width: 100%;
-        overflow-x: auto;
-    }
-
     .dataTable {
         width: 100%;
 
@@ -275,9 +265,8 @@ body {
         display: inline;
     }
 
-    .paste:hover {
-        cursor: hand;
-        cursor: pointer;
+    .nowrap {
+        white-space: nowrap
     }
 
     .popover {
@@ -348,7 +337,7 @@ body {
      * Start specific body ids
      *****************************************/
 
-    &#person-timesheet {
+    &#user-timesheet {
         #header {
             margin-bottom: 25px;
             #options-buttons {
@@ -440,9 +429,6 @@ body {
                 }
             }
         }
-        .nowrap {
-            white-space: nowrap;
-        }
         #active-entry {
             margin-bottom: 35px;
             #active-buttons {
@@ -503,7 +489,7 @@ body {
                     overflow: hidden;
                 }
                 #active-project {
-                    background-color: #F2FBEF;
+                    background-color: #E2F3DD;
                 }
                 .progress-col {
                     width: 50%;
@@ -513,18 +499,6 @@ body {
                     }
                 }
             }
-        }
-    }
-
-    &#paste {
-        pre {
-            white-space: pre;
-        }
-
-        textarea {
-            width: 100%;
-            height: 25em;
-            font-family: 'Monaco', 'Nimbus Mono L', 'DejaVu Sans Mono', 'Courier New';
         }
     }
 
@@ -569,7 +543,7 @@ body {
                 overflow: auto;
                 margin-right: 15px;
 
-                &.people {
+                &.users {
                     width: 25%;
 
                     ul li {
@@ -739,35 +713,12 @@ body {
             text-align: right;
         }
 
-        /*****************************************
-         * End general content
-         *****************************************/
-
-
-        /*****************************************
-         * Start Reports
-         *****************************************/
-
-        ul {
-            &.reports {
-                font-size: 110%;
-
-                li {
-                    .list-icon('chart_bar.png');
-                    margin-bottom: 0.2em;
-
-                }
-            }
-
-            &.parent {
-                ul {
-                    list-style-type: none;
-                }
-            }
+        .pending_hours {
+            color: @green;
         }
 
         /*****************************************
-         * End Reports
+         * End general content
          *****************************************/
     }
 

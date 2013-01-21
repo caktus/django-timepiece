@@ -1,0 +1,68 @@
+{% extends 'timepiece/schedule/base.html' %}
+{% load url from future %}
+{% load bootstrap_toolkit %}
+
+{% block title %}Schedule for the Week of {{ week|date:'M j, Y'}}{% endblock %}
+
+{% block extrajs %}
+    <script type="text/javascript">
+        var ajax_url = '{{ ajax_url }}';
+    </script>
+
+    <script type="text/javascript" src="{{ STATIC_URL }}bootstrap/js/bootstrap-typeahead.js"></script>
+    <script type="text/javascript" src="{{ STATIC_URL }}timepiece/js/handsontable/jquery.handsontable.js"></script>
+    <script type="text/javascript" src="{{ STATIC_URL }}timepiece/js/ajax.js"></script>
+
+    <script type="text/javascript" src="{{ STATIC_URL }}timepiece/js/project_hours/models.js"></script>
+    <script type="text/javascript" src="{{ STATIC_URL }}timepiece/js/project_hours/app.js"></script>
+{% endblock extrajs %}
+
+{% block extracss %}
+    <link type="text/css" rel="stylesheet" href="{{ STATIC_URL }}timepiece/js/handsontable/jquery.handsontable.css" />
+{% endblock extracss %}
+
+{% block crumbs %}
+    {{ block.super }}
+    <li><span class="divider">/</span> <a href=""> Edit</a></li>
+{% endblock crumbs %}
+
+{% block bodyid %}project-hours{% endblock bodyid %}
+
+{% block content %}
+
+
+    <div class="row-fluid">
+        <div class="span12">
+            <h2 data-date="{{ week|date:'Y-m-d' }}">Schedule for the Week of {{ week|date:'M j, Y'}}</h2>
+        </div>
+    </div>
+
+    <div class="row-fluid">
+        <div class="span4">
+            <form class="form-inline" method="get">
+                {{ form|as_bootstrap:"inline" }}
+                <button type="submit" class="btn">Update</button>
+            </form>
+
+        </div>
+        <div class="span5 offset3">
+            <form class="form-inline right" method="post" action="{% url 'ajax_schedule' %}">
+                {% csrf_token %}
+                <input type="hidden" name="duplicate" value="duplicate" />
+                <input type="hidden" name="week_update" value="{{ week|date:'Y-m-d' }}" />
+                <button id="copy" type="submit" class="btn">Copy previous week</button>
+            </form>
+            <form class="form-inline right" method="post" action="{% url 'edit_schedule' %}">
+                {% csrf_token %}
+                <input type="hidden" name="week_start" value="{{ week|date:'Y-m-d' }}" />
+                <button type="submit" class="btn">Publish hours</button>
+            </form>
+        </div>
+    </div>
+
+    <div class="row-fluid">
+        <div class="span12">
+            <div class="dataTable"></div>
+        </div>
+    </div>
+{% endblock content %}

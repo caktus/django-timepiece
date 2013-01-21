@@ -1,12 +1,12 @@
 """
-django-timepiece is a multi-user application for tracking people's time on
+django-timepiece is a multi-user application for tracking users' time on
 projects.
 """
 
 __version_info__ = {
     'major': 0,
-    'minor': 7,
-    'micro': 3,
+    'minor': 8,
+    'micro': 0,
     'releaselevel': 'final',
 }
 

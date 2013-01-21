@@ -1,0 +1,92 @@
+{% extends "timepiece/reports/base.html" %}
+{% load timepiece_tags bootstrap_toolkit %}
+{% load url from future %}
+
+{% block title %}Hourly Report{% endblock %}
+
+{% block extrajs %}
+    {{ pj_filters.media }}
+{% endblock extrajs %}
+
+{% block bodyid %}hourly-report{% endblock bodyid %}
+
+{% block crumbs %}
+    {{ block.super }}
+    <li><span class="divider">/</span> <a href="{% url 'report_hourly' %}">Hourly Report</a></li>
+{% endblock crumbs %}
+
+{% block report_nav %}
+    {% with 'hourly_report' as active %}
+        {{ block.super }}
+    {% endwith %}
+{% endblock %}
+
+{% block report_content %}
+    <div class="row-fluid">
+        <div class="span12">
+            {% date_filters "report-filters" %}
+        </div>
+    </div>
+
+    <div class="row-fluid">
+        <div class="row-fluid">
+            <form class="span12 form-horizontal" method="get" action="" id="report-filters" accept-charset="utf-8">
+                {{ filter_form|as_bootstrap:"horizontal" }}
+                <button type="submit" class="btn btn-primary" name="ok" id="billable">Update Filters</button>
+                {% if perms.timepiece.export_project_time_sheet %}
+                    <button type="submit" class="btn" name="export_users" value="True">Export User Summary</button>
+                    <button type="submit" class="btn" name="export_projects" value="True">Export Project Summary</button>
+                {% endif %}
+            </form>
+        </div>
+    </div>
+
+    <div class="row-fluid">
+        <div class="span12">
+            {% for title, summary in summaries.items %}
+                <h3>{{ title }}</h3>
+                <table class="table table-bordered table-striped table-condensed">
+                    <thead>
+                        <tr>
+                            <th>Name</th>
+                            {% for date in range_headers %}
+                                <th>
+                                    {% if trunc == 'day' %}
+                                        {{ date|date:'M j' }}
+                                    {% else %}  {# Should switch to elif when we're no longer supporting 1.3 #}
+                                        {% if date.0 == date.1 %}
+                                            {{ date.0|date:'M j' }}
+                                        {% else %}
+                                            {{ date.0|date:'M j' }} - {{ date.1|date:'M j' }}
+                                        {% endif %}
+                                    {% endif %}
+                                </th>
+                            {% endfor %}
+                            <th>Total</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for rows, totals in summary %}
+                            {% for name, pk, hours in rows %}
+                                <tr>
+                                    <th>{{ name }}</th>
+                                    {% for num in hours %}
+                                        <td class="hours" title="{{ name }}">{{ num|floatformat:2 }}</td>
+                                    {% endfor %}
+                                </tr>
+                            {% endfor %}
+                            <tr class="total">
+                                <th>Total</th>
+                                {% for total in totals %}
+                                    <td class="hours">{{ total|floatformat:2 }}</td>
+                                {% endfor %}
+                            </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            {% empty %}
+                <p>No entries found.</p>
+            {% endfor %}
+        </div>
+    </div>
+{% endblock report_content %}

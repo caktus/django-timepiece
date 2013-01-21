@@ -21,9 +21,7 @@ class ProjectTestCase(TimepieceDataTestCase):
         self.p2 = self.create_project(billable=False, name='2')
         self.p4 = self.create_project(billable=True, name='4')
         self.p3 = self.create_project(billable=False, name='1')
-        self.url = reverse('project_time_sheet',
-                           kwargs={'pk': self.p1.pk}
-        )
+        self.url = reverse('view_project_timesheet', args=(self.p1.pk,))
 
     def make_entries(self):
         days = [
@@ -53,7 +51,8 @@ class ProjectTestCase(TimepieceDataTestCase):
 
     def testNoProject(self):
         self.client.login(username='superuser', password='abc')
-        response = self.client.get(reverse('project_time_sheet', args=(999, )))
+        url = reverse('view_project_timesheet', args=(999,))
+        response = self.client.get(url)
         self.assertEqual(response.status_code, 404)
 
     def testEmptyProjectTimesheet(self):
@@ -116,7 +115,7 @@ class ProjectTestCase(TimepieceDataTestCase):
     def testOtherProjectTimesheet(self):
         self.client.login(username='superuser', password='abc')
         self.make_entries()
-        response = self.client.get(reverse('project_time_sheet',
+        response = self.client.get(reverse('view_project_timesheet',
                                            args=(self.p2.pk, ))
         )
         self.assertEqual(response.status_code, 200)
@@ -131,7 +130,7 @@ class ProjectTestCase(TimepieceDataTestCase):
     def test_project_csv(self):
         self.client.login(username='superuser', password='abc')
         self.make_entries()
-        response = self.client.get(reverse('export_project_time_sheet',
+        response = self.client.get(reverse('view_project_timesheet_csv',
                                            args=[self.p1.id])
         )
         self.assertEqual(response.status_code, 200)
