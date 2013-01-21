@@ -836,7 +836,7 @@ class ProjectContract(models.Model):
 
     @property
     def hours_remaining(self):
-        return self.contracted_hours() - self.hours_worked()
+        return self.contracted_hours() - self.hours_worked
 
     @property
     def hours_worked(self):

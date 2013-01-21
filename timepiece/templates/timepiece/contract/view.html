@@ -42,7 +42,7 @@
                         ({% widthratio contract.hours_worked contract.contracted_hours 100 %}%)
                     </td>
                 </tr>
-                <tr><th>Hours Remaining</th><td>{{ contract.hours_assigned|floatformat:2 }}</td></tr>
+                <tr><th>Hours Remaining</th><td>{{ contract.hours_remaining|floatformat:2 }}</td></tr>
                 <tr><th>Type</th><td>{{  contract.get_type_display }}</td></tr>
             </table>
         </div>
