@@ -1,8 +1,8 @@
 Release Notes
 =============
 
-0.8.0 (Unreleased)
-------------------
+0.8.0 (Released 01-21-2013)
+---------------------------
 
 Related issues are in the `0.8.0 milestone
 <https://github.com/caktus/django-timepiece/issues?milestone=31&page=1&state=closed>`_.
