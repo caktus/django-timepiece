@@ -115,6 +115,7 @@ class Project(models.Model):
 
 class RelationshipType(models.Model):
     name = models.CharField(max_length=255, unique=True)
+    slug = models.SlugField(max_length=255)
 
     def __unicode__(self):
         return self.name
