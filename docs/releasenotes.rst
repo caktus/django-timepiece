@@ -1,6 +1,14 @@
 Release Notes
 =============
 
+0.8.1 (Released 01-22-2013)
+---------------------------
+
+Related issues are in the `0.8.1 milestone
+<https://github.com/caktus/django-timepiece/issues?milestone=35&page=1&state=closed>`_.
+
+* Restored `slug` field on RelationshipType
+
 0.8.0 (Released 01-21-2013)
 ---------------------------
 
