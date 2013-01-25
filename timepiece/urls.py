@@ -27,8 +27,8 @@ urlpatterns = patterns('',
         views.clock_out,
         name='clock_out'),
     url(r'^entry/toggle_pause/$',
-        views.toggle_pause,
-        name='toggle_pause'),
+        views.ajax_toggle_pause,
+        name='ajax_toggle_pause'),
 
     # Entries
     url(r'^entry/add/$',

@@ -248,3 +248,57 @@ class ProcessProgressTestCase(TimepieceDataTestCase):
         self.assertEqual(progress[0]['project'], projects[0])
         self.assertEqual(progress[1]['project'], projects[1])
         self.assertEqual(progress[2]['project'], projects[2])
+
+
+class AjaxTogglePauseTestCase(TimepieceDataTestCase):
+    url_name = 'ajax_toggle_pause'
+    perm_names = [('timepiece', 'can_pause')]
+
+    def setUp(self):
+        get_perm = lambda ct, n: Permission.objects.get(
+                content_type__app_label=ct, codename=n)
+        self.permissions = [get_perm(*perm) for perm in self.perm_names]
+
+        self.username = self.random_string(25)
+        self.password = self.random_string(25)
+        self.email = self.random_string(25) + '@example.com'
+        self.user = self.create_user(self.username, self.email, self.password)
+        self.user.user_permissions.add(*self.permissions)
+        self.client.login(username=self.username, password=self.password)
+
+        self.active_entry = self.create_entry(data={
+            'start_time': datetime.datetime(2012, 2, 1, 12, 0),
+        })
+
+    def test_login_required(self):
+        self.client.logout()
+        response = self._post()
+        self.assertEqual(response.status_code, 302)
+
+    def test_permission_required(self):
+        self.user.user_permissions.all().delete()
+        response = self._post()
+        self.assertEqual(response.status_code, 302)
+
+    def test_get(self):
+        response = self._get()
+        self.assertEqual(response.status_code, 405)
+
+    def test_no_active_entry(self):
+        self.active_entry.delete()
+        response = self._post()
+        self.assertEqual(response.status_code, 404)
+
+    def test_pause(self):
+        self.active_entry.unpause()
+        self.active_entry.save()
+        response = self._post()
+        self.assertEqual(response.status_code, 200)
+        self.assertTrue(Entry.objects.get().is_paused)
+
+    def test_unpause(self):
+        self.active_entry.pause()
+        self.active_entry.save()
+        response = self._post()
+        self.assertEqual(response.status_code, 200)
+        self.assertFalse(Entry.objects.get().is_paused)
