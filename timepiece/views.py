@@ -672,6 +672,7 @@ def list_outstanding_invoices(request):
     })
 
 
+@permission_required('timepiece.add_entrygroup')
 def list_invoices(request):
     search_form = timepiece_forms.SearchForm(request.GET)
     query = Q()
