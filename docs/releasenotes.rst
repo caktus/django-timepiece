@@ -1,6 +1,14 @@
 Release Notes
 =============
 
+0.8.2 (Unreleased)
+------------------
+
+Related issues are in the `0.8.2 milestone
+<https://github.com/caktus/django-timepiece/issues?milestone=36&page=1&state=closed>`_.
+
+* Added permission requirements to view invoice list
+
 0.8.1 (Released 01-22-2013)
 ---------------------------
 
