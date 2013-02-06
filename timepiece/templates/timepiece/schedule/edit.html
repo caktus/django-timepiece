@@ -6,11 +6,13 @@
 
 {% block extrajs %}
     <script type="text/javascript">
-        var ajax_url = "{% url 'ajax_schedule' %}";
+        var ajax_url = "{% url 'ajax_schedule' %}",
+            week_start = "{{ week|date:'Y-m-d' }}";
     </script>
     <script type="text/javascript" src="{{ STATIC_URL }}bootstrap/js/bootstrap-typeahead.js"></script>
     <script type="text/javascript" src="{{ STATIC_URL }}handsontable/jquery.handsontable-0.8.3.full.js"></script>
     <script type="text/javascript" src="{{ STATIC_URL }}timepiece/js/ajax.js"></script>
+    <script type="text/javascript" src="{{ STATIC_URL }}timepiece/js/schedule/utils.js"></script>
     <script type="text/javascript" src="{{ STATIC_URL }}timepiece/js/schedule/models.js"></script>
     <script type="text/javascript" src="{{ STATIC_URL }}timepiece/js/schedule/app.js"></script>
 {% endblock extrajs %}
@@ -24,14 +26,14 @@
     <li><span class="divider">/</span> <a href="">Edit</a></li>
 {% endblock crumbs %}
 
-{% block bodyid %}project-hours{% endblock bodyid %}
+{% block bodyid %}schedule-edit{% endblock bodyid %}
 
 {% block content %}
 
 
     <div class="row-fluid">
         <div class="span12">
-            <h2 data-date="{{ week|date:'Y-m-d' }}">Schedule for the Week of {{ week|date:'M j, Y'}}</h2>
+            <h2>Schedule for the Week of {{ week|date:'M j, Y'}}</h2>
         </div>
     </div>
 
@@ -49,6 +51,17 @@
                 <input type="hidden" name="duplicate" value="{{ prev_week|date:'Y-m-d' }}" />
                 <button id="copy" class="btn" type="submit">Copy Previous Week</button>
             </form>
+            <script>
+                // Make sure that the user really wants to overwrite assignments.
+                $('#copy').click(function(e) {
+                    var copy = confirm('This will overwrite a user\'s assignments. ' +
+                                       'Are you sure you want to do this?');
+                    if (copy) {
+                        return true;
+                    }
+                    return false;
+                });
+            </script>
             <form class="form-inline right" method="post" action="{% url 'edit_schedule' %}">
                 {% csrf_token %}
                 <input type="hidden" name="publish" value="publish" />
@@ -59,7 +72,7 @@
 
     <div class="row-fluid">
         <div class="span12">
-            <div class="dataTable"></div>
+            <div id="schedule"></div>
         </div>
     </div>
 {% endblock content %}

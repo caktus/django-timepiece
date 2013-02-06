@@ -1701,9 +1701,8 @@ class ScheduleAjax(ScheduleMixin, View):
         Returns the data as a JSON object made up of the following key/value
         pairs:
             assignments: the assignments for this week
-            projects: the projects that have assignments this week
             all_projects: all of the projects; used for autocomplete
-            all_users: all users that can clock in; used for completion
+            all_users: all users that can clock in; used for autocomplete
         """
         # Clock-in permission required for being in the schedule.
         # TODO: should this be enforced?
@@ -1713,16 +1712,12 @@ class ScheduleAjax(ScheduleMixin, View):
         perms = Q(user_permissions=perm) | Q(groups__permissions=perm)
 
         assignments = self.get_assignment_vals()
-        project_ids = assignments.values_list('project__id', flat=True)
-        projects = timepiece.Project.objects.filter(id__in=project_ids)
-        projects = projects.values('name', 'id').distinct().order_by('name')
         all_projects = timepiece.Project.objects.values('id', 'name')
         all_users = User.objects.filter(perms | Q(is_superuser=True))\
                                 .values('id', 'first_name', 'last_name')
 
         data = {
             'assignments': list(assignments),
-            'projects': list(projects),
             'all_projects': list(all_projects),
             'all_users': list(all_users),
         }

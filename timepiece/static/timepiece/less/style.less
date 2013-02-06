@@ -49,6 +49,11 @@ static/timepiece.
     }
 }
 
+html {
+    width: 100%;
+    height: 100%;
+}
+
 body {
     /*****************************************
      * Start HTML entities
@@ -232,33 +237,6 @@ body {
 
     .right {
         float: right;
-    }
-
-    .dataTable {
-        width: 100%;
-
-        td {
-            background-color: #FF0000;
-            color: #FFFFFF;
-        }
-
-        td:empty {
-            background-color: #FFFFFF;
-        }
-
-        td:first-child {
-            background-color: #FFFFFF;
-            color: #000000;
-            min-width: 170px;
-        }
-
-        tr:first-child, tr:nth-last-child(2) {
-            td {
-                min-width: 75px;
-                color: #000000;
-                background-color: #FFFFFF;
-            }
-        }
     }
 
     .inline {
@@ -573,14 +551,11 @@ body {
         }
     }
 
-    &#project-hours {
+    &#schedule-view {
         form.right {
             margin-left: 10px;
         }
 
-        .hours {
-            text-align: center !important;
-        }
         #schedule {
             // Manual table striping with lighter-than-default color.
             tbody tr:nth-child(odd) td, tbody tr:nth-child(odd) th {
@@ -589,8 +564,40 @@ body {
             .hover {
                 background-color: #e2e2f3 !important;
             }
+            .hours {
+                text-align: center !important;
+            }
         }
     }
+
+    &#schedule-edit {
+        form.right {
+            margin-left: 10px;
+        }
+
+        #schedule {
+            margin-bottom: 20px;
+            td {
+                &.published {
+                    color: white;
+                    background-color: green;
+                }
+
+                &.unpublished {
+                    color: white;
+                    background-color: red;
+                }
+            }
+
+            td:first-child {  // first column
+                font-weight: bold;
+            }
+
+            tr:first-child td, tr:last-child td {  // headers row & totals row
+                font-weight: bold;
+            }
+        }
+   }
 
     &#productivity-report {
         #productivity-summary {
