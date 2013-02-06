@@ -594,7 +594,13 @@ class ScheduleSearchForm(forms.Form):
         return utils.get_week_start(week_start, False) if week_start else None
 
 
-class ScheduleForm(forms.ModelForm):
+class AssignmentForm(forms.ModelForm):
+
+    def save(self, *args, **kwargs):
+        assignment = super(AssignmentForm, self).save(commit=False, *args, **kwargs)
+        assignment.published = False
+        assignment.save()
+        return assignment
 
     class Meta:
         model = ProjectHours

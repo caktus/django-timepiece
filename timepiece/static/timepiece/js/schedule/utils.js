@@ -30,7 +30,7 @@ function ajax(data, success, error, type) {
         url: ajax_url,
         data: data,
         success: success,
-        error: error
+        error: error,
     });
 }
 
@@ -52,4 +52,48 @@ function del(data, success, error) {
 function getToday() {
     var d = new Date();
     return d.getFullYear() + '-' + (d.getMonth() + 1) + '-' + d.getDate();
+}
+
+function id_list_from_collection(collection) {
+    var id_list = [], i;
+    for (i = 0; i < collection.length; i++) {
+        id_list.push(collection[i].id);
+    }
+    return id_list;
+}
+
+function reassign_user_data(collection, new_user_id) {
+    var data = [];
+    for (i = 0; i < collection.length; i++) {
+        var map = {
+            user: new_user_id,
+            project: collection[i].project.id,
+            hours: collection[i].hours
+        };
+        data.push(map);
+    }
+    return data;
+}
+
+function reassign_project_data(collection, new_project_id) {
+    var data = [];
+    for (i = 0; i < collection.length; i++) {
+        var map = {
+            user: collection[i].user.id,
+            project: new_project_id,
+            hours: collection[i].hours
+        };
+        data.push(map);
+    }
+    return data;
+}
+
+function get_assignment_data(id, user, project, hours) {
+    var map = {
+        id: id,
+        user: user.id,
+        project: project.id,
+        hours: hours
+    };
+    return [map];
 }

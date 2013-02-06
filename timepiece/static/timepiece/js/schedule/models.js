@@ -124,9 +124,16 @@ Collection.prototype.index = function(item) {
 };
 
 Collection.prototype.remove = function(item) {
-    var index = this.index(item);
+    if(item) {
+        var index = this.index(item);
+        this.collection.splice(index, 1);
+    }
+};
 
-    this.collection.splice(index, 1);
+Collection.prototype.remove_all = function(list) {
+    for (var i = 0; i < list.length; i++) {
+        this.remove(list[i]);
+    }
 };
 
 function ProjectCollection() {
@@ -179,6 +186,30 @@ ProjectHoursCollection.prototype.get_by_row_col = function(row, col) {
 
     return null;
 };
+
+ProjectHoursCollection.prototype.get_by_user = function(user) {
+    var assignments = [];
+    if(user) {
+        for(var i = 0; i < this.collection.length; i++) {
+            if(this.collection[i].user.id === user.id) {
+                assignments.push(this.collection[i]);
+            }
+        }
+    }
+    return assignments;
+}
+
+ProjectHoursCollection.prototype.get_by_project = function(project) {
+    var assignments = [];
+    if(project) {
+        for(var i = 0; i < this.collection.length; i++) {
+            if(this.collection[i].project.id === project.id) {
+                assignments.push(this.collection[i]);
+            }
+        }
+    }
+    return assignments;
+}
 
 // For testing in node
 if(typeof module !== 'undefined') {

@@ -1532,7 +1532,7 @@ class ScheduleMixin(object):
             try:
                 week_start = datetime.datetime.strptime(week_start,
                                                         DATE_FORM_FORMAT)
-                self.week_start = utils.get_week_start(week_start.date())
+                self.week_start = utils.get_week_start(week_start).date()
             except:
                 self.week_start = utils.get_week_start().date()
         else:
@@ -1729,19 +1729,6 @@ class ScheduleAjax(ScheduleMixin, View):
             user = User.objects.get(pk=data.get('user', None))
             project = timepiece.Project.objects.get(pk=data.get('project', None))
             hours = data.get('hours', None)
-
-            ph = timepiece.ProjectHours.objects.get(user=user, project=project,
-                week_start=self.week_start)
-            ph.hours = Decimal(hours)
-        except exceptions.ObjectDoesNotExist:
-            ph = None
-        return ph
-
-    def get_instance(self, data):
-        try:
-            user = User.objects.get(pk=data.get('user', None))
-            project = timepiece.Project.objects.get(pk=data.get('project', None))
-            hours = data.get('hours', None)
             assignment = timepiece.ProjectHours.objects.get(user=user,
                     project=project, week_start=self.week_start)
             return assignment
@@ -1757,15 +1744,37 @@ class ScheduleAjax(ScheduleMixin, View):
             hours: the actual hours to store
             week_start: the start of the week for the hours
         """
+        try:
+            data_list = json.loads(request.raw_post_data)
+        except:
+            msg = 'Post data must be a list of assignment data maps.'
+            return HttpResponse(msg, status=500)
 
-        instance = self.get_instance(request.POST)
-        form = timepiece_forms.ScheduleForm(request.POST, instance=instance)
-        if form.is_valid():
+        valid_forms = []
+        for data_map in data_list:
+            pk = data_map.pop('id', None)
+            instance = None
+            if pk:
+                try:
+                    instance = timepiece.ProjectHours.objects.get(pk=pk)
+                except ProjectHours.DoesNotExist:
+                    msg = 'Could not find assignment {0}; request aborted.'.format(pk)
+                    return HttpResponse(msg, status=500)
+            data_map['week_start'] = self.week_start
+            form = timepiece_forms.AssignmentForm(data_map, instance=instance)
+            if form.is_valid():
+                valid_forms.append(form)
+            else:
+                msg = 'Each data map must contain values for user, project, '\
+                      'and hours.'
+                return HttpResponse(msg, status=500)
+
+        data = []
+        for form in valid_forms:
             assignment = form.save()
-            return HttpResponse(str(assignment.pk), mimetype='text/plain')
+            data.append(assignment.pk)
 
-        msg = 'The request must contain values for user, project, and hours.'
-        return HttpResponse(msg, status=500)
+        return HttpResponse(json.dumps(data), mimetype='application/json')
 
 
 @login_required

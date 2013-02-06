@@ -146,6 +146,168 @@ function publishedRenderer (instance, td, row, col, prop, value, cellProperties)
     $(td).addClass('published');
 }
 
+function changeUser(row, col, before, after) {
+    var old_user = all_users.get_by_display_name(before),
+        new_user = all_users.get_by_display_name(after),
+        existing_assignments = assignments.get_by_user(old_user);
+
+    if (old_user) {  // Remove old assignments from server.
+        if (existing_assignments.length > 0) {
+            var id_list = JSON.stringify(id_list_from_collection(existing_assignments));
+            del(id_list,
+                function(data, status, xhr) {  // Remove local information.
+                    users.remove(old_user);
+                    assignments.remove_all(existing_assignments);
+                    if (!new_user) {
+                        $(schedule_id).handsontable('alter', 'remove_col', col);
+                    }
+                },
+                function(xhr, status, error) {
+                    showError(DEL_ERROR_MSG);
+                    return false;
+                }
+            );
+        } else {
+            users.remove(old_user);
+            if (!new_user) {
+                $(schedule_id).handsontable('alter', 'remove_col', col);
+            }
+        }
+    }
+    if (new_user) {  // Add new assignments to server.
+        if (existing_assignments.length > 0) {
+            var data = JSON.stringify(reassign_user_data(existing_assignments, new_user.id));
+            post(data,
+                 function(data, status, xhr) {  // Add local information.
+                    new_user.col = col;
+                    users.add(new_user);
+                    for (var i = 0; i < existing_assignments.length; i++) {
+                        var assignment = existing_assignments[i];
+                        assignment.id = data[i];
+                        assignment.user = new_user;
+                        assignment.published = false;
+                        assignments.add(assignment);
+                    }
+                    $(schedule_id).handsontable('render');  // To update formatting.
+                },
+                function(xhr, status, error) {
+                    showError(POST_ERROR_MSG);
+                    return false;
+                }
+            );
+        } else {
+            new_user.col = col;
+            users.add(new_user);
+        }
+    }
+}
+
+function changeProject(row, col, before, after) {
+    var old_project = all_projects.get_by_name(before),
+        new_project = all_projects.get_by_name(after),
+        existing_assignments = assignments.get_by_project(old_project);
+    if (old_project) {  // Remove old assignments from server.
+        if (existing_assignments.length > 0) {
+            var id_list = JSON.stringify(id_list_from_collection(existing_assignments));
+            del(id_list,
+                function(data, status, xhr) {  // Remove local information.
+                    projects.remove(old_project);
+                    assignments.remove_all(existing_assignments);
+                    if (!new_project) {
+                        $(schedule_id).handsontable('alter', 'remove_row', row);
+                    }
+                },
+                function(xhr, status, error) {
+                    showError(DEL_ERROR_MSG);
+                    return false;
+                }
+            );
+        } else {
+            projects.remove(old_project);  // Remove local information.
+            if (!new_project) {
+                $(schedule_id).handsontable('alter', 'remove_row', row);
+            }
+        }
+    }
+    if (new_project) {  // Add new assignments to server.
+        if (existing_assignments.length > 0) {
+            var data = JSON.stringify(reassign_project_data(existing_assignments, new_project.id));
+            post(data,
+                 function(data, status, xhr) {  // Add local information.
+                     new_project.row = row;
+                     projects.add(new_project);
+                     for (var i = 0; i < existing_assignments.length; i++) {
+                         var assignment = existing_assignments[i];
+                         assignment.id = data[i];
+                         assignment.published = false;
+                         assignment.project = new_project;
+                         assignments.add(assignment);
+                     }
+                     $(schedule_id).handsontable('render');  // To update formatting.
+                 },
+                 function(xhr, status, error) {
+                     showError(POST_ERROR_MSG);
+                     return false;
+                 }
+            );
+        } else if (new_project) {  // Add local information.
+            new_project.row = row;
+            projects.add(new_project);
+        }
+    }
+}
+
+function changeAssignment(row, col, before, after) {
+    var old_assignment = assignments.get_by_row_col(row, col);
+    if (old_assignment && after === '') {  // Remove assignment from server.
+        var del_data = JSON.stringify([old_assignment.id]);
+        del(del_data,
+            function(data, status, xhr) {  // Remove local information.
+                assignments.remove(old_assignment);
+                $(schedule_id).handsontable('render');  // To update formatting.
+            },
+            function(xhr, status, error) {
+                showError(DEL_ERROR_MSG);
+                return false;
+            }
+        );
+    } else if (old_assignment) {  // Update existing assignment on server.
+        var data = get_assignment_data(old_assignment.id, old_assignment.user,
+                                       old_assignment.project, after);
+        var post_data = JSON.stringify(data);
+        post(post_data,
+            function(data, status, xhr) {  // Update local information..
+                old_assignment.hours = after;
+                old_assignment.published = false;
+                $(schedule_id).handsontable('render');  // To update formatting.
+            },
+            function(xhr, status, error) {
+                showError(POST_ERROR_MSG);
+                return false;
+            }
+        );
+    } else if (after !== '') {  // Add new assignment to server.
+        var user = users.get_by_col(col),
+            project = projects.get_by_row(row),
+            data = get_assignment_data(null, user, project, after),
+            post_data = JSON.stringify(data);
+        post(post_data,
+            function(data, status, xhr) {  // Add local information.
+                assignment = new ProjectHours(data[0], after, project, false);
+                assignment.user = user;
+                assignment.row = row;
+                assignment.col = col;
+                assignments.add(assignment);
+                $(schedule_id).handsontable('render');  // To update formatting.
+            },
+            function(xhr, status, error) {
+                showError(POST_ERROR_MSG);
+                return false;
+            }
+        );
+    }
+}
+
 $(function() {
     // First, add an empty handsontable.
     $(schedule_id).handsontable({
@@ -267,47 +429,11 @@ $(function() {
                 before = changes[0][2],
                 after = changes[0][3];
 
-            if (before === after) { return; }  // Pragma - validation covers this.
-
-            else if (row === 0 && col === 0) { return; }  // Pragma - validation covers this.
-
-            else if (row === 0) {  // Users.
-                var old_user = all_users.get_by_display_name(before),
-                    new_user = all_users.get_by_display_name(after);
-
-                if ((old_user && new_user) || !new_user) {  // Changing or removing.
-                    users.remove(old_user);
-                    // TODO: remove old's assignments & update the server.
-                }
-                if ((old_user && new_user) || !old_user) {  // Changing or adding.
-                    users.add(new_user);
-                    // TODO: add existing assignments to new & update the server.
-                }
-            }
-
-            else if (col === 0) {  // Projects.
-                var old_project = all_projects.get_by_name(before),
-                    new_project = all_projects.get_by_name(after);
-
-                if ((old_project && new_project) || !new_project) {  // Changing or removing.
-                    projects.remove(old_project);
-                    // TODO: remove old's assignments & update server.
-                }
-                if ((old_project && new_project) || !old_project) {  // Changing or adding.
-                    projects.add(new_project);
-                    // TODO: add existing assignments to new & update server.
-                }
-            }
-
-            else {
-                var old_assignment = assignments.get_by_row_col(row, col);
-                if ((old_assignment && after !== '') || after === '') {  // Changing or removing.
-                    // TODO: remove old from assignments & update server.
-                }
-                if ((old_assignment && after !== '') || !old_assignment) {  // Changing or adding.
-                    // TODO: add new to assignments & update server.
-                }
-            }
+            if (before === after) { return; }  // Pragma - validation prevents this.
+            else if (row === 0 && col === 0) { return; }  // Pragma - validation prevents this.
+            else if (row === 0) { return changeUser(row, col, before, after); }
+            else if (col === 0) { return changeProject(row, col, before, after); }
+            else { return changeAssignment(row, col, before, after); }
 
             // TODO: update totals row.
         }
