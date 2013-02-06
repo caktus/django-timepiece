@@ -1024,6 +1024,5 @@ class ProjectHours(models.Model):
         return super(ProjectHours, self).save(*args, **kwargs)
 
     class Meta:
-        verbose_name = 'project hours entry'
-        verbose_name_plural = 'project hours entries'
+        verbose_name = 'schedule assignment'
         unique_together = ('week_start', 'project', 'user')

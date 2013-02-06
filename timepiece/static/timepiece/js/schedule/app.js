@@ -4,7 +4,7 @@ var all_projects = new ProjectCollection();
 var users = new UserCollection();
 var all_users = new UserCollection();
 
-var project_hours = new ProjectHoursCollection();
+var assignments = new ProjectHoursCollection();
 
 function showError(msg) {
     var html = '<div class="alert alert-error">' + msg +
@@ -16,14 +16,10 @@ function showError(msg) {
 
 function processData(data) {
     var projects = data.projects,
-        project_hours = data.project_hours,
+        assignments = data.assignments,
         all_projects = data.all_projects,
         all_users = data.all_users,
         dataTable = [['']];
-
-    if(typeof ajax_url === 'undefined') {
-        ajax_url = data.ajax_url;
-    }
 
     // Store all projects for autocomplete
     for(var i = 0; i < all_projects.length; i++) {
@@ -42,10 +38,9 @@ function processData(data) {
     }
 
     // Process all project hours to add to the table
-    for(i = 0; i < project_hours.length; i++) {
-        var ph = project_hours[i],
-            project = this.all_projects.get_by_id(ph.project);
-
+    for(i = 0; i < assignments.length; i++) {
+        var ph = assignments[i],
+            project = this.all_projects.get_by_id(ph.project__id);
         project.row = project.row || dataTable.length;
 
         // Add project to table if it doesnt already exist
@@ -58,7 +53,7 @@ function processData(data) {
 
         // Get from global users and add to datatable and adjust column
         // if the user isnt already in the table
-        var user = this.all_users.get_by_id(ph.user);
+        var user = this.all_users.get_by_id(ph.user__id);
         if(users.add(user)) {
             dataTable[0].push(user.display_name);
             user.col = dataTable[0].length - 1;
@@ -76,7 +71,7 @@ function processData(data) {
         dataTable[hours.row][hours.col] = hours.hours;
 
 
-        this.project_hours.add(hours);
+        this.assignments.add(hours);
     }
 
     // Populate the totals row after weve gone through all the data
@@ -152,8 +147,8 @@ $.put = function(url, data, success, error) {
     ajax(url, data, success, error, 'PUT');
 };
 
-$.del = function(url, success, error) {
-    ajax(url, { }, success, error, 'DELETE');
+$.del = function(url, data, success, error) {
+    ajax(url, data, success, error, 'DELETE');
 };
 
 $(function() {
@@ -180,7 +175,7 @@ $(function() {
             },
             {   // Match the cells with content
                 match: function(row, col, data) {
-                    var ph = project_hours.get_by_row_col(row, col);
+                    var ph = assignments.get_by_row_col(row, col);
 
                     if(ph && ph.published) {
                         return (row > 0 && col > 0 && data()[row][col] !== '');
@@ -250,7 +245,7 @@ $(function() {
                 }
             } else if(row >= 1 && col >= 1) {
                 var time = parseInt(after, 10);
-                hours = project_hours.get_by_row_col(row, col);
+                hours = assignments.get_by_row_col(row, col);
 
                 if(time && hours && time > 0) {
                     // If we have times and hours in the row/col, then update the current hours
@@ -287,7 +282,7 @@ $(function() {
                             hours.user = user;
                             hours.row = project.row;
                             hours.col = user.col;
-                            project_hours.add(hours);
+                            assignments.add(hours);
 
                             updateTotals(col, time);
                         }, function(xhr, status, error) {
@@ -325,10 +320,10 @@ $(function() {
                     if(user && after === '') {
                         users.remove(user);
 
-                        hours = project_hours.get_by_key('user', user);
+                        hours = assignments.get_by_key('user', user);
 
                         for(i = 0; i < hours.length; i++) {
-                            project_hours.remove(hours[i]);
+                            assignments.remove(hours[i]);
                         }
 
                         $('.dataTable').handsontable('alter', 'remove_col', user.col);
@@ -339,20 +334,21 @@ $(function() {
                     if(project && after === '') {
                         projects.remove(project);
 
-                        hours = project_hours.get_by_key('project', project);
+                        hours = assignments.get_by_key('project', project);
 
                         for(i = 0; i < hours.length; i++) {
-                            project_hours.remove(hours[i]);
+                            assignments.remove(hours[i]);
                         }
 
                         $('.dataTable').handsontable('alter', 'remove_row', project.row);
                     }
                 } else if(row >= 1 && col >= 1) {
                     function deleteHours() {
-                        $.del(ajax_url + hours.id + '/', function(data, status, xhr) {
+                        data = "" + hours.id;
+                        $.del(ajax_url, data, function(data, status, xhr) {
                             updateTotals(col, -hours.hours);
 
-                            project_hours.remove(hours);
+                            assignments.remove(hours);
                             $('.dataTable').handsontable('setDataAtCell', row, col, '');
                         }, function(xhr, status, error) {
                             $('.dataTable').handsontable('setDataAtCell', row, col, before);
@@ -360,7 +356,7 @@ $(function() {
                         });
                     }
 
-                    hours = project_hours.get_by_row_col(row, col);
+                    hours = assignments.get_by_row_col(row, col);
 
                     if(hours && after === '') {
                         // If the hours have been removed from the table, delete from

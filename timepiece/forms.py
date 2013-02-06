@@ -584,7 +584,7 @@ class BillableHoursForm(DateForm):
                     flat=True))
 
 
-class ProjectHoursSearchForm(forms.Form):
+class ScheduleSearchForm(forms.Form):
     week_start = forms.DateField(label='Week of', required=False,
             input_formats=(DATE_FORM_FORMAT,),
             widget=forms.DateInput(format=DATE_FORM_FORMAT))
@@ -594,7 +594,7 @@ class ProjectHoursSearchForm(forms.Form):
         return utils.get_week_start(week_start, False) if week_start else None
 
 
-class ProjectHoursForm(forms.ModelForm):
+class ScheduleForm(forms.ModelForm):
 
     class Meta:
         model = ProjectHours

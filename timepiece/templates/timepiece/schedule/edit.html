@@ -6,15 +6,13 @@
 
 {% block extrajs %}
     <script type="text/javascript">
-        var ajax_url = '{{ ajax_url }}';
+        var ajax_url = "{% url 'ajax_schedule' %}";
     </script>
-
     <script type="text/javascript" src="{{ STATIC_URL }}bootstrap/js/bootstrap-typeahead.js"></script>
     <script type="text/javascript" src="{{ STATIC_URL }}timepiece/js/handsontable/jquery.handsontable.js"></script>
     <script type="text/javascript" src="{{ STATIC_URL }}timepiece/js/ajax.js"></script>
-
-    <script type="text/javascript" src="{{ STATIC_URL }}timepiece/js/project_hours/models.js"></script>
-    <script type="text/javascript" src="{{ STATIC_URL }}timepiece/js/project_hours/app.js"></script>
+    <script type="text/javascript" src="{{ STATIC_URL }}timepiece/js/schedule/models.js"></script>
+    <script type="text/javascript" src="{{ STATIC_URL }}timepiece/js/schedule/app.js"></script>
 {% endblock extrajs %}
 
 {% block extracss %}
@@ -23,7 +21,7 @@
 
 {% block crumbs %}
     {{ block.super }}
-    <li><span class="divider">/</span> <a href=""> Edit</a></li>
+    <li><span class="divider">/</span> <a href="">Edit</a></li>
 {% endblock crumbs %}
 
 {% block bodyid %}project-hours{% endblock bodyid %}
@@ -38,24 +36,23 @@
     </div>
 
     <div class="row-fluid">
-        <div class="span4">
-            <form class="form-inline" method="get">
+        <div class="span7">
+            <form class="form-inline" accept-charset="UTF-8" method="get" action="">
                 {{ form|as_bootstrap:"inline" }}
                 <button type="submit" class="btn">Update</button>
             </form>
-
         </div>
-        <div class="span5 offset3">
-            <form class="form-inline right" method="post" action="{% url 'ajax_schedule' %}">
+
+        <div class="span5">
+            <form class="form-inline right" method="post" action="{% url 'edit_schedule' %}">
                 {% csrf_token %}
-                <input type="hidden" name="duplicate" value="duplicate" />
-                <input type="hidden" name="week_update" value="{{ week|date:'Y-m-d' }}" />
-                <button id="copy" type="submit" class="btn">Copy previous week</button>
+                <input type="hidden" name="duplicate" value="{{ prev_week|date:'Y-m-d' }}" />
+                <button id="copy" class="btn" type="submit">Copy Previous Week</button>
             </form>
             <form class="form-inline right" method="post" action="{% url 'edit_schedule' %}">
                 {% csrf_token %}
-                <input type="hidden" name="week_start" value="{{ week|date:'Y-m-d' }}" />
-                <button type="submit" class="btn">Publish hours</button>
+                <input type="hidden" name="publish" value="publish" />
+                <button class="btn" type="submit">Publish</button>
             </form>
         </div>
     </div>
