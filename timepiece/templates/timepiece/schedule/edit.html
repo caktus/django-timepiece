@@ -9,14 +9,14 @@
         var ajax_url = "{% url 'ajax_schedule' %}";
     </script>
     <script type="text/javascript" src="{{ STATIC_URL }}bootstrap/js/bootstrap-typeahead.js"></script>
-    <script type="text/javascript" src="{{ STATIC_URL }}handsontable/jquery.handsontable.js"></script>
+    <script type="text/javascript" src="{{ STATIC_URL }}handsontable/jquery.handsontable-0.8.3.full.js"></script>
     <script type="text/javascript" src="{{ STATIC_URL }}timepiece/js/ajax.js"></script>
     <script type="text/javascript" src="{{ STATIC_URL }}timepiece/js/schedule/models.js"></script>
     <script type="text/javascript" src="{{ STATIC_URL }}timepiece/js/schedule/app.js"></script>
 {% endblock extrajs %}
 
 {% block extracss %}
-    <link type="text/css" rel="stylesheet" href="{{ STATIC_URL }}handsontable/jquery.handsontable.css" />
+    <link type="text/css" rel="stylesheet" href="{{ STATIC_URL }}handsontable/jquery.handsontable-0.8.3.full.css" />
 {% endblock extracss %}
 
 {% block crumbs %}

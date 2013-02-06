@@ -151,9 +151,20 @@ $.del = function(url, data, success, error) {
     ajax(url, data, success, error, 'DELETE');
 };
 
+function boldRenderer (instance, td, row, col, prop, value, cellProperties) {
+    Handsontable.TextCell.renderer.apply(this, arguments);
+    $(td).css({'font-weight': 'bold'});
+}
+
+function publishedRenderer (instance, td, row, col, prop, value, cellProperties) {
+    Handsontable.TextCell.renderer.apply(this, arguments);
+    $(td).css({color: 'white', backgroundColor: 'green'});
+}
+
 $(function() {
     var table = $('.dataTable').handsontable({
-        rows: 3,
+        startCols: 0,
+        startRows: 0,
 
         fillHandle: false,
 
@@ -164,31 +175,16 @@ $(function() {
 
         enterBeginsEditing: true,
 
-        legend: [
-            {   // Match the first row and bold it
-                match: function(row, col, data) {
-                    return (row === 0);
-                },
-                style: {
-                    fontWeight: 'bold'
-                }
-            },
-            {   // Match the cells with content
-                match: function(row, col, data) {
-                    var ph = assignments.get_by_row_col(row, col);
-
-                    if(ph && ph.published) {
-                        return (row > 0 && col > 0 && data()[row][col] !== '');
-                    }
-
-                    return false;
-                },
-                style: {
-                    color: 'white',
-                    backgroundColor: 'green'
-                }
+        cells: function (row, col, prop) {
+            if (row === 0) {
+                return {type: {renderer: boldRenderer}};
             }
-        ],
+
+            var assignment = assignments.get_by_row_col(row, col);
+            if (assignment && assignment.published) {
+                return {type: {renderer: publishedRenderer}};
+            }
+        },
 
         autoComplete: [
             {
@@ -197,7 +193,8 @@ $(function() {
                 },
                 source: function() {
                     return all_projects.collection;
-                }
+                },
+                strict: true
             },
             {
                 match: function(row, col, data) {
@@ -205,7 +202,8 @@ $(function() {
                 },
                 source: function() {
                     return all_users.collection;
-                }
+                },
+                strict: true
             }
         ],
 
