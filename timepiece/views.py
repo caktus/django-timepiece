@@ -148,7 +148,9 @@ def clock_in(request):
 def clock_out(request):
     entry = utils.get_active_entry(request.user)
     if not entry:
-        raise Http404
+        message = "Not clocked in"
+        messages.info(request, message)
+        return HttpResponseRedirect(reverse('dashboard'))
     if request.POST:
         form = timepiece_forms.ClockOutForm(request.POST, instance=entry)
         if form.is_valid():
