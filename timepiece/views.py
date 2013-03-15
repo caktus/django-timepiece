@@ -14,7 +14,7 @@ from django.contrib.auth.models import User, Permission
 from django.contrib.contenttypes.models import ContentType
 from django.core import exceptions
 from django.core.urlresolvers import reverse, resolve
-from django.db import transaction
+from django.db import transaction, DatabaseError
 from django.db.models import Sum, Q, Min, Max
 from django.http import HttpResponse, HttpResponseRedirect
 from django.http import Http404, HttpResponseForbidden
@@ -617,10 +617,34 @@ def create_invoice(request):
     invoice_form = timepiece_forms.InvoiceForm(request.POST or None,
                                                initial=initial)
     if request.POST and invoice_form.is_valid():
-        invoice = invoice_form.save()
         entries = timepiece.Entry.no_join.filter(**entries_query)
-        entries.update(status=invoice.status, entry_group=invoice)
-        return HttpResponseRedirect(reverse('view_invoice', args=[invoice.pk]))
+        if entries.exists():
+            # LOCK the entries until our transaction completes - nobody
+            # else will be able to lock or change them - see
+            # https://docs.djangoproject.com/en/1.4/ref/models/querysets/#select-for-update
+            # (This feature requires Django 1.4.)
+            # If more than one request is trying to create an invoice from
+            # these same entries, then the second one to get to this line will
+            # throw a DatabaseError.  That can happen if someone double-clicks
+            # the Create Invoice button.
+            try:
+                entries.select_for_update(nowait=True)
+            except DatabaseError:
+                # Whoops, we lost the race
+                messages.add_message(request, messages.ERROR,
+                                     "Lock error trying to get entries")
+            else:
+                # We got the lock, we can carry on
+                invoice = invoice_form.save()
+                entries.update(status=invoice.status,
+                               entry_group=invoice)
+                messages.add_message(request, messages.INFO,
+                                     "Invoice created")
+                return HttpResponseRedirect(reverse('view_invoice',
+                                                    args=[invoice.pk]))
+        else:
+            messages.add_message(request, messages.ERROR,
+                                 "No entries for invoice")
     else:
         entries = timepiece.Entry.objects.filter(**entries_query)
         entries = entries.order_by('start_time')
