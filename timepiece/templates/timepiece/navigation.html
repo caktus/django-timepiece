@@ -5,30 +5,32 @@
     <div class="navbar-inner">
         <div class="container-fluid visible-desktop">
             {% block navbar-left %}
+                <a class="brand" href="/">Timepiece</a>
                 <ul class="nav pull-left">
-                <li class="active"><a class="brand" href="/">Timepiece</a></li>
-                {% block quick-clock-in %}
-                    {% if perms.timepiece.can_clock_in %}
-                        <li class="dropdown">
-                            <a href="#" class="dropdown-toggle" data-toggle="dropdown"><i class="icon-time icon-white"> </i><b class="caret"></b> </a>
-                            <ul class="dropdown-menu">
-                                <li><a href="{% url 'clock_in' %}">Clock in...</a></li>
-                                <li><a href="{% url 'create_entry' %}">Add Entry...</a></li>
-                                {% if work_projects %}<li class="divider"></li>{% endif %}
-                                {% for project in work_projects %}
-                                    <li><a href="{% url 'clock_in' %}?project={{ project.id }}">{{ project }}</a></li>
-                                {% endfor %}
-                                {% if leave_projects %}<li class="divider"></li>{% endif %}
-                                {% for project in leave_projects %}
-                                    <li><a href="{% url 'clock_in' %}?project={{ project.id }}">{{ project }}</a></li>
-                                {% endfor %}
-                            </ul>
+                    {% block quick-clock-in %}
+                        {% if perms.timepiece.can_clock_in %}
+                            <li class="dropdown">
+                                <a href="#" class="dropdown-toggle" data-toggle="dropdown"><i class="icon-time icon-white"> </i><b class="caret"></b> </a>
+                                <ul class="dropdown-menu">
+                                    <li><a href="{% url 'clock_in' %}">Clock in...</a></li>
+                                    <li><a href="{% url 'create_entry' %}">Add Entry...</a></li>
+                                    {% if work_projects %}<li class="divider"></li>{% endif %}
+                                    {% for project in work_projects %}
+                                        <li><a href="{% url 'clock_in' %}?project={{ project.id }}">{{ project }}</a></li>
+                                    {% endfor %}
+                                    {% if leave_projects %}<li class="divider"></li>{% endif %}
+                                    {% for project in leave_projects %}
+                                        <li><a href="{% url 'clock_in' %}?project={{ project.id }}">{{ project }}</a></li>
+                                    {% endfor %}
+                                </ul>
+                            </li>
                         {% endif %}
-                {% endblock %}
+                    {% endblock %}
 
                     {% if perms.timepiece.add_entry %}
                         <li><a href="{% url 'view_user_timesheet' request.user.pk %}">Time Sheet</a></li>
                     {% endif %}
+
                     {% if perms.timepiece.view_project or perms.auth.view_user or perms.timepiece.view_business or perms.timepiece.add_project_contract %}
                         <li class="dropdown">
                             <a href="#" class="dropdown-toggle" data-toggle="dropdown">CRM <b class="caret"></b></a>
@@ -48,6 +50,7 @@
                             </ul>
                         </li>
                     {% endif %}
+
                     {% if perms.timepiece.can_clock_in or perms.timepiece.view_entry_summary or perms.timepiece.view_payroll_summary or perms.timepiece.change_entrygroup or user.is_staff %}
                         <li class="dropdown">
                             <a href="#" class="dropdown-toggle" data-toggle="dropdown">Management <b class="caret"></b></a>
@@ -88,7 +91,6 @@
                             </ul>
                         </li>
                     {% endfor %}
-
                 </ul>
             {% endblock %}
 
@@ -135,6 +137,7 @@
                     {% if perms.timepiece.add_entry %}
                         <li><a href="{% url 'dashboard' %}">Dashboard</a></li>
                         <li><a href="{% url 'view_user_timesheet' request.user.pk %}">Time Sheet</a></li>
+                        <li><a href="{% url 'view_schedule' %}">Schedule</a></li>
                         <li><a href="{% url 'create_entry' %}">Add Entry</a></li>
                         <li><a href="{% url 'auth_logout' %}">Logout</a></li>
                     {% endif %}
