@@ -3,30 +3,29 @@ import datetime
 from decimal import Decimal
 
 from dateutil.relativedelta import relativedelta
-import mock
 
 from django.contrib.auth.models import Permission, User
 from django.contrib.contenttypes.models import ContentType
-from django.core.exceptions import ValidationError
 from django.core.urlresolvers import reverse
 
-from timepiece import models as timepiece
 from timepiece import utils
-from timepiece.models import ContractHour
+from timepiece.models import ProjectHours, Entry
 from timepiece.tests.base import TimepieceDataTestCase
 
 
-class ProjectHoursTestCase(TimepieceDataTestCase):
+__all__ = ['ScheduleTestBase', 'ScheduleViewTestCase', 'ScheduleEditTestCase',
+        'ScheduleModelTestCase']
+
+
+class ScheduleTestBase(TimepieceDataTestCase):
 
     def setUp(self):
-        self.user = self.create_user('user', 'u@abc.com', 'abc')
-        permissions = Permission.objects.filter(
-            content_type=ContentType.objects.get_for_model(timepiece.Entry),
-            codename__in=('can_clock_in', 'can_clock_out', 'can_pause',
-                    'change_entry')
-        )
-        self.user.user_permissions = permissions
-        self.user.save()
+        perm_names = ['can_clock_in', 'can_clock_out', 'can_pause',
+                'change_entry']
+        permissions = Permission.objects.filter(codename__in=perm_names,
+                content_type=ContentType.objects.get_for_model(Entry))
+        self.user = self.create_user('user', 'u@abc.com', 'abc',
+                user_permissions=permissions)
         self.superuser = self.create_user('super', 's@abc.com', 'abc',
                 is_superuser=True)
 
@@ -70,24 +69,24 @@ class ProjectHoursTestCase(TimepieceDataTestCase):
         self.untracked_project = self.create_project(True, 'Untracked', data)
 
 
-class ProjectHoursModelTestCase(ProjectHoursTestCase):
+class ScheduleModelTestCase(ScheduleTestBase):
 
     def test_week_start(self):
         """week_start should always save to Monday of the given week."""
         monday = datetime.date(2012, 07, 16)
         for i in range(7):
             date = monday + relativedelta(days=i)
-            entry = timepiece.ProjectHours.objects.create(
+            entry = ProjectHours.objects.create(
                     week_start=date, project=self.tracked_project,
                     user=self.user)
             self.assertEquals(entry.week_start.date(), monday)
-            timepiece.ProjectHours.objects.all().delete()
+            ProjectHours.objects.all().delete()
 
 
-class ProjectHoursListViewTestCase(ProjectHoursTestCase):
+class ScheduleViewTestCase(ScheduleTestBase):
 
     def setUp(self):
-        super(ProjectHoursListViewTestCase, self).setUp()
+        super(ScheduleViewTestCase, self).setUp()
         self.past_week = utils.get_week_start(datetime.date(2012, 4, 1)).date()
         self.current_week = utils.get_week_start().date()
         for i in range(5):
@@ -114,6 +113,7 @@ class ProjectHoursListViewTestCase(ProjectHoursTestCase):
         """Page shows project hours entries from the current week."""
         data = {}
         response = self.client.get(self.url, data)
+        self.assertEquals(response.status_code, 200)
         self.assertEquals(response.context['week'], self.current_week)
 
     def test_week_filter(self):
@@ -123,6 +123,7 @@ class ProjectHoursListViewTestCase(ProjectHoursTestCase):
             'submit': '',
         }
         response = self.client.get(self.url, data)
+        self.assertEquals(response.status_code, 200)
         self.assertEquals(response.context['week'].date(), self.past_week)
 
         all_entries = utils.get_project_hours_for_week(self.past_week)
@@ -148,6 +149,7 @@ class ProjectHoursListViewTestCase(ProjectHoursTestCase):
             'submit': '',
         }
         response = self.client.get(self.url, data)
+        self.assertEquals(response.status_code, 200)
         self.assertEquals(response.context['week'].date(), monday)
 
     def test_no_entries(self):
@@ -157,12 +159,14 @@ class ProjectHoursListViewTestCase(ProjectHoursTestCase):
             'submit': '',
         }
         response = self.client.get(self.url, data)
+        self.assertEquals(response.status_code, 200)
         self.assertEquals(len(response.context['projects']), 0)
         self.assertEquals(len(response.context['users']), 0)
 
     def test_all_users_for_project(self):
         """Each project should list hours for every user."""
         response = self.client.get(self.url)
+        self.assertEquals(response.status_code, 200)
         projects = response.context['projects']
         users = response.context['users']
 
@@ -170,9 +174,10 @@ class ProjectHoursListViewTestCase(ProjectHoursTestCase):
             self.assertEquals(len(entries), len(users))
 
 
-class ProjectHoursEditTestCase(ProjectHoursTestCase):
+class ScheduleEditTestCase(ScheduleTestBase):
+
     def setUp(self):
-        super(ProjectHoursEditTestCase, self).setUp()
+        super(ScheduleEditTestCase, self).setUp()
         self.permission = Permission.objects.filter(
             codename='add_projecthours')
         self.manager = self.create_user('manager', 'e@e.com', 'abc')
@@ -185,17 +190,17 @@ class ProjectHoursEditTestCase(ProjectHoursTestCase):
 
     def create_project_hours(self):
         """Create project hours data"""
-        timepiece.ProjectHours.objects.create(
+        ProjectHours.objects.create(
             week_start=self.week_start, project=self.tracked_project,
             user=self.user, hours="25.0")
-        timepiece.ProjectHours.objects.create(
+        ProjectHours.objects.create(
             week_start=self.week_start, project=self.tracked_project,
             user=self.manager, hours="5.0")
 
-        timepiece.ProjectHours.objects.create(
+        ProjectHours.objects.create(
             week_start=self.next_week, project=self.tracked_project,
             user=self.user, hours="15.0")
-        timepiece.ProjectHours.objects.create(
+        ProjectHours.objects.create(
             week_start=self.next_week, project=self.tracked_project,
             user=self.manager, hours="2.0")
 
@@ -383,7 +388,7 @@ class ProjectHoursEditTestCase(ProjectHoursTestCase):
             self.user.id: 15.0
         }
         for entry in data['project_hours']:
-            self.assertEqual(entry['hours'], correct_hours[entry['user']])
+            self.assertEquals(entry['hours'], correct_hours[entry['user']])
 
     def test_ajax_create_successful(self):
         """
@@ -392,7 +397,7 @@ class ProjectHoursEditTestCase(ProjectHoursTestCase):
         """
         self.client.login(username='manager', password='abc')
 
-        self.assertEquals(timepiece.ProjectHours.objects.count(), 0)
+        self.assertEquals(ProjectHours.objects.count(), 0)
 
         data = {
             'hours': 5,
@@ -403,8 +408,8 @@ class ProjectHoursEditTestCase(ProjectHoursTestCase):
         response = self.client.post(self.ajax_url, data=data)
         self.assertEquals(response.status_code, 200)
 
-        ph = timepiece.ProjectHours.objects.get()
-        self.assertEquals(timepiece.ProjectHours.objects.count(), 1)
+        ph = ProjectHours.objects.get()
+        self.assertEquals(ProjectHours.objects.count(), 1)
         self.assertEquals(int(response.content), ph.pk)
         self.assertEquals(ph.hours, Decimal("5.0"))
 
@@ -415,11 +420,11 @@ class ProjectHoursEditTestCase(ProjectHoursTestCase):
         """
         self.client.login(username='manager', password='abc')
 
-        self.assertEquals(timepiece.ProjectHours.objects.count(), 0)
+        self.assertEquals(ProjectHours.objects.count(), 0)
 
         self.ajax_posts()
 
-        self.assertEquals(timepiece.ProjectHours.objects.count(), 0)
+        self.assertEquals(ProjectHours.objects.count(), 0)
 
     def test_ajax_update_successful(self):
         """
@@ -428,7 +433,7 @@ class ProjectHoursEditTestCase(ProjectHoursTestCase):
         """
         self.client.login(username='manager', password='abc')
 
-        ph = timepiece.ProjectHours.objects.create(
+        ph = ProjectHours.objects.create(
             hours=Decimal('5.0'),
             project=self.tracked_project,
             user=self.manager
@@ -442,7 +447,7 @@ class ProjectHoursEditTestCase(ProjectHoursTestCase):
         })
         self.assertEquals(response.status_code, 200)
 
-        ph = timepiece.ProjectHours.objects.get()
+        ph = ProjectHours.objects.get()
         self.assertEquals(ph.hours, Decimal("10"))
 
     def test_ajax_update_unsuccessful(self):
@@ -452,7 +457,7 @@ class ProjectHoursEditTestCase(ProjectHoursTestCase):
         """
         self.client.login(username='manager', password='abc')
 
-        ph = timepiece.ProjectHours.objects.create(
+        ph = ProjectHours.objects.create(
             hours=Decimal('10.0'),
             project=self.untracked_project,
             user=self.manager
@@ -460,7 +465,7 @@ class ProjectHoursEditTestCase(ProjectHoursTestCase):
 
         self.ajax_posts()
 
-        self.assertEquals(timepiece.ProjectHours.objects.count(), 1)
+        self.assertEquals(ProjectHours.objects.count(), 1)
         self.assertEquals(ph.hours, Decimal('10.0'))
 
     def test_ajax_delete_successful(self):
@@ -470,18 +475,19 @@ class ProjectHoursEditTestCase(ProjectHoursTestCase):
         """
         self.client.login(username='manager', password='abc')
 
-        ph = timepiece.ProjectHours.objects.create(
+        ph = ProjectHours.objects.create(
             hours=Decimal('5.0'),
             project=self.tracked_project,
             user=self.manager
         )
 
-        url = reverse('ajax_schedule_detail', args=(ph.pk,))
+        url = reverse('ajax_schedule')
 
+        # TODO: update this
         response = self.client.delete(url)
         self.assertEquals(response.status_code, 200)
 
-        self.assertEquals(timepiece.ProjectHours.objects.count(), 0)
+        self.assertEquals(ProjectHours.objects.count(), 0)
 
     def test_duplicate_successful(self):
         """
@@ -501,9 +507,10 @@ class ProjectHoursEditTestCase(ProjectHoursTestCase):
         self.assertEquals(response.status_code, 200)
 
         messages = response.context['messages']
+        self.assertEquals(len(messages), 1)
         self.assertEquals(messages._loaded_messages[0].message, msg)
 
-        ph = timepiece.ProjectHours.objects.all()
+        ph = ProjectHours.objects.all()
         self.assertEquals(ph.count(), 6)
         self.assertEquals(ph.filter(week_start__gte=self.future).count(), 2)
 
@@ -525,7 +532,7 @@ class ProjectHoursEditTestCase(ProjectHoursTestCase):
         }, follow=True)
         self.assertEquals(response.status_code, 500)
 
-        self.assertEquals(timepiece.ProjectHours.objects.count(), 4)
+        self.assertEquals(ProjectHours.objects.count(), 4)
 
     def test_duplicate_dates(self):
         """
@@ -544,12 +551,13 @@ class ProjectHoursEditTestCase(ProjectHoursTestCase):
         self.assertEquals(response.status_code, 200)
 
         messages = response.context['messages']
+        self.assertEquals(len(messages), 1)
         self.assertEquals(messages._loaded_messages[0].message, msg)
 
-        this_week_qs = timepiece.ProjectHours.objects.filter(
+        this_week_qs = ProjectHours.objects.filter(
             week_start=self.week_start
         ).values_list('hours', flat=True)
-        next_week_qs = timepiece.ProjectHours.objects.filter(
+        next_week_qs = ProjectHours.objects.filter(
             week_start=self.next_week
         ).values_list('hours', flat=True)
 
@@ -557,8 +565,8 @@ class ProjectHoursEditTestCase(ProjectHoursTestCase):
         this_week_qs = list(this_week_qs)
         next_week_qs = list(next_week_qs)
 
-        self.assertEquals(timepiece.ProjectHours.objects.count(), 4)
-        self.assertEquals(timepiece.ProjectHours.objects.filter(
+        self.assertEquals(ProjectHours.objects.count(), 4)
+        self.assertEquals(ProjectHours.objects.filter(
             published=False).count(), 4)
         self.assertEquals(this_week_qs, next_week_qs)
 
@@ -578,6 +586,7 @@ class ProjectHoursEditTestCase(ProjectHoursTestCase):
         self.assertEquals(response.status_code, 200)
 
         messages = response.context['messages']
+        self.assertEquals(len(messages), 1)
         self.assertEquals(messages._loaded_messages[0].message, msg)
 
     def test_publish_hours(self):
@@ -590,16 +599,17 @@ class ProjectHoursEditTestCase(ProjectHoursTestCase):
 
         msg = 'Unpublished project hours are now published'
 
-        ph = timepiece.ProjectHours.objects.filter(published=True)
+        ph = ProjectHours.objects.filter(published=True)
         self.assertEquals(ph.count(), 0)
 
         response = self.client.post(self.view_url, follow=True)
         self.assertEquals(response.status_code, 200)
 
         messages = response.context['messages']
+        self.assertEquals(len(messages), 1)
         self.assertEquals(messages._loaded_messages[0].message, msg)
 
-        ph = timepiece.ProjectHours.objects.filter(published=True)
+        ph = ProjectHours.objects.filter(published=True)
         self.assertEquals(ph.count(), 2)
 
         for p in ph:
@@ -615,100 +625,14 @@ class ProjectHoursEditTestCase(ProjectHoursTestCase):
 
         msg = 'There were no hours to publish'
 
-        timepiece.ProjectHours.objects.update(published=True)
+        ProjectHours.objects.update(published=True)
 
         response = self.client.post(self.view_url, follow=True)
         self.assertEquals(response.status_code, 200)
 
         messages = response.context['messages']
+        self.assertEquals(len(messages), 1)
         self.assertEquals(messages._loaded_messages[0].message, msg)
 
-        ph = timepiece.ProjectHours.objects.filter(published=True)
+        ph = ProjectHours.objects.filter(published=True)
         self.assertEquals(ph.count(), 4)
-
-
-class ContractHourTestCase(ProjectHoursTestCase):
-    def test_defaults(self):
-        contract_hour = ContractHour()
-        self.assertEqual(0, contract_hour.hours)
-        self.assertEqual(ContractHour.PENDING_STATUS, contract_hour.status)
-
-    def test_contracted_hours(self):
-        # If we create some Contract Hour objects and then go to the
-        # project contract and get contracted_hours(), it gives the sum
-        # of the hours
-        pc = self.create_contract(num_hours=4)
-        self.assertEqual(4, pc.contracted_hours())
-        self.assertEqual(0, pc.pending_hours())
-
-    def test_pending_hours(self):
-        # If we create some pending Contract Hour objects and then go to the
-        # project contract and get pending_hours(), it gives the sum
-        # of the hours
-        pc = self.create_contract(num_hours=4)
-        ch = self.create_contract_hour({
-            'contract': pc,
-            'hours': 27,
-            'status': timepiece.ContractHour.PENDING_STATUS
-        })
-        self.assertEqual(4, pc.contracted_hours())
-        self.assertEqual(27, pc.pending_hours())
-        ch.delete()
-        self.assertEqual(4, pc.contracted_hours())
-        self.assertEqual(0, pc.pending_hours())
-
-    def test_validation(self):
-        with self.assertRaises(ValidationError):
-            ch = self.create_contract_hour({
-                'status': timepiece.ContractHour.PENDING_STATUS,
-                'date_approved': datetime.date.today(),
-            })
-            ch.clean()
-
-    def test_default_date_approved(self):
-        # If saved with status approved and no date approved,
-        # it sets it to today
-        ch = self.create_contract_hour({
-            'status': timepiece.ContractHour.APPROVED_STATUS,
-            'date_approved': None,
-        })
-        ch = timepiece.ContractHour.objects.get(pk=ch.pk)
-        self.assertEqual(datetime.date.today(), ch.date_approved)
-
-class ContractHourEmailTestCase(ProjectHoursTestCase):
-    def test_save_pending_calls_send_email(self):
-        with mock.patch('timepiece.models.ContractHour._send_mail') as send_mail:
-            self.create_contract_hour({
-                'status': timepiece.ContractHour.PENDING_STATUS
-            })
-        self.assertTrue(send_mail.called)
-        (subject, ctx) = send_mail.call_args[0]
-        self.assertTrue(subject.startswith("New"))
-
-    def test_save_approved_does_not_call_send_email(self):
-        with mock.patch('timepiece.models.ContractHour._send_mail') as send_mail:
-            self.create_contract_hour({
-                'status': timepiece.ContractHour.APPROVED_STATUS
-            })
-        self.assertFalse(send_mail.called)
-
-    def test_delete_pending_calls_send_email(self):
-        ch = self.create_contract_hour({
-            'status': timepiece.ContractHour.PENDING_STATUS
-        })
-        with mock.patch('timepiece.models.ContractHour._send_mail') as send_mail:
-            ch.delete()
-        self.assertTrue(send_mail.called)
-        (subject, ctx) = send_mail.call_args[0]
-        self.assertTrue(subject.startswith("Deleted"))
-
-    def test_change_pending_calls_send_email(self):
-        ch = self.create_contract_hour({
-            'status': timepiece.ContractHour.PENDING_STATUS
-        })
-        with mock.patch('timepiece.models.ContractHour._send_mail') as send_mail:
-            ch.save()
-        self.assertTrue(send_mail.called)
-        (subject, ctx) = send_mail.call_args[0]
-        self.assertTrue(subject.startswith("Changed"))
-
