@@ -1006,7 +1006,7 @@ class UserProfile(models.Model):
         return unicode(self.user)
 
 
-class ProjectHours(models.Model):
+class ScheduleAssignment(models.Model):
     week_start = models.DateField(verbose_name='start of week')
     project = models.ForeignKey(Project)
     user = models.ForeignKey(User)
@@ -1024,8 +1024,7 @@ class ProjectHours(models.Model):
     def save(self, *args, **kwargs):
         # Ensure that week_start is the Monday of a given week.
         self.week_start = utils.get_week_start(self.week_start)
-        return super(ProjectHours, self).save(*args, **kwargs)
+        return super(ScheduleAssignment, self).save(*args, **kwargs)
 
     class Meta:
-        verbose_name = 'schedule assignment'
         unique_together = ('week_start', 'project', 'user')

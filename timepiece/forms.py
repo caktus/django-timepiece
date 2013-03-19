@@ -17,7 +17,7 @@ from timepiece.fields import UserModelChoiceField
 from timepiece.lookups import ProjectLookup, QuickLookup
 from timepiece.lookups import UserLookup, BusinessLookup
 from timepiece.models import Project, Entry, Activity, UserProfile, Attribute
-from timepiece.models import ProjectHours
+from timepiece.models import ScheduleAssignment
 
 
 DATE_FORM_FORMAT = '%Y-%m-%d'
@@ -597,13 +597,14 @@ class ScheduleSearchForm(forms.Form):
 class AssignmentForm(forms.ModelForm):
 
     def save(self, *args, **kwargs):
-        assignment = super(AssignmentForm, self).save(commit=False, *args, **kwargs)
+        assignment = super(AssignmentForm, self).save(commit=False, *args,
+                **kwargs)
         assignment.published = False
         assignment.save()
         return assignment
 
     class Meta:
-        model = ProjectHours
+        model = ScheduleAssignment
 
 
 class ProductivityReportForm(forms.Form):

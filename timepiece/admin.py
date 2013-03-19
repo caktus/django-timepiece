@@ -116,7 +116,7 @@ class LocationAdmin(admin.ModelAdmin):
 admin.site.register(timepiece.Location, LocationAdmin)
 
 
-class ProjectHoursAdmin(admin.ModelAdmin):
+class ScheduleAssignmentAdmin(admin.ModelAdmin):
     list_display = ('_user', 'project', 'week_start', 'hours', 'published')
 
     def _user(self, obj):
@@ -124,7 +124,7 @@ class ProjectHoursAdmin(admin.ModelAdmin):
     _user.short_description = 'User'
     _user.admin_order_field = 'user__last_name'
 
-admin.site.register(timepiece.ProjectHours, ProjectHoursAdmin)
+admin.site.register(timepiece.ScheduleAssignment, ScheduleAssignmentAdmin)
 
 
 class UserProfileAdmin(admin.ModelAdmin):

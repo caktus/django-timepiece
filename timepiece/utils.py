@@ -410,7 +410,7 @@ def process_progress(entries, assignments):
     The list is ordered by project name.
     """
     Project = get_model('timepiece', 'Project')
-    ProjectHours = get_model('timepiece', 'ProjectHours')
+    ScheduleAssignment = get_model('timepiece', 'ScheduleAssignment')
 
     # Determine all projects either worked or assigned.
     project_q = Q(id__in=assignments.values_list('project__id', flat=True))
@@ -422,7 +422,7 @@ def process_progress(entries, assignments):
     for project in projects:
         try:
             assigned = assignments.get(project__id=project.pk).hours
-        except ProjectHours.DoesNotExist:
+        except ScheduleAssignment.DoesNotExist:
             assigned = Decimal('0.00')
         project_data[project.pk] = {
             'project': project,

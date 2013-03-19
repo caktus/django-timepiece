@@ -9,12 +9,12 @@ from django.contrib.contenttypes.models import ContentType
 from django.core.urlresolvers import reverse
 
 from timepiece import utils
-from timepiece.models import ProjectHours, Entry
+from timepiece.models import ScheduleAssignment, Entry
 from timepiece.tests.base import TimepieceDataTestCase
 
 
 __all__ = ['ScheduleTestBase', 'ScheduleViewTestCase', 'ScheduleEditTestCase',
-        'ScheduleModelTestCase']
+        'ScheduleAssignmentModelTestCase']
 
 
 class ScheduleTestBase(TimepieceDataTestCase):
@@ -69,18 +69,18 @@ class ScheduleTestBase(TimepieceDataTestCase):
         self.untracked_project = self.create_project(True, 'Untracked', data)
 
 
-class ScheduleModelTestCase(ScheduleTestBase):
+class ScheduleAssignmentModelTestCase(ScheduleTestBase):
 
     def test_week_start(self):
         """week_start should always save to Monday of the given week."""
         monday = datetime.date(2012, 07, 16)
         for i in range(7):
             date = monday + relativedelta(days=i)
-            entry = ProjectHours.objects.create(
+            entry = ScheduleAssignment.objects.create(
                     week_start=date, project=self.tracked_project,
                     user=self.user)
             self.assertEquals(entry.week_start.date(), monday)
-            ProjectHours.objects.all().delete()
+            ScheduleAssignment.objects.all().delete()
 
 
 class ScheduleViewTestCase(ScheduleTestBase):
@@ -190,17 +190,17 @@ class ScheduleEditTestCase(ScheduleTestBase):
 
     def create_project_hours(self):
         """Create project hours data"""
-        ProjectHours.objects.create(
+        ScheduleAssignment.objects.create(
             week_start=self.week_start, project=self.tracked_project,
             user=self.user, hours="25.0")
-        ProjectHours.objects.create(
+        ScheduleAssignment.objects.create(
             week_start=self.week_start, project=self.tracked_project,
             user=self.manager, hours="5.0")
 
-        ProjectHours.objects.create(
+        ScheduleAssignment.objects.create(
             week_start=self.next_week, project=self.tracked_project,
             user=self.user, hours="15.0")
-        ProjectHours.objects.create(
+        ScheduleAssignment.objects.create(
             week_start=self.next_week, project=self.tracked_project,
             user=self.manager, hours="2.0")
 
@@ -397,7 +397,7 @@ class ScheduleEditTestCase(ScheduleTestBase):
         """
         self.client.login(username='manager', password='abc')
 
-        self.assertEquals(ProjectHours.objects.count(), 0)
+        self.assertEquals(ScheduleAssignment.objects.count(), 0)
 
         data = {
             'hours': 5,
@@ -408,8 +408,8 @@ class ScheduleEditTestCase(ScheduleTestBase):
         response = self.client.post(self.ajax_url, data=data)
         self.assertEquals(response.status_code, 200)
 
-        ph = ProjectHours.objects.get()
-        self.assertEquals(ProjectHours.objects.count(), 1)
+        ph = ScheduleAssignment.objects.get()
+        self.assertEquals(ScheduleAssignment.objects.count(), 1)
         self.assertEquals(int(response.content), ph.pk)
         self.assertEquals(ph.hours, Decimal("5.0"))
 
@@ -420,11 +420,11 @@ class ScheduleEditTestCase(ScheduleTestBase):
         """
         self.client.login(username='manager', password='abc')
 
-        self.assertEquals(ProjectHours.objects.count(), 0)
+        self.assertEquals(ScheduleAssignment.objects.count(), 0)
 
         self.ajax_posts()
 
-        self.assertEquals(ProjectHours.objects.count(), 0)
+        self.assertEquals(ScheduleAssignment.objects.count(), 0)
 
     def test_ajax_update_successful(self):
         """
@@ -433,7 +433,7 @@ class ScheduleEditTestCase(ScheduleTestBase):
         """
         self.client.login(username='manager', password='abc')
 
-        ph = ProjectHours.objects.create(
+        ph = ScheduleAssignment.objects.create(
             hours=Decimal('5.0'),
             project=self.tracked_project,
             user=self.manager
@@ -447,7 +447,7 @@ class ScheduleEditTestCase(ScheduleTestBase):
         })
         self.assertEquals(response.status_code, 200)
 
-        ph = ProjectHours.objects.get()
+        ph = ScheduleAssignment.objects.get()
         self.assertEquals(ph.hours, Decimal("10"))
 
     def test_ajax_update_unsuccessful(self):
@@ -457,7 +457,7 @@ class ScheduleEditTestCase(ScheduleTestBase):
         """
         self.client.login(username='manager', password='abc')
 
-        ph = ProjectHours.objects.create(
+        ph = ScheduleAssignment.objects.create(
             hours=Decimal('10.0'),
             project=self.untracked_project,
             user=self.manager
@@ -465,7 +465,7 @@ class ScheduleEditTestCase(ScheduleTestBase):
 
         self.ajax_posts()
 
-        self.assertEquals(ProjectHours.objects.count(), 1)
+        self.assertEquals(ScheduleAssignment.objects.count(), 1)
         self.assertEquals(ph.hours, Decimal('10.0'))
 
     def test_ajax_delete_successful(self):
@@ -475,7 +475,7 @@ class ScheduleEditTestCase(ScheduleTestBase):
         """
         self.client.login(username='manager', password='abc')
 
-        ph = ProjectHours.objects.create(
+        ph = ScheduleAssignment.objects.create(
             hours=Decimal('5.0'),
             project=self.tracked_project,
             user=self.manager
@@ -487,7 +487,7 @@ class ScheduleEditTestCase(ScheduleTestBase):
         response = self.client.delete(url)
         self.assertEquals(response.status_code, 200)
 
-        self.assertEquals(ProjectHours.objects.count(), 0)
+        self.assertEquals(ScheduleAssignment.objects.count(), 0)
 
     def test_duplicate_successful(self):
         """
@@ -510,7 +510,7 @@ class ScheduleEditTestCase(ScheduleTestBase):
         self.assertEquals(len(messages), 1)
         self.assertEquals(messages._loaded_messages[0].message, msg)
 
-        ph = ProjectHours.objects.all()
+        ph = ScheduleAssignment.objects.all()
         self.assertEquals(ph.count(), 6)
         self.assertEquals(ph.filter(week_start__gte=self.future).count(), 2)
 
@@ -532,7 +532,7 @@ class ScheduleEditTestCase(ScheduleTestBase):
         }, follow=True)
         self.assertEquals(response.status_code, 500)
 
-        self.assertEquals(ProjectHours.objects.count(), 4)
+        self.assertEquals(ScheduleAssignment.objects.count(), 4)
 
     def test_duplicate_dates(self):
         """
@@ -554,10 +554,10 @@ class ScheduleEditTestCase(ScheduleTestBase):
         self.assertEquals(len(messages), 1)
         self.assertEquals(messages._loaded_messages[0].message, msg)
 
-        this_week_qs = ProjectHours.objects.filter(
+        this_week_qs = ScheduleAssignment.objects.filter(
             week_start=self.week_start
         ).values_list('hours', flat=True)
-        next_week_qs = ProjectHours.objects.filter(
+        next_week_qs = ScheduleAssignment.objects.filter(
             week_start=self.next_week
         ).values_list('hours', flat=True)
 
@@ -565,8 +565,8 @@ class ScheduleEditTestCase(ScheduleTestBase):
         this_week_qs = list(this_week_qs)
         next_week_qs = list(next_week_qs)
 
-        self.assertEquals(ProjectHours.objects.count(), 4)
-        self.assertEquals(ProjectHours.objects.filter(
+        self.assertEquals(ScheduleAssignment.objects.count(), 4)
+        self.assertEquals(ScheduleAssignment.objects.filter(
             published=False).count(), 4)
         self.assertEquals(this_week_qs, next_week_qs)
 
@@ -599,7 +599,7 @@ class ScheduleEditTestCase(ScheduleTestBase):
 
         msg = 'Unpublished project hours are now published'
 
-        ph = ProjectHours.objects.filter(published=True)
+        ph = ScheduleAssignment.objects.filter(published=True)
         self.assertEquals(ph.count(), 0)
 
         response = self.client.post(self.view_url, follow=True)
@@ -609,7 +609,7 @@ class ScheduleEditTestCase(ScheduleTestBase):
         self.assertEquals(len(messages), 1)
         self.assertEquals(messages._loaded_messages[0].message, msg)
 
-        ph = ProjectHours.objects.filter(published=True)
+        ph = ScheduleAssignment.objects.filter(published=True)
         self.assertEquals(ph.count(), 2)
 
         for p in ph:
@@ -625,7 +625,7 @@ class ScheduleEditTestCase(ScheduleTestBase):
 
         msg = 'There were no hours to publish'
 
-        ProjectHours.objects.update(published=True)
+        ScheduleAssignment.objects.update(published=True)
 
         response = self.client.post(self.view_url, follow=True)
         self.assertEquals(response.status_code, 200)
@@ -634,5 +634,5 @@ class ScheduleEditTestCase(ScheduleTestBase):
         self.assertEquals(len(messages), 1)
         self.assertEquals(messages._loaded_messages[0].message, msg)
 
-        ph = ProjectHours.objects.filter(published=True)
+        ph = ScheduleAssignment.objects.filter(published=True)
         self.assertEquals(ph.count(), 4)

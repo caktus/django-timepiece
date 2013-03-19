@@ -12,7 +12,7 @@ except ImportError:
     from timepiece import timezone
 
 from timepiece import utils
-from timepiece.models import Entry, ProjectHours
+from timepiece.models import Entry, ScheduleAssignment
 from timepiece.tests.base import TimepieceDataTestCase
 
 
@@ -188,7 +188,7 @@ class ProcessProgressTestCase(TimepieceDataTestCase):
 
     def _get_progress(self):
         entries = Entry.objects.all()
-        assignments = ProjectHours.objects.all()
+        assignments = ScheduleAssignment.objects.all()
         return utils.process_progress(entries, assignments)
 
     def _check_progress(self, progress, project, assigned, worked):

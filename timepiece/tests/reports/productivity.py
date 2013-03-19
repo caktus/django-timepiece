@@ -142,7 +142,8 @@ class TestProductivityReport(TimepieceDataTestCase):
     def test_no_data(self):
         """If no data, report should contain header row only."""
         timepiece.Entry.objects.filter(project=self.project).delete()
-        timepiece.ProjectHours.objects.filter(project=self.project).delete()
+        timepiece.ScheduleAssignment.objects.filter(
+                project=self.project).delete()
         data = {'project_1': self.project.pk, 'organize_by': 'week'}
         response = self._get(data=data)
         self.assertEqual(response.status_code, 200)

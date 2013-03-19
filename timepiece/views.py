@@ -75,7 +75,7 @@ def dashboard(request, active_tab):
     active_tab = active_tab or 'progress'
     user = request.user
     Entry = timepiece.Entry
-    ProjectHours = timepiece.ProjectHours
+    ScheduleAssignment = timepiece.ScheduleAssignment
 
     today = datetime.date.today()
     day = today
@@ -95,7 +95,7 @@ def dashboard(request, active_tab):
     week_entries = Entry.objects.filter(user=user) \
             .timespan(week_start, span='week', current=True) \
             .select_related('project')
-    assignments = ProjectHours.objects.filter(user=user,
+    assignments = ScheduleAssignment.objects.filter(user=user,
             week_start=week_start.date())
     project_progress = utils.process_progress(week_entries, assignments)
 
@@ -1543,7 +1543,7 @@ class ScheduleMixin(object):
         week_start = week_start or self.week_start
         week_end = week_start + relativedelta(days=7)
         dates = Q(week_start__gte=week_start, week_start__lt=week_end)
-        return timepiece.ProjectHours.objects.filter(dates)
+        return timepiece.ScheduleAssignment.objects.filter(dates)
 
     def get_assignment_vals(self, assignments=None):
         """Get ordered values for assignments."""
@@ -1642,7 +1642,7 @@ class ScheduleEdit(ScheduleMixin, TemplateView):
             entries.delete()
             try:
                 builder = duplicate_builder(other_entries, self.week_start)
-                timepiece.ProjectHours.objects.bulk_create(builder)
+                timepiece.ScheduleAssignment.objects.bulk_create(builder)
             except AttributeError:  # Django 1.3
                 for entry in duplicate_builder(other_entries, self.week_start):
                     entry.save()
@@ -1684,7 +1684,7 @@ class ScheduleAjax(ScheduleMixin, View):
             msg = 'Delete request should be a list of assignment ids.'
             return HttpResponse(msg, status=500)
 
-        assignments = timepiece.ProjectHours.objects.filter(pk__in=pks)
+        assignments = timepiece.ScheduleAssignment.objects.filter(pk__in=pks)
         existing = list(assignments.values_list('pk', flat=True))
         if len(existing) != len(pks):
             nonexisting = [pk for pk in pks if pk not in existing]
@@ -1729,7 +1729,7 @@ class ScheduleAjax(ScheduleMixin, View):
             project = timepiece.Project.objects.get(
                     pk=data.get('project', None))
             hours = data.get('hours', None)
-            assignment = timepiece.ProjectHours.objects.get(user=user,
+            assignment = timepiece.ScheduleAssignment.objects.get(user=user,
                     project=project, week_start=self.week_start)
             return assignment
         except exceptions.DoesNotExist:
@@ -1756,8 +1756,8 @@ class ScheduleAjax(ScheduleMixin, View):
             instance = None
             if pk:
                 try:
-                    instance = timepiece.ProjectHours.objects.get(pk=pk)
-                except ProjectHours.DoesNotExist:
+                    instance = timepiece.ScheduleAssignment.objects.get(pk=pk)
+                except ScheduleAssignment.DoesNotExist:
                     msg = 'Could not find assignment {0}; request '\
                           'aborted.'.format(pk)
                     return HttpResponse(msg, status=500)
@@ -1792,7 +1792,8 @@ def report_productivity(request):
 
         actualsQ = Q(project=project, end_time__isnull=False)
         actuals = timepiece.Entry.objects.filter(actualsQ)
-        projections = timepiece.ProjectHours.objects.filter(project=project)
+        projections = timepiece.ScheduleAssignment.objects.filter(
+                project=project)
         entry_count = actuals.count() + projections.count()
 
         if organize_by == 'week' and entry_count > 0:

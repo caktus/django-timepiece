@@ -289,8 +289,9 @@ class TimepieceDataTestCase(TestCase):
         project = project or self.create_project()
         user = user or self.create_user()
         hours = Decimal(str(random.random() * 20)) if hours is None else hours
-        return timepiece.ProjectHours.objects.create(week_start=week_start,
-                project=project, user=user, hours=hours, **kwargs)
+        return timepiece.ScheduleAssignment.objects.create(
+                week_start=week_start, project=project, user=user,
+                hours=hours, **kwargs)
 
     def setUp(self):
         self.user = self.create_user('user', 'u@abc.com', 'abc')
