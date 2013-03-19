@@ -1,7 +1,7 @@
 Release Notes
 =============
 
-0.8.2 (Unreleased)
+0.8.2 (Released 01-25-2013)
 ------------------
 
 Related issues are in the `0.8.2 milestone

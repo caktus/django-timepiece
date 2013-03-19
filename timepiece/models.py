@@ -1,10 +1,10 @@
 import datetime
 from dateutil.relativedelta import relativedelta
 from decimal import Decimal
-import logging
 
 from django.contrib.auth.models import User
 from django.contrib.sites.models import Site
+from django.core import validators
 from django.core.exceptions import ValidationError
 from django.core.mail import send_mail
 from django.db import models
@@ -1010,7 +1010,10 @@ class ProjectHours(models.Model):
     week_start = models.DateField(verbose_name='start of week')
     project = models.ForeignKey(Project)
     user = models.ForeignKey(User)
-    hours = models.DecimalField(max_digits=8, decimal_places=2, default=0)
+    hours = models.DecimalField(
+        max_digits=8, decimal_places=2, default=0,
+        validators=[validators.MinValueValidator(Decimal("0.01"))]
+    )
     published = models.BooleanField(default=False)
 
     def __unicode__(self):
