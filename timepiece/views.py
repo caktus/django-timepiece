@@ -1527,16 +1527,14 @@ class ScheduleMixin(object):
             return HttpResponseRedirect(url)
 
         # Since we use this param in multiple places, attach it to the class.
-        week_start = request.REQUEST.get('week_start', '')
+        week_start = request.REQUEST.get('week_start', None)
         if week_start:
             try:
                 week_start = datetime.datetime.strptime(week_start,
                                                         DATE_FORM_FORMAT)
-                self.week_start = utils.get_week_start(week_start).date()
             except:
-                self.week_start = utils.get_week_start().date()
-        else:
-            self.week_start = utils.get_week_start().date()
+                week_start = None
+        self.week_start = utils.get_week_start(week_start).date()
 
         return super(ScheduleMixin, self).dispatch(request, *args, **kwargs)
 
@@ -1585,19 +1583,10 @@ class ScheduleView(ScheduleMixin, TemplateView):
     template_name = 'timepiece/schedule/view.html'
     permissions = ('timepiece.can_clock_in',)
 
-    def get_context_data(self, **kwargs):
-        """Get all published schedule assignments for this week."""
-        context = super(ScheduleView, self).get_context_data(**kwargs)
-
-        # Retrieve assignments and users for this week.
-        assignments = self.get_assignment_vals().filter(published=True)
-        vals = ('user__id', 'user__first_name', 'user__last_name')
-        order = ('user__first_name', 'user__last_name', 'user__id')
-        users = assignments.values_list(*vals).distinct().order_by(*order)
-
-        # Create assignments table.
+    def create_assignments_table(self, assignments, users):
+        """Creates a table of assignments by project & user."""
         id_order = [user[0] for user in users]
-        projects = []
+        table = []
         func = lambda o: o['project__id']
         for project, entries in groupby(assignments, func):
             entries = list(entries)
@@ -1608,11 +1597,22 @@ class ScheduleView(ScheduleMixin, TemplateView):
                 index = id_order.index(entry['user__id'])
                 hours = entry['hours']
                 row[index] = row[index] + hours if row[index] else hours
-            projects.append((proj_id, name, row))
+            table.append((proj_id, name, row))
+        return table
+
+    def get_context_data(self, **kwargs):
+        """Get all published schedule assignments for this week."""
+        context = super(ScheduleView, self).get_context_data(**kwargs)
+
+        assignments = self.get_assignment_vals().filter(published=True)
+        vals = ('user__id', 'user__first_name', 'user__last_name')
+        order = ('user__first_name', 'user__last_name', 'user__id')
+        users = assignments.values_list(*vals).distinct().order_by(*order)
+        table = self.create_assignments_table(assignments, users)
 
         context.update({
             'users': users,
-            'projects': projects,
+            'projects': table,
         })
         return context
 
@@ -1662,14 +1662,13 @@ class ScheduleEdit(ScheduleMixin, TemplateView):
     def post(self, request, *args, **kwargs):
         """
         If publish is present, all unpublished assignments for this week are
-        published. If duplicate is present, entries from the given week
-        are duplicated to this week.
+        published. Otherwise, if duplicate is present, entries from the given
+        week are duplicated to this week.
         """
         if 'publish' in request.POST:
             self.publish_entries()
         elif 'duplicate' in request.POST:
             self.duplicate_entries(request.POST.get('duplicate'))
-
         return HttpResponseRedirect(self.get_edit_url())
 
 
@@ -1727,7 +1726,8 @@ class ScheduleAjax(ScheduleMixin, View):
     def get_instance(self, data):
         try:
             user = User.objects.get(pk=data.get('user', None))
-            project = timepiece.Project.objects.get(pk=data.get('project', None))
+            project = timepiece.Project.objects.get(
+                    pk=data.get('project', None))
             hours = data.get('hours', None)
             assignment = timepiece.ProjectHours.objects.get(user=user,
                     project=project, week_start=self.week_start)
@@ -1758,7 +1758,8 @@ class ScheduleAjax(ScheduleMixin, View):
                 try:
                     instance = timepiece.ProjectHours.objects.get(pk=pk)
                 except ProjectHours.DoesNotExist:
-                    msg = 'Could not find assignment {0}; request aborted.'.format(pk)
+                    msg = 'Could not find assignment {0}; request '\
+                          'aborted.'.format(pk)
                     return HttpResponse(msg, status=500)
             data_map['week_start'] = self.week_start
             form = timepiece_forms.AssignmentForm(data_map, instance=instance)
