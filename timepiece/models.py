@@ -112,6 +112,10 @@ class Project(models.Model):
     def __unicode__(self):
         return '{0} ({1})'.format(self.name, self.business.get_display_name())
 
+    @property
+    def billable(self):
+        return self.type.billable
+
 
 class RelationshipType(models.Model):
     name = models.CharField(max_length=255, unique=True)
@@ -841,11 +845,21 @@ class ProjectContract(models.Model):
 
     @property
     def hours_worked(self):
-        """Number of hours worked on the contract."""
+        """Number of billable hours worked on the contract."""
         if not hasattr(self, '_worked'):
             # TODO put this in a .extra w/a subselect
-            self._worked = self.entries.aggregate(s=Sum('hours'))['s'] or 0
+            entries = self.entries.filter(activity__billable=True)
+            self._worked = entries.aggregate(s=Sum('hours'))['s'] or 0
         return self._worked or 0
+
+    @property
+    def nonbillable_hours_worked(self):
+        """Number of non-billable hours worked on the contract."""
+        if not hasattr(self, '_nb_worked'):
+            # TODO put this in a .extra w/a subselect
+            entries = self.entries.filter(activity__billable=False)
+            self._nb_worked = entries.aggregate(s=Sum('hours'))['s'] or 0
+        return self._nb_worked or 0
 
 
 class ContractHour(models.Model):

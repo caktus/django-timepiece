@@ -99,8 +99,15 @@ def week_start(date):
 
 
 @register.simple_tag
-def get_uninvoiced_hours(entries):
+def get_uninvoiced_hours(entries, billable=None):
+    """Given an iterable of entries, return the total hours that have
+    not been invoices. If billable is passed as 'billable' or 'nonbillable',
+    limit to the corresponding entries.
+    """
     statuses = ('invoiced', 'not-invoiced')
+    if billable is not None:
+        billable = (billable.lower() == u'billable')
+        entries = [e for e in entries if e.activity.billable == billable]
     hours = sum([e.hours for e in entries if e.status not in statuses])
     return hours
 
@@ -163,10 +170,17 @@ def get_max_hours(context):
 # have to support Django 1.3.
 @register.simple_tag(takes_context=True)
 def project_hours_for_contract(context, contract, project,
-        variable='project_hours'):
-    """Total hours worked on project for contract."""
-    hours = contract.entries.filter(project=project)\
-                           .aggregate(s=Sum('hours'))['s'] or 0
+                               variable='project_hours',
+                               billable=None):
+    """Total billable hours worked on project for contract.
+    If billable is passed as 'billable' or 'nonbillable', limits to
+    the corresponding hours.  (Must pass a variable name first, of course.)
+    """
+    hours = contract.entries.filter(project=project)
+    if billable is not None:
+        billable = (billable.lower() == u'billable')
+        hours = hours.filter(activity__billable=billable)
+    hours = hours.aggregate(s=Sum('hours'))['s'] or 0
     context[variable] = hours
     return ''
 
@@ -177,8 +191,8 @@ def project_report_url_for_contract(contract, project):
         'from_date': contract.start_date.strftime(DATE_FORM_FORMAT),
         'to_date': contract.end_date.strftime(DATE_FORM_FORMAT),
         'billable': 1,
-        'non_billable': 1,
-        'paid_leave': 1,
+        'non_billable': 0,
+        'paid_leave': 0,
         'trunc': 'month',
         'projects_1': project.id,
     }

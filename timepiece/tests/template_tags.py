@@ -177,8 +177,8 @@ class MiscTagTestCase(TestCase):
             project = mock.Mock(id=54)
             retval = tags.project_report_url_for_contract(contract, project)
             url = 'Boo?billable=1&projects_1=54&from_date=' \
-                '2013-01-10&to_date=2013-01-10&non_billable=1' \
-                '&paid_leave=1&trunc=month'
+                '2013-01-10&to_date=2013-01-10&non_billable=0' \
+                '&paid_leave=0&trunc=month'
             self.assertEqual(url, retval)
             self.assertEqual('report_hourly', reverse.call_args[0][0])
 
@@ -257,21 +257,25 @@ class TestProjectHoursForContract(TimepieceDataTestCase):
         ]
 
         self.contract = self.create_contract(projects=projects)
+        activity = self.create_activity(data={'billable': True})
 
         start_time = datetime.datetime.now()
         one_hour = datetime.timedelta(hours=1)
         self.create_entry(data={
             'project': self.a_project,
+            'activity': activity,
             'start_time': start_time,
             'end_time': start_time + one_hour * 1
         })
         self.create_entry(data={
             'project': self.another_project,
+            'activity': activity,
             'start_time': start_time,
             'end_time': start_time + one_hour * 2
         })
         self.create_entry(data={
             'project': self.billable_project,
+            'activity': activity,
             'start_time': start_time,
             'end_time': start_time + one_hour * 4
         })

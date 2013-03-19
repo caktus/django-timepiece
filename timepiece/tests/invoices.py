@@ -21,7 +21,10 @@ class InvoiceViewPreviousTestCase(TimepieceDataTestCase):
         # Make some projects and entries for invoice creation
         self.project = self.create_project(billable=True)
         self.project2 = self.create_project(billable=True)
-        self.log_many([self.project, self.project2])
+        last_start = self.log_many([self.project, self.project2])
+        # Add some non-billable entries
+        self.log_many([self.project, self.project2], start=last_start,
+                      billable=False)
         self.create_invoice(self.project, {'static': 'invoiced'})
         self.create_invoice(self.project2, {'status': 'not-invoiced'})
 
@@ -30,12 +33,14 @@ class InvoiceViewPreviousTestCase(TimepieceDataTestCase):
         params = urllib.urlencode(kwargs)
         return '{0}?{1}'.format(base_url, params)
 
-    def log_many(self, projects, num_entries=20):
+    def log_many(self, projects, num_entries=20, start=None, billable=True):
         start = utils.add_timezone(datetime.datetime(2011, 1, 1, 0, 0, 0))
         for index in xrange(0, num_entries):
             start += datetime.timedelta(hours=(5 * index))
             project = projects[index % len(projects)]  # Alternate projects
-            self.log_time(start=start, status='approved', project=project)
+            self.log_time(start=start, status='approved', project=project,
+                          billable=billable)
+        return start
 
     def create_invoice(self, project=None, data=None):
         data = data or {}
@@ -110,6 +115,11 @@ class InvoiceViewPreviousTestCase(TimepieceDataTestCase):
         self.assertTrue(disposition.startswith('attachment; filename=Invoice'))
         contents = response.content.splitlines()
         # TODO: Possibly find a meaningful way to test contents
+        # Pull off header line and totals line
+        header = contents.pop(0)
+        total = contents.pop()
+        num_entries = invoice.entries.all().count()
+        self.assertEqual(num_entries, len(contents))
 
     def test_invoice_csv_bad_id(self):
         url = reverse('view_invoice_csv', args=[9999999999])
@@ -237,6 +247,7 @@ class InvoiceCreateTestCase(TimepieceDataTestCase):
         self.entry1 = self.create_entry({
             'user': self.user,
             'project': self.project_billable,
+            'activity': self.create_activity(data={'billable': True}),
             'start_time': start,
             'end_time': end,
             'status': 'approved',
@@ -244,6 +255,7 @@ class InvoiceCreateTestCase(TimepieceDataTestCase):
         self.entry2 = self.create_entry({
             'user': self.user,
             'project': self.project_billable,
+            'activity': self.create_activity(data={'billable': True}),
             'start_time': start - datetime.timedelta(days=5),
             'end_time': end - datetime.timedelta(days=5),
             'status': 'approved',
@@ -251,6 +263,7 @@ class InvoiceCreateTestCase(TimepieceDataTestCase):
         self.entry3 = self.create_entry({
             'user': self.user,
             'project': self.project_billable2,
+            'activity': self.create_activity(data={'billable': False}),
             'start_time': start - datetime.timedelta(days=10),
             'end_time': end - datetime.timedelta(days=10),
             'status': 'approved',
@@ -277,7 +290,7 @@ class InvoiceCreateTestCase(TimepieceDataTestCase):
         for activity in all_activities:
             hg = timepiece.HourGroup.objects.create(name=activity.name)
             hg.activities.add(activity)
-            hg.save()
+            # hg.save()   # Not needed
 
     def login_with_permission(self):
         """Helper to login as user with correct permissions"""
@@ -382,7 +395,8 @@ class InvoiceCreateTestCase(TimepieceDataTestCase):
         end = utils.add_timezone(datetime.datetime(2011, 1, 1, 12))
         # start = utils.add_timezone(datetime.datetime.now())
         # end = start + datetime.timedelta(hours=4)
-        activity = self.create_activity(data={'name': 'activity1'})
+        activity = self.create_activity(data={'name': 'activity1',
+                                              'billable': True})
         for num in xrange(0, 4):
             new_entry = self.create_entry({
                 'user': self.user,
@@ -401,7 +415,7 @@ class InvoiceCreateTestCase(TimepieceDataTestCase):
         url = self.get_create_url(**kwargs)
         response = self.client.get(url)
         self.assertEqual(response.status_code, 200)
-        for name, hours_activities in response.context['totals']:
+        for name, hours_activities in response.context['billable_totals']:
             total, activities = hours_activities
             if name == 'activity1':
                 self.assertEqual(total, 16)
@@ -411,6 +425,7 @@ class InvoiceCreateTestCase(TimepieceDataTestCase):
                 self.assertEqual(total, 24)
                 self.assertEqual(activities, [])
             else:
+                # Each other activity is 4 hrs each
                 self.assertEqual(total, 4)
                 self.assertEqual(total, activities[0][1])
                 self.assertEqual(name, activities[0][0])
