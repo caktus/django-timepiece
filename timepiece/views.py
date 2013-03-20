@@ -1521,7 +1521,7 @@ class ScheduleMixin(object):
 
     @method_decorator(login_required)
     def dispatch(self, request, *args, **kwargs):
-        if not request.user.has_perms(*self.permissions):
+        if not request.user.has_perms(self.permissions):
             params = {'next': request.get_full_path()}
             url = '{0}?{1}'.format(reverse('auth_login'), urlencode(params))
             return HttpResponseRedirect(url)
@@ -1538,12 +1538,20 @@ class ScheduleMixin(object):
 
         return super(ScheduleMixin, self).dispatch(request, *args, **kwargs)
 
+    def get_assignable_users(self):
+        """Returns all users who can be assigned to."""
+        # Clock-in permission required for being in the schedule.
+        # TODO: should this be enforced?
+        content_type = ContentType.objects.get_for_model(timepiece.Entry)
+        perm = Permission.objects.filter(content_type=content_type,
+                codename='can_clock_in')
+        perms = Q(user_permissions=perm) | Q(groups__permissions=perm)
+        return User.objects.filter(perms | Q(is_superuser=True))
+
     def get_assignments(self, week_start=None):
         """Get all assignments for the week of week_start."""
         week_start = week_start or self.week_start
-        week_end = week_start + relativedelta(days=7)
-        dates = Q(week_start__gte=week_start, week_start__lt=week_end)
-        return timepiece.ScheduleAssignment.objects.filter(dates)
+        return timepiece.ScheduleAssignment.objects.get_for_week(week_start)
 
     def get_assignment_vals(self, assignments=None):
         """Get ordered values for assignments."""
@@ -1556,7 +1564,7 @@ class ScheduleMixin(object):
         return assignments.values(*vals).order_by(*order)
 
     def get_context_data(self, **kwargs):
-        """Convenience for TemplateViews (ScheduleView and ScheduleEdit)."""
+        """Common things for TemplateViews (ScheduleView and ScheduleEdit)."""
         context = super(ScheduleMixin, self).get_context_data(**kwargs)
         form = timepiece_forms.ScheduleSearchForm(initial=self.initial_data)
         context.update({
@@ -1583,7 +1591,7 @@ class ScheduleView(ScheduleMixin, TemplateView):
     template_name = 'timepiece/schedule/view.html'
     permissions = ('timepiece.can_clock_in',)
 
-    def create_assignments_table(self, assignments, users):
+    def create_schedule(self, assignments, users):
         """Creates a table of assignments by project & user."""
         id_order = [user[0] for user in users]
         table = []
@@ -1603,23 +1611,22 @@ class ScheduleView(ScheduleMixin, TemplateView):
     def get_context_data(self, **kwargs):
         """Get all published schedule assignments for this week."""
         context = super(ScheduleView, self).get_context_data(**kwargs)
-
         assignments = self.get_assignment_vals().filter(published=True)
         vals = ('user__id', 'user__first_name', 'user__last_name')
         order = ('user__first_name', 'user__last_name', 'user__id')
         users = assignments.values_list(*vals).distinct().order_by(*order)
-        table = self.create_assignments_table(assignments, users)
+        schedule = self.create_schedule(assignments, users)
 
         context.update({
             'users': users,
-            'projects': table,
+            'schedule': schedule,
         })
         return context
 
 
 class ScheduleEdit(ScheduleMixin, TemplateView):
     template_name = 'timepiece/schedule/edit.html'
-    permissions = ('timepiece.add_projecthours',)
+    permissions = ('timepiece.add_scheduleassignment',)
 
     def duplicate_entries(self, week):
         """Copies entries from the given week to this week, if any exist."""
@@ -1662,10 +1669,15 @@ class ScheduleEdit(ScheduleMixin, TemplateView):
     def post(self, request, *args, **kwargs):
         """
         If publish is present, all unpublished assignments for this week are
-        published. Otherwise, if duplicate is present, entries from the given
+        published. If duplicate is present, entries from the given
         week are duplicated to this week.
         """
-        if 'publish' in request.POST:
+        if 'publish' in request.POST and 'duplicate' in request.POST:
+            # Ambiguous. We don't know what order to perform the steps in
+            # so we'll be safe and do nothing.
+            messages.warning(self.request, 'The system cannot duplicate '
+                    'and publish assignments in the same request.')
+        elif 'publish' in request.POST:
             self.publish_entries()
         elif 'duplicate' in request.POST:
             self.duplicate_entries(request.POST.get('duplicate'))
@@ -1673,7 +1685,7 @@ class ScheduleEdit(ScheduleMixin, TemplateView):
 
 
 class ScheduleAjax(ScheduleMixin, View):
-    permissions = ('timepiece.add_projecthours',)
+    permissions = ('timepiece.add_scheduleassignment',)
     http_method_names = ['get', 'post', 'delete']
 
     def delete(self, request, *args, **kwargs):
@@ -1684,16 +1696,18 @@ class ScheduleAjax(ScheduleMixin, View):
             msg = 'Delete request should be a list of assignment ids.'
             return HttpResponse(msg, status=500)
 
-        assignments = timepiece.ScheduleAssignment.objects.filter(pk__in=pks)
+        assignments = timepiece.ScheduleAssignment.objects.filter(pk__in=pks,
+                week_start=self.week_start)
         existing = list(assignments.values_list('pk', flat=True))
         if len(existing) != len(pks):
             nonexisting = [pk for pk in pks if pk not in existing]
-            msg = 'Assignments {0} do not exist; request '\
-                  'aborted.'.format(nonexisting)
+            msg = 'Assignments {0} for week {1} do not exist; request '\
+                  'aborted.'.format(nonexisting, self.week_start)
             return HttpResponse(msg, status=500)
         assignments.delete()
 
-        return HttpResponse(json.dumps(existing), mimetype='application/json')
+        return HttpResponse(json.dumps(existing),
+                content_type='application/json')
 
     def get(self, request, *args, **kwargs):
         """
@@ -1703,17 +1717,11 @@ class ScheduleAjax(ScheduleMixin, View):
             all_projects: all of the projects; used for autocomplete
             all_users: all users that can clock in; used for autocomplete
         """
-        # Clock-in permission required for being in the schedule.
-        # TODO: should this be enforced?
-        content_type = ContentType.objects.get_for_model(timepiece.Entry)
-        perm = Permission.objects.filter(content_type=content_type,
-                codename='can_clock_in')
-        perms = Q(user_permissions=perm) | Q(groups__permissions=perm)
 
         assignments = self.get_assignment_vals()
         all_projects = timepiece.Project.objects.values('id', 'name')
-        all_users = User.objects.filter(perms | Q(is_superuser=True))\
-                                .values('id', 'first_name', 'last_name')
+        all_users = self.get_assignable_users().values(
+                'id', 'first_name', 'last_name')
 
         data = {
             'assignments': list(assignments),
@@ -1721,7 +1729,7 @@ class ScheduleAjax(ScheduleMixin, View):
             'all_users': list(all_users),
         }
         json_data = json.dumps(data, cls=DecimalEncoder)
-        return HttpResponse(json_data, mimetype='application/json')
+        return HttpResponse(json_data, content_type='application/json')
 
     def get_instance(self, data):
         try:
@@ -1762,7 +1770,8 @@ class ScheduleAjax(ScheduleMixin, View):
                           'aborted.'.format(pk)
                     return HttpResponse(msg, status=500)
             data_map['week_start'] = self.week_start
-            form = timepiece_forms.AssignmentForm(data_map, instance=instance)
+            form = timepiece_forms.ScheduleAssignmentForm(data_map,
+                    instance=instance)
             if form.is_valid():
                 valid_forms.append(form)
             else:
@@ -1775,7 +1784,7 @@ class ScheduleAjax(ScheduleMixin, View):
             assignment = form.save()
             data.append(assignment.pk)
 
-        return HttpResponse(json.dumps(data), mimetype='application/json')
+        return HttpResponse(json.dumps(data), content_type='application/json')
 
 
 @login_required

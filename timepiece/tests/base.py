@@ -1,7 +1,7 @@
 import datetime
 import random
 import string
-import urllib
+from urllib import urlencode, splitquery
 
 from dateutil.relativedelta import relativedelta
 from decimal import Decimal
@@ -22,11 +22,14 @@ from timepiece import utils
 
 
 class TimepieceDataTestCase(TestCase):
+    TEST_SERVER = 'http://testserver'
     url_name = ''
     url_kwargs = {}
     url_args = {}
     get_kwargs = {}
     post_data = {}
+    delete_data = {}
+    perm_names = []
 
     def _url(self, url_name=None, url_args=None, url_kwargs=None,
             get_kwargs=None):
@@ -37,7 +40,7 @@ class TimepieceDataTestCase(TestCase):
 
         url = reverse(url_name, args=url_args, kwargs=url_kwargs)
         if get_kwargs:
-            url = '{0}?{1}'.format(url, urllib.urlencode(get_kwargs))
+            url = '{0}?{1}'.format(url, urlencode(get_kwargs))
         return url
 
     def _get(self, url_name=None, url_args=None, url_kwargs=None,
@@ -60,6 +63,45 @@ class TimepieceDataTestCase(TestCase):
         url = url or self._url(url_name, url_args, url_kwargs, get_kwargs)
         data = self.post_data if data is None else data
         return self.client.post(path=url, data=data, *args, **kwargs)
+
+    def _delete(self, data=None, url_name=None, url_args=None, url_kwargs=None,
+            get_kwargs=None, url=None, *args, **kwargs):
+        """Convenience wrapper for self.client.delete.
+
+        If url is not passed, it is built using url_name, url_args, url_kwargs.
+        Get parameters may be added from get_kwargs.
+        """
+        url = url or self._url(url_name, url_args, url_kwargs, get_kwargs)
+        data = self.delete_data if data is None else data
+        return self.client.delete(path=url, data=data, *args, **kwargs)
+
+    def assertRedirectsNoFollow(self, response, url, use_params=True,
+            status_code=302):
+        """
+        Workaround to test whether a response redirects to another URL,
+        without loading the page at that URL.
+
+        If the URL starts with '/', the test server name will be prepended to
+        the URL before checking for redirect.
+
+        If use_params = False, the method will strip the GET parameters from
+        response location before checking whether it was redirect to the
+        specified URL.
+        """
+        self.assertEqual(response.status_code, status_code)
+        if url.startswith('/'):
+            url = self.TEST_SERVER + url
+        response_url = response['location']
+        if not use_params:
+            response_ulr = splitquery(response_url)[0]
+        self.assertEqual(response_url, url)
+
+    def get_permissions(self, perm_names=None):
+        """Returns a list of Permission objects corresponding to perm_names."""
+        if perm_names is None:
+            perm_names = self.perm_names
+        return [Permission.objects.filter(content_type__app_label=app_label,
+                codename=codename)[0] for app_label, codename in perm_names]
 
     def create_business(self, data=None):
         data = data or {}
@@ -283,9 +325,9 @@ class TimepieceDataTestCase(TestCase):
         defaults.update(data)
         return timepiece.ActivityGroup.objects.create(**defaults)
 
-    def create_project_hours_entry(self, week_start=None, project=None,
+    def create_schedule_assignment(self, week_start=None, project=None,
                 user=None, hours=None, **kwargs):
-        week_start = week_start or utils.get_week_start(add_tzinfo=False)
+        week_start = week_start or utils.get_week_start().date()
         project = project or self.create_project()
         user = user or self.create_user()
         hours = Decimal(str(random.random() * 20)) if hours is None else hours

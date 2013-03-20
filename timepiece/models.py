@@ -1006,6 +1006,16 @@ class UserProfile(models.Model):
         return unicode(self.user)
 
 
+class ScheduleAssignmentManager(models.Manager):
+
+    def get_for_week(self, date):
+        """Returns any entries in the week containing date."""
+        week_start = utils.get_week_start(date)
+        next_week = week_start + relativedelta(days=7)
+        return self.filter(week_start__gte=week_start,
+                week_start__lt=next_week)
+
+
 class ScheduleAssignment(models.Model):
     week_start = models.DateField(verbose_name='start of week')
     project = models.ForeignKey(Project)
@@ -1015,6 +1025,8 @@ class ScheduleAssignment(models.Model):
         validators=[validators.MinValueValidator(Decimal("0.01"))]
     )
     published = models.BooleanField(default=False)
+
+    objects = ScheduleAssignmentManager()
 
     def __unicode__(self):
         return "{0} on {1} for Week of {2}".format(

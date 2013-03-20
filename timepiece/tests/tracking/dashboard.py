@@ -184,7 +184,7 @@ class ProcessProgressTestCase(TimepieceDataTestCase):
             'week_start': self.this_week,
             'hours': hours,
         }
-        return self.create_project_hours_entry(**data)
+        return self.create_schedule_assignment(**data)
 
     def _get_progress(self):
         entries = Entry.objects.all()

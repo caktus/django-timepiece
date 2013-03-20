@@ -1,638 +1,364 @@
 import json
 import datetime
-from decimal import Decimal
-
 from dateutil.relativedelta import relativedelta
 
-from django.contrib.auth.models import Permission, User
-from django.contrib.contenttypes.models import ContentType
-from django.core.urlresolvers import reverse
-
 from timepiece import utils
-from timepiece.models import ScheduleAssignment, Entry
+from timepiece.forms import ScheduleAssignmentForm
+from timepiece.models import ScheduleAssignment, Project
 from timepiece.tests.base import TimepieceDataTestCase
 
 
 __all__ = ['ScheduleTestBase', 'ScheduleViewTestCase', 'ScheduleEditTestCase',
-        'ScheduleAssignmentModelTestCase']
+        'ScheduleAjaxTestCase', 'ScheduleAssignmentModelTestCase',
+        'ScheduleAssignmentFormTestCase']
+
+
+class ScheduleAssignmentModelTestCase(TimepieceDataTestCase):
+
+    def test_week_start(self):
+        """week_start should always save to Monday of the given week."""
+        project = self.create_project()
+        monday = datetime.date(2012, 07, 16)
+        for i in range(7):
+            date = monday + relativedelta(days=i)
+            assignment = ScheduleAssignment.objects.create(
+                    week_start=date, project=project,
+                    user=self.user)
+            self.assertEquals(assignment.week_start.date(), monday)
+            ScheduleAssignment.objects.all().delete()
+
+
+class ScheduleAssignmentFormTestCase(TimepieceDataTestCase):
+
+    def setUp(self):
+        self.published = self.create_schedule_assignment(published=True)
+        self.unpublished = self.create_schedule_assignment(published=False)
+        self.data = {
+            'week_start': utils.get_week_start().date(),
+            'user': self.create_user().pk,
+            'project': self.create_project().pk,
+            'hours': 10,
+        }
+
+    def test_save_published(self):
+        """Published entry should be saved as unpublished."""
+        form = ScheduleAssignmentForm(data=self.data, instance=self.published)
+        self.assertTrue(form.is_valid(), form.errors)
+        assignment = form.save()
+        self.assertFalse(assignment.published)
+
+    def test_save_unpublished(self):
+        """Unpublished entry should be saved as unpublished."""
+        form = ScheduleAssignmentForm(data=self.data, instance=self.unpublished)
+        self.assertTrue(form.is_valid(), form.errors)
+        assignment = form.save()
+        self.assertFalse(assignment.published)
+
+    def test_save_new(self):
+        """New entry should be saved as unpublished."""
+        form = ScheduleAssignmentForm(data=self.data)
+        self.assertTrue(form.is_valid(), form.errors)
+        assignment = form.save()
+        self.assertFalse(assignment.published)
 
 
 class ScheduleTestBase(TimepieceDataTestCase):
+    """Base test set up for all schedule view tests."""
 
     def setUp(self):
-        perm_names = ['can_clock_in', 'can_clock_out', 'can_pause',
-                'change_entry']
-        permissions = Permission.objects.filter(codename__in=perm_names,
-                content_type=ContentType.objects.get_for_model(Entry))
+        self.permissions = self.get_permissions()
         self.user = self.create_user('user', 'u@abc.com', 'abc',
-                user_permissions=permissions)
-        self.superuser = self.create_user('super', 's@abc.com', 'abc',
-                is_superuser=True)
-
-        self.tracked_status = self.create_project_status(data={
-                'label': 'Current', 'billable': True,
-                'enable_timetracking': True})
-        self.untracked_status = self.create_project_status(data={
-                'label': 'Closed', 'billable': False,
-                'enable_timetracking': False})
-        self.tracked_type = self.create_project_type(data={
-                'label': 'Tracked', 'billable': True,
-                'enable_timetracking': True})
-        self.untracked_type = self.create_project_type(data={
-                'label': 'Untracked', 'billable': False,
-                'enable_timetracking': False})
+                user_permissions=self.permissions)
+        self.client.login(username='user', password='abc')
+        self.user2 = self.create_user()
 
         self.work_activities = self.create_activity_group('Work')
         self.leave_activities = self.create_activity_group('Leave')
         self.all_activities = self.create_activity_group('All')
 
-        self.leave_activity = self.create_activity(
-            activity_groups=[self.leave_activities, self.all_activities],
-            data={'code': 'leave', 'name': 'Leave', 'billable': False}
-        )
-        self.work_activity = self.create_activity(
-            activity_groups=[self.work_activities, self.all_activities],
-            data={'code': 'work', 'name': 'Work', 'billable': True}
-        )
-
-        data = {
+        self.tracked_status = self.create_project_status(data={
+            'label': 'Current',
+            'billable': True,
+            'enable_timetracking': True,
+        })
+        self.tracked_type = self.create_project_type(data={
+            'label': 'Tracked',
+            'billable': True,
+            'enable_timetracking': True,
+        })
+        self.tracked_project = self.create_project(True, 'Tracked', {
             'type': self.tracked_type,
             'status': self.tracked_status,
             'activity_group': self.work_activities,
-        }
-        self.tracked_project = self.create_project(True, 'Tracked', data)
-        data = {
+        })
+
+        self.untracked_status = self.create_project_status(data={
+            'label': 'Closed',
+            'billable': False,
+            'enable_timetracking': False,
+        })
+        self.untracked_type = self.create_project_type(data={
+            'label': 'Untracked',
+            'billable': False,
+            'enable_timetracking': False,
+        })
+        self.untracked_project = self.create_project(True, 'Untracked', {
             'type': self.untracked_type,
             'status': self.untracked_status,
             'activity_group': self.all_activities,
+        })
+
+        self.this_week = utils.get_week_start().date()
+        self.prev_week = self.this_week - relativedelta(days=7)
+        self.next_week = self.this_week + relativedelta(days=7)
+        self.get_kwargs = {
+            'week_start': self._format(self.this_week),
         }
-        self.untracked_project = self.create_project(True, 'Untracked', data)
 
+        self.prev_week_assignments = [
+            self.create_schedule_assignment(week_start=self.prev_week,
+                    project=self.tracked_project, user=self.user, hours=2),
+            self.create_schedule_assignment(week_start=self.prev_week,
+                    project=self.tracked_project, user=self.user2, hours=4),
+        ]
+        self.this_week_assignments = [
+            self.create_schedule_assignment(week_start=self.this_week,
+                    project=self.tracked_project, user=self.user, hours=15),
+            self.create_schedule_assignment(week_start=self.this_week,
+                    project=self.tracked_project, user=self.user2, hours=20),
+        ]
+        self.all_assignments = self.prev_week_assignments + \
+                self.this_week_assignments
 
-class ScheduleAssignmentModelTestCase(ScheduleTestBase):
-
-    def test_week_start(self):
-        """week_start should always save to Monday of the given week."""
-        monday = datetime.date(2012, 07, 16)
-        for i in range(7):
-            date = monday + relativedelta(days=i)
-            entry = ScheduleAssignment.objects.create(
-                    week_start=date, project=self.tracked_project,
-                    user=self.user)
-            self.assertEquals(entry.week_start.date(), monday)
-            ScheduleAssignment.objects.all().delete()
+    def _format(self, week):
+        return week.strftime('%Y-%m-%d')
 
 
 class ScheduleViewTestCase(ScheduleTestBase):
-
-    def setUp(self):
-        super(ScheduleViewTestCase, self).setUp()
-        self.past_week = utils.get_week_start(datetime.date(2012, 4, 1)).date()
-        self.current_week = utils.get_week_start().date()
-        for i in range(5):
-            self.create_project_hours_entry(self.past_week, published=True)
-            self.create_project_hours_entry(self.current_week, published=True)
-        self.url = reverse('view_schedule')
-        self.client.login(username='user', password='abc')
-        self.date_format = '%Y-%m-%d'
+    # TODO - some tests for published vs unpublished
+    url_name = 'view_schedule'
+    perm_names = [('timepiece', 'can_clock_in')]
 
     def test_no_permission(self):
-        """User must have permission timepiece.can_clock_in to view page."""
-        basic_user = self.create_user('basic', 'b@e.com', 'abc')
-        self.client.login(username='basic', password='abc')
-        response = self.client.get(self.url)
-        self.assertEquals(response.status_code, 302)
-
-    def test_permission(self):
-        """User must have permission timepiece.can_clock_in to view page."""
-        self.assertTrue(self.user.has_perm('timepiece.can_clock_in'))
-        response = self.client.get(self.url)
-        self.assertEquals(response.status_code, 200)
+        """Permission is required to view the schedule."""
+        self.user.user_permissions.all().delete()
+        response = self._get()
+        self.assertEquals(response.status_code, 302)  # redirect to login
 
     def test_default_filter(self):
-        """Page shows project hours entries from the current week."""
-        data = {}
-        response = self.client.get(self.url, data)
+        """By default, the schedule should show assignments from this week."""
+        response = self._get(data={})
         self.assertEquals(response.status_code, 200)
-        self.assertEquals(response.context['week'], self.current_week)
+        self.assertEquals(response.context['week'], self.this_week)
+        # TODO - check entries
 
     def test_week_filter(self):
-        """Filter shows all entries from Monday to Sunday of specified week."""
-        data = {
-            'week_start': self.past_week.strftime(self.date_format),
-            'submit': '',
-        }
-        response = self.client.get(self.url, data)
+        """Schedule should show assignments for Mon-Sun of specified week."""
+        for assignment in self.prev_week_assignments:
+            assignment.published = True
+            assignment.save()
+        get_kwargs = {'week_start': self._format(self.prev_week)}
+        response = self._get(get_kwargs=get_kwargs)
         self.assertEquals(response.status_code, 200)
-        self.assertEquals(response.context['week'].date(), self.past_week)
+        self.assertEquals(response.context['week'], self.prev_week)
 
-        all_entries = utils.get_project_hours_for_week(self.past_week)
+        saved = ScheduleAssignment.objects.get_for_week(self.prev_week)
         users = response.context['users']
-        projects = response.context['projects']
+        schedule = response.context['schedule']
         count = 0
-
-        for proj_id, name, entries in projects:
-            for i in range(len(entries)):
-                entry = entries[i]
-                if entry:
+        for proj_id, name, assignments in schedule:
+            for i, assignment in enumerate(assignments):
+                if assignment:
                     count += 1
-                    self.assertTrue(all_entries.filter(project__id=proj_id,
-                            user__id=users[i][0], hours=entry).exists())
-        self.assertEquals(count, all_entries.count())
+                    self.assertTrue(saved.filter(project__id=proj_id,
+                            user__id=users[i][0], hours=assignment).exists())
+        self.assertEquals(count, saved.count())
 
     def test_week_filter_midweek(self):
         """Filter corrects mid-week date to Monday of specified week."""
         wednesday = datetime.date(2012, 7, 4)
-        monday = utils.get_week_start(wednesday).date()
-        data = {
-            'week_start': wednesday.strftime(self.date_format),
-            'submit': '',
-        }
-        response = self.client.get(self.url, data)
+        monday = datetime.date(2012, 7, 2)
+        data = {'week_start': self._format(wednesday)}
+        response = self._get(data=data)
         self.assertEquals(response.status_code, 200)
-        self.assertEquals(response.context['week'].date(), monday)
+        self.assertEquals(response.context['week'], monday)
 
-    def test_no_entries(self):
+    def test_no_assignments(self):
         date = utils.get_week_start(datetime.date(2012, 3, 15))
-        data = {
-            'week_start': date.strftime('%Y-%m-%d'),
-            'submit': '',
-        }
-        response = self.client.get(self.url, data)
+        data = {'week_start': self._format(date)}
+        response = self._get(data=data)
         self.assertEquals(response.status_code, 200)
-        self.assertEquals(len(response.context['projects']), 0)
         self.assertEquals(len(response.context['users']), 0)
+        self.assertEquals(len(response.context['schedule']), 0)
 
     def test_all_users_for_project(self):
-        """Each project should list hours for every user."""
-        response = self.client.get(self.url)
+        """Each project should have assignments for every user."""
+        response = self._get()
         self.assertEquals(response.status_code, 200)
-        projects = response.context['projects']
         users = response.context['users']
-
-        for proj_id, name, entries in projects:
-            self.assertEquals(len(entries), len(users))
+        schedule = response.context['schedule']
+        for proj_id, name, assignments in schedule:
+            self.assertEquals(len(assignments), len(users))
 
 
 class ScheduleEditTestCase(ScheduleTestBase):
+    url_name = 'edit_schedule'
+    perm_names = [('timepiece', 'add_scheduleassignment')]
 
-    def setUp(self):
-        super(ScheduleEditTestCase, self).setUp()
-        self.permission = Permission.objects.filter(
-            codename='add_projecthours')
-        self.manager = self.create_user('manager', 'e@e.com', 'abc')
-        self.manager.user_permissions = self.permission
-        self.view_url = reverse('edit_schedule')
-        self.ajax_url = reverse('ajax_schedule')
-        self.week_start = utils.get_week_start(datetime.date.today())
-        self.next_week = self.week_start + relativedelta(days=7)
-        self.future = self.week_start + relativedelta(days=14)
+    def test_no_permission(self):
+        """Permission is required to edit the schedule."""
+        self.user.user_permissions.all().delete()
+        response = self._get()
+        self.assertEquals(response.status_code, 302)  # redirects to login
 
-    def create_project_hours(self):
-        """Create project hours data"""
-        ScheduleAssignment.objects.create(
-            week_start=self.week_start, project=self.tracked_project,
-            user=self.user, hours="25.0")
-        ScheduleAssignment.objects.create(
-            week_start=self.week_start, project=self.tracked_project,
-            user=self.manager, hours="5.0")
+    def test_get(self):
+        """GET returns a response with basic information in it."""
+        response = self._get()
+        self.assertEquals(response.status_code, 200)
+        self.assertTrue('form' in response.context)
+        self.assertTrue(response.context['week'], self.this_week)
 
-        ScheduleAssignment.objects.create(
-            week_start=self.next_week, project=self.tracked_project,
-            user=self.user, hours="15.0")
-        ScheduleAssignment.objects.create(
-            week_start=self.next_week, project=self.tracked_project,
-            user=self.manager, hours="2.0")
+    def test_duplicate(self):
+        """Posting 'duplicate' copies the assignments from another week."""
+        response = self._post(data={'duplicate': self._format(self.prev_week)})
+        self.assertRedirectsNoFollow(response, self._url())
+        for a in self.this_week_assignments:
+            self.assertFalse(ScheduleAssignment.objects.filter(
+                    pk=a.pk).exists())
+        for a in self.prev_week_assignments:
+            self.assertEquals(a, ScheduleAssignment.objects.get(pk=a.pk))
+            self.assertTrue(ScheduleAssignment.objects.filter(user=a.user,
+                    project=a.project, week_start=self.this_week,
+                    hours=a.hours).exists())
 
-    def ajax_posts(self):
-        date_msg = 'Parameter week_start must be a date in the format ' \
-            'yyyy-mm-dd'
-        msg = 'The request must contain values for user, project, and hours'
+    def test_duplicate_no_assignments(self):
+        """If there are no assignmentss to duplicate, no operation occurs."""
+        ScheduleAssignment.objects.filter(week_start=self.prev_week).delete()
+        response = self._post(data={'duplicate': self._format(self.prev_week)})
+        self.assertRedirectsNoFollow(response, self._url())
+        self.assertEquals(ScheduleAssignment.objects.count(), 2)
+        for a in self.this_week_assignments:
+            self.assertEquals(a, ScheduleAssignment.objects.get(pk=a.pk))
 
-        response = self.client.post(self.ajax_url, data={
-            'hours': 5,
-            'week_start': '2012-07-23'
+    def test_publish(self):
+        """Posting 'publish' publishes unpublished assignments for the week."""
+        response = self._post(data={'publish': True})
+        self.assertRedirectsNoFollow(response, self._url())
+        self.assertEquals(ScheduleAssignment.objects.all().count(), 4)
+        for a in self.this_week_assignments:
+            # This week's assignments are now published.
+            self.assertFalse(a.published)
+            self.assertTrue(ScheduleAssignment.objects.get(pk=a.pk).published)
+        for a in self.prev_week_assignments:
+            # Other assignments remain the same.
+            self.assertFalse(a.published)
+            self.assertFalse(ScheduleAssignment.objects.get(pk=a.pk).published)
+
+    def test_publish_no_assignments(self):
+        """Posting 'publish' publishes unpublished assignments for the week."""
+        ScheduleAssignment.objects.filter(week_start=self.this_week)\
+                                  .update(published=True)
+        response = self._post(data={'publish': True})
+        self.assertRedirectsNoFollow(response, self._url())
+        for a in self.all_assignments:
+            self.assertEquals(a, ScheduleAssignment.objects.get(pk=a.pk))
+
+    def test_duplicate_and_publish(self):
+        """Posting 'publish' and 'duplicate' causes no operation."""
+        response = self._post(data={
+            'publish': True,
+            'duplicate': self._format(self.prev_week),
         })
-        self.assertEquals(response.status_code, 500)
-        self.assertEquals(response.content, msg)
+        self.assertRedirectsNoFollow(response, self._url())
+        for a in self.all_assignments:
+            self.assertEquals(a, ScheduleAssignment.objects.get(pk=a.pk))
 
-        response = self.client.post(self.ajax_url, data={
-            'hours': 5,
-            'project': self.tracked_project.pk,
-            'week_start': '2012-07-23'
-        })
-        self.assertEquals(response.status_code, 500)
-        self.assertEquals(response.content, msg)
 
-        response = self.client.post(self.ajax_url, data={
-            'project': self.tracked_project.pk,
-            'week_start': '2012-07-23'
-        })
-        self.assertEquals(response.status_code, 500)
-        self.assertEquals(response.content, msg)
+class ScheduleAjaxTestCase(ScheduleTestBase):
+    url_name = 'ajax_schedule'
+    perm_names = [('timepiece', 'add_scheduleassignment')]
 
-        response = self.client.post(self.ajax_url, data={
-            'project': self.tracked_project.pk,
-            'user': self.manager.pk,
-            'week_start': '2012-07-23'
-        })
-        self.assertEquals(response.status_code, 500)
-        self.assertEquals(response.content, msg)
+    def test_no_permission(self):
+        """Permission is required to use the schedule AJAX view."""
+        self.user.user_permissions.all().delete()
+        for _send in (self._get, self._post, self._delete):
+            response = _send()
+            self.assertEquals(response.status_code, 302)  # redirect to login
 
-        response = self.client.post(self.ajax_url, data={
-            'user': self.manager.pk,
-            'week_start': '2012-07-23'
-        })
-        self.assertEquals(response.status_code, 500)
-        self.assertEquals(response.content, msg)
-
-        response = self.client.post(self.ajax_url, data={
-            'hours': 5,
-            'user': self.manager.pk,
-            'week_start': '2012-07-23'
-        })
-        self.assertEquals(response.status_code, 500)
-        self.assertEquals(response.content, msg)
-
-        response = self.client.post(self.ajax_url, data={
-            'week_start': '2012-07-23'
-        })
-        self.assertEquals(response.status_code, 500)
-        self.assertEquals(response.content, msg)
-
-        response = self.client.post(self.ajax_url, data={
-            'hours': 5,
-            'user': self.manager.pk,
-            'project': self.tracked_project.pk
-        })
-        self.assertEquals(response.status_code, 500)
-        self.assertEquals(response.content, date_msg)
-
-    def process_default_call(self, response):
+    def test_get(self):
+        """GET returns complete lists of assignments, projects, & users."""
+        self.user3 = self.create_user(is_superuser=True)
+        response = self._get()
         self.assertEquals(response.status_code, 200)
+        self.assertEquals(response['Content-Type'], 'application/json')
+        content = json.loads(response.content)
+        assignments = content['assignments']
+        self.assertTrue(len(assignments), 4)
+        for a in assignments:
+            saved = ScheduleAssignment.objects.get(pk=a['id'])
+            self.assertEquals(a['project__id'], saved.project.pk)
+            self.assertEquals(a['user__id'], saved.user.pk)
+            self.assertEquals(a['hours'], saved.hours)
+        all_users = content['all_users']
+        self.assertEquals(len(all_users), 1)
+        self.assertTrue(all_users[0]['id'], self.user3.pk)
+        all_projects = content['all_projects']
+        self.assertTrue(len(all_projects), 2)
+        for p in all_projects:
+            saved = Project.objects.get(pk=p['id'])
 
-        data = json.loads(response.content)
-
-        self.assertEquals(len(data['project_hours']), 2)
-        self.assertEquals(len(data['projects']), 1)
-
-        correct_hours = {self.manager.id: 5.0, self.user.id: 25.0}
-        for entry in data['project_hours']:
-            self.assertEquals(entry['hours'], correct_hours[entry['user']])
-
-    def test_permission_access(self):
-        """
-        You must have the permission to view the edit page or
-        the ajax page
-        """
-        self.client.login(username='manager', password='abc')
-
-        response = self.client.get(self.view_url)
+    def test_get_no_assignments(self):
+        """GET returns complete list of assignments, projects, & users."""
+        self.user3 = self.create_user(is_superuser=True)
+        ScheduleAssignment.objects.all().delete()
+        response = self._get()
         self.assertEquals(response.status_code, 200)
-
-        response = self.client.get(self.ajax_url)
-        self.assertEquals(response.status_code, 200)
-
-    def test_no_permission_access(self):
-        """
-        If you are a regular user, edit view should redirect to regular view
-        and you should not be able to request any ajax data.
-        """
-        self.client.login(username='basic', password='abc')
-
-        response = self.client.get(self.view_url)
-        self.assertEquals(response.status_code, 302)
-
-        response = self.client.get(self.ajax_url)
-        self.assertEquals(response.status_code, 302)
-
-    def test_empty_ajax_call(self):
-        """
-        An ajax call should return empty data sets when project hours
-        do not exist
-        """
-        self.client.login(username='manager', password='abc')
-
-        response = self.client.get(self.ajax_url)
-        self.assertEquals(response.status_code, 200)
-
-        data = json.loads(response.content)
-
-        self.assertEquals(data['project_hours'], [])
-        self.assertEquals(data['projects'], [])
-
-    def test_users(self):
-        """Should retrieve all users who can_clock_in."""
-        perm = Permission.objects.get(codename='can_clock_in')
-        group = self.create_auth_group(permissions=[perm])
-
-        group_user = self.create_user(username='groupie', groups=[group])
-        perm_user = User.objects.get(username='user')
-        super_user = User.objects.get(username='super')
-
-        self.client.login(username='manager', password='abc')
-        response = self.client.get(self.ajax_url)
-        self.assertEquals(response.status_code, 200)
-        users = [u['id'] for u in json.loads(response.content)['all_users']]
-        self.assertEquals(len(users), 3)
-        self.assertTrue(group_user.id in users)
-        self.assertTrue(perm_user.id in users)
-        self.assertTrue(super_user.id in users)
-
-    def test_default_ajax_call(self):
-        """
-        An ajax call without any parameters should return the current
-        weeks data
-        """
-        self.client.login(username='manager', password='abc')
-        self.create_project_hours()
-
-        response = self.client.get(self.ajax_url)
-
-        self.process_default_call(response)
-
-    def test_default_empty_ajax_call(self):
-        """
-        An ajax call with the parameter present, but empty value, should
-        return the same as a call with no parameter
-        """
-        self.client.login(username='manager', password='abc')
-        self.create_project_hours()
-
-        response = self.client.get(self.ajax_url, data={
-            'week_start': ''
-        })
-
-        self.process_default_call(response)
-
-    def test_ajax_call_date(self):
-        """
-        An ajax call with the 'week_of' parameter should return
-        the data for that week
-        """
-        self.client.login(username='manager', password='abc')
-        self.create_project_hours()
-
-        date = datetime.datetime.now() + relativedelta(days=7)
-        response = self.client.get(self.ajax_url, data={
-            'week_start': date.strftime('%Y-%m-%d')
-        })
-        self.assertEquals(response.status_code, 200)
-
-        data = json.loads(response.content)
-
-        self.assertEquals(len(data['project_hours']), 2)
-        self.assertEquals(len(data['projects']), 1)
-        correct_hours = {
-            self.manager.id: 2.0,
-            self.user.id: 15.0
-        }
-        for entry in data['project_hours']:
-            self.assertEquals(entry['hours'], correct_hours[entry['user']])
-
-    def test_ajax_create_successful(self):
-        """
-        A post request on the ajax url should create a new project
-        hour entry and return the entry's pk
-        """
-        self.client.login(username='manager', password='abc')
-
-        self.assertEquals(ScheduleAssignment.objects.count(), 0)
-
-        data = {
-            'hours': 5,
-            'user': self.manager.pk,
-            'project': self.tracked_project.pk,
-            'week_start': self.week_start.strftime('%Y-%m-%d')
-        }
-        response = self.client.post(self.ajax_url, data=data)
-        self.assertEquals(response.status_code, 200)
-
-        ph = ScheduleAssignment.objects.get()
-        self.assertEquals(ScheduleAssignment.objects.count(), 1)
-        self.assertEquals(int(response.content), ph.pk)
-        self.assertEquals(ph.hours, Decimal("5.0"))
-
-    def test_ajax_create_unsuccessful(self):
-        """
-        If any of the data is missing, the server response should
-        be a 500 error
-        """
-        self.client.login(username='manager', password='abc')
-
-        self.assertEquals(ScheduleAssignment.objects.count(), 0)
-
-        self.ajax_posts()
-
-        self.assertEquals(ScheduleAssignment.objects.count(), 0)
-
-    def test_ajax_update_successful(self):
-        """
-        A put request to the url with the correct data should update
-        an existing project hour entry
-        """
-        self.client.login(username='manager', password='abc')
-
-        ph = ScheduleAssignment.objects.create(
-            hours=Decimal('5.0'),
-            project=self.tracked_project,
-            user=self.manager
-        )
-
-        response = self.client.post(self.ajax_url, data={
-            'project': self.tracked_project.pk,
-            'user': self.manager.pk,
-            'hours': 10,
-            'week_start': self.week_start.strftime('%Y-%m-%d')
-        })
-        self.assertEquals(response.status_code, 200)
-
-        ph = ScheduleAssignment.objects.get()
-        self.assertEquals(ph.hours, Decimal("10"))
-
-    def test_ajax_update_unsuccessful(self):
-        """
-        If the request to update is missing data, the server should respond
-        with a 500 error
-        """
-        self.client.login(username='manager', password='abc')
-
-        ph = ScheduleAssignment.objects.create(
-            hours=Decimal('10.0'),
-            project=self.untracked_project,
-            user=self.manager
-        )
-
-        self.ajax_posts()
-
-        self.assertEquals(ScheduleAssignment.objects.count(), 1)
-        self.assertEquals(ph.hours, Decimal('10.0'))
-
-    def test_ajax_delete_successful(self):
-        """
-        A delete request with a valid pk should delete the project
-        hours entry from the database
-        """
-        self.client.login(username='manager', password='abc')
-
-        ph = ScheduleAssignment.objects.create(
-            hours=Decimal('5.0'),
-            project=self.tracked_project,
-            user=self.manager
-        )
-
-        url = reverse('ajax_schedule')
-
-        # TODO: update this
-        response = self.client.delete(url)
-        self.assertEquals(response.status_code, 200)
-
-        self.assertEquals(ScheduleAssignment.objects.count(), 0)
-
-    def test_duplicate_successful(self):
-        """
-        You can copy hours from the previous week to the currently
-        active week. A request with the duplicate key present will
-        start the duplication process
-        """
-        self.client.login(username='manager', password='abc')
-        self.create_project_hours()
-
-        msg = 'Project hours were copied'
-
-        response = self.client.post(self.ajax_url, data={
-            'week_update': self.future.strftime('%Y-%m-%d'),
-            'duplicate': 'duplicate'
-        }, follow=True)
-        self.assertEquals(response.status_code, 200)
-
-        messages = response.context['messages']
-        self.assertEquals(len(messages), 1)
-        self.assertEquals(messages._loaded_messages[0].message, msg)
-
-        ph = ScheduleAssignment.objects.all()
-        self.assertEquals(ph.count(), 6)
-        self.assertEquals(ph.filter(week_start__gte=self.future).count(), 2)
-
-    def test_duplicate_unsuccessful_params(self):
-        """
-        Both week_update and duplicate must be present if hours
-        duplication is to take place
-        """
-        self.client.login(username='manager', password='abc')
-        self.create_project_hours()
-
-        response = self.client.post(self.ajax_url, data={
-            'week_update': self.future.strftime('%Y-%m-%d')
-        }, follow=True)
-        self.assertEquals(response.status_code, 500)
-
-        response = self.client.post(self.ajax_url, data={
-            'duplicate': 'duplicate'
-        }, follow=True)
-        self.assertEquals(response.status_code, 500)
-
-        self.assertEquals(ScheduleAssignment.objects.count(), 4)
-
-    def test_duplicate_dates(self):
-        """
-        If you specify a week and hours current exist for that week,
-        the previous weeks hours will be copied over the current entries
-        """
-        self.client.login(username='manager', password='abc')
-        self.create_project_hours()
-
-        msg = 'Project hours were copied'
-
-        response = self.client.post(self.ajax_url, data={
-            'week_update': self.next_week.strftime('%Y-%m-%d'),
-            'duplicate': 'duplicate'
-        }, follow=True)
-        self.assertEquals(response.status_code, 200)
-
-        messages = response.context['messages']
-        self.assertEquals(len(messages), 1)
-        self.assertEquals(messages._loaded_messages[0].message, msg)
-
-        this_week_qs = ScheduleAssignment.objects.filter(
-            week_start=self.week_start
-        ).values_list('hours', flat=True)
-        next_week_qs = ScheduleAssignment.objects.filter(
-            week_start=self.next_week
-        ).values_list('hours', flat=True)
-
-        # ValueQuerySets do not like being compared...
-        this_week_qs = list(this_week_qs)
-        next_week_qs = list(next_week_qs)
-
-        self.assertEquals(ScheduleAssignment.objects.count(), 4)
-        self.assertEquals(ScheduleAssignment.objects.filter(
-            published=False).count(), 4)
-        self.assertEquals(this_week_qs, next_week_qs)
-
-    def test_no_hours_to_copy(self):
-        """
-        You should be notified if there are no hours to copy
-        from the previous week
-        """
-        self.client.login(username='manager', password='abc')
-
-        msg = 'There are no hours to copy'
-
-        response = self.client.post(self.ajax_url, data={
-            'week_update': self.week_start.strftime('%Y-%m-%d'),
-            'duplicate': 'duplicate'
-        }, follow=True)
-        self.assertEquals(response.status_code, 200)
-
-        messages = response.context['messages']
-        self.assertEquals(len(messages), 1)
-        self.assertEquals(messages._loaded_messages[0].message, msg)
-
-    def test_publish_hours(self):
-        """
-        If you post to the edit view, you can publish the hours for
-        the given week
-        """
-        self.client.login(username='manager', password='abc')
-        self.create_project_hours()
-
-        msg = 'Unpublished project hours are now published'
-
-        ph = ScheduleAssignment.objects.filter(published=True)
-        self.assertEquals(ph.count(), 0)
-
-        response = self.client.post(self.view_url, follow=True)
-        self.assertEquals(response.status_code, 200)
-
-        messages = response.context['messages']
-        self.assertEquals(len(messages), 1)
-        self.assertEquals(messages._loaded_messages[0].message, msg)
-
-        ph = ScheduleAssignment.objects.filter(published=True)
-        self.assertEquals(ph.count(), 2)
-
-        for p in ph:
-            self.assertEquals(p.week_start, self.week_start.date())
-
-    def test_publish_hours_unsuccessful(self):
-        """
-        If you post to the edit view and there are no hours to
-        publish, you are told so
-        """
-        self.client.login(username='manager', password='abc')
-        self.create_project_hours()
-
-        msg = 'There were no hours to publish'
-
-        ScheduleAssignment.objects.update(published=True)
-
-        response = self.client.post(self.view_url, follow=True)
-        self.assertEquals(response.status_code, 200)
-
-        messages = response.context['messages']
-        self.assertEquals(len(messages), 1)
-        self.assertEquals(messages._loaded_messages[0].message, msg)
-
-        ph = ScheduleAssignment.objects.filter(published=True)
-        self.assertEquals(ph.count(), 4)
+        self.assertEquals(response['Content-Type'], 'application/json')
+        content = json.loads(response.content)
+        assignments = content['assignments']
+        self.assertEquals(len(assignments), 0)
+        all_users = content['all_users']
+        self.assertEquals(len(all_users), 1)
+        self.assertTrue(all_users[0]['id'], self.user3.pk)
+        all_projects = content['all_projects']
+        self.assertTrue(len(all_projects), 2)
+        for p in all_projects:
+            saved = Project.objects.get(pk=p['id'])
+
+    def test_delete(self):
+        """DELETE should delete all assignments with given ids."""
+        pass
+
+    def test_delete_different_week(self):
+        """DELETE should only work on assignments for current week."""
+        pass
+
+    def test_delete_bad_format(self):
+        """DELETE returns 500 response if data is not JSON-encoded."""
+        pass
+
+    def test_delete_non_existing(self):
+        """DELETE returns 500 response if an assignment doesn't exist."""
+        pass
+
+    def test_post_bad_format(self):
+        """POST returns 500 response if data is not JSON-encoded."""
+
+    def test_post_create(self):
+        """POST assignment map w/no id should create a new assignment."""
+
+    def test_post_update(self):
+        """POST assignment map w/pk should update existing assignment."""
+        pass
+
+    def test_post_update_non_existing(self):
+        """POST returns 500 response if assignment to update does not exist."""
+        pass
+
+    def test_post_update_last_week(self):
+        """POST can only update assignment from current week."""
+        pass
+
+    def test_post_multiple(self):
+        """POST can accept multiple entries to create/update."""
+        pass

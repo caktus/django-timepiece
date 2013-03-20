@@ -24,7 +24,7 @@
                 <button type="submit" class="btn" name="submit">Update</button>
             </form>
         </div>
-        {% if perms.timepiece.add_projecthours %}
+        {% if perms.timepiece.add_scheduleassignment %}
             <div class="span2">
                 <a class="btn right" href="{% url 'edit_schedule' %}?week_start={{ week|date:'Y-m-d' }}">Edit Schedule</a>
             </div>
@@ -33,7 +33,7 @@
 
     <div class="row-fluid">
         <div class="span12">
-            {% if projects %}
+            {% if schedule %}
                 <table id="schedule" class="table table-bordered table-condensed">
                     <thead>
                         <tr>
@@ -44,7 +44,7 @@
                         </tr>
                     </thead>
                     <tbody>
-                        {% for id, name, entries in projects %}
+                        {% for id, name, entries in schedule %}
                             <tr>
                                 <th>{{ name }}</th>
                                 {% for entry in entries %}

@@ -48,7 +48,7 @@ class TestProductivityReport(TimepieceDataTestCase):
             for user in (self.users[0], self.users[1]):
                 data = {'user': user, 'week_start': week_start,
                         'project': self.project, 'hours': 2}
-                self.create_project_hours_entry(**data)
+                self.create_schedule_assignment(**data)
 
     def _unpack(self, response):
         form = response.context['form']
