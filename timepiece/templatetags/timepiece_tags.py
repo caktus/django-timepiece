@@ -178,8 +178,13 @@ def project_hours_for_contract(context, contract, project,
     """
     hours = contract.entries.filter(project=project)
     if billable is not None:
-        billable = (billable.lower() == u'billable')
-        hours = hours.filter(activity__billable=billable)
+        if billable in (u'billable', u'nonbillable'):
+            billable = (billable.lower() == u'billable')
+            hours = hours.filter(activity__billable=billable)
+        else:
+            msg = '`project_hours_for_contract` arg 4 must be "billable" ' \
+                  'or "nonbillable"'
+            raise template.TemplateSyntaxError(msg)
     hours = hours.aggregate(s=Sum('hours'))['s'] or 0
     context[variable] = hours
     return ''
