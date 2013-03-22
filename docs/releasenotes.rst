@@ -1,8 +1,17 @@
 Release Notes
 =============
 
-0.8.2 (Released 01-25-2013)
+0.8.3 (unreleased)
 ------------------
+
+Related issues are in the `0.8.3 milestone
+<https://github.com/caktus/django-timepiece/issues?milestone=37&page=1&state=closed>`_.
+
+* Fixed invoice creation to separate out non-billable activities and not count them in the invoice totals.
+
+
+0.8.2 (Released 01-25-2013)
+---------------------------
 
 Related issues are in the `0.8.2 milestone
 <https://github.com/caktus/django-timepiece/issues?milestone=36&page=1&state=closed>`_.
