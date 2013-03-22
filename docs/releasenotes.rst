@@ -13,6 +13,7 @@ Related issues are in the `0.8.3 milestone
 * Added requirement that scheduled hours be > 0.
 * Added tests for project hours.
 * Fixed weekly schedule editor so project name changes stick.
+* Clicking 'Clock Out' more than once gives 404 error
 
 
 0.8.2 (Released 01-25-2013)
