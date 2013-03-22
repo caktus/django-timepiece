@@ -290,7 +290,6 @@ class InvoiceCreateTestCase(TimepieceDataTestCase):
         for activity in all_activities:
             hg = timepiece.HourGroup.objects.create(name=activity.name)
             hg.activities.add(activity)
-            # hg.save()   # Not needed
 
     def login_with_permission(self):
         """Helper to login as user with correct permissions"""
