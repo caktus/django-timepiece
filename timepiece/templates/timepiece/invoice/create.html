@@ -27,28 +27,44 @@
         </div>
 
         <div class="span4">
-            {% if totals %}
-                <h3>Totals</h3>
-                    <table class="table table-bordered">
+            <h3>Billable Totals</h3>
+            <table class="table table-bordered">
+                <tr>
+                    <th>Activity Type</th>
+                    <th>Total Hours</th>
+                </tr>
+                {% for name, hours_activities in billable_totals %}
+                    <tr class="ledger_header">
+                        <th>{{ name|title }}</th>
+                        <td class="hours"> {{ hours_activities.0 }} </td>
+                    </tr>
+                    {% for name, hours in hours_activities.1 %}
                         <tr>
-                            <th>Activity Type</th>
-                            <th>Total Hours</th>
+                            <td>{{ name|title }}</td>
+                            <td class="hours">{{ hours }} </td>
                         </tr>
-                        {% for name, hours_activities in totals %}
-                            <tr class="ledger_header">
-                                <th>{{ name|title }}</th>
-                                <td class="hours"> {{ hours_activities.0 }} </td>
-                            </tr>
-                            {% for name, hours in hours_activities.1 %}
-                                <tr>
-                                    <td>{{ name|title }}</td>
-                                    <td class="hours">{{ hours }} </td>
-                                </tr>
-                            {% endfor %}
-                        {% endfor %}
-                    </table>
-                <br />
-            {% endif %}
+                    {% endfor %}
+                {% endfor %}
+            </table>
+            <h3>Non-billable Totals</h3>
+            <table class="table table-bordered">
+                <tr>
+                    <th>Activity Type</th>
+                    <th>Total Hours</th>
+                </tr>
+                {% for name, hours_activities in nonbillable_totals %}
+                    <tr class="ledger_header">
+                        <th>{{ name|title }}</th>
+                        <td class="hours"> {{ hours_activities.0 }} </td>
+                    </tr>
+                    {% for name, hours in hours_activities.1 %}
+                        <tr>
+                            <td>{{ name|title }}</td>
+                            <td class="hours">{{ hours }} </td>
+                        </tr>
+                    {% endfor %}
+                {% endfor %}
+            </table>
         </div>
     </div>
 
