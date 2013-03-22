@@ -730,6 +730,31 @@ class ClockOutTest(TimepieceDataTestCase):
             '%(project)s - %(activity)s - from %(st_str)s to %(end_str)s' %
             entry1_data)
 
+    def test_clocking_out_inactive(self):
+        # If clock out when not active, redirect to dashboard
+        # (e.g. double-clicked clock out button or clicked it on an old page)
+
+        # setUp clocked us in, so clock out again
+        data = {
+            'start_time_0': self.entry.start_time.strftime('%m/%d/%Y'),
+            'start_time_1': self.entry.start_time.strftime('%H:%M:%S'),
+            'end_time_0': self.default_end_time.strftime('%m/%d/%Y'),
+            'end_time_1': self.default_end_time.strftime('%H:%M:%S'),
+            'location': self.location.pk,
+            }
+        response = self.client.post(
+            self.url, data,
+            follow=True,
+            )
+        # Do it again - make sure we redirect to the dashboard
+        response = self.client.post(
+            self.url, data,
+            follow=False,
+            )
+        self.assertRedirects(response, reverse('dashboard'),
+                             status_code=302, target_status_code=200)
+
+
 
 class CheckOverlap(TimepieceDataTestCase):
     """
