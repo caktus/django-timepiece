@@ -1,8 +1,23 @@
 Release Notes
 =============
 
-0.8.2 (Released 01-25-2013)
+0.8.3 (unreleased)
 ------------------
+
+Related issues are in the `0.8.3 milestone
+<https://github.com/caktus/django-timepiece/issues?milestone=37&page=1&state=closed>`_.
+
+* Fixed invoice creation to separate out non-billable activities and not count them in the invoice totals.
+* Added link to `Outstanding Hours` page from `Invoice Detail` page.
+* Added schedule link to mobile navbar
+* Added requirement that scheduled hours be > 0.
+* Added tests for project hours.
+* Fixed weekly schedule editor so project name changes stick.
+* Clicking 'Clock Out' more than once gives 404 error.
+
+
+0.8.2 (Released 01-25-2013)
+---------------------------
 
 Related issues are in the `0.8.2 milestone
 <https://github.com/caktus/django-timepiece/issues?milestone=36&page=1&state=closed>`_.

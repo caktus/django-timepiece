@@ -148,7 +148,9 @@ def clock_in(request):
 def clock_out(request):
     entry = utils.get_active_entry(request.user)
     if not entry:
-        raise Http404
+        message = "Not clocked in"
+        messages.info(request, message)
+        return HttpResponseRedirect(reverse('dashboard'))
     if request.POST:
         form = timepiece_forms.ClockOutForm(request.POST, instance=entry)
         if form.is_valid():
@@ -632,11 +634,20 @@ def create_invoice(request):
         entries = entries.order_by('start_time')
         if not entries:
             raise Http404
+
+    billable_entries = entries.filter(activity__billable=True) \
+        .select_related()
+    nonbillable_entries = entries.filter(activity__billable=False) \
+        .select_related()
     return render(request, 'timepiece/invoice/create.html', {
         'invoice_form': invoice_form,
-        'entries': entries.select_related(),
+        'billable_entries': billable_entries,
+        'nonbillable_entries': nonbillable_entries,
         'project': project,
-        'totals': timepiece.HourGroup.objects.summaries(entries),
+        'billable_totals': timepiece.HourGroup.objects
+            .summaries(billable_entries),
+        'nonbillable_totals': timepiece.HourGroup.objects
+            .summaries(nonbillable_entries),
         'from_date': from_date,
         'to_date': to_date,
     })
@@ -705,11 +716,20 @@ class InvoiceDetail(DetailView):
     def get_context_data(self, **kwargs):
         context = super(InvoiceDetail, self).get_context_data(**kwargs)
         invoice = context['invoice']
-        entries = invoice.entries.order_by('start_time').select_related()
+        billable_entries = invoice.entries.filter(activity__billable=True)\
+                                          .order_by('start_time')\
+                                          .select_related()
+        nonbillable_entries = invoice.entries.filter(activity__billable=False)\
+                                             .order_by('start_time')\
+                                             .select_related()
         return {
             'invoice': invoice,
-            'entries': entries,
-            'totals': timepiece.HourGroup.objects.summaries(entries),
+            'billable_entries': billable_entries,
+            'billable_totals': timepiece.HourGroup.objects\
+                                        .summaries(billable_entries),
+            'nonbillable_entries': nonbillable_entries,
+            'nonbillable_totals': timepiece.HourGroup.objects\
+                                           .summaries(nonbillable_entries),
             'from_date': invoice.start,
             'to_date': invoice.end,
             'project': invoice.project,
@@ -721,9 +741,13 @@ class InvoiceEntriesDetail(InvoiceDetail):
 
     def get_context_data(self, **kwargs):
         context = super(InvoiceEntriesDetail, self).get_context_data(**kwargs)
-        entries = context['entries']
+        billable_entries = context['billable_entries']
+        nonbillable_entries = context['nonbillable_entries']
         context.update({
-            'total': entries.aggregate(hours=Sum('hours'))['hours'],
+            'billable_total': billable_entries \
+                              .aggregate(hours=Sum('hours'))['hours'],
+            'nonbillable_total': nonbillable_entries\
+                                 .aggregate(hours=Sum('hours'))['hours'],
         })
         return context
 
@@ -748,7 +772,7 @@ class InvoiceDetailCSV(CSVMixin, InvoiceDetail):
             'Breaks',
             'Hours',
         ])
-        for entry in context['entries']:
+        for entry in context['billable_entries']:
             data = [
                 entry.start_time.strftime('%x'),
                 entry.start_time.strftime('%A'),
@@ -760,7 +784,7 @@ class InvoiceDetailCSV(CSVMixin, InvoiceDetail):
                 entry.hours,
             ]
             rows.append(data)
-        total = context['entries'].aggregate(hours=Sum('hours'))['hours']
+        total = context['billable_entries'].aggregate(hours=Sum('hours'))['hours']
         rows.append(('', '', '', '', '', '', 'Total:', total))
         return rows
 
@@ -1384,8 +1408,8 @@ class HourlyReport(ReportMixin, CSVMixin, TemplateView):
             'from_date': start,
             'to_date': end,
             'billable': True,
-            'non_billable': True,
-            'paid_leave': True,
+            'non_billable': False,
+            'paid_leave': False,
             'trunc': 'day',
             'projects': [],
         }
@@ -1441,6 +1465,12 @@ class HourlyReport(ReportMixin, CSVMixin, TemplateView):
 
     def get_form(self):
         data = self.request.GET or self.defaults
+        data = data.copy()  # make mutable
+        # Fix booleans - the strings "0" and "false" are True in Python
+        for key in ['billable', 'non_billable', 'paid_leave']:
+            data[key] = key in data and \
+                        str(data[key]).lower() in ('on', 'true', '1')
+
         return timepiece_forms.ProjectFiltersForm(data)
 
 
