@@ -1,10 +1,10 @@
 import datetime
 from dateutil.relativedelta import relativedelta
 from decimal import Decimal
-import logging
 
 from django.contrib.auth.models import User
 from django.contrib.sites.models import Site
+from django.core import validators
 from django.core.exceptions import ValidationError
 from django.core.mail import send_mail
 from django.db import models
@@ -111,6 +111,10 @@ class Project(models.Model):
 
     def __unicode__(self):
         return '{0} ({1})'.format(self.name, self.business.get_display_name())
+
+    @property
+    def billable(self):
+        return self.type.billable
 
 
 class RelationshipType(models.Model):
@@ -841,11 +845,21 @@ class ProjectContract(models.Model):
 
     @property
     def hours_worked(self):
-        """Number of hours worked on the contract."""
+        """Number of billable hours worked on the contract."""
         if not hasattr(self, '_worked'):
             # TODO put this in a .extra w/a subselect
-            self._worked = self.entries.aggregate(s=Sum('hours'))['s'] or 0
+            entries = self.entries.filter(activity__billable=True)
+            self._worked = entries.aggregate(s=Sum('hours'))['s'] or 0
         return self._worked or 0
+
+    @property
+    def nonbillable_hours_worked(self):
+        """Number of non-billable hours worked on the contract."""
+        if not hasattr(self, '_nb_worked'):
+            # TODO put this in a .extra w/a subselect
+            entries = self.entries.filter(activity__billable=False)
+            self._nb_worked = entries.aggregate(s=Sum('hours'))['s'] or 0
+        return self._nb_worked or 0
 
 
 class ContractHour(models.Model):
@@ -1010,7 +1024,10 @@ class ProjectHours(models.Model):
     week_start = models.DateField(verbose_name='start of week')
     project = models.ForeignKey(Project)
     user = models.ForeignKey(User)
-    hours = models.DecimalField(max_digits=8, decimal_places=2, default=0)
+    hours = models.DecimalField(
+        max_digits=8, decimal_places=2, default=0,
+        validators=[validators.MinValueValidator(Decimal("0.01"))]
+    )
     published = models.BooleanField(default=False)
 
     def __unicode__(self):

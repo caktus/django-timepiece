@@ -12,12 +12,16 @@
             <table class='table table-bordered table-striped table-condensed'>
                 <thead>
                     <tr>
-                        <th>Name</th>
-                        <th>Start Date</th>
-                        <th>End Date</th>
-                        <th>Contract Hours</th>
-                        <th>Hours Worked</th>
-                        <th>Contract Type</th>
+                        <th rowspan="2">Name</th>
+                        <th rowspan="2">Start Date</th>
+                        <th rowspan="2">End Date</th>
+                        <th rowspan="2">Contract Hours</th>
+                        <th colspan="2">Hours Worked</th>
+                        <th rowspan="2">Contract Type</th>
+                    </tr>
+                    <tr>
+                        <th>Billable</th>
+                        <th>Non-billable</th>
                     </tr>
                 </thead>
                 <tbody>
@@ -33,6 +37,7 @@
                                 {%  endif %}
                             </td>
                             <td class="nowrap hours">{{ contract.hours_worked|floatformat:2 }} ({% widthratio contract.hours_worked contract.contracted_hours 100 %}%)</td>
+                            <td class="nowrap hours">{{ contract.nonbillable_hours_worked|floatformat:2 }}</td>
                             <td class="nowrap">{{ contract.get_type_display }}</td>
                         </tr>
                     {% endfor %}
