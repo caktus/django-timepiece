@@ -171,7 +171,13 @@
                                             {% endwith %}
                                         </td>
                                         <td class="nowrap">{{ entry.get_total_seconds|humanize_seconds|slice:":-3" }}</td>
-                                        <td class="hidden-phone">{{ entry.comments|slice:':50' }}</td>
+                                        <td class="hidden-phone">
+                                            {% if entry.comments|length > 50 %}
+                                                {{entry.comments|slice:':50'}}&hellip;
+                                            {% else %}
+                                                {{ entry.comments }}
+                                            {% endif %}
+                                        </td>
                                     </tr>
                                 {% endfor %}
                                 {% sum_hours day.list 'daily_total' %}
