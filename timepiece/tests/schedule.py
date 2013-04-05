@@ -1,6 +1,7 @@
-import json
 import datetime
 from dateutil.relativedelta import relativedelta
+import json
+import mock
 
 from timepiece import utils
 from timepiece.forms import ScheduleAssignmentForm
@@ -18,7 +19,7 @@ class ScheduleAssignmentModelTestCase(TimepieceDataTestCase):
     def test_week_start(self):
         """week_start should always save to Monday of the given week."""
         project = self.create_project()
-        monday = datetime.date(2012, 07, 16)
+        monday = datetime.date(2012, 7, 16)
         for i in range(7):
             date = monday + relativedelta(days=i)
             assignment = ScheduleAssignment.objects.create(
@@ -135,7 +136,6 @@ class ScheduleTestBase(TimepieceDataTestCase):
 
 
 class ScheduleViewTestCase(ScheduleTestBase):
-    # TODO - some tests for published vs unpublished
     url_name = 'view_schedule'
     perm_names = [('timepiece', 'can_clock_in')]
 
@@ -146,11 +146,17 @@ class ScheduleViewTestCase(ScheduleTestBase):
         self.assertEquals(response.status_code, 302)  # redirect to login
 
     def test_default_filter(self):
-        """By default, the schedule should show assignments from this week."""
+        """Schedule should show this week's published assignments."""
+        self.this_week_assignments[0].published = True
+        self.this_week_assignments[0].save()
         response = self._get(data={})
         self.assertEquals(response.status_code, 200)
         self.assertEquals(response.context['week'], self.this_week)
-        # TODO - check entries
+        schedule = response.context['schedule']
+        self.assertEquals(len(schedule), 1)  # 1 project
+        proj_id, name, row = schedule[0]
+        self.assertEquals(len(row), 1)  # 1 user
+        self.assertEquals(row[0], self.this_week_assignments[0].hours)
 
     def test_week_filter(self):
         """Schedule should show assignments for Mon-Sun of specified week."""
@@ -278,12 +284,43 @@ class ScheduleAjaxTestCase(ScheduleTestBase):
     url_name = 'ajax_schedule'
     perm_names = [('timepiece', 'add_scheduleassignment')]
 
+    def _post(self, *args, **kwargs):
+        """
+        By default, the Django test client interprets POST data as a
+        dictionary. By using a different content type it will take the data as
+        is.
+        """
+        if 'content_type' not in kwargs:
+            kwargs['content_type'] = 'application/x-www-form-urlencoded'
+        return super(ScheduleAjaxTestCase, self)._post(*args, **kwargs)
+
+    def _delete(self, *args, **kwargs):
+        """
+        The test client in Django 1.4 requires key/value pairs for DELETE
+        data. To get around this, we'll create a simple mock request and
+        to test the basic functionality of the view. This is fixed in 1.5.
+        """
+        # Just use the default if data is not given.
+        if 'data' not in kwargs:
+            return super(ScheduleAjaxTestCase, self)._delete(*args, **kwargs)
+
+        from timepiece.views import ScheduleAjax
+        request = mock.Mock()
+        request.raw_post_data = kwargs['data']
+        request.method = 'DELETE'
+        request.GET = kwargs.get('get_kwargs', None) or {}
+        view = ScheduleAjax()
+        return view.dispatch(request)
+
     def test_no_permission(self):
         """Permission is required to use the schedule AJAX view."""
         self.user.user_permissions.all().delete()
-        for _send in (self._get, self._post, self._delete):
+        methods = ['GET', 'POST', 'DELETE']
+        functions = [self._get, self._post, self._delete]
+        for method, _send in zip(methods, functions):
             response = _send()
-            self.assertEquals(response.status_code, 302)  # redirect to login
+            self.assertEquals(response.status_code, 302,
+                    '{0} should redirect to login'.format(method))
 
     def test_get(self):
         """GET returns complete lists of assignments, projects, & users."""
@@ -327,38 +364,138 @@ class ScheduleAjaxTestCase(ScheduleTestBase):
 
     def test_delete(self):
         """DELETE should delete all assignments with given ids."""
-        pass
+        pks = [self.this_week_assignments[0].pk]
+        response = self._delete(data=json.dumps(pks))
+        self.assertEquals(response.status_code, 200)
+        self.assertEquals(response['Content-Type'], 'application/json')
+        content = json.loads(response.content)
+        self.assertEquals(content, pks)
+        saved = ScheduleAssignment.objects.all()
+        self.assertEqual(saved.count(), 3)
+        self.assertTrue(self.this_week_assignments[1] in saved)
+        self.assertTrue(self.prev_week_assignments[0] in saved)
+        self.assertTrue(self.prev_week_assignments[1] in saved)
 
     def test_delete_different_week(self):
         """DELETE should only work on assignments for current week."""
-        pass
+        pks = [self.prev_week_assignments[0].pk]
+        response = self._delete(data=json.dumps(pks))
+        self.assertEquals(response.status_code, 500)
+        self.assertEquals(ScheduleAssignment.objects.count(), 4)
 
     def test_delete_bad_format(self):
         """DELETE returns 500 response if data is not JSON-encoded."""
-        pass
+        response = self._delete(data='bad')
+        self.assertEquals(response.status_code, 500)
+        self.assertEquals(ScheduleAssignment.objects.count(), 4)
 
     def test_delete_non_existing(self):
         """DELETE returns 500 response if an assignment doesn't exist."""
-        pass
+        pks = [123]
+        response = self._delete(data=json.dumps(pks))
+        self.assertEquals(response.status_code, 500)
+        self.assertEquals(ScheduleAssignment.objects.count(), 4)
 
     def test_post_bad_format(self):
         """POST returns 500 response if data is not JSON-encoded."""
+        response = self._delete(data='bad')
+        self.assertEquals(response.status_code, 500)
+        self.assertEquals(ScheduleAssignment.objects.count(), 4)
 
     def test_post_create(self):
         """POST assignment map w/no id should create a new assignment."""
+        project = self.create_project()
+        data = [{'project': project.pk, 'user': self.user.pk, 'hours': 5}]
+        response = self._post(data=json.dumps(data))
+        self.assertEquals(response.status_code, 200)
+        self.assertEquals(response['Content-Type'], 'application/json')
+        content = json.loads(response.content)
+        self.assertEquals(ScheduleAssignment.objects.count(), 5)
+        new = ScheduleAssignment.objects.get(pk=content[0])
+        self.assertEquals(new.project.pk, project.pk)
+        self.assertEquals(new.user.pk, self.user.pk)
+        self.assertEquals(new.week_start, self.this_week)
+        self.assertEquals(new.hours, 5)
+
+    def test_post_create_duplicate(self):
+        """
+        Assignment shouldn't be created if one already exists for project,
+        user, and week.
+        """
+        data = [{'project': self.tracked_project.pk, 'user': self.user.pk,
+                'hours': 5}]
+        response = self._post(data=json.dumps(data))
+        self.assertEquals(response.status_code, 500)
+        self.assertEquals(ScheduleAssignment.objects.count(), 4)
+
+    def test_post_create_0_hours(self):
+        """Assignment should not be created if 0 hours are specified."""
+        project = self.create_project()
+        data = [{'project': project.pk, 'user': self.user.pk, 'hours': 0}]
+        response = self._post(data=json.dumps(data))
+        self.assertEquals(response.status_code, 500)
+        self.assertEquals(ScheduleAssignment.objects.count(), 4)
 
     def test_post_update(self):
         """POST assignment map w/pk should update existing assignment."""
-        pass
+        assignment = self.this_week_assignments[0]
+        data = [{'id': assignment.pk, 'project': assignment.project.pk,
+                'user': assignment.user.pk, 'hours': assignment.hours + 10}]
+        response = self._post(data=json.dumps(data))
+        self.assertEquals(response.status_code, 200)
+        self.assertEquals(response['Content-Type'], 'application/json')
+        content = json.loads(response.content)
+        self.assertEquals(content, [assignment.pk])
+        self.assertEquals(ScheduleAssignment.objects.count(), 4)
+        saved = ScheduleAssignment.objects.get(pk=assignment.pk)
+        self.assertEquals(saved.hours, assignment.hours + 10)
 
     def test_post_update_non_existing(self):
         """POST returns 500 response if assignment to update does not exist."""
-        pass
+        data = [{'id': 123, 'project': self.tracked_project.pk,
+                'user': self.user.pk, 'hours': 15}]
+        response = self._post(data=json.dumps(data))
+        self.assertEquals(response.status_code, 500)
+        self.assertEquals(ScheduleAssignment.objects.count(), 4)
 
     def test_post_update_last_week(self):
         """POST can only update assignment from current week."""
-        pass
+        assignment = self.prev_week_assignments[0]
+        data = [{'id': assignment.pk, 'project': assignment.project.pk,
+                'user': assignment.user.pk, 'hours': assignment.hours + 10}]
+        response = self._post(data=json.dumps(data))
+        self.assertEquals(response.status_code, 500)
+        self.assertEquals(ScheduleAssignment.objects.count(), 4)
+        saved = ScheduleAssignment.objects.get(pk=assignment.pk)
+        self.assertEquals(saved.hours, assignment.hours)
 
     def test_post_multiple(self):
         """POST can accept multiple entries to create/update."""
-        pass
+        project = self.create_project()
+        assignment = self.this_week_assignments[0]
+        data = [
+            {'project': project.pk, 'user': self.user.pk, 'hours': 5},
+            {'id': assignment.pk, 'project': assignment.project.pk,
+                    'user': assignment.user.pk,
+                    'hours': assignment.hours + 10},
+        ]
+        response = self._post(data=json.dumps(data))
+        self.assertEquals(response.status_code, 200)
+        self.assertEquals(response['Content-Type'], 'application/json')
+        content = json.loads(response.content)
+        new = ScheduleAssignment.objects.get(project=project, user=self.user,
+                week_start=self.this_week, hours=5)
+        self.assertEquals(content, [new.pk, assignment.pk])
+
+    def test_post_multiple_bad_format(self):
+        """No changes occur if one part has bad data."""
+        project = self.create_project()
+        assignment = self.this_week_assignments[0]
+        data = [
+            {'project': project.pk, 'user': self.user.pk, 'hours': 5},
+            {'id': 123, 'project': assignment.project.pk,
+                    'user': assignment.user.pk, 'hours': 20},
+        ]
+        response = self._post(data=json.dumps(data))
+        self.assertEquals(response.status_code, 500)
+        self.assertEquals(ScheduleAssignment.objects.count(), 4)

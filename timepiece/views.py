@@ -1731,18 +1731,6 @@ class ScheduleAjax(ScheduleMixin, View):
         json_data = json.dumps(data, cls=DecimalEncoder)
         return HttpResponse(json_data, content_type='application/json')
 
-    def get_instance(self, data):
-        try:
-            user = User.objects.get(pk=data.get('user', None))
-            project = timepiece.Project.objects.get(
-                    pk=data.get('project', None))
-            hours = data.get('hours', None)
-            assignment = timepiece.ScheduleAssignment.objects.get(user=user,
-                    project=project, week_start=self.week_start)
-            return assignment
-        except exceptions.DoesNotExist:
-            return None
-
     def post(self, request, *args, **kwargs):
         """
         Create or update an hour entry for a particular use and project. This
@@ -1750,7 +1738,6 @@ class ScheduleAjax(ScheduleMixin, View):
             user: the user pk for the hours
             project: the project pk for the hours
             hours: the actual hours to store
-            week_start: the start of the week for the hours
         """
         try:
             data_list = json.loads(request.raw_post_data)
@@ -1760,12 +1747,12 @@ class ScheduleAjax(ScheduleMixin, View):
 
         valid_forms = []
         for data_map in data_list:
-            pk = data_map.pop('id', None)
             instance = None
+            pk = data_map.pop('id', None)
             if pk:
                 try:
                     instance = timepiece.ScheduleAssignment.objects.get(pk=pk)
-                except ScheduleAssignment.DoesNotExist:
+                except timepiece.ScheduleAssignment.DoesNotExist:
                     msg = 'Could not find assignment {0}; request '\
                           'aborted.'.format(pk)
                     return HttpResponse(msg, status=500)
