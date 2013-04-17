@@ -4,7 +4,7 @@ import sys
 import optparse
 
 from django.conf import settings
-from django.core.management import call_command, setup_environ
+from django.core.management import call_command
 
 
 parser = optparse.OptionParser()
