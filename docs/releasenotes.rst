@@ -1,6 +1,18 @@
 Release Notes
 =============
 
+0.9.0 (Unreleased)
+------------------
+
+Related issues are in the `0.9.0 milestone
+<https://github.com/caktus/django-timepiece/issues?milestone=33&page=1&state=closed>`_.
+
+* Dropped support for Django 1.3
+* Added support for Django 1.5
+* Removed `PROJECT_UNSET` from `ProjectContract.type` choices
+* Use ellipsis after comment summary on dashboard so that comment doesn't
+  appear cut off
+
 0.8.3 (Released 03-27-2013)
 ---------------------------
 
@@ -14,7 +26,6 @@ Related issues are in the `0.8.3 milestone
 * Added tests for project hours.
 * Fixed weekly schedule editor so project name changes stick.
 * Clicking 'Clock Out' more than once gives 404 error.
-
 
 0.8.2 (Released 01-25-2013)
 ---------------------------
