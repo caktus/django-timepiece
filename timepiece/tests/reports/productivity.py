@@ -48,7 +48,7 @@ class TestProductivityReport(TimepieceDataTestCase):
             for user in (self.users[0], self.users[1]):
                 data = {'user': user, 'week_start': week_start,
                         'project': self.project, 'hours': 2}
-                self.create_project_hours_entry(**data)
+                self.create_schedule_assignment(**data)
 
     def _unpack(self, response):
         form = response.context['form']
@@ -142,7 +142,8 @@ class TestProductivityReport(TimepieceDataTestCase):
     def test_no_data(self):
         """If no data, report should contain header row only."""
         timepiece.Entry.objects.filter(project=self.project).delete()
-        timepiece.ProjectHours.objects.filter(project=self.project).delete()
+        timepiece.ScheduleAssignment.objects.filter(
+                project=self.project).delete()
         data = {'project_1': self.project.pk, 'organize_by': 'week'}
         response = self._get(data=data)
         self.assertEqual(response.status_code, 200)

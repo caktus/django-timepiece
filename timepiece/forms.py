@@ -17,7 +17,7 @@ from timepiece.fields import UserModelChoiceField
 from timepiece.lookups import ProjectLookup, QuickLookup
 from timepiece.lookups import UserLookup, BusinessLookup
 from timepiece.models import Project, Entry, Activity, UserProfile, Attribute
-from timepiece.models import ProjectHours
+from timepiece.models import ScheduleAssignment
 
 
 DATE_FORM_FORMAT = '%Y-%m-%d'
@@ -584,7 +584,7 @@ class BillableHoursForm(DateForm):
                     flat=True))
 
 
-class ProjectHoursSearchForm(forms.Form):
+class ScheduleSearchForm(forms.Form):
     week_start = forms.DateField(label='Week of', required=False,
             input_formats=(DATE_FORM_FORMAT,),
             widget=forms.DateInput(format=DATE_FORM_FORMAT))
@@ -594,10 +594,17 @@ class ProjectHoursSearchForm(forms.Form):
         return utils.get_week_start(week_start, False) if week_start else None
 
 
-class ProjectHoursForm(forms.ModelForm):
+class ScheduleAssignmentForm(forms.ModelForm):
+
+    def save(self, *args, **kwargs):
+        assignment = super(ScheduleAssignmentForm, self).save(commit=False,
+                *args, **kwargs)
+        assignment.published = False
+        assignment.save()
+        return assignment
 
     class Meta:
-        model = ProjectHours
+        model = ScheduleAssignment
 
 
 class ProductivityReportForm(forms.Form):

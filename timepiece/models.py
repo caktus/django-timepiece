@@ -1020,7 +1020,17 @@ class UserProfile(models.Model):
         return unicode(self.user)
 
 
-class ProjectHours(models.Model):
+class ScheduleAssignmentManager(models.Manager):
+
+    def get_for_week(self, date):
+        """Returns any entries in the week containing date."""
+        week_start = utils.get_week_start(date)
+        next_week = week_start + relativedelta(days=7)
+        return self.filter(week_start__gte=week_start,
+                week_start__lt=next_week)
+
+
+class ScheduleAssignment(models.Model):
     week_start = models.DateField(verbose_name='start of week')
     project = models.ForeignKey(Project)
     user = models.ForeignKey(User)
@@ -1030,6 +1040,8 @@ class ProjectHours(models.Model):
     )
     published = models.BooleanField(default=False)
 
+    objects = ScheduleAssignmentManager()
+
     def __unicode__(self):
         return "{0} on {1} for Week of {2}".format(
                 self.user.get_name_or_username(),
@@ -1038,9 +1050,7 @@ class ProjectHours(models.Model):
     def save(self, *args, **kwargs):
         # Ensure that week_start is the Monday of a given week.
         self.week_start = utils.get_week_start(self.week_start)
-        return super(ProjectHours, self).save(*args, **kwargs)
+        return super(ScheduleAssignment, self).save(*args, **kwargs)
 
     class Meta:
-        verbose_name = 'project hours entry'
-        verbose_name_plural = 'project hours entries'
         unique_together = ('week_start', 'project', 'user')

@@ -2,7 +2,7 @@ from copy import deepcopy
 import csv
 import datetime
 import json
-import urllib
+from urllib import urlencode
 
 from dateutil.relativedelta import relativedelta
 from decimal import Decimal
@@ -75,7 +75,7 @@ def dashboard(request, active_tab):
     active_tab = active_tab or 'progress'
     user = request.user
     Entry = timepiece.Entry
-    ProjectHours = timepiece.ProjectHours
+    ScheduleAssignment = timepiece.ScheduleAssignment
 
     today = datetime.date.today()
     day = today
@@ -95,7 +95,7 @@ def dashboard(request, active_tab):
     week_entries = Entry.objects.filter(user=user) \
             .timespan(week_start, span='week', current=True) \
             .select_related('project')
-    assignments = ProjectHours.objects.filter(user=user,
+    assignments = ScheduleAssignment.objects.filter(user=user,
             week_start=week_start.date())
     project_progress = utils.process_progress(week_entries, assignments)
 
@@ -353,7 +353,7 @@ class ProjectTimesheet(DetailView):
             request_get.pop('csv')
             return_url = reverse('view_project_timesheet_csv',
                                  args=(self.get_object().pk,))
-            return_url += '?%s' % urllib.urlencode(request_get)
+            return_url += '?%s' % urlencode(request_get)
             return redirect(return_url)
         return super(ProjectTimesheet, self).get(*args, **kwargs)
 
@@ -463,7 +463,7 @@ def view_user_timesheet(request, user_id, active_tab):
                     'year': from_date.year,
                     'user': form_user.pk
                 }
-                url += '?{0}'.format(urllib.urlencode(request_data))
+                url += '?{0}'.format(urlencode(request_data))
                 return HttpResponseRedirect(url)
         else:
             from_date, to_date = year_month_form.save()
@@ -556,7 +556,7 @@ def change_user_timesheet(request, user_id, action):
     entries = entries.filter(status=filter_status[action])
 
     return_url = reverse('view_user_timesheet', args=(user_id,))
-    return_url += '?%s' % urllib.urlencode({
+    return_url += '?%s' % urlencode({
         'year': from_date.year,
         'month': from_date.month,
     })
@@ -1547,185 +1547,119 @@ class BillableHours(ReportMixin, TemplateView):
 
 
 class ScheduleMixin(object):
+    permissions = ()
 
+    @method_decorator(login_required)
     def dispatch(self, request, *args, **kwargs):
-        # Since we use get param in multiple places, attach it to the class
-        default_week = utils.get_week_start(datetime.date.today()).date()
+        if not request.user.has_perms(self.permissions):
+            params = {'next': request.get_full_path()}
+            url = '{0}?{1}'.format(reverse('auth_login'), urlencode(params))
+            return HttpResponseRedirect(url)
 
-        if request.method == 'GET':
-            week_start_str = request.GET.get('week_start', '')
-        else:
-            week_start_str = request.POST.get('week_start', '')
+        # Since we use this param in multiple places, attach it to the class.
+        week_start = request.REQUEST.get('week_start', None)
+        if week_start:
+            try:
+                week_start = datetime.datetime.strptime(week_start,
+                                                        DATE_FORM_FORMAT)
+            except:
+                week_start = None
+        self.week_start = utils.get_week_start(week_start).date()
 
-        # Account for an empty string
-        self.week_start = default_week if week_start_str == '' \
-            else utils.get_week_start(datetime.datetime.strptime(
-                week_start_str, '%Y-%m-%d').date())
+        return super(ScheduleMixin, self).dispatch(request, *args, **kwargs)
 
-        return super(ScheduleMixin, self).dispatch(request, *args,
-                **kwargs)
+    def get_assignable_users(self):
+        """Returns all users who can be assigned to."""
+        # Clock-in permission required for being in the schedule.
+        # TODO: should this be enforced?
+        content_type = ContentType.objects.get_for_model(timepiece.Entry)
+        perm = Permission.objects.filter(content_type=content_type,
+                codename='can_clock_in')
+        perms = Q(user_permissions=perm) | Q(groups__permissions=perm)
+        return User.objects.filter(perms | Q(is_superuser=True))
 
-    def get_hours_for_week(self, start=None):
-        week_start = start if start else self.week_start
-        week_end = week_start + relativedelta(days=7)
+    def get_assignments(self, week_start=None):
+        """Get all assignments for the week of week_start."""
+        week_start = week_start or self.week_start
+        return timepiece.ScheduleAssignment.objects.get_for_week(week_start)
 
-        return timepiece.ProjectHours.objects.filter(
-            week_start__gte=week_start, week_start__lt=week_end)
-
-
-class ScheduleView(ScheduleMixin, TemplateView):
-    template_name = 'timepiece/schedule/view.html'
-
-    def dispatch(self, request, *args, **kwargs):
-        if not request.user.has_perm('timepiece.can_clock_in'):
-            return HttpResponseRedirect(reverse('auth_login'))
-
-        return super(ScheduleView, self).dispatch(request, *args, **kwargs)
+    def get_assignment_vals(self, assignments=None):
+        """Get ordered values for assignments."""
+        if assignments is None:  # Account for empty list.
+            assignments = self.get_assignments()
+        vals = ('user__id', 'user__first_name', 'user__last_name',
+                'project__id', 'project__name', 'hours', 'id', 'published')
+        order = ('-project__type__billable', 'project__name', 'project__id',
+                 'user__first_name', 'user__last_name', 'user__id')
+        return assignments.values(*vals).order_by(*order)
 
     def get_context_data(self, **kwargs):
-        context = super(ScheduleView, self).get_context_data(**kwargs)
-
-        initial = {'week_start': self.week_start}
-        form = timepiece_forms.ProjectHoursSearchForm(initial=initial)
-
-        project_hours = utils.get_project_hours_for_week(self.week_start) \
-            .filter(published=True)
-        users = utils.get_users_from_project_hours(project_hours)
-        id_list = [user[0] for user in users]
-        projects = []
-
-        func = lambda o: o['project__id']
-        for project, entries in groupby(project_hours, func):
-            entries = list(entries)
-            proj_id = entries[0]['project__id']
-            name = entries[0]['project__name']
-            row = [None for i in range(len(id_list))]
-            for entry in entries:
-                index = id_list.index(entry['user__id'])
-                hours = entry['hours']
-                row[index] = row[index] + hours if row[index] else hours
-            projects.append((proj_id, name, row))
-
+        """Common things for TemplateViews (ScheduleView and ScheduleEdit)."""
+        context = super(ScheduleMixin, self).get_context_data(**kwargs)
+        form = timepiece_forms.ScheduleSearchForm(initial=self.initial_data)
         context.update({
             'form': form,
             'week': self.week_start,
             'prev_week': self.week_start - relativedelta(days=7),
             'next_week': self.week_start + relativedelta(days=7),
-            'users': users,
-            'project_hours': project_hours,
-            'projects': projects
         })
         return context
 
+    def get_edit_url(self, week_start=None):
+        week_start = week_start or self.week_start
+        base = reverse('edit_schedule')
+        params = {'week_start': self.week_start.strftime('%Y-%m-%d')}
+        return '{0}?{1}'.format(base, urlencode(params))
 
-class EditScheduleView(ScheduleMixin, TemplateView):
-    template_name = 'timepiece/schedule/edit.html'
+    @property
+    def initial_data(self):
+        """Initial ScheduleSearchForm data."""
+        return {'week_start': self.week_start}
 
-    def dispatch(self, request, *args, **kwargs):
-        if not request.user.has_perm('timepiece.add_projecthours'):
-            return HttpResponseRedirect(reverse('view_schedule'))
 
-        return super(EditScheduleView, self).dispatch(request, *args,
-                **kwargs)
+class ScheduleView(ScheduleMixin, TemplateView):
+    template_name = 'timepiece/schedule/view.html'
+    permissions = ('timepiece.can_clock_in',)
+
+    def create_schedule(self, assignments, users):
+        """Creates a table of assignments by project & user."""
+        id_order = [user[0] for user in users]
+        table = []
+        func = lambda o: o['project__id']
+        for project, entries in groupby(assignments, func):
+            entries = list(entries)
+            proj_id = entries[0]['project__id']
+            name = entries[0]['project__name']
+            row = [None for i in range(len(id_order))]
+            for entry in entries:
+                index = id_order.index(entry['user__id'])
+                hours = entry['hours']
+                row[index] = row[index] + hours if row[index] else hours
+            table.append((proj_id, name, row))
+        return table
 
     def get_context_data(self, **kwargs):
-        context = super(EditScheduleView, self).get_context_data(**kwargs)
-
-        form = timepiece_forms.ProjectHoursSearchForm(initial={
-            'week_start': self.week_start
-        })
+        """Get all published schedule assignments for this week."""
+        context = super(ScheduleView, self).get_context_data(**kwargs)
+        assignments = self.get_assignment_vals().filter(published=True)
+        vals = ('user__id', 'user__first_name', 'user__last_name')
+        order = ('user__first_name', 'user__last_name', 'user__id')
+        users = assignments.values_list(*vals).distinct().order_by(*order)
+        schedule = self.create_schedule(assignments, users)
 
         context.update({
-            'form': form,
-            'week': self.week_start,
-            'ajax_url': reverse('ajax_schedule')
+            'users': users,
+            'schedule': schedule,
         })
         return context
 
-    def post(self, request, *args, **kwargs):
-        ph = self.get_hours_for_week(self.week_start).filter(published=False)
 
-        if ph.exists():
-            ph.update(published=True)
-            msg = 'Unpublished project hours are now published'
-        else:
-            msg = 'There were no hours to publish'
+class ScheduleEdit(ScheduleMixin, TemplateView):
+    template_name = 'timepiece/schedule/edit.html'
+    permissions = ('timepiece.add_scheduleassignment',)
 
-        messages.info(request, msg)
-
-        param = {
-            'week_start': self.week_start.strftime(DATE_FORM_FORMAT)
-        }
-        url = '?'.join((reverse('edit_schedule'),
-            urllib.urlencode(param),))
-
-        return HttpResponseRedirect(url)
-
-
-class ScheduleAjaxView(ScheduleMixin, View):
-    permissions = ('timepiece.add_projecthours',)
-
-    def dispatch(self, request, *args, **kwargs):
-        if not request.user.has_perm('timepiece.add_projecthours'):
-            return HttpResponseRedirect(reverse('auth_login'))
-
-        return super(ScheduleAjaxView, self).dispatch(request, *args,
-                **kwargs)
-
-    def get_instance(self, data, week_start):
-        try:
-            user = User.objects.get(pk=data.get('user', None))
-            project = timepiece.Project.objects.get(
-                pk=data.get('project', None))
-            hours = data.get('hours', None)
-            week = datetime.datetime.strptime(week_start, DATE_FORM_FORMAT).date()
-
-            ph = timepiece.ProjectHours.objects.get(user=user, project=project,
-                week_start=week)
-            ph.hours = Decimal(hours)
-        except (exceptions.ObjectDoesNotExist):
-            ph = None
-
-        return ph
-
-    def get(self, request, *args, **kwargs):
-        """
-        Returns the data as a JSON object made up of the following key/value
-        pairs:
-            project_hours: the current project hours for the week
-            projects: the projects that have hours for the week
-            all_projects: all of the projects; used for autocomplete
-            all_users: all users that can clock in; used for completion
-        """
-        perm = Permission.objects.filter(
-            content_type=ContentType.objects.get_for_model(timepiece.Entry),
-            codename='can_clock_in'
-        )
-        project_hours = self.get_hours_for_week().values(
-            'id', 'user', 'user__first_name', 'user__last_name',
-            'project', 'hours', 'published'
-        ).order_by('-project__type__billable', 'project__name',
-            'user__first_name', 'user__last_name')
-        inner_qs = project_hours.values_list('project', flat=True)
-        projects = timepiece.Project.objects.filter(pk__in=inner_qs).values() \
-            .order_by('name')
-        all_projects = timepiece.Project.objects.values('id', 'name')
-        user_q = Q(groups__permissions=perm) | Q(user_permissions=perm)
-        user_q |= Q(is_superuser=True)
-        all_users = User.objects.filter(user_q) \
-            .values('id', 'first_name', 'last_name')
-
-        data = {
-            'project_hours': list(project_hours),
-            'projects': list(projects),
-            'all_projects': list(all_projects),
-            'all_users': list(all_users),
-            'ajax_url': reverse('ajax_schedule'),
-        }
-        return HttpResponse(json.dumps(data, cls=DecimalEncoder),
-            mimetype='application/json')
-
-    def duplicate_entries(self, duplicate, week_update):
+    def duplicate_entries(self, week):
+        """Copies entries from the given week to this week, if any exist."""
         def duplicate_builder(queryset, new_date):
             for instance in queryset:
                 duplicate = deepcopy(instance)
@@ -1734,53 +1668,98 @@ class ScheduleAjaxView(ScheduleMixin, View):
                 duplicate.week_start = new_date
                 yield duplicate
 
-        def duplicate_helper(queryset, new_date):
-            try:
-                timepiece.ProjectHours.objects.bulk_create(
-                    duplicate_builder(queryset, new_date)
-                )
-            except AttributeError:
-                for entry in duplicate_builder(queryset, new_date):
-                    entry.save()
-            msg = 'Project hours were copied'
-            messages.info(self.request, msg)
+        other_week = datetime.datetime.strptime(week, DATE_FORM_FORMAT).date()
+        other_entries = self.get_assignments(other_week)
 
-        this_week = datetime.datetime.strptime(week_update, DATE_FORM_FORMAT).date()
-        prev_week = this_week - relativedelta(days=7)
-        prev_week_qs = self.get_hours_for_week(prev_week)
-        this_week_qs = self.get_hours_for_week(this_week)
-
-        param = {
-            'week_start': week_update
-        }
-        url = '?'.join((reverse('edit_schedule'),
-            urllib.urlencode(param),))
-
-        if not prev_week_qs.exists():
-            msg = 'There are no hours to copy'
+        if not other_entries.exists():
+            msg = 'There are no entries to copy from the week of ' + week + '.'
             messages.warning(self.request, msg)
         else:
-            this_week_qs.delete()
-            duplicate_helper(prev_week_qs, this_week)
-        return HttpResponseRedirect(url)
+            entries = self.get_assignments()
+            entries.delete()
+            try:
+                builder = duplicate_builder(other_entries, self.week_start)
+                timepiece.ScheduleAssignment.objects.bulk_create(builder)
+            except AttributeError:  # Django 1.3
+                for entry in duplicate_builder(other_entries, self.week_start):
+                    entry.save()
+            msg = 'Assignments from {0} were copied to this week.'.format(week)
+            messages.info(self.request, msg)
 
-    def update_week(self, week_start):
+    def publish_entries(self):
+        """Publish any unpublished entries from this week."""
+        assignments = self.get_assignments().filter(published=False)
+        if assignments.exists():
+            assignments.update(published=True)
+            msg = 'Unpublished assignments are now published.'
+        else:
+            msg = 'There were no assignments to publish.'
+        messages.info(self.request, msg)
+
+    def post(self, request, *args, **kwargs):
+        """
+        If publish is present, all unpublished assignments for this week are
+        published. If duplicate is present, entries from the given
+        week are duplicated to this week.
+        """
+        if 'publish' in request.POST and 'duplicate' in request.POST:
+            # Ambiguous. We don't know what order to perform the steps in
+            # so we'll be safe and do nothing.
+            messages.warning(self.request, 'The system cannot duplicate '
+                    'and publish assignments in the same request.')
+        elif 'publish' in request.POST:
+            self.publish_entries()
+        elif 'duplicate' in request.POST:
+            self.duplicate_entries(request.POST.get('duplicate'))
+        return HttpResponseRedirect(self.get_edit_url())
+
+
+class ScheduleAjax(ScheduleMixin, View):
+    permissions = ('timepiece.add_scheduleassignment',)
+    http_method_names = ['get', 'post', 'delete']
+
+    def delete(self, request, *args, **kwargs):
+        """Remove projects with the specified ids from the database."""
         try:
-            instance = self.get_instance(self.request.POST, week_start)
-        except TypeError:
-            msg = 'Parameter week_start must be a date in the format ' \
-                'yyyy-mm-dd'
+            pks = json.loads(request.raw_post_data)
+        except:
+            msg = 'Delete request should be a list of assignment ids.'
             return HttpResponse(msg, status=500)
 
-        form = timepiece_forms.ProjectHoursForm(self.request.POST,
-            instance=instance)
+        assignments = timepiece.ScheduleAssignment.objects.filter(pk__in=pks,
+                week_start=self.week_start)
+        existing = list(assignments.values_list('pk', flat=True))
+        if len(existing) != len(pks):
+            nonexisting = [pk for pk in pks if pk not in existing]
+            msg = 'Assignments {0} for week {1} do not exist; request '\
+                  'aborted.'.format(nonexisting, self.week_start)
+            return HttpResponse(msg, status=500)
+        assignments.delete()
 
-        if form.is_valid():
-            ph = form.save()
-            return HttpResponse(str(ph.pk), mimetype='text/plain')
+        return HttpResponse(json.dumps(existing),
+                content_type='application/json')
 
-        msg = 'The request must contain values for user, project, and hours'
-        return HttpResponse(msg, status=500)
+    def get(self, request, *args, **kwargs):
+        """
+        Returns the data as a JSON object made up of the following key/value
+        pairs:
+            assignments: the assignments for this week
+            all_projects: all of the projects; used for autocomplete
+            all_users: all users that can clock in; used for autocomplete
+        """
+
+        assignments = self.get_assignment_vals()
+        all_projects = timepiece.Project.objects.values('id', 'name')
+        all_users = self.get_assignable_users().values(
+                'id', 'first_name', 'last_name')
+
+        data = {
+            'assignments': list(assignments),
+            'all_projects': list(all_projects),
+            'all_users': list(all_users),
+        }
+        json_data = json.dumps(data, cls=DecimalEncoder)
+        return HttpResponse(json_data, content_type='application/json')
 
     def post(self, request, *args, **kwargs):
         """
@@ -1789,33 +1768,40 @@ class ScheduleAjaxView(ScheduleMixin, View):
             user: the user pk for the hours
             project: the project pk for the hours
             hours: the actual hours to store
-            week_start: the start of the week for the hours
-
-        If the duplicate key is present along with week_update, then items
-        will be duplicated from week_update to the current week
         """
-        duplicate = request.POST.get('duplicate', None)
-        week_update = request.POST.get('week_update', None)
-        week_start = request.POST.get('week_start', None)
+        try:
+            data_list = json.loads(request.raw_post_data)
+        except:
+            msg = 'Post data must be a list of assignment data maps.'
+            return HttpResponse(msg, status=500)
 
-        if duplicate and week_update:
-            return self.duplicate_entries(duplicate, week_update)
+        valid_forms = []
+        for data_map in data_list:
+            instance = None
+            pk = data_map.pop('id', None)
+            if pk:
+                try:
+                    instance = timepiece.ScheduleAssignment.objects.get(pk=pk)
+                except timepiece.ScheduleAssignment.DoesNotExist:
+                    msg = 'Could not find assignment {0}; request '\
+                          'aborted.'.format(pk)
+                    return HttpResponse(msg, status=500)
+            data_map['week_start'] = self.week_start
+            form = timepiece_forms.ScheduleAssignmentForm(data_map,
+                    instance=instance)
+            if form.is_valid():
+                valid_forms.append(form)
+            else:
+                msg = 'Each data map must contain values for user, project, '\
+                      'and hours.'
+                return HttpResponse(msg, status=500)
 
-        return self.update_week(week_start)
+        data = []
+        for form in valid_forms:
+            assignment = form.save()
+            data.append(assignment.pk)
 
-
-class ScheduleDetailView(ScheduleMixin, View):
-    permissions = ('timepiece.add_projecthours',)
-
-    def delete(self, request, *args, **kwargs):
-        """Remove a project from the database."""
-        assignment_id = kwargs.get('assignment_id', None)
-
-        if assignment_id:
-            timepiece.ProjectHours.objects.filter(pk=assignment_id).delete()
-            return HttpResponse('ok', mimetype='text/plain')
-
-        return HttpResponse('', status=500)
+        return HttpResponse(json.dumps(data), content_type='application/json')
 
 
 @login_required
@@ -1832,7 +1818,8 @@ def report_productivity(request):
 
         actualsQ = Q(project=project, end_time__isnull=False)
         actuals = timepiece.Entry.objects.filter(actualsQ)
-        projections = timepiece.ProjectHours.objects.filter(project=project)
+        projections = timepiece.ScheduleAssignment.objects.filter(
+                project=project)
         entry_count = actuals.count() + projections.count()
 
         if organize_by == 'week' and entry_count > 0:

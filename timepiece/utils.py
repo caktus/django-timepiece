@@ -384,33 +384,6 @@ def payroll_totals(month_work_entries, month_leave_entries):
     return labels, rows
 
 
-def get_project_hours_for_week(week_start):
-    """
-    Gets all ProjectHours entries in the 7-day period beginning on week_start.
-
-    Returns a values set, ordered by the project id.
-    """
-    week_end = week_start + relativedelta(days=7)
-    ProjectHours = get_model('timepiece', 'ProjectHours')
-    qs = ProjectHours.objects.filter(week_start__gte=week_start,
-            week_start__lt=week_end)
-    qs = qs.values('project__id', 'project__name', 'user__id',
-            'user__first_name', 'user__last_name', 'hours')
-    qs = qs.order_by('-project__type__billable', 'project__name',)
-    return qs
-
-
-def get_users_from_project_hours(project_hours):
-    """
-    Gets a list of the distinct users included in the project hours entries,
-    ordered by name.
-    """
-    users = project_hours.values_list('user__id', 'user__first_name',
-            'user__last_name').distinct().order_by('user__first_name',
-            'user__last_name')
-    return users
-
-
 def get_total_seconds(td):
     """
     The equivalent for datetime.timedelta.total_seconds() for Python 2.6
@@ -437,7 +410,7 @@ def process_progress(entries, assignments):
     The list is ordered by project name.
     """
     Project = get_model('timepiece', 'Project')
-    ProjectHours = get_model('timepiece', 'ProjectHours')
+    ScheduleAssignment = get_model('timepiece', 'ScheduleAssignment')
 
     # Determine all projects either worked or assigned.
     project_q = Q(id__in=assignments.values_list('project__id', flat=True))
@@ -449,7 +422,7 @@ def process_progress(entries, assignments):
     for project in projects:
         try:
             assigned = assignments.get(project__id=project.pk).hours
-        except ProjectHours.DoesNotExist:
+        except ScheduleAssignment.DoesNotExist:
             assigned = Decimal('0.00')
         project_data[project.pk] = {
             'project': project,
