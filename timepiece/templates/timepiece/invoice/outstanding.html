@@ -51,30 +51,39 @@
                 <h3>Summary of {{ type.grouper }} Entries</h3>
 
                 <table class="table table-bordered table-condensed table-striped">
-                    <tr>
-                        <th>Project</th>
-                        <th>Business</th>
-                        <th>Status</th>
-                        <th>Uninvoiced Hours</th>
-                        <th></th>
-                    </tr>
-                    {% regroup type.list by project.name as project_list %}
-                    {% for project in project_list %}
+                    <thead>
                         <tr>
-                            <td><a href="{% timesheet_url 'project' project.list.0.project.pk to_date %}">{{ project.grouper }}</a></td>
-                            <td>
-                            {{ project.list.0.project.business.get_display_name }}</td>
-                            <td>{{ project.list.0.project.status.label|title }}</td>
-                            <td class="hours">{% get_uninvoiced_hours project.list %}</td>
-                            <td>
-                                {% if from_date %}
-                                    <a href="{% url 'create_invoice' %}?project= {{ project.list.0.project.pk }}&to_date={{ to_date|date:'Y-m-d' }}&from_date={{ from_date|date:'Y-m-d' }}">Make Invoice</a>
-                                {% else %}
-                                    <a href="{% url 'create_invoice' %}?project={{ project.list.0.project.pk }}&to_date={{ to_date|date:'Y-m-d' }}">Make Invoice</a>
-                                {% endif %}
-                            </td>
+                            <th rowspan="2">Project</th>
+                            <th rowspan="2">Business</th>
+                            <th rowspan="2">Status</th>
+                            <th colspan="2">Uninvoiced Hours</th>
+                            <th rowspan="2"></th>
                         </tr>
-                    {% endfor %}
+                        <tr>
+                            <th>Billable</th>
+                            <th>Non-billable</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% regroup type.list by project.name as project_list %}
+                        {% for project in project_list %}
+                            <tr>
+                                <td><a href="{% timesheet_url 'project' project.list.0.project.pk to_date %}">{{ project.grouper }}</a></td>
+                                <td>
+                                {{ project.list.0.project.business.get_display_name }}</td>
+                                <td>{{ project.list.0.project.status.label|title }}</td>
+                                <td class="hours">{% get_uninvoiced_hours project.list 'billable' %}</td>
+                                <td class="hours">{% get_uninvoiced_hours project.list 'nonbillable' %}</td>
+                                <td>
+                                    {% if from_date %}
+                                        <a href="{% url 'create_invoice' %}?project= {{ project.list.0.project.pk }}&to_date={{ to_date|date:'Y-m-d' }}&from_date={{ from_date|date:'Y-m-d' }}">Make Invoice</a>
+                                    {% else %}
+                                        <a href="{% url 'create_invoice' %}?project={{ project.list.0.project.pk }}&to_date={{ to_date|date:'Y-m-d' }}">Make Invoice</a>
+                                    {% endif %}
+                                </td>
+                            </tr>
+                        {% endfor %}
+                    </tbody>
                 </table>
             {% endfor %}
         </div>
