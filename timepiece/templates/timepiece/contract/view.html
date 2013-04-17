@@ -64,8 +64,8 @@
                     </thead>
                     <tbody>
                     {% for project in contract.projects.all %}
-                        {% project_hours_for_contract contract project 'project_hours' 'billable'%}
-                        {% project_hours_for_contract contract project 'nonbillable_hours' 'nonbillable' %}
+                        {% project_hours_for_contract contract project 'billable' as project_hours %}
+                        {% project_hours_for_contract contract project 'nonbillable' as nonbillable_hours %}
                         <tr>
                             <td><a href="{% url 'view_project' project.pk %}">{{ project.name }}</a></td>
                             <td class="hours">{{ project_hours|floatformat:'2' }}</td>

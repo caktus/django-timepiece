@@ -20,12 +20,9 @@ from timepiece import utils
 register = template.Library()
 
 
-# This is a good candidate for an assignment_tag, once we no longer
-# have to support Django 1.3.
-@register.simple_tag(takes_context=True)
-def sum_hours(context, entries, variable='daily_total'):
-    context[variable] = sum([e.get_total_seconds() for e in entries])
-    return ''
+@register.assignment_tag
+def sum_hours(entries):
+    return sum([e.get_total_seconds() for e in entries])
 
 
 @register.filter
@@ -166,12 +163,8 @@ def get_max_hours(context):
     return str(max_hours)
 
 
-# This is a good candidate for an assignment_tag, once we no longer
-# have to support Django 1.3.
-@register.simple_tag(takes_context=True)
-def project_hours_for_contract(context, contract, project,
-                               variable='project_hours',
-                               billable=None):
+@register.assignment_tag
+def project_hours_for_contract(contract, project, billable=None):
     """Total billable hours worked on project for contract.
     If billable is passed as 'billable' or 'nonbillable', limits to
     the corresponding hours.  (Must pass a variable name first, of course.)
@@ -186,8 +179,7 @@ def project_hours_for_contract(context, contract, project,
                   'or "nonbillable"'
             raise template.TemplateSyntaxError(msg)
     hours = hours.aggregate(s=Sum('hours'))['s'] or 0
-    context[variable] = hours
-    return ''
+    return hours
 
 
 @register.simple_tag

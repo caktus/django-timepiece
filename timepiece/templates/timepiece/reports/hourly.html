@@ -53,12 +53,10 @@
                                 <th>
                                     {% if trunc == 'day' %}
                                         {{ date|date:'M j' }}
-                                    {% else %}  {# Should switch to elif when we're no longer supporting 1.3 #}
-                                        {% if date.0 == date.1 %}
-                                            {{ date.0|date:'M j' }}
-                                        {% else %}
-                                            {{ date.0|date:'M j' }} - {{ date.1|date:'M j' }}
-                                        {% endif %}
+                                    {% elif date.0 == date.1 %}
+                                        {{ date.0|date:'M j' }}
+                                    {% else %}
+                                        {{ date.0|date:'M j' }} - {{ date.1|date:'M j' }}
                                     {% endif %}
                                 </th>
                             {% endfor %}
