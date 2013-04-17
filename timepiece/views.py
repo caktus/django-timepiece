@@ -338,10 +338,7 @@ class ProjectTimesheet(DetailView):
     template_name = 'timepiece/project/timesheet.html'
     model = timepiece.Project
     context_object_name = 'project'
-    pk_url_kwarg = 'pk'  # This parameter was introduced in Django 1.4.
-                         # When we drop support for Django 1.3, we can
-                         # change this to project_id for consistency of the
-                         # URL structure.
+    pk_url_kwarg = 'project_id'
 
     @method_decorator(permission_required('timepiece.view_project_time_sheet'))
     def dispatch(self, *args, **kwargs):
@@ -704,10 +701,7 @@ class InvoiceDetail(DetailView):
     template_name = 'timepiece/invoice/view.html'
     model = timepiece.EntryGroup
     context_object_name = 'invoice'
-    pk_url_kwarg = 'pk'  # This parameter was introduced in Django 1.4.
-                         # When we drop support for Django 1.3, we can
-                         # change this to invoice_id for consistency of the
-                         # URL structure.
+    pk_url_kwarg = 'invoice_id'
 
     @method_decorator(permission_required('timepiece.change_entrygroup'))
     def dispatch(self, *args, **kwargs):
@@ -1156,10 +1150,7 @@ class ContractDetail(DetailView):
     template_name = 'timepiece/contract/view.html'
     model = timepiece.ProjectContract
     context_object_name = 'contract'
-    pk_url_kwarg = 'pk'  # This parameter was introduced in Django 1.4.
-                         # When we drop support for Django 1.3, we can
-                         # change this to contract_id for consistency of the
-                         # URL structure.
+    pk_url_kwarg = 'contract_id'
 
     @method_decorator(permission_required('timepiece.add_projectcontract'))
     def dispatch(self, *args, **kwargs):
