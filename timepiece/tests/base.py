@@ -11,11 +11,7 @@ from django.core.urlresolvers import reverse
 from django.contrib.auth.models import User, Permission, Group
 from django.contrib.contenttypes.models import ContentType
 from django.db.models import Q
-
-try:
-    from django.utils import timezone
-except ImportError:
-    from timepiece import timezone
+from django.utils import timezone
 
 from timepiece import models as timepiece
 from timepiece import utils

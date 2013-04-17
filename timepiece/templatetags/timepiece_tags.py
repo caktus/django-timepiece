@@ -6,15 +6,10 @@ from django import template
 from django.core.urlresolvers import reverse
 from django.db.models import Sum
 from django.template.defaultfilters import date as date_format_filter
-from timepiece.forms import DATE_FORM_FORMAT
-
-
-try:
-    from django.utils import timezone
-except ImportError:
-    from timepiece import timezone
+from django.utils import timezone
 
 from timepiece import utils
+from timepiece.forms import DATE_FORM_FORMAT
 
 
 register = template.Library()

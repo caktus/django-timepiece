@@ -8,12 +8,8 @@ import json
 from django.conf import settings
 from django.core.urlresolvers import reverse
 from django.db.models import Sum, get_model, Q
+from django.utils import timezone
 from django.utils.functional import lazy
-
-try:
-    from django.utils import timezone
-except ImportError:
-    from timepiece import timezone
 
 from timepiece.defaults import TimepieceDefaults
 

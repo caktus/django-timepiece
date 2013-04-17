@@ -11,11 +11,7 @@ from django.db import models
 from django.db.models import Q, Sum, Max, Min
 from django.template import Context
 from django.template.loader import get_template
-
-try:
-    from django.utils import timezone
-except ImportError:
-    from timepiece import timezone
+from django.utils import timezone
 
 from timepiece import utils
 

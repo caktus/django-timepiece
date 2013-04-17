@@ -2,11 +2,7 @@ import datetime
 from decimal import Decimal
 
 from django.core.urlresolvers import reverse
-
-try:
-    from django.utils import timezone
-except ImportError:
-    from timepiece import timezone
+from django.utils import timezone
 
 from timepiece import models as timepiece
 from timepiece.tests.base import TimepieceDataTestCase

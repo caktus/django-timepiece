@@ -10,11 +10,7 @@ from django.core.urlresolvers import reverse
 from django.contrib.auth.models import User, Permission
 from django.core.exceptions import ValidationError
 from django.forms import model_to_dict
-
-try:
-    from django.utils import timezone
-except ImportError:
-    from timepiece import timezone
+from django.utils import timezone
 
 from timepiece.tests.base import TimepieceDataTestCase
 

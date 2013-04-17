@@ -25,17 +25,12 @@ from django.views.decorators.csrf import csrf_exempt
 from django.views.decorators.http import require_POST
 from django.views.generic import ListView, DetailView, View
 from django.views.generic.base import TemplateView
-from timepiece.forms import DATE_FORM_FORMAT
-
-
-try:
-    from django.utils import timezone
-except ImportError:
-    from timepiece import timezone
+from django.utils import timezone
 
 from timepiece import forms as timepiece_forms
 from timepiece import models as timepiece
 from timepiece import utils
+from timepiece.forms import DATE_FORM_FORMAT
 from timepiece.templatetags.timepiece_tags import seconds_to_hours
 from timepiece.utils import DecimalEncoder
 
