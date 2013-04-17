@@ -767,8 +767,7 @@ class ProjectContract(models.Model):
     PROJECT_FIXED = 1
     PROJECT_PRE_PAID_HOURLY = 2
     PROJECT_POST_PAID_HOURLY = 3
-    PROJECT_TYPE = (
-        (PROJECT_UNSET, 'Unset'),
+    PROJECT_TYPE = (   # UNSET is not an option
         (PROJECT_FIXED, 'Fixed'),
         (PROJECT_PRE_PAID_HOURLY, 'Pre-paid Hourly'),
         (PROJECT_POST_PAID_HOURLY, 'Post-paid Hourly')
@@ -780,7 +779,7 @@ class ProjectContract(models.Model):
     end_date = models.DateField()
     status = models.CharField(choices=CONTRACT_STATUS, default='upcoming',
                               max_length=32)
-    type = models.IntegerField(choices=PROJECT_TYPE, default=PROJECT_UNSET)  # FIXME - we really shouldn't let them save it with this unset, it's just what we'll use in the migration initially
+    type = models.IntegerField(choices=PROJECT_TYPE)
 
     class Meta:
         ordering = ('-end_date',)
