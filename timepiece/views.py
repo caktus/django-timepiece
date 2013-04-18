@@ -1,4 +1,3 @@
-from collections import OrderedDict
 from copy import deepcopy
 import csv
 import datetime
@@ -1418,19 +1417,19 @@ class HourlyReport(ReportMixin, CSVMixin, TemplateView):
         entries = context['entries']
         date_headers = context['date_headers']
 
-        summaries = OrderedDict()
+        summaries = []
         if context['entries']:
-            summaries['By User'] = utils.project_totals(
+            summaries.append(('By User', utils.project_totals(
                     entries.order_by('user__last_name', 'user__id', 'date'),
-                    date_headers, 'total', total_column=True, by='user')
+                    date_headers, 'total', total_column=True, by='user')))
 
             entries = entries.order_by('project__type__label', 'project__name',
                     'project__id', 'date')
             func = lambda x: x['project__type__label']
             for label, group in groupby(entries, func):
                 title = label + ' Projects'
-                summaries[title] = utils.project_totals(list(group),
-                        date_headers, 'total', total_column=True, by='project')
+                summaries.append((title, utils.project_totals(list(group),
+                        date_headers, 'total', total_column=True, by='project')))
 
         # Adjust date headers & create range headers.
         from_date = context['from_date']
