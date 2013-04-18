@@ -9,7 +9,7 @@ from django.utils import timezone
 
 from timepiece import models as timepiece
 from timepiece import utils
-from timepiece.tests.reports.base import ReportsTestBase
+from timepiece.reports.tests.base import ReportsTestBase
 
 
 class TestHourlyReport(ReportsTestBase):

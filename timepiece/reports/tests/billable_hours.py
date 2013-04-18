@@ -8,7 +8,7 @@ from django.db.models import Q
 from timepiece.forms import DATE_FORM_FORMAT
 
 from timepiece.models import Entry
-from timepiece.tests.reports.base import ReportsTestBase
+from timepiece.reports.tests.base import ReportsTestBase
 
 
 class TestBillableHours(ReportsTestBase):
