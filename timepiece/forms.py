@@ -616,6 +616,7 @@ class ProjectFiltersForm(DateForm):
         ('day', 'Day'),
         ('week', 'Week'),
         ('month', 'Month'),
+        ('year', 'Year'),
     )
 
     billable = forms.BooleanField(required=False)

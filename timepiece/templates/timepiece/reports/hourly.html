@@ -53,6 +53,8 @@
                                 <th>
                                     {% if trunc == 'day' %}
                                         {{ date|date:'M j' }}
+                                    {% elif trunc == 'year' %}
+                                        {{ date.0|date:'M j' }} - {{ date.1|date:'M j Y' }}
                                     {% elif date.0 == date.1 %}
                                         {{ date.0|date:'M j' }}
                                     {% else %}

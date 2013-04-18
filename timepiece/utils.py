@@ -76,6 +76,13 @@ def get_total_time(seconds):
     return u'%02i:%02i:%02i' % (hours, minutes, seconds)
 
 
+def get_year_start(from_day=None):
+    if not from_day:
+        from_day = datetime.date.today()
+    from_day = add_timezone(from_day)
+    return from_day.replace(month=1).replace(day=1)
+
+
 def get_month_start(from_day=None):
     if not from_day:
         from_day = datetime.date.today()
@@ -105,6 +112,9 @@ def generate_dates(start=None, end=None, by='week'):
         start = add_timezone(start)
     if end:
         end = add_timezone(end)
+    if by == 'year':
+        start = get_year_start(start)
+        return rrule.rrule(rrule.YEARLY, dtstart=start, until=end)
     if by == 'month':
         start = get_month_start(start)
         return rrule.rrule(rrule.MONTHLY, dtstart=start, until=end)
