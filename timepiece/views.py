@@ -1,3 +1,4 @@
+from collections import OrderedDict
 from copy import deepcopy
 import csv
 import datetime
@@ -1247,7 +1248,7 @@ class ReportMixin(object):
             trunc = data['trunc']
             if entryQ:
                 vals = ('pk', 'activity', 'project', 'project__name',
-                        'project__status')
+                        'project__status', 'project__type__label')
                 entries = timepiece.Entry.objects.date_trunc(trunc,
                         extra_values=vals).filter(entryQ)
             else:
@@ -1417,14 +1418,19 @@ class HourlyReport(ReportMixin, CSVMixin, TemplateView):
         entries = context['entries']
         date_headers = context['date_headers']
 
-        summaries = {}
+        summaries = OrderedDict()
         if context['entries']:
             summaries['By User'] = utils.project_totals(
                     entries.order_by('user__last_name', 'user__id', 'date'),
                     date_headers, 'total', total_column=True, by='user')
-            summaries['By Project'] = utils.project_totals(
-                    entries.order_by('project__name', 'project__id', 'date'),
-                    date_headers, 'total', total_column=True, by='project')
+
+            entries = entries.order_by('project__type__label', 'project__name',
+                    'project__id', 'date')
+            func = lambda x: x['project__type__label']
+            for label, group in groupby(entries, func):
+                title = label + ' Projects'
+                summaries[title] = utils.project_totals(list(group),
+                        date_headers, 'total', total_column=True, by='project')
 
         # Adjust date headers & create range headers.
         from_date = context['from_date']
