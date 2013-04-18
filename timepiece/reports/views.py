@@ -18,6 +18,7 @@ from timepiece import utils
 from timepiece.forms import YearMonthForm
 from timepiece.reports.forms import BillableHoursForm, ProjectFiltersForm, \
         ProductivityReportForm
+from timepiece.reports.utils import get_project_totals, get_payroll_totals
 from timepiece.forms import DATE_FORM_FORMAT
 from timepiece.utils import DecimalEncoder
 from timepiece.views import CSVMixin
@@ -46,7 +47,7 @@ def report_payroll_summary(request):
         weekQ, statusQ, workQ
     )
     date_headers = utils.generate_dates(from_date, last_billable, by='week')
-    weekly_totals = list(utils.project_totals(week_entries, date_headers,
+    weekly_totals = list(get_project_totals(week_entries, date_headers,
                                               'total', overtime=True))
     # Monthly totals
     leave = timepiece.Entry.objects.filter(monthQ, ~workQ
@@ -54,7 +55,7 @@ def report_payroll_summary(request):
     extra_values = ('project__type__label',)
     month_entries = timepiece.Entry.objects.date_trunc('month', extra_values)
     month_entries_valid = month_entries.filter(monthQ, statusQ, workQ)
-    labels, monthly_totals = utils.payroll_totals(month_entries_valid, leave)
+    labels, monthly_totals = get_payroll_totals(month_entries_valid, leave)
     # Unapproved and unverified hours
     entries = timepiece.Entry.objects.filter(monthQ).order_by()  # No ordering
     user_values = ['user__pk', 'user__first_name', 'user__last_name']
@@ -265,7 +266,7 @@ class HourlyReport(ReportMixin, CSVMixin, TemplateView):
 
         summaries = []
         if context['entries']:
-            summaries.append(('By User', utils.project_totals(
+            summaries.append(('By User', get_project_totals(
                     entries.order_by('user__last_name', 'user__id', 'date'),
                     date_headers, 'total', total_column=True, by='user')))
 
@@ -274,7 +275,7 @@ class HourlyReport(ReportMixin, CSVMixin, TemplateView):
             func = lambda x: x['project__type__label']
             for label, group in groupby(entries, func):
                 title = label + ' Projects'
-                summaries.append((title, utils.project_totals(list(group),
+                summaries.append((title, get_project_totals(list(group),
                         date_headers, 'total', total_column=True, by='project')))
 
         # Adjust date headers & create range headers.
@@ -367,7 +368,7 @@ class BillableHours(ReportMixin, TemplateView):
 
     def get_hours_data(self, entries, date_headers):
         """Sum billable and non-billable hours across all users."""
-        project_totals = utils.project_totals(entries, date_headers,
+        project_totals = get_project_totals(entries, date_headers,
                 total_column=False) if entries else []
 
         data_map = {}

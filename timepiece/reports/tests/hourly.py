@@ -10,6 +10,7 @@ from django.utils import timezone
 from timepiece import models as timepiece
 from timepiece import utils
 from timepiece.reports.tests.base import ReportsTestBase
+from timepiece.reports.utils import get_project_totals
 
 
 class TestHourlyReport(ReportsTestBase):
@@ -66,7 +67,7 @@ class TestHourlyReport(ReportsTestBase):
         """Helper function for testing project_totals utility directly"""
         entries = timepiece.Entry.objects.date_trunc(trunc).filter(query)
         if entries:
-            pj_totals = utils.project_totals(entries, date_headers, hour_type)
+            pj_totals = get_project_totals(entries, date_headers, hour_type)
             pj_totals = list(pj_totals)
             rows = pj_totals[0][0]
             hours = [hours for name, user_id, hours in rows]
