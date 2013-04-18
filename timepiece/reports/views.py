@@ -13,66 +13,14 @@ from django.utils import timezone
 from django.utils.decorators import method_decorator
 from django.views.generic import TemplateView
 
-from timepiece import models as timepiece
 from timepiece import utils
-from timepiece.forms import YearMonthForm
-from timepiece.reports.forms import BillableHoursForm, ProjectFiltersForm, \
-        ProductivityReportForm
-from timepiece.reports.utils import get_project_totals, get_payroll_totals
-from timepiece.forms import DATE_FORM_FORMAT
-from timepiece.utils import DecimalEncoder
+from timepiece.forms import YearMonthForm, DATE_FORM_FORMAT
+from timepiece.models import Entry, ProjectHours
 from timepiece.views import CSVMixin
 
-
-@permission_required('timepiece.view_payroll_summary')
-def report_payroll_summary(request):
-    date = timezone.now() - relativedelta(months=1)
-    from_date = utils.get_month_start(date).date()
-    to_date = from_date + relativedelta(months=1)
-
-    year_month_form = YearMonthForm(request.GET or None,
-        initial={'month': from_date.month, 'year': from_date.year})
-
-    if year_month_form.is_valid():
-        from_date, to_date = year_month_form.save()
-    last_billable = utils.get_last_billable_day(from_date)
-    projects = utils.get_setting('TIMEPIECE_PAID_LEAVE_PROJECTS')
-    weekQ = Q(end_time__gt=utils.get_week_start(from_date),
-              end_time__lt=last_billable + datetime.timedelta(days=1))
-    monthQ = Q(end_time__gt=from_date, end_time__lt=to_date)
-    workQ = ~Q(project__in=projects.values())
-    statusQ = Q(status='invoiced') | Q(status='approved')
-    # Weekly totals
-    week_entries = timepiece.Entry.objects.date_trunc('week').filter(
-        weekQ, statusQ, workQ
-    )
-    date_headers = utils.generate_dates(from_date, last_billable, by='week')
-    weekly_totals = list(get_project_totals(week_entries, date_headers,
-                                              'total', overtime=True))
-    # Monthly totals
-    leave = timepiece.Entry.objects.filter(monthQ, ~workQ
-                                  ).values('user', 'hours', 'project__name')
-    extra_values = ('project__type__label',)
-    month_entries = timepiece.Entry.objects.date_trunc('month', extra_values)
-    month_entries_valid = month_entries.filter(monthQ, statusQ, workQ)
-    labels, monthly_totals = get_payroll_totals(month_entries_valid, leave)
-    # Unapproved and unverified hours
-    entries = timepiece.Entry.objects.filter(monthQ).order_by()  # No ordering
-    user_values = ['user__pk', 'user__first_name', 'user__last_name']
-    unverified = entries.filter(status='unverified', user__is_active=True) \
-                        .values_list(*user_values).distinct()
-    unapproved = entries.filter(status='verified') \
-                        .values_list(*user_values).distinct()
-    return render(request, 'reports/payroll_summary.html', {
-        'from_date': from_date,
-        'year_month_form': year_month_form,
-        'date_headers': date_headers,
-        'weekly_totals': weekly_totals,
-        'monthly_totals': monthly_totals,
-        'unverified': unverified,
-        'unapproved': unapproved,
-        'labels': labels,
-    })
+from timepiece.reports.forms import BillableHoursReportForm, HourlyReportForm, \
+        ProductivityReportForm
+from timepiece.reports.utils import get_project_totals, get_payroll_totals
 
 
 class ReportMixin(object):
@@ -95,10 +43,10 @@ class ReportMixin(object):
             if entryQ:
                 vals = ('pk', 'activity', 'project', 'project__name',
                         'project__status', 'project__type__label')
-                entries = timepiece.Entry.objects.date_trunc(trunc,
+                entries = Entry.objects.date_trunc(trunc,
                         extra_values=vals).filter(entryQ)
             else:
-                entries = timepiece.Entry.objects.none()
+                entries = Entry.objects.none()
 
             end = end - relativedelta(days=1)
             date_headers = utils.generate_dates(start, end, by=trunc)
@@ -115,7 +63,7 @@ class ReportMixin(object):
                 'from_date': None,
                 'to_date': None,
                 'date_headers': [],
-                'entries': timepiece.Entry.objects.none(),
+                'entries': Entry.objects.none(),
                 'filter_form': form,
                 'trunc': '',
             })
@@ -123,7 +71,7 @@ class ReportMixin(object):
         return context
 
     def get_entry_query(self, start, end, data):
-        """Builds timepiece.Entry query from form data."""
+        """Builds Entry query from form data."""
         # Entry types.
         incl_billable = data.get('billable', True)
         incl_nonbillable = data.get('non_billable', True)
@@ -309,7 +257,7 @@ class HourlyReport(ReportMixin, CSVMixin, TemplateView):
             data[key] = key in data and \
                         str(data[key]).lower() in ('on', 'true', '1')
 
-        return ProjectFiltersForm(data)
+        return HourlyReportForm(data)
 
 
 class BillableHours(ReportMixin, TemplateView):
@@ -354,16 +302,16 @@ class BillableHours(ReportMixin, TemplateView):
             data_list.append([label, billable, nonbillable])
 
         context.update({
-            'data': json.dumps(data_list, cls=DecimalEncoder),
+            'data': json.dumps(data_list, cls=utils.DecimalEncoder),
         })
         return context
 
     def get_form(self):
         if self.request.GET:
-            return BillableHoursForm(self.request.GET)
+            return BillableHoursReportForm(self.request.GET)
         else:
             # Select all available users, activities, and project types.
-            return BillableHoursForm(self.defaults,
+            return BillableHoursReportForm(self.defaults,
                     select_all=True)
 
     def get_hours_data(self, entries, date_headers):
@@ -384,6 +332,57 @@ class BillableHours(ReportMixin, TemplateView):
         return data_map
 
 
+@permission_required('timepiece.view_payroll_summary')
+def report_payroll_summary(request):
+    date = timezone.now() - relativedelta(months=1)
+    from_date = utils.get_month_start(date).date()
+    to_date = from_date + relativedelta(months=1)
+
+    year_month_form = YearMonthForm(request.GET or None,
+        initial={'month': from_date.month, 'year': from_date.year})
+
+    if year_month_form.is_valid():
+        from_date, to_date = year_month_form.save()
+    last_billable = utils.get_last_billable_day(from_date)
+    projects = utils.get_setting('TIMEPIECE_PAID_LEAVE_PROJECTS')
+    weekQ = Q(end_time__gt=utils.get_week_start(from_date),
+              end_time__lt=last_billable + datetime.timedelta(days=1))
+    monthQ = Q(end_time__gt=from_date, end_time__lt=to_date)
+    workQ = ~Q(project__in=projects.values())
+    statusQ = Q(status='invoiced') | Q(status='approved')
+    # Weekly totals
+    week_entries = Entry.objects.date_trunc('week').filter(
+        weekQ, statusQ, workQ
+    )
+    date_headers = utils.generate_dates(from_date, last_billable, by='week')
+    weekly_totals = list(get_project_totals(week_entries, date_headers,
+                                              'total', overtime=True))
+    # Monthly totals
+    leave = Entry.objects.filter(monthQ, ~workQ
+                                  ).values('user', 'hours', 'project__name')
+    extra_values = ('project__type__label',)
+    month_entries = Entry.objects.date_trunc('month', extra_values)
+    month_entries_valid = month_entries.filter(monthQ, statusQ, workQ)
+    labels, monthly_totals = get_payroll_totals(month_entries_valid, leave)
+    # Unapproved and unverified hours
+    entries = Entry.objects.filter(monthQ).order_by()  # No ordering
+    user_values = ['user__pk', 'user__first_name', 'user__last_name']
+    unverified = entries.filter(status='unverified', user__is_active=True) \
+                        .values_list(*user_values).distinct()
+    unapproved = entries.filter(status='verified') \
+                        .values_list(*user_values).distinct()
+    return render(request, 'reports/payroll_summary.html', {
+        'from_date': from_date,
+        'year_month_form': year_month_form,
+        'date_headers': date_headers,
+        'weekly_totals': weekly_totals,
+        'monthly_totals': monthly_totals,
+        'unverified': unverified,
+        'unapproved': unapproved,
+        'labels': labels,
+    })
+
+
 @login_required
 @permission_required('timepiece.view_entry_summary')
 def report_productivity(request):
@@ -397,8 +396,8 @@ def report_productivity(request):
         export = request.GET.get('export', False)
 
         actualsQ = Q(project=project, end_time__isnull=False)
-        actuals = timepiece.Entry.objects.filter(actualsQ)
-        projections = timepiece.ProjectHours.objects.filter(project=project)
+        actuals = Entry.objects.filter(actualsQ)
+        projections = ProjectHours.objects.filter(project=project)
         entry_count = actuals.count() + projections.count()
 
         if organize_by == 'week' and entry_count > 0:
@@ -461,7 +460,7 @@ def report_productivity(request):
 
     return render(request, 'reports/productivity.html', {
         'form': form,
-        'report': json.dumps(report, cls=DecimalEncoder),
+        'report': json.dumps(report, cls=utils.DecimalEncoder),
         'type': organize_by or '',
         'total_worked': sum([r[1] for r in report[1:]]),
         'total_assigned': sum([r[2] for r in report[1:]]),

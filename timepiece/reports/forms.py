@@ -1,14 +1,14 @@
 from django import forms
-from django.contrib.auth import models as auth_models
+from django.contrib.auth.models import User
 
 from selectable import forms as selectable
 
-from timepiece import models as timepiece
 from timepiece.forms import DateForm, DATE_FORM_FORMAT
 from timepiece.lookups import ProjectLookup
+from timepiece.models import Entry, Activity, Attribute
 
 
-class BillableHoursForm(DateForm):
+class BillableHoursReportForm(DateForm):
     TRUNC_CHOICES = (
         ('day', 'Day'),
         ('week', 'Week'),
@@ -32,17 +32,18 @@ class BillableHoursForm(DateForm):
         """
         select_all = kwargs.pop('select_all', False)
 
-        super(BillableHoursForm, self).__init__(*args, **kwargs)
+        super(BillableHoursReportForm, self).__init__(*args, **kwargs)
         self.fields['from_date'].required = True
         self.fields['to_date'].required = True
 
-        user_ids = timepiece.Entry.no_join.values_list('user', flat=True)
-        users = auth_models.User.objects.filter(id__in=user_ids)
-        activities = timepiece.Activity.objects.all()
-        project_types = timepiece.Attribute.objects.all()
+        user_ids = Entry.no_join.values_list('user', flat=True)
+        users = User.objects.filter(id__in=user_ids)
+        activities = Activity.objects.all()
+        project_types = Attribute.objects.all()
 
         self.fields['users'].queryset = users
-        self.fields['users'].label_from_instance = lambda p: p.get_name_or_username()
+        get_label = lambda p: p.get_name_or_username()
+        self.fields['users'].label_from_instance = get_label
         self.fields['activities'].queryset = activities
         self.fields['project_types'].queryset = project_types
 
@@ -65,7 +66,7 @@ class ProductivityReportForm(forms.Form):
             widget=forms.RadioSelect(), initial=ORGANIZE_BY_CHOICES[0][0])
 
 
-class ProjectFiltersForm(DateForm):
+class HourlyReportForm(DateForm):
     TRUNC_CHOICES = (
         ('day', 'Day'),
         ('week', 'Week'),
@@ -82,6 +83,6 @@ class ProjectFiltersForm(DateForm):
             label='Project Name', required=False)
 
     def __init__(self, *args, **kwargs):
-        super(ProjectFiltersForm, self).__init__(*args, **kwargs)
+        super(HourlyReportForm, self).__init__(*args, **kwargs)
         self.fields['from_date'].required = True
         self.fields['to_date'].required = True

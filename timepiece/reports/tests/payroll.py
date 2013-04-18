@@ -1,5 +1,4 @@
 import datetime
-from dateutil.relativedelta import relativedelta
 from decimal import Decimal
 
 from django.conf import settings
@@ -7,10 +6,9 @@ from django.core.urlresolvers import reverse
 from django.contrib.auth.models import Permission
 from django.utils import timezone
 
-from timepiece import models as timepiece
-from timepiece import forms as timepiece_forms
 from timepiece import utils
 from timepiece.tests.base import TimepieceDataTestCase
+
 from timepiece.reports.utils import find_overtime
 
 
