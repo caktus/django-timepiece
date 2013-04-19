@@ -204,7 +204,7 @@ def add_parameters(url, parameters):
         {% url 'this_view' as current_url %}
         {% with complete_url=current_url|add_parameters:request.GET %}
             The <a href="{% url 'other' %}?next={{ complete_url|urlencode }}">
-            next page</a> will redirect back to the current page (including
+            other page</a> will redirect back to the current page (including
             any GET parameters).
         {% endwith %}
     """
@@ -212,3 +212,14 @@ def add_parameters(url, parameters):
         sep = '&' if '?' in url else '?'
         return '{0}{1}{2}'.format(url, sep, urllib.urlencode(parameters))
     return url
+
+
+@register.assignment_tag
+def create_dict(**kwargs):
+    """Utility to create a dictionary from arguments."""
+    return kwargs
+
+
+@register.filter
+def add_timezone(date, tz=None):
+    return utils.add_timezone(date, tz)

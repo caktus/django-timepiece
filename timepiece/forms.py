@@ -3,8 +3,8 @@ from dateutil.relativedelta import relativedelta
 import time
 
 from django import forms
-from django.contrib.auth import models as auth_models
 from django.contrib.auth import forms as auth_forms
+from django.contrib.auth.models import User
 from django.core.urlresolvers import reverse
 from django.db.models import Q
 from django.utils.translation import ugettext_lazy as _
@@ -13,7 +13,7 @@ from selectable import forms as selectable
 
 from timepiece import models as timepiece
 from timepiece import utils
-from timepiece.fields import UserModelChoiceField
+from timepiece.fields import UserModelChoiceField, UserModelMultipleChoiceField
 from timepiece.lookups import ProjectLookup, QuickLookup
 from timepiece.lookups import UserLookup, BusinessLookup
 from timepiece.models import Project, Entry, Activity, UserProfile, Attribute
@@ -32,7 +32,7 @@ class CreateUserForm(auth_forms.UserCreationForm):
         self.fields['groups'].help_text = None
 
     class Meta:
-        model = auth_models.User
+        model = User
         fields = ('username', 'first_name', 'last_name', 'email', 'is_active',
                 'is_staff', 'groups')
 
@@ -78,7 +78,7 @@ class EditUserForm(auth_forms.UserChangeForm):
         return instance
 
     class Meta:
-        model = auth_models.User
+        model = User
         fields = ('username', 'first_name', 'last_name', 'email', 'is_active',
                 'is_staff', 'groups')
 
@@ -400,13 +400,17 @@ class YearMonthForm(forms.Form):
 
 
 class UserYearMonthForm(YearMonthForm):
-    users = auth_models.User.objects.exclude(timepiece_entries=None) \
-        .order_by('first_name')
-    user = UserModelChoiceField(label='', queryset=users, required=False)
+    user = UserModelChoiceField(label='', queryset=None, required=False)
+
+    def __init__(self, *args, **kwargs):
+        super(UserYearMonthForm, self).__init__(*args, **kwargs)
+        queryset = User.objects.exclude(timepiece_entries=None)\
+                               .order_by('first_name')
+        self.fields['user'].queryset = queryset
 
     def save(self):
         from_date, to_date = super(UserYearMonthForm, self).save()
-        return  (from_date, to_date, self.cleaned_data.get('user', None))
+        return (from_date, to_date, self.cleaned_data.get('user', None))
 
 
 class BusinessForm(forms.ModelForm):
@@ -487,7 +491,7 @@ class SearchForm(forms.Form):
 class UserForm(forms.ModelForm):
 
     class Meta:
-        model = auth_models.User
+        model = User
         fields = ('first_name', 'last_name', 'email')
 
     def __init__(self, *args, **kwargs):
@@ -547,7 +551,7 @@ class BillableHoursForm(DateForm):
 
     trunc = forms.ChoiceField(label='Group Totals By', choices=TRUNC_CHOICES,
             widget=forms.RadioSelect())
-    users = forms.ModelMultipleChoiceField(required=False, queryset=None,
+    users = UserModelMultipleChoiceField(required=False, queryset=None,
             widget=forms.CheckboxSelectMultiple())
     activities = forms.ModelMultipleChoiceField(required=False, queryset=None,
             widget=forms.CheckboxSelectMultiple())
@@ -567,12 +571,11 @@ class BillableHoursForm(DateForm):
         self.fields['to_date'].required = True
 
         user_ids = timepiece.Entry.no_join.values_list('user', flat=True)
-        users = auth_models.User.objects.filter(id__in=user_ids)
+        users = User.objects.filter(id__in=user_ids)
         activities = timepiece.Activity.objects.all()
         project_types = timepiece.Attribute.objects.all()
 
         self.fields['users'].queryset = users
-        self.fields['users'].label_from_instance = lambda p: p.get_name_or_username()
         self.fields['activities'].queryset = activities
         self.fields['project_types'].queryset = project_types
 
