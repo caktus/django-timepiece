@@ -3,7 +3,7 @@ from django.contrib.auth.models import User
 
 from selectable import forms as selectable
 
-from timepiece.forms import DateForm, DATE_FORM_FORMAT
+from timepiece.forms import DateForm, DATE_FORM_FORMAT, YearMonthForm
 from timepiece.lookups import ProjectLookup
 from timepiece.models import Entry, Activity, Attribute
 
@@ -86,3 +86,7 @@ class HourlyReportForm(DateForm):
         super(HourlyReportForm, self).__init__(*args, **kwargs)
         self.fields['from_date'].required = True
         self.fields['to_date'].required = True
+
+
+class PayrollSummaryReportForm(YearMonthForm):
+    pass

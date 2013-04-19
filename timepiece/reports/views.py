@@ -4,7 +4,7 @@ from dateutil.relativedelta import relativedelta
 from itertools import groupby
 import json
 
-from django.contrib.auth.decorators import login_required, permission_required
+from django.contrib.auth.decorators import permission_required
 from django.db.models import Sum, Q, Min, Max
 from django.http import HttpResponse
 from django.shortcuts import render
@@ -14,12 +14,12 @@ from django.utils.decorators import method_decorator
 from django.views.generic import TemplateView
 
 from timepiece import utils
-from timepiece.forms import YearMonthForm, DATE_FORM_FORMAT
+from timepiece.forms import DATE_FORM_FORMAT
 from timepiece.models import Entry, ProjectHours
 from timepiece.views import CSVMixin
 
 from timepiece.reports.forms import BillableHoursReportForm, HourlyReportForm, \
-        ProductivityReportForm
+        ProductivityReportForm, PayrollSummaryReportForm
 from timepiece.reports.utils import get_project_totals, get_payroll_totals
 
 
@@ -338,7 +338,7 @@ def report_payroll_summary(request):
     from_date = utils.get_month_start(date).date()
     to_date = from_date + relativedelta(months=1)
 
-    year_month_form = YearMonthForm(request.GET or None,
+    year_month_form = PayrollSummaryReportForm(request.GET or None,
         initial={'month': from_date.month, 'year': from_date.year})
 
     if year_month_form.is_valid():
@@ -383,7 +383,6 @@ def report_payroll_summary(request):
     })
 
 
-@login_required
 @permission_required('timepiece.view_entry_summary')
 def report_productivity(request):
     report = []
