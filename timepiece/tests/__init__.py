@@ -5,7 +5,6 @@ from timepiece.tests.management import *
 from timepiece.tests.projects import *
 from timepiece.tests.project_list import *
 from timepiece.tests.relationships import *
-from timepiece.tests.reports import *
 from timepiece.tests.schedule import *
 from timepiece.tests.search import *
 from timepiece.tests.tracking import *

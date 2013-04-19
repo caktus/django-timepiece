@@ -61,7 +61,9 @@ Installation
             'compressor',
             'pagination',
             'selectable',
+
             'timepiece',
+            'timepiece.reports',
             ...
         )
 

@@ -538,52 +538,6 @@ class DeleteForm(forms.Form):
         return False
 
 
-class BillableHoursForm(DateForm):
-    TRUNC_CHOICES = (
-        ('day', 'Day'),
-        ('week', 'Week'),
-        ('month', 'Month'),
-    )
-
-    trunc = forms.ChoiceField(label='Group Totals By', choices=TRUNC_CHOICES,
-            widget=forms.RadioSelect())
-    users = forms.ModelMultipleChoiceField(required=False, queryset=None,
-            widget=forms.CheckboxSelectMultiple())
-    activities = forms.ModelMultipleChoiceField(required=False, queryset=None,
-            widget=forms.CheckboxSelectMultiple())
-    project_types = forms.ModelMultipleChoiceField(required=False,
-            queryset=None, widget=forms.CheckboxSelectMultiple())
-
-    def __init__(self, *args, **kwargs):
-        """
-        If the 'select_all' argument is given, any data values for users,
-        activities, and project_types are overwritten with all available
-        choices.
-        """
-        select_all = kwargs.pop('select_all', False)
-
-        super(BillableHoursForm, self).__init__(*args, **kwargs)
-        self.fields['from_date'].required = True
-        self.fields['to_date'].required = True
-
-        user_ids = timepiece.Entry.no_join.values_list('user', flat=True)
-        users = auth_models.User.objects.filter(id__in=user_ids)
-        activities = timepiece.Activity.objects.all()
-        project_types = timepiece.Attribute.objects.all()
-
-        self.fields['users'].queryset = users
-        self.fields['users'].label_from_instance = lambda p: p.get_name_or_username()
-        self.fields['activities'].queryset = activities
-        self.fields['project_types'].queryset = project_types
-
-        if select_all:
-            self.data['users'] = list(users.values_list('id', flat=True))
-            self.data['activities'] = list(activities.values_list('id',
-                    flat=True))
-            self.data['project_types'] = list(project_types.values_list('id',
-                    flat=True))
-
-
 class ProjectHoursSearchForm(forms.Form):
     week_start = forms.DateField(label='Week of', required=False,
             input_formats=(DATE_FORM_FORMAT,),
@@ -600,34 +554,4 @@ class ProjectHoursForm(forms.ModelForm):
         model = ProjectHours
 
 
-class ProductivityReportForm(forms.Form):
-    DATE_FORMAT = DATE_FORM_FORMAT
-    ORGANIZE_BY_CHOICES = (
-        ('week', 'Week'),
-        ('user', 'User'),
-    )
-    project = selectable.AutoCompleteSelectField(ProjectLookup)
-    organize_by = forms.ChoiceField(choices=ORGANIZE_BY_CHOICES,
-            widget=forms.RadioSelect(), initial=ORGANIZE_BY_CHOICES[0][0])
 
-
-class ProjectFiltersForm(DateForm):
-    TRUNC_CHOICES = (
-        ('day', 'Day'),
-        ('week', 'Week'),
-        ('month', 'Month'),
-        ('year', 'Year'),
-    )
-
-    billable = forms.BooleanField(required=False)
-    non_billable = forms.BooleanField(label='Non-billable', required=False)
-    paid_leave = forms.BooleanField(required=False)
-    trunc = forms.ChoiceField(label='Group Totals By', choices=TRUNC_CHOICES,
-            widget=forms.RadioSelect())
-    projects = selectable.AutoCompleteSelectMultipleField(ProjectLookup,
-            label='Project Name', required=False)
-
-    def __init__(self, *args, **kwargs):
-        super(ProjectFiltersForm, self).__init__(*args, **kwargs)
-        self.fields['from_date'].required = True
-        self.fields['to_date'].required = True
