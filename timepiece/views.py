@@ -15,6 +15,7 @@ from django.contrib.contenttypes.models import ContentType
 from django.core import exceptions
 from django.core.urlresolvers import reverse, resolve
 from django.db import transaction
+from django.db import transaction, DatabaseError
 from django.db.models import Sum, Q
 from django.http import HttpResponse, HttpResponseRedirect
 from django.http import Http404, HttpResponseForbidden
