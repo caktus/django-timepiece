@@ -31,15 +31,24 @@
     <div class="row-fluid">
         <div class="span12" id="header">
             <div id="options-buttons">
-               {% if show_verify %}
-                    <a class="btn btn-primary" href="{% url 'change_user_timesheet' timesheet_user.id 'verify' %}?from_date={{ from_date|date:"Y-m-d" }}">Verify All Entries</a>
+                {% if show_verify %}
+                    {% url 'change_user_timesheet' timesheet_user.id 'verify' as base_url %}
+                    {% create_dict from_date=from_date|date:'Y-m-d' as params %}
+                    <a class="btn btn-primary" href="{{ base_url|add_parameters:params }}">Verify All Entries</a>
                 {% endif %}
+
                 {% if show_approve %}
-                    <a class="btn btn-primary" href="{% url 'change_user_timesheet' timesheet_user.id 'approve' %}?from_date={{ from_date|date:"Y-m-d" }}">Approve All Entries</a>
+                    {% url 'change_user_timesheet' timesheet_user.id 'approve' as base_url %}
+                    {% create_dict from_date=from_date|date:'Y-m-d' as params %}
+                    <a class="btn btn-primary" href="{{ base_url|add_parameters:params }}">Approve All Entries</a>
                 {% endif %}
+
                 {% if perms.timepiece.view_payroll_summary %}
-                    <a class="btn btn-primary" href="{% url 'reject_user_timesheet' timesheet_user.pk %}?month={{ from_date|date:'n' }}&amp;year={{ from_date|date:'Y' }}">Reject All Entries</a>
+                    {% url 'reject_user_timesheet' timesheet_user.pk as base_url %}
+                    {% create_dict month=from_date|date:'n' year=from_date|date:'Y' as params %}
+                    <a class="btn btn-primary" href="{{ base_url|add_parameters:params }}">Reject All Entries</a>
                 {% endif %}
+
                 {% if perms.timepiece.view_user %}
                     <a class="btn btn-primary" href="{% url 'view_user' timesheet_user.pk %}">View/Edit User</a>
                 {% endif %}
@@ -226,7 +235,7 @@
                                 </tr>
                                 {% for day, projects in days %}
                                     {% for project, totals in projects.1.iteritems %}
-                                        <tr class="{% if day < from_date %}before_from_date{% endif %}">
+                                        <tr class="{% if day|add_timezone < from_date %}before_from_date{% endif %}">
                                             <td>
                                                 {% if forloop.counter == 1 %}
                                                     {{day|date:"m/d/Y (D)"}}
@@ -240,7 +249,7 @@
                                             <td class="hours">{{ totals.total|floatformat:2 }}</td>
                                         </tr>
                                     {% endfor %}
-                                    <tr class="daily_total {% if day < from_date %}before_from_date{% endif %}">
+                                    <tr class="daily_total {% if day|add_timezone < from_date %}before_from_date{% endif %}">
                                         <td></td>
                                         <td class="hours"><strong>{{day|date:"D"}}:</strong></td>
                                         <td class="hours">{{ projects.0.billable|floatformat:2 }}</td>
