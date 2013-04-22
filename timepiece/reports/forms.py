@@ -3,6 +3,7 @@ from django.contrib.auth.models import User
 
 from selectable import forms as selectable
 
+from timepiece.fields import UserModelMultipleChoiceField
 from timepiece.forms import DateForm, DATE_FORM_FORMAT, YearMonthForm
 from timepiece.lookups import ProjectLookup
 from timepiece.models import Entry, Activity, Attribute
@@ -17,7 +18,7 @@ class BillableHoursReportForm(DateForm):
 
     trunc = forms.ChoiceField(label='Group Totals By', choices=TRUNC_CHOICES,
             widget=forms.RadioSelect())
-    users = forms.ModelMultipleChoiceField(required=False, queryset=None,
+    users = UserModelMultipleChoiceField(required=False, queryset=None,
             widget=forms.CheckboxSelectMultiple())
     activities = forms.ModelMultipleChoiceField(required=False, queryset=None,
             widget=forms.CheckboxSelectMultiple())
@@ -42,8 +43,6 @@ class BillableHoursReportForm(DateForm):
         project_types = Attribute.objects.all()
 
         self.fields['users'].queryset = users
-        get_label = lambda p: p.get_name_or_username()
-        self.fields['users'].label_from_instance = get_label
         self.fields['activities'].queryset = activities
         self.fields['project_types'].queryset = project_types
 

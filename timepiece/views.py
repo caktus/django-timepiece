@@ -426,37 +426,39 @@ class ProjectTimesheetCSV(CSVMixin, ProjectTimesheet):
 
 @login_required
 def view_user_timesheet(request, user_id, active_tab):
-    active_tab = active_tab or 'overview'
+    # User can only view their own time sheet unless they have a permission.
     user = get_object_or_404(User, pk=user_id)
-    if not (request.user.has_perm('timepiece.view_entry_summary') or
-            user.pk == request.user.pk):
+    has_perm = request.user.has_perm('timepiece.view_entry_summary')
+    if not (has_perm or user.pk == request.user.pk):
         return HttpResponseForbidden('Forbidden')
-    today = utils.add_timezone(datetime.datetime.today())
-    today = today.replace(hour=0, minute=0, second=0, microsecond=0)
-    from_date = utils.get_month_start(today)
-    to_date = from_date + relativedelta(months=1)
-    can_view_summary = request.user and \
-        request.user.has_perm('timepiece.view_entry_summary')
-    form = timepiece_forms.UserYearMonthForm if can_view_summary else \
-        timepiece_forms.YearMonthForm
-    year_month_form = form(request.GET or None)
-    if year_month_form.is_valid():
-        if can_view_summary:
-            from_date, to_date, form_user = year_month_form.save()
-            is_update = request.GET.get('yearmonth', None)
-            if form_user and is_update:
+
+    FormClass = timepiece_forms.UserYearMonthForm if has_perm else \
+            timepiece_forms.YearMonthForm
+    form = FormClass(request.GET or None)
+    if form.is_valid():
+        if has_perm:
+            from_date, to_date, form_user = form.save()
+            if form_user and request.GET.get('yearmonth', None):
+                # Redirect to form_user's time sheet.
+                # Do not use request.GET in urlencode to prevent redirect
+                # loop caused by yearmonth parameter.
                 url = reverse('view_user_timesheet', args=(form_user.pk,))
-                # Do not use request.GET in urlencode in case it has the
-                # yearmonth parameter (redirect loop otherwise)
                 request_data = {
                     'month': from_date.month,
                     'year': from_date.year,
-                    'user': form_user.pk
+                    'user': form_user.pk,  # Keep so that user appears in form.
                 }
                 url += '?{0}'.format(urllib.urlencode(request_data))
                 return HttpResponseRedirect(url)
-        else:
-            from_date, to_date = year_month_form.save()
+        else:  # User must be viewing their own time sheet; no redirect needed.
+            from_date, to_date = form.save()
+        from_date = utils.add_timezone(from_date)
+        to_date = utils.add_timezone(to_date)
+    else:
+        # Default to showing this month.
+        from_date = utils.get_month_start()
+        to_date = from_date + relativedelta(months=1)
+
     entries_qs = timepiece.Entry.objects.filter(user=user)
     month_qs = entries_qs.timespan(from_date, span='month')
     extra_values = ('start_time', 'end_time', 'comments', 'seconds_paused',
@@ -479,23 +481,25 @@ def view_user_timesheet(request, user_id, active_tab):
     project_entries = month_qs.order_by().values(
         'project__name').annotate(sum=Sum('hours')).order_by('-sum')
     summary = timepiece.Entry.summary(user, from_date, to_date)
+
     show_approve = show_verify = False
-    if request.user.has_perm('timepiece.change_entry') or \
-        request.user.has_perm('timepiece.approve_timesheet') or \
-        user == request.user:
+    can_change = request.user.has_perm('timepiece.change_entry')
+    can_approve = request.user.has_perm('timepiece.approve_timesheet')
+    if can_change or can_approve or user == request.user:
         statuses = list(month_qs.values_list('status', flat=True))
         total_statuses = len(statuses)
         unverified_count = statuses.count('unverified')
         verified_count = statuses.count('verified')
         approved_count = statuses.count('approved')
-    if request.user.has_perm('timepiece.change_entry') or user == request.user:
+    if can_change or user == request.user:
         show_verify = unverified_count != 0
-    if request.user.has_perm('timepiece.approve_timesheet'):
+    if can_approve:
         show_approve = verified_count + approved_count == total_statuses \
-        and verified_count > 0 and total_statuses != 0
+                and verified_count > 0 and total_statuses != 0
+
     return render(request, 'timepiece/user/timesheet/view.html', {
-        'active_tab': active_tab,
-        'year_month_form': year_month_form,
+        'active_tab': active_tab or 'overview',
+        'year_month_form': form,
         'from_date': from_date,
         'to_date': to_date - datetime.timedelta(days=1),
         'show_verify': show_verify,

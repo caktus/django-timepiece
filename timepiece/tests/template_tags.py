@@ -1,12 +1,15 @@
 import datetime
-from django import template
 import mock
+
+from django import template
 from django.test import TestCase
+
+from timepiece import utils
 from timepiece.templatetags import timepiece_tags as tags
 from timepiece.tests.base import TimepieceDataTestCase
 
 
-class HumanizeSecondsTestCase(TimepieceDataTestCase):
+class HumanizeSecondsTestCase(TestCase):
 
     def test_usual(self):
         seconds_display = tags.humanize_seconds((5.5 * 3600) + 3)
@@ -34,7 +37,7 @@ class HumanizeSecondsTestCase(TimepieceDataTestCase):
         )
 
 
-class ConvertHoursToSecondsTestCase(TimepieceDataTestCase):
+class ConvertHoursToSecondsTestCase(TestCase):
 
     def test_usual(self):
         seconds = tags.convert_hours_to_seconds('3.25')
@@ -316,7 +319,7 @@ class TestProjectHoursForContract(TimepieceDataTestCase):
                 self.a_project, 'invalidarg')
 
 
-class AddParametersTest(TimepieceDataTestCase):
+class AddParametersTest(TestCase):
 
     def test_new_parameters(self):
         """Tag should add parameters to base URL after a '?'."""
@@ -352,3 +355,24 @@ class AddParametersTest(TimepieceDataTestCase):
         params = {'foo': '?'}
         retval = tags.add_parameters(url, params)
         self.assertEqual(retval, url + '?foo=%3F')
+
+
+class CreateDictTest(TestCase):
+
+    def test_create_dict(self):
+        retVal = tags.create_dict(foo='bar', a='b')
+        self.assertEquals(len(retVal), 2)
+        self.assertEquals(retVal['foo'], 'bar')
+        self.assertEquals(retVal['a'], 'b')
+
+    def test_create_empty_dict(self):
+        retVal = tags.create_dict()
+        self.assertEquals(retVal, {})
+
+
+class AddTimezoneTest(TestCase):
+
+    def test_add_timezone(self):
+        d = datetime.datetime.now()
+        retVal = tags.add_timezone(d)
+        self.assertEquals(retVal, utils.add_timezone(d))
