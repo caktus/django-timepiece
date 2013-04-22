@@ -149,7 +149,7 @@ class ReportMixin(object):
 
 
 class HourlyReport(ReportMixin, CSVMixin, TemplateView):
-    template_name = 'reports/hourly.html'
+    template_name = 'timepiece/reports/hourly.html'
 
     def convert_context_to_csv(self, context):
         """Convert the context dictionary into a CSV file."""
@@ -261,7 +261,7 @@ class HourlyReport(ReportMixin, CSVMixin, TemplateView):
 
 
 class BillableHours(ReportMixin, TemplateView):
-    template_name = 'reports/billable_hours.html'
+    template_name = 'timepiece/reports/billable_hours.html'
 
     @property
     def defaults(self):
@@ -371,7 +371,7 @@ def report_payroll_summary(request):
                         .values_list(*user_values).distinct()
     unapproved = entries.filter(status='verified') \
                         .values_list(*user_values).distinct()
-    return render(request, 'reports/payroll_summary.html', {
+    return render(request, 'timepiece/reports/payroll_summary.html', {
         'from_date': from_date,
         'year_month_form': year_month_form,
         'date_headers': date_headers,
@@ -457,7 +457,7 @@ def report_productivity(request):
                 writer.writerow(row)
             return response
 
-    return render(request, 'reports/productivity.html', {
+    return render(request, 'timepiece/reports/productivity.html', {
         'form': form,
         'report': json.dumps(report, cls=utils.DecimalEncoder),
         'type': organize_by or '',
