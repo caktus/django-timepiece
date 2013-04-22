@@ -3,13 +3,14 @@ from decimal import Decimal
 from random import randint
 
 from django.contrib.auth.models import Permission
-from django.core.urlresolvers import reverse
 from django.db.models import Q
 from django.utils import timezone
 
-from timepiece import models as timepiece
 from timepiece import utils
-from timepiece.tests.reports.base import ReportsTestBase
+from timepiece.models import Entry
+
+from timepiece.reports.tests.base import ReportsTestBase
+from timepiece.reports.utils import get_project_totals
 
 
 class TestHourlyReport(ReportsTestBase):
@@ -45,7 +46,7 @@ class TestHourlyReport(ReportsTestBase):
     def check_truncs(self, trunc, billable, non_billable):
         self.make_entries(user=self.user)
         self.make_entries(user=self.user2)
-        entries = timepiece.Entry.objects.date_trunc(trunc)
+        entries = Entry.objects.date_trunc(trunc)
         for entry in entries:
             if entry['billable']:
                 self.assertEqual(entry['hours'], billable)
@@ -64,9 +65,9 @@ class TestHourlyReport(ReportsTestBase):
     def get_project_totals(self, date_headers, trunc, query=Q(),
                            hour_type='total'):
         """Helper function for testing project_totals utility directly"""
-        entries = timepiece.Entry.objects.date_trunc(trunc).filter(query)
+        entries = Entry.objects.date_trunc(trunc).filter(query)
         if entries:
-            pj_totals = utils.project_totals(entries, date_headers, hour_type)
+            pj_totals = get_project_totals(entries, date_headers, hour_type)
             pj_totals = list(pj_totals)
             rows = pj_totals[0][0]
             hours = [hours for name, user_id, hours in rows]
