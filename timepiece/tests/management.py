@@ -1,17 +1,14 @@
 from datetime import datetime, timedelta
-from StringIO import StringIO
 from dateutil.relativedelta import relativedelta
+from StringIO import StringIO
 
 from django.contrib.auth.models import User, Permission
 from django.core.exceptions import ValidationError
 from django.utils import timezone
 
-from timepiece.tests.base import TimepieceDataTestCase
-
-from timepiece import models as timepiece
-from timepiece import forms as timepiece_forms
 from timepiece import utils
 from timepiece.management.commands import check_entries
+from timepiece.tests.base import TimepieceDataTestCase
 
 
 class CheckEntries(TimepieceDataTestCase):

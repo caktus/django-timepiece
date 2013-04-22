@@ -8,8 +8,9 @@ from django.core.urlresolvers import reverse
 from django.utils import timezone
 
 from timepiece import utils
-from timepiece.models import Entry, ProjectHours
 from timepiece.tests.base import TimepieceDataTestCase
+
+from timepiece.entries.models import Entry, ProjectHours
 
 
 class DashboardViewTestCase(TimepieceDataTestCase):

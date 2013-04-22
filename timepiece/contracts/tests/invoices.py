@@ -7,10 +7,10 @@ from django.core.urlresolvers import reverse
 
 from timepiece import utils
 from timepiece.forms import DATE_FORM_FORMAT
-from timepiece.models import Activity, Entry
 from timepiece.tests.base import TimepieceDataTestCase
 
 from timepiece.contracts.models import EntryGroup, HourGroup
+from timepiece.entries.models import Activity, Entry
 
 
 class InvoiceViewPreviousTestCase(TimepieceDataTestCase):

@@ -15,9 +15,9 @@ from django.views.generic import TemplateView
 
 from timepiece import utils
 from timepiece.forms import DATE_FORM_FORMAT
-from timepiece.models import Entry, ProjectHours
 from timepiece.views import CSVMixin
 
+from timepiece.entries.models import Entry, ProjectHours
 from timepiece.reports.forms import BillableHoursReportForm, HourlyReportForm, \
         ProductivityReportForm, PayrollSummaryReportForm
 from timepiece.reports.utils import get_project_totals, get_payroll_totals
@@ -26,7 +26,7 @@ from timepiece.reports.utils import get_project_totals, get_payroll_totals
 class ReportMixin(object):
     """Common data for the Hourly & Billable Hours reports."""
 
-    @method_decorator(permission_required('timepiece.view_entry_summary'))
+    @method_decorator(permission_required('entries.view_entry_summary'))
     def dispatch(self, request, *args, **kwargs):
         return super(ReportMixin, self).dispatch(request, *args, **kwargs)
 
@@ -332,7 +332,7 @@ class BillableHours(ReportMixin, TemplateView):
         return data_map
 
 
-@permission_required('timepiece.view_payroll_summary')
+@permission_required('entries.view_payroll_summary')
 def report_payroll_summary(request):
     date = timezone.now() - relativedelta(months=1)
     from_date = utils.get_month_start(date).date()
@@ -383,7 +383,7 @@ def report_payroll_summary(request):
     })
 
 
-@permission_required('timepiece.view_entry_summary')
+@permission_required('entries.view_entry_summary')
 def report_productivity(request):
     report = []
     organize_by = None

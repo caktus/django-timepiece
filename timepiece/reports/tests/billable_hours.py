@@ -7,8 +7,8 @@ from django.core.urlresolvers import reverse
 from django.db.models import Q
 
 from timepiece.forms import DATE_FORM_FORMAT
-from timepiece.models import Entry
 
+from timepiece.entries.models import Entry
 from timepiece.reports.tests.base import ReportsTestBase
 
 

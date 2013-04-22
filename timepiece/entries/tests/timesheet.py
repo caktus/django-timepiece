@@ -1,24 +1,22 @@
 import time
 import datetime
-import random
-import itertools
-import urllib
+from dateutil.relativedelta import relativedelta
 from decimal import Decimal
-
-from django.core.urlresolvers import reverse
+import itertools
+import random
+import urllib
 
 from django.contrib.auth.models import User, Permission
 from django.core.exceptions import ValidationError
+from django.core.urlresolvers import reverse
 from django.forms import model_to_dict
 from django.utils import timezone
 
+from timepiece import utils
 from timepiece.tests.base import TimepieceDataTestCase
 
-from timepiece import models as timepiece
-from timepiece import forms as timepiece_forms
-from timepiece import utils
-
-from dateutil.relativedelta import relativedelta
+from timepiece.entries.models import Entry
+from timepiece.entries.forms import ClockInForm
 
 
 class EditableTest(TimepieceDataTestCase):
@@ -182,7 +180,7 @@ class ClockInTest(TimepieceDataTestCase):
         # with one active entry
         self.assertRedirects(response, reverse('dashboard'),
                              status_code=302, target_status_code=200)
-        entries = timepiece.Entry.objects.filter(
+        entries = Entry.objects.filter(
             end_time__isnull=True, user=self.user
         )
         self.assertEqual(entries.count(), 1)
@@ -202,7 +200,7 @@ class ClockInTest(TimepieceDataTestCase):
             'start_time_1': self.now.strftime('%H:%M:%S'),
         })
         response = self.client.post(self.url, data)
-        entries = timepiece.Entry.objects.all()
+        entries = Entry.objects.all()
         #These clock in times do not overlap
         for entry in entries:
             if entry.is_overlapping():
@@ -237,9 +235,9 @@ class ClockInTest(TimepieceDataTestCase):
             self.assertEqual(str(e), "Only one active entry is allowed.")
         else:
             self.fail("Only one active entry should be allowed.")
-        self.assertEqual(timepiece.Entry.objects.count(), 2)
-        self.assertEqual(timepiece.Entry.objects.get(pk=entry1.pk), entry1)
-        self.assertEqual(timepiece.Entry.objects.get(pk=entry2.pk), entry2)
+        self.assertEqual(Entry.objects.count(), 2)
+        self.assertEqual(Entry.objects.get(pk=entry1.pk), entry1)
+        self.assertEqual(Entry.objects.get(pk=entry2.pk), entry2)
 
     def testClockInCurrentStatus(self):
         """Verify the status of the current entry shows what is expected"""
@@ -264,7 +262,7 @@ class ClockInTest(TimepieceDataTestCase):
         entry1 = self.create_entry({
             'start_time': self.ten_min_ago,
         })
-        e_id = timepiece.Entry.objects.get(pk=entry1.id)
+        e_id = Entry.objects.get(pk=entry1.id)
         e_id.pause()
         data = self.clock_in_form
         data.update({
@@ -274,7 +272,7 @@ class ClockInTest(TimepieceDataTestCase):
         })
         response = self.client.post(self.url, data, follow=True)
         #obtain entry1 now that it is closed. The hours should be recorded
-        e_id = timepiece.Entry.objects.get(pk=entry1.id)
+        e_id = Entry.objects.get(pk=entry1.id)
         self.assertTrue(e_id.is_closed)
         self.assertTrue(e_id.hours)
         self.assertEqual(e_id.comments, 'test comment')
@@ -412,7 +410,7 @@ class ClockInTest(TimepieceDataTestCase):
         msg = 'Enter a valid date/time.'
         self.assertFormError(response, 'form', 'start_time', msg)
 
-        active = timepiece.Entry.objects.get()
+        active = Entry.objects.get()
         self.assertIsNone(active.end_time)
 
     def test_clockin_correct_active_entry(self):
@@ -427,7 +425,7 @@ class ClockInTest(TimepieceDataTestCase):
         self.assertEquals(response.status_code, 200)
         self.assertTrue(response.context['messages'])
 
-        active = timepiece.Entry.objects.get()
+        active = Entry.objects.get()
 
         data = self.clock_in_form
         start_time = self.now + datetime.timedelta(seconds=10)
@@ -437,7 +435,7 @@ class ClockInTest(TimepieceDataTestCase):
         })
         response = self.client.post(self.url, data)
 
-        active = timepiece.Entry.objects.get(pk=active.pk)
+        active = Entry.objects.get(pk=active.pk)
         self.assertIsNotNone(active.end_time)
 
     def testProjectListFiltered(self):
@@ -509,7 +507,7 @@ class AutoActivityTest(TimepieceDataTestCase):
         if not project:
             project = self.project
         initial = {'project': project.id}
-        form = timepiece_forms.ClockInForm(user=self.user, initial=initial)
+        form = ClockInForm(user=self.user, initial=initial)
         return form.initial['activity']
 
     def testNewWorker(self):
@@ -581,7 +579,7 @@ class ClockOutTest(TimepieceDataTestCase):
             self.url, data,
             follow=True,
         )
-        closed_entry = timepiece.Entry.objects.get(pk=self.entry.pk)
+        closed_entry = Entry.objects.get(pk=self.entry.pk)
         self.assertTrue(closed_entry.is_closed)
 
     def testClockOutWithSecondsPaused(self):
@@ -601,7 +599,7 @@ class ClockOutTest(TimepieceDataTestCase):
             'location': self.location.pk,
         }
         response = self.client.post(reverse('clock_out'), data)
-        entry_with_pause = timepiece.Entry.objects.get(pk=entry_with_pause.pk)
+        entry_with_pause = Entry.objects.get(pk=entry_with_pause.pk)
         self.assertAlmostEqual(entry_with_pause.hours, 4)
 
     def testClockOutWhilePaused(self):
@@ -620,7 +618,7 @@ class ClockOutTest(TimepieceDataTestCase):
             'location': self.location.pk,
         }
         response = self.client.post(reverse('clock_out'), data)
-        paused_entry = timepiece.Entry.objects.get(pk=paused_entry.pk)
+        paused_entry = Entry.objects.get(pk=paused_entry.pk)
         self.assertAlmostEqual(paused_entry.hours, 1)
 
     def testClockOutReverse(self):
@@ -787,7 +785,7 @@ class CheckOverlap(TimepieceDataTestCase):
         return user_total_overlaps
 
     def get_entries(self):
-        return timepiece.Entry.objects.filter(user=self.user)
+        return Entry.objects.filter(user=self.user)
 
     #Invalid entries to test against
     def testBeforeAndIn(self):
@@ -915,7 +913,7 @@ class CreateEditEntry(TimepieceDataTestCase):
             status_code=302, target_status_code=200)
         self.assertContains(response,
             'The entry has been updated successfully', count=1)
-        entries = timepiece.Entry.objects.filter(
+        entries = Entry.objects.filter(
             user=self.user, end_time__isnull=True
         )
         self.assertEquals(entries.count(), 1)
@@ -936,7 +934,7 @@ class CreateEditEntry(TimepieceDataTestCase):
         #and 1 active entry, because we updated the current entry from setUp
         self.assertRedirects(response, reverse('dashboard'),
             status_code=302, target_status_code=200)
-        entries = timepiece.Entry.objects.filter(
+        entries = Entry.objects.filter(
             user=self.user, end_time__isnull=True
         )
         self.assertEquals(entries.count(), 1)
@@ -1402,7 +1400,7 @@ class StatusTest(TimepieceDataTestCase):
         self.assertEquals(entry.status, 'verified')
 
         response = self.client.post(self.approve_url(), {'do_action': 'Yes'})
-        entry = timepiece.Entry.objects.get(pk=entry.pk)
+        entry = Entry.objects.get(pk=entry.pk)
         self.assertEquals(entry.status, 'approved')
 
     def test_reject_user(self):
@@ -1462,7 +1460,7 @@ class StatusTest(TimepieceDataTestCase):
         check_entry_against_code('verified', 200)
         response = self.client.post(reject_url, {'Yes': 'yes'})
         self.assertTrue(response.status_code, 302)
-        entry = timepiece.Entry.objects.get(user=self.user)
+        entry = Entry.objects.get(user=self.user)
         self.assertEqual(entry.status, 'unverified')
 
     def testNotAllowedToRejectTimesheet(self):
@@ -1523,7 +1521,7 @@ class TestTotals(TimepieceDataTestCase):
         from_date = utils.get_month_start(date)
         to_date = from_date + relativedelta(months=1)
         first_week = utils.get_week_start(from_date)
-        entries = timepiece.Entry.objects.timespan(first_week, to_date=to_date)
+        entries = Entry.objects.timespan(first_week, to_date=to_date)
         grouped_totals = utils.grouped_totals(entries)
         for week, week_totals, days in grouped_totals:
             #Jan. 3rd is a monday. Each week should be on a monday
@@ -1651,7 +1649,7 @@ class HourlySummaryTest(TimepieceDataTestCase):
         extra_values = ('start_time', 'end_time', 'comments', 'seconds_paused',
                 'id', 'location__name', 'project__name', 'activity__name',
                 'status')
-        entries = timepiece.Entry.objects \
+        entries = Entry.objects \
             .timespan(april, span='month') \
             .date_trunc('month', extra_values)
         self.assertEquals(list(entries), list(response.context['entries']))
@@ -1695,7 +1693,7 @@ class MonthlyRejectTestCase(TimepieceDataTestCase):
 
         response = self.client.post(self.url, data=self.data)
 
-        entries = timepiece.Entry.no_join.filter(status='verified')
+        entries = Entry.no_join.filter(status='verified')
         self.assertEquals(entries.count(), 0)
 
     def test_page_no_permissions(self):
@@ -1711,7 +1709,7 @@ class MonthlyRejectTestCase(TimepieceDataTestCase):
 
         response = self.client.post(self.url, data=self.data)
 
-        entries = timepiece.Entry.no_join.filter(status='verified')
+        entries = Entry.no_join.filter(status='verified')
         self.assertEquals(entries.count(), 2)
 
     def test_reject_entries_no_date(self):
@@ -1747,7 +1745,7 @@ class MonthlyRejectTestCase(TimepieceDataTestCase):
 
         response = self.client.post(self.url, data=data)
 
-        entries = timepiece.Entry.no_join.filter(status='verified')
+        entries = Entry.no_join.filter(status='verified')
         self.assertEquals(entries.count(), 2)
 
     def test_reject_approved_invoiced_entries(self):
@@ -1758,5 +1756,5 @@ class MonthlyRejectTestCase(TimepieceDataTestCase):
 
         response = self.client.post(self.url, data=self.data)
 
-        entries = timepiece.Entry.no_join.filter(status='unverified')
+        entries = Entry.no_join.filter(status='unverified')
         self.assertEquals(entries.count(), 0)

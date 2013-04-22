@@ -14,12 +14,12 @@ from django.views.generic import ListView, DetailView
 
 from timepiece import utils
 from timepiece.forms import DATE_FORM_FORMAT, DateForm, SearchForm
-from timepiece.models import Project, Entry
 from timepiece.templatetags.timepiece_tags import seconds_to_hours
 from timepiece.views import CSVMixin
 
 from timepiece.contracts.forms import InvoiceForm
 from timepiece.contracts.models import ProjectContract, HourGroup, EntryGroup
+from timepiece.entries.models import Project, Entry
 
 
 class ContractDetail(DetailView):

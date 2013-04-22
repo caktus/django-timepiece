@@ -17,7 +17,6 @@ from django.views.generic import DetailView, TemplateView, View
 
 from timepiece import utils
 from timepiece.forms import YearMonthForm, UserYearMonthForm, SearchForm
-from timepiece.models import Entry
 from timepiece.templatetags.timepiece_tags import seconds_to_hours
 from timepiece.views import CSVMixin
 
@@ -27,9 +26,10 @@ from timepiece.crm.forms import BusinessForm, ProjectForm, UserProfileForm,\
         DeleteForm
 from timepiece.crm.models import Business, Project, ProjectRelationship,\
         UserProfile
+from timepiece.entries.models import Entry
 
 
-@permission_required('timepiece.view_payroll_summary')
+@permission_required('entries.view_payroll_summary')
 def reject_user_timesheet(request, user_id):
     """
     This allows admins to reject all entries, instead of just one
@@ -69,7 +69,7 @@ class ProjectTimesheet(DetailView):
     pk_url_kwarg = 'project_id'
 
     # FIXME: this permission doesn't seem to exist
-    @method_decorator(permission_required('timepiece.view_project_time_sheet'))
+    @method_decorator(permission_required('entries.view_project_time_sheet'))
     def dispatch(self, *args, **kwargs):
         return super(ProjectTimesheet, self).dispatch(*args, **kwargs)
 
@@ -163,7 +163,7 @@ class ProjectTimesheetCSV(CSVMixin, ProjectTimesheet):
 def view_user_timesheet(request, user_id, active_tab):
     # User can only view their own time sheet unless they have a permission.
     user = get_object_or_404(User, pk=user_id)
-    has_perm = request.user.has_perm('timepiece.view_entry_summary')
+    has_perm = request.user.has_perm('entries.view_entry_summary')
     if not (has_perm or user.pk == request.user.pk):
         return HttpResponseForbidden('Forbidden')
 
@@ -217,8 +217,8 @@ def view_user_timesheet(request, user_id, active_tab):
     summary = Entry.summary(user, from_date, to_date)
 
     show_approve = show_verify = False
-    can_change = request.user.has_perm('timepiece.change_entry')
-    can_approve = request.user.has_perm('timepiece.approve_timesheet')
+    can_change = request.user.has_perm('entries.change_entry')
+    can_approve = request.user.has_perm('entries.approve_timesheet')
     if can_change or can_approve or user == request.user:
         statuses = list(month_qs.values_list('status', flat=True))
         total_statuses = len(statuses)
@@ -249,7 +249,7 @@ def view_user_timesheet(request, user_id, active_tab):
 @login_required
 def change_user_timesheet(request, user_id, action):
     user = get_object_or_404(User, pk=user_id)
-    admin_verify = request.user.has_perm('timepiece.view_entry_summary')
+    admin_verify = request.user.has_perm('entries.view_entry_summary')
     perm = True
 
     if not admin_verify and action == 'verify' and user != request.user:

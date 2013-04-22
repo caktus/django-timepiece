@@ -13,12 +13,12 @@ from django.contrib.contenttypes.models import ContentType
 from django.db.models import Q
 from django.utils import timezone
 
-from timepiece.models import Activity, ActivityGroup, Location, Entry,\
-        ProjectHours
 from timepiece.contracts.models import ProjectContract, ContractHour,\
         ContractAssignment, EntryGroup, HourGroup
 from timepiece.crm.models import Attribute, Business, Project,\
         ProjectRelationship, RelationshipType, UserProfile
+from timepiece.entries.models import Activity, ActivityGroup, Location, Entry,\
+        ProjectHours
 from timepiece import utils
 
 

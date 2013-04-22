@@ -5,8 +5,9 @@ import json
 
 from django.contrib.auth.models import Permission
 
-from timepiece.models import Entry, ProjectHours
 from timepiece.tests.base import TimepieceDataTestCase
+
+from timepiece.entries.models import Entry, ProjectHours
 
 
 class TestProductivityReport(TimepieceDataTestCase):

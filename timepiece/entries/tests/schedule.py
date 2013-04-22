@@ -1,16 +1,16 @@
 import json
 import datetime
-from decimal import Decimal
-
 from dateutil.relativedelta import relativedelta
+from decimal import Decimal
 
 from django.contrib.auth.models import Permission, User
 from django.contrib.contenttypes.models import ContentType
 from django.core.urlresolvers import reverse
 
-from timepiece import models as timepiece
 from timepiece import utils
 from timepiece.tests.base import TimepieceDataTestCase
+
+from timepiece.entries.models import Entry, ProjectHours
 
 
 class ProjectHoursTestCase(TimepieceDataTestCase):
@@ -18,7 +18,7 @@ class ProjectHoursTestCase(TimepieceDataTestCase):
     def setUp(self):
         self.user = self.create_user('user', 'u@abc.com', 'abc')
         permissions = Permission.objects.filter(
-            content_type=ContentType.objects.get_for_model(timepiece.Entry),
+            content_type=ContentType.objects.get_for_model(Entry),
             codename__in=('can_clock_in', 'can_clock_out', 'can_pause',
                     'change_entry')
         )
@@ -74,11 +74,11 @@ class ProjectHoursModelTestCase(ProjectHoursTestCase):
         monday = datetime.date(2012, 07, 16)
         for i in range(7):
             date = monday + relativedelta(days=i)
-            entry = timepiece.ProjectHours.objects.create(
+            entry = ProjectHours.objects.create(
                     week_start=date, project=self.tracked_project,
                     user=self.user)
             self.assertEquals(entry.week_start.date(), monday)
-            timepiece.ProjectHours.objects.all().delete()
+            ProjectHours.objects.all().delete()
 
 
 class ProjectHoursListViewTestCase(ProjectHoursTestCase):
@@ -95,15 +95,15 @@ class ProjectHoursListViewTestCase(ProjectHoursTestCase):
         self.date_format = '%Y-%m-%d'
 
     def test_no_permission(self):
-        """User must have permission timepiece.can_clock_in to view page."""
+        """User must have permission entries.can_clock_in to view page."""
         basic_user = self.create_user('basic', 'b@e.com', 'abc')
         self.client.login(username='basic', password='abc')
         response = self.client.get(self.url)
         self.assertEquals(response.status_code, 302)
 
     def test_permission(self):
-        """User must have permission timepiece.can_clock_in to view page."""
-        self.assertTrue(self.user.has_perm('timepiece.can_clock_in'))
+        """User must have permission entries.can_clock_in to view page."""
+        self.assertTrue(self.user.has_perm('entries.can_clock_in'))
         response = self.client.get(self.url)
         self.assertEquals(response.status_code, 200)
 
@@ -182,17 +182,17 @@ class ProjectHoursEditTestCase(ProjectHoursTestCase):
 
     def create_project_hours(self):
         """Create project hours data"""
-        timepiece.ProjectHours.objects.create(
+        ProjectHours.objects.create(
             week_start=self.week_start, project=self.tracked_project,
             user=self.user, hours="25.0")
-        timepiece.ProjectHours.objects.create(
+        ProjectHours.objects.create(
             week_start=self.week_start, project=self.tracked_project,
             user=self.manager, hours="5.0")
 
-        timepiece.ProjectHours.objects.create(
+        ProjectHours.objects.create(
             week_start=self.next_week, project=self.tracked_project,
             user=self.user, hours="15.0")
-        timepiece.ProjectHours.objects.create(
+        ProjectHours.objects.create(
             week_start=self.next_week, project=self.tracked_project,
             user=self.manager, hours="2.0")
 
@@ -389,7 +389,7 @@ class ProjectHoursEditTestCase(ProjectHoursTestCase):
         """
         self.client.login(username='manager', password='abc')
 
-        self.assertEquals(timepiece.ProjectHours.objects.count(), 0)
+        self.assertEquals(ProjectHours.objects.count(), 0)
 
         data = {
             'hours': 5,
@@ -400,8 +400,8 @@ class ProjectHoursEditTestCase(ProjectHoursTestCase):
         response = self.client.post(self.ajax_url, data=data)
         self.assertEquals(response.status_code, 200)
 
-        ph = timepiece.ProjectHours.objects.get()
-        self.assertEquals(timepiece.ProjectHours.objects.count(), 1)
+        ph = ProjectHours.objects.get()
+        self.assertEquals(ProjectHours.objects.count(), 1)
         self.assertEquals(int(response.content), ph.pk)
         self.assertEquals(ph.hours, Decimal("5.0"))
 
@@ -412,11 +412,11 @@ class ProjectHoursEditTestCase(ProjectHoursTestCase):
         """
         self.client.login(username='manager', password='abc')
 
-        self.assertEquals(timepiece.ProjectHours.objects.count(), 0)
+        self.assertEquals(ProjectHours.objects.count(), 0)
 
         self.ajax_posts()
 
-        self.assertEquals(timepiece.ProjectHours.objects.count(), 0)
+        self.assertEquals(ProjectHours.objects.count(), 0)
 
     def test_ajax_update_successful(self):
         """
@@ -425,7 +425,7 @@ class ProjectHoursEditTestCase(ProjectHoursTestCase):
         """
         self.client.login(username='manager', password='abc')
 
-        ph = timepiece.ProjectHours.objects.create(
+        ph = ProjectHours.objects.create(
             hours=Decimal('5.0'),
             project=self.tracked_project,
             user=self.manager
@@ -439,7 +439,7 @@ class ProjectHoursEditTestCase(ProjectHoursTestCase):
         })
         self.assertEquals(response.status_code, 200)
 
-        ph = timepiece.ProjectHours.objects.get()
+        ph = ProjectHours.objects.get()
         self.assertEquals(ph.hours, Decimal("10"))
 
     def test_ajax_update_unsuccessful(self):
@@ -449,7 +449,7 @@ class ProjectHoursEditTestCase(ProjectHoursTestCase):
         """
         self.client.login(username='manager', password='abc')
 
-        ph = timepiece.ProjectHours.objects.create(
+        ph = ProjectHours.objects.create(
             hours=Decimal('10.0'),
             project=self.untracked_project,
             user=self.manager
@@ -457,7 +457,7 @@ class ProjectHoursEditTestCase(ProjectHoursTestCase):
 
         self.ajax_posts()
 
-        self.assertEquals(timepiece.ProjectHours.objects.count(), 1)
+        self.assertEquals(ProjectHours.objects.count(), 1)
         self.assertEquals(ph.hours, Decimal('10.0'))
 
     def test_ajax_delete_successful(self):
@@ -467,7 +467,7 @@ class ProjectHoursEditTestCase(ProjectHoursTestCase):
         """
         self.client.login(username='manager', password='abc')
 
-        ph = timepiece.ProjectHours.objects.create(
+        ph = ProjectHours.objects.create(
             hours=Decimal('5.0'),
             project=self.tracked_project,
             user=self.manager
@@ -478,7 +478,7 @@ class ProjectHoursEditTestCase(ProjectHoursTestCase):
         response = self.client.delete(url)
         self.assertEquals(response.status_code, 200)
 
-        self.assertEquals(timepiece.ProjectHours.objects.count(), 0)
+        self.assertEquals(ProjectHours.objects.count(), 0)
 
     def test_duplicate_successful(self):
         """
@@ -500,7 +500,7 @@ class ProjectHoursEditTestCase(ProjectHoursTestCase):
         messages = response.context['messages']
         self.assertEquals(messages._loaded_messages[0].message, msg)
 
-        ph = timepiece.ProjectHours.objects.all()
+        ph = ProjectHours.objects.all()
         self.assertEquals(ph.count(), 6)
         self.assertEquals(ph.filter(week_start__gte=self.future).count(), 2)
 
@@ -522,7 +522,7 @@ class ProjectHoursEditTestCase(ProjectHoursTestCase):
         }, follow=True)
         self.assertEquals(response.status_code, 500)
 
-        self.assertEquals(timepiece.ProjectHours.objects.count(), 4)
+        self.assertEquals(ProjectHours.objects.count(), 4)
 
     def test_duplicate_dates(self):
         """
@@ -543,10 +543,10 @@ class ProjectHoursEditTestCase(ProjectHoursTestCase):
         messages = response.context['messages']
         self.assertEquals(messages._loaded_messages[0].message, msg)
 
-        this_week_qs = timepiece.ProjectHours.objects.filter(
+        this_week_qs = ProjectHours.objects.filter(
             week_start=self.week_start
         ).values_list('hours', flat=True)
-        next_week_qs = timepiece.ProjectHours.objects.filter(
+        next_week_qs = ProjectHours.objects.filter(
             week_start=self.next_week
         ).values_list('hours', flat=True)
 
@@ -554,8 +554,8 @@ class ProjectHoursEditTestCase(ProjectHoursTestCase):
         this_week_qs = list(this_week_qs)
         next_week_qs = list(next_week_qs)
 
-        self.assertEquals(timepiece.ProjectHours.objects.count(), 4)
-        self.assertEquals(timepiece.ProjectHours.objects.filter(
+        self.assertEquals(ProjectHours.objects.count(), 4)
+        self.assertEquals(ProjectHours.objects.filter(
             published=False).count(), 4)
         self.assertEquals(this_week_qs, next_week_qs)
 
@@ -587,7 +587,7 @@ class ProjectHoursEditTestCase(ProjectHoursTestCase):
 
         msg = 'Unpublished project hours are now published'
 
-        ph = timepiece.ProjectHours.objects.filter(published=True)
+        ph = ProjectHours.objects.filter(published=True)
         self.assertEquals(ph.count(), 0)
 
         response = self.client.post(self.view_url, follow=True)
@@ -596,7 +596,7 @@ class ProjectHoursEditTestCase(ProjectHoursTestCase):
         messages = response.context['messages']
         self.assertEquals(messages._loaded_messages[0].message, msg)
 
-        ph = timepiece.ProjectHours.objects.filter(published=True)
+        ph = ProjectHours.objects.filter(published=True)
         self.assertEquals(ph.count(), 2)
 
         for p in ph:
@@ -612,7 +612,7 @@ class ProjectHoursEditTestCase(ProjectHoursTestCase):
 
         msg = 'There were no hours to publish'
 
-        timepiece.ProjectHours.objects.update(published=True)
+        ProjectHours.objects.update(published=True)
 
         response = self.client.post(self.view_url, follow=True)
         self.assertEquals(response.status_code, 200)
@@ -620,5 +620,5 @@ class ProjectHoursEditTestCase(ProjectHoursTestCase):
         messages = response.context['messages']
         self.assertEquals(messages._loaded_messages[0].message, msg)
 
-        ph = timepiece.ProjectHours.objects.filter(published=True)
+        ph = ProjectHours.objects.filter(published=True)
         self.assertEquals(ph.count(), 4)

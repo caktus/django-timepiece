@@ -215,7 +215,7 @@ def get_project_hours_for_week(week_start):
     Returns a values set, ordered by the project id.
     """
     week_end = week_start + relativedelta(days=7)
-    ProjectHours = get_model('timepiece', 'ProjectHours')
+    ProjectHours = get_model('entries', 'ProjectHours')
     qs = ProjectHours.objects.filter(week_start__gte=week_start,
             week_start__lt=week_end)
     qs = qs.values('project__id', 'project__name', 'user__id',
@@ -261,7 +261,7 @@ def process_progress(entries, assignments):
     The list is ordered by project name.
     """
     Project = get_model('crm', 'Project')
-    ProjectHours = get_model('timepiece', 'ProjectHours')
+    ProjectHours = get_model('entries', 'ProjectHours')
 
     # Determine all projects either worked or assigned.
     project_q = Q(id__in=assignments.values_list('project__id', flat=True))
@@ -294,7 +294,7 @@ def process_progress(entries, assignments):
 
 
 def get_active_entry(user):
-    Entry = get_model('timepiece', 'Entry')
+    Entry = get_model('entries', 'Entry')
     try:
         entry = Entry.no_join.get(user=user, end_time__isnull=True)
     except Entry.DoesNotExist:

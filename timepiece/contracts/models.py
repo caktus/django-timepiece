@@ -10,7 +10,7 @@ from django.template import Context
 from django.template.loader import get_template
 
 from timepiece import utils
-from timepiece.models import Entry, Activity, ENTRY_STATUS
+from timepiece.entries.models import Entry, ENTRY_STATUS
 
 
 class ProjectContract(models.Model):
@@ -317,10 +317,8 @@ class HourGroupManager(models.Manager):
 class HourGroup(models.Model):
     """Activities that are bundled together for billing"""
     name = models.CharField(max_length=255, unique=True)
-    activities = models.ManyToManyField(
-        Activity,
-        related_name='activity_bundle',
-    )
+    activities = models.ManyToManyField('entries.Activity',
+            related_name='activity_bundle')
     order = models.PositiveIntegerField(unique=True, blank=True, null=True)
 
     objects = HourGroupManager()

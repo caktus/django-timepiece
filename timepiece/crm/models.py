@@ -86,7 +86,7 @@ class Project(models.Model):
         related_name='user_projects',
         through='ProjectRelationship',
     )
-    activity_group = models.ForeignKey('timepiece.ActivityGroup',
+    activity_group = models.ForeignKey('entries.ActivityGroup',
         related_name='activity_group', null=True, blank=True,
         verbose_name='restrict activities to',
     )

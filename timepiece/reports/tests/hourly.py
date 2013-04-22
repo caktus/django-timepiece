@@ -7,8 +7,8 @@ from django.db.models import Q
 from django.utils import timezone
 
 from timepiece import utils
-from timepiece.models import Entry
 
+from timepiece.entries.models import Entry
 from timepiece.reports.tests.base import ReportsTestBase
 from timepiece.reports.utils import get_project_totals
 

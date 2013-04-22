@@ -1,24 +1,24 @@
 from django.contrib import admin
-from timepiece import models as timepiece
+
+from timepiece.entries.models import Activity, ActivityGroup, Entry, Location,\
+        ProjectHours
 
 
 class ActivityAdmin(admin.ModelAdmin):
-    model = timepiece.Activity
+    model = Activity
     list_display = ('code', 'name', 'billable')
     list_filter = ('billable',)
-admin.site.register(timepiece.Activity, ActivityAdmin)
 
 
 class ActivityGroupAdmin(admin.ModelAdmin):
-    model = timepiece.ActivityGroup
+    model = ActivityGroup
     list_display = ('name',)
     list_filter = ('activities',)
     filter_horizontal = ('activities',)
-admin.site.register(timepiece.ActivityGroup, ActivityGroupAdmin)
 
 
 class EntryAdmin(admin.ModelAdmin):
-    model = timepiece.Entry
+    model = Entry
     list_display = ('user',
                     'project',
                     'location',
@@ -38,12 +38,10 @@ class EntryAdmin(admin.ModelAdmin):
 
     def project_type(self, entry):
         return entry.project.type
-admin.site.register(timepiece.Entry, EntryAdmin)
 
 
 class LocationAdmin(admin.ModelAdmin):
     list_display = ('id', 'name')
-admin.site.register(timepiece.Location, LocationAdmin)
 
 
 class ProjectHoursAdmin(admin.ModelAdmin):
@@ -54,4 +52,9 @@ class ProjectHoursAdmin(admin.ModelAdmin):
     _user.short_description = 'User'
     _user.admin_order_field = 'user__last_name'
 
-admin.site.register(timepiece.ProjectHours, ProjectHoursAdmin)
+
+admin.site.register(Activity, ActivityAdmin)
+admin.site.register(ActivityGroup, ActivityGroupAdmin)
+admin.site.register(Entry, EntryAdmin)
+admin.site.register(Location, LocationAdmin)
+admin.site.register(ProjectHours, ProjectHoursAdmin)

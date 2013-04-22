@@ -131,6 +131,7 @@ INSTALLED_APPS = (
     'timepiece',
     'timepiece.contracts',
     'timepiece.crm',
+    'timepiece.entries',
     'timepiece.reports',
 )
 
