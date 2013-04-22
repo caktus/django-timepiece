@@ -4,11 +4,7 @@ from dateutil.relativedelta import relativedelta
 
 from django.contrib.auth.models import User, Permission
 from django.core.exceptions import ValidationError
-
-try:
-    from django.utils import timezone
-except ImportError:
-    from timepiece import timezone
+from django.utils import timezone
 
 from timepiece.tests.base import TimepieceDataTestCase
 

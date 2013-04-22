@@ -6,11 +6,7 @@ from dateutil.relativedelta import relativedelta
 from django.contrib.auth import models as auth_models
 from django.core.management.base import BaseCommand, CommandError
 from django.db.models import Q
-
-try:
-    from django.utils import timezone
-except ImportError:
-    from timepiece import timezone
+from django.utils import timezone
 
 from timepiece import models as timepiece
 from timepiece import utils

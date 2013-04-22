@@ -36,7 +36,7 @@
                         {%  endif %}</td>
                     </td>
                 </tr>
-                <tr><th>Hours Worked</th>
+                <tr><th>Hours Worked (billable)</th>
                     <td>
                         {{ contract.hours_worked|floatformat:2 }}
                         ({% widthratio contract.hours_worked contract.contracted_hours 100 %}%)
@@ -52,18 +52,24 @@
                 <table class="table table-bordered">
                     <thead>
                     <tr>
-                        <th>Name</th>
-                        <th>Hours Worked</th>
-                        <th>Time Sheet</th>
-                        <th>Hours Report</th>
+                        <th rowspan="2">Name</th>
+                        <th colspan="2">Hours Worked</th>
+                        <th rowspan="2">Time Sheet</th>
+                        <th rowspan="2">Hours Report</th>
+                    </tr>
+                    <tr>
+                        <th>Billable</th>
+                        <th>Non-billable</th>
                     </tr>
                     </thead>
                     <tbody>
                     {% for project in contract.projects.all %}
-                        {% project_hours_for_contract contract project %}
+                        {% project_hours_for_contract contract project 'billable' as project_hours %}
+                        {% project_hours_for_contract contract project 'nonbillable' as nonbillable_hours %}
                         <tr>
                             <td><a href="{% url 'view_project' project.pk %}">{{ project.name }}</a></td>
                             <td class="hours">{{ project_hours|floatformat:'2' }}</td>
+                            <td class="hours">{{ nonbillable_hours|floatformat:'2' }}</td>
                             <td><a href="{% timesheet_url 'project' project.id '' %}">Time Sheet</a></td>
                             <td><a href="{% project_report_url_for_contract contract project %}">Hours Report</a></td>
                         </tr>

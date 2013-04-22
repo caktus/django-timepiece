@@ -1,10 +1,7 @@
 from django.core.urlresolvers import reverse
 from django.http import HttpResponsePermanentRedirect
 
-try:
-    from django.conf.urls import patterns, include, url
-except ImportError:
-    from django.conf.urls.defaults import patterns, include, url
+from django.conf.urls import patterns, include, url
 
 from timepiece import views
 
@@ -90,10 +87,10 @@ urlpatterns = patterns('',
     url(r'^project/(?P<project_id>\d+)/delete/$',
         views.DeleteProjectView.as_view(),
         name='delete_project'),
-    url(r'^project/(?P<pk>\d+)/timesheet/$',
+    url(r'^project/(?P<project_id>\d+)/timesheet/$',
         views.ProjectTimesheet.as_view(),
         name='view_project_timesheet'),
-    url(r'^project/(?P<pk>\d+)/timesheet/csv/$',
+    url(r'^project/(?P<project_id>\d+)/timesheet/csv/$',
         views.ProjectTimesheetCSV.as_view(),
         name='view_project_timesheet_csv'),
 
@@ -157,7 +154,7 @@ urlpatterns = patterns('',
     url(r'^contract/$',
         views.ContractList.as_view(),
         name='list_contracts'),
-    url(r'^contract/(?P<pk>\d+)/$',
+    url(r'^contract/(?P<contract_id>\d+)/$',
         views.ContractDetail.as_view(),
         name='view_contract'),
 
@@ -171,22 +168,22 @@ urlpatterns = patterns('',
     url(r'invoice/create/$',
         views.create_invoice,
         name='create_invoice'),
-    url(r'invoice/(?P<pk>\d+)/$',
+    url(r'invoice/(?P<invoice_id>\d+)/$',
         views.InvoiceDetail.as_view(),
         name='view_invoice'),
-    url(r'invoice/(?P<pk>\d+)/csv/$',
+    url(r'invoice/(?P<invoice_id>\d+)/csv/$',
         views.InvoiceDetailCSV.as_view(),
         name='view_invoice_csv'),
-    url(r'invoice/(?P<pk>\d+)/entries/$',
+    url(r'invoice/(?P<invoice_id>\d+)/entries/$',
         views.InvoiceEntriesDetail.as_view(),
         name='view_invoice_entries'),
     url(r'invoice/(?P<invoice_id>\d+)/entries/(?P<entry_id>\d+)/remove/$',
         views.delete_invoice_entry,
         name='delete_invoice_entry'),
-    url(r'invoice/(?P<pk>\d+)/edit/$',
+    url(r'invoice/(?P<invoice_id>\d+)/edit/$',
         views.InvoiceEdit.as_view(),
         name='edit_invoice'),
-    url(r'invoice/(?P<pk>\d+)/delete/$',
+    url(r'invoice/(?P<invoice_id>\d+)/delete/$',
         views.InvoiceDelete.as_view(),
         name='delete_invoice'),
 )

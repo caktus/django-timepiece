@@ -3,12 +3,7 @@ import datetime
 from django.test import TestCase
 from timepiece.tests import TimepieceDataTestCase
 from timepiece.utils import get_active_entry, ActiveEntryError
-
-
-try:
-    from django.utils import timezone
-except ImportError:
-    from timepiece import timezone
+from django.utils import timezone
 
 from timepiece import utils
 

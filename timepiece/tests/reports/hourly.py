@@ -5,11 +5,7 @@ from random import randint
 from django.contrib.auth.models import Permission
 from django.core.urlresolvers import reverse
 from django.db.models import Q
-
-try:
-    from django.utils import timezone
-except ImportError:
-    from timepiece import timezone
+from django.utils import timezone
 
 from timepiece import models as timepiece
 from timepiece import utils
