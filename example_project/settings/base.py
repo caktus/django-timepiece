@@ -122,11 +122,14 @@ INSTALLED_APPS = (
     'django.contrib.staticfiles',
     'django.contrib.admin',
     'django.contrib.markup',
+
     'pagination',
-    'timepiece',
     'compressor',
     'bootstrap_toolkit',
     'selectable',
+
+    'timepiece',
+    'timepiece.reports',
 )
 
 # A sample logging configuration. The only tangible logging
