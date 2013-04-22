@@ -20,7 +20,7 @@ from django.views.generic import TemplateView, View
 
 from timepiece import utils
 from timepiece.forms import DATE_FORM_FORMAT
-from timepiece.utils import DecimalEncoder
+from timepiece.utils.csv import DecimalEncoder
 
 from timepiece.crm.models import Project
 from timepiece.entries.forms import ClockInForm, ClockOutForm, AddUpdateEntryForm,\

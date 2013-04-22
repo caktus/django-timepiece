@@ -1,23 +1,21 @@
+from __future__ import absolute_import
+
 import csv
+from decimal import Decimal
+from json import JSONEncoder
 
-from django.contrib.auth.decorators import login_required
-from django.http import HttpResponse, HttpResponseRedirect
-from django.shortcuts import render
-
-from timepiece.forms import QuickSearchForm
+from django.http import HttpResponse
 
 
-@login_required
-def search(request):
-    form = QuickSearchForm(request.GET or None)
-    if form.is_valid():
-        return HttpResponseRedirect(form.save())
-    return render(request, 'timepiece/search_results.html', {
-        'form': form,
-    })
+class DecimalEncoder(JSONEncoder):
+
+    def default(self, obj):
+        if isinstance(obj, Decimal):
+            return float(obj)
+        return super(DecimalEncoder, self).default(obj)
 
 
-class CSVMixin(object):
+class CSVViewMixin(object):
 
     def render_to_response(self, context):
         response = HttpResponse(content_type='text/csv')
@@ -33,5 +31,5 @@ class CSVMixin(object):
         raise NotImplemented('You must implement this in the subclass')
 
     def convert_context_to_csv(self, context):
-        """Convert the context dictionary into a CSV file"""
+        """Convert the context dictionary into a CSV file."""
         raise NotImplemented('You must implement this in the subclass')

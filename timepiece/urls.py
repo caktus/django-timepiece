@@ -3,8 +3,6 @@ from django.http import HttpResponsePermanentRedirect
 
 from django.conf.urls import patterns, include, url
 
-from timepiece import views
-
 
 urlpatterns = patterns('',
     # Redirect the base URL to the dashboard.
@@ -14,6 +12,4 @@ urlpatterns = patterns('',
     url('', include('timepiece.contracts.urls')),
     url('', include('timepiece.entries.urls')),
     url('', include('timepiece.reports.urls')),
-
-    url(r'^search/$', views.search, name='search'),
 )

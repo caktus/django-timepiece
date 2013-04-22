@@ -15,7 +15,7 @@ from django.views.generic import TemplateView
 
 from timepiece import utils
 from timepiece.forms import DATE_FORM_FORMAT
-from timepiece.views import CSVMixin
+from timepiece.utils.csv import CSVViewMixin, DecimalEncoder
 
 from timepiece.entries.models import Entry, ProjectHours
 from timepiece.reports.forms import BillableHoursReportForm, HourlyReportForm,\
@@ -149,7 +149,7 @@ class ReportMixin(object):
         return start, end
 
 
-class HourlyReport(ReportMixin, CSVMixin, TemplateView):
+class HourlyReport(ReportMixin, CSVViewMixin, TemplateView):
     template_name = 'timepiece/reports/hourly.html'
 
     def convert_context_to_csv(self, context):
@@ -199,7 +199,7 @@ class HourlyReport(ReportMixin, CSVMixin, TemplateView):
         self.export_projects = request.GET.get('export_projects', False)
         context = self.get_context_data()
         if self.export_users or self.export_projects:
-            kls = CSVMixin
+            kls = CSVViewMixin
         else:
             kls = TemplateView
         return kls.render_to_response(self, context)
@@ -301,7 +301,7 @@ class BillableHours(ReportMixin, TemplateView):
             data_list.append([label, billable, nonbillable])
 
         context.update({
-            'data': json.dumps(data_list, cls=utils.DecimalEncoder),
+            'data': json.dumps(data_list, cls=DecimalEncoder),
         })
         return context
 
@@ -458,7 +458,7 @@ def report_productivity(request):
 
     return render(request, 'timepiece/reports/productivity.html', {
         'form': form,
-        'report': json.dumps(report, cls=utils.DecimalEncoder),
+        'report': json.dumps(report, cls=DecimalEncoder),
         'type': organize_by or '',
         'total_worked': sum([r[1] for r in report[1:]]),
         'total_assigned': sum([r[2] for r in report[1:]]),

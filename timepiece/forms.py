@@ -1,58 +1,16 @@
 import datetime
-from datetime import timedelta
 from dateutil.relativedelta import relativedelta
 import time
 
 from django import forms
 from django.contrib.auth.models import User
-from django.core.urlresolvers import reverse
 
-from selectable import forms as selectable
-
-from timepiece.crm.lookups import QuickLookup
 from timepiece.fields import UserModelChoiceField
 
 from timepiece.entries.models import Entry
 
 
 DATE_FORM_FORMAT = '%Y-%m-%d'
-
-
-class QuickSearchForm(forms.Form):
-    quick_search = selectable.AutoCompleteSelectField(
-        QuickLookup,
-        label='Quick Search',
-        required=False
-    )
-    quick_search.widget.attrs['placeholder'] = 'Search'
-
-    def clean_quick_search(self):
-        item = self.cleaned_data['quick_search']
-
-        if item is not None:
-            try:
-                item = item.split('-')
-                if len(item) == 1 or '' in item:
-                    raise ValueError
-                return item
-            except ValueError:
-                raise forms.ValidationError('%s' %
-                    'User, business, or project does not exist')
-        else:
-            raise forms.ValidationError('%s' %
-                'User, business, or project does not exist')
-
-    def save(self):
-        type, pk = self.cleaned_data['quick_search']
-
-        if type == 'individual':
-            return reverse('view_user', args=(pk,))
-        elif type == 'business':
-            return reverse('view_business', args=(pk,))
-        elif type == 'project':
-            return reverse('view_project', args=(pk,))
-
-        raise forms.ValidationError('Must be a user, project, or business')
 
 
 class DateForm(forms.Form):
@@ -80,7 +38,7 @@ class DateForm(forms.Form):
         returned_date = to_date
 
         if returned_date:
-            returned_date += timedelta(days=1)
+            returned_date += relativedelta(days=1)
         return (from_date, returned_date)
 
 

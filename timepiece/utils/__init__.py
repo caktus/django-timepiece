@@ -1,7 +1,6 @@
 import datetime
 from dateutil.relativedelta import relativedelta
 from decimal import Decimal
-from json import JSONEncoder
 
 from django.conf import settings
 from django.db.models import get_model
@@ -13,14 +12,6 @@ from timepiece.defaults import TimepieceDefaults
 class ActiveEntryError(Exception):
     """A user should have no more than one active entry at a given time."""
     pass
-
-
-class DecimalEncoder(JSONEncoder):
-
-    def default(self, obj):
-        if isinstance(obj, Decimal):
-            return float(obj)
-        return super(DecimalEncoder, self).default(obj)
 
 
 def add_timezone(value, tz=None):
@@ -39,6 +30,7 @@ def add_timezone(value, tz=None):
 
 
 def get_active_entry(user):
+    """Returns the user's currently-active entry, or None."""
     Entry = get_model('entries', 'Entry')
     try:
         entry = Entry.no_join.get(user=user, end_time__isnull=True)

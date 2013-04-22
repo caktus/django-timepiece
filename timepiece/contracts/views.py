@@ -15,7 +15,7 @@ from django.views.generic import ListView, DetailView
 from timepiece import utils
 from timepiece.forms import DATE_FORM_FORMAT, DateForm, SearchForm
 from timepiece.templatetags.timepiece_tags import seconds_to_hours
-from timepiece.views import CSVMixin
+from timepiece.utils.csv import CSVViewMixin
 
 from timepiece.contracts.forms import InvoiceForm
 from timepiece.contracts.models import ProjectContract, HourGroup, EntryGroup
@@ -227,7 +227,7 @@ class InvoiceEntriesDetail(InvoiceDetail):
         return context
 
 
-class InvoiceDetailCSV(CSVMixin, InvoiceDetail):
+class InvoiceDetailCSV(CSVViewMixin, InvoiceDetail):
 
     def get_filename(self, context):
         invoice = context['invoice']

@@ -18,12 +18,12 @@ from django.views.generic import DetailView, TemplateView, View
 from timepiece import utils
 from timepiece.forms import YearMonthForm, UserYearMonthForm, SearchForm
 from timepiece.templatetags.timepiece_tags import seconds_to_hours
-from timepiece.views import CSVMixin
+from timepiece.utils.csv import CSVViewMixin
 
 from timepiece.crm.forms import BusinessForm, ProjectForm, UserProfileForm,\
         ProjectRelationshipForm, SelectProjectForm, EditUserForm,\
         CreateUserForm, SelectUserForm, UserForm, ProjectSearchForm,\
-        DeleteForm
+        DeleteForm, QuickSearchForm
 from timepiece.crm.models import Business, Project, ProjectRelationship,\
         UserProfile
 from timepiece.crm.utils import grouped_totals
@@ -124,7 +124,7 @@ class ProjectTimesheet(DetailView):
         return context
 
 
-class ProjectTimesheetCSV(CSVMixin, ProjectTimesheet):
+class ProjectTimesheetCSV(CSVViewMixin, ProjectTimesheet):
 
     def get_filename(self, context):
         project = self.object.name
@@ -627,3 +627,13 @@ class DeleteProjectView(DeleteView):
     url_name = 'list_projects'
     permissions = ('crm.add_project', 'crm.change_project',)
     param = 'project_id'
+
+
+@login_required
+def search(request):
+    form = QuickSearchForm(request.GET or None)
+    if form.is_valid():
+        return HttpResponseRedirect(form.save())
+    return render(request, 'timepiece/search_results.html', {
+        'form': form,
+    })

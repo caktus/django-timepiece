@@ -9,6 +9,7 @@ from timepiece import utils
 
 
 class UtilityFunctionsTest(TestCase):
+
     def setUp(self):
         # Setup last billable days
         self.last_billable = [
@@ -35,6 +36,7 @@ class UtilityFunctionsTest(TestCase):
 
 
 class GetActiveEntryTest(TimepieceDataTestCase):
+
     def setUp(self):
         self.user = self.create_user()
 

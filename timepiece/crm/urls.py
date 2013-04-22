@@ -4,6 +4,8 @@ from timepiece.crm import views
 
 
 urlpatterns = patterns('',
+    url(r'^search/$', views.search, name='search'),
+
     # Users
     url(r'^user/settings/$',
         views.edit_settings,
