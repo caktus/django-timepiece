@@ -1,8 +1,9 @@
 from django.contrib.auth.models import Permission
 from django.core.urlresolvers import reverse
 
-from timepiece.models import ProjectRelationship
 from timepiece.tests.base import TimepieceDataTestCase
+
+from timepiece.crm.models import ProjectRelationship
 
 
 class RelationshipTestBase(TimepieceDataTestCase):

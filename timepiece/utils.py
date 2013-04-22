@@ -246,7 +246,7 @@ def get_total_seconds(td):
 
 def get_hours_per_week(user):
     """Retrieves the number of hours the user should work per week."""
-    UserProfile = get_model('timepiece', 'UserProfile')
+    UserProfile = get_model('crm', 'UserProfile')
     try:
         profile = UserProfile.objects.get(user=user)
     except UserProfile.DoesNotExist:
@@ -260,7 +260,7 @@ def process_progress(entries, assignments):
     assigned) for each project either worked or assigned.
     The list is ordered by project name.
     """
-    Project = get_model('timepiece', 'Project')
+    Project = get_model('crm', 'Project')
     ProjectHours = get_model('timepiece', 'ProjectHours')
 
     # Determine all projects either worked or assigned.

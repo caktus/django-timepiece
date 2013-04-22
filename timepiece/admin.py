@@ -17,17 +17,6 @@ class ActivityGroupAdmin(admin.ModelAdmin):
 admin.site.register(timepiece.ActivityGroup, ActivityGroupAdmin)
 
 
-class RelationshipTypeAdmin(admin.ModelAdmin):
-    pass
-admin.site.register(timepiece.RelationshipType, RelationshipTypeAdmin)
-
-
-class BusinessAdmin(admin.ModelAdmin):
-    list_display = ['name', 'short_name']
-    search_fields = ['name', 'short_name']
-admin.site.register(timepiece.Business, BusinessAdmin)
-
-
 class EntryAdmin(admin.ModelAdmin):
     model = timepiece.Entry
     list_display = ('user',
@@ -52,25 +41,6 @@ class EntryAdmin(admin.ModelAdmin):
 admin.site.register(timepiece.Entry, EntryAdmin)
 
 
-class AttributeAdmin(admin.ModelAdmin):
-    search_fields = ('label', 'type')
-    list_display = ('label', 'type', 'enable_timetracking', 'billable')
-    list_filter = ('type', 'enable_timetracking', 'billable')
-    #Django honors only first field
-    ordering = ('type', 'sort_order')
-admin.site.register(timepiece.Attribute, AttributeAdmin)
-
-
-class ProjectAdmin(admin.ModelAdmin):
-    raw_id_fields = ('business',)
-    list_display = ('name', 'business', 'point_person', 'status', 'type')
-    list_filter = ('type', 'status')
-    search_fields = ('name', 'business__name', 'point_person__username',
-            'point_person__first_name', 'point_person__last_name',
-            'description')
-admin.site.register(timepiece.Project, ProjectAdmin)
-
-
 class LocationAdmin(admin.ModelAdmin):
     list_display = ('id', 'name')
 admin.site.register(timepiece.Location, LocationAdmin)
@@ -85,8 +55,3 @@ class ProjectHoursAdmin(admin.ModelAdmin):
     _user.admin_order_field = 'user__last_name'
 
 admin.site.register(timepiece.ProjectHours, ProjectHoursAdmin)
-
-
-class UserProfileAdmin(admin.ModelAdmin):
-    list_display = ('user', 'hours_per_week')
-admin.site.register(timepiece.UserProfile, UserProfileAdmin)

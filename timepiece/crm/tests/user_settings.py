@@ -1,10 +1,10 @@
+from django.contrib.auth.models import User
 from django.core.urlresolvers import reverse
 
-from django.contrib.auth import models as auth_models
-
-from timepiece import models as timepiece
 from timepiece import forms
 from timepiece.tests.base import TimepieceDataTestCase
+
+from timepiece.crm.models import UserProfile
 
 
 class EditSettingsTest(TimepieceDataTestCase):
@@ -31,7 +31,7 @@ class EditSettingsTest(TimepieceDataTestCase):
         }
         response = self.edit_profile(self.url, data)
         self.assertRedirects(response, reverse('dashboard'))
-        self.user = auth_models.User.objects.get(pk=self.user.pk)
+        self.user = User.objects.get(pk=self.user.pk)
         for k, v in data.iteritems():
             value = getattr(self.user, k)
             self.assertEquals(value, v)
@@ -44,7 +44,7 @@ class EditSettingsTest(TimepieceDataTestCase):
         }
         response = self.edit_profile(next_query_url, data)
         self.assertRedirects(response, next)
-        self.profile = timepiece.UserProfile.objects.get(user=self.user)
+        self.profile = UserProfile.objects.get(user=self.user)
 
 
 class EditUserTest(TimepieceDataTestCase):
@@ -81,7 +81,7 @@ class EditUserTest(TimepieceDataTestCase):
 
         response = self.client.post(self.url, data=self.data)
         # User was updated, so self.user contains incorrect password
-        user = auth_models.User.objects.get(pk=self.user.pk)
+        user = User.objects.get(pk=self.user.pk)
         self.assertTrue(user.check_password('password'))
 
     def test_edit_user_invalid(self):
@@ -112,7 +112,7 @@ class EditUserTest(TimepieceDataTestCase):
         self.data['groups'] = (group1.id,)
         response = self.client.post(self.url, data=self.data)
         self.assertEqual(response.status_code, 302)
-        user = auth_models.User.objects.get(pk=self.user.pk)
+        user = User.objects.get(pk=self.user.pk)
         user_groups = user.groups.all()
         self.assertTrue(group1 in user_groups)
         self.assertTrue(group2 not in user_groups)

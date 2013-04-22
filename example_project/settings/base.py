@@ -129,8 +129,9 @@ INSTALLED_APPS = (
     'selectable',
 
     'timepiece',
-    'timepiece.reports',
     'timepiece.contracts',
+    'timepiece.crm',
+    'timepiece.reports',
 )
 
 # A sample logging configuration. The only tangible logging

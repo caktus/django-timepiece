@@ -4,7 +4,6 @@ from decimal import Decimal
 from django.core.urlresolvers import reverse
 from django.utils import timezone
 
-from timepiece import models as timepiece
 from timepiece.tests.base import TimepieceDataTestCase
 from timepiece import utils
 

@@ -1,32 +1,29 @@
-from django.contrib.auth import models as auth_models
+from django.contrib.auth.models import User
 from django.db.models import Q
 
 from selectable.base import LookupBase
 from selectable.base import ModelLookup
 from selectable.registry import registry
 
-from timepiece import models as timepiece
+from timepiece.crm.models import Project, Business
 
 
 class ProjectLookup(ModelLookup):
-    model = timepiece.Project
+    model = Project
     search_fields = ('name__icontains', 'business__name__icontains',
             'business__short_name__icontains')
-registry.register(ProjectLookup)
 
 
 class BusinessLookup(ModelLookup):
-    model = timepiece.Business
+    model = Business
     search_fields = ('name__icontains', 'short_name__icontains')
 
     def get_item_label(self, business):
         return '<span class="business">%s</span>' % business.name
 
-registry.register(BusinessLookup)
-
 
 class UserLookup(ModelLookup):
-    model = auth_models.User
+    model = User
     search_fields = ('username__icontains', 'first_name__icontains',
             'last_name__icontains', 'email__icontains')
 
@@ -46,8 +43,6 @@ class UserLookup(ModelLookup):
 
     def get_item_value(self, user):
         return user.get_name_or_username()
-
-registry.register(UserLookup)
 
 
 class SearchResult(object):
@@ -69,7 +64,7 @@ class QuickLookup(LookupBase):
         """
         results = []
 
-        users = auth_models.User.objects.filter(
+        users = User.objects.filter(
             Q(first_name__icontains=q) |
             Q(last_name__icontains=q) |
             Q(username__icontains=q) |
@@ -82,7 +77,7 @@ class QuickLookup(LookupBase):
                 SearchResult(user.pk, 'individual', name)
             )
 
-        projects = timepiece.Project.objects.filter(
+        projects = Project.objects.filter(
             name__icontains=q,
         ).select_related()[:10]
 
@@ -91,7 +86,7 @@ class QuickLookup(LookupBase):
                 SearchResult(project.pk, 'project', project.name)
             )
 
-        businesses = timepiece.Business.objects.filter(
+        businesses = Business.objects.filter(
             name__icontains=q,
         ).select_related()[:10]
 
@@ -129,10 +124,15 @@ class QuickLookup(LookupBase):
         for id in ids:
             type, pk = id.split('-')
             if type == 'project':
-                results.append(timepiece.Project.objects.get(pk=pk))
+                results.append(Project.objects.get(pk=pk))
             elif type == 'business':
-                results.append(timepiece.Business.objects.get(pk=pk))
+                results.append(Business.objects.get(pk=pk))
             elif type == 'individual':
-                results.append(auth_models.User.objects.get(pk=pk))
+                results.append(User.objects.get(pk=pk))
         return results
+
+
 registry.register(QuickLookup)
+registry.register(ProjectLookup)
+registry.register(BusinessLookup)
+registry.register(UserLookup)

@@ -1,11 +1,13 @@
 from django.core.urlresolvers import reverse
 from django.contrib.auth.models import User, Permission
 
-from timepiece import models as timepiece
 from timepiece.tests.base import TimepieceDataTestCase
+
+from timepiece.crm.models import Business, Project
 
 
 class BusinessTest(TimepieceDataTestCase):
+
     def setUp(self):
         self.client.login(username='user', password='abc')
         self.url = reverse('create_business')
@@ -29,7 +31,7 @@ class BusinessTest(TimepieceDataTestCase):
         self.assertEquals(response.status_code, 302)
 
         response = self.client.post(self.url, data=self.data)
-        self.assertEquals(timepiece.Business.objects.count(), 0)
+        self.assertEquals(Business.objects.count(), 0)
 
     def test_user_create_business_permission(self):
         """A user with permissions should be able to create a business"""
@@ -41,7 +43,7 @@ class BusinessTest(TimepieceDataTestCase):
             'timepiece/business/create_edit.html')
 
         response = self.client.post(self.url, data=self.data)
-        self.assertEquals(timepiece.Business.objects.count(), 1)
+        self.assertEquals(Business.objects.count(), 1)
 
 
 class DeleteObjectsTest(TimepieceDataTestCase):
@@ -65,9 +67,9 @@ class DeleteObjectsTest(TimepieceDataTestCase):
         response = self.client.get(url)
         self.assertEquals(response.status_code, 302)
 
-        self.assertEquals(timepiece.Business.objects.count(), 1)
+        self.assertEquals(Business.objects.count(), 1)
         response = self.client.post(url, data={'delete': 'delete'})
-        self.assertEquals(timepiece.Business.objects.count(), 1)
+        self.assertEquals(Business.objects.count(), 1)
 
     def test_no_permissions_user(self):
         """Delete urls should not be accessed by regular users"""
@@ -92,9 +94,9 @@ class DeleteObjectsTest(TimepieceDataTestCase):
         response = self.client.get(url)
         self.assertEquals(response.status_code, 302)
 
-        self.assertEquals(timepiece.Project.objects.count(), 2)
+        self.assertEquals(Project.objects.count(), 2)
         response = self.client.post(url, data={'delete': 'delete'})
-        self.assertEquals(timepiece.Project.objects.count(), 2)
+        self.assertEquals(Project.objects.count(), 2)
 
     def test_delete_business(self):
         """A superuser should be able to access the delete page"""
@@ -104,9 +106,9 @@ class DeleteObjectsTest(TimepieceDataTestCase):
         self.assertEquals(response.status_code, 200)
         self.assertEquals(response.context['object'], self.business)
 
-        self.assertEquals(timepiece.Business.objects.count(), 1)
+        self.assertEquals(Business.objects.count(), 1)
         response = self.client.post(url, data={'delete': 'delete'})
-        self.assertEquals(timepiece.Business.objects.count(), 0)
+        self.assertEquals(Business.objects.count(), 0)
 
     def test_delete_user(self):
         """A superuser should be able to access the delete page"""
@@ -129,9 +131,9 @@ class DeleteObjectsTest(TimepieceDataTestCase):
         self.assertEquals(response.status_code, 200)
         self.assertEquals(response.context['object'], self.project)
 
-        self.assertEquals(timepiece.Project.objects.count(), 2)
+        self.assertEquals(Project.objects.count(), 2)
         response = self.client.post(url, data={'delete': 'delete'})
-        self.assertEquals(timepiece.Project.objects.count(), 1)
+        self.assertEquals(Project.objects.count(), 1)
 
 
 class ProjectsTest(TimepieceDataTestCase):

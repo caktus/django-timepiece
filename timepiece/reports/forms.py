@@ -6,7 +6,9 @@ from selectable import forms as selectable
 from timepiece.fields import UserModelMultipleChoiceField
 from timepiece.forms import DateForm, DATE_FORM_FORMAT, YearMonthForm
 from timepiece.lookups import ProjectLookup
-from timepiece.models import Entry, Activity, Attribute
+from timepiece.models import Entry, Activity
+
+from timepiece.crm.models import Attribute
 
 
 class BillableHoursReportForm(DateForm):

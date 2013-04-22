@@ -3,84 +3,22 @@ from dateutil.relativedelta import relativedelta
 import time
 
 from django import forms
-from django.contrib.auth import forms as auth_forms
 from django.contrib.auth.models import User
 from django.core.urlresolvers import reverse
 from django.db.models import Q
-from django.utils.translation import ugettext_lazy as _
 
 from selectable import forms as selectable
 
-from timepiece import models as timepiece
 from timepiece import utils
+from timepiece.crm.lookups import QuickLookup
 from timepiece.fields import UserModelChoiceField, UserModelMultipleChoiceField
-from timepiece.lookups import ProjectLookup, QuickLookup
-from timepiece.lookups import UserLookup, BusinessLookup
-from timepiece.models import Project, Entry, Activity, UserProfile, Attribute
-from timepiece.models import ProjectHours
+from timepiece.models import Entry, Activity, Location, ENTRY_STATUS,\
+        ProjectHours
+
+from timepiece.crm.models import Project
 
 
 DATE_FORM_FORMAT = '%Y-%m-%d'
-
-
-class CreateUserForm(auth_forms.UserCreationForm):
-
-    def __init__(self, *args, **kwargs):
-        super(CreateUserForm, self).__init__(*args, **kwargs)
-
-        self.fields['groups'].widget = forms.CheckboxSelectMultiple()
-        self.fields['groups'].help_text = None
-
-    class Meta:
-        model = User
-        fields = ('username', 'first_name', 'last_name', 'email', 'is_active',
-                'is_staff', 'groups')
-
-
-class EditUserForm(auth_forms.UserChangeForm):
-    password_one = forms.CharField(required=False, max_length=36,
-        label=_(u'Password'), widget=forms.PasswordInput(render_value=False))
-    password_two = forms.CharField(required=False, max_length=36,
-        label=_(u'Repeat Password'),
-        widget=forms.PasswordInput(render_value=False))
-
-    def __init__(self, *args, **kwargs):
-        super(EditUserForm, self).__init__(*args, **kwargs)
-
-        self.fields['groups'].widget = forms.CheckboxSelectMultiple()
-        self.fields['groups'].help_text = None
-
-        # In 1.4 this field is created even if it is excluded in Meta.
-        if 'password' in self.fields:
-            del(self.fields['password'])
-
-    def clean_password(self):
-        return self.cleaned_data.get('password_one', None)
-
-    def clean(self):
-        super(EditUserForm, self).clean()
-        password_one = self.cleaned_data.get('password_one', None)
-        password_two = self.cleaned_data.get('password_two', None)
-        if password_one and password_one != password_two:
-            raise forms.ValidationError(_('Passwords Must Match.'))
-        return self.cleaned_data
-
-    def save(self, *args, **kwargs):
-        commit = kwargs.get('commit', True)
-        kwargs['commit'] = False
-        instance = super(EditUserForm, self).save(*args, **kwargs)
-        password_one = self.cleaned_data.get('password_one', None)
-        if password_one:
-            instance.set_password(password_one)
-        if commit:
-            instance.save()
-            self.save_m2m()
-        return instance
-
-    class Meta:
-        model = User
-        fields = ('username', 'first_name', 'last_name', 'email', 'is_active',
-                'is_staff', 'groups')
 
 
 class QuickSearchForm(forms.Form):
@@ -120,28 +58,12 @@ class QuickSearchForm(forms.Form):
         raise forms.ValidationError('Must be a user, project, or business')
 
 
-class SelectUserForm(forms.Form):
-    user = selectable.AutoCompleteSelectField(UserLookup, label='')
-    user.widget.attrs['placeholder'] = 'Add User'
-
-    def save(self):
-        return self.cleaned_data['user']
-
-
-class SelectProjectForm(forms.Form):
-    project = selectable.AutoCompleteSelectField(ProjectLookup, label='')
-    project.widget.attrs['placeholder'] = 'Add Project'
-
-    def save(self):
-        return self.cleaned_data['project']
-
-
 class ClockInForm(forms.ModelForm):
     active_comment = forms.CharField(label='Notes for the active entry',
                                      widget=forms.Textarea, required=False)
 
     class Meta:
-        model = timepiece.Entry
+        model = Entry
         fields = (
             'active_comment', 'location', 'project', 'activity', 'start_time',
             'comments'
@@ -154,14 +76,14 @@ class ClockInForm(forms.ModelForm):
         default_loc = utils.get_setting('TIMEPIECE_DEFAULT_LOCATION_SLUG')
         if default_loc:
             try:
-                loc = timepiece.Location.objects.get(slug=default_loc)
-            except timepiece.Location.DoesNotExist:
+                loc = Location.objects.get(slug=default_loc)
+            except Location.DoesNotExist:
                 loc = None
             if loc:
                 initial['location'] = loc.pk
         project = initial.get('project')
         try:
-            last_project_entry = timepiece.Entry.objects.filter(
+            last_project_entry = Entry.objects.filter(
                 user=self.user, project=project).order_by('-end_time')[0]
         except IndexError:
             initial['activity'] = None
@@ -174,7 +96,7 @@ class ClockInForm(forms.ModelForm):
             attrs={'class': 'timepiece-time'},
             date_format=DATE_FORM_FORMAT
         )
-        self.fields['project'].queryset = timepiece.Project.objects.filter(
+        self.fields['project'].queryset = Project.objects.filter(
             users=self.user, status__enable_timetracking=True,
             type__enable_timetracking=True
         )
@@ -226,7 +148,7 @@ class ClockInForm(forms.ModelForm):
 
 class ClockOutForm(forms.ModelForm):
     class Meta:
-        model = timepiece.Entry
+        model = Entry
         fields = ('location', 'comments', 'start_time', 'end_time')
 
     def __init__(self, *args, **kwargs):
@@ -285,7 +207,7 @@ class AddUpdateEntryForm(forms.ModelForm):
     def __init__(self, *args, **kwargs):
         self.user = kwargs.pop('user')
         super(AddUpdateEntryForm, self).__init__(*args, **kwargs)
-        self.fields['project'].queryset = timepiece.Project.objects.filter(
+        self.fields['project'].queryset = Project.objects.filter(
             users=self.user, status__enable_timetracking=True,
             type__enable_timetracking=True
         )
@@ -328,7 +250,7 @@ class AddUpdateEntryForm(forms.ModelForm):
 
 
 STATUS_CHOICES = [('', '---------'), ]
-STATUS_CHOICES.extend(timepiece.ENTRY_STATUS)
+STATUS_CHOICES.extend(ENTRY_STATUS)
 
 
 class DateForm(forms.Form):
@@ -372,8 +294,8 @@ class YearMonthForm(forms.Form):
         this_year = now.year
         this_month = now.month
         try:
-            first_entry = timepiece.Entry.no_join.values('end_time')\
-                                                 .order_by('end_time')[0]
+            first_entry = Entry.no_join.values('end_time')\
+                                       .order_by('end_time')[0]
         except IndexError:
             first_year = this_year
         else:
@@ -413,55 +335,6 @@ class UserYearMonthForm(YearMonthForm):
         return (from_date, to_date, self.cleaned_data.get('user', None))
 
 
-class BusinessForm(forms.ModelForm):
-    class Meta:
-        model = timepiece.Business
-        fields = ('name', 'short_name', 'email', 'description', 'notes',)
-
-
-class ProjectForm(forms.ModelForm):
-    class Meta:
-        model = timepiece.Project
-        fields = (
-            'name',
-            'business',
-            'tracker_url',
-            'point_person',
-            'type',
-            'status',
-            'activity_group',
-            'description',
-        )
-
-    business = selectable.AutoCompleteSelectField(
-        BusinessLookup,
-        label='Business',
-        required=True
-    )
-    business.widget.attrs['placeholder'] = 'Search'
-
-    def __init__(self, *args, **kwargs):
-        super(ProjectForm, self).__init__(*args, **kwargs)
-
-    def save(self):
-        instance = super(ProjectForm, self).save(commit=False)
-        instance.save()
-        return instance
-
-
-class ProjectRelationshipForm(forms.ModelForm):
-    class Meta:
-        model = timepiece.ProjectRelationship
-        fields = ('types',)
-
-    def __init__(self, *args, **kwargs):
-        super(ProjectRelationshipForm, self).__init__(*args, **kwargs)
-        self.fields['types'].widget = forms.CheckboxSelectMultiple(
-            choices=self.fields['types'].choices
-        )
-        self.fields['types'].help_text = ''
-
-
 class SearchForm(forms.Form):
     search = forms.CharField(required=False, label='')
     search.widget.attrs['placeholder'] = 'Search'
@@ -469,60 +342,6 @@ class SearchForm(forms.Form):
     def save(self):
         search = self.cleaned_data.get('search', '')
         return search
-
-
-class UserForm(forms.ModelForm):
-
-    class Meta:
-        model = User
-        fields = ('first_name', 'last_name', 'email')
-
-    def __init__(self, *args, **kwargs):
-        super(UserForm, self).__init__(*args, **kwargs)
-        for name in self.fields:
-            self.fields[name].required = True
-
-
-class UserProfileForm(forms.ModelForm):
-
-    class Meta:
-        model = timepiece.UserProfile
-        exclude = ('user', 'hours_per_week')
-
-
-class ProjectSearchForm(SearchForm):
-    status = forms.ChoiceField(required=False, choices=[], label='')
-
-    def __init__(self, *args, **kwargs):
-        super(ProjectSearchForm, self).__init__(*args, **kwargs)
-        PROJ_STATUS_CHOICES = [('', 'Any Status')]
-        PROJ_STATUS_CHOICES.extend([(a.pk, a.label) for a
-                in Attribute.objects.all().filter(type='project-status')])
-        self.fields['status'].choices = PROJ_STATUS_CHOICES
-
-    def save(self):
-        search = self.cleaned_data.get('search', '')
-        status = self.cleaned_data.get('status', '')
-        return (search, status)
-
-
-class DeleteForm(forms.Form):
-    """
-    Returns True if the object was deleted
-    """
-    def __init__(self, *args, **kwargs):
-        self.instance = kwargs.pop('instance', None)
-        super(DeleteForm, self).__init__(*args, **kwargs)
-
-    def save(self):
-        if self.instance:
-            try:
-                self.instance.delete()
-            except AssertionError:
-                return False
-            else:
-                return True
-        return False
 
 
 class ProjectHoursSearchForm(forms.Form):

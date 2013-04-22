@@ -10,136 +10,7 @@ from django.db.models import Q, Sum, Max, Min
 from django.utils import timezone
 
 from timepiece import utils
-
-
-class Attribute(models.Model):
-    ATTRIBUTE_TYPES = (
-        ('project-type', 'Project Type'),
-        ('project-status', 'Project Status'),
-    )
-    SORT_ORDER_CHOICES = [(x, x) for x in xrange(-20, 21)]
-    type = models.CharField(max_length=32, choices=ATTRIBUTE_TYPES)
-    label = models.CharField(max_length=255)
-    sort_order = models.SmallIntegerField(
-        null=True,
-        blank=True,
-        choices=SORT_ORDER_CHOICES,
-    )
-    enable_timetracking = models.BooleanField(default=False,
-        help_text='Enable time tracking functionality for projects with this '
-                  'type or status.',
-    )
-    billable = models.BooleanField(default=False)
-
-    class Meta:
-        unique_together = ('type', 'label')
-        ordering = ('sort_order',)
-
-    def __unicode__(self):
-        return self.label
-
-
-class Business(models.Model):
-    name = models.CharField(max_length=255)
-    short_name = models.CharField(max_length=255, blank=True)
-    email = models.EmailField(blank=True)
-    description = models.TextField(blank=True)
-    notes = models.TextField(blank=True)
-    external_id = models.CharField(max_length=32, blank=True)
-
-    def get_display_name(self):
-        return self.short_name or self.name
-
-    def __unicode__(self):
-        return self.get_display_name()
-
-    class Meta:
-        ordering = ('name',)
-        verbose_name_plural = 'Businesses'
-
-
-class Project(models.Model):
-    name = models.CharField(max_length=255)
-    tracker_url = models.CharField(max_length=255, blank=True, null=False,
-            default="")
-    business = models.ForeignKey(
-        Business,
-        related_name='new_business_projects',
-    )
-    point_person = models.ForeignKey(User, limit_choices_to={'is_staff': True})
-    users = models.ManyToManyField(
-        User,
-        related_name='user_projects',
-        through='ProjectRelationship',
-    )
-    activity_group = models.ForeignKey(
-        'ActivityGroup',
-        related_name='activity_group',
-        null=True,
-        blank=True,
-        verbose_name="restrict activities to",
-    )
-    type = models.ForeignKey(
-        Attribute,
-        limit_choices_to={'type': 'project-type'},
-        related_name='projects_with_type',
-    )
-    status = models.ForeignKey(
-        Attribute,
-        limit_choices_to={'type': 'project-status'},
-        related_name='projects_with_status',
-    )
-    description = models.TextField()
-
-    class Meta:
-        ordering = ('name', 'status', 'type',)
-        permissions = (
-            ('view_project', 'Can view project'),
-            ('email_project_report', 'Can email project report'),
-            ('view_project_time_sheet', 'Can view project time sheet'),
-            ('export_project_time_sheet', 'Can export project time sheet'),
-            ('generate_project_invoice', 'Can generate project invoice'),
-        )
-
-    def __unicode__(self):
-        return '{0} ({1})'.format(self.name, self.business.get_display_name())
-
-    @property
-    def billable(self):
-        return self.type.billable
-
-
-class RelationshipType(models.Model):
-    name = models.CharField(max_length=255, unique=True)
-    slug = models.SlugField(max_length=255)
-
-    def __unicode__(self):
-        return self.name
-
-
-class ProjectRelationship(models.Model):
-    types = models.ManyToManyField(
-        RelationshipType,
-        related_name='project_relationships',
-        blank=True,
-    )
-    user = models.ForeignKey(
-        User,
-        related_name='project_relationships',
-    )
-    project = models.ForeignKey(
-        Project,
-        related_name='project_relationships',
-    )
-
-    class Meta:
-        unique_together = ('user', 'project')
-
-    def __unicode__(self):
-        return "%s's relationship to %s" % (
-            self.project.name,
-            self.user.get_name_or_username(),
-        )
+from timepiece.crm.models import Project
 
 
 class Activity(models.Model):
@@ -147,16 +18,10 @@ class Activity(models.Model):
     Represents different types of activity: debugging, developing,
     brainstorming, QA, etc...
     """
-    code = models.CharField(
-        max_length=5,
-        unique=True,
-        help_text='Enter a short code to describe the type of ' +
-            'activity that took place.'
-    )
-    name = models.CharField(
-        max_length=50,
-        help_text="""Now enter a more meaningful name for the activity.""",
-    )
+    code = models.CharField(max_length=5, unique=True, help_text='Enter a '
+            'short code to describe the type of activity that took place.')
+    name = models.CharField(max_length=50, help_text='Now enter a more '
+            'meaningful name for the activity.')
     billable = models.BooleanField(default=True)
 
     def __unicode__(self):
@@ -167,15 +32,11 @@ class Activity(models.Model):
         verbose_name_plural = 'activities'
 
 
-
 class ActivityGroup(models.Model):
     """Activities that are allowed for a project"""
 
     name = models.CharField(max_length=255, unique=True)
-    activities = models.ManyToManyField(
-        Activity,
-        related_name='activity_group',
-    )
+    activities = models.ManyToManyField(Activity, related_name='activity_group')
 
     def __unicode__(self):
         return self.name
@@ -276,7 +137,7 @@ class Entry(models.Model):
     """
 
     user = models.ForeignKey(User, related_name='timepiece_entries')
-    project = models.ForeignKey(Project, related_name='entries')
+    project = models.ForeignKey('crm.Project', related_name='entries')
     activity = models.ForeignKey(Activity, related_name='entries')
     location = models.ForeignKey(Location, related_name='entries')
     entry_group = models.ForeignKey(
@@ -649,28 +510,9 @@ class Entry(models.Model):
         )
 
 
-# Add a utility method to the User class that will tell whether or not a
-# particular user has any unclosed entries
-User.clocked_in = property(lambda user: user.timepiece_entries.filter(
-    end_time__isnull=True).count() > 0)
-
-
-# Utility method to get user's name, falling back to username.
-User.get_name_or_username = lambda user: user.get_full_name() or user.username
-
-
-class UserProfile(models.Model):
-    user = models.OneToOneField(User, unique=True, related_name='profile')
-    hours_per_week = models.DecimalField(max_digits=8, decimal_places=2,
-                                         default=40)
-
-    def __unicode__(self):
-        return unicode(self.user)
-
-
 class ProjectHours(models.Model):
     week_start = models.DateField(verbose_name='start of week')
-    project = models.ForeignKey(Project)
+    project = models.ForeignKey('crm.Project')
     user = models.ForeignKey(User)
     hours = models.DecimalField(
         max_digits=8, decimal_places=2, default=0,

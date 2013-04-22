@@ -53,7 +53,7 @@ def create_invoice(request):
     if not (pk and to_date):
         raise Http404
     from_date = request.GET.get('from_date', None)
-    if not request.user.has_perm('timepiece.generate_project_invoice'):
+    if not request.user.has_perm('crm.generate_project_invoice'):
         return HttpResponseForbidden('Forbidden')
     try:
         to_date = utils.add_timezone(
