@@ -268,6 +268,7 @@ class EntryQuerySet(models.query.QuerySet):
         select = {"day": {"date": """DATE_TRUNC('day', end_time)"""},
                   "week": {"date": """DATE_TRUNC('week', end_time)"""},
                   "month": {"date": """DATE_TRUNC('month', end_time)"""},
+                  "year": {"date": """DATE_TRUNC('year', end_time)"""},
         }
         basic_values = (
             'user', 'date', 'user__first_name', 'user__last_name', 'billable',

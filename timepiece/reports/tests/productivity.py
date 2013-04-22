@@ -5,7 +5,7 @@ import json
 
 from django.contrib.auth.models import Permission
 
-from timepiece import models as timepiece
+from timepiece.models import Entry, ProjectHours
 from timepiece.tests.base import TimepieceDataTestCase
 
 
@@ -141,8 +141,8 @@ class TestProductivityReport(TimepieceDataTestCase):
 
     def test_no_data(self):
         """If no data, report should contain header row only."""
-        timepiece.Entry.objects.filter(project=self.project).delete()
-        timepiece.ProjectHours.objects.filter(project=self.project).delete()
+        Entry.objects.filter(project=self.project).delete()
+        ProjectHours.objects.filter(project=self.project).delete()
         data = {'project_1': self.project.pk, 'organize_by': 'week'}
         response = self._get(data=data)
         self.assertEqual(response.status_code, 200)
