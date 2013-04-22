@@ -5,10 +5,12 @@ import urllib
 from django.contrib.auth.models import User, Permission
 from django.core.urlresolvers import reverse
 
-from timepiece import models as timepiece
 from timepiece import utils
 from timepiece.forms import DATE_FORM_FORMAT
+from timepiece.models import Activity, Entry
 from timepiece.tests.base import TimepieceDataTestCase
+
+from timepiece.contracts.models import EntryGroup, HourGroup
 
 
 class InvoiceViewPreviousTestCase(TimepieceDataTestCase):
@@ -56,7 +58,7 @@ class InvoiceViewPreviousTestCase(TimepieceDataTestCase):
         response = self.client.post(url, params)
 
     def get_invoice(self):
-        invoices = timepiece.EntryGroup.objects.all()
+        invoices = EntryGroup.objects.all()
         return random.choice(invoices)
 
     def get_entry(self, invoice):
@@ -97,7 +99,7 @@ class InvoiceViewPreviousTestCase(TimepieceDataTestCase):
         self.assertEquals(len(results), 0)
 
     def test_invoice_detail(self):
-        invoices = timepiece.EntryGroup.objects.all()
+        invoices = EntryGroup.objects.all()
         for invoice in invoices:
             url = reverse('view_invoice', args=[invoice.id])
             response = self.client.get(url)
@@ -150,7 +152,7 @@ class InvoiceViewPreviousTestCase(TimepieceDataTestCase):
         }
         response = self.client.post(url, params)
         self.assertEqual(response.status_code, 302)
-        new_invoice = timepiece.EntryGroup.objects.get(pk=invoice.id)
+        new_invoice = EntryGroup.objects.get(pk=invoice.id)
         self.assertEqual(int(invoice.number) + 1, int(new_invoice.number))
         self.assertTrue(invoice.status != new_invoice.status)
         self.assertEqual(new_invoice.comments, 'Comments')
@@ -179,8 +181,8 @@ class InvoiceViewPreviousTestCase(TimepieceDataTestCase):
         url = reverse('delete_invoice', args=[invoice.id])
         response = self.client.post(url, {'delete': 'delete'})
         self.assertEqual(response.status_code, 302)
-        self.assertFalse(timepiece.EntryGroup.objects.filter(pk=invoice.id))
-        entries = timepiece.Entry.objects.filter(pk__in=entry_ids)
+        self.assertFalse(EntryGroup.objects.filter(pk=invoice.id))
+        entries = Entry.objects.filter(pk__in=entry_ids)
         for entry in entries:
             self.assertEqual(entry.status, 'approved')
 
@@ -190,7 +192,7 @@ class InvoiceViewPreviousTestCase(TimepieceDataTestCase):
         response = self.client.post(url, {'cancel': 'cancel'})
         self.assertEqual(response.status_code, 302)
         # Canceled out so the invoice was not deleted
-        self.assertTrue(timepiece.EntryGroup.objects.get(pk=invoice.id))
+        self.assertTrue(EntryGroup.objects.get(pk=invoice.id))
 
     def test_invoice_delete_bad_args(self):
         invoice = self.get_invoice()
@@ -224,10 +226,10 @@ class InvoiceViewPreviousTestCase(TimepieceDataTestCase):
         url = reverse('delete_invoice_entry', args=[invoice.id, entry.id])
         response = self.client.post(url, {'submit': ''})
         self.assertEqual(response.status_code, 302)
-        new_invoice = timepiece.EntryGroup.objects.get(pk=invoice.pk)
+        new_invoice = EntryGroup.objects.get(pk=invoice.pk)
         rm_entry = new_invoice.entries.filter(pk=entry.id)
         self.assertFalse(rm_entry)
-        new_entry = timepiece.Entry.objects.get(pk=entry.pk)
+        new_entry = Entry.objects.get(pk=entry.pk)
         self.assertEqual(new_entry.status, 'approved')
         self.assertEqual(new_entry.entry_group, None)
 
@@ -286,9 +288,9 @@ class InvoiceCreateTestCase(TimepieceDataTestCase):
         Make several hour groups, one for each activity, and one that contains
         all activities to check for hour groups with multiple activities.
         """
-        all_activities = timepiece.Activity.objects.all()
+        all_activities = Activity.objects.all()
         for activity in all_activities:
-            hg = timepiece.HourGroup.objects.create(name=activity.name)
+            hg = HourGroup.objects.create(name=activity.name)
             hg.activities.add(activity)
 
     def login_with_permission(self):
@@ -457,14 +459,14 @@ class InvoiceCreateTestCase(TimepieceDataTestCase):
         response = self.client.post(url, {'number': '3', 'status': 'invoiced'})
         self.assertEqual(response.status_code, 302)
         # Verify an invoice was created with the correct attributes
-        invoice = timepiece.EntryGroup.objects.get(number=3)
+        invoice = EntryGroup.objects.get(number=3)
         self.assertEqual(invoice.project.id, self.project_billable.id)
         self.assertEqual(invoice.start, None)
         self.assertEqual(invoice.end.strftime('%Y %m %d'), '2011 01 31')
         self.assertEqual(len(invoice.entries.all()), 2)
         # Verify that the entries were invoiced appropriately
         # and the unrelated entries were untouched
-        entries = timepiece.Entry.objects.all()
+        entries = Entry.objects.all()
         invoiced = entries.filter(status='invoiced')
         for entry in invoiced:
             self.assertEqual(entry.entry_group_id, invoice.id)
@@ -485,14 +487,14 @@ class InvoiceCreateTestCase(TimepieceDataTestCase):
                                           'status': 'not-invoiced'})
         self.assertEqual(response.status_code, 302)
         # Verify an invoice was created with the correct attributes
-        invoice = timepiece.EntryGroup.objects.get(number=5)
+        invoice = EntryGroup.objects.get(number=5)
         self.assertEqual(invoice.project.id, self.project_billable.id)
         self.assertEqual(invoice.start.strftime('%Y %m %d'), '2011 01 01')
         self.assertEqual(invoice.end.strftime('%Y %m %d'), '2011 01 31')
         self.assertEqual(len(invoice.entries.all()), 1)
         # Verify that the entries were invoiced appropriately
         # and the unrelated entries were untouched
-        entries = timepiece.Entry.objects.all()
+        entries = Entry.objects.all()
         uninvoiced = entries.filter(status='uninvoiced')
         for entry in uninvoiced:
             self.assertEqual(entry.entry_group_id, invoice.id)

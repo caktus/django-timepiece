@@ -1,6 +1,4 @@
-from timepiece.tests.contracts import *
 from timepiece.tests.crmcontent import *
-from timepiece.tests.invoices import *
 from timepiece.tests.management import *
 from timepiece.tests.projects import *
 from timepiece.tests.project_list import *

@@ -39,6 +39,7 @@ if not settings.configured:
             'selectable',
             'timepiece',
             'timepiece.reports',
+            'timepiece.contracts',
         ) + jenkins,
         MIDDLEWARE_CLASSES=(
             'django.middleware.common.CommonMiddleware',
@@ -104,7 +105,8 @@ def run_django_tests():
     from django.test.utils import get_runner
     TestRunner = get_runner(settings)
     test_runner = TestRunner(verbosity=1, interactive=True, failfast=False)
-    failures = test_runner.run_tests(args or ['timepiece', 'reports'])
+    apps = ['timepiece', 'reports', 'contracts']
+    failures = test_runner.run_tests(args or apps)
     sys.exit(failures)
 
 

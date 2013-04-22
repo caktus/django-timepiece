@@ -130,6 +130,7 @@ INSTALLED_APPS = (
 
     'timepiece',
     'timepiece.reports',
+    'timepiece.contracts',
 )
 
 # A sample logging configuration. The only tangible logging
