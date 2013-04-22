@@ -11,6 +11,7 @@ from timepiece import utils
 from timepiece.tests.base import TimepieceDataTestCase
 
 from timepiece.entries.models import Entry, ProjectHours
+from timepiece.entries.utils import process_progress
 
 
 class DashboardViewTestCase(TimepieceDataTestCase):
@@ -144,7 +145,7 @@ class DashboardViewTestCase(TimepieceDataTestCase):
 
 
 class ProcessProgressTestCase(TimepieceDataTestCase):
-    """Tests for timepiece.utils.process_progress."""
+    """Tests for process_progress."""
 
     def setUp(self):
         self.today = datetime.date(2012, 11, 7)
@@ -186,7 +187,7 @@ class ProcessProgressTestCase(TimepieceDataTestCase):
     def _get_progress(self):
         entries = Entry.objects.all()
         assignments = ProjectHours.objects.all()
-        return utils.process_progress(entries, assignments)
+        return process_progress(entries, assignments)
 
     def _check_progress(self, progress, project, assigned, worked):
         self.assertEqual(progress['project'], project)

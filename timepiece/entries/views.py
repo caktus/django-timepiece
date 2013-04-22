@@ -26,6 +26,8 @@ from timepiece.crm.models import Project
 from timepiece.entries.forms import ClockInForm, ClockOutForm, AddUpdateEntryForm,\
         ProjectHoursForm, ProjectHoursSearchForm
 from timepiece.entries.models import Entry, ProjectHours
+from timepiece.entries.utils import get_project_hours_for_week,\
+        get_users_from_project_hours, get_hours_per_week, process_progress
 
 
 @login_required
@@ -53,10 +55,10 @@ def dashboard(request, active_tab):
             .select_related('project')
     assignments = ProjectHours.objects.filter(user=user,
             week_start=week_start.date())
-    project_progress = utils.process_progress(week_entries, assignments)
+    project_progress = process_progress(week_entries, assignments)
 
     # Total hours that the user is expected to clock this week.
-    total_assigned = utils.get_hours_per_week(user)
+    total_assigned = get_hours_per_week(user)
     total_worked = sum([p['worked'] for p in project_progress])
 
     # Others' active entries.
@@ -299,9 +301,9 @@ class ScheduleView(ScheduleMixin, TemplateView):
         initial = {'week_start': self.week_start}
         form = ProjectHoursSearchForm(initial=initial)
 
-        project_hours = utils.get_project_hours_for_week(self.week_start) \
+        project_hours = get_project_hours_for_week(self.week_start) \
             .filter(published=True)
-        users = utils.get_users_from_project_hours(project_hours)
+        users = get_users_from_project_hours(project_hours)
         id_list = [user[0] for user in users]
         projects = []
 

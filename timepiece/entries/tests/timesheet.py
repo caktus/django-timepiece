@@ -15,6 +15,7 @@ from django.utils import timezone
 from timepiece import utils
 from timepiece.tests.base import TimepieceDataTestCase
 
+from timepiece.crm.utils import grouped_totals
 from timepiece.entries.models import Entry
 from timepiece.entries.forms import ClockInForm
 
@@ -1522,8 +1523,8 @@ class TestTotals(TimepieceDataTestCase):
         to_date = from_date + relativedelta(months=1)
         first_week = utils.get_week_start(from_date)
         entries = Entry.objects.timespan(first_week, to_date=to_date)
-        grouped_totals = utils.grouped_totals(entries)
-        for week, week_totals, days in grouped_totals:
+        totals = grouped_totals(entries)
+        for week, week_totals, days in totals:
             #Jan. 3rd is a monday. Each week should be on a monday
             if week.month == 1:
                 self.assertEqual(week.day % 7, 3)

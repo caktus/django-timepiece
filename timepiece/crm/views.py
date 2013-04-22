@@ -26,6 +26,7 @@ from timepiece.crm.forms import BusinessForm, ProjectForm, UserProfileForm,\
         DeleteForm
 from timepiece.crm.models import Business, Project, ProjectRelationship,\
         UserProfile
+from timepiece.crm.utils import grouped_totals
 from timepiece.entries.models import Entry
 
 
@@ -211,7 +212,7 @@ def view_user_timesheet(request, user_id, active_tab):
     # of the actual month
     if not intersection and first_week.month < from_date.month:
         grouped_qs = entries_qs.timespan(from_date, to_date=to_date)
-    grouped_totals = utils.grouped_totals(grouped_qs) if month_entries else ''
+    totals =grouped_totals(grouped_qs) if month_entries else ''
     project_entries = month_qs.order_by().values(
         'project__name').annotate(sum=Sum('hours')).order_by('-sum')
     summary = Entry.summary(user, from_date, to_date)
@@ -240,7 +241,7 @@ def view_user_timesheet(request, user_id, active_tab):
         'show_approve': show_approve,
         'timesheet_user': user,
         'entries': month_entries,
-        'grouped_totals': grouped_totals,
+        'grouped_totals': totals,
         'project_entries': project_entries,
         'summary': summary,
     })
@@ -578,8 +579,7 @@ class DeleteView(TemplateView):
             if not request.user.has_perm(permission):
                 messages.info(request,
                         'You do not have permission to access that.')
-                return HttpResponseRedirect(
-                        utils.reverse_lazy('dashboard'))
+                return HttpResponseRedirect(reverse('dashboard'))
         return super(DeleteView, self).dispatch(request, *args, **kwargs)
 
     def post(self, request, *args, **kwargs):
@@ -592,7 +592,7 @@ class DeleteView(TemplateView):
                 msg = '{0} was successfully deleted.'.format(instance)
 
         messages.info(request, msg)
-        return HttpResponseRedirect(utils.reverse_lazy(self.url_name))
+        return HttpResponseRedirect(reverse(self.url_name))
 
     def get(self, request, *args, **kwargs):
         context = self.get_context_data(*args, **kwargs)

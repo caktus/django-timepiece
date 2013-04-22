@@ -18,9 +18,10 @@ from timepiece.forms import DATE_FORM_FORMAT
 from timepiece.views import CSVMixin
 
 from timepiece.entries.models import Entry, ProjectHours
-from timepiece.reports.forms import BillableHoursReportForm, HourlyReportForm, \
+from timepiece.reports.forms import BillableHoursReportForm, HourlyReportForm,\
         ProductivityReportForm, PayrollSummaryReportForm
-from timepiece.reports.utils import get_project_totals, get_payroll_totals
+from timepiece.reports.utils import get_project_totals, get_payroll_totals,\
+        generate_dates, get_week_window
 
 
 class ReportMixin(object):
@@ -49,7 +50,7 @@ class ReportMixin(object):
                 entries = Entry.objects.none()
 
             end = end - relativedelta(days=1)
-            date_headers = utils.generate_dates(start, end, by=trunc)
+            date_headers = generate_dates(start, end, by=trunc)
             context.update({
                 'from_date': start,
                 'to_date': end,
@@ -182,9 +183,7 @@ class HourlyReport(ReportMixin, CSVMixin, TemplateView):
     def defaults(self):
         """Default filter form data when no GET data is provided."""
         # Set default date span to previous week.
-        (start, end) = utils.get_week_window(
-            timezone.now() - relativedelta(days=7)
-        )
+        (start, end) = get_week_window(timezone.now() - relativedelta(days=7))
         return {
             'from_date': start,
             'to_date': end,
@@ -354,7 +353,7 @@ def report_payroll_summary(request):
     week_entries = Entry.objects.date_trunc('week').filter(
         weekQ, statusQ, workQ
     )
-    date_headers = utils.generate_dates(from_date, last_billable, by='week')
+    date_headers = generate_dates(from_date, last_billable, by='week')
     weekly_totals = list(get_project_totals(week_entries, date_headers,
                                               'total', overtime=True))
     # Monthly totals

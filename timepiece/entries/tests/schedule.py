@@ -11,6 +11,7 @@ from timepiece import utils
 from timepiece.tests.base import TimepieceDataTestCase
 
 from timepiece.entries.models import Entry, ProjectHours
+from timepiece.entries.utils import get_project_hours_for_week
 
 
 class ProjectHoursTestCase(TimepieceDataTestCase):
@@ -122,7 +123,7 @@ class ProjectHoursListViewTestCase(ProjectHoursTestCase):
         response = self.client.get(self.url, data)
         self.assertEquals(response.context['week'].date(), self.past_week)
 
-        all_entries = utils.get_project_hours_for_week(self.past_week)
+        all_entries = get_project_hours_for_week(self.past_week)
         users = response.context['users']
         projects = response.context['projects']
         count = 0

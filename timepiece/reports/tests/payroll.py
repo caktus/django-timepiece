@@ -84,21 +84,6 @@ class PayrollTest(TimepieceDataTestCase):
         self.assertEqual(round(find_overtime([0, 40, 40.01, 41, 40]), 2),
                          1.01)
 
-    def testGetHourSummaries(self):
-        """
-        Given dictionaries of hours, return the format for payroll summary
-        """
-        hours_dict1 = {'total': 9.00, 'billable': 6.00, 'non_billable': 3.00}
-        self.assertEqual(utils.get_hour_summaries(hours_dict1),
-                         [(6.0, 66.67), (3.0, 33.33), 9.0])
-        hours_dict2 = {'total': 0.00, 'billable': 0.00, 'non_billable': 0.00}
-        self.assertEqual(utils.get_hour_summaries(hours_dict2),
-                         [(0, 0), (0, 0), 0])
-        #Double check that division by zero doesn't occur.
-        hours_dict3 = {'total': 0.00, 'billable': 6.00, 'non_billable': 3.00}
-        self.assertEqual(utils.get_hour_summaries(hours_dict3),
-                         [(0, 0), (0, 0), 0.0])
-
     def testWeeklyTotals(self):
         self.all_logs(self.user)
         self.all_logs(self.user2)
