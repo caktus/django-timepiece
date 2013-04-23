@@ -4,9 +4,26 @@ Release Notes
 0.9.0 (Unreleased)
 ------------------
 
+We have reorganized the django-timepiece code into 5 co-dependent apps to make
+the code more modular, readable, and updatable. To upgrade your installation
+while maintaining your existing data, please follow these guidelines:
+
+    1. Ensure that all existing migrations for django-timepiece are up to date.
+    2. Upgrade your django-timepiece installation.
+    3. Add `'timepiece'`, `'timepiece.contracts'`, `'timepiece.crm'`,
+       `'timepiece.entries'`, and `'timepiece.reports'` to `INSTALLED_APPS` in
+       your settings file.
+    4. Run `./manage.py migrate timepiece --delete-ghost-migrations`.
+    5. Run `./manage.py migrate reports`.
+    6. Run `./manage.py migrate contracts --fake`.
+    7. Run `./manage.py migrate crm --fake`.
+    8. Run `./manage.py migrate entries --fake`.
+
 Related issues are in the `0.9.0 milestone
 <https://github.com/caktus/django-timepiece/issues?milestone=33&page=1&state=closed>`_.
 
+* Reorganized app structure (see notes above)
+* Removed existing migrations (see notes above)
 * Dropped support for Django 1.3
 * Added support for Django 1.5
 * Removed `PROJECT_UNSET` from `ProjectContract.type` choices
