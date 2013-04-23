@@ -1,8 +1,10 @@
 from django.db.models import Q
 
 from timepiece import utils
-from timepiece.forms import QuickSearchForm
-from timepiece.models import Project, Entry
+from timepiece.crm.forms import QuickSearchForm
+
+from timepiece.crm.models import Project
+from timepiece.entries.models import Entry
 
 
 def quick_search(request):

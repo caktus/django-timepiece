@@ -7,10 +7,10 @@ from django.db.models import Q
 from django.utils import timezone
 
 from timepiece import utils
-from timepiece.models import Entry
 
+from timepiece.entries.models import Entry
 from timepiece.reports.tests.base import ReportsTestBase
-from timepiece.reports.utils import get_project_totals
+from timepiece.reports.utils import get_project_totals, generate_dates
 
 
 class TestHourlyReport(ReportsTestBase):
@@ -91,7 +91,7 @@ class TestHourlyReport(ReportsTestBase):
         end = utils.add_timezone(datetime.datetime(2011, 1, 3))
         self.log_daily(start, day2, end)
         trunc = 'day'
-        date_headers = utils.generate_dates(start, end, trunc)
+        date_headers = generate_dates(start, end, trunc)
         pj_totals = self.get_project_totals(date_headers, trunc)
         self.assertEqual(pj_totals[0][0],
                          [Decimal('1.00'), Decimal('1.50'), ''])
@@ -108,7 +108,7 @@ class TestHourlyReport(ReportsTestBase):
         trunc = 'day'
         billableQ = Q(project__type__billable=True)
         non_billableQ = Q(project__type__billable=False)
-        date_headers = utils.generate_dates(start, end, trunc)
+        date_headers = generate_dates(start, end, trunc)
         pj_billable = self.get_project_totals(date_headers, trunc, Q(),
                                               'billable')
         pj_billable_q = self.get_project_totals(date_headers, trunc, billableQ,
@@ -125,7 +125,7 @@ class TestHourlyReport(ReportsTestBase):
         end = utils.add_timezone(datetime.datetime(2011, 1, 6))
         self.bulk_entries(start, end)
         trunc = 'week'
-        date_headers = utils.generate_dates(start, end, trunc)
+        date_headers = generate_dates(start, end, trunc)
         pj_totals = self.get_project_totals(date_headers, trunc)
         self.assertEqual(pj_totals[0][0], [48])
         self.assertEqual(pj_totals[0][1], [24])
@@ -143,7 +143,7 @@ class TestHourlyReport(ReportsTestBase):
                 day = utils.add_timezone(datetime.datetime(2011, month, day))
                 self.log_time(start=day, delta=(worked1, 0), user=self.user)
                 self.log_time(start=day, delta=(worked2, 0), user=self.user2)
-        date_headers = utils.generate_dates(start, end, trunc)
+        date_headers = generate_dates(start, end, trunc)
         pj_totals = self.get_project_totals(date_headers, trunc)
         for hour in pj_totals[0][0]:
             self.assertEqual(hour, last_day * worked1)

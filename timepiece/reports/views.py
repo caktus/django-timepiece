@@ -15,18 +15,19 @@ from django.views.generic import TemplateView
 
 from timepiece import utils
 from timepiece.forms import DATE_FORM_FORMAT
-from timepiece.models import Entry, ProjectHours
-from timepiece.views import CSVMixin
+from timepiece.utils.csv import CSVViewMixin, DecimalEncoder
 
-from timepiece.reports.forms import BillableHoursReportForm, HourlyReportForm, \
+from timepiece.entries.models import Entry, ProjectHours
+from timepiece.reports.forms import BillableHoursReportForm, HourlyReportForm,\
         ProductivityReportForm, PayrollSummaryReportForm
-from timepiece.reports.utils import get_project_totals, get_payroll_totals
+from timepiece.reports.utils import get_project_totals, get_payroll_totals,\
+        generate_dates, get_week_window
 
 
 class ReportMixin(object):
     """Common data for the Hourly & Billable Hours reports."""
 
-    @method_decorator(permission_required('timepiece.view_entry_summary'))
+    @method_decorator(permission_required('entries.view_entry_summary'))
     def dispatch(self, request, *args, **kwargs):
         return super(ReportMixin, self).dispatch(request, *args, **kwargs)
 
@@ -49,7 +50,7 @@ class ReportMixin(object):
                 entries = Entry.objects.none()
 
             end = end - relativedelta(days=1)
-            date_headers = utils.generate_dates(start, end, by=trunc)
+            date_headers = generate_dates(start, end, by=trunc)
             context.update({
                 'from_date': start,
                 'to_date': end,
@@ -148,7 +149,7 @@ class ReportMixin(object):
         return start, end
 
 
-class HourlyReport(ReportMixin, CSVMixin, TemplateView):
+class HourlyReport(ReportMixin, CSVViewMixin, TemplateView):
     template_name = 'timepiece/reports/hourly.html'
 
     def convert_context_to_csv(self, context):
@@ -182,9 +183,7 @@ class HourlyReport(ReportMixin, CSVMixin, TemplateView):
     def defaults(self):
         """Default filter form data when no GET data is provided."""
         # Set default date span to previous week.
-        (start, end) = utils.get_week_window(
-            timezone.now() - relativedelta(days=7)
-        )
+        (start, end) = get_week_window(timezone.now() - relativedelta(days=7))
         return {
             'from_date': start,
             'to_date': end,
@@ -200,7 +199,7 @@ class HourlyReport(ReportMixin, CSVMixin, TemplateView):
         self.export_projects = request.GET.get('export_projects', False)
         context = self.get_context_data()
         if self.export_users or self.export_projects:
-            kls = CSVMixin
+            kls = CSVViewMixin
         else:
             kls = TemplateView
         return kls.render_to_response(self, context)
@@ -302,7 +301,7 @@ class BillableHours(ReportMixin, TemplateView):
             data_list.append([label, billable, nonbillable])
 
         context.update({
-            'data': json.dumps(data_list, cls=utils.DecimalEncoder),
+            'data': json.dumps(data_list, cls=DecimalEncoder),
         })
         return context
 
@@ -332,7 +331,7 @@ class BillableHours(ReportMixin, TemplateView):
         return data_map
 
 
-@permission_required('timepiece.view_payroll_summary')
+@permission_required('entries.view_payroll_summary')
 def report_payroll_summary(request):
     date = timezone.now() - relativedelta(months=1)
     from_date = utils.get_month_start(date).date()
@@ -354,7 +353,7 @@ def report_payroll_summary(request):
     week_entries = Entry.objects.date_trunc('week').filter(
         weekQ, statusQ, workQ
     )
-    date_headers = utils.generate_dates(from_date, last_billable, by='week')
+    date_headers = generate_dates(from_date, last_billable, by='week')
     weekly_totals = list(get_project_totals(week_entries, date_headers,
                                               'total', overtime=True))
     # Monthly totals
@@ -383,7 +382,7 @@ def report_payroll_summary(request):
     })
 
 
-@permission_required('timepiece.view_entry_summary')
+@permission_required('entries.view_entry_summary')
 def report_productivity(request):
     report = []
     organize_by = None
@@ -459,7 +458,7 @@ def report_productivity(request):
 
     return render(request, 'timepiece/reports/productivity.html', {
         'form': form,
-        'report': json.dumps(report, cls=utils.DecimalEncoder),
+        'report': json.dumps(report, cls=DecimalEncoder),
         'type': organize_by or '',
         'total_worked': sum([r[1] for r in report[1:]]),
         'total_assigned': sum([r[2] for r in report[1:]]),

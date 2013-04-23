@@ -5,6 +5,8 @@ from django.conf import settings
 from timepiece import utils
 from timepiece.tests.base import TimepieceDataTestCase
 
+from timepiece.reports.utils import generate_dates
+
 
 class ReportsTestBase(TimepieceDataTestCase):
 
@@ -50,7 +52,7 @@ class ReportsTestBase(TimepieceDataTestCase):
                    end=datetime.datetime(2011, 1, 4)):
         start = utils.add_timezone(start)
         end = utils.add_timezone(end)
-        dates = utils.generate_dates(start, end, 'day')
+        dates = generate_dates(start, end, 'day')
         projects = [self.p1, self.p2, self.p2, self.p4, self.p5, self.sick]
         self.make_entries(projects=projects, dates=dates,
                           user=self.user, hours=2)
@@ -58,7 +60,7 @@ class ReportsTestBase(TimepieceDataTestCase):
                           user=self.user2, hours=1)
 
     def check_generate_dates(self, start, end, trunc, dates):
-        for index, day in enumerate(utils.generate_dates(start, end, trunc)):
+        for index, day in enumerate(generate_dates(start, end, trunc)):
             if isinstance(day, datetime.datetime):
                 day = day.date()
             self.assertEqual(day, dates[index].date())
