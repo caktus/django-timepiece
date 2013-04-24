@@ -1,4 +1,3 @@
-from datetime import datetime, timedelta
 from dateutil.relativedelta import relativedelta
 from StringIO import StringIO
 
@@ -22,10 +21,10 @@ class CheckEntries(TimepieceDataTestCase):
             'seconds_paused': 0,
             'status': Entry.VERIFIED,
         }
-        self.good_start = timezone.now() - timedelta(days=0, hours=8)
-        self.good_end = timezone.now() - timedelta(days=0)
-        self.bad_start = timezone.now() - timedelta(days=1, hours=8)
-        self.bad_end = timezone.now() - timedelta(days=1)
+        self.good_start = timezone.now() - relativedelta(days=0, hours=8)
+        self.good_end = timezone.now() - relativedelta(days=0)
+        self.bad_start = timezone.now() - relativedelta(days=1, hours=8)
+        self.bad_end = timezone.now() - relativedelta(days=1)
         #Create users for the test
         self.user.first_name = 'first1'
         self.user.last_name = 'last1'
@@ -84,8 +83,8 @@ class CheckEntries(TimepieceDataTestCase):
             for day in range(1, days + 1):
                 self.default_data.update({
                     'start_time': timezone.now() - \
-                                  timedelta(days=day, minutes=1),
-                    'end_time': timezone.now() - timedelta(days=day,)
+                                  relativedelta(days=day, minutes=1),
+                    'end_time': timezone.now() - relativedelta(days=day,)
                 })
                 self.create_entry(self.default_data)
 
@@ -150,7 +149,7 @@ class CheckEntries(TimepieceDataTestCase):
         """
         start = check_entries.Command().find_start()
         if start.day == 1:
-            start += timedelta(days=1)
+            start += relativedelta(days=1)
         all_users = check_entries.Command().find_users()
         entries = check_entries.Command().find_entries(all_users, start)
         #Determine the number of days checked

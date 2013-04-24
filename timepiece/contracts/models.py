@@ -1,4 +1,5 @@
 import datetime
+from dateutil.relativedelta import relativedelta
 
 from django.contrib.auth.models import User
 from django.contrib.sites.models import Site
@@ -62,7 +63,7 @@ class ProjectContract(models.Model):
         """
         return Entry.objects.filter(project__in=self.projects.all(),
                 start_time__gte=self.start_date,
-                end_time__lt=self.end_date + datetime.timedelta(days=1))
+                end_time__lt=self.end_date + relativedelta(days=1))
 
     def contracted_hours(self, approved_only=True):
         """Compute the hours contracted for this contract.
@@ -257,7 +258,7 @@ class ContractAssignment(models.Model):
     def entries(self):
         return Entry.objects.filter(project__in=self.contract.projects.all(),
                 user=self.user, start_time__gte=self.start_date,
-                end_time__lt=self.end_date + datetime.timedelta(days=1))
+                end_time__lt=self.end_date + relativedelta(days=1))
 
     @property
     def hours_remaining(self):

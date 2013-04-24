@@ -1,4 +1,5 @@
 import datetime
+from dateutil.relativedelta import relativedelta
 import random
 import urllib
 
@@ -38,7 +39,7 @@ class InvoiceViewPreviousTestCase(TimepieceDataTestCase):
     def log_many(self, projects, num_entries=20, start=None, billable=True):
         start = utils.add_timezone(datetime.datetime(2011, 1, 1, 0, 0, 0))
         for index in xrange(0, num_entries):
-            start += datetime.timedelta(hours=(5 * index))
+            start += relativedelta(hours=(5 * index))
             project = projects[index % len(projects)]  # Alternate projects
             self.log_time(start=start, status=Entry.APPROVED, project=project,
                           billable=billable)
@@ -259,23 +260,23 @@ class InvoiceCreateTestCase(TimepieceDataTestCase):
             'user': self.user,
             'project': self.project_billable,
             'activity': self.create_activity(data={'billable': True}),
-            'start_time': start - datetime.timedelta(days=5),
-            'end_time': end - datetime.timedelta(days=5),
+            'start_time': start - relativedelta(days=5),
+            'end_time': end - relativedelta(days=5),
             'status': Entry.APPROVED,
         })
         self.entry3 = self.create_entry({
             'user': self.user,
             'project': self.project_billable2,
             'activity': self.create_activity(data={'billable': False}),
-            'start_time': start - datetime.timedelta(days=10),
-            'end_time': end - datetime.timedelta(days=10),
+            'start_time': start - relativedelta(days=10),
+            'end_time': end - relativedelta(days=10),
             'status': Entry.APPROVED,
         })
         self.entry4 = self.create_entry({
             'user': self.user,
             'project': self.project_non_billable,
-            'start_time': start + datetime.timedelta(hours=11),
-            'end_time': end + datetime.timedelta(hours=15),
+            'start_time': start + relativedelta(hours=11),
+            'end_time': end + relativedelta(hours=15),
             'status': Entry.APPROVED,
         })
 
@@ -396,15 +397,15 @@ class InvoiceCreateTestCase(TimepieceDataTestCase):
         start = utils.add_timezone(datetime.datetime(2011, 1, 1, 8))
         end = utils.add_timezone(datetime.datetime(2011, 1, 1, 12))
         # start = utils.add_timezone(datetime.datetime.now())
-        # end = start + datetime.timedelta(hours=4)
+        # end = start + relativedelta(hours=4)
         activity = self.create_activity(data={'name': 'activity1',
                                               'billable': True})
         for num in xrange(0, 4):
             new_entry = self.create_entry({
                 'user': self.user,
                 'project': self.project_billable,
-                'start_time': start - datetime.timedelta(days=num),
-                'end_time': end - datetime.timedelta(days=num),
+                'start_time': start - relativedelta(days=num),
+                'end_time': end - relativedelta(days=num),
                 'status': Entry.APPROVED,
                 'activity': activity,
             })

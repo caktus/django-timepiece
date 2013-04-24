@@ -115,7 +115,7 @@ class ProjectTimesheet(DetailView):
             'project': project,
             'year_month_form': year_month_form,
             'from_date': from_date,
-            'to_date': to_date - datetime.timedelta(days=1),
+            'to_date': to_date - relativedelta(days=1),
             'entries': month_entries,
             'total': total,
             'user_entries': user_entries,
@@ -202,7 +202,7 @@ def view_user_timesheet(request, user_id, active_tab):
     month_entries = month_qs.date_trunc('month', extra_values)
     # For grouped entries, back date up to the start of the week.
     first_week = utils.get_week_start(from_date)
-    month_week = first_week + datetime.timedelta(weeks=1)
+    month_week = first_week + relativedelta(weeks=1)
     grouped_qs = entries_qs.timespan(first_week, to_date=to_date)
     intersection = grouped_qs.filter(start_time__lt=month_week,
         start_time__gte=from_date)
@@ -236,7 +236,7 @@ def view_user_timesheet(request, user_id, active_tab):
         'active_tab': active_tab or 'overview',
         'year_month_form': form,
         'from_date': from_date,
-        'to_date': to_date - datetime.timedelta(days=1),
+        'to_date': to_date - relativedelta(days=1),
         'show_verify': show_verify,
         'show_approve': show_approve,
         'timesheet_user': user,
@@ -313,7 +313,7 @@ def change_user_timesheet(request, user_id, action):
         'action': action,
         'timesheet_user': user,
         'from_date': from_date,
-        'to_date': to_date - datetime.timedelta(days=1),
+        'to_date': to_date - relativedelta(days=1),
         'return_url': return_url,
         'hours': hours,
     })

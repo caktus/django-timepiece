@@ -1,4 +1,5 @@
 import datetime
+from dateutil.relativedelta import relativedelta
 import mock
 
 from django import template
@@ -257,36 +258,35 @@ class TestProjectHoursForContract(TimepieceDataTestCase):
         unbillable_activity = self.create_activity(data={'billable': False})
 
         start_time = datetime.datetime.now()
-        one_hour = datetime.timedelta(hours=1)
         self.create_entry(data={
             'project': self.a_project,
             'activity': activity,
             'start_time': start_time,
-            'end_time': start_time + one_hour * 1
+            'end_time': start_time + relativedelta(hours=1),
         })
         self.create_entry(data={
             'project': self.a_project,
             'activity': unbillable_activity,
             'start_time': start_time,
-            'end_time': start_time + one_hour * 16
+            'end_time': start_time + relativedelta(hours=16),
         })
         self.create_entry(data={
             'project': self.another_project,
             'activity': activity,
             'start_time': start_time,
-            'end_time': start_time + one_hour * 2
+            'end_time': start_time + relativedelta(hours=2),
         })
         self.create_entry(data={
             'project': self.billable_project,
             'activity': activity,
             'start_time': start_time,
-            'end_time': start_time + one_hour * 4
+            'end_time': start_time + relativedelta(hours=4),
         })
         self.create_entry(data={
             'project': self.billable_project,
             'activity': unbillable_activity,
             'start_time': start_time,
-            'end_time': start_time + one_hour * 8
+            'end_time': start_time + relativedelta(hours=8),
         })
 
     def test_project_hours_for_contract(self):

@@ -242,7 +242,7 @@ class Entry(models.Model):
             end = self.end_time
         #Current entries have no end_time
         else:
-            end = start + datetime.timedelta(seconds=1)
+            end = start + relativedelta(seconds=1)
         entries = self.user.timepiece_entries.filter(
             Q(end_time__range=(start, end)) |
             Q(start_time__range=(start, end)) |
