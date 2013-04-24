@@ -1,8 +1,11 @@
 import datetime
+from dateutil import rrule
+from dateutil.relativedelta import relativedelta
 from decimal import Decimal
 from itertools import groupby
 
-from timepiece.utils import get_hours
+from timepiece.utils import get_hours_summary, add_timezone, get_week_start,\
+        get_month_start, get_year_start
 
 
 def date_totals(entries, by):
@@ -22,7 +25,7 @@ def date_totals(entries, by):
             name = d_entries[0][by]
 
         pk = d_entries[0][by]
-        hours = get_hours(d_entries)
+        hours = get_hours_summary(d_entries)
         date_dict[date] = hours
     return name, pk, date_dict
 
@@ -30,6 +33,24 @@ def date_totals(entries, by):
 def find_overtime(dates):
     """Given a list of weekly summaries, return the overtime for each week"""
     return sum([day - 40 for day in dates if day > 40])
+
+
+def generate_dates(start=None, end=None, by='week'):
+    if start:
+        start = add_timezone(start)
+    if end:
+        end = add_timezone(end)
+    if by == 'year':
+        start = get_year_start(start)
+        return rrule.rrule(rrule.YEARLY, dtstart=start, until=end)
+    if by == 'month':
+        start = get_month_start(start)
+        return rrule.rrule(rrule.MONTHLY, dtstart=start, until=end)
+    if by == 'week':
+        start = get_week_start(start)
+        return rrule.rrule(rrule.WEEKLY, dtstart=start, until=end, byweekday=0)
+    if by == 'day':
+        return rrule.rrule(rrule.DAILY, dtstart=start, until=end)
 
 
 def get_project_totals(entries, date_headers, hour_type=None, overtime=False,
@@ -186,3 +207,9 @@ def get_payroll_totals(month_work_entries, month_leave_entries):
     if rows:
         rows.append(totals)
     return labels, rows
+
+
+def get_week_window(day=None):
+    """Returns (Monday, Sunday) of the requested week."""
+    start = get_week_start(day)
+    return (start, start + relativedelta(days=6))

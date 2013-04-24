@@ -38,6 +38,9 @@ if not settings.configured:
             'pagination',
             'selectable',
             'timepiece',
+            'timepiece.contracts',
+            'timepiece.crm',
+            'timepiece.entries',
             'timepiece.reports',
         ) + jenkins,
         MIDDLEWARE_CLASSES=(
@@ -104,7 +107,8 @@ def run_django_tests():
     from django.test.utils import get_runner
     TestRunner = get_runner(settings)
     test_runner = TestRunner(verbosity=1, interactive=True, failfast=False)
-    failures = test_runner.run_tests(args or ['timepiece', 'reports'])
+    apps = ['timepiece', 'contracts', 'crm', 'entries', 'reports']
+    failures = test_runner.run_tests(args or apps)
     sys.exit(failures)
 
 
