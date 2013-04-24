@@ -18,6 +18,8 @@ while maintaining your existing data, please follow these guidelines:
     6. Run `./manage.py migrate contracts --fake`.
     7. Run `./manage.py migrate crm --fake`.
     8. Run `./manage.py migrate entries --fake`.
+    9. Remove all of your old \*.pyc files, e.g. run something like
+       `find . -name '*.pyc' -delete` in bash.
 
 Related issues are in the `0.9.0 milestone
 <https://github.com/caktus/django-timepiece/issues?milestone=33&page=1&state=closed>`_.
