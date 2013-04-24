@@ -16,67 +16,119 @@ from django.db import transaction
 from django.db.models import Q
 from django.http import HttpResponse, HttpResponseRedirect, Http404
 from django.shortcuts import render, redirect
+from django.utils.decorators import method_decorator
 from django.views.generic import TemplateView, View
 
 from timepiece import utils
 from timepiece.forms import DATE_FORM_FORMAT
 from timepiece.utils.csv import DecimalEncoder
 
-from timepiece.crm.models import Project
-from timepiece.entries.forms import ClockInForm, ClockOutForm, AddUpdateEntryForm,\
-        ProjectHoursForm, ProjectHoursSearchForm
+from timepiece.crm.models import Project, UserProfile
+from timepiece.entries.forms import ClockInForm, ClockOutForm, \
+        AddUpdateEntryForm, ProjectHoursForm, ProjectHoursSearchForm
 from timepiece.entries.models import Entry, ProjectHours
-from timepiece.entries.utils import get_project_hours_for_week,\
-        get_users_from_project_hours, get_hours_per_week, process_progress
 
 
-@login_required
-def dashboard(request, active_tab):
-    active_tab = active_tab or 'progress'
-    user = request.user
+class Dashboard(TemplateView):
+    template_name = 'timepiece/dashboard.html'
 
-    today = datetime.date.today()
-    day = today
-    if 'week_start' in request.GET:
-        param = request.GET.get('week_start')
+    @method_decorator(login_required)
+    def dispatch(self, request, active_tab, *args, **kwargs):
+        self.active_tab = active_tab or 'progress'
+        self.user = request.user
+        return super(Dashboard, self).dispatch(request, *args, **kwargs)
+
+    def get_dates(self):
+        today = datetime.date.today()
+        day = today
+        if 'week_start' in self.request.GET:
+            param = self.request.GET.get('week_start')
+            try:
+                day = datetime.datetime.strptime(param, '%Y-%m-%d').date()
+            except:
+                pass
+        week_start = utils.get_week_start(day)
+        week_end = week_start + relativedelta(days=6)
+        return today, week_start, week_end
+
+    def get_hours_per_week(self, user=None):
+        """Retrieves the number of hours the user should work per week."""
         try:
-            day = datetime.datetime.strptime(param, '%Y-%m-%d').date()
-        except:
-            pass
-    week_start = utils.get_week_start(day)
-    week_end = week_start + relativedelta(days=6)
+            profile = UserProfile.objects.get(user=user or self.user)
+        except UserProfile.DoesNotExist:
+            profile = None
+        return profile.hours_per_week if profile else Decimal('40.00')
 
-    # Query for the user's active entry if it exists.
-    active_entry = utils.get_active_entry(user)
+    def get_context_data(self, *args, **kwargs):
+        today, week_start, week_end = self.get_dates()
 
-    # Process this week's entries to determine assignment progress.
-    week_entries = Entry.objects.filter(user=user) \
-            .timespan(week_start, span='week', current=True) \
-            .select_related('project')
-    assignments = ProjectHours.objects.filter(user=user,
-            week_start=week_start.date())
-    project_progress = process_progress(week_entries, assignments)
+        # Query for the user's active entry if it exists.
+        active_entry = utils.get_active_entry(self.user)
 
-    # Total hours that the user is expected to clock this week.
-    total_assigned = get_hours_per_week(user)
-    total_worked = sum([p['worked'] for p in project_progress])
+        # Process this week's entries to determine assignment progress.
+        week_entries = Entry.objects.filter(user=self.user) \
+                .timespan(week_start, span='week', current=True) \
+                .select_related('project')
+        assignments = ProjectHours.objects.filter(user=self.user,
+                week_start=week_start.date())
+        project_progress = self.process_progress(week_entries, assignments)
 
-    # Others' active entries.
-    others_active_entries = Entry.objects.filter(end_time__isnull=True) \
-            .exclude(user=user).select_related('user', 'project', 'activity')
+        # Total hours that the user is expected to clock this week.
+        total_assigned = self.get_hours_per_week(self.user)
+        total_worked = sum([p['worked'] for p in project_progress])
 
-    return render(request, 'timepiece/dashboard.html', {
-        'active_tab': active_tab,
-        'today': today,
-        'week_start': week_start.date(),
-        'week_end': week_end.date(),
-        'active_entry': active_entry,
-        'total_assigned': total_assigned,
-        'total_worked': total_worked,
-        'project_progress': project_progress,
-        'week_entries': week_entries,
-        'others_active_entries': others_active_entries,
-    })
+        # Others' active entries.
+        others_active_entries = Entry.objects.filter(end_time__isnull=True) \
+                .exclude(user=self.user).select_related('user', 'project',
+                'activity')
+
+        return {
+            'active_tab': self.active_tab,
+            'today': today,
+            'week_start': week_start.date(),
+            'week_end': week_end.date(),
+            'active_entry': active_entry,
+            'total_assigned': total_assigned,
+            'total_worked': total_worked,
+            'project_progress': project_progress,
+            'week_entries': week_entries,
+            'others_active_entries': others_active_entries,
+        }
+
+    def process_progress(self, entries, assignments):
+        """
+        Returns a list of progress summary data (pk, name, hours worked, and
+        hours assigned) for each project either worked or assigned.
+        The list is ordered by project name.
+        """
+        # Determine all projects either worked or assigned.
+        project_q = Q(id__in=assignments.values_list('project__id', flat=True))
+        project_q |= Q(id__in=entries.values_list('project__id', flat=True))
+        projects = Project.objects.filter(project_q).select_related('business')
+
+        # Hours per project.
+        project_data = {}
+        for project in projects:
+            try:
+                assigned = assignments.get(project__id=project.pk).hours
+            except ProjectHours.DoesNotExist:
+                assigned = Decimal('0.00')
+            project_data[project.pk] = {
+                'project': project,
+                'assigned': assigned,
+                'worked': Decimal('0.00'),
+            }
+
+        for entry in entries:
+            pk = entry.project_id
+            hours = Decimal('%.2f' % (entry.get_total_seconds() / 3600.0))
+            project_data[pk]['worked'] += hours
+
+        # Sort by maximum of worked or assigned hours (highest first).
+        key = lambda x: x['project'].name.lower()
+        project_progress = sorted(project_data.values(), key=key)
+
+        return project_progress
 
 
 @permission_required('entries.can_clock_in')
@@ -295,15 +347,42 @@ class ScheduleView(ScheduleMixin, TemplateView):
 
         return super(ScheduleView, self).dispatch(request, *args, **kwargs)
 
+    def get_project_hours_for_week(self, week_start=None, published=None):
+        """
+        Gets all ProjectHours entries in the 7-day period beginning on
+        week_start.
+
+        Returns a values set, ordered by the project id.
+        """
+        week_start = week_start or self.week_start
+        week_end = week_start + relativedelta(days=7)
+        qs = ProjectHours.objects.filter(week_start__gte=week_start,
+                week_start__lt=week_end)
+        if published is not None:
+            qs = qs.filter(published=published)
+        qs = qs.values('project__id', 'project__name', 'user__id',
+                'user__first_name', 'user__last_name', 'hours')
+        qs = qs.order_by('-project__type__billable', 'project__name',)
+        return qs
+
+    def get_users_from_project_hours(self, project_hours):
+        """
+        Gets a list of the distinct users included in the project hours
+        entries, ordered by name.
+        """
+        name = ('user__first_name', 'user__last_name')
+        users = project_hours.values_list('user__id', *name).distinct()\
+                             .order_by(*name)
+        return users
+
     def get_context_data(self, **kwargs):
         context = super(ScheduleView, self).get_context_data(**kwargs)
 
         initial = {'week_start': self.week_start}
         form = ProjectHoursSearchForm(initial=initial)
 
-        project_hours = get_project_hours_for_week(self.week_start) \
-            .filter(published=True)
-        users = get_users_from_project_hours(project_hours)
+        project_hours = self.get_project_hours_for_week(published=True)
+        users = self.get_users_from_project_hours(project_hours)
         id_list = [user[0] for user in users]
         projects = []
 
@@ -390,10 +469,11 @@ class ScheduleAjaxView(ScheduleMixin, View):
             user = User.objects.get(pk=data.get('user', None))
             project = Project.objects.get(pk=data.get('project', None))
             hours = data.get('hours', None)
-            week = datetime.datetime.strptime(week_start, DATE_FORM_FORMAT).date()
+            week = datetime.datetime.strptime(week_start,
+                    DATE_FORM_FORMAT).date()
 
             ph = ProjectHours.objects.get(user=user, project=project,
-                week_start=week)
+                    week_start=week)
             ph.hours = Decimal(hours)
         except (exceptions.ObjectDoesNotExist):
             ph = None
@@ -457,7 +537,8 @@ class ScheduleAjaxView(ScheduleMixin, View):
             msg = 'Project hours were copied'
             messages.info(self.request, msg)
 
-        this_week = datetime.datetime.strptime(week_update, DATE_FORM_FORMAT).date()
+        this_week = datetime.datetime.strptime(week_update,
+                DATE_FORM_FORMAT).date()
         prev_week = this_week - relativedelta(days=7)
         prev_week_qs = self.get_hours_for_week(prev_week)
         this_week_qs = self.get_hours_for_week(this_week)

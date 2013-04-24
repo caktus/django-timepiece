@@ -11,7 +11,7 @@ from timepiece import utils
 from timepiece.tests.base import TimepieceDataTestCase
 
 from timepiece.entries.models import Entry, ProjectHours
-from timepiece.entries.utils import process_progress
+from timepiece.entries.views import Dashboard
 
 
 class DashboardViewTestCase(TimepieceDataTestCase):
@@ -187,7 +187,8 @@ class ProcessProgressTestCase(TimepieceDataTestCase):
     def _get_progress(self):
         entries = Entry.objects.all()
         assignments = ProjectHours.objects.all()
-        return process_progress(entries, assignments)
+        view = Dashboard()
+        return view.process_progress(entries, assignments)
 
     def _check_progress(self, progress, project, assigned, worked):
         self.assertEqual(progress['project'], project)
