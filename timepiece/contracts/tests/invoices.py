@@ -27,8 +27,8 @@ class InvoiceViewPreviousTestCase(TimepieceDataTestCase):
         # Add some non-billable entries
         self.log_many([self.project, self.project2], start=last_start,
                       billable=False)
-        self.create_invoice(self.project, {'static': 'invoiced'})
-        self.create_invoice(self.project2, {'status': 'not-invoiced'})
+        self.create_invoice(self.project, {'static': EntryGroup.INVOICED})
+        self.create_invoice(self.project2, {'status': EntryGroup.NOT_INVOICED})
 
     def get_create_url(self, **kwargs):
         base_url = reverse('create_invoice')
@@ -40,7 +40,7 @@ class InvoiceViewPreviousTestCase(TimepieceDataTestCase):
         for index in xrange(0, num_entries):
             start += datetime.timedelta(hours=(5 * index))
             project = projects[index % len(projects)]  # Alternate projects
-            self.log_time(start=start, status='approved', project=project,
+            self.log_time(start=start, status=Entry.APPROVED, project=project,
                           billable=billable)
         return start
 
@@ -52,7 +52,7 @@ class InvoiceViewPreviousTestCase(TimepieceDataTestCase):
         url = self.get_create_url(project=project.id, to_date=to_date.strftime('%Y-%m-%d'))
         params = {
             'number': str(random.randint(999, 9999)),
-            'status': 'invoiced',
+            'status': EntryGroup.INVOICED,
         }
         params.update(data)
         response = self.client.post(url, params)
@@ -81,7 +81,7 @@ class InvoiceViewPreviousTestCase(TimepieceDataTestCase):
         list_url = reverse('list_invoices')
         project3 = self.create_project(billable=True, data={'name': ':-D'})
         self.log_many([project3], 10)
-        self.create_invoice(project3, data={'status': 'invoiced',
+        self.create_invoice(project3, data={'status': EntryGroup.INVOICED,
                 'comments': 'comment!', 'number': '###'})
 
         # Search comments, project name, and number.
@@ -144,7 +144,8 @@ class InvoiceViewPreviousTestCase(TimepieceDataTestCase):
     def test_invoice_edit_post(self):
         invoice = self.get_invoice()
         url = reverse('edit_invoice', args=(invoice.id,))
-        status = 'invoiced' if invoice.status != 'invoiced' else 'not-invoiced'
+        status = EntryGroup.INVOICED if invoice.status != EntryGroup.INVOICED \
+                else EntryGroup.NOT_INVOICED
         params = {
             'number': int(invoice.number) + 1,
             'status': status,
@@ -184,7 +185,7 @@ class InvoiceViewPreviousTestCase(TimepieceDataTestCase):
         self.assertFalse(EntryGroup.objects.filter(pk=invoice.id))
         entries = Entry.objects.filter(pk__in=entry_ids)
         for entry in entries:
-            self.assertEqual(entry.status, 'approved')
+            self.assertEqual(entry.status, Entry.APPROVED)
 
     def test_invoice_delete_cancel(self):
         invoice = self.get_invoice()
@@ -230,7 +231,7 @@ class InvoiceViewPreviousTestCase(TimepieceDataTestCase):
         rm_entry = new_invoice.entries.filter(pk=entry.id)
         self.assertFalse(rm_entry)
         new_entry = Entry.objects.get(pk=entry.pk)
-        self.assertEqual(new_entry.status, 'approved')
+        self.assertEqual(new_entry.status, Entry.APPROVED)
         self.assertEqual(new_entry.entry_group, None)
 
 
@@ -252,7 +253,7 @@ class InvoiceCreateTestCase(TimepieceDataTestCase):
             'activity': self.create_activity(data={'billable': True}),
             'start_time': start,
             'end_time': end,
-            'status': 'approved',
+            'status': Entry.APPROVED,
         })
         self.entry2 = self.create_entry({
             'user': self.user,
@@ -260,7 +261,7 @@ class InvoiceCreateTestCase(TimepieceDataTestCase):
             'activity': self.create_activity(data={'billable': True}),
             'start_time': start - datetime.timedelta(days=5),
             'end_time': end - datetime.timedelta(days=5),
-            'status': 'approved',
+            'status': Entry.APPROVED,
         })
         self.entry3 = self.create_entry({
             'user': self.user,
@@ -268,14 +269,14 @@ class InvoiceCreateTestCase(TimepieceDataTestCase):
             'activity': self.create_activity(data={'billable': False}),
             'start_time': start - datetime.timedelta(days=10),
             'end_time': end - datetime.timedelta(days=10),
-            'status': 'approved',
+            'status': Entry.APPROVED,
         })
         self.entry4 = self.create_entry({
             'user': self.user,
             'project': self.project_non_billable,
             'start_time': start + datetime.timedelta(hours=11),
             'end_time': end + datetime.timedelta(hours=15),
-            'status': 'approved',
+            'status': Entry.APPROVED,
         })
 
     def get_create_url(self, **kwargs):
@@ -404,7 +405,7 @@ class InvoiceCreateTestCase(TimepieceDataTestCase):
                 'project': self.project_billable,
                 'start_time': start - datetime.timedelta(days=num),
                 'end_time': end - datetime.timedelta(days=num),
-                'status': 'approved',
+                'status': Entry.APPROVED,
                 'activity': activity,
             })
         self.make_hourgroups()
@@ -456,7 +457,8 @@ class InvoiceCreateTestCase(TimepieceDataTestCase):
             'to_date': to_date.strftime(DATE_FORM_FORMAT),
         }
         url = self.get_create_url(**kwargs)
-        response = self.client.post(url, {'number': '3', 'status': 'invoiced'})
+        response = self.client.post(url, {'number': '3',
+                'status': EntryGroup.INVOICED})
         self.assertEqual(response.status_code, 302)
         # Verify an invoice was created with the correct attributes
         invoice = EntryGroup.objects.get(number=3)
@@ -467,10 +469,10 @@ class InvoiceCreateTestCase(TimepieceDataTestCase):
         # Verify that the entries were invoiced appropriately
         # and the unrelated entries were untouched
         entries = Entry.objects.all()
-        invoiced = entries.filter(status='invoiced')
+        invoiced = entries.filter(status=EntryGroup.INVOICED)
         for entry in invoiced:
             self.assertEqual(entry.entry_group_id, invoice.id)
-        approved = entries.filter(status='approved')
+        approved = entries.filter(status=Entry.APPROVED)
         self.assertEqual(len(approved), 2)
         self.assertEqual(approved[0].entry_group_id, None)
 
@@ -484,7 +486,7 @@ class InvoiceCreateTestCase(TimepieceDataTestCase):
         }
         url = self.get_create_url(**kwargs)
         response = self.client.post(url, {'number': '5',
-                                          'status': 'not-invoiced'})
+                                          'status': EntryGroup.NOT_INVOICED})
         self.assertEqual(response.status_code, 302)
         # Verify an invoice was created with the correct attributes
         invoice = EntryGroup.objects.get(number=5)
@@ -495,6 +497,6 @@ class InvoiceCreateTestCase(TimepieceDataTestCase):
         # Verify that the entries were invoiced appropriately
         # and the unrelated entries were untouched
         entries = Entry.objects.all()
-        uninvoiced = entries.filter(status='uninvoiced')
+        uninvoiced = entries.filter(status=Entry.NOT_INVOICED)
         for entry in uninvoiced:
             self.assertEqual(entry.entry_group_id, invoice.id)

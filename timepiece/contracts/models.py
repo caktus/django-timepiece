@@ -10,7 +10,7 @@ from django.template import Context
 from django.template.loader import get_template
 
 from timepiece import utils
-from timepiece.entries.models import Entry, ENTRY_STATUS
+from timepiece.entries.models import Entry
 
 
 class ProjectContract(models.Model):
@@ -328,13 +328,17 @@ class HourGroup(models.Model):
 
 
 class EntryGroup(models.Model):
-    VALID_STATUS = ('invoiced', 'not-invoiced')
-    STATUS_CHOICES = [status for status in ENTRY_STATUS
-                      if status[0] in VALID_STATUS]
+    INVOICED = Entry.INVOICED
+    NOT_INVOICED = Entry.NOT_INVOICED
+    STATUSES = {
+        INVOICED: 'Invoiced',
+        NOT_INVOICED: 'Not Invoiced',
+    }
+
     user = models.ForeignKey(User, related_name='entry_group')
     project = models.ForeignKey('crm.Project', related_name='entry_group')
-    status = models.CharField(max_length=24, choices=STATUS_CHOICES,
-                              default='invoiced')
+    status = models.CharField(max_length=24, choices=STATUSES.items(),
+                              default=INVOICED)
     number = models.CharField("Reference #", max_length=50, blank=True,
                               null=True)
     comments = models.TextField(blank=True, null=True)
@@ -344,7 +348,7 @@ class EntryGroup(models.Model):
     end = models.DateField()
 
     def delete(self):
-        self.entries.update(status='approved')
+        self.entries.update(status=Entry.APPROVED)
         super(EntryGroup, self).delete()
 
     def __unicode__(self):

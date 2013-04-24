@@ -35,7 +35,7 @@ class DashboardViewTestCase(TimepieceDataTestCase):
         self.project = self.create_project()
         self.activity = self.create_activity()
         self.location = self.create_location()
-        self.status = 'unverified'
+        self.status = Entry.UNVERIFIED
 
     def _create_entry(self, start_time, end_time=None, user=None):
         """
@@ -160,7 +160,7 @@ class ProcessProgressTestCase(TimepieceDataTestCase):
         self.project = self.create_project()
         self.activity = self.create_activity()
         self.location = self.create_location()
-        self.status = 'unverified'
+        self.status = Entry.UNVERIFIED
 
     def _create_entry(self, start_time, end_time=None, project=None):
         data = {

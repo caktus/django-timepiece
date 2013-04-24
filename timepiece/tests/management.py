@@ -10,6 +10,8 @@ from timepiece import utils
 from timepiece.management.commands import check_entries
 from timepiece.tests.base import TimepieceDataTestCase
 
+from timepiece.entries.models import Entry
+
 
 class CheckEntries(TimepieceDataTestCase):
     def setUp(self):
@@ -18,7 +20,7 @@ class CheckEntries(TimepieceDataTestCase):
             'user': self.user,
             'project': self.project,
             'seconds_paused': 0,
-            'status': 'verified',
+            'status': Entry.VERIFIED,
         }
         self.good_start = timezone.now() - timedelta(days=0, hours=8)
         self.good_end = timezone.now() - timedelta(days=0)

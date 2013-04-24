@@ -8,8 +8,7 @@ from timepiece import utils
 from timepiece.forms import DATE_FORM_FORMAT
 
 from timepiece.crm.models import Project
-from timepiece.entries.models import Entry, Activity, Location, ENTRY_STATUS,\
-        ProjectHours
+from timepiece.entries.models import Entry, Activity, Location, ProjectHours
 
 
 class ClockInForm(forms.ModelForm):

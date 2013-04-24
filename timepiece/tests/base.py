@@ -168,7 +168,7 @@ class TimepieceDataTestCase(TestCase):
         if 'location' not in defaults:
             defaults['location'] = self.create_location()
         if 'status' not in defaults:
-            defaults['status'] = 'unverified'
+            defaults['status'] = Entry.UNVERIFIED
         return Entry.objects.create(**defaults)
 
     def create_contract_hour(self, data=None):

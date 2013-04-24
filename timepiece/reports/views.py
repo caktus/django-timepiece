@@ -348,7 +348,7 @@ def report_payroll_summary(request):
               end_time__lt=last_billable + datetime.timedelta(days=1))
     monthQ = Q(end_time__gt=from_date, end_time__lt=to_date)
     workQ = ~Q(project__in=projects.values())
-    statusQ = Q(status='invoiced') | Q(status='approved')
+    statusQ = Q(status=Entry.INVOICED) | Q(status=Entry.APPROVED)
     # Weekly totals
     week_entries = Entry.objects.date_trunc('week').filter(
         weekQ, statusQ, workQ
@@ -366,9 +366,9 @@ def report_payroll_summary(request):
     # Unapproved and unverified hours
     entries = Entry.objects.filter(monthQ).order_by()  # No ordering
     user_values = ['user__pk', 'user__first_name', 'user__last_name']
-    unverified = entries.filter(status='unverified', user__is_active=True) \
+    unverified = entries.filter(status=Entry.UNVERIFIED, user__is_active=True) \
                         .values_list(*user_values).distinct()
-    unapproved = entries.filter(status='verified') \
+    unapproved = entries.filter(status=Entry.VERIFIED) \
                         .values_list(*user_values).distinct()
     return render(request, 'timepiece/reports/payroll_summary.html', {
         'from_date': from_date,
