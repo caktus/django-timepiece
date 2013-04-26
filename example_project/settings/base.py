@@ -94,7 +94,6 @@ TEMPLATE_CONTEXT_PROCESSORS = (
     'django.contrib.messages.context_processors.messages',
     'django.core.context_processors.request',
     'timepiece.context_processors.quick_search',
-    'timepiece.context_processors.extra_nav',
     'timepiece.context_processors.quick_clock_in',
 )
 
@@ -172,5 +171,4 @@ COMPRESS_ROOT = '%s/static/' % PROJECT_PATH
 
 # django-timepiece settings
 TIMEPIECE_DEFAULT_LOCATION_SLUG = None
-TIMEPIECE_PROJECTS = {}
-EXTRA_NAV = {}
+TIMEPIECE_PAID_LEAVE_PROJECTS = {}

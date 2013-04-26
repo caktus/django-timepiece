@@ -50,9 +50,3 @@ def quick_clock_in(request):
         'leave_projects': leave_projects,
         'work_projects': work_projects,
     }
-
-
-def extra_nav(request):
-    return {
-        'timepiece_extra_nav': utils.get_setting('TIMEPIECE_EXTRA_NAV'),
-    }
