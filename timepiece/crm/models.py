@@ -72,6 +72,15 @@ class Business(models.Model):
         verbose_name_plural = 'Businesses'
 
 
+class TrackableProjectManager(models.Manager):
+
+    def get_query_set(self):
+        return super(TrackableProjectManager, self).get_query_set().filter(
+            status__enable_timetracking=True,
+            type__enable_timetracking=True,
+        )
+
+
 class Project(models.Model):
     name = models.CharField(max_length=255)
     tracker_url = models.CharField(max_length=255, blank=True, null=False,
@@ -101,6 +110,11 @@ class Project(models.Model):
         related_name='projects_with_status',
     )
     description = models.TextField()
+
+
+    objects = models.Manager()
+    trackable = TrackableProjectManager()
+
 
     class Meta:
         db_table = 'timepiece_project'  # Using legacy table name.

@@ -19,13 +19,9 @@ def quick_clock_in(request):
     leave_projects = []
 
     if user.is_authenticated() and user.is_active:
-        q = Q(status__enable_timetracking=True)
-        q &= Q(type__enable_timetracking=True)
-
         # Display all active paid leave projects that the user is assigned to.
-        leave_ids = utils.get_setting(
-                'TIMEPIECE_PAID_LEAVE_PROJECTS').values()
-        lq = Q(users=user) & Q(id__in=leave_ids) & q
+        leave_ids = utils.get_setting('TIMEPIECE_PAID_LEAVE_PROJECTS').values()
+        lq = Q(users=user) & Q(id__in=leave_ids)
         leave_projects = Project.objects.filter(lq).order_by('name')
 
         # Get all projects this user has clocked in to.
@@ -33,7 +29,7 @@ def quick_clock_in(request):
         project_ids = list(entries.values_list('project', flat=True))
 
         # Narrow to projects which can still be clocked in to.
-        pq = Q(id__in=project_ids) & q
+        pq = Q(id__in=project_ids)
         valid_projects = Project.objects.filter(pq).exclude(id__in=leave_ids)
         valid_ids = list(valid_projects.values_list('id', flat=True))
 

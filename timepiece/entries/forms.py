@@ -50,10 +50,8 @@ class ClockInForm(forms.ModelForm):
             attrs={'class': 'timepiece-time'},
             date_format=DATE_FORM_FORMAT
         )
-        self.fields['project'].queryset = Project.objects.filter(
-            users=self.user, status__enable_timetracking=True,
-            type__enable_timetracking=True
-        )
+        self.fields['project'].queryset = Project.trackable.filter(
+                users=self.user)
         if not self.active:
             self.fields.pop('active_comment')
         else:
@@ -161,10 +159,8 @@ class AddUpdateEntryForm(forms.ModelForm):
     def __init__(self, *args, **kwargs):
         self.user = kwargs.pop('user')
         super(AddUpdateEntryForm, self).__init__(*args, **kwargs)
-        self.fields['project'].queryset = Project.objects.filter(
-            users=self.user, status__enable_timetracking=True,
-            type__enable_timetracking=True
-        )
+        self.fields['project'].queryset = Project.trackable.filter(
+                users=self.user)
         #if editing a current entry, remove the end time field
         if self.instance.start_time and not self.instance.end_time:
             self.fields.pop('end_time')
