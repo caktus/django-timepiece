@@ -81,16 +81,7 @@
                         </li>
                     {% endif %}
 
-                    {% for name, links in timepiece_extra_nav.items %}
-                        <li class="dropdown">
-                            <a href="#" class="dropdown-toggle" data-toggle="dropdown">{{ name }} <b class="caret"></b></a>
-                            <ul class="dropdown-menu">
-                                {% for url_name, link_text in links %}
-                                    <li><a href="{% url url_name %}">{{ link_text }}</a></li>
-                                {% endfor %}
-                            </ul>
-                        </li>
-                    {% endfor %}
+                    {% include "timepiece/extra_nav.html" %}
                 </ul>
             {% endblock %}
 
