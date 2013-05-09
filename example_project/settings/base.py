@@ -122,16 +122,18 @@ INSTALLED_APPS = (
     'django.contrib.admin',
     'django.contrib.markup',
 
-    'pagination',
-    'compressor',
-    'bootstrap_toolkit',
-    'selectable',
-
+    # Timepiece apps must be listed before third-party apps in order
+    # for template overrides to work.
     'timepiece',
     'timepiece.contracts',
     'timepiece.crm',
     'timepiece.entries',
     'timepiece.reports',
+
+    'pagination',
+    'compressor',
+    'bootstrap_toolkit',
+    'selectable',
 )
 
 # A sample logging configuration. The only tangible logging
