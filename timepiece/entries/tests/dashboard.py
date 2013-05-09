@@ -11,7 +11,7 @@ from timepiece import utils
 from timepiece.tests.base import TimepieceDataTestCase
 
 from timepiece.entries.models import Entry, ProjectHours
-from timepiece.entries.utils import process_progress
+from timepiece.entries.views import Dashboard
 
 
 class DashboardViewTestCase(TimepieceDataTestCase):
@@ -35,7 +35,7 @@ class DashboardViewTestCase(TimepieceDataTestCase):
         self.project = self.create_project()
         self.activity = self.create_activity()
         self.location = self.create_location()
-        self.status = 'unverified'
+        self.status = Entry.UNVERIFIED
 
     def _create_entry(self, start_time, end_time=None, user=None):
         """
@@ -160,7 +160,7 @@ class ProcessProgressTestCase(TimepieceDataTestCase):
         self.project = self.create_project()
         self.activity = self.create_activity()
         self.location = self.create_location()
-        self.status = 'unverified'
+        self.status = Entry.UNVERIFIED
 
     def _create_entry(self, start_time, end_time=None, project=None):
         data = {
@@ -187,7 +187,8 @@ class ProcessProgressTestCase(TimepieceDataTestCase):
     def _get_progress(self):
         entries = Entry.objects.all()
         assignments = ProjectHours.objects.all()
-        return process_progress(entries, assignments)
+        view = Dashboard()
+        return view.process_progress(entries, assignments)
 
     def _check_progress(self, progress, project, assigned, worked):
         self.assertEqual(progress['project'], project)

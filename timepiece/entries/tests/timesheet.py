@@ -27,18 +27,18 @@ class EditableTest(TimepieceDataTestCase):
         self.entry = self.create_entry({
             'user': self.user,
             'project': self.project,
-            'start_time': timezone.now() - datetime.timedelta(days=6),
-            'end_time':  timezone.now() - datetime.timedelta(days=6),
+            'start_time': timezone.now() - relativedelta(days=6),
+            'end_time':  timezone.now() - relativedelta(days=6),
             'seconds_paused': 0,
-            'status': 'verified',
+            'status': Entry.VERIFIED,
         })
         self.entry2 = self.create_entry({
             'user': self.user,
             'project': self.project,
-            'start_time': timezone.now() - datetime.timedelta(days=2),
-            'end_time':  timezone.now() - datetime.timedelta(days=2),
+            'start_time': timezone.now() - relativedelta(days=2),
+            'end_time':  timezone.now() - relativedelta(days=2),
             'seconds_paused': 0,
-            'status': 'unverified',
+            'status': Entry.UNVERIFIED,
         })
 
     def testUnEditable(self):
@@ -163,7 +163,7 @@ class ClockInTest(TimepieceDataTestCase):
         super(ClockInTest, self).setUp()
         self.url = reverse('clock_in')
         self.now = timezone.now()
-        self.ten_min_ago = self.now - datetime.timedelta(minutes=10)
+        self.ten_min_ago = self.now - relativedelta(minutes=10)
         self.clock_in_form = {
             'project': self.project.pk,
             'location': self.location.pk,
@@ -210,7 +210,7 @@ class ClockInTest(TimepieceDataTestCase):
         closed_entry = entries.get(end_time__isnull=False)
         current_entry = entries.get(end_time__isnull=True)
         #The current start time is one second after the closed entry's end time
-        self.assertEqual(closed_entry.end_time + datetime.timedelta(seconds=1),
+        self.assertEqual(closed_entry.end_time + relativedelta(seconds=1),
                          current_entry.start_time)
 
     def testClockInManyActive(self):
@@ -223,7 +223,7 @@ class ClockInTest(TimepieceDataTestCase):
             'start_time': self.ten_min_ago,
         })
         entry2 = self.create_entry({
-            'start_time': self.now - datetime.timedelta(minutes=20),
+            'start_time': self.now - relativedelta(minutes=20),
         })
         data = self.clock_in_form
         data.update({
@@ -294,7 +294,7 @@ class ClockInTest(TimepieceDataTestCase):
             'st_str': self.ten_min_ago.strftime('%H:%M:%S'),
             'end_str': self.now.strftime('%H:%M:%S'),
         })
-        blocked_start_time = entry1.start_time + datetime.timedelta(minutes=5)
+        blocked_start_time = entry1.start_time + relativedelta(minutes=5)
         data = self.clock_in_form
         data.update({
             'start_time_0': blocked_start_time.strftime('%m/%d/%Y'),
@@ -350,7 +350,7 @@ class ClockInTest(TimepieceDataTestCase):
         entry1_data.update({
             'st_str': self.ten_min_ago.strftime('%H:%M:%S')
         })
-        before_entry1 = entry1.start_time - datetime.timedelta(minutes=5)
+        before_entry1 = entry1.start_time - relativedelta(minutes=5)
         data = self.clock_in_form
         data.update({
             'start_time_0': before_entry1.strftime('%m/%d/%Y'),
@@ -372,9 +372,9 @@ class ClockInTest(TimepieceDataTestCase):
         """
         self.client.login(username='user', password='abc')
         entry1 = self.create_entry({
-            'start_time': self.now - datetime.timedelta(hours=13),
+            'start_time': self.now - relativedelta(hours=13),
         })
-        end_time = self.now - datetime.timedelta(seconds=1)
+        end_time = self.now - relativedelta(seconds=1)
         data = self.clock_in_form
         data.update({
             'start_time_0': self.now.strftime('%m/%d/%Y'),
@@ -429,7 +429,7 @@ class ClockInTest(TimepieceDataTestCase):
         active = Entry.objects.get()
 
         data = self.clock_in_form
-        start_time = self.now + datetime.timedelta(seconds=10)
+        start_time = self.now + relativedelta(seconds=10)
         data.update({
             'start_time_0': start_time.strftime('%m/%d/%Y'),
             'start_time_1': start_time.strftime('%H:%M:%S')
@@ -527,7 +527,7 @@ class AutoActivityTest(TimepieceDataTestCase):
         self.client.login(username='user', password='abc')
         for day in xrange(0, 10):
             this_day = utils.add_timezone(datetime.datetime(2011, 1, 1))
-            this_day += datetime.timedelta(days=day)
+            this_day += relativedelta(days=day)
             activity = self.activity if day == 9 else self.devl_activity
             self.log_time(start=this_day, project=self.project,
                           activity=activity)
@@ -542,7 +542,7 @@ class AutoActivityTest(TimepieceDataTestCase):
         project2 = self.project2
         for day in xrange(0, 10):
             this_day = utils.add_timezone(datetime.datetime(2011, 1, 1))
-            this_day += datetime.timedelta(days=day)
+            this_day += relativedelta(days=day)
             #Cycle through projects and activities
             project = project1 if day % 2 == 0 else project2
             activity = self.devl_activity if day % 3 == 0 else self.activity
@@ -560,7 +560,7 @@ class ClockOutTest(TimepieceDataTestCase):
 
         # Create an active entry, so that clock out tests don't have to.
         self.default_end_time = timezone.now()
-        back = timezone.now() - datetime.timedelta(hours=5)
+        back = timezone.now() - relativedelta(hours=5)
         self.entry = self.create_entry({
             'user': self.user,
             'start_time': back,
@@ -609,7 +609,7 @@ class ClockOutTest(TimepieceDataTestCase):
         """
         paused_entry = self.entry
         paused_entry.pause_time = self.entry.start_time \
-            + datetime.timedelta(hours=1)
+            + relativedelta(hours=1)
         paused_entry.save()
         data = {
             'start_time_0': paused_entry.start_time.strftime('%m/%d/%Y'),
@@ -641,7 +641,7 @@ class ClockOutTest(TimepieceDataTestCase):
             'Ending time must exceed the starting time')
 
     def testClockOutTooLong(self):
-        end_time = self.entry.start_time + datetime.timedelta(hours=13)
+        end_time = self.entry.start_time + relativedelta(hours=13)
         data = {
             'start_time_0': self.entry.start_time.strftime('%m/%d/%Y'),
             'start_time_1': self.entry.start_time.strftime('%H:%M:%S'),
@@ -688,7 +688,7 @@ class ClockOutTest(TimepieceDataTestCase):
         existing entry
         """
         # Create a closed and valid entry
-        now = timezone.now() - datetime.timedelta(hours=5)
+        now = timezone.now() - relativedelta(hours=5)
         entry1_data = {
             'user': self.user,
             'project': self.project,
@@ -703,8 +703,8 @@ class ClockOutTest(TimepieceDataTestCase):
         })
 
         # Create a form with times that overlap with entry1
-        bad_start = entry1.start_time - datetime.timedelta(hours=1)
-        bad_end = entry1.end_time + datetime.timedelta(hours=1)
+        bad_start = entry1.start_time - relativedelta(hours=1)
+        bad_end = entry1.end_time + relativedelta(hours=1)
         bad_entry = self.create_entry({
             'user': self.user,
             'start_time': bad_start,
@@ -762,15 +762,15 @@ class CheckOverlap(TimepieceDataTestCase):
         self.client.login(username='user', password='abc')
         self.now = timezone.now()
         #define start and end times to create valid entries
-        self.start = self.now - datetime.timedelta(days=0, hours=8)
-        self.end = self.now - datetime.timedelta(days=0)
+        self.start = self.now - relativedelta(days=0, hours=8)
+        self.end = self.now - relativedelta(days=0)
         #Create a valid entry for the tests to overlap with
         self.log_time(start=self.start, end=self.end)
         #define bad start times relative to the valid one (just in/outside)
-        self.start_before = self.start - datetime.timedelta(minutes=2)
-        self.start_inside = self.start + datetime.timedelta(minutes=2)
-        self.end_inside = self.end - datetime.timedelta(minutes=2)
-        self.end_after = self.end + datetime.timedelta(minutes=2)
+        self.start_before = self.start - relativedelta(minutes=2)
+        self.start_inside = self.start + relativedelta(minutes=2)
+        self.end_inside = self.end - relativedelta(minutes=2)
+        self.end_after = self.end + relativedelta(minutes=2)
 
     #helper functions
     def use_checkoverlap(self, entries):
@@ -830,11 +830,11 @@ class CreateEditEntry(TimepieceDataTestCase):
         super(CreateEditEntry, self).setUp()
         self.client.login(username='user', password='abc')
         self.now = timezone.now()
-        valid_start = self.now - datetime.timedelta(days=1)
-        valid_end = valid_start + datetime.timedelta(hours=1)
-        self.ten_min_ago = self.now - datetime.timedelta(minutes=10)
-        self.two_hour_ago = self.now - datetime.timedelta(hours=2)
-        self.one_hour_ago = self.now - datetime.timedelta(hours=1)
+        valid_start = self.now - relativedelta(days=1)
+        valid_end = valid_start + relativedelta(hours=1)
+        self.ten_min_ago = self.now - relativedelta(minutes=10)
+        self.two_hour_ago = self.now - relativedelta(hours=2)
+        self.one_hour_ago = self.now - relativedelta(hours=1)
         #establish data, entries, urls for all tests
         self.default_data = {
             'project': self.project.pk,
@@ -925,7 +925,7 @@ class CreateEditEntry(TimepieceDataTestCase):
         """
         data = self.default_data
         new_start = self.current_entry_data['start_time'] + \
-            datetime.timedelta(minutes=5)
+            relativedelta(minutes=5)
         data.update({
             'start_time_0': new_start.strftime('%m/%d/%Y'),
             'start_time_1': new_start.strftime('%H:%M:%S'),
@@ -981,7 +981,7 @@ class CreateEditEntry(TimepieceDataTestCase):
         Test that the entry is blocked if the duration is too long.
         """
         long_entry = self.default_data
-        end_time = self.now + datetime.timedelta(hours=13)
+        end_time = self.now + relativedelta(hours=13)
         long_entry.update({
             'start_time_0': self.now.strftime('%m/%d/%Y'),
             'start_time_1': self.now.strftime('%H:%M:%S'),
@@ -1052,9 +1052,9 @@ class CreateEditEntry(TimepieceDataTestCase):
         """
         entry = self.create_entry({
             'start_time': self.ten_min_ago,
-            'end_time': self.ten_min_ago + datetime.timedelta(minutes=1)
+            'end_time': self.ten_min_ago + relativedelta(minutes=1)
         })
-        entry.status = 'invoiced'
+        entry.status = Entry.INVOICED
         entry.save()
 
         self.add_entry_test_helper()
@@ -1066,9 +1066,9 @@ class CreateEditEntry(TimepieceDataTestCase):
         """
         entry = self.create_entry({
             'start_time': self.ten_min_ago,
-            'end_time': self.ten_min_ago + datetime.timedelta(minutes=1)
+            'end_time': self.ten_min_ago + relativedelta(minutes=1)
         })
-        entry.status = 'invoiced'
+        entry.status = Entry.INVOICED
         entry.save()
 
         self.add_entry_test_helper()
@@ -1128,7 +1128,7 @@ class CreateEditEntry(TimepieceDataTestCase):
         self.client.logout()
         self.client.login(username='superuser', password='abc')
 
-        url, entry, data = self.edit_entry_helper('invoiced')
+        url, entry, data = self.edit_entry_helper(Entry.INVOICED)
 
         response = self.client.post(url, data=data, follow=True)
         self.assertEqual(response.status_code, 200)
@@ -1184,7 +1184,7 @@ class StatusTest(TimepieceDataTestCase):
     def test_verify_link(self):
         entry = self.create_entry({
             'user': self.user,
-            'start_time': self.now - datetime.timedelta(hours=1),
+            'start_time': self.now - relativedelta(hours=1),
             'end_time': self.now
         })
 
@@ -1198,9 +1198,9 @@ class StatusTest(TimepieceDataTestCase):
         """Permission is required to see approve timesheet link."""
         entry = self.create_entry({
             'user': self.user,
-            'start_time': self.now - datetime.timedelta(hours=1),
+            'start_time': self.now - relativedelta(hours=1),
             'end_time': self.now,
-            'status': 'verified'
+            'status': Entry.VERIFIED
         })
         response = self.client.get(self.sheet_url)
         self.assertFalse(response.context['show_approve'])
@@ -1209,9 +1209,9 @@ class StatusTest(TimepieceDataTestCase):
         self.login_with_permissions('view_entry_summary', 'approve_timesheet')
         entry = self.create_entry({
             'user': self.user,
-            'start_time': self.now - datetime.timedelta(hours=1),
+            'start_time': self.now - relativedelta(hours=1),
             'end_time': self.now,
-            'status': 'verified'
+            'status': Entry.VERIFIED
         })
         response = self.client.get(self.sheet_url)
         self.assertEquals(response.status_code, 200)
@@ -1246,24 +1246,24 @@ class StatusTest(TimepieceDataTestCase):
         """A user should not be able to verify another's timesheet"""
         entry = self.create_entry({
             'user': self.user2,
-            'start_time': self.now - datetime.timedelta(hours=1),
+            'start_time': self.now - relativedelta(hours=1),
             'end_time': self.now,
         })
         url = self.verify_url(self.user2)
         response = self.client.get(url)
 
         self.assertEquals(response.status_code, 403)
-        self.assertEquals(entry.status, 'unverified')
+        self.assertEquals(entry.status, Entry.UNVERIFIED)
 
         response = self.client.post(url, {'do_action': 'Yes'})
         self.assertEquals(response.status_code, 403)
-        self.assertEquals(entry.status, 'unverified')
+        self.assertEquals(entry.status, Entry.UNVERIFIED)
 
     def test_approve_user(self):
         """A regular user should not be able to approve their timesheet"""
         entry = self.create_entry({
             'user': self.user,
-            'start_time': self.now - datetime.timedelta(hours=1),
+            'start_time': self.now - relativedelta(hours=1),
             'end_time': self.now
         })
 
@@ -1272,7 +1272,7 @@ class StatusTest(TimepieceDataTestCase):
 
         response = self.client.post(self.approve_url(), {'do_action': 'Yes'})
         self.assertEquals(response.status_code, 403)
-        self.assertNotEquals(entry.status, 'approved')
+        self.assertNotEquals(entry.status, Entry.APPROVED)
         self.assertContains(response,
             'Forbidden: You cannot approve this timesheet',
             status_code=403
@@ -1282,7 +1282,7 @@ class StatusTest(TimepieceDataTestCase):
         """A regular user should not be able to approve another's timesheet"""
         entry = self.create_entry({
             'user': self.user2,
-            'start_time': self.now - datetime.timedelta(hours=1),
+            'start_time': self.now - relativedelta(hours=1),
             'end_time': self.now
         })
 
@@ -1291,7 +1291,7 @@ class StatusTest(TimepieceDataTestCase):
 
         response = self.client.post(self.approve_url(), {'do_action': 'Yes'})
         self.assertEquals(response.status_code, 403)
-        self.assertNotEquals(entry.status, 'approved')
+        self.assertNotEquals(entry.status, Entry.APPROVED)
         self.assertContains(response,
             'Forbidden: You cannot approve this timesheet',
             status_code=403
@@ -1306,14 +1306,14 @@ class StatusTest(TimepieceDataTestCase):
 
         entry1 = self.create_entry({
             'user': self.user,
-            'start_time': self.now - datetime.timedelta(hours=5),
-            'end_time': self.now - datetime.timedelta(hours=4),
-            'status': 'unverified'
+            'start_time': self.now - relativedelta(hours=5),
+            'end_time': self.now - relativedelta(hours=4),
+            'status': Entry.UNVERIFIED
         })
         entry2 = self.create_entry({
             'user': self.user,
-            'start_time': self.now - datetime.timedelta(hours=1),
-            'status': 'unverified'
+            'start_time': self.now - relativedelta(hours=1),
+            'status': Entry.UNVERIFIED
         })
 
         response = self.client.get(self.verify_url(), follow=True)
@@ -1325,16 +1325,16 @@ class StatusTest(TimepieceDataTestCase):
             'entries.'.format(self.user.get_name_or_username())
 
         self.assertEquals(messages._loaded_messages[0].message, msg)
-        self.assertEquals(entry1.status, 'unverified')
-        self.assertEquals(entry2.status, 'unverified')
+        self.assertEquals(entry1.status, Entry.UNVERIFIED)
+        self.assertEquals(entry2.status, Entry.UNVERIFIED)
 
         response = self.client.post(self.verify_url(), follow=True)
         self.assertEquals(response.status_code, 200)
         messages = response.context['messages']
 
         self.assertEquals(messages._loaded_messages[0].message, msg)
-        self.assertEquals(entry1.status, 'unverified')
-        self.assertEquals(entry2.status, 'unverified')
+        self.assertEquals(entry1.status, Entry.UNVERIFIED)
+        self.assertEquals(entry2.status, Entry.UNVERIFIED)
 
     def testVerifyButton(self):
         response = self.client.get(self.sheet_url)
@@ -1342,12 +1342,12 @@ class StatusTest(TimepieceDataTestCase):
         entry = self.create_entry(data={
             'user': self.user,
             'start_time': timezone.now() - \
-                datetime.timedelta(hours=1),
+                relativedelta(hours=1),
             'end_time':  timezone.now(),
         })
         response = self.client.get(self.sheet_url)
         self.assertTrue(response.context['show_verify'])
-        entry.status = 'verified'
+        entry.status = Entry.VERIFIED
         entry.save()
         response = self.client.get(self.sheet_url)
         self.assertFalse(response.context['show_verify'])
@@ -1358,16 +1358,16 @@ class StatusTest(TimepieceDataTestCase):
         self.assertFalse(response.context['show_approve'])
         entry = self.create_entry(data={
             'user': self.user,
-            'start_time': timezone.now() - datetime.timedelta(hours=1),
+            'start_time': timezone.now() - relativedelta(hours=1),
             'end_time':  timezone.now(),
         })
         response = self.client.get(self.sheet_url)
         self.assertFalse(response.context['show_approve'])
-        entry.status = 'verified'
+        entry.status = Entry.VERIFIED
         entry.save()
         response = self.client.get(self.sheet_url)
         self.assertTrue(response.context['show_approve'])
-        entry.status = 'approved'
+        entry.status = Entry.APPROVED
         entry.save()
         response = self.client.get(self.sheet_url)
         self.assertFalse(response.context['show_approve'])
@@ -1376,33 +1376,33 @@ class StatusTest(TimepieceDataTestCase):
         entry = self.create_entry(data={
             'user': self.user,
             'start_time': timezone.now() - \
-                datetime.timedelta(hours=1),
+                relativedelta(hours=1),
             'end_time':  timezone.now(),
         })
         response = self.client.get(self.verify_url())
         entries = self.user.timepiece_entries.all()
-        self.assertEquals(entries[0].status, 'unverified')
+        self.assertEquals(entries[0].status, Entry.UNVERIFIED)
         response = self.client.post(self.verify_url(), {'do_action': 'Yes'})
-        self.assertEquals(entries[0].status, 'verified')
+        self.assertEquals(entries[0].status, Entry.VERIFIED)
 
     def testApprovePage(self):
         self.login_with_permissions('approve_timesheet', 'view_entry_summary')
         entry = self.create_entry(data={
             'user': self.user,
-            'start_time': timezone.now() - datetime.timedelta(hours=1),
+            'start_time': timezone.now() - relativedelta(hours=1),
             'end_time':  timezone.now(),
         })
 
-        self.assertEquals(entry.status, 'unverified')
-        entry.status = 'verified'
+        self.assertEquals(entry.status, Entry.UNVERIFIED)
+        entry.status = Entry.VERIFIED
         entry.save()
 
         response = self.client.get(self.approve_url(),)
-        self.assertEquals(entry.status, 'verified')
+        self.assertEquals(entry.status, Entry.VERIFIED)
 
         response = self.client.post(self.approve_url(), {'do_action': 'Yes'})
         entry = Entry.objects.get(pk=entry.pk)
-        self.assertEquals(entry.status, 'approved')
+        self.assertEquals(entry.status, Entry.APPROVED)
 
     def test_reject_user(self):
         """A regular user should not be able to reject an entry"""
@@ -1411,14 +1411,14 @@ class StatusTest(TimepieceDataTestCase):
         now = timezone.now()
         entry = self.create_entry({
             'user': self.user,
-            'start_time': now - datetime.timedelta(hours=1),
+            'start_time': now - relativedelta(hours=1),
             'end_time': now,
-            'status': 'verified'
+            'status': Entry.VERIFIED
         })
         url = self.get_reject_url(entry.pk)
 
         response = self.client.post(url, {'Yes': 'yes'})
-        self.assertEquals(entry.status, 'verified')
+        self.assertEquals(entry.status, Entry.VERIFIED)
 
     def test_reject_other_user(self):
         """
@@ -1430,21 +1430,21 @@ class StatusTest(TimepieceDataTestCase):
         now = timezone.now()
         entry = self.create_entry({
             'user': self.user,
-            'start_time': now - datetime.timedelta(hours=1),
+            'start_time': now - relativedelta(hours=1),
             'end_time': now,
-            'status': 'verified'
+            'status': Entry.VERIFIED
         })
         url = self.get_reject_url(entry.pk)
 
         response = self.client.post(url, {'Yes': 'yes'})
-        self.assertEquals(entry.status, 'verified')
+        self.assertEquals(entry.status, Entry.VERIFIED)
 
     def testRejectPage(self):
         self.login_as_admin()
         entry = self.create_entry(data={
             'user': self.user,
             'start_time': timezone.now() - \
-                datetime.timedelta(hours=1),
+                relativedelta(hours=1),
             'end_time':  timezone.now(),
         })
         reject_url = self.get_reject_url(entry.id)
@@ -1455,20 +1455,20 @@ class StatusTest(TimepieceDataTestCase):
             response = self.client.get(reject_url)
             self.assertEqual(response.status_code, status_code)
 
-        check_entry_against_code('unverified', 302)
-        check_entry_against_code('invoiced', 302)
-        check_entry_against_code('approved', 200)
-        check_entry_against_code('verified', 200)
+        check_entry_against_code(Entry.UNVERIFIED, 302)
+        check_entry_against_code(Entry.INVOICED, 302)
+        check_entry_against_code(Entry.APPROVED, 200)
+        check_entry_against_code(Entry.VERIFIED, 200)
         response = self.client.post(reject_url, {'Yes': 'yes'})
         self.assertTrue(response.status_code, 302)
         entry = Entry.objects.get(user=self.user)
-        self.assertEqual(entry.status, 'unverified')
+        self.assertEqual(entry.status, Entry.UNVERIFIED)
 
     def testNotAllowedToRejectTimesheet(self):
         entry = self.create_entry(data={
             'user': self.user,
             'start_time': timezone.now() - \
-                datetime.timedelta(hours=1),
+                relativedelta(hours=1),
             'end_time':  timezone.now(),
         })
         reject_url = self.get_reject_url(entry.id)
@@ -1565,22 +1565,22 @@ class HourlySummaryTest(TimepieceDataTestCase):
         self.create_entry({
             'user': self.user,
             'start_time': self.month,
-            'end_time': self.month + datetime.timedelta(hours=1)
+            'end_time': self.month + relativedelta(hours=1)
         })
         self.create_entry({
             'user': self.user,
-            'start_time': self.month + datetime.timedelta(weeks=1),
-            'end_time': self.month + datetime.timedelta(weeks=1, hours=1)
+            'start_time': self.month + relativedelta(weeks=1),
+            'end_time': self.month + relativedelta(weeks=1, hours=1)
         })
         self.create_entry({
             'user': self.user,
-            'start_time': self.month + datetime.timedelta(weeks=2),
-            'end_time': self.month + datetime.timedelta(weeks=2, hours=1)
+            'start_time': self.month + relativedelta(weeks=2),
+            'end_time': self.month + relativedelta(weeks=2, hours=1)
         })
         self.create_entry({
             'user': self.user,
-            'start_time': self.month + datetime.timedelta(weeks=3),
-            'end_time': self.month + datetime.timedelta(weeks=3, hours=1)
+            'start_time': self.month + relativedelta(weeks=3),
+            'end_time': self.month + relativedelta(weeks=3, hours=1)
         })
 
     def test_start_of_week(self):
@@ -1603,8 +1603,8 @@ class HourlySummaryTest(TimepieceDataTestCase):
         self.create_month_entries()
         old_entry = self.create_entry({
             'user': self.user,
-            'start_time': self.month - datetime.timedelta(days=1, hours=1),
-            'end_time': self.month - datetime.timedelta(days=1)
+            'start_time': self.month - relativedelta(days=1, hours=1),
+            'end_time': self.month - relativedelta(days=1)
         })
 
         response = self.client.get(self.url)
@@ -1629,17 +1629,17 @@ class HourlySummaryTest(TimepieceDataTestCase):
         self.create_entry({
             'user': self.user,
             'start_time': april,
-            'end_time': april + datetime.timedelta(hours=1)
+            'end_time': april + relativedelta(hours=1)
         })
         self.create_entry({
             'user': self.user,
-            'start_time': april + datetime.timedelta(weeks=1),
-            'end_time': april + datetime.timedelta(weeks=1, hours=1)
+            'start_time': april + relativedelta(weeks=1),
+            'end_time': april + relativedelta(weeks=1, hours=1)
         })
         self.create_entry({
             'user': self.user,
             'start_time': march,
-            'end_time': march + datetime.timedelta(hours=1)
+            'end_time': march + relativedelta(hours=1)
         })
 
         response = self.client.get(self.url + '?{0}'.format(
@@ -1687,14 +1687,14 @@ class MonthlyRejectTestCase(TimepieceDataTestCase):
         and unverify them
         """
         self.client.login(username='superuser', password='abc')
-        self.create_entries(self.now, 'verified')
+        self.create_entries(self.now, Entry.VERIFIED)
 
         response = self.client.get(self.url, data=self.data)
         self.assertEqual(response.status_code, 200)
 
         response = self.client.post(self.url, data=self.data)
 
-        entries = Entry.no_join.filter(status='verified')
+        entries = Entry.no_join.filter(status=Entry.VERIFIED)
         self.assertEquals(entries.count(), 0)
 
     def test_page_no_permissions(self):
@@ -1703,14 +1703,14 @@ class MonthlyRejectTestCase(TimepieceDataTestCase):
         get or post to the page
         """
         self.client.login(username='user', password='abc')
-        self.create_entries(timezone.now(), 'verified')
+        self.create_entries(timezone.now(), Entry.VERIFIED)
 
         response = self.client.get(self.url, data=self.data)
         self.assertEqual(response.status_code, 302)
 
         response = self.client.post(self.url, data=self.data)
 
-        entries = Entry.no_join.filter(status='verified')
+        entries = Entry.no_join.filter(status=Entry.VERIFIED)
         self.assertEquals(entries.count(), 2)
 
     def test_reject_entries_no_date(self):
@@ -1719,7 +1719,7 @@ class MonthlyRejectTestCase(TimepieceDataTestCase):
         then the reject page should not show
         """
         self.client.login(username='superuser', password='abc')
-        self.create_entries(timezone.now(), 'verified')
+        self.create_entries(timezone.now(), Entry.VERIFIED)
 
         data = {
             'month': self.now.month
@@ -1739,23 +1739,23 @@ class MonthlyRejectTestCase(TimepieceDataTestCase):
         'yes', then the entries are not rejected
         """
         self.client.login(username='superuser', password='abc')
-        self.create_entries(timezone.now(), 'verified')
+        self.create_entries(timezone.now(), Entry.VERIFIED)
 
         data = self.data
         data.pop('yes')
 
         response = self.client.post(self.url, data=data)
 
-        entries = Entry.no_join.filter(status='verified')
+        entries = Entry.no_join.filter(status=Entry.VERIFIED)
         self.assertEquals(entries.count(), 2)
 
     def test_reject_approved_invoiced_entries(self):
         """Entries that are approved invoiced should not be rejected"""
         self.client.login(username='superuser', password='abc')
-        self.create_entries(timezone.now(), 'approved')
-        self.create_entries(timezone.now(), 'invoiced')
+        self.create_entries(timezone.now(), Entry.APPROVED)
+        self.create_entries(timezone.now(), Entry.INVOICED)
 
         response = self.client.post(self.url, data=self.data)
 
-        entries = Entry.no_join.filter(status='unverified')
+        entries = Entry.no_join.filter(status=Entry.UNVERIFIED)
         self.assertEquals(entries.count(), 0)

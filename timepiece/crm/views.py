@@ -39,12 +39,12 @@ def reject_user_timesheet(request, user_id):
     user = User.objects.get(pk=user_id)
     if form.is_valid():
         from_date, to_date = form.save()
-        entries = Entry.no_join.filter(status='verified', user=user,
+        entries = Entry.no_join.filter(status=Entry.VERIFIED, user=user,
             start_time__gte=from_date, end_time__lte=to_date)
         if request.POST.get('yes'):
             if entries.exists():
                 count = entries.count()
-                entries.update(status='unverified')
+                entries.update(status=Entry.UNVERIFIED)
                 msg = 'You have rejected %d previously verified entries.' \
                     % count
             else:
@@ -115,7 +115,7 @@ class ProjectTimesheet(DetailView):
             'project': project,
             'year_month_form': year_month_form,
             'from_date': from_date,
-            'to_date': to_date - datetime.timedelta(days=1),
+            'to_date': to_date - relativedelta(days=1),
             'entries': month_entries,
             'total': total,
             'user_entries': user_entries,
@@ -202,7 +202,7 @@ def view_user_timesheet(request, user_id, active_tab):
     month_entries = month_qs.date_trunc('month', extra_values)
     # For grouped entries, back date up to the start of the week.
     first_week = utils.get_week_start(from_date)
-    month_week = first_week + datetime.timedelta(weeks=1)
+    month_week = first_week + relativedelta(weeks=1)
     grouped_qs = entries_qs.timespan(first_week, to_date=to_date)
     intersection = grouped_qs.filter(start_time__lt=month_week,
         start_time__gte=from_date)
@@ -223,9 +223,9 @@ def view_user_timesheet(request, user_id, active_tab):
     if can_change or can_approve or user == request.user:
         statuses = list(month_qs.values_list('status', flat=True))
         total_statuses = len(statuses)
-        unverified_count = statuses.count('unverified')
-        verified_count = statuses.count('verified')
-        approved_count = statuses.count('approved')
+        unverified_count = statuses.count(Entry.UNVERIFIED)
+        verified_count = statuses.count(Entry.VERIFIED)
+        approved_count = statuses.count(Entry.APPROVED)
     if can_change or user == request.user:
         show_verify = unverified_count != 0
     if can_approve:
@@ -236,7 +236,7 @@ def view_user_timesheet(request, user_id, active_tab):
         'active_tab': active_tab or 'overview',
         'year_month_form': form,
         'from_date': from_date,
-        'to_date': to_date - datetime.timedelta(days=1),
+        'to_date': to_date - relativedelta(days=1),
         'show_verify': show_verify,
         'show_approve': show_approve,
         'timesheet_user': user,
@@ -276,11 +276,11 @@ def change_user_timesheet(request, user_id, action):
         user=user_id,
         start_time__lt=to_date,
         end_time=None,
-        status='unverified'
+        status=Entry.UNVERIFIED,
     )
     filter_status = {
-        'verify': 'unverified',
-        'approve': 'verified',
+        'verify': Entry.UNVERIFIED,
+        'approve': Entry.VERIFIED,
     }
     entries = entries.filter(status=filter_status[action])
 
@@ -313,7 +313,7 @@ def change_user_timesheet(request, user_id, action):
         'action': action,
         'timesheet_user': user,
         'from_date': from_date,
-        'to_date': to_date - datetime.timedelta(days=1),
+        'to_date': to_date - relativedelta(days=1),
         'return_url': return_url,
         'hours': hours,
     })

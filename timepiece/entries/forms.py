@@ -1,5 +1,5 @@
 import datetime
-from datetime import timedelta
+from dateutil.relativedelta import relativedelta
 
 from django import forms
 from django.db.models import Q
@@ -8,8 +8,7 @@ from timepiece import utils
 from timepiece.forms import DATE_FORM_FORMAT
 
 from timepiece.crm.models import Project
-from timepiece.entries.models import Entry, Activity, Location, ENTRY_STATUS,\
-        ProjectHours
+from timepiece.entries.models import Entry, Activity, Location, ProjectHours
 
 
 class ClockInForm(forms.ModelForm):
@@ -82,7 +81,7 @@ class ClockInForm(forms.ModelForm):
         if self.active:
             self.active.unpause()
             self.active.comments = data['active_comment']
-            self.active.end_time = start_time - timedelta(seconds=1)
+            self.active.end_time = start_time - relativedelta(seconds=1)
             if not self.active.clean():
                 raise forms.ValidationError(data)
         return data
@@ -99,6 +98,7 @@ class ClockInForm(forms.ModelForm):
 
 
 class ClockOutForm(forms.ModelForm):
+
     class Meta:
         model = Entry
         fields = ('location', 'comments', 'start_time', 'end_time')
@@ -137,7 +137,6 @@ class AddUpdateEntryForm(forms.ModelForm):
     This form will provide a way for users to add missed log entries and to
     update existing log entries.
     """
-
     start_time = forms.DateTimeField(
         widget=forms.SplitDateTimeWidget(
             attrs={'class': 'timepiece-time'},

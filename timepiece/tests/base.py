@@ -168,7 +168,7 @@ class TimepieceDataTestCase(TestCase):
         if 'location' not in defaults:
             defaults['location'] = self.create_location()
         if 'status' not in defaults:
-            defaults['status'] = 'unverified'
+            defaults['status'] = Entry.UNVERIFIED
         return Entry.objects.create(**defaults)
 
     def create_contract_hour(self, data=None):
@@ -185,7 +185,7 @@ class TimepieceDataTestCase(TestCase):
         defaults = {
             'name': self.random_string(25),
             'start_date': datetime.date.today(),
-            'end_date': datetime.date.today() + datetime.timedelta(weeks=2),
+            'end_date': datetime.date.today() + relativedelta(weeks=2),
             'num_hours': random.randint(10, 400),
             'status': 'current',
             'type': ProjectContract.PROJECT_PRE_PAID_HOURLY,
@@ -230,7 +230,7 @@ class TimepieceDataTestCase(TestCase):
             if start.day >= 28:
                 start -= relativedelta(days=1)
         if not end:
-            end = start + datetime.timedelta(hours=hours, minutes=minutes)
+            end = start + relativedelta(hours=hours, minutes=minutes)
         data = {'user': user,
                 'start_time': start,
                 'end_time': end,
