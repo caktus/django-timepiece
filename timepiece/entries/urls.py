@@ -5,7 +5,7 @@ from timepiece.entries import views
 
 urlpatterns = patterns('',
     url(r'^dashboard/(?:(?P<active_tab>progress|all-entries|online-users)/)?$',
-        views.dashboard,
+        views.Dashboard.as_view(),
         name='dashboard'),
 
     # Active entry

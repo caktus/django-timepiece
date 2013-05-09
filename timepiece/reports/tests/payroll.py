@@ -9,6 +9,7 @@ from django.utils import timezone
 from timepiece import utils
 from timepiece.tests.base import TimepieceDataTestCase
 
+from timepiece.entries.models import Entry
 from timepiece.reports.utils import find_overtime
 
 
@@ -54,9 +55,9 @@ class PayrollTest(TimepieceDataTestCase):
                 project=billable_project)
         non_billable = self.make_entry(user, day, (2, 0),
                 project=nonbillable_project)
-        invoiced = self.make_entry(user, day, (5, 30), status='invoiced',
+        invoiced = self.make_entry(user, day, (5, 30), status=Entry.INVOICED,
                 project=billable_project)
-        unapproved = self.make_entry(user, day, (6, 0), status='verified',
+        unapproved = self.make_entry(user, day, (6, 0), status=Entry.VERIFIED,
                 project=billable_project)
         sick = self.make_entry(user, day, (8, 0), project=self.sick)
         vacation = self.make_entry(user, day, (4, 0), project=self.vacation)

@@ -71,7 +71,7 @@ def create_invoice(request):
         'to_date': to_date,
     }
     entries_query = {
-        'status': 'approved',
+        'status': Entry.APPROVED,
         'end_time__lt': to_date + relativedelta(days=1),
         'project__id': project.id
     }
@@ -146,7 +146,7 @@ def list_outstanding_invoices(request):
     datesQ &= Q(end_time__gte=from_date) if from_date else Q()
     datesQ &= Q(end_time__lt=to_date) if to_date else Q()
     billableQ = Q(project__type__billable=True, project__status__billable=True)
-    statusQ = Q(status='approved')
+    statusQ = Q(status=Entry.APPROVED)
     ordering = ('project__type__label', 'project__status__label',
             'project__business__name', 'project__name', 'status')
 
@@ -317,7 +317,7 @@ def delete_invoice_entry(request, invoice_id, entry_id):
     invoice = get_object_or_404(EntryGroup, pk=invoice_id)
     entry = get_object_or_404(Entry, pk=entry_id)
     if request.POST:
-        entry.status = 'approved'
+        entry.status = Entry.APPROVED
         entry.entry_group = None
         entry.save()
         url = reverse('edit_invoice', args=(invoice_id,))
