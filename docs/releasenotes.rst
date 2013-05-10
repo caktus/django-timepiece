@@ -1,7 +1,7 @@
 Release Notes
 =============
 
-0.9.0 (Unreleased)
+0.9.0 (05-10-2013)
 ------------------
 
 We have reorganized the django-timepiece code into 5 co-dependent apps to make
