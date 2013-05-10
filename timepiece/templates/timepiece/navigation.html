@@ -8,7 +8,7 @@
                 <a class="brand" href="/">Timepiece</a>
                 <ul class="nav pull-left">
                     {% block quick-clock-in %}
-                        {% if perms.timepiece.can_clock_in %}
+                        {% if perms.entries.can_clock_in %}
                             <li class="dropdown">
                                 <a href="#" class="dropdown-toggle" data-toggle="dropdown"><i class="icon-time icon-white"> </i><b class="caret"></b> </a>
                                 <ul class="dropdown-menu">
@@ -27,70 +27,61 @@
                         {% endif %}
                     {% endblock %}
 
-                    {% if perms.timepiece.add_entry %}
+                    {% if perms.entries.add_entry %}
                         <li><a href="{% url 'view_user_timesheet' request.user.pk %}">Time Sheet</a></li>
                     {% endif %}
 
-                    {% if perms.timepiece.view_project or perms.auth.view_user or perms.timepiece.view_business or perms.timepiece.add_project_contract %}
+                    {# FIXME: Some permissions don't exist #}
+                    {% if perms.crm.view_project or perms.auth.view_user or perms.crm.view_business or perms.contracts.add_project_contract %}
                         <li class="dropdown">
                             <a href="#" class="dropdown-toggle" data-toggle="dropdown">CRM <b class="caret"></b></a>
                             <ul class="dropdown-menu">
-                                {% if perms.timepiece.view_project %}
+                                {% if perms.crm.view_project %}
                                     <li><a href="{% url 'list_projects' %}">Projects</a></li>
                                 {% endif %}
-                                {% if perms.auth.view_user %}
+                                {% if perms.auth.view_user %}  {# FIXME: Permission doesn't exist #}
                                     <li><a href="{% url 'list_users' %}">Users</a></li>
                                 {% endif %}
-                                {% if perms.timepiece.view_business %}
+                                {% if perms.crm.view_business %}  {# FIXME: Permission doesn't exist #}
                                     <li><a href="{% url 'list_businesses' %}">Businesses</a></li>
                                 {% endif %}
-                                {% if perms.timepiece.add_project_contract %}
+                                {% if perms.contracts.add_project_contract %}
                                     <li><a href="{% url 'list_contracts' %}">Contracts</a></li>
                                 {% endif %}
                             </ul>
                         </li>
                     {% endif %}
 
-                    {% if perms.timepiece.can_clock_in or perms.timepiece.view_entry_summary or perms.timepiece.view_payroll_summary or perms.timepiece.change_entrygroup or user.is_staff %}
+                    {# FIXME: Some of those permissions don't exist #}
+                    {% if perms.entries.can_clock_in or perms.entries.view_entry_summary or perms.entries.view_payroll_summary or perms.contracts.change_entrygroup or user.is_staff %}
                         <li class="dropdown">
                             <a href="#" class="dropdown-toggle" data-toggle="dropdown">Management <b class="caret"></b></a>
                             <ul class="dropdown-menu">
-                                {% if perms.timepiece.view_entry_summary %}
+                                {% if perms.entries.view_entry_summary %}  {# FIXME: permission doesn't exist #}
                                     <li><a href="{% url 'report_billable_hours' %}">Billable Hours</a></li>
                                     <li><a href="{% url 'report_hourly' %}">Hourly</a></li>
                                 {% endif %}
-                                {% if perms.timepiece.view_payroll_summary %}
+                                {% if perms.entries.view_payroll_summary %}
                                     <li><a href="{% url 'report_payroll_summary' %}">Payroll Summary</a></li>
                                     <li><a href="{% url 'report_productivity' %}">Productivity</a></li>
-                                {% endif %}
-                                {% if perms.timepiece.view_payroll_summary %}
-                                    {% if user.is_staff or perms.timepiece.change_entrygroup or perms.timepiece.can_clock_in %}
+                                    {% if user.is_staff or perms.contracts.change_entrygroup or perms.entries.can_clock_in %}
                                         <li class="divider"></li>
                                     {% endif %}
                                 {% endif %}
                                 {% if user.is_staff %}
                                     <li><a href="{% url 'admin:index' %}">Admin</a></li>
                                 {% endif %}
-                                {% if perms.timepiece.change_entrygroup %}
+                                {% if perms.contracts.change_entrygroup %}
                                     <li><a href="{% url 'list_outstanding_invoices' %}">Invoices</a></li>
                                 {% endif %}
-                                {% if perms.timepiece.can_clock_in %}
+                                {% if perms.entries.can_clock_in %}
                                     <li><a href="{% url 'view_schedule' %}">Weekly Schedule</a></li>
                                 {% endif %}
                             </ul>
                         </li>
                     {% endif %}
 
-                    {% for name, links in timepiece_extra_nav.items %}
-                        <li class="dropdown">
-                            <a href="#" class="dropdown-toggle" data-toggle="dropdown">{{ name }} <b class="caret"></b></a>
-                            <ul class="dropdown-menu">
-                                {% for url_name, link_text in links %}
-                                    <li><a href="{% url url_name %}">{{ link_text }}</a></li>
-                                {% endfor %}
-                            </ul>
-                        </li>
-                    {% endfor %}
+                    {% include "timepiece/extra_nav.html" %}
                 </ul>
             {% endblock %}
 
@@ -112,7 +103,7 @@
                 {% endif %}
 
                 {% block quick-search %}
-                    {% if perms.timepiece.view_business %}
+                    {% if perms.crm.view_business %}
                         <form class="navbar-search pull-right" action="{% url 'search' %}" method="get" accept-charset="utf-8">
                             {{ quick_search_form.quick_search }}
                         </form>
@@ -134,7 +125,7 @@
 
             <div class="nav-collapse">
                 <ul class="nav">
-                    {% if perms.timepiece.add_entry %}
+                    {% if perms.entries.add_entry %}
                         <li><a href="{% url 'dashboard' %}">Dashboard</a></li>
                         <li><a href="{% url 'view_user_timesheet' request.user.pk %}">Time Sheet</a></li>
                         <li><a href="{% url 'view_schedule' %}">Schedule</a></li>

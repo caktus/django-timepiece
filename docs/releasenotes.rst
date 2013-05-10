@@ -1,8 +1,64 @@
 Release Notes
 =============
 
-0.8.3 (unreleased)
+0.9.0 (Unreleased)
 ------------------
+
+We have reorganized the django-timepiece code into 5 co-dependent apps to make
+the code more modular, readable, and updatable. To upgrade your installation
+while maintaining your existing data, please follow these guidelines:
+
+    1. Ensure that all existing migrations for django-timepiece are up to date.
+    2. Upgrade your django-timepiece installation.
+    3. Add ``'timepiece'``, ``'timepiece.contracts'``, ``'timepiece.crm'``,
+       ``'timepiece.entries'``, and ``'timepiece.reports'`` to
+       `INSTALLED_APPS` in your settings file.
+    4. Run the new migrations:
+       ::
+
+        ./manage.py migrate timepiece --delete-ghost-migrations
+        ./manage.py migrate reports
+        ./manage.py migrate contracts --fake
+        ./manage.py migrate crm --fake
+        ./manage.py migrate entries --fake
+
+    5. Remove all of your old \*.pyc files, e.g. run something like
+       `find . -name '*.pyc' -delete` in bash.
+    6. Remove stale ContentType and Permission objects. Note: Before doing
+       this, take note of which timepiece permissions are in each of your auth
+       Groups as these will need to be restored.
+       ::
+
+        # This also deletes associated timepiece permissions.
+        ContentType.objects.filter(app_label='timepiece').delete()
+
+    7. Trigger the creation of new ContentType and Permission objects:
+       ::
+
+        from django.contrib.auth.management import create_permissions
+        from django.contrib.contenttypes.management import update_contenttypes
+        from django.db.models import get_app, get_models
+
+        for app in ['timepiece', 'contracts', 'crm', 'entries', 'reports']:
+            update_content_types(get_app(app), get_models())
+            create_permissions(get_app(app), get_models(), 0)
+
+    8. Restore permissions to any auth Groups that you have created.
+
+
+Related issues are in the `0.9.0 milestone
+<https://github.com/caktus/django-timepiece/issues?milestone=33&page=1&state=closed>`_.
+
+* Reorganized app structure (see notes above)
+* Removed existing migrations (see notes above)
+* Dropped support for Django 1.3
+* Added support for Django 1.5
+* Removed `PROJECT_UNSET` from `ProjectContract.type` choices
+* Use ellipsis after comment summary on dashboard so that comment doesn't
+  appear cut off
+
+0.8.3 (Released 03-27-2013)
+---------------------------
 
 Related issues are in the `0.8.3 milestone
 <https://github.com/caktus/django-timepiece/issues?milestone=37&page=1&state=closed>`_.
@@ -14,7 +70,6 @@ Related issues are in the `0.8.3 milestone
 * Added tests for project hours.
 * Fixed weekly schedule editor so project name changes stick.
 * Clicking 'Clock Out' more than once gives 404 error.
-
 
 0.8.2 (Released 01-25-2013)
 ---------------------------

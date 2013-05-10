@@ -33,7 +33,7 @@
             <form class="span12 form-horizontal" method="get" action="" id="report-filters" accept-charset="utf-8">
                 {{ filter_form|as_bootstrap:"horizontal" }}
                 <button type="submit" class="btn btn-primary" name="ok" id="billable">Update Filters</button>
-                {% if perms.timepiece.export_project_time_sheet %}
+                {% if perms.crm.export_project_time_sheet %}
                     <button type="submit" class="btn" name="export_users" value="True">Export User Summary</button>
                     <button type="submit" class="btn" name="export_projects" value="True">Export Project Summary</button>
                 {% endif %}
@@ -43,7 +43,7 @@
 
     <div class="row-fluid">
         <div class="span12">
-            {% for title, summary in summaries.items %}
+            {% for title, summary in summaries %}
                 <h3>{{ title }}</h3>
                 <table class="table table-bordered table-striped table-condensed">
                     <thead>
@@ -53,12 +53,12 @@
                                 <th>
                                     {% if trunc == 'day' %}
                                         {{ date|date:'M j' }}
-                                    {% else %}  {# Should switch to elif when we're no longer supporting 1.3 #}
-                                        {% if date.0 == date.1 %}
-                                            {{ date.0|date:'M j' }}
-                                        {% else %}
-                                            {{ date.0|date:'M j' }} - {{ date.1|date:'M j' }}
-                                        {% endif %}
+                                    {% elif trunc == 'year' %}
+                                        {{ date.0|date:'M j' }} - {{ date.1|date:'M j Y' }}
+                                    {% elif date.0 == date.1 %}
+                                        {{ date.0|date:'M j' }}
+                                    {% else %}
+                                        {{ date.0|date:'M j' }} - {{ date.1|date:'M j' }}
                                     {% endif %}
                                 </th>
                             {% endfor %}

@@ -1,8 +1,10 @@
 from django.db.models import Q
 
 from timepiece import utils
-from timepiece.forms import QuickSearchForm
-from timepiece.models import Project, Entry
+from timepiece.crm.forms import QuickSearchForm
+
+from timepiece.crm.models import Project
+from timepiece.entries.models import Entry
 
 
 def quick_search(request):
@@ -17,13 +19,9 @@ def quick_clock_in(request):
     leave_projects = []
 
     if user.is_authenticated() and user.is_active:
-        q = Q(status__enable_timetracking=True)
-        q &= Q(type__enable_timetracking=True)
-
         # Display all active paid leave projects that the user is assigned to.
-        leave_ids = utils.get_setting(
-                'TIMEPIECE_PAID_LEAVE_PROJECTS').values()
-        lq = Q(users=user) & Q(id__in=leave_ids) & q
+        leave_ids = utils.get_setting('TIMEPIECE_PAID_LEAVE_PROJECTS').values()
+        lq = Q(users=user) & Q(id__in=leave_ids)
         leave_projects = Project.objects.filter(lq).order_by('name')
 
         # Get all projects this user has clocked in to.
@@ -31,7 +29,7 @@ def quick_clock_in(request):
         project_ids = list(entries.values_list('project', flat=True))
 
         # Narrow to projects which can still be clocked in to.
-        pq = Q(id__in=project_ids) & q
+        pq = Q(id__in=project_ids)
         valid_projects = Project.objects.filter(pq).exclude(id__in=leave_ids)
         valid_ids = list(valid_projects.values_list('id', flat=True))
 
@@ -47,10 +45,4 @@ def quick_clock_in(request):
     return {
         'leave_projects': leave_projects,
         'work_projects': work_projects,
-    }
-
-
-def extra_nav(request):
-    return {
-        'timepiece_extra_nav': utils.get_setting('TIMEPIECE_EXTRA_NAV'),
     }

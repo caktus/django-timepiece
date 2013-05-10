@@ -11,13 +11,14 @@ from django.core.urlresolvers import reverse
 from django.contrib.auth.models import User, Permission, Group
 from django.contrib.contenttypes.models import ContentType
 from django.db.models import Q
+from django.utils import timezone
 
-try:
-    from django.utils import timezone
-except ImportError:
-    from timepiece import timezone
-
-from timepiece import models as timepiece
+from timepiece.contracts.models import ProjectContract, ContractHour,\
+        ContractAssignment, EntryGroup, HourGroup
+from timepiece.crm.models import Attribute, Business, Project,\
+        ProjectRelationship, RelationshipType, UserProfile
+from timepiece.entries.models import Activity, ActivityGroup, Location, Entry,\
+        ProjectHours
 from timepiece import utils
 
 
@@ -68,7 +69,7 @@ class TimepieceDataTestCase(TestCase):
             'name': name,
         }
         defaults.update(data)
-        return timepiece.Business.objects.create(**defaults)
+        return Business.objects.create(**defaults)
 
     def random_string(self, length=255, extra_chars=''):
         chars = string.letters + extra_chars
@@ -81,7 +82,7 @@ class TimepieceDataTestCase(TestCase):
             'type': 'project-type',
         }
         defaults.update(data)
-        return timepiece.Attribute.objects.create(**defaults)
+        return Attribute.objects.create(**defaults)
 
     def create_project_status(self, data=None):
         data = data or {}
@@ -90,7 +91,7 @@ class TimepieceDataTestCase(TestCase):
             'type': 'project-status',
         }
         defaults.update(data)
-        return timepiece.Attribute.objects.create(**defaults)
+        return Attribute.objects.create(**defaults)
 
     def create_project(self, billable=False, name=None, data=None):
         data = data or {}
@@ -107,7 +108,7 @@ class TimepieceDataTestCase(TestCase):
             defaults['business'] = self.create_business()
         if 'point_person' not in defaults:
             defaults['point_person'] = self.create_user()
-        return timepiece.Project.objects.create(**defaults)
+        return Project.objects.create(**defaults)
 
     def create_project_relationship(self, types=None, data=None):
         types = types or []
@@ -118,7 +119,7 @@ class TimepieceDataTestCase(TestCase):
             defaults['user'] = self.create_user()
         if 'project' not in defaults:
             defaults['project'] = self.create_project()
-        relationship = timepiece.ProjectRelationship.objects.create(**defaults)
+        relationship = ProjectRelationship.objects.create(**defaults)
         relationship.types.add(*types)
         return relationship
 
@@ -128,7 +129,7 @@ class TimepieceDataTestCase(TestCase):
             'name': self.random_string(25),
         }
         defaults.update(data)
-        return timepiece.RelationshipType.objects.create(**defaults)
+        return RelationshipType.objects.create(**defaults)
 
     def create_activity(self, activity_groups=None, data=None):
         activity_groups = activity_groups or []
@@ -139,7 +140,7 @@ class TimepieceDataTestCase(TestCase):
             'billable': False
         }
         defaults.update(data)
-        activity = timepiece.Activity.objects.create(**defaults)
+        activity = Activity.objects.create(**defaults)
         if activity_groups:
             activity.activity_group.add(*activity_groups)
             activity.save()
@@ -152,7 +153,7 @@ class TimepieceDataTestCase(TestCase):
             'slug': self.random_string(255),
         }
         defaults.update(data)
-        return timepiece.Location.objects.create(**defaults)
+        return Location.objects.create(**defaults)
 
     def create_entry(self, data=None):
         data = data or {}
@@ -167,38 +168,38 @@ class TimepieceDataTestCase(TestCase):
         if 'location' not in defaults:
             defaults['location'] = self.create_location()
         if 'status' not in defaults:
-            defaults['status'] = 'unverified'
-        return timepiece.Entry.objects.create(**defaults)
+            defaults['status'] = Entry.UNVERIFIED
+        return Entry.objects.create(**defaults)
 
     def create_contract_hour(self, data=None):
         defaults = {
             'date_requested': datetime.date.today(),
-            'status': timepiece.ContractHour.APPROVED_STATUS
+            'status': ContractHour.APPROVED_STATUS
         }
         defaults.update(data or {})
         if not 'contract' in defaults:
             defaults['contract'] = self.create_contract()
-        return timepiece.ContractHour.objects.create(**defaults)
+        return ContractHour.objects.create(**defaults)
 
     def create_contract(self, projects=None, **kwargs):
         defaults = {
             'name': self.random_string(25),
             'start_date': datetime.date.today(),
-            'end_date': datetime.date.today() + datetime.timedelta(weeks=2),
+            'end_date': datetime.date.today() + relativedelta(weeks=2),
             'num_hours': random.randint(10, 400),
             'status': 'current',
-            'type': timepiece.ProjectContract.PROJECT_PRE_PAID_HOURLY,
+            'type': ProjectContract.PROJECT_PRE_PAID_HOURLY,
         }
         defaults.update(kwargs)
         num_hours = defaults.pop('num_hours')
-        contract = timepiece.ProjectContract.objects.create(**defaults)
+        contract = ProjectContract.objects.create(**defaults)
         contract.projects.add(*(projects or []))
         # Create 2 ContractHour objects that add up to the hours we want
         for i in (1, 2):
             self.create_contract_hour({
                 'hours': Decimal(str(num_hours / 2.0)),
                 'contract': contract,
-                'status': timepiece.ContractHour.APPROVED_STATUS
+                'status': ContractHour.APPROVED_STATUS
             })
         return contract
 
@@ -212,7 +213,7 @@ class TimepieceDataTestCase(TestCase):
             defaults['contract'] = self.create_project()
         defaults['start_date'] = defaults['contract'].start_date
         defaults['end_date'] = defaults['contract'].end_date
-        return timepiece.ContractAssignment.objects.create(**defaults)
+        return ContractAssignment.objects.create(**defaults)
 
     def log_time(self, delta=None, billable=True, project=None,
         start=None, end=None, status=None, pause=0, activity=None, user=None):
@@ -229,7 +230,7 @@ class TimepieceDataTestCase(TestCase):
             if start.day >= 28:
                 start -= relativedelta(days=1)
         if not end:
-            end = start + datetime.timedelta(hours=hours, minutes=minutes)
+            end = start + relativedelta(hours=hours, minutes=minutes)
         data = {'user': user,
                 'start_time': start,
                 'end_time': end,
@@ -281,7 +282,7 @@ class TimepieceDataTestCase(TestCase):
             'name': name or self.random_string(25),
         }
         defaults.update(data)
-        return timepiece.ActivityGroup.objects.create(**defaults)
+        return ActivityGroup.objects.create(**defaults)
 
     def create_project_hours_entry(self, week_start=None, project=None,
                 user=None, hours=None, **kwargs):
@@ -289,7 +290,7 @@ class TimepieceDataTestCase(TestCase):
         project = project or self.create_project()
         user = user or self.create_user()
         hours = Decimal(str(random.random() * 20)) if hours is None else hours
-        return timepiece.ProjectHours.objects.create(week_start=week_start,
+        return ProjectHours.objects.create(week_start=week_start,
                 project=project, user=user, hours=hours, **kwargs)
 
     def setUp(self):
@@ -300,7 +301,7 @@ class TimepieceDataTestCase(TestCase):
         self.superuser = self.create_user('superuser', 'super@abc.com', 'abc',
                 is_superuser=True)
         permissions = Permission.objects.filter(
-            content_type=ContentType.objects.get_for_model(timepiece.Entry),
+            content_type=ContentType.objects.get_for_model(Entry),
             codename__in=('can_clock_in', 'can_clock_out',
             'can_pause', 'change_entry')
         )
@@ -308,46 +309,46 @@ class TimepieceDataTestCase(TestCase):
         self.user2.user_permissions = permissions
         self.user.save()
         self.user2.save()
-        self.activity = timepiece.Activity.objects.create(
+        self.activity = Activity.objects.create(
             code="WRK",
             name="Work",
         )
-        self.devl_activity = timepiece.Activity.objects.create(
+        self.devl_activity = Activity.objects.create(
             code="devl",
             name="development",
             billable=True,
         )
-        self.sick_activity = timepiece.Activity.objects.create(
+        self.sick_activity = Activity.objects.create(
             code="sick",
             name="sick/personal",
             billable=False,
         )
-        self.activity_group_all = timepiece.ActivityGroup.objects.create(
+        self.activity_group_all = ActivityGroup.objects.create(
             name='All',
         )
-        self.activity_group_work = timepiece.ActivityGroup.objects.create(
+        self.activity_group_work = ActivityGroup.objects.create(
             name='Client work',
         )
-        activities = timepiece.Activity.objects.all()
+        activities = Activity.objects.all()
         for activity in activities:
             activity.activity_group.add(self.activity_group_all)
             if activity != self.sick_activity:
                 activity.activity_group.add(self.activity_group_work)
-        self.business = timepiece.Business.objects.create(
+        self.business = Business.objects.create(
             name='Example Business',
             description='',
         )
-        status = timepiece.Attribute.objects.create(
+        status = Attribute.objects.create(
             type='project-status',
             label='Current',
             enable_timetracking=True,
         )
-        type_ = timepiece.Attribute.objects.create(
+        type_ = Attribute.objects.create(
             type='project-type',
             label='Web Sites',
             enable_timetracking=True,
         )
-        self.project = timepiece.Project.objects.create(
+        self.project = Project.objects.create(
             name='Example Project 1',
             type=type_,
             status=status,
@@ -355,7 +356,7 @@ class TimepieceDataTestCase(TestCase):
             point_person=self.user,
             activity_group=self.activity_group_work,
         )
-        self.project2 = timepiece.Project.objects.create(
+        self.project2 = Project.objects.create(
             name='Example Project 2',
             type=type_,
             status=status,
@@ -363,7 +364,7 @@ class TimepieceDataTestCase(TestCase):
             point_person=self.user2,
             activity_group=self.activity_group_all,
         )
-        timepiece.ProjectRelationship.objects.create(
+        ProjectRelationship.objects.create(
             user=self.user,
             project=self.project,
         )

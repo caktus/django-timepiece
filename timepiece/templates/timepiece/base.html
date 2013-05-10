@@ -16,7 +16,7 @@
         <script src="{{ STATIC_URL }}bootstrap/js/bootstrap.min.js"></script>
         <script src="//ajax.googleapis.com/ajax/libs/jqueryui/1.8.18/jquery-ui.min.js"></script>
         <script src="{{ STATIC_URL }}selectable/js/jquery.dj.selectable.js"></script>
-        {% if perms.timepiece.view_business %}
+        {% if perms.crm.view_business %}  {# FIXME: Permission doesn't exist #}
             {{ quick_search_form.media.js }}
             <script src="{{ STATIC_URL }}timepiece/js/quicksearch.js"></script>
         {% endif %}

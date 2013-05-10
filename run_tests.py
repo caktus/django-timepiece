@@ -4,7 +4,7 @@ import sys
 import optparse
 
 from django.conf import settings
-from django.core.management import call_command, setup_environ
+from django.core.management import call_command
 
 
 parser = optparse.OptionParser()
@@ -38,6 +38,10 @@ if not settings.configured:
             'pagination',
             'selectable',
             'timepiece',
+            'timepiece.contracts',
+            'timepiece.crm',
+            'timepiece.entries',
+            'timepiece.reports',
         ) + jenkins,
         MIDDLEWARE_CLASSES=(
             'django.middleware.common.CommonMiddleware',
@@ -60,7 +64,6 @@ if not settings.configured:
             'django.core.context_processors.request',
             'timepiece.context_processors.quick_search',
             'timepiece.context_processors.quick_clock_in',
-            'timepiece.context_processors.extra_nav',
         ),
         TEMPLATE_DIRS=(
             '%s/example_project/templates' % directory,
@@ -103,7 +106,8 @@ def run_django_tests():
     from django.test.utils import get_runner
     TestRunner = get_runner(settings)
     test_runner = TestRunner(verbosity=1, interactive=True, failfast=False)
-    failures = test_runner.run_tests(args or ['timepiece'])
+    apps = ['timepiece', 'contracts', 'crm', 'entries', 'reports']
+    failures = test_runner.run_tests(args or apps)
     sys.exit(failures)
 
 
