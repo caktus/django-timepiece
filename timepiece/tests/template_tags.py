@@ -1,12 +1,16 @@
 import datetime
-from django import template
+from dateutil.relativedelta import relativedelta
 import mock
+
+from django import template
 from django.test import TestCase
+
+from timepiece import utils
 from timepiece.templatetags import timepiece_tags as tags
 from timepiece.tests.base import TimepieceDataTestCase
 
 
-class HumanizeSecondsTestCase(TimepieceDataTestCase):
+class HumanizeSecondsTestCase(TestCase):
 
     def test_usual(self):
         seconds_display = tags.humanize_seconds((5.5 * 3600) + 3)
@@ -34,7 +38,7 @@ class HumanizeSecondsTestCase(TimepieceDataTestCase):
         )
 
 
-class ConvertHoursToSecondsTestCase(TimepieceDataTestCase):
+class ConvertHoursToSecondsTestCase(TestCase):
 
     def test_usual(self):
         seconds = tags.convert_hours_to_seconds('3.25')
@@ -200,16 +204,8 @@ class SumHoursTagTestCase(TestCase):
         ]
 
     def test_sum_hours(self):
-        context = {}
-        retval = tags.sum_hours(context, self.entries)
-        self.assertEqual('', retval)
-        self.assertEqual(8.5, context['daily_total'])
-
-    def test_sum_hours_set_var_name(self):
-        # again, different var name
-        context = {}
-        retval = tags.sum_hours(context, self.entries, 'foo_bar')
-        self.assertEqual(8.5, context['foo_bar'])
+        retval = tags.sum_hours(self.entries)
+        self.assertEqual(8.5, retval)
 
 
 class ArithmeticTagTestCase(TestCase):
@@ -262,94 +258,68 @@ class TestProjectHoursForContract(TimepieceDataTestCase):
         unbillable_activity = self.create_activity(data={'billable': False})
 
         start_time = datetime.datetime.now()
-        one_hour = datetime.timedelta(hours=1)
         self.create_entry(data={
             'project': self.a_project,
             'activity': activity,
             'start_time': start_time,
-            'end_time': start_time + one_hour * 1
+            'end_time': start_time + relativedelta(hours=1),
         })
         self.create_entry(data={
             'project': self.a_project,
             'activity': unbillable_activity,
             'start_time': start_time,
-            'end_time': start_time + one_hour * 16
+            'end_time': start_time + relativedelta(hours=16),
         })
         self.create_entry(data={
             'project': self.another_project,
             'activity': activity,
             'start_time': start_time,
-            'end_time': start_time + one_hour * 2
+            'end_time': start_time + relativedelta(hours=2),
         })
         self.create_entry(data={
             'project': self.billable_project,
             'activity': activity,
             'start_time': start_time,
-            'end_time': start_time + one_hour * 4
+            'end_time': start_time + relativedelta(hours=4),
         })
         self.create_entry(data={
             'project': self.billable_project,
             'activity': unbillable_activity,
             'start_time': start_time,
-            'end_time': start_time + one_hour * 8
+            'end_time': start_time + relativedelta(hours=8),
         })
 
     def test_project_hours_for_contract(self):
-        ctx = {}
-        retval = tags.project_hours_for_contract(ctx, self.contract,
-            self.a_project)
-        self.assertEqual('', retval)
+        retval = tags.project_hours_for_contract(self.contract, self.a_project)
         # Includes billable and nonbillable by default
-        self.assertEqual(17, ctx['project_hours'])
-
-    def test_project_hours_for_contract_varname(self):
-        # Specify a variable name, that's where the hours should go
-        ctx = {}
-        retval = tags.project_hours_for_contract(ctx, self.contract,
-            self.another_project, variable='foo_bar')
-        self.assertEqual('', retval)
-        self.assertNotIn('project_hours', ctx)
-        self.assertEqual(2, ctx['foo_bar'])
+        self.assertEqual(17, retval)
 
     def test_project_hours_for_contract_none(self):
         # Try it with the aggregate returning None
-        ctx = {}
-        retval = tags.project_hours_for_contract(ctx, self.contract,
+        retval = tags.project_hours_for_contract(self.contract,
             self.project_without_hours)
-        self.assertEqual('', retval)
-        self.assertEqual(0, ctx['project_hours'])
+        self.assertEqual(0, retval)
 
     def test_project_hours_for_contract_billable(self):
         # only include billable hours
-        ctx = {}
-        retval = tags.project_hours_for_contract(ctx, self.contract,
-                                                 self.billable_project,
-                                                 'project_hours',
-                                                 'billable')
-        self.assertEqual('', retval)
-        self.assertEqual(4, ctx['project_hours'])
+        retval = tags.project_hours_for_contract(self.contract,
+            self.billable_project, 'billable')
+        self.assertEqual(4, retval)
 
     def test_project_hours_for_contract_nonbillable(self):
         # only include non-billable hours
-        ctx = {}
-        retval = tags.project_hours_for_contract(ctx, self.contract,
-                                                 self.billable_project,
-                                                 'project_hours',
-                                                 'nonbillable')
-        self.assertEqual('', retval)
-        self.assertEqual(8, ctx['project_hours'])
+        retval = tags.project_hours_for_contract(self.contract,
+            self.billable_project, 'nonbillable')
+        self.assertEqual(8, retval)
 
     def test_project_hours_for_contract_badbillable(self):
         # template tag does syntax check on the 'billable' arg
-        ctx = {}
         with self.assertRaises(template.TemplateSyntaxError):
-            tags.project_hours_for_contract(ctx, self.contract,
-                                            self.a_project,
-                                            'project_hours',
-                                            'invalidarg')
+            tags.project_hours_for_contract(self.contract,
+                self.a_project, 'invalidarg')
 
 
-class AddParametersTest(TimepieceDataTestCase):
+class AddParametersTest(TestCase):
 
     def test_new_parameters(self):
         """Tag should add parameters to base URL after a '?'."""
@@ -385,3 +355,24 @@ class AddParametersTest(TimepieceDataTestCase):
         params = {'foo': '?'}
         retval = tags.add_parameters(url, params)
         self.assertEqual(retval, url + '?foo=%3F')
+
+
+class CreateDictTest(TestCase):
+
+    def test_create_dict(self):
+        retVal = tags.create_dict(foo='bar', a='b')
+        self.assertEquals(len(retVal), 2)
+        self.assertEquals(retVal['foo'], 'bar')
+        self.assertEquals(retVal['a'], 'b')
+
+    def test_create_empty_dict(self):
+        retVal = tags.create_dict()
+        self.assertEquals(retVal, {})
+
+
+class AddTimezoneTest(TestCase):
+
+    def test_add_timezone(self):
+        d = datetime.datetime.now()
+        retVal = tags.add_timezone(d)
+        self.assertEquals(retVal, utils.add_timezone(d))

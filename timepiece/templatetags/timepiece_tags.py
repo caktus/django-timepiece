@@ -6,26 +6,18 @@ from django import template
 from django.core.urlresolvers import reverse
 from django.db.models import Sum
 from django.template.defaultfilters import date as date_format_filter
-from timepiece.forms import DATE_FORM_FORMAT
-
-
-try:
-    from django.utils import timezone
-except ImportError:
-    from timepiece import timezone
+from django.utils import timezone
 
 from timepiece import utils
+from timepiece.forms import DATE_FORM_FORMAT
 
 
 register = template.Library()
 
 
-# This is a good candidate for an assignment_tag, once we no longer
-# have to support Django 1.3.
-@register.simple_tag(takes_context=True)
-def sum_hours(context, entries, variable='daily_total'):
-    context[variable] = sum([e.get_total_seconds() for e in entries])
-    return ''
+@register.assignment_tag
+def sum_hours(entries):
+    return sum([e.get_total_seconds() for e in entries])
 
 
 @register.filter
@@ -166,12 +158,8 @@ def get_max_hours(context):
     return str(max_hours)
 
 
-# This is a good candidate for an assignment_tag, once we no longer
-# have to support Django 1.3.
-@register.simple_tag(takes_context=True)
-def project_hours_for_contract(context, contract, project,
-                               variable='project_hours',
-                               billable=None):
+@register.assignment_tag
+def project_hours_for_contract(contract, project, billable=None):
     """Total billable hours worked on project for contract.
     If billable is passed as 'billable' or 'nonbillable', limits to
     the corresponding hours.  (Must pass a variable name first, of course.)
@@ -186,8 +174,7 @@ def project_hours_for_contract(context, contract, project,
                   'or "nonbillable"'
             raise template.TemplateSyntaxError(msg)
     hours = hours.aggregate(s=Sum('hours'))['s'] or 0
-    context[variable] = hours
-    return ''
+    return hours
 
 
 @register.simple_tag
@@ -217,7 +204,7 @@ def add_parameters(url, parameters):
         {% url 'this_view' as current_url %}
         {% with complete_url=current_url|add_parameters:request.GET %}
             The <a href="{% url 'other' %}?next={{ complete_url|urlencode }}">
-            next page</a> will redirect back to the current page (including
+            other page</a> will redirect back to the current page (including
             any GET parameters).
         {% endwith %}
     """
@@ -225,3 +212,14 @@ def add_parameters(url, parameters):
         sep = '&' if '?' in url else '?'
         return '{0}{1}{2}'.format(url, sep, urllib.urlencode(parameters))
     return url
+
+
+@register.assignment_tag
+def create_dict(**kwargs):
+    """Utility to create a dictionary from arguments."""
+    return kwargs
+
+
+@register.filter
+def add_timezone(date, tz=None):
+    return utils.add_timezone(date, tz)

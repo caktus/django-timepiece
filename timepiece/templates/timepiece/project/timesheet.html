@@ -25,7 +25,7 @@
             <form class="form-inline" method="get" action="" id="date-filter" accept-charset="utf-8">
                 {{ year_month_form }}
                 <input class="btn" type='submit' name='yearmonth' value="Update" id='yearmonth'/>
-                {% if perms.timepiece.export_project_time_sheet %}
+                {% if perms.crm.export_project_time_sheet %}
                     <button class="btn" type='submit' name='csv' value="csv" id='csv'>Download CSV</button>
                 {% endif %}
             </form>

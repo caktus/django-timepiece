@@ -1,21 +1,15 @@
-from datetime import datetime, timedelta
-from StringIO import StringIO
 from dateutil.relativedelta import relativedelta
+from StringIO import StringIO
 
 from django.contrib.auth.models import User, Permission
 from django.core.exceptions import ValidationError
+from django.utils import timezone
 
-try:
-    from django.utils import timezone
-except ImportError:
-    from timepiece import timezone
-
-from timepiece.tests.base import TimepieceDataTestCase
-
-from timepiece import models as timepiece
-from timepiece import forms as timepiece_forms
 from timepiece import utils
 from timepiece.management.commands import check_entries
+from timepiece.tests.base import TimepieceDataTestCase
+
+from timepiece.entries.models import Entry
 
 
 class CheckEntries(TimepieceDataTestCase):
@@ -25,12 +19,12 @@ class CheckEntries(TimepieceDataTestCase):
             'user': self.user,
             'project': self.project,
             'seconds_paused': 0,
-            'status': 'verified',
+            'status': Entry.VERIFIED,
         }
-        self.good_start = timezone.now() - timedelta(days=0, hours=8)
-        self.good_end = timezone.now() - timedelta(days=0)
-        self.bad_start = timezone.now() - timedelta(days=1, hours=8)
-        self.bad_end = timezone.now() - timedelta(days=1)
+        self.good_start = timezone.now() - relativedelta(days=0, hours=8)
+        self.good_end = timezone.now() - relativedelta(days=0)
+        self.bad_start = timezone.now() - relativedelta(days=1, hours=8)
+        self.bad_end = timezone.now() - relativedelta(days=1)
         #Create users for the test
         self.user.first_name = 'first1'
         self.user.last_name = 'last1'
@@ -89,8 +83,8 @@ class CheckEntries(TimepieceDataTestCase):
             for day in range(1, days + 1):
                 self.default_data.update({
                     'start_time': timezone.now() - \
-                                  timedelta(days=day, minutes=1),
-                    'end_time': timezone.now() - timedelta(days=day,)
+                                  relativedelta(days=day, minutes=1),
+                    'end_time': timezone.now() - relativedelta(days=day,)
                 })
                 self.create_entry(self.default_data)
 
@@ -155,7 +149,7 @@ class CheckEntries(TimepieceDataTestCase):
         """
         start = check_entries.Command().find_start()
         if start.day == 1:
-            start += timedelta(days=1)
+            start += relativedelta(days=1)
         all_users = check_entries.Command().find_users()
         entries = check_entries.Command().find_entries(all_users, start)
         #Determine the number of days checked

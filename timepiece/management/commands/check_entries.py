@@ -1,19 +1,14 @@
-import datetime
 from optparse import OptionParser, make_option
 
 from dateutil.relativedelta import relativedelta
 
-from django.contrib.auth import models as auth_models
+from django.contrib.auth.models import User
 from django.core.management.base import BaseCommand, CommandError
 from django.db.models import Q
+from django.utils import timezone
 
-try:
-    from django.utils import timezone
-except ImportError:
-    from timepiece import timezone
-
-from timepiece import models as timepiece
 from timepiece import utils
+from timepiece.entries.models import Entry
 
 
 class Command(BaseCommand):
@@ -161,7 +156,7 @@ For options type:
         if year:
             start = timezone.now() - relativedelta(day=1, month=1)
         if days:
-            start = timezone.now() - datetime.timedelta(days=days)
+            start = timezone.now() - relativedelta(days=days)
         start -= relativedelta(hour=0, minute=0, second=0, microsecond=0)
         return start
 
@@ -174,10 +169,10 @@ For options type:
             names = reduce(lambda query, arg: query |
                 (Q(first_name__icontains=arg) | Q(last_name__icontains=arg)),
                 args, Q())
-            users = auth_models.User.objects.filter(names)
+            users = User.objects.filter(names)
         #If no args given, check every user
         else:
-            users = auth_models.User.objects.all()
+            users = User.objects.all()
         #Display errors if no user was found
         if not users.count() and args:
             if len(args) == 1:
@@ -197,11 +192,9 @@ For options type:
         forever = kwargs.get('all', False)
         for user in users:
             if forever:
-                entries = timepiece.Entry.objects.filter(
-                    user=user).order_by(
-                    'start_time')
+                entries = Entry.objects.filter(user=user).order_by('start_time')
             else:
-                entries = timepiece.Entry.objects.filter(
+                entries = Entry.objects.filter(
                     user=user, start_time__gte=start).order_by(
                     'start_time')
             yield entries

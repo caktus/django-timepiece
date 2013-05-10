@@ -61,7 +61,9 @@ Installation
             'compressor',
             'pagination',
             'selectable',
+
             'timepiece',
+            'timepiece.reports',
             ...
         )
 
@@ -74,7 +76,6 @@ Installation
             "django.core.context_processors.media",
             "django.contrib.messages.context_processors.messages",
             "django.core.context_processors.request",           # <----
-            "timepiece.context_processors.extra_nav",           # <----
             "timepiece.context_processors.quick_clock_in",      # <----
             "timepiece.context_processors.quick_search",        # <----
         )

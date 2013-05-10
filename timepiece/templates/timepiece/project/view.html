@@ -14,11 +14,11 @@
         <div class="span12">
             <h2>{{ project }}</h2>
             <ul class="nav nav-pills">
-                {% if perms.timepiece.change_project %}
+                {% if perms.crm.change_project %}
                     <li><a href="{% url 'edit_project' project.id %}">Edit</a></li>
                     <li><a href="{% url 'delete_project' project.id %}">Delete</a></li>
                 {% endif %}
-                {% if perms.timepiece.view_project_time_sheet %}
+                {% if perms.crm.view_project_time_sheet %}
                     <li><a href="{% url 'view_project_timesheet' project.id %}">View Time Sheet</a></li>
                 {% endif %}
             </ul>
@@ -32,7 +32,7 @@
                 <tr>
                     <th>Business</th>
                     <td>
-                        {% if perms.timepiece.view_business  %}
+                        {% if perms.crm.view_business  %}
                             <a href="{% url 'view_business' project.business.pk %}">{{ project.business }}</a>
                         {% else %}
                             {{ project.business }}
@@ -77,12 +77,12 @@
                 {% for user in project.users.all %}
                     <li>
                         {{ user.get_name_or_username }}
-                        {% if perms.timepiece.change_projectrelationship %}
+                        {% if perms.crm.change_projectrelationship %}
                             {% with caption="Edit "|add:user.get_name_or_username|add:"'s relationship to "|add:project.name %}
                                 <a title="{{ caption }}" href="{% url 'edit_relationship' %}?project_id={{ project.id}}&user_id={{ user.id }}&next={{ next_url|add_parameters:request.GET|urlencode }}"><i alt="{{ caption }}" class="icon-pencil"></i></a>
                             {% endwith %}
                         {% endif %}
-                        {% if perms.timepiece.delete_projectrelationship %}
+                        {% if perms.crm.delete_projectrelationship %}
                             {% with caption="Remove "|add:user.get_name_or_username|add:" from "|add:project.name %}
                                 <a title="{{ caption }}" href="{% url 'delete_relationship' %}?project_id={{ project.id }}&user_id={{ user.id }}&next={{ next_url|add_parameters:request.GET|urlencode }}"><i alt="{{ caption }}" class="icon-remove"></i></a>
                             {% endwith %}
@@ -90,7 +90,7 @@
                     </li>
                 {% endfor %}
             </ul>
-            {% if perms.timepiece.add_projectrelationship %}
+            {% if perms.crm.add_projectrelationship %}
                 <form class="form-inline" action="{% url 'create_relationship' %}?project_id={{ project.id }}&next={{ next_url|add_parameters:request.GET|urlencode }}" method="post" accept-charset="utf-8">
                     {% csrf_token %}
                     {{ add_user_form|as_bootstrap:"inline" }}

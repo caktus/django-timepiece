@@ -18,7 +18,7 @@
                 <li>
                     <span>Outstanding Hours</span>
                 </li>
-                {% if perms.timepiece.view_entry_group %}
+                {% if perms.contracts.view_entry_group %}  {# FIXME: Permission doesn't exist #}
                     <li>
                         <a href="{% url 'list_invoices' %}">Previous Invoices</a>
                     </li>
