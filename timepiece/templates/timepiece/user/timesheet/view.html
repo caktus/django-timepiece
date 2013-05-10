@@ -43,13 +43,13 @@
                     <a class="btn btn-primary" href="{{ base_url|add_parameters:params }}">Approve All Entries</a>
                 {% endif %}
 
-                {% if perms.timepiece.view_payroll_summary %}
+                {% if perms.entries.view_payroll_summary %}
                     {% url 'reject_user_timesheet' timesheet_user.pk as base_url %}
                     {% create_dict month=from_date|date:'n' year=from_date|date:'Y' as params %}
                     <a class="btn btn-primary" href="{{ base_url|add_parameters:params }}">Reject All Entries</a>
                 {% endif %}
 
-                {% if perms.timepiece.view_user %}
+                {% if perms.auth.view_user %} {# FIXME: This permission doesn't exist #}
                     <a class="btn btn-primary" href="{% url 'view_user' timesheet_user.pk %}">View/Edit User</a>
                 {% endif %}
            </div>
@@ -183,10 +183,10 @@
                                 <td class="hours time">{{ entry.hours|floatformat:2 }}</td>
                                 <td class="comments" title="{{entry.comments}}">{{ entry.comments|truncatewords:12|urlizetrunc:25|safe }}</td>
                                 <td class="aux">
-                                    {% if entry.status == "unverified" or entry.status != 'invoiced' and perms.timepiece.view_payroll_summary %}
+                                    {% if entry.status == "unverified" or entry.status != 'invoiced' and perms.entries.view_payroll_summary %}
                                         <a href="{% url 'edit_entry' entry.id %}?next={{ next_url|add_parameters:request.GET|urlencode }}">Edit</a>
                                     {% endif %}
-                                    {% if perms.timepiece.view_payroll_summary and entry.status != "unverified" and entry.status != "invoiced" %}
+                                    {% if perms.entries.view_payroll_summary and entry.status != "unverified" and entry.status != "invoiced" %}
                                         | <a href="{% url 'reject_entry' entry.id %}?next={{ next_url|add_parameters:request.GET|urlencode }}">Reject</a>
                                     {% endif %}
                                 </td>

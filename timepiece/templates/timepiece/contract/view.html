@@ -14,7 +14,7 @@
         <div class="span12">
             <h2>{{ contract }}</h2>
             <ul class="nav nav-pills">
-                {% if perms.timepiece.change_contract %}
+                {% if perms.contracts.change_contract %}  {# FIXME: permission doesn't exist #}
                     <li><a href="{{ contract.get_admin_url }}">Edit</a></li>
                 {% endif %}
             </ul>

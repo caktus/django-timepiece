@@ -33,7 +33,7 @@
             <form class="span12 form-horizontal" method="get" action="" id="report-filters" accept-charset="utf-8">
                 {{ filter_form|as_bootstrap:"horizontal" }}
                 <button type="submit" class="btn btn-primary" name="ok" id="billable">Update Filters</button>
-                {% if perms.timepiece.export_project_time_sheet %}
+                {% if perms.crm.export_project_time_sheet %}
                     <button type="submit" class="btn" name="export_users" value="True">Export User Summary</button>
                     <button type="submit" class="btn" name="export_projects" value="True">Export Project Summary</button>
                 {% endif %}

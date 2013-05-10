@@ -23,7 +23,7 @@
 {% endblock %}
 
 {% block content %}
-    {% if perms.timepiece.can_clock_in %}
+    {% if perms.entries.can_clock_in %}
         <h2>{{ week_start|date:'M j' }} to {{ week_end|date:'M j' }}</h2>
 
         <div class="row-fluid">

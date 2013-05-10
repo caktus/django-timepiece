@@ -14,7 +14,7 @@
         <div class="span12">
             <h2>{{ business.name }}</h2>
             <ul class="nav nav-pills">
-                {% if perms.timepiece.change_business %}
+                {% if perms.crm.change_business %}
                     <li><a href='{% url 'edit_business' business.pk %}'>Edit</a></li>
                     <li><a href="{% url 'delete_business' business.pk %}">Delete</a></li>
                 {% endif %}
