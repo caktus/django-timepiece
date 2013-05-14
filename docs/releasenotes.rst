@@ -1,6 +1,13 @@
 Release Notes
 =============
 
+0.9.1 (05-14-2013)
+------------------
+Related issues are in the `0.9.1 milestone
+<https://github.com/caktus/django-timepiece/issues?milestone=38&page=1&state=closed>`_.
+
+* Fixed a bug with the 'db_name' of some contract models that was causing database queries to use the wrong table name.
+
 0.9.0 (05-10-2013)
 ------------------
 

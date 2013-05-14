@@ -324,6 +324,9 @@ class HourGroup(models.Model):
 
     objects = HourGroupManager()
 
+    class Meta:
+        db_table = 'timepiece_hourgroup'  # Using legacy table name.
+
     def __unicode__(self):
         return self.name
 
@@ -348,6 +351,9 @@ class EntryGroup(models.Model):
     start = models.DateField(blank=True, null=True)
     end = models.DateField()
 
+    class Meta:
+        db_table = 'timepiece_entrygroup'  # Using legacy table name.
+
     def delete(self):
         self.entries.update(status=Entry.APPROVED)
         super(EntryGroup, self).delete()
@@ -361,5 +367,3 @@ class EntryGroup(models.Model):
         }
         return u'Entry Group ' + \
                u'%(number)s: %(status)s - %(project)s - %(end)s' % invoice_data
-
-
