@@ -20,7 +20,9 @@ static/timepiece.
 @lightgray: #DDDDDD;
 @blue: #049CDB;
 @lightblue: lighten(@blue, 20%);
-@tableBackgroundAccent: #E6E6E6;
+
+@tableBackgroundAccent: #EEEEEE;
+@tableBackgroundHover: #D0D0EC;
 @tableBorder: #DDDDDD;
 
 .bg-icon(@icon) {
@@ -79,29 +81,6 @@ body {
         padding-right: 0.5em;
         height: 16px;
         width: 16px;
-    }
-
-    .quick-buttons {
-        margin-bottom: 20px;
-        ul {
-            &.subnav {
-                margin-top: 3px;
-                li {
-                    .pull-left;
-                    padding: 0px 10px 0 0;
-                    @media(max-width: 480px) {
-                        padding: 0 5px 0 0;
-                    }
-                    a {
-                        &.add-entry {
-                            @media(max-width: 430px) {
-                                margin-top: 10px;
-                            }
-                        }
-                    }
-                }
-            }
-        }
     }
 
     span {
@@ -182,25 +161,6 @@ body {
                 background-color: @blue !important;
             }
         }
-
-        &.table-striped-vertical {
-            th, td {
-                border-bottom: 1px solid @tableBorder;
-            }
-
-            // Double border in the body
-            tbody {
-                tr:last-child {
-                    th, td {
-                        border-bottom: 0px;
-                    }
-                }
-            }
-
-            th:nth-child(even), td:nth-child(even) {
-                background-color: @tableBackgroundAccent;
-            }
-        }
     }
 
     form {
@@ -212,7 +172,6 @@ body {
             }
         }
     }
-
 
     /*****************************************
      * End HTML entities
@@ -308,6 +267,7 @@ body {
      * End general site-wide classes
      *****************************************/
 
+
     /*****************************************
      * Start navbar classes
      *****************************************/
@@ -332,6 +292,7 @@ body {
     /*****************************************
      * End navbar classes
      *****************************************/
+
 
     /*****************************************
      * Start specific body ids
@@ -417,18 +378,6 @@ body {
     }
 
     &#dashboard {
-        .table-striped {
-            tbody tr:nth-child(odd) td, tbody tr:nth-child(odd) th {
-                background-color: #eeeeee;
-            }
-        }
-        .table-hover {
-            tbody {
-                tr:hover td, tr:hover th {
-                    background-color: #e2e2f3;
-                }
-            }
-        }
         #active-entry {
             margin-bottom: 35px;
             #active-buttons {
@@ -582,12 +531,8 @@ body {
             text-align: center !important;
         }
         #schedule {
-            // Manual table striping with lighter-than-default color.
-            tbody tr:nth-child(odd) td, tbody tr:nth-child(odd) th {
-                background-color: #eeeeee;
-            }
             .hover {
-                background-color: #e2e2f3 !important;
+                background-color: @tableBackgroundHover !important;
             }
         }
     }
