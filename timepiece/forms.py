@@ -24,22 +24,18 @@ class DateForm(forms.Form):
         widget=forms.DateInput(format=DATE_FORMAT))
 
     def clean(self):
-        data = self.cleaned_data
-        from_date = data.get('from_date', None)
-        to_date = data.get('to_date', None)
+        from_date = self.cleaned_data.get('from_date', None)
+        to_date = self.cleaned_data.get('to_date', None)
         if from_date and to_date and from_date > to_date:
-            err_msg = 'The ending date must exceed the beginning date'
-            raise forms.ValidationError(err_msg)
-        return data
+            raise forms.ValidationError('The ending date must exceed the '
+                    'beginning date.')
+        return self.cleaned_data
 
     def save(self):
         from_date = self.cleaned_data.get('from_date', '')
         to_date = self.cleaned_data.get('to_date', '')
-        returned_date = to_date
-
-        if returned_date:
-            returned_date += relativedelta(days=1)
-        return (from_date, returned_date)
+        to_date = to_date + relativedelta(days=1) if to_date else to_date
+        return (from_date, to_date)
 
 
 class YearMonthForm(forms.Form):
