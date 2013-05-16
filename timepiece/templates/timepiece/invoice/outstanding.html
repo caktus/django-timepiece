@@ -72,7 +72,7 @@
                         {% regroup type.list by project.name as project_list %}
                         {% for project in project_list %}
                             <tr>
-                                <td><a href="{% timesheet_url 'project' project.list.0.project.pk to_date %}">{{ project.grouper }}</a></td>
+                                <td><a href="{% url 'view_project_timesheet' project.list.0.project.pk %}{% if to_date %}?month={{ to_date|date:'n' }}&year={{ to_date|date:'Y' }}{% endif %}">{{ project.grouper }}</a></td>
                                 <td>
                                 {{ project.list.0.project.business.get_display_name }}</td>
                                 <td>{{ project.list.0.project.status.label|title }}</td>

@@ -41,7 +41,7 @@ class HumanizeSecondsTestCase(TestCase):
 class ConvertHoursToSecondsTestCase(TestCase):
 
     def test_usual(self):
-        seconds = tags.convert_hours_to_seconds('3.25')
+        seconds = tags.hours_to_seconds('3.25')
         expected = int(3.25 * 3600)
         self.assertEqual(seconds, expected,
             "Given 3.25 hours, returned {0}, expected {1}".format(
@@ -49,7 +49,7 @@ class ConvertHoursToSecondsTestCase(TestCase):
         )
 
     def test_negative_seconds(self):
-        seconds = tags.convert_hours_to_seconds('-2.75')
+        seconds = tags.hours_to_seconds('-2.75')
         expected = int(-2.75 * 3600)
         self.assertEqual(seconds, expected,
             "Given -2.75 hours, returned {0}, expected {1}".format(
@@ -133,7 +133,7 @@ class TimeTagTestCase(TestCase):
 
     def test_week_start(self):
         start = tags.week_start(datetime.date(2013, 1, 10))
-        self.assertEqual(u'Jan. 7, 2013', start)
+        self.assertEqual(start.date(), datetime.date(2013, 1, 7))
 
 
 class MiscTagTestCase(TestCase):
@@ -153,25 +153,6 @@ class MiscTagTestCase(TestCase):
         ]
         retval = tags.get_uninvoiced_hours(entries)
         self.assertEqual(49, retval)
-
-    def test_timesheet_url(self):
-        with mock.patch('timepiece.templatetags.timepiece_tags.reverse') \
-          as reverse:
-            reverse.return_value = "Boo"
-            retval = tags.timesheet_url('project', 27, None)
-            self.assertEqual('Boo?', retval)
-            self.assertEqual('view_project_timesheet', reverse.call_args[0][0])
-            self.assertEqual((27,), reverse.call_args[1]['args'])
-
-    def test_timesheet_url2(self):
-        with mock.patch('timepiece.templatetags.timepiece_tags.reverse')\
-        as reverse:
-            reverse.return_value = "Boo"
-            dt = datetime.date(2013, 1, 10)
-            retval = tags.timesheet_url('user', 13, dt)
-            self.assertEqual('Boo?year=2013&month=1', retval)
-            self.assertEqual('view_user_timesheet', reverse.call_args[0][0])
-            self.assertEqual((13,), reverse.call_args[1]['args'])
 
     def test_project_report_url_for_contract(self):
         with mock.patch('timepiece.templatetags.timepiece_tags.reverse')\
@@ -224,7 +205,7 @@ class ArithmeticTagTestCase(TestCase):
                 { 'worked': 2, 'assigned': 1},
             ]
         }
-        self.assertEqual('3', tags.get_max_hours(ctx))
+        self.assertEqual(3, tags.get_max_hours(ctx))
 
     def test_get_max_hours_min_is_zero(self):
         # min of max hours is zero
@@ -234,7 +215,7 @@ class ArithmeticTagTestCase(TestCase):
                 { 'worked': -3, 'assigned': -5},
                 ]
         }
-        self.assertEqual('0', tags.get_max_hours(ctx))
+        self.assertEqual(0, tags.get_max_hours(ctx))
 
 
 class TestProjectHoursForContract(TimepieceDataTestCase):

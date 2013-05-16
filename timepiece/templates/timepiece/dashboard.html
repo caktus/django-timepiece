@@ -108,8 +108,8 @@
                                 {% for data in project_progress %}
                                     <tr{% if active_entry.project.pk == data.project.pk %} id="active-project"{% endif %}>
                                         <td><a href="{% url 'clock_in' %}?project={{ data.project.pk }}">{{ data.project }}</a></td>
-                                        <td class="nowrap">{{ data.assigned|convert_hours_to_seconds|humanize_seconds:"%H:%M" }}</td>
-                                        <td class="nowrap">{{ data.worked|convert_hours_to_seconds|humanize_seconds:"%H:%M" }}</td>
+                                        <td class="nowrap">{{ data.assigned|hours_to_seconds|humanize_seconds:"%H:%M" }}</td>
+                                        <td class="nowrap">{{ data.worked|hours_to_seconds|humanize_seconds:"%H:%M" }}</td>
                                         <td class="hidden-phone progress-col project-bar"
                                             data-worked = "{{ data.worked }}"
                                             data-assigned = "{{ data.assigned }}">
