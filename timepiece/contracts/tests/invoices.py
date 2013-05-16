@@ -521,6 +521,14 @@ class ListOutstandingInvoicesViewTestCase(ViewTestMixin, TimepieceDataTestCase):
         response = self._get()
         self.assertEquals(response.status_code, 302)
 
+    def test_list_no_kwargs(self):
+        response = self._get(get_kwargs={})
+        self.assertEquals(response.status_code, 200)
+        form = response.context['form']
+        self.assertFalse(form.is_bound)
+        self.assertFalse(form.is_valid())
+        self.assertEquals(response.context['project_totals'].count(), 3)
+
     def test_list_outstanding(self):
         """Only billable projects should be listed."""
         response = self._get()

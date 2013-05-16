@@ -61,7 +61,7 @@ class OutstandingHoursFilterForm(DateForm):
         return self.fields['statuses'].initial
 
     def get_project_totals(self):
-        if not self.is_valid():
+        if not self.is_valid() and self.is_bound:
             return Entry.objects.none()
 
         from_date = self.get_from_date()
