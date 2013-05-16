@@ -23,6 +23,18 @@ static/timepiece.
 @tableBackgroundAccent: #E6E6E6;
 @tableBorder: #DDDDDD;
 
+
+@navbarCollapseWidth: 840px;
+@media (min-width: @navbarCollapseWidth) {
+    #collapsed-nav { display: none !important; }
+    #full-nav      { display: inherit !important; }
+}
+@media (max-width: @navbarCollapseWidth) {
+    #collapsed-nav { display: inherit !important; }
+    #full-nav      { display: none !important; }
+}
+
+
 .bg-icon(@icon) {
     background: url('../../images/icons/@{icon}') no-repeat;
 }
