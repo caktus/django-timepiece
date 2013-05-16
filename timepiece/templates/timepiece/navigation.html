@@ -3,7 +3,8 @@
 
 <div class="navbar navbar-fixed-top navbar-inverse">
     <div class="navbar-inner">
-        <div class="container-fluid visible-desktop">
+
+        <div id="full-nav" class="container-fluid">
             {% block navbar-left %}
                 <a class="brand" href="/">Timepiece</a>
                 <ul class="nav pull-left">
@@ -112,7 +113,7 @@
             {% endblock %}
         </div>
 
-        <div class="container-fluid hidden-desktop">
+        <div id="collapsed-nav" class="container-fluid">
             <a class="brand" href="/">Timepiece</a>
 
             {% if user.is_authenticated %}
