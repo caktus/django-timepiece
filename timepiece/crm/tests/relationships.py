@@ -1,7 +1,7 @@
 from django.contrib.auth.models import Permission
 from django.core.urlresolvers import reverse
 
-from timepiece.tests.base import TimepieceDataTestCase
+from timepiece.tests.base import TimepieceDataTestCase, ViewTestMixin
 
 from timepiece.crm.models import ProjectRelationship
 
@@ -26,7 +26,7 @@ class RelationshipTestBase(TimepieceDataTestCase):
         self.assertEquals(response._headers['location'][1], full_url)
 
 
-class AddProjectToUserTestCase(RelationshipTestBase):
+class AddProjectToUserTestCase(ViewTestMixin, RelationshipTestBase):
     url_name = 'create_relationship'
     perm_names = ['add_projectrelationship']
 
@@ -97,7 +97,7 @@ class AddProjectToUserTestCase(RelationshipTestBase):
         self.assertEquals(rel.user, self.user)
 
 
-class AddUserToProjectTestCase(RelationshipTestBase):
+class AddUserToProjectTestCase(ViewTestMixin, RelationshipTestBase):
     url_name = 'create_relationship'
     perm_names = ['change_projectrelationship', 'add_projectrelationship']
 
@@ -168,7 +168,7 @@ class AddUserToProjectTestCase(RelationshipTestBase):
         self.assertEquals(rel.user, self.user)
 
 
-class EditRelationshipTestCase(RelationshipTestBase):
+class EditRelationshipTestCase(ViewTestMixin, RelationshipTestBase):
     url_name = 'edit_relationship'
     perm_names = ['change_projectrelationship']
 
@@ -262,7 +262,7 @@ class EditRelationshipTestCase(RelationshipTestBase):
         self.assertTrue(self.rel_type2 in rel.types.all())
 
 
-class DeleteRelationshipTestCase(RelationshipTestBase):
+class DeleteRelationshipTestCase(ViewTestMixin, RelationshipTestBase):
     url_name = 'delete_relationship'
     perm_names = ['delete_projectrelationship']
 

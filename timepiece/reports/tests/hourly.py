@@ -11,9 +11,10 @@ from timepiece import utils
 from timepiece.entries.models import Entry
 from timepiece.reports.tests.base import ReportsTestBase
 from timepiece.reports.utils import get_project_totals, generate_dates
+from timepiece.tests.base import ViewTestMixin
 
 
-class TestHourlyReport(ReportsTestBase):
+class TestHourlyReport(ViewTestMixin, ReportsTestBase):
     url_name = 'report_hourly'
 
     def test_generate_months(self):

@@ -24,13 +24,32 @@ class UserProfile(models.Model):
         return unicode(self.user)
 
 
+class TypeAttributeManager(models.Manager):
+    """Object manager for type attributes."""
+
+    def get_query_set(self):
+        qs = super(TypeAttributeManager, self).get_query_set()
+        return qs.filter(type=Attribute.PROJECT_TYPE)
+
+
+class StatusAttributeManager(models.Manager):
+    """Object manager for status attributes."""
+
+    def get_query_set(self):
+        qs = super(StatusAttributeManager, self).get_query_set()
+        return qs.filter(type=Attribute.PROJECT_STATUS)
+
+
 class Attribute(models.Model):
-    ATTRIBUTE_TYPES = (
-        ('project-type', 'Project Type'),
-        ('project-status', 'Project Status'),
-    )
+    PROJECT_TYPE = 'project-type'
+    PROJECT_STATUS = 'project-status'
+    ATTRIBUTE_TYPES = {
+        PROJECT_TYPE: 'Project Type',
+        PROJECT_STATUS: 'Project Status',
+    }
     SORT_ORDER_CHOICES = [(x, x) for x in xrange(-20, 21)]
-    type = models.CharField(max_length=32, choices=ATTRIBUTE_TYPES)
+
+    type = models.CharField(max_length=32, choices=ATTRIBUTE_TYPES.items())
     label = models.CharField(max_length=255)
     sort_order = models.SmallIntegerField(
         null=True,
@@ -42,6 +61,10 @@ class Attribute(models.Model):
                   'type or status.',
     )
     billable = models.BooleanField(default=False)
+
+    objects = models.Manager()
+    types = TypeAttributeManager()
+    statuses = StatusAttributeManager()
 
     class Meta:
         db_table = 'timepiece_attribute'  # Using legacy table name.

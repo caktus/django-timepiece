@@ -5,10 +5,10 @@ from django.contrib.auth.models import Permission
 from django.core.exceptions import ValidationError
 
 from timepiece.contracts.models import ProjectContract, ContractHour
-from timepiece.tests.base import TimepieceDataTestCase
+from timepiece.tests.base import TimepieceDataTestCase, ViewTestMixin
 
 
-class ContractListTestCase(TimepieceDataTestCase):
+class ContractListTestCase(ViewTestMixin, TimepieceDataTestCase):
     url_name = 'list_contracts'
     perm_names = [('contracts', 'add_projectcontract')]
 
@@ -80,7 +80,7 @@ class ContractListTestCase(TimepieceDataTestCase):
         self.assertEqual(len(contracts), 0)
 
 
-class ContractViewTestCase(TimepieceDataTestCase):
+class ContractViewTestCase(ViewTestMixin, TimepieceDataTestCase):
     url_name = 'view_contract'
     perm_names = [('contracts', 'add_projectcontract')]
 
@@ -230,4 +230,3 @@ class ContractHourEmailTestCase(TimepieceDataTestCase):
         self.assertTrue(send_mail.called)
         (subject, ctx) = send_mail.call_args[0]
         self.assertTrue(subject.startswith("Changed"))
-
