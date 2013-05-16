@@ -6,6 +6,27 @@
 
 {% block bodyid %}project-hours{% endblock bodyid %}
 
+{% block extrajs %}
+    <script type="text/javascript">
+        // Highlight the current row & column on hover.
+        $(function() {
+            $('#schedule').delegate('td, th', 'mouseover mouseout', function(event) {
+                var self = $(this),  // <td> or <th> element
+                    num = self.index() + 1;
+                if (event.type === 'mouseover') {
+                    self.parent().find('td, th').addClass('hover');
+                    $('#schedule tr td:nth-child(' + num + ')').addClass('hover');
+                    $('#schedule tr th:nth-child(' + num + ')').addClass('hover');
+                } else {
+                    self.parent().find('td, th').removeClass('hover');
+                    $('#schedule tr td:nth-child(' + num + ')').removeClass('hover');
+                    $('#schedule tr th:nth-child(' + num + ')').removeClass('hover');
+                }
+            });
+        });
+    </script>
+{% endblock extrajs %}
+
 {% block content %}
     <div class="row-fluid">
         <div class="span12">
@@ -34,7 +55,7 @@
     <div class="row-fluid">
         <div class="span12">
             {% if projects %}
-                <table id="schedule" class="table table-bordered table-condensed">
+                <table id="schedule" class="table table-striped table-bordered table-condensed">
                     <thead>
                         <tr>
                             <th>Project</th>
@@ -56,21 +77,6 @@
                         {% endfor %}
                     </tbody>
                 </table>
-                <script>
-                    // Highlight the current row & column in the schedule on hover.
-                    $('#schedule').delegate('td, th', 'mouseover mouseout', function(event) {
-                        var self = $(this);
-                        if (event.type === 'mouseover') {
-                            self.parent().find('td, th').addClass('hover');
-                            $('#schedule tr td:nth-child(' + (self.index() + 1) + ')').addClass('hover');
-                            $('#schedule tr th:nth-child(' + (self.index() + 1) + ')').addClass('hover');
-                        } else {
-                            self.parent().find('td, th').removeClass('hover');
-                            $('#schedule tr td:nth-child(' + (self.index() + 1) + ')').removeClass('hover');
-                            $('#schedule tr th:nth-child(' + (self.index() + 1) +')').removeClass('hover');
-                        }
-                    });
-                </script>
             {% else %}
                 <p>There are no entries this week.</p>
             {% endif %}
