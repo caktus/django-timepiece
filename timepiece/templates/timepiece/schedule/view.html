@@ -8,10 +8,10 @@
 
 {% block extrajs %}
     <script type="text/javascript">
+        // Highlight the current row & column on hover.
         $(function() {
-            // Highlight the current row & column in the schedule on hover.
             $('#schedule').delegate('td, th', 'mouseover mouseout', function(event) {
-                var self = $(this),
+                var self = $(this),  // <td> or <th> element
                     num = self.index() + 1;
                 if (event.type === 'mouseover') {
                     self.parent().find('td, th').addClass('hover');

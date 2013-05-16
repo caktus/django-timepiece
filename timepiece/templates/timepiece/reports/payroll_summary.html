@@ -12,12 +12,12 @@
 
 {% block extrajs %}
     <script type="text/javascript">
-        // "Sticky" highlighting on each summary table.
+        // "Sticky" row highlighting on click for each summary table.
         $(function() {
-            $('#hourly-summary tbody tr, #weekly-summary tbody tr').click(function(event) {
-                var tr = $(this);
-                tr.parent().parent().find('td.hover, th.hover').removeClass('hover');
-                tr.find('td, th').addClass('hover');
+            $('#hourly-summary tbody, #weekly-summary tbody').delegate('tr', 'click', function(event) {
+                var self = $(this);  // <tr> element
+                self.parent().parent().find('td.hover, th.hover').removeClass('hover');
+                self.find('td, th').addClass('hover');
             });
         });
     </script>
