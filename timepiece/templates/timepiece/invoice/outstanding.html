@@ -35,9 +35,13 @@
 
     <div class="row-fluid">
         <div class="span4">
-            <form class="form-inline" method="get" action="" id="date-filter" accept-charset="utf-8">
-                {{ date_form|as_bootstrap:"inline" }}
-                <input class="btn" type='submit' name='yearmonth' value="Update" id='yearmonth'/>
+            <form class="form-horizontal" method="get" action="" id="date-filter" accept-charset="utf-8">
+                {{ date_form|as_bootstrap:"horizontal" }}
+                <div class="control-group">
+                    <div class="controls">
+                        <input class="btn btn-primary" type='submit' name='yearmonth' value="Update" id='yearmonth'/>
+                    </div>
+                </div>
             </form>
         </div>
     </div>
@@ -85,6 +89,8 @@
                         {% endfor %}
                     </tbody>
                 </table>
+            {% empty %}
+                <p>There are no outstanding hours which match your filter criteria.</p>
             {% endfor %}
         </div>
     </div>

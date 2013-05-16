@@ -5,12 +5,12 @@ import json
 
 from django.contrib.auth.models import Permission
 
-from timepiece.tests.base import TimepieceDataTestCase
+from timepiece.tests.base import TimepieceDataTestCase, ViewTestMixin
 
 from timepiece.entries.models import Entry, ProjectHours
 
 
-class TestProductivityReport(TimepieceDataTestCase):
+class TestProductivityReport(ViewTestMixin, TimepieceDataTestCase):
     url_name = 'report_productivity'
 
     def setUp(self):

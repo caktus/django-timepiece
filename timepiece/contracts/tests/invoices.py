@@ -8,9 +8,10 @@ from django.core.urlresolvers import reverse
 
 from timepiece import utils
 from timepiece.forms import DATE_FORM_FORMAT
-from timepiece.tests.base import TimepieceDataTestCase
+from timepiece.tests.base import TimepieceDataTestCase, ViewTestMixin
 
 from timepiece.contracts.models import EntryGroup, HourGroup
+from timepiece.crm.models import Attribute
 from timepiece.entries.models import Activity, Entry
 
 
@@ -302,49 +303,6 @@ class InvoiceCreateTestCase(TimepieceDataTestCase):
         user = self.create_user('perm', 'e@e.com', 'abc',
                 user_permissions=[generate_invoice])
 
-    def test_invoice_create(self):
-        """
-        Verify that only billable projects appear on the create invoice and
-        that the links have accurate date information
-        """
-        url = reverse('list_outstanding_invoices')
-        to_date = utils.add_timezone(datetime.datetime(2011, 1, 31, 0, 0, 0))
-        params = {'to_date': to_date.strftime(DATE_FORM_FORMAT)}
-        response = self.client.get(url, params)
-        # The number of projects should be 3 because entry4 has billable=False
-        self.assertEquals(response.context['project_totals'].count(), 3)
-        # Verify that the date on the mark as invoiced links will be correct
-        to_date_str = response.context['to_date'].strftime('%Y %m %d')
-        self.assertEquals(to_date_str, '2011 01 31')
-
-    def test_invoice_create_requires_to(self):
-        """Verify that create invoice links are blank without a to date"""
-        url = reverse('list_outstanding_invoices')
-        params = {'to_date': ''}
-        response = self.client.get(url, params)
-        # The number of projects should be 1 because entry3 has billable=False
-        num_project_totals = len(response.context['project_totals'])
-        self.assertEquals(num_project_totals, 0)
-
-    def test_invoice_create_with_from(self):
-        # Add another entry and make sure from filters it out
-        url = reverse('list_outstanding_invoices')
-        from_date = utils.add_timezone(datetime.datetime(2011, 1, 1, 0, 0, 0))
-        to_date = utils.add_timezone(datetime.datetime(2011, 1, 31, 0, 0, 0))
-        params = {
-            'from_date': from_date.strftime(DATE_FORM_FORMAT),
-            'to_date': to_date.strftime(DATE_FORM_FORMAT),
-        }
-        response = self.client.get(url, params)
-        # From date filters out one entry
-        num_project_totals = len(response.context['project_totals'])
-        self.assertEquals(num_project_totals, 1)
-        # Verify that the date on the mark as invoiced links will be correct
-        from_date_str = response.context['from_date'].strftime('%Y %m %d')
-        self.assertEquals(from_date_str, '2011 01 01')
-        to_date_str = response.context['to_date'].strftime('%Y %m %d')
-        self.assertEquals(to_date_str, '2011 01 31')
-
     def test_invoice_confirm_view_user(self):
         """A regular user should not be able to access this page"""
         self.client.login(username='user2', password='abc')
@@ -501,3 +459,106 @@ class InvoiceCreateTestCase(TimepieceDataTestCase):
         uninvoiced = entries.filter(status=Entry.NOT_INVOICED)
         for entry in uninvoiced:
             self.assertEqual(entry.entry_group_id, invoice.id)
+
+
+class ListOutstandingInvoicesViewTestCase(ViewTestMixin, TimepieceDataTestCase):
+    url_name = 'list_outstanding_invoices'
+
+    def setUp(self):
+        super(ListOutstandingInvoicesViewTestCase, self).setUp()
+        self.user.is_superuser = True
+        self.user.save()
+        self.client.login(username=self.user.username, password='abc')
+
+        start = utils.add_timezone(datetime.datetime(2011, 1, 1, 8))
+        end = utils.add_timezone(datetime.datetime(2011, 1, 1, 12))
+
+        self.project_billable = self.create_project(billable=True)
+        self.project_billable2 = self.create_project(billable=True)
+        self.project_non_billable = self.create_project(billable=False)
+
+        self.entry1 = self.create_entry({
+            'user': self.user,
+            'project': self.project_billable,
+            'activity': self.create_activity(data={'billable': True}),
+            'start_time': start,
+            'end_time': end,
+            'status': Entry.APPROVED,
+        })
+        self.entry2 = self.create_entry({
+            'user': self.user,
+            'project': self.project_billable,
+            'activity': self.create_activity(data={'billable': True}),
+            'start_time': start - relativedelta(days=5),
+            'end_time': end - relativedelta(days=5),
+            'status': Entry.APPROVED,
+        })
+        self.entry3 = self.create_entry({
+            'user': self.user,
+            'project': self.project_billable2,
+            'activity': self.create_activity(data={'billable': False}),
+            'start_time': start - relativedelta(days=10),
+            'end_time': end - relativedelta(days=10),
+            'status': Entry.APPROVED,
+        })
+        self.entry4 = self.create_entry({
+            'user': self.user,
+            'project': self.project_non_billable,
+            'start_time': start + relativedelta(hours=11),
+            'end_time': end + relativedelta(hours=15),
+            'status': Entry.APPROVED,
+        })
+
+        # Default get kwargs.
+        self.to_date = utils.add_timezone(datetime.datetime(2011, 1, 31, 0, 0, 0))
+        self.get_kwargs = {
+            'to_date': self.to_date.strftime(DATE_FORM_FORMAT),
+            'statuses': list(Attribute.statuses.values_list('pk', flat=True)),
+        }
+
+    def test_unauthenticated(self):
+        self.client.logout()
+        response = self._get()
+        self.assertEquals(response.status_code, 302)
+
+    def test_list_outstanding(self):
+        """Only billable projects should be listed."""
+        response = self._get()
+        self.assertEquals(response.status_code, 200)
+        form = response.context['form']
+        self.assertTrue(form.is_valid(), form.errors)
+        # The number of projects should be 3 because entry4 has billable=False
+        self.assertEquals(response.context['project_totals'].count(), 3)
+        # Verify that the date on the mark as invoiced links will be correct
+        self.assertEquals(response.context['to_date'], self.to_date.date())
+
+    def test_no_statuses(self):
+        self.get_kwargs.pop('statuses')
+        response = self._get()
+        self.assertEquals(response.status_code, 200)
+        form = response.context['form']
+        self.assertTrue(form.is_valid(), form.errors)
+        self.assertEquals(response.context['project_totals'].count(), 0)
+
+    def test_to_date_required(self):
+        """to_date is required."""
+        self.get_kwargs['to_date'] = ''
+        response = self._get()
+        self.assertEquals(response.status_code, 200)
+        form = response.context['form']
+        self.assertFalse(form.is_valid(), form.errors)
+        # The number of projects should be 1 because entry3 has billable=False
+        self.assertEquals(response.context['project_totals'].count(), 0)
+
+    def test_from_date(self):
+        from_date = utils.add_timezone(datetime.datetime(2011, 1, 1, 0, 0, 0))
+        self.get_kwargs['from_date'] = from_date.strftime(DATE_FORM_FORMAT)
+        response = self._get()
+        self.assertEquals(response.status_code, 200)
+        form = response.context['form']
+        self.assertTrue(form.is_valid(), form.errors)
+        # From date filters out one entry
+        self.assertEquals(response.context['project_totals'].count(), 1)
+        # Verify that the date on the mark as invoiced links will be correct
+        self.assertEquals(response.context['to_date'], self.to_date.date())
+        self.assertEquals(response.context['from_date'], from_date.date())
