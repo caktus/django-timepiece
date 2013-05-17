@@ -15,11 +15,13 @@
             defaultTab = 'progress';
     </script>
     <script src="{{ STATIC_URL }}timepiece/js/permanent_tabs.js" type="text/javascript" charset="utf-8"></script>
-    <script type="text/javascript" charset="utf-8">
+    <script type="text/javascript">
         // The largest number of hours worked or assigned on any project.
         var max_hours = {% get_max_hours %};
     </script>
     <script src="{{ STATIC_URL }}timepiece/js/dashboard.js" type="text/javascript" charset="utf-8"></script>
+    <script type="text/javascript" charset="utf-8"
+            src="{{ STATIC_URL }}timepiece/js/prevent_double_click.js"></script>
 {% endblock %}
 
 {% block content %}
@@ -36,7 +38,7 @@
                         </a>
                         {% if active_entry %}
                             <a class="btn btn-primary" href="{% url 'clock_out' %}">Clock Out</a>
-                            <a class="btn btn-{% if active_entry.is_paused %}inverse{% else %}primary{% endif %}"
+                            <a class="btn btn-{% if active_entry.is_paused %}inverse{% else %}primary{% endif %} prevent-doubleclick"
                                     href="{% url 'toggle_pause' %}">
                                 {% if active_entry.is_paused %}Resume{% else %}Pause{% endif %}
                             </a>
