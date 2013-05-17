@@ -15,7 +15,7 @@ from django.core.urlresolvers import reverse
 from django.db import transaction
 from django.db.models import Q
 from django.http import HttpResponse, HttpResponseRedirect, Http404
-from django.shortcuts import render, redirect
+from django.shortcuts import get_object_or_404, redirect, render
 from django.utils.decorators import method_decorator
 from django.views.generic import TemplateView, View
 
@@ -204,22 +204,17 @@ def toggle_pause(request):
 @permission_required('entries.change_entry')
 def create_edit_entry(request, entry_id=None):
     if entry_id:
-        try:
-            entry = Entry.no_join.get(pk=entry_id)
-            if not (entry.is_editable or
-                    request.user.has_perm('entries.view_payroll_summary')):
-                raise Http404
-        except Entry.DoesNotExist:
+        entry = get_object_or_404(Entry, pk=entry_id)
+        if not (entry.is_editable or
+                request.user.has_perm('entries.view_payroll_summary')):
             raise Http404
     else:
         entry = None
 
+    entry_user = entry.user if entry else request.user
     if request.method == 'POST':
-        form = AddUpdateEntryForm(
-            request.POST,
-            instance=entry,
-            user=entry.user if entry else request.user,
-        )
+        form = AddUpdateEntryForm(data=request.POST, instance=entry,
+                user=entry_user)
         if form.is_valid():
             entry = form.save()
             if entry_id:
@@ -234,11 +229,8 @@ def create_edit_entry(request, entry_id=None):
             messages.error(request, message)
     else:
         initial = dict([(k, request.GET[k]) for k in request.GET.keys()])
-        form = AddUpdateEntryForm(
-            instance=entry,
-            user=request.user,
-            initial=initial,
-        )
+        form = AddUpdateEntryForm(instance=entry, user=entry_user,
+                initial=initial)
 
     return render(request, 'timepiece/entry/create_edit.html', {
         'form': form,
