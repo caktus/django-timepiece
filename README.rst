@@ -88,6 +88,9 @@ Installation
             'selectable',
 
             'timepiece',
+            'timepiece.contracts',
+            'timepiece.crm',
+            'timepiece.entries',
             'timepiece.reports',
             ...
         )
