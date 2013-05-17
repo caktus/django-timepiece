@@ -111,26 +111,24 @@ def convert_hours_to_seconds(total_hours):
 
 
 @register.filter
-def humanize_seconds(total_seconds, format='%H:%M:%S'):
-    """Given time in int(seconds), return a unicode in %H:%M:%S format."""
+def humanize_seconds(total_seconds,
+        format_string='{hours:02d}:{minutes:02d}:{seconds:02d}'):
+    """Given time in int(seconds), return a string representing the time."""
     seconds = abs(int(total_seconds))
-    hours = seconds // 3600
-    seconds %= 3600
-    minutes = seconds // 60
-    seconds %= 60
-    format_mapping = {
-        '%H': hours,
-        '%M': minutes,
-        '%S': seconds,
+    mapping = {
+        'hours': seconds // 3600,
+        'minutes': seconds % 3600 // 60,
+        'seconds': seconds % 3600 % 60,
     }
-    time_units = [
-        format_mapping[token] for token in format.split(':')
-        if token in format_mapping
-    ]
-    result = ':'.join([
-        u'{0:02d}'.format(time_unit) for time_unit in time_units
-    ])
-    return result if total_seconds >= 0 else '({0})'.format(result)
+    result = format_string.format(**mapping)
+    return result if total_seconds >= 0 else '-{0}'.format(result)
+
+
+@register.filter
+def humanize_hours(total_hours,
+        format_string='{hours:02d}:{minutes:02d}:{seconds:02d}'):
+    seconds = convert_hours_to_seconds(total_hours)
+    return humanize_seconds(seconds, format_string)
 
 
 @register.simple_tag
