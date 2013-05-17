@@ -64,7 +64,7 @@
                                 on {{ active_entry.start_time|date:"l" }}
                             {% endif %}
                         {% endifnotequal %}
-                        (<span{% if active_entry.get_total_seconds < 0 %} class="negative-time"{% endif %}>{{ active_entry.get_total_seconds|humanize_seconds }}</span> time clocked{% if active_entry.seconds_paused or active_entry.is_paused %} and <span{% if active_entry.get_paused_seconds < 0 %} class="negative-time"{% endif %}>{{ active_entry.get_paused_seconds|humanize_seconds }}</span> paused{% endif %}).
+                        ({{ active_entry.get_total_seconds|humanize_seconds }} time clocked{% if active_entry.seconds_paused or active_entry.is_paused %} and {{ active_entry.get_paused_seconds|humanize_seconds }} paused{% endif %}).
                     {% else %}
                         You are not currently clocked into a project.
                     {% endif %}
@@ -108,10 +108,10 @@
                                 {% for data in project_progress %}
                                     <tr{% if active_entry.project.pk == data.project.pk %} id="active-project"{% endif %}>
                                         <td><a href="{% url 'clock_in' %}?project={{ data.project.pk }}">{{ data.project }}</a></td>
-                                        <td class="nowrap{% if data.assigned < 0 %} negative-time{% endif %}">
+                                        <td class="nowrap">
                                             {{ data.assigned|humanize_hours:"{hours:02d}:{minutes:02d}" }}
                                         </td>
-                                        <td class="nowrap{% if data.worked < 0 %} negative-time{%endif %}">
+                                        <td class="nowrap">
                                             {{ data.worked|humanize_hours:"{hours:02d}:{minutes:02d}" }}
                                         </td>
                                         <td class="hidden-phone progress-col project-bar"
@@ -170,13 +170,11 @@
                                         <td class="hidden-phone nowrap">
                                             {% with entry.get_paused_seconds as pause_time %}
                                                 {% if pause_time %}
-                                                    <span{% if pause_time < 0 %} class="negative-time"{% endif %}>
-                                                        {{ pause_time|humanize_seconds }}
-                                                    </span>
+                                                    {{ pause_time|humanize_seconds }}
                                                 {% endif %}
                                             {% endwith %}
                                         </td>
-                                        <td class="nowrap{% if entry.get_total_seconds < 0 %} negative-time{% endif %}">
+                                        <td class="nowrap">
                                             {{ entry.get_total_seconds|humanize_seconds:'{hours:02d}:{minutes:02d}' }}
                                         </td>
                                         <td class="hidden-phone">
@@ -192,9 +190,7 @@
                                 <tr>
                                     <th class="hidden-phone" colspan="2"></th>
                                     <th colspan="3" style="text-align: right;">Total:</th>
-                                    <td{% if daily_total < 0 %} class="negative-time"{% endif %}>
-                                        {{ daily_total|humanize_seconds:'{hours:02d}:{minutes:02d}' }}
-                                    </td>
+                                    <td>{{ daily_total|humanize_seconds:'{hours:02d}:{minutes:02d}' }}</td>
                                     <td class="hidden-phone"></td>
                                 </tr>
                             </tbody>

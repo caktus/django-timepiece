@@ -7,6 +7,7 @@ from django.core.urlresolvers import reverse
 from django.db.models import Sum
 from django.template.defaultfilters import date as date_format_filter
 from django.utils import timezone
+from django.utils.safestring import mark_safe
 
 from timepiece import utils
 from timepiece.forms import DATE_FORM_FORMAT
@@ -121,8 +122,10 @@ def humanize_seconds(total_seconds,
         'seconds': seconds % 3600 % 60,
     }
     result = format_string.format(**mapping)
-    return result if total_seconds >= 0 else '-{0}'.format(result)
-
+    if total_seconds < 0:
+        html = '<span class="negative-time">-{0}</span>'.format(result)
+        return mark_safe(html)
+    return result
 
 @register.filter
 def humanize_hours(total_hours,

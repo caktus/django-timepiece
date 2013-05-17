@@ -4,6 +4,7 @@ import mock
 
 from django import template
 from django.test import TestCase
+from django.utils.html import strip_tags
 
 from timepiece import utils
 from timepiece.templatetags import timepiece_tags as tags
@@ -22,7 +23,9 @@ class HumanizeTimeTestCase(TestCase):
     def test_seconds_negative(self):
         seconds_display = tags.humanize_seconds((-2.5 * 3600) - 4)
         expected = u'-02:30:04'
-        self.assertEquals(seconds_display, expected,
+        self.assertTrue(seconds_display.startswith('<span'))
+        self.assertTrue('negative-time' in seconds_display)
+        self.assertEquals(strip_tags(seconds_display), expected,
             "Should return {0}, returned {1}".format(expected, seconds_display)
         )
 
