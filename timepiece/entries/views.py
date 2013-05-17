@@ -448,8 +448,7 @@ class EditScheduleView(ScheduleMixin, TemplateView):
         param = {
             'week_start': self.week_start.strftime(DATE_FORM_FORMAT)
         }
-        url = '?'.join((reverse('edit_schedule'),
-            urllib.urlencode(param),))
+        url = '?'.join((reverse('edit_schedule'), urllib.urlencode(param),))
 
         return HttpResponseRedirect(url)
 
