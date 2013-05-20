@@ -1,7 +1,7 @@
 /*
 IMPORTANT: Some ad block extensions prevent the browser from loading
 Javascript files with 'doubleclick' in the name.
-/
+*/
 
 $(function() {
     /*
