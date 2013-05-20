@@ -113,25 +113,31 @@ def convert_hours_to_seconds(total_hours):
 
 @register.filter
 def humanize_seconds(total_seconds,
-        format_string='{hours:02d}:{minutes:02d}:{seconds:02d}'):
-    """Given time in int(seconds), return a string representing the time."""
+        frmt='{hours:02d}:{minutes:02d}:{seconds:02d}', negative_frmt=None):
+    """Given time in int(seconds), return a string representing the time.
+
+    If negative_frmt is not given, a negative sign is prepended to frmt
+    and the result is wrapped in a <span> with the "negative-time" class.
+    """
+    if negative_frmt is None:
+        negative_frmt = '<span class="negative-time">-{0}</span>'.format(frmt)
     seconds = abs(int(total_seconds))
     mapping = {
         'hours': seconds // 3600,
         'minutes': seconds % 3600 // 60,
         'seconds': seconds % 3600 % 60,
     }
-    result = format_string.format(**mapping)
     if total_seconds < 0:
-        html = '<span class="negative-time">-{0}</span>'.format(result)
-        return mark_safe(html)
-    return result
+        result = negative_frmt.format(**mapping)
+    else:
+        result = frmt.format(**mapping)
+    return mark_safe(result)
 
 @register.filter
-def humanize_hours(total_hours,
-        format_string='{hours:02d}:{minutes:02d}:{seconds:02d}'):
+def humanize_hours(total_hours, frmt='{hours:02d}:{minutes:02d}:{seconds:02d}',
+        negative_frmt=None):
     seconds = convert_hours_to_seconds(total_hours)
-    return humanize_seconds(seconds, format_string)
+    return humanize_seconds(seconds, frmt, negative_frmt)
 
 
 @register.simple_tag

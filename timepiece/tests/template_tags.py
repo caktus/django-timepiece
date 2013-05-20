@@ -43,6 +43,13 @@ class HumanizeTimeTestCase(TestCase):
             "Should return {0}, returned {1}".format(expected, seconds_display)
         )
 
+    def test_seconds_negative_format(self):
+        seconds_display = tags.humanize_seconds(-120, None, '-{minutes:02d}')
+        expected = u'-02'
+        self.assertEquals(seconds_display, expected,
+            "Should return {0}, returned {1}".format(expected, seconds_display)
+        )
+
     def test_hours(self):
         hours_display = tags.humanize_hours(7.5)
         expected = u'07:30:00'
