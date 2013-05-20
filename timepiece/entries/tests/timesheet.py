@@ -720,10 +720,9 @@ class ClockOutTest(TimepieceDataTestCase):
         # With entry1 on either side, a post with the bad_entry data should
         # fail
         response = self.client.post(reverse('clock_out'), data)
-        self.assertFormError(response, 'form', None,
-            'Start time overlaps with: ' + \
-            '%(project)s - %(activity)s - from %(st_str)s to %(end_str)s' %
-            entry1_data)
+        form = response.context['form']
+        self.assertEquals(len(form.errors), 1, form.errors.keys)
+        self.assertTrue('__all__' in form.errors, form.errors)
 
     def test_clocking_out_inactive(self):
         # If clock out when not active, redirect to dashboard
