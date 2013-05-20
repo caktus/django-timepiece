@@ -37,8 +37,8 @@ class ContractList(ListView):
     template_name = 'timepiece/contract/list.html'
     model = ProjectContract
     context_object_name = 'contracts'
-    queryset = ProjectContract.objects.filter(status='current')\
-            .order_by('name')
+    queryset = ProjectContract.objects.filter(
+            status=ProjectContract.STATUS_CURRENT).order_by('name')
 
     @method_decorator(permission_required('contracts.add_projectcontract'))
     def dispatch(self, *args, **kwargs):
