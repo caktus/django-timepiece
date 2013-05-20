@@ -425,16 +425,6 @@ class Entry(models.Model):
         """
         return bool(self.end_time)
 
-    def clock_in(self, user, project):
-        """
-        Set this entry up for saving the first time, as an open entry.
-        """
-        if not self.is_closed:
-            self.user = user
-            self.project = project
-            if not self.start_time:
-                self.start_time = timezone.now()
-
     @property
     def is_editable(self):
         return self.status == Entry.UNVERIFIED
