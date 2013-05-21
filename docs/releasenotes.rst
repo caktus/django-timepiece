@@ -19,6 +19,7 @@ Release Notes
 * Split view test methods from `TimepieceDataTestCase` to create `ViewTestMixin`
 * Removed outdated styles
 * Used global styles for table highlight and hover colors
+* Dropped pytz requirement (unused since dropping support for Django 1.3)
 
 0.9.1 (05-14-2013)
 ------------------
