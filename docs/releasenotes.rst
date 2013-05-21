@@ -1,6 +1,25 @@
 Release Notes
 =============
 
+0.10.0 (Unreleased)
+-------------------
+
+*Bugfixes*
+
+* Added missing apps to `INSTALLED_APPS` in README
+* Only include trackable projects in the quick clock in context processor
+
+*Features*
+
+* Checkbox filter by status on the outstanding hours list view
+* Click-to-highlight rows on the payroll summary page
+
+*Code quality*
+
+* Split view test methods from `TimepieceDataTestCase` to create `ViewTestMixin`
+* Removed outdated styles
+* Used global styles for table highlight and hover colors
+
 0.9.1 (05-14-2013)
 ------------------
 Related issues are in the `0.9.1 milestone
