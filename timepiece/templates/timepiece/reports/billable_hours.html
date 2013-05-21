@@ -6,15 +6,12 @@
 
 {% block bodyid %}billable-hours{% endblock bodyid %}
 
-{% block extrajs %}
-    {{ block.super }}
-    <script type="text/javascript" src="https://www.google.com/jsapi"></script>
-    <script type="text/javascript" src="{{ STATIC_URL }}timepiece/js/chart/billable_chart.js" data-hours="{{ data }}"></script>
-{% endblock extrajs %}
-
 {% block crumbs %}
     {{ block.super }}
-    <li><span class="divider">/</span> <a href="{% url 'report_billable_hours' %}">Billable Hours Report</a></li>
+    <li>
+        <span class="divider">/</span>
+        <a href="{% url 'report_billable_hours' %}">Billable Hours Report</a>
+    </li>
 {% endblock crumbs %}
 
 {% block report_nav %}
@@ -22,6 +19,15 @@
         {{ block.super }}
     {% endwith %}
 {% endblock report_nav %}
+
+{% block extrajs %}
+    {{ block.super }}
+    <script type="text/javascript" charset="utf-8"
+            src="https://www.google.com/jsapi"></script>
+    <script type="text/javascript" charset="utf-8"
+            src="{{ STATIC_URL }}timepiece/js/chart/billable_chart.js"
+            data-hours="{{ data }}"></script>
+{% endblock extrajs %}
 
 {% block report_content %}
     <div class="row-fluid">

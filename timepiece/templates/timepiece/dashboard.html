@@ -9,18 +9,21 @@
 {% block breadcrumb %}{% endblock breadcrumb %}
 
 {% block extrajs %}
-    <script type="text/javascript" charset="utf-8">
+    <script type="text/javascript">
         var basePath = "{% url 'dashboard' %}",
             tabIds = ['progress', 'all-entries', 'online-users'],
             defaultTab = 'progress';
     </script>
-    <script src="{{ STATIC_URL }}timepiece/js/permanent_tabs.js" type="text/javascript" charset="utf-8"></script>
-    <script type="text/javascript" charset="utf-8">
+    <script type="text/javascript" charset="utf-8"
+            src="{{ STATIC_URL }}timepiece/js/permanent_tabs.js"></script>
+
+    <script type="text/javascript">
         // The largest number of hours worked or assigned on any project.
         var max_hours = {% get_max_hours %};
     </script>
-    <script src="{{ STATIC_URL }}timepiece/js/dashboard.js" type="text/javascript" charset="utf-8"></script>
-{% endblock %}
+    <script type="text/javascript" charset="utf-8"
+            src="{{ STATIC_URL }}timepiece/js/dashboard.js"></script>
+{% endblock extrajs %}
 
 {% block content %}
     {% if perms.entries.can_clock_in %}
