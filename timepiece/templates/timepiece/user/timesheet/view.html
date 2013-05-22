@@ -92,7 +92,7 @@
                                         {% for entry in project_entries %}
                                             <tr>
                                                 <td>{{ entry.project__name}} </td>
-                                                <td class="hours">{{ entry.sum|floatformat:2 }}</td>
+                                                <td class="hours">{{ entry.sum|humanize_hours:"{hours:02d}:{minutes:02d}" }}</td>
                                             </tr>
                                         {% endfor %}
                                     </tbody>
@@ -111,16 +111,16 @@
                                     </thead>
                                     <tbody>
                                         <tr>
-                                            <td>Billable</td><td class="hours">{{summary.billable|floatformat:2 }}</td>
+                                            <td>Billable</td><td class="hours">{{summary.billable|humanize_hours:"{hours:02d}:{minutes:02d}" }}</td>
                                         </tr>
                                         <tr>
-                                           <td>Non-billable</td><td class="hours">{{summary.non_billable|floatformat:2 }}</td>
+                                           <td>Non-billable</td><td class="hours">{{summary.non_billable|humanize_hours:"{hours:02d}:{minutes:02d}" }}</td>
                                         </tr>
                                         <tr>
-                                            <td>Invoiced</td><td class="hours">{{summary.invoiced|floatformat:2 }}</td>
+                                            <td>Invoiced</td><td class="hours">{{summary.invoiced|humanize_hours:"{hours:02d}:{minutes:02d}" }}</td>
                                         </tr>
                                         <tr>
-                                            <td>Uninvoiced</td><td class="hours">{{summary.uninvoiced|floatformat:2 }}</td>
+                                            <td>Uninvoiced</td><td class="hours">{{summary.uninvoiced|humanize_hours:"{hours:02d}:{minutes:02d}" }}</td>
                                         </tr>
                                     </tbody>
                                 </table>
@@ -171,8 +171,8 @@
                                         <td>{{ entry.status|title }}</td>
                                         <td class="time break">{{ entry.start_time|time }}</td>
                                         <td class="time break">{{ entry.end_time|time }}</td>
-                                        <td class="hours time">{{ entry.seconds_paused|seconds_to_hours|floatformat:2 }}</td>
-                                        <td class="hours time">{{ entry.hours|floatformat:2 }}</td>
+                                        <td class="hours time">{{ entry.seconds_paused|seconds_to_hours|humanize_hours:"{hours:02d}:{minutes:02d}" }}</td>
+                                        <td class="hours time">{{ entry.hours|humanize_hours:"{hours:02d}:{minutes:02d}" }}</td>
                                         <td class="comments" title="{{entry.comments}}">{{ entry.comments|truncatewords:12|urlizetrunc:25|safe }}</td>
                                         <td class="aux">
                                             {% if entry.status == "unverified" or entry.status != 'invoiced' and perms.entries.view_payroll_summary %}
@@ -186,7 +186,7 @@
                                 {% endfor %}
                                 <tr class="emphasized-row">
                                     <th colspan=8 style="text-align: right;">Total over all entries:</th>
-                                    <th class="hours">{{ summary.total|floatformat:2 }}</th>
+                                    <th class="hours">{{ summary.total|humanize_hours:"{hours:02d}:{minutes:02d}" }}</th>
                                     <th colspan=2></th>
                                 </tr>
                             </tbody>
@@ -216,24 +216,24 @@
                                             <td>
                                                 {{project}}
                                             </td>
-                                            <td class="hours">{{ totals.billable|floatformat:2 }}</td>
-                                            <td class="hours">{{ totals.non_billable|floatformat:2 }}</td>
-                                            <td class="hours">{{ totals.total|floatformat:2 }}</td>
+                                            <td class="hours">{{ totals.billable|humanize_hours:"{hours:02d}:{minutes:02d}" }}</td>
+                                            <td class="hours">{{ totals.non_billable|humanize_hours:"{hours:02d}:{minutes:02d}" }}</td>
+                                            <td class="hours">{{ totals.total|humanize_hours:"{hours:02d}:{minutes:02d}" }}</td>
                                         </tr>
                                     {% endfor %}
                                     <tr class="daily_total {% if day|add_timezone < from_date %}before_from_date{% endif %}">
                                         <td></td>
                                         <td class="hours"><strong>{{day|date:"D"}}:</strong></td>
-                                        <td class="hours">{{ projects.0.billable|floatformat:2 }}</td>
-                                        <td class="hours">{{ projects.0.non_billable|floatformat:2 }}</td>
-                                        <td class="hours">{{ projects.0.total|floatformat:2 }}</td>
+                                        <td class="hours">{{ projects.0.billable|humanize_hours:"{hours:02d}:{minutes:02d}" }}</td>
+                                        <td class="hours">{{ projects.0.non_billable|humanize_hours:"{hours:02d}:{minutes:02d}" }}</td>
+                                        <td class="hours">{{ projects.0.total|humanize_hours:"{hours:02d}:{minutes:02d}" }}</td>
                                     <tr/>
                                 {% endfor %}
                                 <tr class="weekly_total">
                                     <th colspan="2">Totals for this week:</th>
-                                    <td class="hours">{{ week_totals.billable|floatformat:2 }}</td>
-                                    <td class="hours">{{ week_totals.non_billable|floatformat:2 }}</td>
-                                    <td class="hours">{{ week_totals.total|floatformat:2 }}</td>
+                                    <td class="hours">{{ week_totals.billable|humanize_hours:"{hours:02d}:{minutes:02d}" }}</td>
+                                    <td class="hours">{{ week_totals.non_billable|humanize_hours:"{hours:02d}:{minutes:02d}" }}</td>
+                                    <td class="hours">{{ week_totals.total|humanize_hours:"{hours:02d}:{minutes:02d}" }}</td>
                                 </tr>
                             </table>
                         {% endfor %}
@@ -249,7 +249,7 @@
                             </thead>
                             <tr>
                                 <td colspan="4"><strong>Overall total for the period:</strong></td>
-                                <td class="hours">{{ summary.total|floatformat:2 }}</td>
+                                <td class="hours">{{ summary.total|humanize_hours:"{hours:02d}:{minutes:02d}" }}</td>
                             </tr>
                         </table>
                     {% else %}
