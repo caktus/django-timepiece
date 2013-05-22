@@ -3,30 +3,26 @@
 {% load bootstrap_toolkit %}
 {% load url from future %}
 
+{% block title %}
+    {{ timesheet_user.get_name_or_username }}
+    - Time Sheet for {{ from_date|date:'M Y' }}
+{% endblock %}
+{% block bodyid %}user-timesheet{% endblock bodyid %}
+
+{% block breadcrumb %}{% endblock breadcrumb %}
+
 {% block extrajs %}
-    <script type="text/javascript" charset="utf-8">
+    <script type="text/javascript">
         var basePath = "{% url 'view_user_timesheet' timesheet_user.pk %}",
             tabIds = ['overview', 'all-entries', 'daily-summary'],
             defaultTab = 'overview';
     </script>
-    <script src="{{ STATIC_URL }}timepiece/js/permanent_tabs.js" type="text/javascript" charset="utf-8"></script>
+    <script type="text/javascript" charset="utf-8"
+            src="{{ STATIC_URL }}timepiece/js/permanent_tabs.js"></script>
 {% endblock %}
-
-{% block breadcrumb %}{% endblock breadcrumb %}
-
-{% block title %}
-    {{ timesheet_user.get_name_or_username }}
-    - Time Sheet for {{ from_date|date:'M Y' }}
-
-{% endblock %}
-
-{% block bodyid %}user-timesheet{% endblock bodyid %}
 
 {% block content %}
-    <h2>
-        {{ timesheet_user.get_name_or_username }}
-        - Time Sheet for {{ from_date|date:'M Y' }}
-    </h2>
+    <h2>{{ timesheet_user.get_name_or_username }} - Time Sheet for {{ from_date|date:'M Y' }}</h2>
 
     <div class="row-fluid">
         <div class="span12" id="header">
@@ -52,7 +48,7 @@
                 {% if perms.auth.view_user %} {# FIXME: This permission doesn't exist #}
                     <a class="btn btn-primary" href="{% url 'view_user' timesheet_user.pk %}">View/Edit User</a>
                 {% endif %}
-           </div>
+            </div>
 
             {# We have to duplicate the form so the hidden fields are not in the same form #}
             <form class="form-inline visible-desktop" method="get" action="" accept-charset="utf-8">
@@ -96,7 +92,7 @@
                                         {% for entry in project_entries %}
                                             <tr>
                                                 <td>{{ entry.project__name}} </td>
-                                                <td class="hours">{{ entry.sum|humanize_hours:'{hours:02d}:{minutes:02d}' }}</td>
+                                                <td class="hours">{{ entry.sum|humanize_hours:"{hours:02d}:{minutes:02d}" }}</td>
                                             </tr>
                                         {% endfor %}
                                     </tbody>
@@ -115,20 +111,16 @@
                                     </thead>
                                     <tbody>
                                         <tr>
-                                            <td>Billable</td>
-                                            <td class="hours">{{summary.billable|humanize_hours:'{hours:02d}:{minutes:02d}' }}</td>
+                                            <td>Billable</td><td class="hours">{{summary.billable|humanize_hours:"{hours:02d}:{minutes:02d}" }}</td>
                                         </tr>
                                         <tr>
-                                            <td>Non-billable</td>
-                                            <td class="hours">{{summary.non_billable|humanize_hours:'{hours:02d}:{minutes:02d}' }}</td>
+                                           <td>Non-billable</td><td class="hours">{{summary.non_billable|humanize_hours:"{hours:02d}:{minutes:02d}" }}</td>
                                         </tr>
                                         <tr>
-                                            <td>Invoiced</td>
-                                            <td class="hours">{{summary.invoiced|humanize_hours:'{hours:02d}:{minutes:02d}' }}</td>
+                                            <td>Invoiced</td><td class="hours">{{summary.invoiced|humanize_hours:"{hours:02d}:{minutes:02d}" }}</td>
                                         </tr>
                                         <tr>
-                                            <td>Uninvoiced</td>
-                                            <td class="hours">{{summary.uninvoiced|humanize_hours:'{hours:02d}:{minutes:02d}' }}</td>
+                                            <td>Uninvoiced</td><td class="hours">{{summary.uninvoiced|humanize_hours:"{hours:02d}:{minutes:02d}" }}</td>
                                         </tr>
                                     </tbody>
                                 </table>
@@ -141,87 +133,63 @@
                     </div>
                 </div>
                 <div class="tab-pane{% if active_tab == 'all-entries' %} active{% endif %}" id="all-entries">
+
                     {% if entries %}
                         {% url 'view_user_timesheet' timesheet_user.pk 'all-entries' as next_url %}
-                        {% for entry in entries %}
-                            {% ifchanged entry.start_time|date:"W" %}
-                                {# Close table before new table starts (ignore first table) #}
-                                {% if entry.start_time.weekday == 0 and not forloop.first %}
-                                        </tbody>
-                                    </table>
-                                {% endif %}
-                                <table class="table table-bordered table-condensed table-striped">
-                                    <thead>
-                                        <tr>
-                                            <th>Date</th>
-                                            <th class="project">Project</th>
-                                            <th class="activity">Activity</th>
-                                            <th>Location</th>
-                                            <th>Status</th>
-                                            <th class="time">Time In</th>
-                                            <th class="time">Time Out</th>
-                                            <th class="time">Breaks</th>
-                                            <th class="time">Hours</th>
-                                            <th class="comments">Comments</th>
-                                            <th class="aux"></th>
-                                        </tr>
-                                    </thead>
-                                    <tbody>
-                                        <tr class="ledger_header">
-                                            <th colspan="11">Week of {% week_start entry.start_time %} </th>
-                                        </tr>
-                            {% endifchanged %}
-                            <tr>
-                                {% ifchanged entry.start_time|date %}
-                                <td>{{ entry.start_time|date:"m/d/Y (D)" }}</td>
-                                {% else %}
-                                <td></td>
-                                {% endifchanged %}
-                                <td class="project">{{ entry.project__name }}</td>
-                                <td class="activity">{{ entry.activity__name }}</td>
-                                <td>{{ entry.location__name }}</td>
-                                <td>{{ entry.status|title }}</td>
-                                <td class="time break">{{ entry.start_time|time }}</td>
-                                <td class="time break">{{ entry.end_time|time }}</td>
-                                <td class="hours time">{{ entry.seconds_paused|humanize_seconds:'{hours:02d}:{minutes:02d}' }}</td>
-                                <td class="hours time">{{ entry.hours|humanize_hours:'{hours:02d}:{minutes:02d}' }}</td>
-                                <td class="comments" title="{{entry.comments}}">{{ entry.comments|truncatewords:12|urlizetrunc:25|safe }}</td>
-                                <td class="aux">
-                                    {% if entry.status == "unverified" or entry.status != 'invoiced' and perms.entries.view_payroll_summary %}
-                                        <a href="{% url 'edit_entry' entry.id %}?next={{ next_url|add_parameters:request.GET|urlencode }}">Edit</a>
-                                    {% endif %}
-                                    {% if perms.entries.view_payroll_summary and entry.status != "unverified" and entry.status != "invoiced" %}
-                                        | <a href="{% url 'reject_entry' entry.id %}?next={{ next_url|add_parameters:request.GET|urlencode }}">Reject</a>
-                                    {% endif %}
-                                </td>
-                            </tr>
-                            {# Close the last table #}
-                            {% if forloop.last %}
-                                    </tbody>
-                                </table>
-                            {% endif %}
-                        {% endfor %}
-
-                        <table class="table table-bordered table-condensed totals">
+                        <table class="table table-bordered table-condensed table-hover">
                             <thead>
                                 <tr>
-                                    <th></th>
-                                    <th></th>
-                                    <th></th>
-                                    <th></th>
-                                    <th class="time"></th>
-                                    <th class="time"></th>
-                                    <th class="time"></th>
-                                    <th class="time"></th>
-                                    <th class="comments"></th>
+                                    <th>Date</th>
+                                    <th class="project">Project</th>
+                                    <th class="activity">Activity</th>
+                                    <th>Location</th>
+                                    <th>Status</th>
+                                    <th class="time">Time In</th>
+                                    <th class="time">Time Out</th>
+                                    <th class="time">Breaks</th>
+                                    <th class="time">Hours</th>
+                                    <th class="comments">Comments</th>
                                     <th class="aux"></th>
                                 </tr>
                             </thead>
-                            <tr >
-                                <td colspan="7"><strong>Overall total for the period:</strong></td>
-                                <td class="hours">{{ summary.total|humanize_hours:'{hours:02d}:{minutes:02d}' }}</td>
-                                <td colspan="2"></td>
-                            </tr>
+                            <tbody>
+                                {% for entry in entries %}
+                                    {% ifchanged entry.start_time|date:"W" %}
+                                        <tr class="emphasized-row">
+                                            <th colspan="11">Week of {% week_start entry.start_time %} </th>
+                                        </tr>
+                                    {% endifchanged %}
+                                    <tr>
+                                        {% ifchanged entry.start_time|date %}
+                                            <td>{{ entry.start_time|date:"m/d/Y (D)" }}</td>
+                                        {% else %}
+                                            <td></td>
+                                        {% endifchanged %}
+                                        <td class="project">{{ entry.project__name }}</td>
+                                        <td class="activity">{{ entry.activity__name }}</td>
+                                        <td>{{ entry.location__name }}</td>
+                                        <td>{{ entry.status|title }}</td>
+                                        <td class="time break">{{ entry.start_time|time }}</td>
+                                        <td class="time break">{{ entry.end_time|time }}</td>
+                                        <td class="hours time">{{ entry.seconds_paused|seconds_to_hours|humanize_hours:"{hours:02d}:{minutes:02d}" }}</td>
+                                        <td class="hours time">{{ entry.hours|humanize_hours:"{hours:02d}:{minutes:02d}" }}</td>
+                                        <td class="comments" title="{{entry.comments}}">{{ entry.comments|truncatewords:12|urlizetrunc:25|safe }}</td>
+                                        <td class="aux">
+                                            {% if entry.status == "unverified" or entry.status != 'invoiced' and perms.entries.view_payroll_summary %}
+                                                <a href="{% url 'edit_entry' entry.id %}?next={{ next_url|add_parameters:request.GET|urlencode }}">Edit</a>
+                                            {% endif %}
+                                            {% if perms.entries.view_payroll_summary and entry.status != "unverified" and entry.status != "invoiced" %}
+                                                | <a href="{% url 'reject_entry' entry.id %}?next={{ next_url|add_parameters:request.GET|urlencode }}">Reject</a>
+                                            {% endif %}
+                                        </td>
+                                    </tr>
+                                {% endfor %}
+                                <tr class="emphasized-row">
+                                    <th colspan=8 style="text-align: right;">Total over all entries:</th>
+                                    <th class="hours">{{ summary.total|humanize_hours:"{hours:02d}:{minutes:02d}" }}</th>
+                                    <th colspan=2></th>
+                                </tr>
+                            </tbody>
                         </table>
                     {% else %}
                         <p>No entries exist for this time sheet.</p>
@@ -248,24 +216,24 @@
                                             <td>
                                                 {{project}}
                                             </td>
-                                            <td class="hours">{{ totals.billable|humanize_hours:'{hours:02d}:{minutes:02d}' }}</td>
-                                            <td class="hours">{{ totals.non_billable|humanize_hours:'{hours:02d}:{minutes:02d}' }}</td>
-                                            <td class="hours">{{ totals.total|humanize_hours:'{hours:02d}:{minutes:02d}' }}</td>
+                                            <td class="hours">{{ totals.billable|humanize_hours:"{hours:02d}:{minutes:02d}" }}</td>
+                                            <td class="hours">{{ totals.non_billable|humanize_hours:"{hours:02d}:{minutes:02d}" }}</td>
+                                            <td class="hours">{{ totals.total|humanize_hours:"{hours:02d}:{minutes:02d}" }}</td>
                                         </tr>
                                     {% endfor %}
                                     <tr class="daily_total {% if day|add_timezone < from_date %}before_from_date{% endif %}">
                                         <td></td>
                                         <td class="hours"><strong>{{day|date:"D"}}:</strong></td>
-                                        <td class="hours">{{ projects.0.billable|humanize_hours:'{hours:02d}:{minutes:02d}' }}</td>
-                                        <td class="hours">{{ projects.0.non_billable|humanize_hours:'{hours:02d}:{minutes:02d}' }}</td>
-                                        <td class="hours">{{ projects.0.total|humanize_hours:'{hours:02d}:{minutes:02d}' }}</td>
+                                        <td class="hours">{{ projects.0.billable|humanize_hours:"{hours:02d}:{minutes:02d}" }}</td>
+                                        <td class="hours">{{ projects.0.non_billable|humanize_hours:"{hours:02d}:{minutes:02d}" }}</td>
+                                        <td class="hours">{{ projects.0.total|humanize_hours:"{hours:02d}:{minutes:02d}" }}</td>
                                     <tr/>
                                 {% endfor %}
                                 <tr class="weekly_total">
                                     <th colspan="2">Totals for this week:</th>
-                                    <td class="hours">{{ week_totals.billable|humanize_hours:'{hours:02d}:{minutes:02d}' }}</td>
-                                    <td class="hours">{{ week_totals.non_billable|humanize_hours:'{hours:02d}:{minutes:02d}' }}</td>
-                                    <td class="hours">{{ week_totals.total|humanize_hours:'{hours:02d}:{minutes:02d}' }}</td>
+                                    <td class="hours">{{ week_totals.billable|humanize_hours:"{hours:02d}:{minutes:02d}" }}</td>
+                                    <td class="hours">{{ week_totals.non_billable|humanize_hours:"{hours:02d}:{minutes:02d}" }}</td>
+                                    <td class="hours">{{ week_totals.total|humanize_hours:"{hours:02d}:{minutes:02d}" }}</td>
                                 </tr>
                             </table>
                         {% endfor %}
@@ -281,7 +249,7 @@
                             </thead>
                             <tr>
                                 <td colspan="4"><strong>Overall total for the period:</strong></td>
-                                <td class="hours">{{ summary.total|humanize_hours:'{hours:02d}:{minutes:02d}' }}</td>
+                                <td class="hours">{{ summary.total|humanize_hours:"{hours:02d}:{minutes:02d}" }}</td>
                             </tr>
                         </table>
                     {% else %}
