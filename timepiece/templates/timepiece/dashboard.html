@@ -87,7 +87,11 @@
         <div class="tab-content">
             <div class="tab-pane{% if active_tab == 'progress' %} active{% endif %}" id="progress">
                 <div id="overall-progress">
-                    <div id="overall-label">Overall</div>
+                    <div id="overall-label">
+                        <span>Total Progress:</span>
+                        {{ total_worked|convert_hours_to_seconds|humanize_seconds|slice:':-3' }} worked
+                        of {{ total_assigned|convert_hours_to_seconds|humanize_seconds|slice:':-3' }} assigned
+                    </div>
                     <div id="overall-bar"
                         data-worked="{{ total_worked }}"
                         data-assigned="{{ total_assigned }}">
