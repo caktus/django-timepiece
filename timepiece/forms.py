@@ -11,17 +11,28 @@ from timepiece.entries.models import Entry
 
 
 DATE_FORM_FORMAT = '%Y-%m-%d'
+INPUT_FORMATS = [DATE_FORM_FORMAT]
+
+
+class TimepieceSplitDateTimeWidget(forms.SplitDateTimeWidget):
+
+    def __init__(self, *args, **kwargs):
+        kwargs['date_format'] = kwargs.get('date_format', DATE_FORM_FORMAT)
+        super(TimepieceSplitDateTimeWidget, self).__init__(*args, **kwargs)
+
+
+class TimepieceDateInput(forms.DateInput):
+
+    def __init__(self, *args, **kwargs):
+        kwargs['format'] = kwargs.get('format', DATE_FORM_FORMAT)
+        super(TimepieceDateInput, self).__init__(*args, **kwargs)
 
 
 class DateForm(forms.Form):
-    DATE_FORMAT = DATE_FORM_FORMAT
-
     from_date = forms.DateField(label='From', required=False,
-        input_formats=(DATE_FORMAT,),
-        widget=forms.DateInput(format=DATE_FORMAT))
+        input_formats=INPUT_FORMATS, widget=TimepieceDateInput())
     to_date = forms.DateField(label='To', required=False,
-        input_formats=(DATE_FORMAT,),
-        widget=forms.DateInput(format=DATE_FORMAT))
+        input_formats=INPUT_FORMATS, widget=TimepieceDateInput())
 
     def clean(self):
         from_date = self.cleaned_data.get('from_date', None)

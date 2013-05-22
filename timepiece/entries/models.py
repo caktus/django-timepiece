@@ -149,17 +149,10 @@ class Entry(models.Model):
     project = models.ForeignKey('crm.Project', related_name='entries')
     activity = models.ForeignKey(Activity, related_name='entries')
     location = models.ForeignKey(Location, related_name='entries')
-    entry_group = models.ForeignKey(
-       'contracts.EntryGroup',
-        related_name='entries',
-        blank=True, null=True,
-        on_delete=models.SET_NULL,
-    )
-    status = models.CharField(
-        max_length=24,
-        choices=STATUSES.items(),
-        default=UNVERIFIED,
-    )
+    entry_group = models.ForeignKey('contracts.EntryGroup', blank=True,
+            null=True, related_name='entries', on_delete=models.SET_NULL)
+    status = models.CharField(max_length=24, choices=STATUSES.items(),
+            default=UNVERIFIED)
 
     start_time = models.DateTimeField()
     end_time = models.DateTimeField(blank=True, null=True, db_index=True)
@@ -174,10 +167,24 @@ class Entry(models.Model):
     worked = EntryWorkedManager()
     no_join = models.Manager()
 
+    class Meta:
+        db_table = 'timepiece_entry'  # Using legacy table name
+        ordering = ('-start_time',)
+        verbose_name_plural = 'entries'
+        permissions = (
+            ('can_clock_in', 'Can use Pendulum to clock in'),
+            ('can_pause', 'Can pause and unpause log entries'),
+            ('can_clock_out', 'Can use Pendulum to clock out'),
+            ('view_entry_summary', 'Can view entry summary page'),
+            ('view_payroll_summary', 'Can view payroll summary page'),
+            ('approve_timesheet', 'Can approve a verified timesheet'),
+        )
+
+    def __unicode__(self):
+        return '%s on %s' % (self.user, self.project)
+
     def check_overlap(self, entry_b, **kwargs):
-        """
-        Given two entries, return True if they overlap, otherwise return False
-        """
+        """Return True if the two entries overlap."""
         consider_pause = kwargs.get('pause', True)
         entry_a = self
         #if entries are open, consider them to be closed right now
@@ -265,19 +272,17 @@ class Entry(models.Model):
                         '%H:%M:%S')
                     entry_data['end_time'] = entry.end_time.strftime(
                         '%H:%M:%S')
-                    output = 'Start time overlaps with: ' + \
-                    '%(project)s - %(activity)s - ' % entry_data + \
-                    'from %(start_time)s to %(end_time)s' % entry_data
-                    raise ValidationError(output)
+                    raise ValidationError('Start time overlaps with '
+                            '{activity} on {project} from {start_time} to '
+                            '{end_time}.'.format(**entry_data))
                 else:
                     entry_data['start_time'] = entry.start_time.strftime(
                         '%H:%M:%S on %m\%d\%Y')
                     entry_data['end_time'] = entry.end_time.strftime(
                         '%H:%M:%S on %m\%d\%Y')
-                    output = 'Start time overlaps with: ' + \
-                    '%(project)s - %(activity)s - ' % entry_data + \
-                    'from %(start_time)s to %(end_time)s' % entry_data
-                    raise ValidationError(output)
+                    raise ValidationError('Start time overlaps with '
+                            '{activity} on {project} from {start_time} to '
+                            '{end_time}.'.format(**entry_data))
         try:
             act_group = self.project.activity_group
             if act_group:
@@ -499,25 +504,6 @@ class Entry(models.Model):
             qs = entries.filter(project=projects[name])
             data['paid_leave'][name] = qs.aggregate(s=Sum('hours'))['s']
         return data
-
-    def __unicode__(self):
-        """
-        The string representation of an instance of this class
-        """
-        return '%s on %s' % (self.user, self.project)
-
-    class Meta:
-        db_table = 'timepiece_entry'  # Using legacy table name
-        ordering = ('-start_time',)
-        verbose_name_plural = 'entries'
-        permissions = (
-            ('can_clock_in', 'Can use Pendulum to clock in'),
-            ('can_pause', 'Can pause and unpause log entries'),
-            ('can_clock_out', 'Can use Pendulum to clock out'),
-            ('view_entry_summary', 'Can view entry summary page'),
-            ('view_payroll_summary', 'Can view payroll summary page'),
-            ('approve_timesheet', 'Can approve a verified timesheet'),
-        )
 
 
 class ProjectHours(models.Model):
