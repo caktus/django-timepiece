@@ -204,8 +204,11 @@ def toggle_pause(request):
 @permission_required('entries.change_entry')
 def create_edit_entry(request, entry_id=None):
     if entry_id:
-        entry = get_object_or_404(Entry, pk=entry_id)
-        if not (entry.is_editable or
+        try:
+            entry = Entry.no_join.get(pk=entry_id)
+        except Entry.DoesNotExist:
+            entry = None
+        if not entry or not (entry.is_editable or
                 request.user.has_perm('entries.view_payroll_summary')):
             raise Http404
     else:
