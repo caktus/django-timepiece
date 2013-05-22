@@ -124,9 +124,11 @@ def get_uninvoiced_hours(entries, billable=None):
 
 
 @register.filter
-def hours_to_seconds(total_hours):
-    """Given time in decimal hours, return int seconds."""
-    return int(float(total_hours) * 3600)
+def humanize_hours(total_hours, frmt='{hours:02d}:{minutes:02d}:{seconds:02d}',
+        negative_frmt=None):
+    """Given time in hours, return a string representing the time."""
+    seconds = int(float(total_hours) * 3600)
+    return humanize_seconds(seconds, frmt, negative_frmt)
 
 
 @register.filter
@@ -150,12 +152,6 @@ def humanize_seconds(total_seconds,
     else:
         result = frmt.format(**mapping)
     return mark_safe(result)
-
-@register.filter
-def humanize_hours(total_hours, frmt='{hours:02d}:{minutes:02d}:{seconds:02d}',
-        negative_frmt=None):
-    seconds = hours_to_seconds(total_hours)
-    return humanize_seconds(seconds, frmt, negative_frmt)
 
 
 @register.filter

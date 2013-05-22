@@ -65,25 +65,6 @@ class HumanizeTimeTestCase(TestCase):
         )
 
 
-class ConvertHoursToSecondsTestCase(TestCase):
-
-    def test_usual(self):
-        seconds = tags.hours_to_seconds('3.25')
-        expected = int(3.25 * 3600)
-        self.assertEqual(seconds, expected,
-            "Given 3.25 hours, returned {0}, expected {1}".format(
-                seconds, expected)
-        )
-
-    def test_negative_seconds(self):
-        seconds = tags.hours_to_seconds('-2.75')
-        expected = int(-2.75 * 3600)
-        self.assertEqual(seconds, expected,
-            "Given -2.75 hours, returned {0}, expected {1}".format(
-                seconds, expected)
-        )
-
-
 class DateFiltersTagTestCase(TestCase):
 
     def test_default_options(self):
