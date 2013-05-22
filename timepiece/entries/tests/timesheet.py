@@ -302,10 +302,9 @@ class ClockInTest(TimepieceDataTestCase):
         })
         #This clock in attempt should be blocked by entry1
         response = self.client.post(self.url, data)
-        self.assertFormError(response, 'form', None, \
-            'Start time overlaps with: ' + \
-            '%(project)s - %(activity)s - from %(st_str)s to %(end_str)s' % \
-            entry1_data)
+        form = response.context['form']
+        self.assertEquals(len(form.errors), 1, form.errors)
+        self.assertTrue('__all__' in form.errors, form.errors.keys())
 
     def testClockInSameTime(self):
         """
@@ -359,11 +358,10 @@ class ClockInTest(TimepieceDataTestCase):
         #This clock in attempt should be blocked by entry1
         #(It is before the start time of the current entry)
         response = self.client.post(self.url, data)
-        self.assertFormError(response, 'form', None, \
-            'Please enter a valid start time')
-        self.assertFormError(response, 'form', 'start_time', \
-            'The start time is on or before the current entry: ' + \
-            '%(project)s - %(activity)s starting at %(st_str)s' % entry1_data)
+        form = response.context['form']
+        self.assertEquals(len(form.errors), 2, form.errors)
+        self.assertTrue('start_time' in form.errors, form.errors.keys)
+        self.assertTrue('__all__' in form.errors, form.errors.keys)
 
     def testClockInActiveTooLong(self):
         """
@@ -952,10 +950,9 @@ class CreateEditEntry(TimepieceDataTestCase):
         })
         response = self.client.post(self.create_url, overlap_entry,
             follow=True)
-        self.assertFormError(response, 'form', None, \
-            'Start time overlaps with: ' + \
-            '%(project)s - %(activity)s - from %(st_str)s to %(end_str)s' % \
-            self.closed_entry_data)
+        form = response.context['form']
+        self.assertEquals(len(form.errors), 1, form.errors)
+        self.assertTrue('__all__' in form.errors, form.errors.keys())
 
     def testCreateBlockByCurrent(self):
         """
@@ -970,10 +967,9 @@ class CreateEditEntry(TimepieceDataTestCase):
         })
         response = self.client.post(self.create_url, overlap_entry,
             follow=True)
-        self.assertFormError(response, 'form', None, \
-            'The times below conflict with the current entry: ' + \
-            '%(project)s - %(activity)s starting at %(st_str)s' % \
-            self.current_entry_data)
+        form = response.context['form']
+        self.assertEquals(len(form.errors), 1, form.errors)
+        self.assertTrue('__all__' in form.errors, form.errors.keys())
 
     def testCreateTooLongEntry(self):
         """
