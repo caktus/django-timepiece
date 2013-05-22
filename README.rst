@@ -42,6 +42,12 @@ also depends on the following Django apps:
  * `django-compressor <https://github.com/jezdez/django_compressor>`_
  * `django-bootstrap-toolkit <https://github.com/dyve/django-bootstrap-toolkit>`_
 
+We actively support desktop versions of Chrome, Firefox, and Safari, and common
+mobile platforms. We do not support most versions of Internet Explorer. If you
+come across a front-end bug, feel free to make a pull request or create a bug
+report with information about what you were doing and what browser you were
+using.
+
 django-timepiece uses Sphinx and RST for documentation. You can use Sphinx to
 build the documentation:
 
