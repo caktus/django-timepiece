@@ -124,7 +124,7 @@ class ProjectHoursListViewTestCase(ProjectHoursTestCase):
         self.assertEquals(response.context['week'].date(), self.past_week)
 
         view = ScheduleView()
-        all_entries = view.get_project_hours_for_week(self.past_week)
+        all_entries = view.get_hours_for_week(self.past_week)
         users = response.context['users']
         projects = response.context['projects']
         count = 0
@@ -135,7 +135,8 @@ class ProjectHoursListViewTestCase(ProjectHoursTestCase):
                 if entry:
                     count += 1
                     self.assertTrue(all_entries.filter(project__id=proj_id,
-                            user__id=users[i][0], hours=entry).exists())
+                            user__id=users[i][0],
+                            hours=entry['hours']).exists())
         self.assertEquals(count, all_entries.count())
 
     def test_week_filter_midweek(self):
