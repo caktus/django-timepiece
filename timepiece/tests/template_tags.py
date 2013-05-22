@@ -4,37 +4,64 @@ import mock
 
 from django import template
 from django.test import TestCase
+from django.utils.html import strip_tags
 
 from timepiece import utils
 from timepiece.templatetags import timepiece_tags as tags
 from timepiece.tests.base import TimepieceDataTestCase
 
 
-class HumanizeSecondsTestCase(TestCase):
+class HumanizeTimeTestCase(TestCase):
 
-    def test_usual(self):
+    def test_seconds(self):
         seconds_display = tags.humanize_seconds((5.5 * 3600) + 3)
-        self.assertEqual(seconds_display, u'05:30:03',
-            "Should return u'05:30:03', returned {0}".format(seconds_display)
+        expected = u'05:30:03'
+        self.assertEquals(seconds_display, expected,
+            "Should return {0}, returned {1}".format(expected, seconds_display)
         )
 
-    def test_negative_seconds(self):
+    def test_seconds_negative(self):
         seconds_display = tags.humanize_seconds((-2.5 * 3600) - 4)
-        self.assertEqual(seconds_display, u'(02:30:04)',
-            "Should return u'(02:30:04)', returned {0}".format(seconds_display)
+        expected = u'-02:30:04'
+        self.assertTrue(seconds_display.startswith('<span'))
+        self.assertTrue('negative-time' in seconds_display)
+        self.assertEquals(strip_tags(seconds_display), expected,
+            "Should return {0}, returned {1}".format(expected, seconds_display)
         )
 
-    def test_overnight(self):
+    def test_seconds_overnight(self):
         seconds_display = tags.humanize_seconds((30 * 3600) + 2)
-        self.assertEqual(seconds_display, u'30:00:02',
-            "Should return u'30:00:02', returned {0}".format(seconds_display)
+        expected = u'30:00:02'
+        self.assertEquals(seconds_display, expected,
+            "Should return {0}, returned {1}".format(expected, seconds_display)
         )
 
-    def test_format(self):
-        seconds_display = tags.humanize_seconds(120, '%M:%M:%M')
-        expected = u'02:02:02'
-        self.assertEqual(seconds_display, expected,
-            "Should return {0}, return {1}".format(expected, seconds_display)
+    def test_seconds_format(self):
+        seconds_display = tags.humanize_seconds(120, '{minutes:02d}:{minutes}')
+        expected = u'02:2'
+        self.assertEquals(seconds_display, expected,
+            "Should return {0}, returned {1}".format(expected, seconds_display)
+        )
+
+    def test_seconds_negative_format(self):
+        seconds_display = tags.humanize_seconds(-120, None, '-{minutes:02d}')
+        expected = u'-02'
+        self.assertEquals(seconds_display, expected,
+            "Should return {0}, returned {1}".format(expected, seconds_display)
+        )
+
+    def test_hours(self):
+        hours_display = tags.humanize_hours(7.5)
+        expected = u'07:30:00'
+        self.assertEquals(hours_display, expected,
+            "Should return {0}, returned {1}".format(expected, hours_display)
+        )
+
+    def test_hours_format(self):
+        hours_display = tags.humanize_hours(7.1, '{minutes:02d}:{minutes}')
+        expected = u'06:6'
+        self.assertEquals(hours_display, expected,
+            "Should return {0}, returned {1}".format(expected, hours_display)
         )
 
 

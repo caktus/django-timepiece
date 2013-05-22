@@ -15,7 +15,7 @@ from django.core.urlresolvers import reverse
 from django.db import transaction
 from django.db.models import Q
 from django.http import HttpResponse, HttpResponseRedirect, Http404
-from django.shortcuts import render, redirect
+from django.shortcuts import get_object_or_404, redirect, render
 from django.utils.decorators import method_decorator
 from django.views.generic import TemplateView, View
 
@@ -206,20 +206,18 @@ def create_edit_entry(request, entry_id=None):
     if entry_id:
         try:
             entry = Entry.no_join.get(pk=entry_id)
-            if not (entry.is_editable or
-                    request.user.has_perm('entries.view_payroll_summary')):
-                raise Http404
         except Entry.DoesNotExist:
+            entry = None
+        if not entry or not (entry.is_editable or
+                request.user.has_perm('entries.view_payroll_summary')):
             raise Http404
     else:
         entry = None
 
+    entry_user = entry.user if entry else request.user
     if request.method == 'POST':
-        form = AddUpdateEntryForm(
-            request.POST,
-            instance=entry,
-            user=entry.user if entry else request.user,
-        )
+        form = AddUpdateEntryForm(data=request.POST, instance=entry,
+                user=entry_user)
         if form.is_valid():
             entry = form.save()
             if entry_id:
@@ -234,11 +232,8 @@ def create_edit_entry(request, entry_id=None):
             messages.error(request, message)
     else:
         initial = dict([(k, request.GET[k]) for k in request.GET.keys()])
-        form = AddUpdateEntryForm(
-            instance=entry,
-            user=request.user,
-            initial=initial,
-        )
+        form = AddUpdateEntryForm(instance=entry, user=entry_user,
+                initial=initial)
 
     return render(request, 'timepiece/entry/create_edit.html', {
         'form': form,
@@ -330,8 +325,12 @@ class ScheduleMixin(object):
         return super(ScheduleMixin, self).dispatch(request, *args,
                 **kwargs)
 
-    def get_hours_for_week(self, start=None):
-        week_start = start if start else self.week_start
+    def get_hours_for_week(self, week_start=None):
+        """
+        Gets all ProjectHours entries in the 7-day period beginning on
+        week_start.
+        """
+        week_start = week_start if week_start else self.week_start
         week_end = week_start + relativedelta(days=7)
 
         return ProjectHours.objects.filter(
@@ -346,24 +345,6 @@ class ScheduleView(ScheduleMixin, TemplateView):
             return HttpResponseRedirect(reverse('auth_login'))
 
         return super(ScheduleView, self).dispatch(request, *args, **kwargs)
-
-    def get_project_hours_for_week(self, week_start=None, published=None):
-        """
-        Gets all ProjectHours entries in the 7-day period beginning on
-        week_start.
-
-        Returns a values set, ordered by the project id.
-        """
-        week_start = week_start or self.week_start
-        week_end = week_start + relativedelta(days=7)
-        qs = ProjectHours.objects.filter(week_start__gte=week_start,
-                week_start__lt=week_end)
-        if published is not None:
-            qs = qs.filter(published=published)
-        qs = qs.values('project__id', 'project__name', 'user__id',
-                'user__first_name', 'user__last_name', 'hours')
-        qs = qs.order_by('-project__type__billable', 'project__name',)
-        return qs
 
     def get_users_from_project_hours(self, project_hours):
         """
@@ -381,7 +362,14 @@ class ScheduleView(ScheduleMixin, TemplateView):
         initial = {'week_start': self.week_start}
         form = ProjectHoursSearchForm(initial=initial)
 
-        project_hours = self.get_project_hours_for_week(published=True)
+        project_hours = self.get_hours_for_week()
+        project_hours = project_hours.values('project__id', 'project__name',
+                'user__id', 'user__first_name', 'user__last_name', 'hours',
+                'published')
+        project_hours = project_hours.order_by('-project__type__billable',
+                'project__name')
+        if not self.request.user.has_perm('entries.add_projecthours'):
+            project_hours = project_hours.filter(published=True)
         users = self.get_users_from_project_hours(project_hours)
         id_list = [user[0] for user in users]
         projects = []
@@ -391,11 +379,12 @@ class ScheduleView(ScheduleMixin, TemplateView):
             entries = list(entries)
             proj_id = entries[0]['project__id']
             name = entries[0]['project__name']
-            row = [None for i in range(len(id_list))]
+            row = [{} for i in range(len(id_list))]
             for entry in entries:
                 index = id_list.index(entry['user__id'])
                 hours = entry['hours']
-                row[index] = row[index] + hours if row[index] else hours
+                row[index]['hours'] = row[index].get('hours', 0) + hours
+                row[index]['published'] = entry['published']
             projects.append((proj_id, name, row))
 
         context.update({
@@ -448,8 +437,7 @@ class EditScheduleView(ScheduleMixin, TemplateView):
         param = {
             'week_start': self.week_start.strftime(DATE_FORM_FORMAT)
         }
-        url = '?'.join((reverse('edit_schedule'),
-            urllib.urlencode(param),))
+        url = '?'.join((reverse('edit_schedule'), urllib.urlencode(param),))
 
         return HttpResponseRedirect(url)
 

@@ -87,7 +87,11 @@
         <div class="tab-content">
             <div class="tab-pane{% if active_tab == 'progress' %} active{% endif %}" id="progress">
                 <div id="overall-progress">
-                    <div id="overall-label">Overall</div>
+                    <div id="overall-label">
+                        <span>Total Progress:</span>
+                        {{ total_worked|humanize_hours:"{hours:02d}:{minutes:02d}" }} worked
+                        of {{ total_assigned|humanize_hours:"{hours:02d}:{minutes:02d}" }} assigned
+                    </div>
                     <div id="overall-bar"
                         data-worked="{{ total_worked }}"
                         data-assigned="{{ total_assigned }}">
@@ -108,8 +112,12 @@
                                 {% for data in project_progress %}
                                     <tr{% if active_entry.project.pk == data.project.pk %} id="active-project"{% endif %}>
                                         <td><a href="{% url 'clock_in' %}?project={{ data.project.pk }}">{{ data.project }}</a></td>
-                                        <td class="nowrap">{{ data.assigned|hours_to_seconds|humanize_seconds:"%H:%M" }}</td>
-                                        <td class="nowrap">{{ data.worked|hours_to_seconds|humanize_seconds:"%H:%M" }}</td>
+                                        <td class="nowrap">
+                                            {{ data.assigned|humanize_hours:"{hours:02d}:{minutes:02d}" }}
+                                        </td>
+                                        <td class="nowrap">
+                                            {{ data.worked|humanize_hours:"{hours:02d}:{minutes:02d}" }}
+                                        </td>
                                         <td class="hidden-phone progress-col project-bar"
                                             data-worked = "{{ data.worked }}"
                                             data-assigned = "{{ data.assigned }}">
@@ -128,21 +136,27 @@
                 {% if week_entries %}
                     {% url 'dashboard' active_tab='all-entries' as next_url %}
                     {% regroup week_entries by start_time|date:'l, F j' as daily_entries %}
-                    {% for day in daily_entries %}
-                        <h4>{{ day.grouper }}</h4>
-                        <table class="table table-striped table-bordered" style="margin-top:10px;">
-                            <thead>
-                                <tr>
-                                    <th>Project</th>
-                                    <th class="hidden-phone">Activity</th>
-                                    <th>From</th>
-                                    <th>To</th>
-                                    <th class="hidden-phone">Pause Time</th>
-                                    <th>Total Time</th>
-                                    <th class="hidden-phone">Comment</th>
+                    <table class="table table-hover table-bordered">
+                        <thead>
+                            <tr>
+                                <th>Project</th>
+                                <th class="hidden-phone">Activity</th>
+                                <th>From</th>
+                                <th>To</th>
+                                <th class="hidden-phone">Pause Time</th>
+                                <th>Total Time</th>
+                                <th class="hidden-phone">Comment</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for day in daily_entries %}
+                                {% sum_hours day.list as daily_total %}
+                                <tr class="emphasized-row">
+                                    <th colspan="3" style="border-right: 0px;">{{ day.grouper }}</th>
+                                    <th class="hidden-phone" colspan="2" style="border-left: 0px;"></th>
+                                    <th>{{ daily_total|humanize_seconds:"{hours:02d}:{minutes:02d}" }}</th>
+                                    <th class="hidden-phone"></th>
                                 </tr>
-                            </thead>
-                            <tbody>
                                 {% for entry in day.list %}
                                     <tr rel="tooltip" title="{{ entry.comments|escape }}">
                                         <td>
@@ -170,7 +184,7 @@
                                                 {% endif %}
                                             {% endwith %}
                                         </td>
-                                        <td class="nowrap">{{ entry.get_total_seconds|humanize_seconds|slice:":-3" }}</td>
+                                        <td class="nowrap">{{ entry.get_total_seconds|humanize_seconds:"{hours:02d}:{minutes:02d}" }}</td>
                                         <td class="hidden-phone">
                                             {% if entry.comments|length > 50 %}
                                                 {{entry.comments|slice:':50'}}&hellip;
@@ -180,16 +194,9 @@
                                         </td>
                                     </tr>
                                 {% endfor %}
-                                {% sum_hours day.list as daily_total %}
-                                <tr>
-                                    <th class="hidden-phone" colspan="2"></th>
-                                    <th colspan="3" style="text-align: right;">Total:</th>
-                                    <td>{{ daily_total|humanize_seconds|slice:":-3" }}</td>
-                                    <td class="hidden-phone"></td>
-                                </tr>
-                            </tbody>
-                        </table>
-                    {% endfor %}
+                            {% endfor %}
+                        </tbody>
+                    </table>
                 {% else %}
                     <p>No entries exist for this week.</p>
                 {% endif %}

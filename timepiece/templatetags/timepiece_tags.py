@@ -6,6 +6,7 @@ from django import template
 from django.core.urlresolvers import reverse
 from django.db.models import Sum
 from django.template.defaultfilters import date as date_format_filter
+from django.utils.safestring import mark_safe
 
 from timepiece import utils
 from timepiece.forms import DATE_FORM_FORMAT
@@ -129,26 +130,32 @@ def hours_to_seconds(total_hours):
 
 
 @register.filter
-def humanize_seconds(total_seconds, format='%H:%M:%S'):
-    """Given time in int(seconds), return a unicode in %H:%M:%S format."""
+def humanize_seconds(total_seconds,
+        frmt='{hours:02d}:{minutes:02d}:{seconds:02d}', negative_frmt=None):
+    """Given time in int(seconds), return a string representing the time.
+
+    If negative_frmt is not given, a negative sign is prepended to frmt
+    and the result is wrapped in a <span> with the "negative-time" class.
+    """
+    if negative_frmt is None:
+        negative_frmt = '<span class="negative-time">-{0}</span>'.format(frmt)
     seconds = abs(int(total_seconds))
-    hours = seconds // 3600
-    seconds %= 3600
-    minutes = seconds // 60
-    seconds %= 60
-    format_mapping = {
-        '%H': hours,
-        '%M': minutes,
-        '%S': seconds,
+    mapping = {
+        'hours': seconds // 3600,
+        'minutes': seconds % 3600 // 60,
+        'seconds': seconds % 3600 % 60,
     }
-    time_units = [
-        format_mapping[token] for token in format.split(':')
-        if token in format_mapping
-    ]
-    result = ':'.join([
-        u'{0:02d}'.format(time_unit) for time_unit in time_units
-    ])
-    return result if total_seconds >= 0 else '({0})'.format(result)
+    if total_seconds < 0:
+        result = negative_frmt.format(**mapping)
+    else:
+        result = frmt.format(**mapping)
+    return mark_safe(result)
+
+@register.filter
+def humanize_hours(total_hours, frmt='{hours:02d}:{minutes:02d}:{seconds:02d}',
+        negative_frmt=None):
+    seconds = hours_to_seconds(total_hours)
+    return humanize_seconds(seconds, frmt, negative_frmt)
 
 
 @register.filter

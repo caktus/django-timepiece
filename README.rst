@@ -11,12 +11,12 @@ projects. Complete documentation is available on `Read The Docs
 .. |master-status| image::
     https://secure.travis-ci.org/caktus/django-timepiece.png?branch=master
     :alt: Build Status
-    :target: https://secure.travis-ci.org/caktus/django-timepiece
+    :target: https://travis-ci.org/caktus/django-timepiece
 
 .. |develop-status| image::
     https://secure.travis-ci.org/caktus/django-timepiece.png?branch=develop
     :alt: Build Status
-    :target: https://secure.travis-ci.org/caktus/django-timepiece
+    :target: https://travis-ci.org/caktus/django-timepiece
 
 Features
 --------
@@ -41,6 +41,12 @@ also depends on the following Django apps:
  * `django-pagination <http://pypi.python.org/pypi/django-pagination>`_
  * `django-compressor <https://github.com/jezdez/django_compressor>`_
  * `django-bootstrap-toolkit <https://github.com/dyve/django-bootstrap-toolkit>`_
+
+We actively support desktop versions of Chrome, Firefox, and Safari, and common
+mobile platforms. We do not support most versions of Internet Explorer. If you
+come across a front-end bug, feel free to make a pull request or create a bug
+report with information about what you were doing and what browser you were
+using.
 
 django-timepiece uses Sphinx and RST for documentation. You can use Sphinx to
 build the documentation:
@@ -88,6 +94,9 @@ Installation
             'selectable',
 
             'timepiece',
+            'timepiece.contracts',
+            'timepiece.crm',
+            'timepiece.entries',
             'timepiece.reports',
             ...
         )
