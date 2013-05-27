@@ -43,6 +43,8 @@ class ContractList(ListView):
     def get_context_data(self, *args, **kwargs):
         if 'today' not in kwargs:
             kwargs['today'] = datetime.date.today()
+        if 'warning_date' not in kwargs:
+            kwargs['warning_date'] = datetime.date.today() + relativedelta(weeks=2)
         return super(ContractList, self).get_context_data(*args, **kwargs)
 
     @method_decorator(permission_required('contracts.add_projectcontract'))

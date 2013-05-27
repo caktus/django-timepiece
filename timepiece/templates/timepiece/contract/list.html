@@ -5,6 +5,15 @@
 {% block title %}Current Contracts{% endblock %}
 {% block bodyid %}contracts-list{% endblock bodyid %}
 
+{% block extrajs %}
+    <script type="text/javascript">
+        $(function() {
+            // Activate tooltip message for expired/expiring contracts.
+            $('tr.expired, tr.expiring-soon').tooltip();
+        });
+    </script>
+{% endblock extrajs %}
+
 {% block content %}
     <div class="row-fluid">
         <div class="span12">
@@ -28,11 +37,20 @@
                 </thead>
                 <tbody>
                     {% for contract in contracts %}
-                        <tr>
+                        {% if contract.end_date < today %}
+                            <tr class="expired" title="This contract has expired.">
+                        {% elif contract.end_date < warning_date %}
+                            <tr class="expiring-soon" title="This contract will expire in less than 2 weeks.">
+                        {% else %}
+                            <tr>
+                        {% endif %}
                             <td><a href="{% url 'view_contract' contract.id %}">{{ contract.name }}</a></td>
                             <td class="nowrap">{{ contract.start_date|date:'M j, Y' }}</td>
                             <td class="nowrap{% if contract.end_date < today %} past{% endif %}">
-                                    {{ contract.end_date|date:'M j, Y' }}
+                                {{ contract.end_date|date:'M j, Y' }}
+                                {% if contract.end_date >= today and contract.end_date < warning_date %}
+                                    <i class="icon-warning-sign"></i>
+                                {% endif %}
                             </td>
                             <td class="nowrap hours">
                                 {{ contract.contracted_hours|floatformat:2 }}
