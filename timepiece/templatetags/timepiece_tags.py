@@ -193,6 +193,12 @@ def project_report_url_for_contract(contract, project):
     return '{0}?{1}'.format(reverse('report_hourly'), urllib.urlencode(data))
 
 
+@register.simple_tag
+def project_timesheet_url(project_id, date=None):
+    """Shortcut to create a time sheet URL with optional date parameters."""
+    return _timesheet_url('view_project_timesheet', project_id, date)
+
+
 @register.filter
 def seconds_to_hours(seconds):
     """Given time in int seconds, return decimal seconds."""
@@ -203,6 +209,21 @@ def seconds_to_hours(seconds):
 def sum_hours(entries):
     """Return the sum total of get_total_seconds() for each entry."""
     return sum([e.get_total_seconds() for e in entries])
+
+
+def _timesheet_url(url_name, pk, date=None):
+    """Utility to create a time sheet URL with optional date parameters."""
+    url = reverse(url_name, args=(pk,))
+    if date:
+        params = {'month': date.month, 'year': date.year}
+        return '?'.join((url, urllib.urlencode(params)))
+    return url
+
+
+@register.simple_tag
+def user_timesheet_url(user_id, date=None):
+    """Shortcut to create a time sheet URL with optional date parameters."""
+    return _timesheet_url('view_user_timesheet', user_id, date)
 
 
 @register.filter

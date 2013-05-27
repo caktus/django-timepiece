@@ -46,7 +46,7 @@
                 <ul>
                     {% for pk, first, last in unverified %}
                         <li>
-                            <a href="{% url 'view_user_timesheet' pk %}{% if from_date %}?month={{ from_date|date:'n' }}&year={{ from_date|date:'Y' }}{% endif %}">{{ first }} {{ last }}</a>
+                            <a href="{% user_timesheet_url pk from_date %}">{{ first }} {{ last }}</a>
                         </li>
                     {% endfor %}
                 </ul>
@@ -56,7 +56,7 @@
                 <ul>
                     {% for pk, first, last in unapproved %}
                         <li>
-                            <a href="{% url 'view_user_timesheet' pk %}{% if from_date %}?month={{ from_date|date:'n' }}&year={{ from_date|date:'Y' }}{% endif %}">{{ first }} {{ last }}</a>
+                            <a href="{% user_timesheet_url pk from_date %}">{{ first }} {{ last }}</a>
                         </li>
                     {% endfor %}
                 </ul>
@@ -108,7 +108,7 @@
                             <tr>
                                 <th class='name_col'>
                                     {% if row.user_id %}
-                                        <a href="{% url 'view_user_timesheet' row.user_id %}{% if from_date %}?month={{ from_date|date:'n' }}&year={{ from_date|date:'Y' }}{% endif %}">{{ row.name }}</a>
+                                        <a href="{% user_timesheet_url row.user_id from_date %}">{{ row.name }}</a>
                                     {% else %}
                                         {{ row.name }}
                                     {% endif %}
@@ -167,7 +167,7 @@
                                 <tr>
                                     <th class='name_col'>
                                         {% if user_id %}
-                                            <a href="{% url 'view_user_timesheet' user_id %}{% if from_date %}?month={{ from_date|date:'n' }}&year={{ from_date|date:'Y' }}{% endif %}">{{ name }}</a>
+                                            <a href="{% user_timesheet_url user_id from_date %}">{{ name }}</a>
                                         {% else %}
                                             {{ name }}
                                         {% endif %}
