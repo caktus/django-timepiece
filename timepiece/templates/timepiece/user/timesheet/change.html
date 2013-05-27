@@ -2,7 +2,7 @@
 {% load url from future %}
 {% load timepiece_tags %}
 
-{% block title %}{{ action.capitalize }} Hours for Time Sheet{% endblock %}
+{% block title %}{{ action.capitalize }} Hours for Time Sheet{% endblock title %}
 
 {% block crumbs %}
     {{ block.super }}
@@ -34,4 +34,4 @@
             </form>
         </div>
     </div>
-{% endblock %}
+{% endblock content %}

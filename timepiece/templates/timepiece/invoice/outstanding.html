@@ -3,7 +3,7 @@
 {% load bootstrap_toolkit %}
 {% load url from future %}
 
-{% block title %}Outstanding Hours{% endblock %}
+{% block title %}Outstanding Hours{% endblock title %}
 
 {% block crumbs %}
     {{ block.super }}
@@ -94,5 +94,4 @@
             {% endfor %}
         </div>
     </div>
-{% endblock %}
-
+{% endblock content %}

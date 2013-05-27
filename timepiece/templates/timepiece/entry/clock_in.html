@@ -7,7 +7,7 @@
     <li><span class="divider">/</span> <a href="{% url 'clock_in' %}">Clock In</a></li>
 {% endblock crumbs %}
 
-{% block title %}Clock In{% endblock %}
+{% block title %}Clock In{% endblock title %}
 
 {% block content %}
     <div class="row-fluid">
@@ -34,4 +34,4 @@
             </form>
         </div>
     </div>
-{% endblock %}
+{% endblock content %}

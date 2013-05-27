@@ -4,7 +4,7 @@
 
 {% block title %}
     {% if not user %}Create User{% else %}Edit {{ user.get_name_or_username }}{% endif %}
-{% endblock %}
+{% endblock title %}
 
 {% block crumbs %}
     {{ block.super }}
@@ -33,4 +33,4 @@
             </form>
         </div>
     </div>
-{% endblock %}
+{% endblock content %}
