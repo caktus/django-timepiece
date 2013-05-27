@@ -81,4 +81,5 @@ class OutstandingHoursFilterForm(DateForm):
 
         project_totals = Entry.objects.filter(dates, billable, entry_status,
                 project_status).order_by(*ordering)
+        import ipdb; ipdb.set_trace()
         return project_totals

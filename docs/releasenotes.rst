@@ -14,6 +14,7 @@ Release Notes
   total hours worked vs. total hours assigned.
 * Aligned columns on time sheet and dashboard All Entries tables.
 * Displayed negative times with a negative sign and a red font.
+* Display end date in Contract listing in red & bold if the contract is post-due.
 * Used humanized time format on dashboard and user time sheet.
 
 *Bugfixes*
