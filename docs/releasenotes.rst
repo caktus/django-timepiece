@@ -14,9 +14,10 @@ Release Notes
   total hours worked vs. total hours assigned.
 * Aligned columns on time sheet and dashboard All Entries tables.
 * Displayed negative times with a negative sign and a red font.
-* Display end date in Contract listing in red & bold if the contract is post-due.
-* Display warning icon next to end date in Contract listing if the contract
-  is due to expire in less than two weeks.
+* In Contract listing & detail views, display end date in red+bold if the
+  contract is expired.
+* In Contract listing & detail views, display warning icon next to end date if
+  the contract is due to expire in less than two weeks.
 * Used humanized time format on dashboard and user time sheet.
 
 *Bugfixes*

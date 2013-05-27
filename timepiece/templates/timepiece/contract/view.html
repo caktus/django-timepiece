@@ -3,6 +3,7 @@
 {% load url from future %}
 
 {% block title %}{{ contract }}{% endblock %}
+{% block bodyid %}contracts{% endblock bodyid %}
 
 {% block crumbs %}
     {{ block.super }}
@@ -27,7 +28,21 @@
             <table class="table table-bordered">
                 <tr><th>Status</th><td>{{ contract.get_status_display }}</td></tr>
                 <tr><th>Start Date</th><td>{{ contract.start_date|date:'M j, Y' }}</td></tr>
-                <tr><th>End Date</th><td>{{ contract.end_date|date:'M j, Y' }}</td></tr>
+                {% if contract.end_date < today %}
+                    <tr class="expired" title="This contract has expired.">
+                {% elif contract.end_date < warning_date %}
+                    <tr class="expiring-soon" title="This contract will expire in less than two weeks.">
+                {% else %}
+                    <tr>
+                {% endif %}
+                    <th>End Date</th>
+                    <td{% if contract.end_date < today %} class="past"{% endif %}>
+                        {{ contract.end_date|date:'M j, Y' }}
+                        {% if contract.end_date >= today and contract.end_date < warning_date %}
+                            <i class="icon-warning-sign"></i>
+                        {% endif %}
+                    </td>
+                </tr>
                 <tr><th>Contract Hours</th>
                     <td>
                         {{ contract.contracted_hours|floatformat:2 }}

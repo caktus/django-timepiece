@@ -3,24 +3,14 @@
 {% load url from future %}
 
 {% block title %}Current Contracts{% endblock %}
-{% block bodyid %}contracts-list{% endblock bodyid %}
-
-{% block extrajs %}
-    <script type="text/javascript">
-        $(function() {
-            // Activate tooltip message for expired/expiring contracts.
-            $('tr.expired, tr.expiring-soon').tooltip();
-        });
-    </script>
-{% endblock extrajs %}
+{% block bodyid %}contracts{% endblock bodyid %}
 
 {% block content %}
     <div class="row-fluid">
         <div class="span12">
             <h2 class="page-title">Current Contracts</h2>
 
-            <table id="listing"
-                    class="table table-bordered table-striped table-condensed">
+            <table class="table table-bordered table-striped table-condensed">
                 <thead>
                     <tr>
                         <th rowspan="2">Name</th>
