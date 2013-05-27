@@ -135,10 +135,10 @@ class Dashboard(TemplateView):
 @transaction.commit_on_success
 def clock_in(request):
     """For clocking the user into a project."""
-    # Lock the user for the duration of this transaction, to prevent creating
-    # multiple active entries.
-    user = User.objects.select_for_update().filter(pk=request.user.pk)[0]
-    active_entry = utils.get_active_entry(user)
+    user = request.user
+    # Lock the active entry for the duration of this transaction, to prevent
+    # creating multiple active entries.
+    active_entry = utils.get_active_entry(user, select_for_update=True)
 
     initial = dict([(k, v) for k, v in request.GET.items()])
     data = request.POST or None
