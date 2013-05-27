@@ -20,6 +20,7 @@ static/timepiece.
 @lightgray: #DDDDDD;
 @blue: #049CDB;
 @lightblue: lighten(@blue, 20%);
+@red: #DA4F49;
 
 @tableBackgroundAccent: #EEEEEE;
 @tableBackgroundHover: #D0D0EC;
@@ -394,7 +395,7 @@ body {
 
     &#dashboard {
         .negative-time {
-            color: #da4f49;
+            color: @red;
         }
         #active-entry {
             margin-bottom: 35px;
@@ -542,7 +543,7 @@ body {
                 text-align: center !important;
             }
             .unpublished {
-                color: red;
+                color: @red;
             }
         }
     }
@@ -568,6 +569,13 @@ body {
             .hover {
                 background-color: @tableBackgroundHover !important;
             }
+        }
+    }
+
+    &#contracts-list {
+        #listing .past {
+            font-weight: bold;
+            color: @red;
         }
     }
 

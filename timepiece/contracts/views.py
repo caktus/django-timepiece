@@ -40,6 +40,11 @@ class ContractList(ListView):
     queryset = ProjectContract.objects.filter(status='current')\
             .order_by('name')
 
+    def get_context_data(self, *args, **kwargs):
+        if 'today' not in kwargs:
+            kwargs['today'] = datetime.date.today()
+        return super(ContractList, self).get_context_data(*args, **kwargs)
+
     @method_decorator(permission_required('contracts.add_projectcontract'))
     def dispatch(self, *args, **kwargs):
         return super(ContractList, self).dispatch(*args, **kwargs)
