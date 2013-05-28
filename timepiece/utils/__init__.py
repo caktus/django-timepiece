@@ -29,16 +29,18 @@ def add_timezone(value, tz=None):
     return value
 
 
-def get_active_entry(user):
+def get_active_entry(user, select_for_update=False):
     """Returns the user's currently-active entry, or None."""
-    Entry = get_model('entries', 'Entry')
-    try:
-        entry = Entry.no_join.get(user=user, end_time__isnull=True)
-    except Entry.DoesNotExist:
-        entry = None
-    except Entry.MultipleObjectsReturned:
+    entries = get_model('entries', 'Entry').no_join
+    if select_for_update:
+        entries = entries.select_for_update()
+    entries = entries.filter(user=user, end_time__isnull=True)
+
+    if not entries.exists():
+        return None
+    if entries.count() > 1:
         raise ActiveEntryError('Only one active entry is allowed.')
-    return entry
+    return entries[0]
 
 
 def get_hours_summary(entries):
