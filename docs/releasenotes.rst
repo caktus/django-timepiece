@@ -1,8 +1,8 @@
 Release Notes
 =============
 
-0.10.0 (Unreleased)
--------------------
+0.9.2 (Unreleased)
+------------------
 
 *Features*
 
