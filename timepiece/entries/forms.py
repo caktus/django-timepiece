@@ -23,6 +23,7 @@ class ClockInForm(forms.ModelForm):
     def __init__(self, *args, **kwargs):
         self.user = kwargs.pop('user')
         self.active = kwargs.pop('active', None)
+
         initial = kwargs.get('initial', {})
         default_loc = utils.get_setting('TIMEPIECE_DEFAULT_LOCATION_SLUG')
         if default_loc:
@@ -32,15 +33,17 @@ class ClockInForm(forms.ModelForm):
                 loc = None
             if loc:
                 initial['location'] = loc.pk
-        project = initial.get('project')
+        project = initial.get('project', None)
         try:
             last_project_entry = Entry.objects.filter(
                 user=self.user, project=project).order_by('-end_time')[0]
         except IndexError:
             initial['activity'] = None
         else:
-            initial['activity'] = last_project_entry.activity.id
+            initial['activity'] = last_project_entry.activity.pk
+
         super(ClockInForm, self).__init__(*args, **kwargs)
+
         self.fields['start_time'].required = False
         self.fields['start_time'].initial = datetime.datetime.now()
         self.fields['start_time'].widget = TimepieceSplitDateTimeWidget()
@@ -82,13 +85,10 @@ class ClockInForm(forms.ModelForm):
         return data
 
     def save(self, commit=True):
-        entry = super(ClockInForm, self).save(commit=False)
-        entry.hours = 0
-        entry.clock_in(self.user, self.cleaned_data['project'])
-        if commit:
-            entry.save()
-            if self.active:
-                self.active.save()
+        self.instance.hours = 0
+        entry = super(ClockInForm, self).save(commit=commit)
+        if self.active and commit:
+            self.active.save()
         return entry
 
 
