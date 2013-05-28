@@ -5,6 +5,7 @@ from django.contrib.auth.models import User
 from django.contrib.sites.models import Site
 from django.core.exceptions import ValidationError
 from django.core.mail import send_mail
+from django.core.urlresolvers import reverse
 from django.db import models
 from django.db.models import Sum
 from django.template import Context
@@ -50,13 +51,11 @@ class ProjectContract(models.Model):
     def __unicode__(self):
         return unicode(self.name)
 
-    @models.permalink
     def get_admin_url(self):
-        return ('admin:timepiece_projectcontract_change', [self.pk])
+        return reverse('admin:contracts_projectcontract_change', args=[self.pk])
 
-    @models.permalink
     def get_absolute_url(self):
-        return ('view_contract', [self.pk])
+        return reverse('view_contract', args=[self.pk])
 
     @property
     def entries(self):
@@ -159,9 +158,8 @@ class ContractHour(models.Model):
             'contract': self.contract if self.contract_id else None,
             }
 
-    @models.permalink
     def get_absolute_url(self):
-        return ('admin:timepiece_contracthour_change', [self.pk])
+        return reverse('admin:contracts_contracthour_change', args=[self.pk])
 
     def clean(self):
         # Note: this is called when editing in the admin, but not otherwise
