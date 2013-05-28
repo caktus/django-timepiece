@@ -69,8 +69,8 @@
                             <tr>
                                 <th>{{ name }}</th>
                                 {% for entry in entries %}
-                                    <td class="hours">
-                                        {% if entry %}{{ entry|floatformat:0 }}{% endif %}
+                                    <td class="hours{% if not entry.published %} unpublished{% endif %}">
+                                        {% if entry.hours %}{{ entry.hours|floatformat:0 }}{% endif %}
                                     </td>
                                 {% endfor %}
                             </tr>

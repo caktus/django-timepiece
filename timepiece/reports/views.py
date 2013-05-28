@@ -13,7 +13,6 @@ from django.utils.decorators import method_decorator
 from django.views.generic import TemplateView
 
 from timepiece import utils
-from timepiece.forms import DATE_FORM_FORMAT
 from timepiece.utils.csv import CSVViewMixin, DecimalEncoder
 
 from timepiece.entries.models import Entry, ProjectHours

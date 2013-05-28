@@ -20,6 +20,7 @@ static/timepiece.
 @lightgray: #DDDDDD;
 @blue: #049CDB;
 @lightblue: lighten(@blue, 20%);
+@red: #DA4F49;
 
 @tableBackgroundAccent: #EEEEEE;
 @tableBackgroundHover: #D0D0EC;
@@ -151,6 +152,9 @@ body {
                 }
             }
 
+            &.emphasized-row {
+                background-color: @tableBackgroundAccent;
+            }
             &.ledger_header th {
                 background-color: @lightblue !important;
             }
@@ -390,6 +394,9 @@ body {
     }
 
     &#dashboard {
+        .negative-time {
+            color: @red;
+        }
         #active-entry {
             margin-bottom: 35px;
             #active-buttons {
@@ -412,6 +419,8 @@ body {
             .bar, .remaining {
                 float: left;
                 overflow: hidden;
+                text-indent: 100%;
+                white-space: nowrap;
             }
             .bar-worked {
                 #gradient > .vertical(#62c462, #57a957);  // green
@@ -420,26 +429,17 @@ body {
                 #gradient > .vertical(#458745, #346534);  // dark green
             }
         }
-        #overall-progress {
+       #overall-progress {
+            margin: auto 15px;
             #overall-label {
-                float: left;
-                padding: 1px;
-                margin-right: 10px;
-                height: 28px;
-                line-height: 28px;
-                font-size: 26px;
-                font-weight: bold;
-                vertical-align: middle;
-                text-align: center;
+                font-size: 16px;
+                margin-bottom: 3px;
+                span {
+                    font-weight: bold;
+                }
             }
-            .progress {
+            #overall-bar .progress {
                 height: 28px;
-            }
-            .bar, .remaining {
-                vertical-align: middle;
-                font-size: 18px;
-                line-height: 28px;
-                text-align: center;
             }
         }
         #project-progress {
@@ -454,10 +454,6 @@ body {
                 }
                 .progress-col {
                     width: 50%;
-                    .bar, .remaining {
-                        text-indent: 100%;
-                        white-space: nowrap;
-                    }
                 }
             }
         }
@@ -539,12 +535,15 @@ body {
             margin-left: 10px;
         }
 
-        .hours {
-            text-align: center !important;
-        }
         #schedule {
             .hover {
                 background-color: @tableBackgroundHover !important;
+            }
+            .hours {
+                text-align: center !important;
+            }
+            .unpublished {
+                color: @red;
             }
         }
     }
@@ -570,6 +569,13 @@ body {
             .hover {
                 background-color: @tableBackgroundHover !important;
             }
+        }
+    }
+
+    &#contracts {
+        table .past {
+            font-weight: bold;
+            color: @red;
         }
     }
 

@@ -73,7 +73,7 @@
                         {% regroup type.list by project.name as project_list %}
                         {% for project in project_list %}
                             <tr>
-                                <td><a href="{% timesheet_url 'project' project.list.0.project.pk to_date %}">{{ project.grouper }}</a></td>
+                                <td><a href="{% project_timesheet_url project.list.0.project.pk to_date %}">{{ project.grouper }}</a></td>
                                 <td>
                                     {% for contract in project.list.0.project.get_active_contracts %}
                                         <a href="{{ contract.get_absolute_url }}">{{ contract.name }}</a>
