@@ -1,5 +1,6 @@
 from django.contrib.auth.models import User
 from django.db import models
+from django.db.models import get_model
 
 
 # Add a utility method to the User class that will tell whether or not a
@@ -134,10 +135,8 @@ class Project(models.Model):
     )
     description = models.TextField()
 
-
     objects = models.Manager()
     trackable = TrackableProjectManager()
-
 
     class Meta:
         db_table = 'timepiece_project'  # Using legacy table name.
@@ -156,6 +155,11 @@ class Project(models.Model):
     @property
     def billable(self):
         return self.type.billable
+
+    def get_active_contracts(self):
+        """Returns all associated contracts which are not marked complete."""
+        ProjectContract = get_model('contracts', 'ProjectContract')
+        return self.contracts.exclude(status=ProjectContract.STATUS_COMPLETE)
 
 
 class RelationshipType(models.Model):

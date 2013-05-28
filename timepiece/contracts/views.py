@@ -44,8 +44,8 @@ class ContractList(ListView):
     template_name = 'timepiece/contract/list.html'
     model = ProjectContract
     context_object_name = 'contracts'
-    queryset = ProjectContract.objects.filter(status='current')\
-            .order_by('name')
+    queryset = ProjectContract.objects.filter(
+            status=ProjectContract.STATUS_CURRENT).order_by('name')
 
     def get_context_data(self, *args, **kwargs):
         if 'today' not in kwargs:
