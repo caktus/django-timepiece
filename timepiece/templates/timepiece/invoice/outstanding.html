@@ -58,6 +58,7 @@
                     <thead>
                         <tr>
                             <th rowspan="2">Project</th>
+                            <th rowspan="2">Active Contracts</th>
                             <th rowspan="2">Business</th>
                             <th rowspan="2">Status</th>
                             <th colspan="2">Uninvoiced Hours</th>
@@ -73,6 +74,13 @@
                         {% for project in project_list %}
                             <tr>
                                 <td><a href="{% project_timesheet_url project.list.0.project.pk to_date %}">{{ project.grouper }}</a></td>
+                                <td>
+                                    {# FIXME: This generates a db query for each project; can we make it faster? #}
+                                    {% for contract in project.list.0.project.get_active_contracts %}
+                                        <a href="{{ contract.get_absolute_url }}">{{ contract.name }}</a>
+                                        {% if not forloop.last %}<br />{% endif %}
+                                    {% endfor %}
+                                </td>
                                 <td>
                                 {{ project.list.0.project.business.get_display_name }}</td>
                                 <td>{{ project.list.0.project.status.label|title }}</td>

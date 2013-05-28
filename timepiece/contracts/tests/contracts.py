@@ -50,7 +50,7 @@ class ContractListTestCase(ViewTestMixin, TimepieceDataTestCase):
     def test_one_contract(self):
         """List should return all current contracts."""
         correct_contract = self.create_contract(projects=self.projects,
-                status='current')
+                status=ProjectContract.STATUS_CURRENT)
         response = self._get()
         self.assertEqual(response.status_code, 200)
         contracts = response.context['contracts']
@@ -60,7 +60,7 @@ class ContractListTestCase(ViewTestMixin, TimepieceDataTestCase):
     def test_contracts(self):
         """List should return all current contracts."""
         correct_contracts = [self.create_contract(projects=self.projects,
-                status='current') for i in range(3)]
+                status=ProjectContract.STATUS_CURRENT) for i in range(3)]
         response = self._get()
         self.assertEqual(response.status_code, 200)
         contracts = response.context['contracts']
@@ -71,9 +71,9 @@ class ContractListTestCase(ViewTestMixin, TimepieceDataTestCase):
     def test_non_current_contracts(self):
         """List should return all current contracts."""
         complete_contract = self.create_contract(projects=self.projects,
-                status='complete')
+                status=ProjectContract.STATUS_COMPLETE)
         upcoming_contract = self.create_contract(projects=self.projects,
-                status='upcoming')
+                status=ProjectContract.STATUS_UPCOMING)
         response = self._get()
         self.assertEqual(response.status_code, 200)
         contracts = response.context['contracts']
@@ -123,21 +123,21 @@ class ContractViewTestCase(ViewTestMixin, TimepieceDataTestCase):
 
     def test_current_contract(self):
         contract = self.create_contract(projects=self.projects,
-                status='current')
+                status=ProjectContract.STATUS_CURRENT)
         response = self._get(url_args=(contract.pk,))
         self.assertEqual(response.status_code, 200)
         self.assertEqual(contract, response.context['contract'])
 
     def test_upcoming_contract(self):
         contract = self.create_contract(projects=self.projects,
-                status='upcoming')
+                status=ProjectContract.STATUS_UPCOMING)
         response = self._get(url_args=(contract.pk,))
         self.assertEqual(response.status_code, 200)
         self.assertEqual(contract, response.context['contract'])
 
     def test_complete_contract(self):
         contract = self.create_contract(projects=self.projects,
-                status='complete')
+                status=ProjectContract.STATUS_COMPLETE)
         response = self._get(url_args=(contract.pk,))
         self.assertEqual(response.status_code, 200)
         self.assertEqual(contract, response.context['contract'])

@@ -179,7 +179,7 @@ class TimepieceDataTestCase(TestCase):
             'start_date': datetime.date.today(),
             'end_date': datetime.date.today() + relativedelta(weeks=2),
             'num_hours': random.randint(10, 400),
-            'status': 'current',
+            'status': ProjectContract.STATUS_CURRENT,
             'type': ProjectContract.PROJECT_PRE_PAID_HOURLY,
         }
         defaults.update(kwargs)
