@@ -2,7 +2,7 @@
 {% load timepiece_tags %}
 {% load url from future %}
 
-{% block title %}Invoice Detail{% endblock %}
+{% block title %}Invoice Detail{% endblock title %}
 
 {% block crumbs %}
     {{ block.super }}
@@ -36,4 +36,4 @@
             {% endif %}
         </div>
     </div>
-{% endblock %}
+{% endblock content %}

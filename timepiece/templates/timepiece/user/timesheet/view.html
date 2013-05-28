@@ -1,25 +1,24 @@
 {% extends "timepiece/base.html" %}
-{% load timepiece_tags %}
-{% load bootstrap_toolkit %}
 {% load url from future %}
+{% load timepiece_tags bootstrap_toolkit %}
 
 {% block title %}
     {{ timesheet_user.get_name_or_username }}
     - Time Sheet for {{ from_date|date:'M Y' }}
-{% endblock %}
+{% endblock title %}
+
 {% block bodyid %}user-timesheet{% endblock bodyid %}
 
 {% block breadcrumb %}{% endblock breadcrumb %}
 
 {% block extrajs %}
-    <script type="text/javascript">
+    <script>
         var basePath = "{% url 'view_user_timesheet' timesheet_user.pk %}",
             tabIds = ['overview', 'all-entries', 'daily-summary'],
             defaultTab = 'overview';
     </script>
-    <script type="text/javascript" charset="utf-8"
-            src="{{ STATIC_URL }}timepiece/js/permanent_tabs.js"></script>
-{% endblock %}
+    <script charset="utf-8" src="{{ STATIC_URL }}timepiece/js/permanent_tabs.js"></script>
+{% endblock extrajs %}
 
 {% block content %}
     <h2>{{ timesheet_user.get_name_or_username }} - Time Sheet for {{ from_date|date:'M Y' }}</h2>
@@ -108,8 +107,8 @@
                                 <table class="table table-bordered table-striped table-condensed">
                                     <thead>
                                         <tr>
-                                            <th width="70%">Category</th>
-                                            <th width="30%">Hours</th>
+                                            <th>Category</th>
+                                            <th>Hours</th>
                                         </tr>
                                     </thead>
                                     <tbody>
@@ -262,4 +261,4 @@
             </div>
         </div>
     </div>
-{% endblock %}
+{% endblock content %}

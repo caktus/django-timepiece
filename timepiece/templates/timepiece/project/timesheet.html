@@ -2,7 +2,7 @@
 {% load url from future %}
 {% load timepiece_tags %}
 
-{% block title %}{{ project }} - Time Sheet for {{ from_date|date:'M Y' }}{% endblock %}
+{% block title %}{{ project }} - Time Sheet for {{ from_date|date:'M Y' }}{% endblock title %}
 
 {% block crumbs %}
     {{ block.super }}
@@ -102,4 +102,4 @@
             {% endif %}
         </div>
     </div>
-{% endblock %}
+{% endblock content %}

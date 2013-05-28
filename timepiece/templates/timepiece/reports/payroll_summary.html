@@ -2,16 +2,26 @@
 {% load timepiece_tags bootstrap_toolkit %}
 {% load url from future %}
 
-{% block title %}Payroll Summary Report{% endblock %}
+{% block title %}Payroll Summary Report{% endblock title %}
+
 {% block bodyid %}payroll-summary{% endblock bodyid %}
 
 {% block crumbs %}
     {{ block.super }}
-    <li><span class="divider">/</span> <a href="{% url 'report_payroll_summary' %}">Payroll Summary Report</a></li>
+    <li>
+        <span class="divider">/</span>
+        <a href="{% url 'report_payroll_summary' %}">Payroll Summary Report</a>
+    </li>
 {% endblock crumbs %}
 
+{% block report_nav %}
+    {% with 'payroll_summary' as active %}
+        {{ block.super }}
+    {% endwith %}
+{% endblock report_nav %}
+
 {% block extrajs %}
-    <script type="text/javascript">
+    <script>
         // "Sticky" row highlighting on click for each summary table.
         $(function() {
             $('#hourly-summary tbody, #weekly-summary tbody').delegate('tr', 'click', function(event) {
@@ -22,12 +32,6 @@
         });
     </script>
 {% endblock extrajs %}
-
-{% block report_nav %}
-    {% with 'payroll_summary' as active %}
-        {{ block.super }}
-    {% endwith %}
-{% endblock %}
 
 {% block report_content %}
     <div class="row-fluid">

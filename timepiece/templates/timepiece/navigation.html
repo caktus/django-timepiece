@@ -26,7 +26,7 @@
                                 </ul>
                             </li>
                         {% endif %}
-                    {% endblock %}
+                    {% endblock quick-clock-in %}
 
                     {% if perms.entries.add_entry %}
                         <li><a href="{% url 'view_user_timesheet' request.user.pk %}">Time Sheet</a></li>
@@ -84,7 +84,7 @@
 
                     {% include "timepiece/extra_nav.html" %}
                 </ul>
-            {% endblock %}
+            {% endblock navbar-left %}
 
             {% block navbar-right %}
                 {% if user.is_authenticated %}
@@ -109,8 +109,8 @@
                             {{ quick_search_form.quick_search }}
                         </form>
                     {% endif %}
-                {% endblock %}
-            {% endblock %}
+                {% endblock quick-search %}
+            {% endblock navbar-right %}
         </div>
 
         <div id="collapsed-nav" class="container-fluid">

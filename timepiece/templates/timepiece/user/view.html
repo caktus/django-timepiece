@@ -2,7 +2,7 @@
 {% load timepiece_tags markup bootstrap_toolkit %}
 {% load url from future %}
 
-{% block title %}{{ user.get_name_or_username }}{% endblock %}
+{% block title %}{{ user.get_name_or_username }}{% endblock title %}
 
 {% block crumbs %}
     {{ block.super }}
@@ -75,4 +75,4 @@
             {% endif %}
         </div>
     </div>
-{% endblock %}
+{% endblock content %}
