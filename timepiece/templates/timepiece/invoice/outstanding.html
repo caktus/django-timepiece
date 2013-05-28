@@ -75,6 +75,7 @@
                             <tr>
                                 <td><a href="{% project_timesheet_url project.list.0.project.pk to_date %}">{{ project.grouper }}</a></td>
                                 <td>
+                                    {# FIXME: This generates a db query for each project; can we make it faster? #}
                                     {% for contract in project.list.0.project.get_active_contracts %}
                                         <a href="{{ contract.get_absolute_url }}">{{ contract.name }}</a>
                                         {% if not forloop.last %}<br />{% endif %}
