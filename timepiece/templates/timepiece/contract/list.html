@@ -2,7 +2,7 @@
 {% load timepiece_tags %}
 {% load url from future %}
 
-{% block title %}Current Contracts{% endblock %}
+{% block title %}Current Contracts{% endblock title %}
 {% block bodyid %}contracts{% endblock bodyid %}
 
 {% block content %}
@@ -57,4 +57,4 @@
             </table>
         </div>
     </div>
-{% endblock %}
+{% endblock content %}

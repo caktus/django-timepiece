@@ -2,35 +2,36 @@
 {% load url from future %}
 {% load bootstrap_toolkit %}
 
-{% block title %}Schedule for the Week of {{ week|date:'M j, Y'}}{% endblock %}
-
-{% block extrajs %}
-    <script type="text/javascript">
-        var ajax_url = '{{ ajax_url }}';
-    </script>
-
-    <script type="text/javascript" src="{{ STATIC_URL }}bootstrap/js/bootstrap-typeahead.js"></script>
-    <script type="text/javascript" src="{{ STATIC_URL }}timepiece/js/handsontable/jquery.handsontable.js"></script>
-    <script type="text/javascript" src="{{ STATIC_URL }}timepiece/js/ajax.js"></script>
-
-    <script type="text/javascript" src="{{ STATIC_URL }}timepiece/js/project_hours/models.js"></script>
-    <script type="text/javascript" src="{{ STATIC_URL }}timepiece/js/project_hours/app.js"></script>
-{% endblock extrajs %}
-
-{% block extracss %}
-    <link type="text/css" rel="stylesheet" href="{{ STATIC_URL }}timepiece/js/handsontable/jquery.handsontable.css" />
-{% endblock extracss %}
-
-{% block crumbs %}
-    {{ block.super }}
-    <li><span class="divider">/</span> <a href=""> Edit</a></li>
-{% endblock crumbs %}
+{% block title %}Schedule for the Week of {{ week|date:'M j, Y'}}{% endblock title %}
 
 {% block bodyid %}project-hours{% endblock bodyid %}
 
+{% block crumbs %}
+    {{ block.super }}
+    <li>
+        <span class="divider">/</span>
+        <a href=""> Edit</a>
+    </li>
+{% endblock crumbs %}
+
+{% block extrajs %}
+    <script>
+        var ajax_url = '{{ ajax_url }}';
+    </script>
+
+    <script charset="utf-8" src="{{ STATIC_URL }}bootstrap/js/bootstrap-typeahead.js"></script>
+    <script charset="utf-8" src="{{ STATIC_URL }}timepiece/js/handsontable/jquery.handsontable.js"></script>
+    <script charset="utf-8" src="{{ STATIC_URL }}timepiece/js/ajax.js"></script>
+    <script charset="utf-8" src="{{ STATIC_URL }}timepiece/js/project_hours/models.js"></script>
+    <script charset="utf-8" src="{{ STATIC_URL }}timepiece/js/project_hours/app.js"></script>
+{% endblock extrajs %}
+
+{% block extracss %}
+    <link type="text/css" rel="stylesheet"
+            href="{{ STATIC_URL }}timepiece/js/handsontable/jquery.handsontable.css" />
+{% endblock extracss %}
+
 {% block content %}
-
-
     <div class="row-fluid">
         <div class="span12">
             <h2 data-date="{{ week|date:'Y-m-d' }}">Schedule for the Week of {{ week|date:'M j, Y'}}</h2>

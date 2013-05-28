@@ -1,7 +1,7 @@
 {% extends 'timepiece/base.html' %}
 {% load url from future %}
 
-{% block title %}Delete Entry{% endblock %}
+{% block title %}Delete Entry{% endblock title %}
 
 {% block crumbs %}
     {{ block.super }}
@@ -26,4 +26,4 @@
             </form>
         </div>
     </div>
-{% endblock %}
+{% endblock content %}

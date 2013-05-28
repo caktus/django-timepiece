@@ -10,8 +10,7 @@
 {% block title %}Clock Out of {{ entry.project }}{% endblock title %}
 
 {% block extrajs %}
-    <script type="text/javascript" charset="utf-8"
-            src="{{ STATIC_URL }}timepiece/js/prevent_double_click.js"></script>
+    <script charset="utf-8" src="{{ STATIC_URL }}timepiece/js/prevent_double_click.js"></script>
 {% endblock extrajs %}
 
 {% block content %}
@@ -32,4 +31,4 @@
             </form>
         </div>
     </div>
-{% endblock %}
+{% endblock content %}

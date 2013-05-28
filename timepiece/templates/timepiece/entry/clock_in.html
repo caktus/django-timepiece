@@ -7,11 +7,10 @@
     <li><span class="divider">/</span> <a href="{% url 'clock_in' %}">Clock In</a></li>
 {% endblock crumbs %}
 
-{% block title %}Clock In{% endblock %}
+{% block title %}Clock In{% endblock title %}
 
 {% block extrajs %}
-    <script type="text/javascript" charset="utf-8"
-            src="{{ STATIC_URL }}timepiece/js/prevent_double_click.js"></script>
+    <script charset="utf-8" src="{{ STATIC_URL }}timepiece/js/prevent_double_click.js"></script>
 {% endblock extrajs %}
 
 {% block content %}
@@ -40,4 +39,4 @@
             </form>
         </div>
     </div>
-{% endblock %}
+{% endblock content %}
