@@ -66,13 +66,16 @@
         <div class="span12">
             <ul class="nav nav-tabs">
                 <li{% if active_tab == 'overview' %} class="active"{% endif %}>
-                    <a class="tab-link" href="overview">Overview</a>
+                    {% url "view_user_timesheet" user.pk "overview" as link %}
+                    <a class="tab-link" to="overview" href="{{ link|add_parameters:request.GET }}">Overview</a>
                 </li>
                 <li{% if active_tab == 'all-entries' %} class="active"{% endif %}>
-                    <a class="tab-link" href="all-entries">All Entries</a>
+                    {% url "view_user_timesheet" user.pk "all-entries" as link %}
+                    <a class="tab-link" to="all-entries" href="{{ link|add_parameters:request.GET }}">All Entries</a>
                 </li>
                 <li{% if active_tab == 'daily-summary' %} class="active"{% endif %}>
-                    <a class="tab-link" href="daily-summary">Daily Summary</a>
+                    {% url "view_user_timesheet" user.pk "daily-summary" as link %}
+                    <a class="tab-link" to="daily-summary" href="{{ link|add_parameters:request.GET }}">Daily Summary</a>
                 </li>
             </ul>
             <div class="tab-content">
@@ -156,7 +159,7 @@
                                 {% for entry in entries %}
                                     {% ifchanged entry.start_time|date:"W" %}
                                         <tr class="emphasized-row">
-                                            <th colspan="11">Week of {% week_start entry.start_time %} </th>
+                                            <th colspan="11">Week of {{ entry.start_time|week_start|date:'M j, Y' }} </th>
                                         </tr>
                                     {% endifchanged %}
                                     <tr>

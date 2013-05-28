@@ -6,7 +6,6 @@ from django import template
 from django.core.urlresolvers import reverse
 from django.db.models import Sum
 from django.template.defaultfilters import date as date_format_filter
-from django.utils import timezone
 from django.utils.safestring import mark_safe
 
 from timepiece import utils
@@ -16,19 +15,39 @@ from timepiece.forms import DATE_FORM_FORMAT
 register = template.Library()
 
 
+@register.filter
+def add_parameters(url, parameters):
+    """
+    Appends URL-encoded parameters to the base URL. It appends after '&' if
+    '?' is found in the URL; otherwise it appends using '?'. Keep in mind that
+    this tag does not take into account the value of existing params; it is
+    therefore possible to add another value for a pre-existing parameter.
+
+    For example::
+
+        {% url 'this_view' as current_url %}
+        {% with complete_url=current_url|add_parameters:request.GET %}
+            The <a href="{% url 'other' %}?next={{ complete_url|urlencode }}">
+            other page</a> will redirect back to the current page (including
+            any GET parameters).
+        {% endwith %}
+    """
+    if parameters:
+        sep = '&' if '?' in url else '?'
+        return '{0}{1}{2}'.format(url, sep, urllib.urlencode(parameters))
+    return url
+
+
+@register.filter
+def add_timezone(date, tz=None):
+    """Return the given date with timezone added."""
+    return utils.add_timezone(date, tz)
+
+
 @register.assignment_tag
-def sum_hours(entries):
-    return sum([e.get_total_seconds() for e in entries])
-
-
-@register.filter
-def multiply(a, b):
-    return float(a) * float(b)
-
-
-@register.filter
-def seconds_to_hours(seconds):
-    return round(seconds / 3600.0, 2)
+def create_dict(**kwargs):
+    """Utility to create a dictionary from keyword arguments."""
+    return kwargs
 
 
 @register.inclusion_tag('timepiece/date_filters.html')
@@ -83,12 +102,11 @@ def date_filters(form_id, options=None, use_range=True):
     return {'filters': filters, 'form_id': form_id}
 
 
-@register.simple_tag
-def week_start(date):
-    """Given a Python date/datetime object, return the starting day of that
-    week as a date object formatted by the |date filter.
-    """
-    return date_format_filter(utils.get_week_start(date))
+@register.simple_tag(takes_context=True)
+def get_max_hours(context):
+    """Return the largest number of hours worked or assigned on any project."""
+    progress = context['project_progress']
+    return max([0] + [max(p['worked'], p['assigned']) for p in progress])
 
 
 @register.simple_tag
@@ -106,9 +124,11 @@ def get_uninvoiced_hours(entries, billable=None):
 
 
 @register.filter
-def convert_hours_to_seconds(total_hours):
-    """Given time in Decimal(hours), return a unicode in %H:%M:%S format."""
-    return int(float(total_hours) * 3600)
+def humanize_hours(total_hours, frmt='{hours:02d}:{minutes:02d}:{seconds:02d}',
+        negative_frmt=None):
+    """Given time in hours, return a string representing the time."""
+    seconds = int(float(total_hours) * 3600)
+    return humanize_seconds(seconds, frmt, negative_frmt)
 
 
 @register.filter
@@ -133,36 +153,11 @@ def humanize_seconds(total_seconds,
         result = frmt.format(**mapping)
     return mark_safe(result)
 
+
 @register.filter
-def humanize_hours(total_hours, frmt='{hours:02d}:{minutes:02d}:{seconds:02d}',
-        negative_frmt=None):
-    seconds = convert_hours_to_seconds(total_hours)
-    return humanize_seconds(seconds, frmt, negative_frmt)
-
-
-@register.simple_tag
-def timesheet_url(type, pk, date):
-    if type == 'project':
-        name = 'view_project_timesheet'
-    elif type == 'user':
-        name = 'view_user_timesheet'
-
-    url = reverse(name, args=(pk,))
-    params = {'month': date.month, 'year': date.year} if date else {}
-
-    return '?'.join((url, urllib.urlencode(params),))
-
-
-@register.simple_tag(takes_context=True)
-def get_max_hours(context):
-    """
-    Returns the largest number of hours worked or assigned on any project.
-    """
-    project_progress = context['project_progress']
-    max_hours = 0
-    for project in project_progress:
-        max_hours = max(max_hours, project['worked'], project['assigned'])
-    return str(max_hours)
+def multiply(a, b):
+    """Return a * b."""
+    return float(a) * float(b)
 
 
 @register.assignment_tag
@@ -198,35 +193,40 @@ def project_report_url_for_contract(contract, project):
     return '{0}?{1}'.format(reverse('report_hourly'), urllib.urlencode(data))
 
 
+@register.simple_tag
+def project_timesheet_url(project_id, date=None):
+    """Shortcut to create a time sheet URL with optional date parameters."""
+    return _timesheet_url('view_project_timesheet', project_id, date)
+
+
 @register.filter
-def add_parameters(url, parameters):
-    """
-    Appends URL-encoded parameters to the base URL. It appends after '&' if
-    '?' is found in the URL; otherwise it appends using '?'. Keep in mind that
-    this tag does not take into account the value of existing params; it is
-    therefore possible to add another value for a pre-existing parameter.
-
-    For example::
-
-        {% url 'this_view' as current_url %}
-        {% with complete_url=current_url|add_parameters:request.GET %}
-            The <a href="{% url 'other' %}?next={{ complete_url|urlencode }}">
-            other page</a> will redirect back to the current page (including
-            any GET parameters).
-        {% endwith %}
-    """
-    if parameters:
-        sep = '&' if '?' in url else '?'
-        return '{0}{1}{2}'.format(url, sep, urllib.urlencode(parameters))
-    return url
+def seconds_to_hours(seconds):
+    """Given time in int seconds, return decimal seconds."""
+    return round(seconds / 3600.0, 2)
 
 
 @register.assignment_tag
-def create_dict(**kwargs):
-    """Utility to create a dictionary from arguments."""
-    return kwargs
+def sum_hours(entries):
+    """Return the sum total of get_total_seconds() for each entry."""
+    return sum([e.get_total_seconds() for e in entries])
+
+
+def _timesheet_url(url_name, pk, date=None):
+    """Utility to create a time sheet URL with optional date parameters."""
+    url = reverse(url_name, args=(pk,))
+    if date:
+        params = {'month': date.month, 'year': date.year}
+        return '?'.join((url, urllib.urlencode(params)))
+    return url
+
+
+@register.simple_tag
+def user_timesheet_url(user_id, date=None):
+    """Shortcut to create a time sheet URL with optional date parameters."""
+    return _timesheet_url('view_user_timesheet', user_id, date)
 
 
 @register.filter
-def add_timezone(date, tz=None):
-    return utils.add_timezone(date, tz)
+def week_start(date):
+    """Return the starting day of the week with the given date."""
+    return utils.get_week_start(date)

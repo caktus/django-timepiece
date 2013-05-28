@@ -719,8 +719,8 @@ class ClockOutTest(TimepieceDataTestCase):
         # fail
         response = self.client.post(reverse('clock_out'), data)
         form = response.context['form']
-        self.assertEquals(len(form.errors), 1, form.errors)
-        self.assertTrue('__all__' in form.errors, form.errors.keys())
+        self.assertEquals(len(form.errors), 1, form.errors.keys)
+        self.assertTrue('__all__' in form.errors, form.errors)
 
     def test_clocking_out_inactive(self):
         # If clock out when not active, redirect to dashboard

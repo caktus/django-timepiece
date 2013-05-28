@@ -23,6 +23,8 @@
     </script>
     <script type="text/javascript" charset="utf-8"
             src="{{ STATIC_URL }}timepiece/js/dashboard.js"></script>
+    <script type="text/javascript" charset="utf-8"
+            src="{{ STATIC_URL }}timepiece/js/prevent_double_click.js"></script>
 {% endblock extrajs %}
 
 {% block content %}
@@ -39,7 +41,7 @@
                         </a>
                         {% if active_entry %}
                             <a class="btn btn-primary" href="{% url 'clock_out' %}">Clock Out</a>
-                            <a class="btn btn-{% if active_entry.is_paused %}inverse{% else %}primary{% endif %}"
+                            <a class="btn btn-{% if active_entry.is_paused %}inverse{% else %}primary{% endif %} prevent-doubleclick"
                                     href="{% url 'toggle_pause' %}">
                                 {% if active_entry.is_paused %}Resume{% else %}Pause{% endif %}
                             </a>
@@ -77,13 +79,16 @@
 
         <ul class="nav nav-tabs">
             <li{% if active_tab == 'progress' %} class="active"{% endif %}>
-                <a class="tab-link" href="progress">Progress</a>
+                {% url "dashboard" "progress" as link %}
+                <a class="tab-link" to="progress" href="{{ link|add_parameters:request.GET }}">Progress</a>
             </li>
             <li{% if active_tab == 'all-entries' %} class="active"{% endif %}>
-                <a class="tab-link" href="all-entries">All Entries</a>
+                {% url "dashboard" "all-entries" as link %}
+                <a class="tab-link" to="all-entries" href="{{ link|add_parameters:request.GET }}">All Entries</a>
             </li>
             <li{% if active_tab == 'online-users' %} class="active"{% endif %}>
-                <a class="tab-link" href="online-users">Online Users</a>
+                {% url "dashboard" "online-users" as link %}
+                <a class="tab-link" to="online-users" href="{{ link|add_parameters:request.GET }}">Online Users</a>
             </li>
         </ul>
 
@@ -92,8 +97,8 @@
                 <div id="overall-progress">
                     <div id="overall-label">
                         <span>Total Progress:</span>
-                        {{ total_worked|convert_hours_to_seconds|humanize_seconds:"{hours:02d}:{minutes:02d}" }} worked
-                        of {{ total_assigned|convert_hours_to_seconds|humanize_seconds:"{hours:02d}:{minutes:02d}" }} assigned
+                        {{ total_worked|humanize_hours:"{hours:02d}:{minutes:02d}" }} worked
+                        of {{ total_assigned|humanize_hours:"{hours:02d}:{minutes:02d}" }} assigned
                     </div>
                     <div id="overall-bar"
                         data-worked="{{ total_worked }}"

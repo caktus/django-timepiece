@@ -3,15 +3,14 @@
 {% load url from future %}
 
 {% block title %}Current Contracts{% endblock title %}
-{% block bodyid %}contracts-list{% endblock bodyid %}
+{% block bodyid %}contracts{% endblock bodyid %}
 
 {% block content %}
     <div class="row-fluid">
         <div class="span12">
             <h2 class="page-title">Current Contracts</h2>
 
-            <table id="listing"
-                    class="table table-bordered table-striped table-condensed">
+            <table class="table table-bordered table-striped table-condensed">
                 <thead>
                     <tr>
                         <th rowspan="2">Name</th>
@@ -28,11 +27,20 @@
                 </thead>
                 <tbody>
                     {% for contract in contracts %}
-                        <tr>
+                        {% if contract.end_date < today %}
+                            <tr class="expired" title="This contract has expired.">
+                        {% elif contract.end_date < warning_date %}
+                            <tr class="expiring-soon" title="This contract will expire in less than 2 weeks.">
+                        {% else %}
+                            <tr>
+                        {% endif %}
                             <td><a href="{% url 'view_contract' contract.id %}">{{ contract.name }}</a></td>
                             <td class="nowrap">{{ contract.start_date|date:'M j, Y' }}</td>
                             <td class="nowrap{% if contract.end_date < today %} past{% endif %}">
-                                    {{ contract.end_date|date:'M j, Y' }}
+                                {{ contract.end_date|date:'M j, Y' }}
+                                {% if contract.end_date >= today and contract.end_date < warning_date %}
+                                    <i class="icon-warning-sign"></i>
+                                {% endif %}
                             </td>
                             <td class="nowrap hours">
                                 {{ contract.contracted_hours|floatformat:2 }}

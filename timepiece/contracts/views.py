@@ -28,6 +28,13 @@ class ContractDetail(DetailView):
     context_object_name = 'contract'
     pk_url_kwarg = 'contract_id'
 
+    def get_context_data(self, *args, **kwargs):
+        if 'today' not in kwargs:
+            kwargs['today'] = datetime.date.today()
+        if 'warning_date' not in kwargs:
+            kwargs['warning_date'] = datetime.date.today() + relativedelta(weeks=2)
+        return super(ContractDetail, self).get_context_data(*args, **kwargs)
+
     @method_decorator(permission_required('contracts.add_projectcontract'))
     def dispatch(self, *args, **kwargs):
         return super(ContractDetail, self).dispatch(*args, **kwargs)
@@ -43,6 +50,8 @@ class ContractList(ListView):
     def get_context_data(self, *args, **kwargs):
         if 'today' not in kwargs:
             kwargs['today'] = datetime.date.today()
+        if 'warning_date' not in kwargs:
+            kwargs['warning_date'] = datetime.date.today() + relativedelta(weeks=2)
         return super(ContractList, self).get_context_data(*args, **kwargs)
 
     @method_decorator(permission_required('contracts.add_projectcontract'))

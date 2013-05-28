@@ -14,7 +14,13 @@ Release Notes
   total hours worked vs. total hours assigned.
 * Aligned columns on time sheet and dashboard All Entries tables.
 * Displayed negative times with a negative sign and a red font.
+* In Contract listing & detail views, display end date in red+bold if the
+  contract is expired.
+* In Contract listing & detail views, display warning icon next to end date if
+  the contract is due to expire in less than two weeks.
 * Used humanized time format on dashboard and user time sheet.
+* JavaScript on Clock In, Clock Out, and Pause buttons that prevents
+  accidentally double-clicking the button
 
 *Bugfixes*
 
@@ -22,6 +28,9 @@ Release Notes
 * Only include trackable projects in the quick clock in context processor.
 * Filter projects by entry's user (rather than logged-in user) on Entry edit
   view.
+* Expose correct link on permanent tabs.
+* Use select_for_update() on the active_entry during clock in to prevent
+  creating a second active entry.
 
 *Code quality*
 
@@ -30,6 +39,7 @@ Release Notes
 * Removed some outdated styles.
 * Used global styles for table highlight and hover colors.
 * Specified browser support in README.
+* Refreshed template tags, and removed some unused ones.
 
 0.9.1 (05-14-2013)
 ------------------
