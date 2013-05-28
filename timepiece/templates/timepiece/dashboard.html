@@ -92,8 +92,8 @@
                 <div id="overall-progress">
                     <div id="overall-label">
                         <span>Total Progress:</span>
-                        {{ total_worked|convert_hours_to_seconds|humanize_seconds:"{hours:02d}:{minutes:02d}" }} worked
-                        of {{ total_assigned|convert_hours_to_seconds|humanize_seconds:"{hours:02d}:{minutes:02d}" }} assigned
+                        {{ total_worked|humanize_hours:"{hours:02d}:{minutes:02d}" }} worked
+                        of {{ total_assigned|humanize_hours:"{hours:02d}:{minutes:02d}" }} assigned
                     </div>
                     <div id="overall-bar"
                         data-worked="{{ total_worked }}"

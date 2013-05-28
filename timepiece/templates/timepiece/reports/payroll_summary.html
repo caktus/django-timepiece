@@ -46,7 +46,7 @@
                 <ul>
                     {% for pk, first, last in unverified %}
                         <li>
-                            <a href="{% timesheet_url 'user' pk from_date %}">{{ first }} {{ last }}</a>
+                            <a href="{% user_timesheet_url pk from_date %}">{{ first }} {{ last }}</a>
                         </li>
                     {% endfor %}
                 </ul>
@@ -56,7 +56,7 @@
                 <ul>
                     {% for pk, first, last in unapproved %}
                         <li>
-                            <a href="{% timesheet_url 'user' pk from_date %}">{{ first }} {{ last }}</a>
+                            <a href="{% user_timesheet_url pk from_date %}">{{ first }} {{ last }}</a>
                         </li>
                     {% endfor %}
                 </ul>
@@ -108,7 +108,7 @@
                             <tr>
                                 <th class='name_col'>
                                     {% if row.user_id %}
-                                        <a href="{% timesheet_url 'user' row.user_id from_date %}">{{ row.name }}</a>
+                                        <a href="{% user_timesheet_url row.user_id from_date %}">{{ row.name }}</a>
                                     {% else %}
                                         {{ row.name }}
                                     {% endif %}
@@ -167,7 +167,7 @@
                                 <tr>
                                     <th class='name_col'>
                                         {% if user_id %}
-                                            <a href="{% timesheet_url 'user' user_id from_date %}">{{ name }}</a>
+                                            <a href="{% user_timesheet_url user_id from_date %}">{{ name }}</a>
                                         {% else %}
                                             {{ name }}
                                         {% endif %}
