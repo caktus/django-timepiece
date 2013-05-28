@@ -32,6 +32,7 @@ Release Notes
 * Expose correct link on permanent tabs.
 * Use select_for_update() on the active_entry during clock in to prevent
   creating a second active entry.
+* Fixed broken admin links for Contract and ContractHour
 
 *Code quality*
 
