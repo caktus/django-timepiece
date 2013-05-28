@@ -22,10 +22,8 @@
 
 {% block extrajs %}
     {{ block.super }}
-    <script type="text/javascript" charset="utf-8"
-            src="https://www.google.com/jsapi"></script>
-    <script type="text/javascript" charset="utf-8"
-            src="{{ STATIC_URL }}timepiece/js/chart/productivity_chart.js"
+    <script charset="utf-8" src="https://www.google.com/jsapi"></script>
+    <script charset="utf-8" src="{{ STATIC_URL }}timepiece/js/chart/productivity_chart.js"
             data-report="{{ report }}" data-type="{{ type }}"></script>
 {% endblock extrajs %}
 

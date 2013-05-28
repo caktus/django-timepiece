@@ -7,26 +7,20 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
 
     {% block javascript %}
-        <script type="text/javascript" charset="utf-8"
-                src="//ajax.googleapis.com/ajax/libs/jquery/1.7.2/jquery.min.js"></script>
+        <script charset="utf-8" src="//ajax.googleapis.com/ajax/libs/jquery/1.7.2/jquery.min.js"></script>
         {% comment %}
         .button() is in both bootstrap & jqueryui. Selectable depends on
         jqueryui's, and bootstrap's is not currently used, so we'll load
         jqueryui last so that it has precedence.
         {% endcomment %}
-        <script type="text/javascript" charset="utf-8"
-                src="{{ STATIC_URL }}bootstrap/js/bootstrap.min.js"></script>
-        <script type="text/javascript" charset="utf-8"
-                src="//ajax.googleapis.com/ajax/libs/jqueryui/1.8.18/jquery-ui.min.js"></script>
-        <script type="text/javascript" charset="utf-8"
-                src="{{ STATIC_URL }}selectable/js/jquery.dj.selectable.js"></script>
+        <script charset="utf-8" src="{{ STATIC_URL }}bootstrap/js/bootstrap.min.js"></script>
+        <script charset="utf-8" src="//ajax.googleapis.com/ajax/libs/jqueryui/1.8.18/jquery-ui.min.js"></script>
+        <script charset="utf-8" src="{{ STATIC_URL }}selectable/js/jquery.dj.selectable.js"></script>
         {% if perms.crm.view_business %}  {# FIXME: Permission doesn't exist #}
             {{ quick_search_form.media.js }}
-            <script type="text/javascript" charset="utf-8"
-                    src="{{ STATIC_URL }}timepiece/js/quicksearch.js"></script>
+            <script charset="utf-8" src="{{ STATIC_URL }}timepiece/js/quicksearch.js"></script>
         {% endif %}
-        <script type="text/javascript" charset="utf-8"
-                src="{{ STATIC_URL }}timepiece/js/widgets.js"></script>
+        <script charset="utf-8" src="{{ STATIC_URL }}timepiece/js/widgets.js"></script>
     {% endblock javascript %}
 
     {% block extrajs %}
@@ -41,8 +35,7 @@
         {% if debug %}
             <link rel="stylesheet/less" type="text/css" href="{{ STATIC_URL }}timepiece/less/style.less" />
             {% block extrastaticfiles_debug %}{% endblock extrastaticfiles_debug %}
-            <script type="text/javascript" charset="utf-8"
-                    src="{{ STATIC_URL }}less/less-1.3.3.min.js"></script>
+            <script charset="utf-8" src="{{ STATIC_URL }}less/less-1.3.3.min.js"></script>
         {% else %}
             {% load compress %}
             {% compress css %}

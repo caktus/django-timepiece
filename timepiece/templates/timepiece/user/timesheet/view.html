@@ -12,13 +12,12 @@
 {% block breadcrumb %}{% endblock breadcrumb %}
 
 {% block extrajs %}
-    <script type="text/javascript">
+    <script>
         var basePath = "{% url 'view_user_timesheet' timesheet_user.pk %}",
             tabIds = ['overview', 'all-entries', 'daily-summary'],
             defaultTab = 'overview';
     </script>
-    <script type="text/javascript" charset="utf-8"
-            src="{{ STATIC_URL }}timepiece/js/permanent_tabs.js"></script>
+    <script charset="utf-8" src="{{ STATIC_URL }}timepiece/js/permanent_tabs.js"></script>
 {% endblock extrajs %}
 
 {% block content %}
