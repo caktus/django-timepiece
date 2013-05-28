@@ -7,7 +7,7 @@
 function changeActiveTab(to) {
     // Change active tab.
     $('.nav-tabs li.active').removeClass('active');
-    $('.nav-tabs a[href=' + to + ']').parent().addClass('active');
+    $('.nav-tabs a[to=' + to + ']').parent().addClass('active');
 
     // Change active tab content.
     $('.tab-pane.active').removeClass('active');
@@ -35,7 +35,7 @@ $(function () {
         event.preventDefault();
         self = $(this)
         if (!self.parent().hasClass('active')) {
-            var to = self.attr('href'),
+            var to = self.attr('to'),
                 search = window.location.search;
             history.pushState({}, '', basePath + to + '/' + search);
             changeActiveTab(to);

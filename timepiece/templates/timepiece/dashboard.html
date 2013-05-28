@@ -74,13 +74,16 @@
 
         <ul class="nav nav-tabs">
             <li{% if active_tab == 'progress' %} class="active"{% endif %}>
-                <a class="tab-link" href="progress">Progress</a>
+                {% url "dashboard" "progress" as link %}
+                <a class="tab-link" to="progress" href="{{ link|add_parameters:request.GET }}">Progress</a>
             </li>
             <li{% if active_tab == 'all-entries' %} class="active"{% endif %}>
-                <a class="tab-link" href="all-entries">All Entries</a>
+                {% url "dashboard" "all-entries" as link %}
+                <a class="tab-link" to="all-entries" href="{{ link|add_parameters:request.GET }}">All Entries</a>
             </li>
             <li{% if active_tab == 'online-users' %} class="active"{% endif %}>
-                <a class="tab-link" href="online-users">Online Users</a>
+                {% url "dashboard" "online-users" as link %}
+                <a class="tab-link" to="online-users" href="{{ link|add_parameters:request.GET }}">Online Users</a>
             </li>
         </ul>
 
