@@ -21,6 +21,7 @@ Release Notes
 * Used humanized time format on dashboard and user time sheet.
 * JavaScript on Clock In, Clock Out, and Pause buttons that prevents
   accidentally double-clicking the button
+* Show active contract names on the Outstanding Hours (invoices) list
 
 *Bugfixes*
 
