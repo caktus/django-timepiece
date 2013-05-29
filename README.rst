@@ -31,7 +31,7 @@ Features
 Requirements
 ------------
 
-django-timepiece is compatible with Python 2.{6,7}, Django 1.{3,4}, and
+django-timepiece is compatible with Python 2.{6,7}, Django 1.{4,5}, and
 PostgreSQL. PostgreSQL is the only offically supported database backend and,
 therefore, requires `psycopg2 <http://initd.org/psycopg/>`_. django-timepiece
 also depends on the following Django apps:
