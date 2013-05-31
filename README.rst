@@ -11,12 +11,12 @@ projects. Complete documentation is available on `Read The Docs
 .. |master-status| image::
     https://secure.travis-ci.org/caktus/django-timepiece.png?branch=master
     :alt: Build Status
-    :target: https://secure.travis-ci.org/caktus/django-timepiece
+    :target: https://travis-ci.org/caktus/django-timepiece
 
 .. |develop-status| image::
     https://secure.travis-ci.org/caktus/django-timepiece.png?branch=develop
     :alt: Build Status
-    :target: https://secure.travis-ci.org/caktus/django-timepiece
+    :target: https://travis-ci.org/caktus/django-timepiece
 
 Features
 --------
@@ -31,7 +31,7 @@ Features
 Requirements
 ------------
 
-django-timepiece is compatible with Python 2.{6,7}, Django 1.{3,4}, and
+django-timepiece is compatible with Python 2.{6,7}, Django 1.{4,5}, and
 PostgreSQL. PostgreSQL is the only offically supported database backend and,
 therefore, requires `psycopg2 <http://initd.org/psycopg/>`_. django-timepiece
 also depends on the following Django apps:
@@ -41,6 +41,10 @@ also depends on the following Django apps:
  * `django-pagination <http://pypi.python.org/pypi/django-pagination>`_
  * `django-compressor <https://github.com/jezdez/django_compressor>`_
  * `django-bootstrap-toolkit <https://github.com/dyve/django-bootstrap-toolkit>`_
+
+We actively support desktop versions of Chrome and Firefox, as well as common
+mobile platforms. We do not support most versions of Internet Explorer. We
+welcome pull requests to fix bugs on unsupported browsers.
 
 django-timepiece uses Sphinx and RST for documentation. You can use Sphinx to
 build the documentation:
@@ -88,6 +92,9 @@ Installation
             'selectable',
 
             'timepiece',
+            'timepiece.contracts',
+            'timepiece.crm',
+            'timepiece.entries',
             'timepiece.reports',
             ...
         )

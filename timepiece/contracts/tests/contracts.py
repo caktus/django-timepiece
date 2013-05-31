@@ -5,10 +5,10 @@ from django.contrib.auth.models import Permission
 from django.core.exceptions import ValidationError
 
 from timepiece.contracts.models import ProjectContract, ContractHour
-from timepiece.tests.base import TimepieceDataTestCase
+from timepiece.tests.base import TimepieceDataTestCase, ViewTestMixin
 
 
-class ContractListTestCase(TimepieceDataTestCase):
+class ContractListTestCase(ViewTestMixin, TimepieceDataTestCase):
     url_name = 'list_contracts'
     perm_names = [('contracts', 'add_projectcontract')]
 
@@ -50,7 +50,7 @@ class ContractListTestCase(TimepieceDataTestCase):
     def test_one_contract(self):
         """List should return all current contracts."""
         correct_contract = self.create_contract(projects=self.projects,
-                status='current')
+                status=ProjectContract.STATUS_CURRENT)
         response = self._get()
         self.assertEqual(response.status_code, 200)
         contracts = response.context['contracts']
@@ -60,7 +60,7 @@ class ContractListTestCase(TimepieceDataTestCase):
     def test_contracts(self):
         """List should return all current contracts."""
         correct_contracts = [self.create_contract(projects=self.projects,
-                status='current') for i in range(3)]
+                status=ProjectContract.STATUS_CURRENT) for i in range(3)]
         response = self._get()
         self.assertEqual(response.status_code, 200)
         contracts = response.context['contracts']
@@ -71,16 +71,16 @@ class ContractListTestCase(TimepieceDataTestCase):
     def test_non_current_contracts(self):
         """List should return all current contracts."""
         complete_contract = self.create_contract(projects=self.projects,
-                status='complete')
+                status=ProjectContract.STATUS_COMPLETE)
         upcoming_contract = self.create_contract(projects=self.projects,
-                status='upcoming')
+                status=ProjectContract.STATUS_UPCOMING)
         response = self._get()
         self.assertEqual(response.status_code, 200)
         contracts = response.context['contracts']
         self.assertEqual(len(contracts), 0)
 
 
-class ContractViewTestCase(TimepieceDataTestCase):
+class ContractViewTestCase(ViewTestMixin, TimepieceDataTestCase):
     url_name = 'view_contract'
     perm_names = [('contracts', 'add_projectcontract')]
 
@@ -123,21 +123,21 @@ class ContractViewTestCase(TimepieceDataTestCase):
 
     def test_current_contract(self):
         contract = self.create_contract(projects=self.projects,
-                status='current')
+                status=ProjectContract.STATUS_CURRENT)
         response = self._get(url_args=(contract.pk,))
         self.assertEqual(response.status_code, 200)
         self.assertEqual(contract, response.context['contract'])
 
     def test_upcoming_contract(self):
         contract = self.create_contract(projects=self.projects,
-                status='upcoming')
+                status=ProjectContract.STATUS_UPCOMING)
         response = self._get(url_args=(contract.pk,))
         self.assertEqual(response.status_code, 200)
         self.assertEqual(contract, response.context['contract'])
 
     def test_complete_contract(self):
         contract = self.create_contract(projects=self.projects,
-                status='complete')
+                status=ProjectContract.STATUS_COMPLETE)
         response = self._get(url_args=(contract.pk,))
         self.assertEqual(response.status_code, 200)
         self.assertEqual(contract, response.context['contract'])
@@ -230,4 +230,3 @@ class ContractHourEmailTestCase(TimepieceDataTestCase):
         self.assertTrue(send_mail.called)
         (subject, ctx) = send_mail.call_args[0]
         self.assertTrue(subject.startswith("Changed"))
-

@@ -1,7 +1,7 @@
 {% extends "timepiece/project/base.html" %}
 {% load url from future %}
 
-{% block title %}Remove Project Relationship{% endblock %}
+{% block title %}Remove Project Relationship{% endblock title %}
 
 {% block crumbs %}
     {{ block.super }}
@@ -23,4 +23,4 @@
             </form>
         </div>
     </div>
-{% endblock %}
+{% endblock content %}

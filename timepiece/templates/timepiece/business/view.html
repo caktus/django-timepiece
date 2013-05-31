@@ -2,11 +2,14 @@
 {% load timepiece_tags markup %}
 {% load url from future %}
 
-{% block title %}{{ business.name }}{% endblock %}
+{% block title %}{{ business.name }}{% endblock title %}
 
 {% block crumbs %}
     {{ block.super }}
-    <li><span class="divider">/</span> <a href="">{{ business.name }}</a></li>
+    <li>
+        <span class="divider">/</span>
+        <a href="">{{ business.name }}</a>
+    </li>
 {% endblock crumbs %}
 
 {% block content %}
@@ -32,4 +35,4 @@
             </table>
         </div>
     </div>
-{% endblock %}
+{% endblock content %}

@@ -1,12 +1,55 @@
 Release Notes
 =============
 
+0.9.2 (05-31-2013)
+------------------
+
+*Features*
+
+* Checkbox filter by status on the outstanding hours list view.
+* Click-to-highlight rows on the payroll summary page.
+* Administrators with 'entries.add_projecthours' permission can view
+  unpublished hours on the schedule view page.
+* Refactored Total Progress area on the dashboard to more clearly show
+  total hours worked vs. total hours assigned.
+* Aligned columns on time sheet and dashboard All Entries tables.
+* Displayed negative times with a negative sign and a red font.
+* In Contract listing & detail views, display end date in red+bold if the
+  contract is expired.
+* In Contract listing & detail views, display warning icon next to end date if
+  the contract is due to expire in less than two weeks.
+* Used humanized time format on dashboard and user time sheet.
+* JavaScript on Clock In, Clock Out, and Pause buttons that prevents
+  accidentally double-clicking the button
+* Show active contract names on the Outstanding Hours (invoices) list
+
+*Bugfixes*
+
+* Added missing apps to `INSTALLED_APPS` in README.
+* Only include trackable projects in the quick clock in context processor.
+* Filter projects by entry's user (rather than logged-in user) on Entry edit
+  view.
+* Expose correct link on permanent tabs.
+* Use select_for_update() on the active_entry during clock in to prevent
+  creating a second active entry.
+* Fixed broken admin links for Contract and ContractHour
+
+*Code quality*
+
+* Split view test methods from `TimepieceDataTestCase` to create
+  `ViewTestMixin`.
+* Removed some outdated styles.
+* Used global styles for table highlight and hover colors.
+* Specified browser support in README.
+* Refreshed template tags, and removed some unused ones.
+
 0.9.1 (05-14-2013)
 ------------------
 Related issues are in the `0.9.1 milestone
 <https://github.com/caktus/django-timepiece/issues?milestone=38&page=1&state=closed>`_.
 
-* Fixed a bug with the 'db_name' of some contract models that was causing database queries to use the wrong table name.
+* Fixed a bug with the 'db_name' of some contract models that was causing
+  database queries to use the wrong table name.
 
 0.9.0 (05-10-2013)
 ------------------
@@ -70,7 +113,8 @@ Related issues are in the `0.9.0 milestone
 Related issues are in the `0.8.3 milestone
 <https://github.com/caktus/django-timepiece/issues?milestone=37&page=1&state=closed>`_.
 
-* Fixed invoice creation to separate out non-billable activities and not count them in the invoice totals.
+* Fixed invoice creation to separate out non-billable activities and not count
+  them in the invoice totals.
 * Added link to `Outstanding Hours` page from `Invoice Detail` page.
 * Added schedule link to mobile navbar
 * Added requirement that scheduled hours be > 0.

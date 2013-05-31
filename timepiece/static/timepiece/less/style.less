@@ -20,8 +20,23 @@ static/timepiece.
 @lightgray: #DDDDDD;
 @blue: #049CDB;
 @lightblue: lighten(@blue, 20%);
-@tableBackgroundAccent: #E6E6E6;
+@red: #DA4F49;
+
+@tableBackgroundAccent: #EEEEEE;
+@tableBackgroundHover: #D0D0EC;
 @tableBorder: #DDDDDD;
+
+
+@navbarCollapseWidth: 840px;
+@media (min-width: @navbarCollapseWidth) {
+    #collapsed-nav { display: none !important; }
+    #full-nav      { display: inherit !important; }
+}
+@media (max-width: @navbarCollapseWidth) {
+    #collapsed-nav { display: inherit !important; }
+    #full-nav      { display: none !important; }
+}
+
 
 .bg-icon(@icon) {
     background: url('../../images/icons/@{icon}') no-repeat;
@@ -81,29 +96,6 @@ body {
         width: 16px;
     }
 
-    .quick-buttons {
-        margin-bottom: 20px;
-        ul {
-            &.subnav {
-                margin-top: 3px;
-                li {
-                    .pull-left;
-                    padding: 0px 10px 0 0;
-                    @media(max-width: 480px) {
-                        padding: 0 5px 0 0;
-                    }
-                    a {
-                        &.add-entry {
-                            @media(max-width: 430px) {
-                                margin-top: 10px;
-                            }
-                        }
-                    }
-                }
-            }
-        }
-    }
-
     span {
         &.individual {
             .bg-icon('user.png');
@@ -160,6 +152,9 @@ body {
                 }
             }
 
+            &.emphasized-row {
+                background-color: @tableBackgroundAccent;
+            }
             &.ledger_header th {
                 background-color: @lightblue !important;
             }
@@ -182,25 +177,6 @@ body {
                 background-color: @blue !important;
             }
         }
-
-        &.table-striped-vertical {
-            th, td {
-                border-bottom: 1px solid @tableBorder;
-            }
-
-            // Double border in the body
-            tbody {
-                tr:last-child {
-                    th, td {
-                        border-bottom: 0px;
-                    }
-                }
-            }
-
-            th:nth-child(even), td:nth-child(even) {
-                background-color: @tableBackgroundAccent;
-            }
-        }
     }
 
     form {
@@ -212,7 +188,6 @@ body {
             }
         }
     }
-
 
     /*****************************************
      * End HTML entities
@@ -308,6 +283,7 @@ body {
      * End general site-wide classes
      *****************************************/
 
+
     /*****************************************
      * Start navbar classes
      *****************************************/
@@ -332,6 +308,7 @@ body {
     /*****************************************
      * End navbar classes
      *****************************************/
+
 
     /*****************************************
      * Start specific body ids
@@ -417,17 +394,8 @@ body {
     }
 
     &#dashboard {
-        .table-striped {
-            tbody tr:nth-child(odd) td, tbody tr:nth-child(odd) th {
-                background-color: #eeeeee;
-            }
-        }
-        .table-hover {
-            tbody {
-                tr:hover td, tr:hover th {
-                    background-color: #e2e2f3;
-                }
-            }
+        .negative-time {
+            color: @red;
         }
         #active-entry {
             margin-bottom: 35px;
@@ -451,6 +419,8 @@ body {
             .bar, .remaining {
                 float: left;
                 overflow: hidden;
+                text-indent: 100%;
+                white-space: nowrap;
             }
             .bar-worked {
                 #gradient > .vertical(#62c462, #57a957);  // green
@@ -459,26 +429,16 @@ body {
                 #gradient > .vertical(#458745, #346534);  // dark green
             }
         }
-        #overall-progress {
+       #overall-progress {
             #overall-label {
-                float: left;
-                padding: 1px;
-                margin-right: 10px;
-                height: 28px;
-                line-height: 28px;
-                font-size: 26px;
-                font-weight: bold;
-                vertical-align: middle;
-                text-align: center;
+                font-size: 16px;
+                margin-bottom: 3px;
+                span {
+                    font-weight: bold;
+                }
             }
-            .progress {
+            #overall-bar .progress {
                 height: 28px;
-            }
-            .bar, .remaining {
-                vertical-align: middle;
-                font-size: 18px;
-                line-height: 28px;
-                text-align: center;
             }
         }
         #project-progress {
@@ -493,10 +453,6 @@ body {
                 }
                 .progress-col {
                     width: 50%;
-                    .bar, .remaining {
-                        text-indent: 100%;
-                        white-space: nowrap;
-                    }
                 }
             }
         }
@@ -578,16 +534,15 @@ body {
             margin-left: 10px;
         }
 
-        .hours {
-            text-align: center !important;
-        }
         #schedule {
-            // Manual table striping with lighter-than-default color.
-            tbody tr:nth-child(odd) td, tbody tr:nth-child(odd) th {
-                background-color: #eeeeee;
-            }
             .hover {
-                background-color: #e2e2f3 !important;
+                background-color: @tableBackgroundHover !important;
+            }
+            .hours {
+                text-align: center !important;
+            }
+            .unpublished {
+                color: @red;
             }
         }
     }
@@ -605,6 +560,21 @@ body {
     &#hourly-report {
         .controls {
             width: 100%;
+        }
+    }
+
+    &#payroll-summary {
+        #weekly-summary tbody tr, #hourly-summary tbody tr {
+            .hover {
+                background-color: @tableBackgroundHover !important;
+            }
+        }
+    }
+
+    &#contracts {
+        table .past {
+            font-weight: bold;
+            color: @red;
         }
     }
 

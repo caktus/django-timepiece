@@ -2,7 +2,7 @@
 {% load bootstrap_toolkit %}
 {% load url from future %}
 
-{% block title %}Businesses{% endblock %}
+{% block title %}Businesses{% endblock title %}
 
 {% block content %}
     <div class="row-fluid">
@@ -50,4 +50,4 @@
             {% paginate %}
         </div>
     </div>
-{% endblock %}
+{% endblock content %}

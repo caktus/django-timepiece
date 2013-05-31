@@ -2,7 +2,7 @@
 {% load timepiece_tags bootstrap_toolkit %}
 {% load url from future %}
 
-{% block title %}Invoices{% endblock %}
+{% block title %}Invoices{% endblock title %}
 
 {% block content %}
     <div class="row-fluid">
@@ -71,4 +71,4 @@
             {% endif %}
         </div>
     </div>
-{% endblock %}
+{% endblock content %}

@@ -2,7 +2,7 @@
 {% load timepiece_tags bootstrap_toolkit %}
 {% load url from future %}
 
-{% block title %}Hourly Report{% endblock %}
+{% block title %}Hourly Report{% endblock title %}
 
 {% block extrajs %}
     {{ pj_filters.media }}
@@ -19,7 +19,7 @@
     {% with 'hourly_report' as active %}
         {{ block.super }}
     {% endwith %}
-{% endblock %}
+{% endblock report_nav %}
 
 {% block report_content %}
     <div class="row-fluid">
