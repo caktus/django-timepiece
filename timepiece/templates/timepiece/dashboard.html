@@ -95,7 +95,7 @@
                     <div id="overall-label">
                         <span>Total:</span>
                         {{ total_worked|humanize_hours:"{hours:02d}:{minutes:02d}" }} worked
-                        of {{ total_assigned|humanize_hours:"{hours:02d}:{minutes:02d}" }} assigned
+                        of {{ total_assigned|humanize_hours:"{hours:02d}:{minutes:02d}" }} expected
                     </div>
                     <div id="overall-bar"
                         data-worked="{{ total_worked }}"
