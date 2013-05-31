@@ -2,7 +2,7 @@
 {% load url from future %}
 {% load bootstrap_toolkit %}
 
-{% block title %}My Settings{% endblock %}
+{% block title %}My Settings{% endblock title %}
 
 {% block crumbs %}
     {{ block.super }}
@@ -27,4 +27,4 @@
             </form>
         </div>
     </div>
-{% endblock %}
+{% endblock content %}

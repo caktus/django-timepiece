@@ -3,7 +3,8 @@
 
 <div class="navbar navbar-fixed-top navbar-inverse">
     <div class="navbar-inner">
-        <div class="container-fluid visible-desktop">
+
+        <div id="full-nav" class="container-fluid">
             {% block navbar-left %}
                 <a class="brand" href="/">Timepiece</a>
                 <ul class="nav pull-left">
@@ -25,7 +26,7 @@
                                 </ul>
                             </li>
                         {% endif %}
-                    {% endblock %}
+                    {% endblock quick-clock-in %}
 
                     {% if perms.entries.add_entry %}
                         <li><a href="{% url 'view_user_timesheet' request.user.pk %}">Time Sheet</a></li>
@@ -83,7 +84,7 @@
 
                     {% include "timepiece/extra_nav.html" %}
                 </ul>
-            {% endblock %}
+            {% endblock navbar-left %}
 
             {% block navbar-right %}
                 {% if user.is_authenticated %}
@@ -108,11 +109,11 @@
                             {{ quick_search_form.quick_search }}
                         </form>
                     {% endif %}
-                {% endblock %}
-            {% endblock %}
+                {% endblock quick-search %}
+            {% endblock navbar-right %}
         </div>
 
-        <div class="container-fluid hidden-desktop">
+        <div id="collapsed-nav" class="container-fluid">
             <a class="brand" href="/">Timepiece</a>
 
             {% if user.is_authenticated %}

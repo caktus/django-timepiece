@@ -2,7 +2,7 @@
 {% load timepiece_tags %}
 {% load url from future %}
 
-{% block title %}Invoice Detail{% endblock %}
+{% block title %}Invoice Detail{% endblock title %}
 
 {% block crumbs %}
     {{ block.super }}
@@ -21,4 +21,4 @@
             {% include 'timepiece/invoice/_weekly_entry_list.html' %}
         </div>
     </div>
-{% endblock %}
+{% endblock content %}

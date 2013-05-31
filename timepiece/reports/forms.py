@@ -4,7 +4,7 @@ from django.contrib.auth.models import User
 from selectable import forms as selectable
 
 from timepiece.fields import UserModelMultipleChoiceField
-from timepiece.forms import DateForm, DATE_FORM_FORMAT, YearMonthForm
+from timepiece.forms import DateForm, YearMonthForm
 
 from timepiece.crm.lookups import ProjectLookup
 from timepiece.crm.models import Attribute
@@ -57,7 +57,6 @@ class BillableHoursReportForm(DateForm):
 
 
 class ProductivityReportForm(forms.Form):
-    DATE_FORMAT = DATE_FORM_FORMAT
     ORGANIZE_BY_CHOICES = (
         ('week', 'Week'),
         ('user', 'User'),

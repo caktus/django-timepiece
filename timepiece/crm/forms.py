@@ -165,7 +165,7 @@ class ProjectSearchForm(SearchForm):
         super(ProjectSearchForm, self).__init__(*args, **kwargs)
         PROJ_STATUS_CHOICES = [('', 'Any Status')]
         PROJ_STATUS_CHOICES.extend([(a.pk, a.label) for a
-                in Attribute.objects.all().filter(type='project-status')])
+                in Attribute.statuses.all()])
         self.fields['status'].choices = PROJ_STATUS_CHOICES
 
     def save(self):

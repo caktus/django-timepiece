@@ -2,7 +2,7 @@
 {% load bootstrap_toolkit %}
 {% load url from future %}
 
-{% block title %}{% if entry %}Update{% else %}Create{% endif %} Entry{% endblock %}
+{% block title %}{% if entry %}Update{% else %}Create{% endif %} Entry{% endblock title %}
 
 {% block crumbs %}
     {{ block.super }}
@@ -30,4 +30,4 @@
             </form>
         </div>
     </div>
-{% endblock %}
+{% endblock content %}

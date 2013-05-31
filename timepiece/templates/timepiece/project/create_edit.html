@@ -14,7 +14,7 @@
     </li>
 {% endblock crumbs %}
 
-{% block title %}{% if not project %}Create Project{% else %}Edit {{ project }}{% endif %}{% endblock %}
+{% block title %}{% if not project %}Create Project{% else %}Edit {{ project }}{% endif %}{% endblock title %}
 
 {% block content %}
     <div class="row-fluid">
@@ -33,4 +33,4 @@
             </form>
         </div>
     </div>
-{% endblock %}
+{% endblock content %}

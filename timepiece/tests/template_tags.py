@@ -4,56 +4,64 @@ import mock
 
 from django import template
 from django.test import TestCase
+from django.utils.html import strip_tags
 
 from timepiece import utils
 from timepiece.templatetags import timepiece_tags as tags
 from timepiece.tests.base import TimepieceDataTestCase
 
 
-class HumanizeSecondsTestCase(TestCase):
+class HumanizeTimeTestCase(TestCase):
 
-    def test_usual(self):
+    def test_seconds(self):
         seconds_display = tags.humanize_seconds((5.5 * 3600) + 3)
-        self.assertEqual(seconds_display, u'05:30:03',
-            "Should return u'05:30:03', returned {0}".format(seconds_display)
+        expected = u'05:30:03'
+        self.assertEquals(seconds_display, expected,
+            "Should return {0}, returned {1}".format(expected, seconds_display)
         )
 
-    def test_negative_seconds(self):
+    def test_seconds_negative(self):
         seconds_display = tags.humanize_seconds((-2.5 * 3600) - 4)
-        self.assertEqual(seconds_display, u'(02:30:04)',
-            "Should return u'(02:30:04)', returned {0}".format(seconds_display)
+        expected = u'-02:30:04'
+        self.assertTrue(seconds_display.startswith('<span'))
+        self.assertTrue('negative-time' in seconds_display)
+        self.assertEquals(strip_tags(seconds_display), expected,
+            "Should return {0}, returned {1}".format(expected, seconds_display)
         )
 
-    def test_overnight(self):
+    def test_seconds_overnight(self):
         seconds_display = tags.humanize_seconds((30 * 3600) + 2)
-        self.assertEqual(seconds_display, u'30:00:02',
-            "Should return u'30:00:02', returned {0}".format(seconds_display)
+        expected = u'30:00:02'
+        self.assertEquals(seconds_display, expected,
+            "Should return {0}, returned {1}".format(expected, seconds_display)
         )
 
-    def test_format(self):
-        seconds_display = tags.humanize_seconds(120, '%M:%M:%M')
-        expected = u'02:02:02'
-        self.assertEqual(seconds_display, expected,
-            "Should return {0}, return {1}".format(expected, seconds_display)
+    def test_seconds_format(self):
+        seconds_display = tags.humanize_seconds(120, '{minutes:02d}:{minutes}')
+        expected = u'02:2'
+        self.assertEquals(seconds_display, expected,
+            "Should return {0}, returned {1}".format(expected, seconds_display)
         )
 
-
-class ConvertHoursToSecondsTestCase(TestCase):
-
-    def test_usual(self):
-        seconds = tags.convert_hours_to_seconds('3.25')
-        expected = int(3.25 * 3600)
-        self.assertEqual(seconds, expected,
-            "Given 3.25 hours, returned {0}, expected {1}".format(
-                seconds, expected)
+    def test_seconds_negative_format(self):
+        seconds_display = tags.humanize_seconds(-120, None, '-{minutes:02d}')
+        expected = u'-02'
+        self.assertEquals(seconds_display, expected,
+            "Should return {0}, returned {1}".format(expected, seconds_display)
         )
 
-    def test_negative_seconds(self):
-        seconds = tags.convert_hours_to_seconds('-2.75')
-        expected = int(-2.75 * 3600)
-        self.assertEqual(seconds, expected,
-            "Given -2.75 hours, returned {0}, expected {1}".format(
-                seconds, expected)
+    def test_hours(self):
+        hours_display = tags.humanize_hours(7.5)
+        expected = u'07:30:00'
+        self.assertEquals(hours_display, expected,
+            "Should return {0}, returned {1}".format(expected, hours_display)
+        )
+
+    def test_hours_format(self):
+        hours_display = tags.humanize_hours(7.1, '{minutes:02d}:{minutes}')
+        expected = u'06:6'
+        self.assertEquals(hours_display, expected,
+            "Should return {0}, returned {1}".format(expected, hours_display)
         )
 
 
@@ -133,7 +141,7 @@ class TimeTagTestCase(TestCase):
 
     def test_week_start(self):
         start = tags.week_start(datetime.date(2013, 1, 10))
-        self.assertEqual(u'Jan. 7, 2013', start)
+        self.assertEqual(start.date(), datetime.date(2013, 1, 7))
 
 
 class MiscTagTestCase(TestCase):
@@ -153,25 +161,6 @@ class MiscTagTestCase(TestCase):
         ]
         retval = tags.get_uninvoiced_hours(entries)
         self.assertEqual(49, retval)
-
-    def test_timesheet_url(self):
-        with mock.patch('timepiece.templatetags.timepiece_tags.reverse') \
-          as reverse:
-            reverse.return_value = "Boo"
-            retval = tags.timesheet_url('project', 27, None)
-            self.assertEqual('Boo?', retval)
-            self.assertEqual('view_project_timesheet', reverse.call_args[0][0])
-            self.assertEqual((27,), reverse.call_args[1]['args'])
-
-    def test_timesheet_url2(self):
-        with mock.patch('timepiece.templatetags.timepiece_tags.reverse')\
-        as reverse:
-            reverse.return_value = "Boo"
-            dt = datetime.date(2013, 1, 10)
-            retval = tags.timesheet_url('user', 13, dt)
-            self.assertEqual('Boo?year=2013&month=1', retval)
-            self.assertEqual('view_user_timesheet', reverse.call_args[0][0])
-            self.assertEqual((13,), reverse.call_args[1]['args'])
 
     def test_project_report_url_for_contract(self):
         with mock.patch('timepiece.templatetags.timepiece_tags.reverse')\
@@ -224,7 +213,7 @@ class ArithmeticTagTestCase(TestCase):
                 { 'worked': 2, 'assigned': 1},
             ]
         }
-        self.assertEqual('3', tags.get_max_hours(ctx))
+        self.assertEqual(3, tags.get_max_hours(ctx))
 
     def test_get_max_hours_min_is_zero(self):
         # min of max hours is zero
@@ -234,7 +223,7 @@ class ArithmeticTagTestCase(TestCase):
                 { 'worked': -3, 'assigned': -5},
                 ]
         }
-        self.assertEqual('0', tags.get_max_hours(ctx))
+        self.assertEqual(0, tags.get_max_hours(ctx))
 
 
 class TestProjectHoursForContract(TimepieceDataTestCase):

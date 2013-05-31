@@ -2,7 +2,7 @@
 {% load bootstrap_toolkit %}
 {% load url from future %}
 
-{% block title %}{% if not business %}Create Business{% else %}Edit {{ business }}{% endif %}{% endblock %}
+{% block title %}{% if not business %}Create Business{% else %}Edit {{ business }}{% endif %}{% endblock title %}
 
 {% block crumbs %}
     {{ block.super }}
@@ -33,4 +33,4 @@
             </form>
         </div>
     </div>
-{% endblock %}
+{% endblock content %}

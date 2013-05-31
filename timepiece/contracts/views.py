@@ -13,11 +13,11 @@ from django.utils.decorators import method_decorator
 from django.views.generic import ListView, DetailView
 
 from timepiece import utils
-from timepiece.forms import DATE_FORM_FORMAT, DateForm, SearchForm
+from timepiece.forms import SearchForm
 from timepiece.templatetags.timepiece_tags import seconds_to_hours
 from timepiece.utils.csv import CSVViewMixin
 
-from timepiece.contracts.forms import InvoiceForm
+from timepiece.contracts.forms import InvoiceForm, OutstandingHoursFilterForm
 from timepiece.contracts.models import ProjectContract, HourGroup, EntryGroup
 from timepiece.entries.models import Project, Entry
 
@@ -28,6 +28,13 @@ class ContractDetail(DetailView):
     context_object_name = 'contract'
     pk_url_kwarg = 'contract_id'
 
+    def get_context_data(self, *args, **kwargs):
+        if 'today' not in kwargs:
+            kwargs['today'] = datetime.date.today()
+        if 'warning_date' not in kwargs:
+            kwargs['warning_date'] = datetime.date.today() + relativedelta(weeks=2)
+        return super(ContractDetail, self).get_context_data(*args, **kwargs)
+
     @method_decorator(permission_required('contracts.add_projectcontract'))
     def dispatch(self, *args, **kwargs):
         return super(ContractDetail, self).dispatch(*args, **kwargs)
@@ -37,8 +44,15 @@ class ContractList(ListView):
     template_name = 'timepiece/contract/list.html'
     model = ProjectContract
     context_object_name = 'contracts'
-    queryset = ProjectContract.objects.filter(status='current')\
-            .order_by('name')
+    queryset = ProjectContract.objects.filter(
+            status=ProjectContract.STATUS_CURRENT).order_by('name')
+
+    def get_context_data(self, *args, **kwargs):
+        if 'today' not in kwargs:
+            kwargs['today'] = datetime.date.today()
+        if 'warning_date' not in kwargs:
+            kwargs['warning_date'] = datetime.date.today() + relativedelta(weeks=2)
+        return super(ContractList, self).get_context_data(*args, **kwargs)
 
     @method_decorator(permission_required('contracts.add_projectcontract'))
     def dispatch(self, *args, **kwargs):
@@ -133,31 +147,13 @@ def create_invoice(request):
 
 @permission_required('contracts.change_entrygroup')
 def list_outstanding_invoices(request):
-    from_date = None
-    to_date = utils.get_month_start().date()
-    defaults = {
-        'to_date': (to_date - relativedelta(days=1)).strftime(DATE_FORM_FORMAT),
-    }
-    date_form = DateForm(request.GET or defaults)
-    if request.GET and date_form.is_valid():
-        from_date, to_date = date_form.save()
-
-    datesQ = Q()
-    datesQ &= Q(end_time__gte=from_date) if from_date else Q()
-    datesQ &= Q(end_time__lt=to_date) if to_date else Q()
-    billableQ = Q(project__type__billable=True, project__status__billable=True)
-    statusQ = Q(status=Entry.APPROVED)
-    ordering = ('project__type__label', 'project__status__label',
-            'project__business__name', 'project__name', 'status')
-
-    entries = Entry.objects.filter(datesQ, billableQ, statusQ)
-    project_totals = entries.order_by(*ordering)
-
+    form = OutstandingHoursFilterForm(request.GET or None)
+    project_totals = form.get_project_totals()
     return render(request, 'timepiece/invoice/outstanding.html', {
-        'date_form': date_form,
-        'project_totals': project_totals if to_date else [],
-        'to_date': to_date - relativedelta(days=1) if to_date else '',
-        'from_date': from_date,
+        'date_form': form,
+        'project_totals': project_totals,
+        'to_date': form.get_to_date(),
+        'from_date': form.get_from_date(),
     })
 
 

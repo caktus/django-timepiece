@@ -5,6 +5,7 @@ from django.contrib.auth.models import User
 from django.contrib.sites.models import Site
 from django.core.exceptions import ValidationError
 from django.core.mail import send_mail
+from django.core.urlresolvers import reverse
 from django.db import models
 from django.db.models import Sum
 from django.template import Context
@@ -15,29 +16,32 @@ from timepiece.entries.models import Entry
 
 
 class ProjectContract(models.Model):
-    CONTRACT_STATUS = (
-        ('upcoming', 'Upcoming'),
-        ('current', 'Current'),
-        ('complete', 'Complete'),
-    )
+    STATUS_UPCOMING = 'upcoming'
+    STATUS_CURRENT = 'current'
+    STATUS_COMPLETE = 'complete'
+    CONTRACT_STATUS = {
+        STATUS_UPCOMING: 'Upcoming',
+        STATUS_CURRENT: 'Current',
+        STATUS_COMPLETE: 'Complete',
+    }
 
     PROJECT_UNSET = 0  # Have to set existing contracts to something...
     PROJECT_FIXED = 1
     PROJECT_PRE_PAID_HOURLY = 2
     PROJECT_POST_PAID_HOURLY = 3
-    PROJECT_TYPE = (   # UNSET is not an option
-        (PROJECT_FIXED, 'Fixed'),
-        (PROJECT_PRE_PAID_HOURLY, 'Pre-paid Hourly'),
-        (PROJECT_POST_PAID_HOURLY, 'Post-paid Hourly')
-    )
+    PROJECT_TYPE = {   # UNSET is not an option
+        PROJECT_FIXED: 'Fixed',
+        PROJECT_PRE_PAID_HOURLY: 'Pre-paid Hourly',
+        PROJECT_POST_PAID_HOURLY: 'Post-paid Hourly',
+    }
 
     name = models.CharField(max_length=255)
     projects = models.ManyToManyField('crm.Project', related_name='contracts')
     start_date = models.DateField()
     end_date = models.DateField()
-    status = models.CharField(choices=CONTRACT_STATUS, default='upcoming',
-                              max_length=32)
-    type = models.IntegerField(choices=PROJECT_TYPE)
+    status = models.CharField(choices=CONTRACT_STATUS.items(),
+            default=STATUS_UPCOMING, max_length=32)
+    type = models.IntegerField(choices=PROJECT_TYPE.items())
 
     class Meta:
         ordering = ('-end_date',)
@@ -47,13 +51,11 @@ class ProjectContract(models.Model):
     def __unicode__(self):
         return unicode(self.name)
 
-    @models.permalink
     def get_admin_url(self):
-        return ('admin:timepiece_projectcontract_change', [self.pk])
+        return reverse('admin:contracts_projectcontract_change', args=[self.pk])
 
-    @models.permalink
     def get_absolute_url(self):
-        return ('view_contract', [self.pk])
+        return reverse('view_contract', args=[self.pk])
 
     @property
     def entries(self):
@@ -156,9 +158,8 @@ class ContractHour(models.Model):
             'contract': self.contract if self.contract_id else None,
             }
 
-    @models.permalink
     def get_absolute_url(self):
-        return ('admin:timepiece_contracthour_change', [self.pk])
+        return reverse('admin:contracts_contracthour_change', args=[self.pk])
 
     def clean(self):
         # Note: this is called when editing in the admin, but not otherwise
