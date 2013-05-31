@@ -2,7 +2,7 @@ from setuptools import setup, find_packages
 
 
 required_packages = [
-    'django>=1.3',
+    'django>=1.4',
     'psycopg2==2.5',
     'python-dateutil==1.5',
     'django-pagination==1.0.7',
