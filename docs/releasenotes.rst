@@ -1,8 +1,8 @@
 Release Notes
 =============
 
-0.9.2 (05-31-2013)
-------------------
+0.9.2 (Released 05-31-2013)
+---------------------------
 
 *Features*
 
@@ -43,16 +43,16 @@ Release Notes
 * Specified browser support in README.
 * Refreshed template tags, and removed some unused ones.
 
-0.9.1 (05-14-2013)
-------------------
+0.9.1 (Released 05-14-2013)
+---------------------------
 Related issues are in the `0.9.1 milestone
 <https://github.com/caktus/django-timepiece/issues?milestone=38&page=1&state=closed>`_.
 
 * Fixed a bug with the 'db_name' of some contract models that was causing
   database queries to use the wrong table name.
 
-0.9.0 (05-10-2013)
-------------------
+0.9.0 (Released 05-10-2013)
+---------------------------
 
 We have reorganized the django-timepiece code into 5 co-dependent apps to make
 the code more modular, readable, and updatable. To upgrade your installation
