@@ -4,6 +4,9 @@ Release Notes
 0.9.2 (Released 05-31-2013)
 ---------------------------
 
+Related iss ues are in the `0.9.2 milestone
+<https://github.com/caktus/django-timepiece/issues?milestone=34&state=closed>_`.
+
 *Features*
 
 * Checkbox filter by status on the outstanding hours list view.
@@ -53,6 +56,9 @@ Related issues are in the `0.9.1 milestone
 
 0.9.0 (Released 05-10-2013)
 ---------------------------
+
+Related issues are in the `0.9.0 milestone
+<https://github.com/caktus/django-timepiece/issues?milestone=33&state=closed>_`.
 
 We have reorganized the django-timepiece code into 5 co-dependent apps to make
 the code more modular, readable, and updatable. To upgrade your installation
