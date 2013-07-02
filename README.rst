@@ -9,12 +9,12 @@ projects. Complete documentation is available on `Read The Docs
 :develop: |develop-status|
 
 .. |master-status| image::
-    https://secure.travis-ci.org/caktus/django-timepiece.png?branch=master
+    https://api.travis-ci.org/caktus/django-timepiece.png?branch=master
     :alt: Build Status
     :target: https://travis-ci.org/caktus/django-timepiece
 
 .. |develop-status| image::
-    https://secure.travis-ci.org/caktus/django-timepiece.png?branch=develop
+    https://api.travis-ci.org/caktus/django-timepiece.png?branch=develop
     :alt: Build Status
     :target: https://travis-ci.org/caktus/django-timepiece
 
