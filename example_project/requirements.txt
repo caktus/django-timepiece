@@ -8,3 +8,4 @@ South==0.7.6
 pytz==2012c
 psycopg2==2.5
 Mock==1.0.1
+factory-boy==2.1.1
