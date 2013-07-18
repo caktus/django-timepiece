@@ -232,9 +232,9 @@ class ProcessProgressTestCase(TimepieceDataTestCase):
     def test_ordering(self):
         """Progress list should be ordered by project name."""
         projects = [
-            self.create_project(data={'name': 'a'}),
-            self.create_project(data={'name': 'b'}),
-            self.create_project(data={'name': 'c'}),
+            self.create_project(name='a'),
+            self.create_project(name='b'),
+            self.create_project(name='c'),
         ]
         for i in range(3):
             start_time = datetime.datetime(2012, 11, 5 + i, 8, 0)

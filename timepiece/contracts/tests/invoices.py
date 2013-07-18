@@ -81,7 +81,7 @@ class InvoiceViewPreviousTestCase(TimepieceDataTestCase):
             return response.context['invoices']
 
         list_url = reverse('list_invoices')
-        project3 = self.create_project(billable=True, data={'name': ':-D'})
+        project3 = self.create_project(billable=True, name=':-D')
         self.log_many([project3], 10)
         self.create_invoice(project3, data={'status': EntryGroup.INVOICED,
                 'comments': 'comment!', 'number': '###'})

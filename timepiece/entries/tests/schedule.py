@@ -41,31 +41,33 @@ class ProjectHoursTestCase(TimepieceDataTestCase):
                 'label': 'Untracked', 'billable': False,
                 'enable_timetracking': False})
 
-        self.work_activities = self.create_activity_group('Work')
-        self.leave_activities = self.create_activity_group('Leave')
-        self.all_activities = self.create_activity_group('All')
+        self.work_activities = self.create_activity_group(name='Work')
+        self.leave_activities = self.create_activity_group(name='Leave')
+        self.all_activities = self.create_activity_group(name='All')
 
         self.leave_activity = self.create_activity(
-            activity_groups=[self.leave_activities, self.all_activities],
             data={'code': 'leave', 'name': 'Leave', 'billable': False}
         )
+        self.leave_activity.activity_group.add(self.leave_activities,
+                self.all_activities)
         self.work_activity = self.create_activity(
-            activity_groups=[self.work_activities, self.all_activities],
             data={'code': 'work', 'name': 'Work', 'billable': True}
         )
+        self.work_activity.activity_group.add(self.work_activities,
+                self.all_activities)
 
         data = {
             'type': self.tracked_type,
             'status': self.tracked_status,
             'activity_group': self.work_activities,
         }
-        self.tracked_project = self.create_project(True, 'Tracked', data)
+        self.tracked_project = self.create_project(billable=True, name='Tracked', **data)
         data = {
             'type': self.untracked_type,
             'status': self.untracked_status,
             'activity_group': self.all_activities,
         }
-        self.untracked_project = self.create_project(True, 'Untracked', data)
+        self.untracked_project = self.create_project(billable=True, name='Untracked', **data)
 
 
 class ProjectHoursModelTestCase(ProjectHoursTestCase):
@@ -89,8 +91,8 @@ class ProjectHoursListViewTestCase(ProjectHoursTestCase):
         self.past_week = utils.get_week_start(datetime.date(2012, 4, 1)).date()
         self.current_week = utils.get_week_start().date()
         for i in range(5):
-            self.create_project_hours_entry(self.past_week, published=True)
-            self.create_project_hours_entry(self.current_week, published=True)
+            self.create_project_hours_entry(week_start=self.past_week, published=True)
+            self.create_project_hours_entry(week_start=self.current_week, published=True)
         self.url = reverse('view_schedule')
         self.client.login(username='user', password='abc')
         self.date_format = '%Y-%m-%d'
@@ -319,7 +321,8 @@ class ProjectHoursEditTestCase(ProjectHoursTestCase):
     def test_users(self):
         """Should retrieve all users who can_clock_in."""
         perm = Permission.objects.get(codename='can_clock_in')
-        group = self.create_auth_group(permissions=[perm])
+        group = self.create_auth_group()
+        group.permissions.add(perm)
 
         group_user = self.create_user(username='groupie', groups=[group])
         perm_user = User.objects.get(username='user')

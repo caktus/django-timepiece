@@ -24,15 +24,15 @@ class ProjectListTest(TimepieceDataTestCase):
 
         self.projects = []
         self.projects.append(self.create_project(name='a',
-                data={'description': 'a', 'status': self.statuses[0]}))
+                **{'description': 'a', 'status': self.statuses[0]}))
         self.projects.append(self.create_project(name='b',
-                data={'description': 'a', 'status': self.statuses[0]}))
+                **{'description': 'a', 'status': self.statuses[0]}))
         self.projects.append(self.create_project(name='c',
-                data={'description': 'b', 'status': self.statuses[1]}))
+                **{'description': 'b', 'status': self.statuses[1]}))
         self.projects.append(self.create_project(name='c',
-                data={'description': 'd', 'status': self.statuses[2]}))
+                **{'description': 'd', 'status': self.statuses[2]}))
         self.projects.append(self.create_project(name='d',
-                data={'description': 'e', 'status': self.statuses[3]}))
+                **{'description': 'e', 'status': self.statuses[3]}))
 
     def testUserPermission(self):
         """Regular users should be redirected to the login page.
