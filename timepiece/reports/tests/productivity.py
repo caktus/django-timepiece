@@ -14,13 +14,10 @@ class TestProductivityReport(ViewTestMixin, TimepieceDataTestCase):
     url_name = 'report_productivity'
 
     def setUp(self):
-        self.username = 'test_user'
-        self.password = 'password'
-        self.user = self.create_user(username=self.username,
-                password=self.password)
+        self.user = self.create_user()
         self.permission = Permission.objects.get(codename='view_entry_summary')
         self.user.user_permissions.add(self.permission)
-        self.client.login(username=self.username, password=self.password)
+        self.login_user(self.user)
 
         self.project = self.create_project()
         self.users = []

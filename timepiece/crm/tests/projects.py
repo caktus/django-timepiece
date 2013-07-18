@@ -39,13 +39,13 @@ class ProjectTestCase(TimepieceDataTestCase):
         self.log_time(project=self.p2, start=days[4], delta=(1, 0))
 
     def testNoPermission(self):
-        self.client.login(username='user', password='abc')
+        self.login_user(self.user)
         self.make_entries()
         response = self.client.get(self.url)
         self.assertEqual(response.status_code, 302)
 
     def testNoProject(self):
-        self.client.login(username='superuser', password='abc')
+        self.login_user(self.superuser)
         url = reverse('view_project_timesheet', args=(999,))
         response = self.client.get(url)
         self.assertEqual(response.status_code, 404)
@@ -55,7 +55,7 @@ class ProjectTestCase(TimepieceDataTestCase):
         The project timesheet should be empty if there are no entries, or a
         month has been selected for which there are no entries
         """
-        self.client.login(username='superuser', password='abc')
+        self.login_user(self.superuser)
 
         def verify_empty(response):
             self.assertEqual(response.status_code, 200)
@@ -72,7 +72,7 @@ class ProjectTestCase(TimepieceDataTestCase):
         verify_empty(response)
 
     def testCurrentProjectTimesheet(self):
-        self.client.login(username='superuser', password='abc')
+        self.login_user(self.superuser)
         self.make_entries()
         response = self.client.get(self.url)
         self.assertEqual(response.status_code, 200)
@@ -85,7 +85,7 @@ class ProjectTestCase(TimepieceDataTestCase):
         self.assertEqual(user_entry['sum'], Decimal(1))
 
     def testOldProjectTimesheet(self):
-        self.client.login(username='superuser', password='abc')
+        self.login_user(self.superuser)
         self.make_entries()
         data = {
             'year': 2011,
@@ -108,7 +108,7 @@ class ProjectTestCase(TimepieceDataTestCase):
         self.assertEqual(user_entry1['sum'], Decimal(1))
 
     def testOtherProjectTimesheet(self):
-        self.client.login(username='superuser', password='abc')
+        self.login_user(self.superuser)
         self.make_entries()
         response = self.client.get(reverse('view_project_timesheet',
                                            args=(self.p2.pk, ))
@@ -123,7 +123,7 @@ class ProjectTestCase(TimepieceDataTestCase):
         self.assertEqual(user_entry['sum'], Decimal(1))
 
     def test_project_csv(self):
-        self.client.login(username='superuser', password='abc')
+        self.login_user(self.superuser)
         self.make_entries()
         response = self.client.get(reverse('view_project_timesheet_csv',
                                            args=[self.p1.id])

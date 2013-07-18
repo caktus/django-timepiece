@@ -1,3 +1,4 @@
+from importlib import import_module
 import random
 import string
 import urllib
@@ -7,8 +8,12 @@ from decimal import Decimal
 
 from django.test import TestCase
 from django.core.urlresolvers import reverse
+from django.conf import settings
+from django.contrib.auth import login, SESSION_KEY
 from django.contrib.auth.models import User, Permission, Group
 from django.contrib.contenttypes.models import ContentType
+from django.core.urlresolvers import reverse, reverse_lazy
+from django.http import HttpRequest
 from django.utils import timezone
 
 from timepiece.entries.models import Activity, Entry
@@ -60,6 +65,38 @@ class ViewTestMixin(object):
 
 
 class TimepieceDataTestCase(TestCase):
+
+    def login_user(self, user, strict=True):
+        """Log in a user without need for a password.
+
+        Adapted from
+        http://jameswestby.net/weblog/tech/17-directly-logging-in-a-user-in-django-tests.html
+        """
+        user.backend = 'django.contrib.auth.backends.ModelBackend'
+        engine = import_module(settings.SESSION_ENGINE)
+
+        # Create a fake request to store login details.
+        request = HttpRequest()
+        if self.client.session:
+            request.session = self.client.session
+        else:
+            request.session = engine.SessionStore()
+        login(request, user)
+
+        # Set the cookie to represent the session.
+        session_cookie = settings.SESSION_COOKIE_NAME
+        self.client.cookies[session_cookie] = request.session.session_key
+        cookie_data = {
+            'max-age': None,
+            'path': '/',
+            'domain': settings.SESSION_COOKIE_DOMAIN,
+            'secure': settings.SESSION_COOKIE_SECURE or None,
+            'expires': None,
+        }
+        self.client.cookies[session_cookie].update(cookie_data)
+
+        # Save the session values.
+        request.session.save()
 
     def create_business(self, data=None):
         return factories.BusinessFactory.create(**(data or {}))
@@ -147,24 +184,8 @@ class TimepieceDataTestCase(TestCase):
             data['status'] = status
         return self.create_entry(data)
 
-    def create_user(self, username=None, email=None, password=None,
-            user_permissions=None, groups=None, **kwargs):
-
-        def random_string(length=255, extra_chars=''):
-            chars = string.letters + extra_chars
-            return ''.join([random.choice(chars) for i in range(length)])
-
-        username = random_string(25) if not username else username
-        email = random_string(10) + "@example.com" if not email else email
-        password = random_string(25) if not password else password
-        user = User.objects.create_user(username, email, password)
-        if user_permissions:
-            user.user_permissions = user_permissions
-        if groups:
-            user.groups = groups
-        if kwargs:
-            User.objects.filter(pk=user.pk).update(**kwargs)
-        return User.objects.get(pk=user.pk)
+    def create_user(self, **kwargs):
+        return factories.UserFactory.create(**kwargs)
 
     def create_auth_group(self, **kwargs):
         return factories.GroupFactory.create(**kwargs)
@@ -176,10 +197,9 @@ class TimepieceDataTestCase(TestCase):
         return factories.ProjectHoursFactory.create(**kwargs)
 
     def setUp(self):
-        self.user = self.create_user('user', 'u@abc.com', 'abc', last_name='Jones')
-        self.user2 = self.create_user('user2', 'u2@abc.com', 'abc', last_name='Smith')
-        self.superuser = self.create_user('superuser', 'super@abc.com', 'abc',
-                is_superuser=True)
+        self.user = factories.UserFactory.create()
+        self.user2 = factories.UserFactory.create()
+        self.superuser = factories.SuperuserFactory.create()
         permissions = Permission.objects.filter(
             content_type=ContentType.objects.get_for_model(Entry),
             codename__in=('can_clock_in', 'can_clock_out',

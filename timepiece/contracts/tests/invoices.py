@@ -21,7 +21,7 @@ class InvoiceViewPreviousTestCase(TimepieceDataTestCase):
         super(InvoiceViewPreviousTestCase, self).setUp()
         self.user.is_superuser = True
         self.user.save()
-        self.client.login(username=self.user.username, password='abc')
+        self.login_user(self.user)
         # Make some projects and entries for invoice creation
         self.project = self.create_project(billable=True)
         self.project2 = self.create_project(billable=True)
@@ -243,7 +243,7 @@ class InvoiceCreateTestCase(TimepieceDataTestCase):
         super(InvoiceCreateTestCase, self).setUp()
         self.user.is_superuser = True
         self.user.save()
-        self.client.login(username=self.user.username, password='abc')
+        self.login_user(self.user)
         start = utils.add_timezone(datetime.datetime(2011, 1, 1, 8))
         end = utils.add_timezone(datetime.datetime(2011, 1, 1, 12))
         self.project_billable = self.create_project(billable=True)
@@ -300,12 +300,12 @@ class InvoiceCreateTestCase(TimepieceDataTestCase):
         """Helper to login as user with correct permissions"""
         generate_invoice = Permission.objects.get(
             codename='generate_project_invoice')
-        user = self.create_user('perm', 'e@e.com', 'abc',
-                user_permissions=[generate_invoice])
+        user = self.create_user()
+        user.user_permissions.add(generate_invoice)
 
     def test_invoice_confirm_view_user(self):
         """A regular user should not be able to access this page"""
-        self.client.login(username='user2', password='abc')
+        self.login_user(self.user2)
         to_date = utils.add_timezone(datetime.datetime(2011, 1, 31))
         url = self.get_create_url(project=self.project_billable.pk,
                 to_date=to_date.strftime(DATE_FORM_FORMAT))
@@ -468,7 +468,7 @@ class ListOutstandingInvoicesViewTestCase(ViewTestMixin, TimepieceDataTestCase):
         super(ListOutstandingInvoicesViewTestCase, self).setUp()
         self.user.is_superuser = True
         self.user.save()
-        self.client.login(username=self.user.username, password='abc')
+        self.login_user(self.user)
 
         start = utils.add_timezone(datetime.datetime(2011, 1, 1, 8))
         end = utils.add_timezone(datetime.datetime(2011, 1, 1, 12))

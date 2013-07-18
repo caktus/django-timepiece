@@ -88,7 +88,7 @@ class PayrollTest(TimepieceDataTestCase):
     def testWeeklyTotals(self):
         self.all_logs(self.user)
         self.all_logs(self.user2)
-        self.client.login(username='superuser', password='abc')
+        self.login_user(self.superuser)
         response = self.client.get(self.url, self.args)
         weekly_totals = response.context['weekly_totals']
         self.assertEqual(weekly_totals[0][0][0][2],
@@ -114,7 +114,7 @@ class PayrollTest(TimepieceDataTestCase):
 
         def check_overtime(week0=Decimal('55.00'), week1=Decimal('55.00'),
                            overtime=Decimal('30.00')):
-            self.client.login(username='superuser', password='abc')
+            self.login_user(self.superuser)
             response = self.client.get(self.url, self.args)
             weekly_totals = response.context['weekly_totals'][0][0][0][2]
             self.assertEqual(weekly_totals[0], week0)
@@ -146,7 +146,7 @@ class PayrollTest(TimepieceDataTestCase):
                 self.nonbillable_project)
         self.all_logs(self.user2, self.billable_project,
                 self.nonbillable_project)
-        self.client.login(username='superuser', password='abc')
+        self.login_user(self.superuser)
         self.response = self.client.get(self.url, self.args)
         self.rows = self.response.context['monthly_totals']
         self.labels = self.response.context['labels']
@@ -248,13 +248,13 @@ class PayrollTest(TimepieceDataTestCase):
         page.
 
         """
-        self.client.login(username='user', password='abc')
+        self.login_user(self.user)
         response = self.client.get(self.url, self.args)
         self.assertEqual(response.status_code, 302)
 
     def testSuperUserPermission(self):
         """Super users should be able to retrieve the payroll report page."""
-        self.client.login(username='superuser', password='abc')
+        self.login_user(self.superuser)
         response = self.client.get(self.url, self.args)
         self.assertEqual(response.status_code, 200)
 
@@ -264,7 +264,7 @@ class PayrollTest(TimepieceDataTestCase):
         should be able to retrieve the payroll summary page.
 
         """
-        self.client.login(username='user', password='abc')
+        self.login_user(self.user)
         payroll_perm = Permission.objects.get(codename='view_payroll_summary')
         self.user.user_permissions.add(payroll_perm)
         self.user.save()

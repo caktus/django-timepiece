@@ -9,11 +9,10 @@ class ProjectListTest(TimepieceDataTestCase):
     def setUp(self):
         self.url = reverse('list_projects')
 
-        self.user = self.create_user('user', 'u@a.com', 'abc')
+        self.user = self.create_user()
         self.user.save()
 
-        self.super_user = self.create_user('super', 's@a.com', 'abc',
-                is_superuser=True)
+        self.super_user = self.create_user(is_superuser=True)
 
         self.statuses = []
         self.statuses.append(self.create_project_status(data={'label': '1'}))
@@ -44,7 +43,7 @@ class ProjectListTest(TimepieceDataTestCase):
         project view page.
 
         """
-        self.client.login(username='user', password='abc')
+        self.login_user(self.user)
         response = self.client.get(self.url)
         self.assertEquals(response.status_code, 302)
 
@@ -55,7 +54,7 @@ class ProjectListTest(TimepieceDataTestCase):
         perm = Permission.objects.filter(codename__exact='view_project')
         self.user.user_permissions = perm
         self.user.save()
-        self.client.login(username='user', password='abc')
+        self.login_user(self.user)
         response = self.client.get(self.url, follow=True)
 
         self.assertEqual(response.status_code, 200)
@@ -65,7 +64,7 @@ class ProjectListTest(TimepieceDataTestCase):
 
     def testSuperUserPermission(self):
         """Super users should be able to see the project list view."""
-        self.client.login(username='super', password='abc')
+        self.login_user(self.super_user)
         response = self.client.get(self.url, follow=True)
 
         self.assertEqual(response.status_code, 200)
@@ -80,7 +79,7 @@ class ProjectListTest(TimepieceDataTestCase):
         should be redirected to individual project page.
 
         """
-        self.client.login(username='super', password='abc')
+        self.login_user(self.super_user)
         data = {}
         response = self.client.get(self.url, data=data, follow=True)
 
@@ -100,7 +99,7 @@ class ProjectListTest(TimepieceDataTestCase):
         project, user should be redirected to individual project page.
 
         """
-        self.client.login(username='super', password='abc')
+        self.login_user(self.super_user)
         query = 'b'
         data = {'search': query}
         response = self.client.get(self.url, data=data, follow=True)
@@ -123,7 +122,7 @@ class ProjectListTest(TimepieceDataTestCase):
         project page.
 
         """
-        self.client.login(username='super', password='abc')
+        self.login_user(self.super_user)
         status = self.statuses[2].pk
         data = {'status': status}
         response = self.client.get(self.url, data=data, follow=True)
@@ -145,7 +144,7 @@ class ProjectListTest(TimepieceDataTestCase):
         project, user should be redirected to individual project page.
 
         """
-        self.client.login(username='super', password='abc')
+        self.login_user(self.super_user)
 
         status = self.statuses[0].pk
         query = 'a'
@@ -171,7 +170,7 @@ class ProjectListTest(TimepieceDataTestCase):
         total project count.
 
         """
-        self.client.login(username='super', password='abc')
+        self.login_user(self.super_user)
 
         total = 0
         for s in self.statuses:

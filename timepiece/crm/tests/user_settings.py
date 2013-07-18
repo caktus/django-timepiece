@@ -12,7 +12,7 @@ class EditSettingsTest(TimepieceDataTestCase):
     def setUp(self):
         super(EditSettingsTest, self).setUp()
         self.url = reverse('edit_settings')
-        self.client.login(username='user', password='abc')
+        self.login_user(self.user)
         self.activities = []
         for i in range(0, 5):
             self.activities.append(self.create_activity())
@@ -62,9 +62,8 @@ class EditUserTest(TimepieceDataTestCase):
         }
 
     def login_with_permission(self):
-        user = self.create_user('admin', 'e@e.com', 'abc', is_superuser=True,
-                is_staff=True)
-        self.client.login(username='admin', password='abc')
+        user = self.create_user(is_superuser=True, is_staff=True)
+        self.login_user(user)
 
     def test_edit_user(self):
         """

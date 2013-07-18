@@ -57,11 +57,11 @@ class MyLedgerTest(TimepieceDataTestCase):
     def login_with_permissions(self):
         view_entry_summary = Permission.objects.get(
             codename='view_entry_summary')
-        user = self.create_user('perm', 'e@e.com', 'abc')
+        user = self.create_user()
         user.user_permissions.add(view_entry_summary)
         user.save()
 
-        self.client.login(username='perm', password='abc')
+        self.login_user(user)
 
     def test_timesheet_view_permission(self):
         """A user with the correct permissions should see the menu"""
@@ -72,19 +72,19 @@ class MyLedgerTest(TimepieceDataTestCase):
 
     def test_timesheet_view_no_permission(self):
         """A regular user should not see the user menu"""
-        self.client.login(username='user', password='abc')
+        self.login_user(self.user)
         response = self.client.get(self.url)
         self.assertTrue(response.status_code, 200)
         self.assertFalse('user' in response.context['year_month_form'].fields)
 
     def testEmptyTimeSheet(self):
-        self.client.login(username='user', password='abc')
+        self.login_user(self.user)
         response = self.client.get(self.url)
         self.assertEquals(response.status_code, 200)
         self.assertEquals(list(response.context['entries']), [])
 
     def testEmptyHourlySummary(self):
-        self.client.login(username='user', password='abc')
+        self.login_user(self.user)
         now = timezone.now()
         empty_month = now + relativedelta(months=1)
         data = {
@@ -97,12 +97,12 @@ class MyLedgerTest(TimepieceDataTestCase):
         self.assertEquals(response.context['grouped_totals'], '')
 
     def testNotMyLedger(self):
-        self.client.login(username='user2', password='abc')
+        self.login_user(self.user2)
         response = self.client.get(self.url)
         self.assertEquals(response.status_code, 403)
 
     def testNoLedger(self):
-        self.client.login(username='user2', password='abc')
+        self.login_user(self.user2)
         self.url = reverse('dashboard')
         try:
             response = self.client.get(self.url)
@@ -138,7 +138,7 @@ class MyLedgerTest(TimepieceDataTestCase):
         self.log_time(project=self.p4, start=days[4], delta=(1, 0))
 
     def testCurrentTimeSheet(self):
-        self.client.login(username='user', password='abc')
+        self.login_user(self.user)
         self.make_entries()
         response = self.client.get(self.url)
         self.assertEquals(response.status_code, 200)
@@ -146,7 +146,7 @@ class MyLedgerTest(TimepieceDataTestCase):
         self.assertEqual(response.context['summary']['total'], Decimal(3))
 
     def testOldTimeSheet(self):
-        self.client.login(username='user', password='abc')
+        self.login_user(self.user)
         self.make_entries()
         data = {
             'month': 1,
@@ -174,7 +174,7 @@ class ClockInTest(TimepieceDataTestCase):
 
     def testClockIn(self):
         """Test the simplest clock in scenario"""
-        self.client.login(username='user', password='abc')
+        self.login_user(self.user)
         data = self.clock_in_form
         response = self.client.post(self.url, data, follow=True)
         # Clock in form submission leads to the dashboard page
@@ -191,7 +191,7 @@ class ClockInTest(TimepieceDataTestCase):
         Clocking in during an active entry automatically clocks out the current
         entry one second before the new entry.
         """
-        self.client.login(username='user', password='abc')
+        self.login_user(self.user)
         entry1 = self.create_entry({
             'start_time': self.ten_min_ago,
         })
@@ -218,7 +218,7 @@ class ClockInTest(TimepieceDataTestCase):
         There should never be more than one active entry. If this happens,
         a 500 error should be raised so that we are notified of the situation.
         """
-        self.client.login(username='user', password='abc')
+        self.login_user(self.user)
         entry1 = self.create_entry({
             'start_time': self.ten_min_ago,
         })
@@ -242,7 +242,7 @@ class ClockInTest(TimepieceDataTestCase):
 
     def testClockInCurrentStatus(self):
         """Verify the status of the current entry shows what is expected"""
-        self.client.login(username='user', password='abc')
+        self.login_user(self.user)
         entry1 = self.create_entry({
             'start_time': self.ten_min_ago,
         })
@@ -259,7 +259,7 @@ class ClockInTest(TimepieceDataTestCase):
         Test that the user can clock in while the current entry is paused.
         The current entry will be clocked out.
         """
-        self.client.login(username='user', password='abc')
+        self.login_user(self.user)
         entry1 = self.create_entry({
             'start_time': self.ten_min_ago,
         })
@@ -282,7 +282,7 @@ class ClockInTest(TimepieceDataTestCase):
         """
         The user cannot clock in to a time that is already logged
         """
-        self.client.login(username='user', password='abc')
+        self.login_user(self.user)
         entry1_data = {
             'project': self.project,
             'activity': self.devl_activity,
@@ -311,7 +311,7 @@ class ClockInTest(TimepieceDataTestCase):
         Test that the user cannot clock in with the same start time as the
         active entry
         """
-        self.client.login(username='user', password='abc')
+        self.login_user(self.user)
         entry1_data = {
             'start_time': self.now,
             'project': self.project,
@@ -339,7 +339,7 @@ class ClockInTest(TimepieceDataTestCase):
         Test that the user cannot clock in with a start time before the active
         entry
         """
-        self.client.login(username='user', password='abc')
+        self.login_user(self.user)
         entry1_data = {
             'project': self.project,
             'activity': self.devl_activity,
@@ -368,7 +368,7 @@ class ClockInTest(TimepieceDataTestCase):
         Test that if the active entry is too long, the clock in form will
         invalidate
         """
-        self.client.login(username='user', password='abc')
+        self.login_user(self.user)
         entry1 = self.create_entry({
             'start_time': self.now - relativedelta(hours=13),
         })
@@ -395,7 +395,7 @@ class ClockInTest(TimepieceDataTestCase):
         you should not be clocked out of the current active entry
         if the clock in form contains errors
         """
-        self.client.login(username='user', password='abc')
+        self.login_user(self.user)
 
         # Create a valid entry and follow the redirect to the homepage
         response = self.client.post(self.url, self.clock_in_form, follow=True)
@@ -417,7 +417,7 @@ class ClockInTest(TimepieceDataTestCase):
         If you clock in with an an active entry, that entry
         should be clocked out
         """
-        self.client.login(username='user', password='abc')
+        self.login_user(self.user)
 
         # Create a valid entry and follow the redirect to the homepage
         response = self.client.post(self.url, self.clock_in_form, follow=True)
@@ -438,7 +438,7 @@ class ClockInTest(TimepieceDataTestCase):
         self.assertIsNotNone(active.end_time)
 
     def testProjectListFiltered(self):
-        self.client.login(username='user', password='abc')
+        self.login_user(self.user)
         response = self.client.get(self.url)
         self.assertEquals(response.status_code, 200)
         projects = list(response.context['form'].fields['project'].queryset)
@@ -453,12 +453,12 @@ class ClockInTest(TimepieceDataTestCase):
     def testClockInLogin(self):
         response = self.client.get(self.url)
         self.assertEquals(response.status_code, 302)
-        self.client.login(username='user', password='abc')
+        self.login_user(self.user)
         response = self.client.get(self.url)
         self.assertEquals(response.status_code, 200)
 
     def testClockInUnauthorizedProject(self):
-        self.client.login(username='user', password='abc')
+        self.login_user(self.user)
         data = self.clock_in_form
         data.update({'project': self.project2.id})
         response = self.client.post(self.url, data)
@@ -469,7 +469,7 @@ class ClockInTest(TimepieceDataTestCase):
         self.assertFormError(response, 'form', 'project', err_msg)
 
     def testClockInBadActivity(self):
-        self.client.login(username='user', password='abc')
+        self.login_user(self.user)
         data = self.clock_in_form
         data.update({
             'project': self.project.id,
@@ -491,7 +491,7 @@ class ClockInTest(TimepieceDataTestCase):
         entry.comments = u'Some comments'
         entry.save()
 
-        self.client.login(username='user', password='abc')
+        self.login_user(self.user)
 
         response = self.client.get(self.url)
         self.assertContains(response, 'Some comments')
@@ -511,18 +511,18 @@ class AutoActivityTest(TimepieceDataTestCase):
 
     def testNewWorker(self):
         """The worker has 0 entries on this project. Activity should = None"""
-        self.client.login(username='user', password='abc')
+        self.login_user(self.user)
         self.assertEqual(self.get_activity(), None)
 
     def testLastWorkedOneEntry(self):
         """The worker has one previous entry on the project"""
-        self.client.login(username='user', password='abc')
+        self.login_user(self.user)
         self.log_time(project=self.project, activity=self.devl_activity)
         self.assertEqual(self.get_activity(), self.devl_activity.id)
 
     def testLastWorkedSeveralEntries(self):
         """The worker has several entries on a project. Use the most recent"""
-        self.client.login(username='user', password='abc')
+        self.login_user(self.user)
         for day in xrange(0, 10):
             this_day = utils.add_timezone(datetime.datetime(2011, 1, 1))
             this_day += relativedelta(days=day)
@@ -535,7 +535,7 @@ class AutoActivityTest(TimepieceDataTestCase):
         """
         Obtain activities contingent on the project when worker is on several
         """
-        self.client.login(username='user', password='abc')
+        self.login_user(self.user)
         project1 = self.project
         project2 = self.project2
         for day in xrange(0, 10):
@@ -554,7 +554,7 @@ class ClockOutTest(TimepieceDataTestCase):
     def setUp(self):
         super(ClockOutTest, self).setUp()
         self.url = reverse('clock_out')
-        self.client.login(username='user', password='abc')
+        self.login_user(self.user)
 
         # Create an active entry, so that clock out tests don't have to.
         self.default_end_time = timezone.now()
@@ -756,7 +756,7 @@ class CheckOverlap(TimepieceDataTestCase):
 
     def setUp(self):
         super(CheckOverlap, self).setUp()
-        self.client.login(username='user', password='abc')
+        self.login_user(self.user)
         self.now = timezone.now()
         #define start and end times to create valid entries
         self.start = self.now - relativedelta(days=0, hours=8)
@@ -825,7 +825,7 @@ class CreateEditEntry(TimepieceDataTestCase):
 
     def setUp(self):
         super(CreateEditEntry, self).setUp()
-        self.client.login(username='user', password='abc')
+        self.login_user(self.user)
         self.now = timezone.now()
         valid_start = self.now - relativedelta(days=1)
         valid_end = valid_start + relativedelta(hours=1)
@@ -1030,7 +1030,7 @@ class CreateEditEntry(TimepieceDataTestCase):
         self.assertFormError(response, 'form', None, err_msg)
 
     def add_entry_test_helper(self):
-        self.client.login(username='user', password='abc')
+        self.login_user(self.user)
 
         response = self.client.post(self.create_url, data=self.default_data,
             follow=True)
@@ -1094,7 +1094,7 @@ class CreateEditEntry(TimepieceDataTestCase):
         be able to edit an entry even if theyve been approved
         """
         self.client.logout()
-        self.client.login(username='superuser', password='abc')
+        self.login_user(self.superuser)
 
         url, entry, data = self.edit_entry_helper()
 
@@ -1121,7 +1121,7 @@ class CreateEditEntry(TimepieceDataTestCase):
     def test_edit_invoiced_entry(self):
         """You shouldnt be able to edit an invoiced entry"""
         self.client.logout()
-        self.client.login(username='superuser', password='abc')
+        self.login_user(self.superuser)
 
         url, entry, data = self.edit_entry_helper(Entry.INVOICED)
 
@@ -1137,7 +1137,7 @@ class StatusTest(TimepieceDataTestCase):
 
     def setUp(self):
         super(StatusTest, self).setUp()
-        self.client.login(username='user', password='abc')
+        self.login_user(self.user)
         self.now = timezone.now()
         self.from_date = utils.get_month_start(self.now)
         self.sheet_url = reverse('view_user_timesheet', args=[self.user.pk])
@@ -1164,17 +1164,16 @@ class StatusTest(TimepieceDataTestCase):
 
     def login_as_admin(self):
         "Helper to login as an admin user"
-        self.admin = self.create_user('admin', 'e@e.com', 'abc',
-                is_superuser=True)
-        self.client.login(username='admin', password='abc')
+        self.admin = self.create_user(is_superuser=True)
+        self.login_user(self.admin)
 
     def login_with_permissions(self, *codenames):
         """Helper to login as a user with correct permissions"""
         perms = Permission.objects.filter(codename__in=codenames)
-        self.perm_user = self.create_user('perm', 'e@e.com', 'abc')
+        self.perm_user = self.create_user()
         self.perm_user.user_permissions.add(*perms)
         self.perm_user.save()
-        self.client.login(username='perm', password='abc')
+        self.login_user(self.perm_user)
 
     def test_verify_link(self):
         entry = self.create_entry({
@@ -1401,7 +1400,7 @@ class StatusTest(TimepieceDataTestCase):
 
     def test_reject_user(self):
         """A regular user should not be able to reject an entry"""
-        self.client.login(username='user', password='abc')
+        self.login_user(self.user)
 
         now = timezone.now()
         entry = self.create_entry({
@@ -1420,7 +1419,7 @@ class StatusTest(TimepieceDataTestCase):
         A regular user should not be able to reject
         another users entry
         """
-        self.client.login(username='user2', password='abc')
+        self.login_user(self.user2)
 
         now = timezone.now()
         entry = self.create_entry({
@@ -1475,7 +1474,7 @@ class StatusTest(TimepieceDataTestCase):
         self.assertTrue(response.status_code, 403)
 
     def testNotAllowedToVerifyTimesheet(self):
-        self.client.login(username='user2', password='abc')
+        self.login_user(self.user2)
         response = self.client.get(self.verify_url(),)
         self.assertTrue(response.status_code, 403)
 
@@ -1491,7 +1490,7 @@ class TestTotals(TimepieceDataTestCase):
         self.p3 = self.create_project(billable=False, name='1')
 
     def testGroupedTotals(self):
-        self.client.login(username='user', password='abc')
+        self.login_user(self.user)
         days = [
             utils.add_timezone(datetime.datetime(2010, 12, 20)),
             utils.add_timezone(datetime.datetime(2010, 12, 27)),
@@ -1553,7 +1552,7 @@ class HourlySummaryTest(TimepieceDataTestCase):
         self.now = timezone.now()
         self.month = self.now.replace(day=1)
         self.url = reverse('view_user_timesheet', args=(self.user.pk,))
-        self.client.login(username='user', password='abc')
+        self.login_user(self.user)
 
     def create_month_entries(self):
         """Create four entries, one for each week of the month"""
@@ -1681,7 +1680,7 @@ class MonthlyRejectTestCase(TimepieceDataTestCase):
         An admin should have the permission to reject a users entries
         and unverify them
         """
-        self.client.login(username='superuser', password='abc')
+        self.login_user(self.superuser)
         self.create_entries(self.now, Entry.VERIFIED)
 
         response = self.client.get(self.url, data=self.data)
@@ -1697,7 +1696,7 @@ class MonthlyRejectTestCase(TimepieceDataTestCase):
         A regular user should not have the permissions to
         get or post to the page
         """
-        self.client.login(username='user', password='abc')
+        self.login_user(self.user)
         self.create_entries(timezone.now(), Entry.VERIFIED)
 
         response = self.client.get(self.url, data=self.data)
@@ -1713,7 +1712,7 @@ class MonthlyRejectTestCase(TimepieceDataTestCase):
         If you are missing the month/year used to filter the entries
         then the reject page should not show
         """
-        self.client.login(username='superuser', password='abc')
+        self.login_user(self.superuser)
         self.create_entries(timezone.now(), Entry.VERIFIED)
 
         data = {
@@ -1733,7 +1732,7 @@ class MonthlyRejectTestCase(TimepieceDataTestCase):
         If a post request contains the month/year but is missing the key
         'yes', then the entries are not rejected
         """
-        self.client.login(username='superuser', password='abc')
+        self.login_user(self.superuser)
         self.create_entries(timezone.now(), Entry.VERIFIED)
 
         data = self.data
@@ -1746,7 +1745,7 @@ class MonthlyRejectTestCase(TimepieceDataTestCase):
 
     def test_reject_approved_invoiced_entries(self):
         """Entries that are approved invoiced should not be rejected"""
-        self.client.login(username='superuser', password='abc')
+        self.login_user(self.superuser)
         self.create_entries(timezone.now(), Entry.APPROVED)
         self.create_entries(timezone.now(), Entry.INVOICED)
 

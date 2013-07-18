@@ -17,12 +17,9 @@ class ContractListTestCase(ViewTestMixin, TimepieceDataTestCase):
                 content_type__app_label=ct, codename=n)
         self.permissions = [get_perm(*perm) for perm in self.perm_names]
 
-        self.username = 'username'
-        self.password = 'password'
-        self.user = self.create_user(username=self.username,
-                password=self.password)
+        self.user = self.create_user()
         self.user.user_permissions.add(*self.permissions)
-        self.client.login(username=self.username, password=self.password)
+        self.login_user(self.user)
 
         self.project1 = self.create_project()
         self.project2 = self.create_project()
@@ -93,12 +90,9 @@ class ContractViewTestCase(ViewTestMixin, TimepieceDataTestCase):
                 content_type__app_label=ct, codename=n)
         self.permissions = [get_perm(*perm) for perm in self.perm_names]
 
-        self.username = 'username'
-        self.password = 'password'
-        self.user = self.create_user(username=self.username,
-                password=self.password)
+        self.user = self.create_user()
         self.user.user_permissions.add(*self.permissions)
-        self.client.login(username=self.username, password=self.password)
+        self.login_user(self.user)
 
         self.project1 = self.create_project()
         self.project2 = self.create_project()

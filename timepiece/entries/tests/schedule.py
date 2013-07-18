@@ -17,7 +17,7 @@ from timepiece.entries.views import ScheduleView
 class ProjectHoursTestCase(TimepieceDataTestCase):
 
     def setUp(self):
-        self.user = self.create_user('user', 'u@abc.com', 'abc')
+        self.user = self.create_user()
         permissions = Permission.objects.filter(
             content_type=ContentType.objects.get_for_model(Entry),
             codename__in=('can_clock_in', 'can_clock_out', 'can_pause',
@@ -25,8 +25,7 @@ class ProjectHoursTestCase(TimepieceDataTestCase):
         )
         self.user.user_permissions = permissions
         self.user.save()
-        self.superuser = self.create_user('super', 's@abc.com', 'abc',
-                is_superuser=True)
+        self.superuser = self.create_user(is_superuser=True)
 
         self.tracked_status = self.create_project_status(data={
                 'label': 'Current', 'billable': True,
@@ -94,13 +93,13 @@ class ProjectHoursListViewTestCase(ProjectHoursTestCase):
             self.create_project_hours_entry(week_start=self.past_week, published=True)
             self.create_project_hours_entry(week_start=self.current_week, published=True)
         self.url = reverse('view_schedule')
-        self.client.login(username='user', password='abc')
+        self.login_user(self.user)
         self.date_format = '%Y-%m-%d'
 
     def test_no_permission(self):
         """User must have permission entries.can_clock_in to view page."""
-        basic_user = self.create_user('basic', 'b@e.com', 'abc')
-        self.client.login(username='basic', password='abc')
+        self.basic_user = self.create_user()
+        self.login_user(self.basic_user)
         response = self.client.get(self.url)
         self.assertEquals(response.status_code, 302)
 
@@ -177,7 +176,7 @@ class ProjectHoursEditTestCase(ProjectHoursTestCase):
         super(ProjectHoursEditTestCase, self).setUp()
         self.permission = Permission.objects.filter(
             codename='add_projecthours')
-        self.manager = self.create_user('manager', 'e@e.com', 'abc')
+        self.manager = self.create_user()
         self.manager.user_permissions = self.permission
         self.view_url = reverse('edit_schedule')
         self.ajax_url = reverse('ajax_schedule')
@@ -282,7 +281,7 @@ class ProjectHoursEditTestCase(ProjectHoursTestCase):
         You must have the permission to view the edit page or
         the ajax page
         """
-        self.client.login(username='manager', password='abc')
+        self.login_user(self.manager)
 
         response = self.client.get(self.view_url)
         self.assertEquals(response.status_code, 200)
@@ -295,7 +294,7 @@ class ProjectHoursEditTestCase(ProjectHoursTestCase):
         If you are a regular user, edit view should redirect to regular view
         and you should not be able to request any ajax data.
         """
-        self.client.login(username='basic', password='abc')
+        self.login_user(self.user)
 
         response = self.client.get(self.view_url)
         self.assertEquals(response.status_code, 302)
@@ -308,7 +307,7 @@ class ProjectHoursEditTestCase(ProjectHoursTestCase):
         An ajax call should return empty data sets when project hours
         do not exist
         """
-        self.client.login(username='manager', password='abc')
+        self.login_user(self.manager)
 
         response = self.client.get(self.ajax_url)
         self.assertEquals(response.status_code, 200)
@@ -324,11 +323,12 @@ class ProjectHoursEditTestCase(ProjectHoursTestCase):
         group = self.create_auth_group()
         group.permissions.add(perm)
 
-        group_user = self.create_user(username='groupie', groups=[group])
-        perm_user = User.objects.get(username='user')
-        super_user = User.objects.get(username='super')
+        group_user = self.create_user()
+        group_user.groups.add(group)
+        perm_user = self.user
+        super_user = self.superuser
 
-        self.client.login(username='manager', password='abc')
+        self.login_user(self.manager)
         response = self.client.get(self.ajax_url)
         self.assertEquals(response.status_code, 200)
         users = [u['id'] for u in json.loads(response.content)['all_users']]
@@ -342,7 +342,7 @@ class ProjectHoursEditTestCase(ProjectHoursTestCase):
         An ajax call without any parameters should return the current
         weeks data
         """
-        self.client.login(username='manager', password='abc')
+        self.login_user(self.manager)
         self.create_project_hours()
 
         response = self.client.get(self.ajax_url)
@@ -354,7 +354,7 @@ class ProjectHoursEditTestCase(ProjectHoursTestCase):
         An ajax call with the parameter present, but empty value, should
         return the same as a call with no parameter
         """
-        self.client.login(username='manager', password='abc')
+        self.login_user(self.manager)
         self.create_project_hours()
 
         response = self.client.get(self.ajax_url, data={
@@ -368,7 +368,7 @@ class ProjectHoursEditTestCase(ProjectHoursTestCase):
         An ajax call with the 'week_of' parameter should return
         the data for that week
         """
-        self.client.login(username='manager', password='abc')
+        self.login_user(self.manager)
         self.create_project_hours()
 
         date = datetime.datetime.now() + relativedelta(days=7)
@@ -393,7 +393,7 @@ class ProjectHoursEditTestCase(ProjectHoursTestCase):
         A post request on the ajax url should create a new project
         hour entry and return the entry's pk
         """
-        self.client.login(username='manager', password='abc')
+        self.login_user(self.manager)
 
         self.assertEquals(ProjectHours.objects.count(), 0)
 
@@ -416,7 +416,7 @@ class ProjectHoursEditTestCase(ProjectHoursTestCase):
         If any of the data is missing, the server response should
         be a 500 error
         """
-        self.client.login(username='manager', password='abc')
+        self.login_user(self.manager)
 
         self.assertEquals(ProjectHours.objects.count(), 0)
 
@@ -429,7 +429,7 @@ class ProjectHoursEditTestCase(ProjectHoursTestCase):
         A put request to the url with the correct data should update
         an existing project hour entry
         """
-        self.client.login(username='manager', password='abc')
+        self.login_user(self.manager)
 
         ph = ProjectHours.objects.create(
             hours=Decimal('5.0'),
@@ -453,7 +453,7 @@ class ProjectHoursEditTestCase(ProjectHoursTestCase):
         If the request to update is missing data, the server should respond
         with a 500 error
         """
-        self.client.login(username='manager', password='abc')
+        self.login_user(self.manager)
 
         ph = ProjectHours.objects.create(
             hours=Decimal('10.0'),
@@ -471,7 +471,7 @@ class ProjectHoursEditTestCase(ProjectHoursTestCase):
         A delete request with a valid pk should delete the project
         hours entry from the database
         """
-        self.client.login(username='manager', password='abc')
+        self.login_user(self.manager)
 
         ph = ProjectHours.objects.create(
             hours=Decimal('5.0'),
@@ -492,7 +492,7 @@ class ProjectHoursEditTestCase(ProjectHoursTestCase):
         active week. A request with the duplicate key present will
         start the duplication process
         """
-        self.client.login(username='manager', password='abc')
+        self.login_user(self.manager)
         self.create_project_hours()
 
         msg = 'Project hours were copied'
@@ -515,7 +515,7 @@ class ProjectHoursEditTestCase(ProjectHoursTestCase):
         Both week_update and duplicate must be present if hours
         duplication is to take place
         """
-        self.client.login(username='manager', password='abc')
+        self.login_user(self.manager)
         self.create_project_hours()
 
         response = self.client.post(self.ajax_url, data={
@@ -535,7 +535,7 @@ class ProjectHoursEditTestCase(ProjectHoursTestCase):
         If you specify a week and hours current exist for that week,
         the previous weeks hours will be copied over the current entries
         """
-        self.client.login(username='manager', password='abc')
+        self.login_user(self.manager)
         self.create_project_hours()
 
         msg = 'Project hours were copied'
@@ -570,7 +570,7 @@ class ProjectHoursEditTestCase(ProjectHoursTestCase):
         You should be notified if there are no hours to copy
         from the previous week
         """
-        self.client.login(username='manager', password='abc')
+        self.login_user(self.manager)
 
         msg = 'There are no hours to copy'
 
@@ -588,7 +588,7 @@ class ProjectHoursEditTestCase(ProjectHoursTestCase):
         If you post to the edit view, you can publish the hours for
         the given week
         """
-        self.client.login(username='manager', password='abc')
+        self.login_user(self.manager)
         self.create_project_hours()
 
         msg = 'Unpublished project hours are now published'
@@ -613,7 +613,7 @@ class ProjectHoursEditTestCase(ProjectHoursTestCase):
         If you post to the edit view and there are no hours to
         publish, you are told so
         """
-        self.client.login(username='manager', password='abc')
+        self.login_user(self.manager)
         self.create_project_hours()
 
         msg = 'There were no hours to publish'

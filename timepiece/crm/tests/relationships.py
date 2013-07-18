@@ -9,14 +9,11 @@ from timepiece.crm.models import ProjectRelationship
 class RelationshipTestBase(TimepieceDataTestCase):
 
     def setUp(self):
-        self.username = 'username'
-        self.password = 'password'
-        self.user = self.create_user(username=self.username,
-                password=self.password)
+        self.user = self.create_user()
         self.permissions = [Permission.objects.get(codename=n) for n in
                 self.perm_names]
         self.user.user_permissions.add(*self.permissions)
-        self.client.login(username=self.username, password=self.password)
+        self.login_user(self.user)
 
         self.project = self.create_project()
 

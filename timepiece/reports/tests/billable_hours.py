@@ -22,7 +22,7 @@ class TestBillableHours(ReportsTestBase):
 
         self.url = reverse('report_billable_hours')
         self.perm = Permission.objects.filter(codename='view_entry_summary')
-        self.admin = self.create_user('admin', 'e@e.com', 'abc')
+        self.admin = self.create_user()
         self.admin.user_permissions = self.perm
 
     def get_entries_data(self):
@@ -33,20 +33,20 @@ class TestBillableHours(ReportsTestBase):
 
     def test_access_permission(self):
         """view_entry_summary permission is required to view this report."""
-        self.client.login(username='admin', password='abc')
+        self.login_user(self.admin)
         response = self.client.get(self.url)
         self.assertEqual(response.status_code, 200)
 
     def test_access_no_permission(self):
         """view_entry_summary permission is required to view this report."""
-        self.client.login(username='user', password='abc')
+        self.login_user(self.user)
         response = self.client.get(self.url)
         self.assertEqual(response.status_code, 302)
 
     def test_response_data(self):
         """Test that the data returned is correct"""
         self.bulk_entries()
-        self.client.login(username='admin', password='abc')
+        self.login_user(self.admin)
 
         response = self.client.get(self.url, data={
             'from_date': self.from_date.strftime(DATE_FORM_FORMAT),

@@ -4,6 +4,7 @@ import factory
 from factory.fuzzy import FuzzyDate, FuzzyInteger
 
 from django.contrib.auth import models as auth
+from django.contrib.auth.hashers import make_password
 
 from timepiece.contracts import models as contracts
 from timepiece.crm import models as crm
@@ -14,32 +15,11 @@ from timepiece import utils
 class BaseUserFactory(factory.DjangoModelFactory):
     FACTORY_FOR = auth.User
 
+    first_name = factory.Sequence(lambda n: 'Sam{0}'.format(n))
+    last_name = factory.Sequence(lambda n: 'Blue{0}'.format(n))
     username = factory.Sequence(lambda n: 'user{0}'.format(n))
     email = factory.Sequence(lambda n: 'user{0}@example.com'.format(n))
-    password = 'password'
-
-    @classmethod
-    def _create(cls, target_class, *args, **kwargs):
-        if cls.FACTORY_DJANGO_GET_OR_CREATE:
-            return cls._get_or_create(target_class, *args, **kwargs)
-
-        manager = cls._get_manager(target_class)
-        is_staff = kwargs.pop('is_staff', False)
-        is_superuser = kwargs.pop('is_superuser', False)
-
-        if is_superuser:
-            return manager.create_superuser(*args, **kwargs)
-
-        elif is_staff:
-            user = manager.create_user(*args, **kwargs)
-            user.is_staff = True
-            user.is_active = True
-            user.is_superuser = False
-            user.save()
-            return user
-
-        else:
-            return manager.create_user(*args, **kwargs)
+    password = factory.LazyAttribute(lambda n: make_password('password'))
 
 
 class UserFactory(BaseUserFactory):

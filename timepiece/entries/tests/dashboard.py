@@ -25,12 +25,10 @@ class DashboardViewTestCase(TimepieceDataTestCase):
         get_params = {'week_start': self.this_week.strftime('%Y-%m-%d')}
         self.url = reverse('dashboard') + '?' + urlencode(get_params)
 
-        self.uname = 'test'
-        self.pword = 'password'
-        self.user = self.create_user(username=self.uname, password=self.pword)
+        self.user = self.create_user()
         self.permission = Permission.objects.get(codename='can_clock_in')
         self.user.user_permissions.add(self.permission)
-        self.client.login(username=self.uname, password=self.pword)
+        self.login_user(self.user)
 
         self.project = self.create_project()
         self.activity = self.create_activity()
@@ -152,10 +150,8 @@ class ProcessProgressTestCase(TimepieceDataTestCase):
         self.this_week = utils.get_week_start(self.today)
         self.next_week = self.this_week + relativedelta(days=7)
 
-        self.uname = 'test'
-        self.pword = 'password'
-        self.user = self.create_user(username=self.uname, password=self.pword)
-        self.client.login(username=self.uname, password=self.pword)
+        self.user = self.create_user()
+        self.login_user(self.user)
 
         self.project = self.create_project()
         self.activity = self.create_activity()
