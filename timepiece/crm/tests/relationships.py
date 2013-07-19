@@ -228,10 +228,9 @@ class EditRelationshipTestCase(ViewTestMixin, RelationshipTestBase):
         response = self._get()
         self.assertEquals(response.status_code, 200)
         context = response.context
-        form = context['relationship_form']
+        form = context['form']
         self.assertEquals(ProjectRelationship.objects.get(), self.relationship)
-        self.assertEqual(context['user'], self.user)
-        self.assertEqual(context['project'], self.project)
+        self.assertEqual(context['object'], self.relationship)
         self.assertFalse(form.is_bound)
         self.assertEquals(form.instance, self.relationship)
 

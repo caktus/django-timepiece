@@ -20,7 +20,7 @@ from timepiece import utils
 from timepiece.forms import YearMonthForm, UserYearMonthForm, SearchForm
 from timepiece.templatetags.timepiece_tags import seconds_to_hours
 from timepiece.utils.csv import CSVViewMixin
-from timepiece.utils.mixins import (CommitOnSuccessMixin,
+from timepiece.utils.mixins import (CommitOnSuccessMixin, CsrfExemptMixin,
         PermissionsRequiredMixin)
 
 from timepiece.crm.forms import (CreateEditBusinessForm, ProjectForm,
@@ -522,44 +522,36 @@ def create_relationship(request):
     return HttpResponseRedirect(url)
 
 
-@csrf_exempt
-@permission_required('crm.delete_projectrelationship')
-@transaction.commit_on_success
-def delete_relationship(request):
-    user_id = request.REQUEST.get('user_id', None)
-    project_id = request.REQUEST.get('project_id', None)
-    rel = get_object_or_404(ProjectRelationship,
-            user__id=user_id, project__id=project_id)
-    if request.method == 'POST':
-        rel.delete()
-        url = request.REQUEST.get('next',
-                reverse('view_project', args=(rel.project.pk,)))
-        return HttpResponseRedirect(url)
-    return render(request, 'timepiece/relationship/delete.html', {
-        'user': rel.user,
-        'project': rel.project,
-    })
+class RelationshipObjectMixin(object):
+    """Handles retrieving and redirecting for ProjectRelationship objects."""
+
+    def get_object(self, queryset=None):
+        if queryset is None:
+            queryset = self.get_queryset()
+
+        user_id = self.request.REQUEST.get('user_id', None)
+        project_id = self.request.REQUEST.get('project_id', None)
+        return get_object_or_404(self.model, user__id=user_id,
+                project__id=project_id)
+
+    def get_success_url(self):
+        return self.request.REQUEST.get('next',
+                self.object.project.get_absolute_url())
 
 
-@permission_required('crm.change_projectrelationship')
-@transaction.commit_on_success
-def edit_relationship(request):
-    user_id = request.REQUEST.get('user_id', None)
-    project_id = request.REQUEST.get('project_id', None)
-    rel = get_object_or_404(ProjectRelationship,
-            user__id=user_id, project__id=project_id)
-    data = request.POST if request.method == 'POST' else None
-    form = ProjectRelationshipForm(data, instance=rel)
-    if request.method == 'POST' and form.is_valid():
-        rel = form.save()
-        url = request.REQUEST.get('next',
-                reverse('view_project', args=(project_id,)))
-        return HttpResponseRedirect(url)
-    return render(request, 'timepiece/relationship/edit.html', {
-        'user': rel.user,
-        'project': rel.project,
-        'relationship_form': form,
-    })
+class EditRelationship(PermissionsRequiredMixin, CommitOnSuccessMixin,
+        RelationshipObjectMixin, UpdateView):
+    model = ProjectRelationship
+    permissions = ('crm.change_projectrelationship',)
+    template_name = 'timepiece/relationship/edit.html'
+    form_class = ProjectRelationshipForm
+
+
+class DeleteRelationship(PermissionsRequiredMixin, CsrfExemptMixin,
+        CommitOnSuccessMixin, RelationshipObjectMixin, DeleteView):
+    model = ProjectRelationship
+    permissions = ('crm.delete_projectrelationship',)
+    template_name = 'timepiece/relationship/delete.html'
 
 
 @login_required
