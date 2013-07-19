@@ -9,24 +9,25 @@ from django.db.models import Sum, Q
 from django.http import HttpResponse, HttpResponseRedirect, Http404,\
         HttpResponseForbidden
 from django.shortcuts import get_object_or_404, redirect, render
-from django.utils.decorators import method_decorator
 from django.views.generic import ListView, DetailView
 
 from timepiece import utils
 from timepiece.forms import SearchForm
 from timepiece.templatetags.timepiece_tags import seconds_to_hours
 from timepiece.utils.csv import CSVViewMixin
+from timepiece.utils.mixins import PermissionsRequiredMixin
 
 from timepiece.contracts.forms import InvoiceForm, OutstandingHoursFilterForm
 from timepiece.contracts.models import ProjectContract, HourGroup, EntryGroup
 from timepiece.entries.models import Project, Entry
 
 
-class ContractDetail(DetailView):
+class ContractDetail(PermissionsRequiredMixin, DetailView):
     template_name = 'timepiece/contract/view.html'
     model = ProjectContract
     context_object_name = 'contract'
     pk_url_kwarg = 'contract_id'
+    permissions = ('contracts.add_projectcontract',)
 
     def get_context_data(self, *args, **kwargs):
         if 'today' not in kwargs:
@@ -35,17 +36,14 @@ class ContractDetail(DetailView):
             kwargs['warning_date'] = datetime.date.today() + relativedelta(weeks=2)
         return super(ContractDetail, self).get_context_data(*args, **kwargs)
 
-    @method_decorator(permission_required('contracts.add_projectcontract'))
-    def dispatch(self, *args, **kwargs):
-        return super(ContractDetail, self).dispatch(*args, **kwargs)
 
-
-class ContractList(ListView):
+class ContractList(PermissionsRequiredMixin, ListView):
     template_name = 'timepiece/contract/list.html'
     model = ProjectContract
     context_object_name = 'contracts'
     queryset = ProjectContract.objects.filter(
             status=ProjectContract.STATUS_CURRENT).order_by('name')
+    permissions = ('contracts.add_projectcontract',)
 
     def get_context_data(self, *args, **kwargs):
         if 'today' not in kwargs:
@@ -53,10 +51,6 @@ class ContractList(ListView):
         if 'warning_date' not in kwargs:
             kwargs['warning_date'] = datetime.date.today() + relativedelta(weeks=2)
         return super(ContractList, self).get_context_data(*args, **kwargs)
-
-    @method_decorator(permission_required('contracts.add_projectcontract'))
-    def dispatch(self, *args, **kwargs):
-        return super(ContractList, self).dispatch(*args, **kwargs)
 
 
 @login_required
@@ -174,15 +168,12 @@ def list_invoices(request):
     })
 
 
-class InvoiceDetail(DetailView):
+class InvoiceDetail(PermissionsRequiredMixin, DetailView):
     template_name = 'timepiece/invoice/view.html'
     model = EntryGroup
     context_object_name = 'invoice'
     pk_url_kwarg = 'invoice_id'
-
-    @method_decorator(permission_required('contracts.change_entrygroup'))
-    def dispatch(self, *args, **kwargs):
-        return super(InvoiceDetail, self).dispatch(*args, **kwargs)
+    permissions = ('contracts.change_entrygroup',)
 
     def get_context_data(self, **kwargs):
         context = super(InvoiceDetail, self).get_context_data(**kwargs)
@@ -322,5 +313,3 @@ def delete_invoice_entry(request, invoice_id, entry_id):
         'invoice': invoice,
         'entry': entry,
     })
-
-
