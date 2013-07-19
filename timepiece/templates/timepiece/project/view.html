@@ -2,24 +2,24 @@
 {% load url from future %}
 {% load timepiece_tags markup bootstrap_toolkit %}
 
-{% block title %}{{ project }}{% endblock title %}
+{% block title %}{{ object }}{% endblock title %}
 
 {% block crumbs %}
     {{ block.super }}
-    <li><span class="divider">/</span> <a href="">{{ project }}</a></li>
+    <li><span class="divider">/</span> <a href="">{{ object }}</a></li>
 {% endblock crumbs %}
 
 {% block content %}
     <div class="row-fluid">
         <div class="span12">
-            <h2>{{ project }}</h2>
+            <h2>{{ object }}</h2>
             <ul class="nav nav-pills">
                 {% if perms.crm.change_project %}
-                    <li><a href="{% url 'edit_project' project.id %}">Edit</a></li>
-                    <li><a href="{% url 'delete_project' project.id %}">Delete</a></li>
+                    <li><a href="{% url 'edit_project' object.id %}">Edit</a></li>
+                    <li><a href="{% url 'delete_project' object.id %}">Delete</a></li>
                 {% endif %}
                 {% if perms.crm.view_project_time_sheet %}
-                    <li><a href="{% url 'view_project_timesheet' project.id %}">View Time Sheet</a></li>
+                    <li><a href="{% url 'view_project_timesheet' object.id %}">View Time Sheet</a></li>
                 {% endif %}
             </ul>
         </div>
@@ -28,37 +28,37 @@
     <div class="row-fluid">
         <div class="span6">
             <table class="table table-bordered">
-                <tr><th>Type</th><td>{{ project.type }}</td></tr>
+                <tr><th>Type</th><td>{{ object.type }}</td></tr>
                 <tr>
                     <th>Business</th>
                     <td>
                         {% if perms.crm.view_business  %}
-                            <a href="{% url 'view_business' project.business.pk %}">{{ project.business }}</a>
+                            <a href="{% url 'view_business' object.business.pk %}">{{ object.business }}</a>
                         {% else %}
-                            {{ project.business }}
+                            {{ object.business }}
                         {% endif %}
                     </td>
                 </tr>
-                <tr><th>Status</th><td>{{ project.status }}</td></tr>
-                <tr><th>Billable</th><td>{{ project.billable }}</td></tr>
+                <tr><th>Status</th><td>{{ object.status }}</td></tr>
+                <tr><th>Billable</th><td>{{ object.billable }}</td></tr>
                 <tr>
                     <th>Point Person</th>
                     <td>
                         {% if perms.auth.view_user %}
-                            <a href="{% url 'view_user' project.point_person.pk %}">{{ project.point_person.get_name_or_username }}</a>
+                            <a href="{% url 'view_user' object.point_person.pk %}">{{ object.point_person.get_name_or_username }}</a>
                         {% else %}
-                            {{ project.point_person.get_name_or_username }}
+                            {{ object.point_person.get_name_or_username }}
                         {% endif %}
                     </td>
                 </tr>
-                <tr><th>Description</th><td>{{ project.description|linebreaks }}</td></tr>
-                {% if project.tracker_url %}
-                    <tr><th>Tracker URL</th><td>{{ project.tracker_url }}</td></tr>
+                <tr><th>Description</th><td>{{ object.description|linebreaks }}</td></tr>
+                {% if object.tracker_url %}
+                    <tr><th>Tracker URL</th><td>{{ object.tracker_url }}</td></tr>
                 {% endif %}
                 <tr>
                     <th>Contracts</th>
                     <td>
-                        {% for contract in project.contracts.all %}
+                        {% for contract in object.contracts.all %}
                             <a href="{% url 'view_contract' contract.pk %}">{{ contract }}</a>
                             ({{ contract.start_date|date:'M j, Y'}} - {{ contract.end_date|date:'M j, Y'}})
                             <br />
@@ -71,27 +71,27 @@
         </div>
 
         <div class="span4 offset2">
-            {% url 'view_project' project.id as next_url %}
+            {% url 'view_project' object.id as next_url %}
             <h3>Users</h3>
             <ul class="users">
-                {% for user in project.users.all %}
+                {% for user in object.users.all %}
                     <li>
                         {{ user.get_name_or_username }}
                         {% if perms.crm.change_projectrelationship %}
-                            {% with caption="Edit "|add:user.get_name_or_username|add:"'s relationship to "|add:project.name %}
-                                <a title="{{ caption }}" href="{% url 'edit_relationship' %}?project_id={{ project.id}}&user_id={{ user.id }}&next={{ next_url|add_parameters:request.GET|urlencode }}"><i alt="{{ caption }}" class="icon-pencil"></i></a>
+                            {% with caption="Edit "|add:user.get_name_or_username|add:"'s relationship to "|add:object.name %}
+                                <a title="{{ caption }}" href="{% url 'edit_relationship' %}?project_id={{ object.id}}&user_id={{ user.id }}&next={{ next_url|add_parameters:request.GET|urlencode }}"><i alt="{{ caption }}" class="icon-pencil"></i></a>
                             {% endwith %}
                         {% endif %}
                         {% if perms.crm.delete_projectrelationship %}
-                            {% with caption="Remove "|add:user.get_name_or_username|add:" from "|add:project.name %}
-                                <a title="{{ caption }}" href="{% url 'delete_relationship' %}?project_id={{ project.id }}&user_id={{ user.id }}&next={{ next_url|add_parameters:request.GET|urlencode }}"><i alt="{{ caption }}" class="icon-remove"></i></a>
+                            {% with caption="Remove "|add:user.get_name_or_username|add:" from "|add:object.name %}
+                                <a title="{{ caption }}" href="{% url 'delete_relationship' %}?project_id={{ object.id }}&user_id={{ user.id }}&next={{ next_url|add_parameters:request.GET|urlencode }}"><i alt="{{ caption }}" class="icon-remove"></i></a>
                             {% endwith %}
                         {% endif %}
                     </li>
                 {% endfor %}
             </ul>
             {% if perms.crm.add_projectrelationship %}
-                <form class="form-inline" action="{% url 'create_relationship' %}?project_id={{ project.id }}&next={{ next_url|add_parameters:request.GET|urlencode }}" method="post" accept-charset="utf-8">
+                <form class="form-inline" action="{% url 'create_relationship' %}?project_id={{ object.id }}&next={{ next_url|add_parameters:request.GET|urlencode }}" method="post" accept-charset="utf-8">
                     {% csrf_token %}
                     {{ add_user_form|as_bootstrap:"inline" }}
                     <input class="btn" type="submit" value="Add" />
