@@ -1,4 +1,5 @@
 from django.db.models import Q
+from django.conf import settings
 
 from timepiece import utils
 from timepiece.crm.forms import QuickSearchForm
@@ -45,4 +46,10 @@ def quick_clock_in(request):
     return {
         'leave_projects': leave_projects,
         'work_projects': work_projects,
+    }
+
+
+def extra_settings(request):
+    return {
+        'COMPRESS_ENABLED': settings.COMPRESS_ENABLED,
     }

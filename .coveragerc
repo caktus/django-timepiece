@@ -1,0 +1,3 @@
+[run]
+source = timepiece
+omit = */tests/*, */migrations/*, */admin.py

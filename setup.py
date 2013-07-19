@@ -15,6 +15,7 @@ required_packages = [
 test_packages = [
     'Mock==1.0.1',
     'factory-boy==2.1.1',
+    'coverage==3.5.3',
 ]
 
 setup(
