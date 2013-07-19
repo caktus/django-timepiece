@@ -51,7 +51,7 @@ class DashboardViewTestCase(TimepieceDataTestCase):
         }
         if end_time:
             data['end_time'] = end_time
-        return self.create_entry(**data)
+        return factories.EntryFactory.create(**data)
 
     def _create_active_entry(self):
         start_time = datetime.datetime(2012, 11, 9, 0)
@@ -170,7 +170,7 @@ class ProcessProgressTestCase(TimepieceDataTestCase):
         }
         if end_time:
             data['end_time'] = end_time
-        return self.create_entry(**data)
+        return factories.EntryFactory.create(**data)
 
     def _create_hours(self, hours, project=None):
         data = {

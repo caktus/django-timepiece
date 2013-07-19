@@ -40,7 +40,7 @@ class TestProductivityReport(ViewTestMixin, TimepieceDataTestCase):
                 end_time = start_time + relativedelta(hours=2)
                 data = {'user': user, 'start_time': start_time,
                         'end_time': end_time, 'project': self.project}
-                self.create_entry(**data)
+                factories.EntryFactory.create(**data)
 
     def _create_assignments(self):
         for week_start in (self.weeks[0], self.weeks[1]):

@@ -96,11 +96,6 @@ class TimepieceDataTestCase(TestCase):
         # Save the session values.
         request.session.save()
 
-    def create_entry(self, **kwargs):
-        if 'user' not in kwargs:
-            kwargs['user'] = self.user
-        return factories.EntryFactory.create(**kwargs)
-
     def create_contract(self, projects=None, **kwargs):
         num_hours = kwargs.pop('num_hours', random.randint(10, 400))
         contract = factories.ProjectContractFactory.create(**kwargs)

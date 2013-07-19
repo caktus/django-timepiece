@@ -253,21 +253,21 @@ class InvoiceCreateTestCase(TimepieceDataTestCase):
         self.project_billable = factories.BillableProjectFactory.create()
         self.project_billable2 = factories.BillableProjectFactory.create()
         self.project_non_billable = factories.NonbillableProjectFactory.create()
-        self.entry1 = self.create_entry(user=self.user,
+        self.entry1 = factories.EntryFactory.create(user=self.user,
                 project=self.project_billable,
                 activity=factories.ActivityFactory.create(billable=True),
                 start_time=start, end_time=end, status=Entry.APPROVED)
-        self.entry2 = self.create_entry(user=self.user,
+        self.entry2 = factories.EntryFactory.create(user=self.user,
                 project=self.project_billable,
                 activity=factories.ActivityFactory.create(billable=True),
                 start_time=start - relativedelta(days=5),
                 end_time=end - relativedelta(days=5), status=Entry.APPROVED)
-        self.entry3 = self.create_entry(user=self.user,
+        self.entry3 = factories.EntryFactory.create(user=self.user,
                 project=self.project_billable2,
                 activity=factories.ActivityFactory.create(billable=False),
                 start_time=start - relativedelta(days=10),
                 end_time=end - relativedelta(days=10), status=Entry.APPROVED)
-        self.entry4 = self.create_entry(user=self.user,
+        self.entry4 = factories.EntryFactory.create(user=self.user,
                 project=self.project_non_billable,
                 start_time=start + relativedelta(hours=11),
                 end_time=end + relativedelta(hours=15), status=Entry.APPROVED)
@@ -349,7 +349,7 @@ class InvoiceCreateTestCase(TimepieceDataTestCase):
         # end = start + relativedelta(hours=4)
         activity = factories.ActivityFactory.create(billable=True, name='activity1')
         for num in xrange(0, 4):
-            new_entry = self.create_entry(user=self.user,
+            new_entry = factories.EntryFactory.create(user=self.user,
                     project=self.project_billable,
                     start_time=start - relativedelta(days=num),
                     end_time=end - relativedelta(days=num),
@@ -464,21 +464,21 @@ class ListOutstandingInvoicesViewTestCase(ViewTestMixin, TimepieceDataTestCase):
         self.project_billable2 = factories.BillableProjectFactory.create()
         self.project_non_billable = factories.NonbillableProjectFactory.create()
 
-        self.entry1 = self.create_entry(user=self.user,
+        self.entry1 = factories.EntryFactory.create(user=self.user,
                 project=self.project_billable,
                 activity=factories.ActivityFactory.create(billable=True),
                 start_time=start, end_time=end, status=Entry.APPROVED)
-        self.entry2 = self.create_entry(user=self.user,
+        self.entry2 = factories.EntryFactory.create(user=self.user,
                 project=self.project_billable,
                 activity=factories.ActivityFactory.create(billable=True),
                 start_time=start - relativedelta(days=5),
                 end_time=end - relativedelta(days=5), status=Entry.APPROVED)
-        self.entry3 = self.create_entry(user=self.user,
+        self.entry3 = factories.EntryFactory.create(user=self.user,
                 project=self.project_billable2,
                 activity=factories.ActivityFactory.create(billable=False),
                 start_time=start - relativedelta(days=10),
                 end_time=end - relativedelta(days=10), status=Entry.APPROVED)
-        self.entry4 = self.create_entry(user=self.user,
+        self.entry4 = factories.EntryFactory.create(user=self.user,
                 project=self.project_non_billable,
                 start_time=start + relativedelta(hours=11),
                 end_time=end + relativedelta(hours=15), status=Entry.APPROVED)
