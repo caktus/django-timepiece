@@ -9,12 +9,13 @@ required_packages = [
     'django-selectable==0.4.1',
     'django-bootstrap-toolkit==2.5.6',
     'django-compressor==1.2',
-    'pytz==2012c'
+    'pytz==2012c',
 ]
 
 test_packages = [
     'Mock==1.0.1',
-    'coverage==3.5.3'
+    'factory-boy==2.1.1',
+    'coverage==3.5.3',
 ]
 
 setup(

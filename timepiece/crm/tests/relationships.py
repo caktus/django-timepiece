@@ -1,24 +1,21 @@
 from django.contrib.auth.models import Permission
 from django.core.urlresolvers import reverse
 
+from timepiece.tests import factories
 from timepiece.tests.base import TimepieceDataTestCase, ViewTestMixin
-
 from timepiece.crm.models import ProjectRelationship
 
 
 class RelationshipTestBase(TimepieceDataTestCase):
 
     def setUp(self):
-        self.username = self.random_string(25)
-        self.password = self.random_string(25)
-        self.user = self.create_user(username=self.username,
-                password=self.password)
+        self.user = factories.UserFactory.create()
         self.permissions = [Permission.objects.get(codename=n) for n in
                 self.perm_names]
         self.user.user_permissions.add(*self.permissions)
-        self.client.login(username=self.username, password=self.password)
+        self.login_user(self.user)
 
-        self.project = self.create_project()
+        self.project = factories.ProjectFactory.create()
 
     def _assertRedirectsNoFollow(self, response, url):
         self.assertEquals(response.status_code, 302)
@@ -67,8 +64,8 @@ class AddProjectToUserTestCase(ViewTestMixin, RelationshipTestBase):
 
     def test_add_again(self):
         """Adding project again should have no effect."""
-        rel_data = {'project': self.project, 'user': self.user}
-        rel = self.create_project_relationship(data=rel_data)
+        rel = factories.ProjectRelationshipFactory.create(project=self.project,
+                user=self.user)
 
         response = self._post(data=self._data())
         self.assertEquals(response.status_code, 302)
@@ -138,8 +135,8 @@ class AddUserToProjectTestCase(ViewTestMixin, RelationshipTestBase):
 
     def test_add_again(self):
         """Adding user again should have no effect."""
-        rel_data = {'project': self.project, 'user': self.user}
-        rel = self.create_project_relationship(data=rel_data)
+        rel = factories.ProjectRelationshipFactory.create(project=self.project,
+                user=self.user)
 
         response = self._post(data=self._data())
         self.assertEquals(response.status_code, 302)
@@ -181,10 +178,10 @@ class EditRelationshipTestCase(ViewTestMixin, RelationshipTestBase):
 
     def setUp(self):
         super(EditRelationshipTestCase, self).setUp()
-        rel_data = {'project': self.project, 'user': self.user}
-        self.relationship = self.create_project_relationship(data=rel_data)
-        self.rel_type1 = self.create_relationship_type()
-        self.rel_type2 = self.create_relationship_type()
+        self.relationship = factories.ProjectRelationshipFactory.create(
+                project=self.project, user=self.user)
+        self.rel_type1 = factories.RelationshipTypeFactory.create()
+        self.rel_type2 = factories.RelationshipTypeFactory.create()
 
     def test_permission(self):
         """Permission is required to edit a project relationship."""
@@ -268,8 +265,8 @@ class DeleteRelationshipTestCase(ViewTestMixin, RelationshipTestBase):
 
     def setUp(self):
         super(DeleteRelationshipTestCase, self).setUp()
-        rel_data = {'project': self.project, 'user': self.user}
-        self.relationship = self.create_project_relationship(data=rel_data)
+        self.relationship = factories.ProjectRelationshipFactory.create(
+                project=self.project, user=self.user)
 
     @property
     def get_kwargs(self):

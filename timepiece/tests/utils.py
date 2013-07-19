@@ -7,6 +7,8 @@ from django.utils import timezone
 
 from timepiece import utils
 
+from . import factories
+
 
 class UtilityFunctionsTest(TestCase):
 
@@ -38,24 +40,24 @@ class UtilityFunctionsTest(TestCase):
 class GetActiveEntryTest(TimepieceDataTestCase):
 
     def setUp(self):
-        self.user = self.create_user()
+        self.user = factories.UserFactory.create()
 
     def test_get_active_entry_none(self):
         self.assertIsNone(get_active_entry(self.user))
 
     def test_get_active_entry_single(self):
         now = datetime.datetime.now()
-        entry = self.create_entry({'user': self.user, 'start_time': now})
+        entry = factories.EntryFactory.create(user=self.user, start_time=now)
         # not active
-        self.create_entry({'user': self.user, 'start_time': now,
-                           'end_time': now})
+        factories.EntryFactory.create(user=self.user, start_time=now,
+                end_time=now)
         # different user
-        self.create_entry({'user': self.create_user(), 'start_time': now})
+        factories.EntryFactory.create(start_time=now)
         self.assertEqual(entry, get_active_entry(self.user))
 
     def test_get_active_entry_multiple(self):
         now = datetime.datetime.now()
         # two active entries for same user
-        self.create_entry({'user': self.user, 'start_time': now})
-        self.create_entry({'user': self.user, 'start_time': now})
+        factories.EntryFactory.create(user=self.user, start_time=now)
+        factories.EntryFactory.create(user=self.user, start_time=now)
         self.assertRaises(ActiveEntryError, get_active_entry, self.user)
