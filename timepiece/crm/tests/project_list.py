@@ -2,6 +2,7 @@ from django.contrib.auth.models import User, Permission
 from django.core.urlresolvers import reverse
 
 from timepiece.tests.base import TimepieceDataTestCase
+from timepiece.tests import factories
 
 
 class ProjectListTest(TimepieceDataTestCase):
@@ -9,30 +10,29 @@ class ProjectListTest(TimepieceDataTestCase):
     def setUp(self):
         self.url = reverse('list_projects')
 
-        self.user = self.create_user('user', 'u@a.com', 'abc')
+        self.user = factories.UserFactory.create()
         self.user.save()
 
-        self.super_user = self.create_user('super', 's@a.com', 'abc',
-                is_superuser=True)
+        self.super_user = factories.SuperuserFactory.create()
 
         self.statuses = []
-        self.statuses.append(self.create_project_status(data={'label': '1'}))
-        self.statuses.append(self.create_project_status(data={'label': '2'}))
-        self.statuses.append(self.create_project_status(data={'label': '3'}))
-        self.statuses.append(self.create_project_status(data={'label': '4'}))
-        self.statuses.append(self.create_project_status(data={'label': '5'}))
+        self.statuses.append(factories.StatusAttributeFactory.create(label='1'))
+        self.statuses.append(factories.StatusAttributeFactory.create(label='2'))
+        self.statuses.append(factories.StatusAttributeFactory.create(label='3'))
+        self.statuses.append(factories.StatusAttributeFactory.create(label='4'))
+        self.statuses.append(factories.StatusAttributeFactory.create(label='5'))
 
         self.projects = []
-        self.projects.append(self.create_project(name='a',
-                data={'description': 'a', 'status': self.statuses[0]}))
-        self.projects.append(self.create_project(name='b',
-                data={'description': 'a', 'status': self.statuses[0]}))
-        self.projects.append(self.create_project(name='c',
-                data={'description': 'b', 'status': self.statuses[1]}))
-        self.projects.append(self.create_project(name='c',
-                data={'description': 'd', 'status': self.statuses[2]}))
-        self.projects.append(self.create_project(name='d',
-                data={'description': 'e', 'status': self.statuses[3]}))
+        self.projects.append(factories.ProjectFactory.create(name='a',
+                description='a', status=self.statuses[0]))
+        self.projects.append(factories.ProjectFactory.create(name='b',
+                description='a', status=self.statuses[0]))
+        self.projects.append(factories.ProjectFactory.create(name='c',
+                description='b', status=self.statuses[1]))
+        self.projects.append(factories.ProjectFactory.create(name='c',
+                description='d', status=self.statuses[2]))
+        self.projects.append(factories.ProjectFactory.create(name='d',
+                description='e', status=self.statuses[3]))
 
     def testUserPermission(self):
         """Regular users should be redirected to the login page.
@@ -44,7 +44,7 @@ class ProjectListTest(TimepieceDataTestCase):
         project view page.
 
         """
-        self.client.login(username='user', password='abc')
+        self.login_user(self.user)
         response = self.client.get(self.url)
         self.assertEquals(response.status_code, 302)
 
@@ -55,7 +55,7 @@ class ProjectListTest(TimepieceDataTestCase):
         perm = Permission.objects.filter(codename__exact='view_project')
         self.user.user_permissions = perm
         self.user.save()
-        self.client.login(username='user', password='abc')
+        self.login_user(self.user)
         response = self.client.get(self.url, follow=True)
 
         self.assertEqual(response.status_code, 200)
@@ -65,7 +65,7 @@ class ProjectListTest(TimepieceDataTestCase):
 
     def testSuperUserPermission(self):
         """Super users should be able to see the project list view."""
-        self.client.login(username='super', password='abc')
+        self.login_user(self.super_user)
         response = self.client.get(self.url, follow=True)
 
         self.assertEqual(response.status_code, 200)
@@ -80,7 +80,7 @@ class ProjectListTest(TimepieceDataTestCase):
         should be redirected to individual project page.
 
         """
-        self.client.login(username='super', password='abc')
+        self.login_user(self.super_user)
         data = {}
         response = self.client.get(self.url, data=data, follow=True)
 
@@ -100,7 +100,7 @@ class ProjectListTest(TimepieceDataTestCase):
         project, user should be redirected to individual project page.
 
         """
-        self.client.login(username='super', password='abc')
+        self.login_user(self.super_user)
         query = 'b'
         data = {'search': query}
         response = self.client.get(self.url, data=data, follow=True)
@@ -123,7 +123,7 @@ class ProjectListTest(TimepieceDataTestCase):
         project page.
 
         """
-        self.client.login(username='super', password='abc')
+        self.login_user(self.super_user)
         status = self.statuses[2].pk
         data = {'status': status}
         response = self.client.get(self.url, data=data, follow=True)
@@ -145,7 +145,7 @@ class ProjectListTest(TimepieceDataTestCase):
         project, user should be redirected to individual project page.
 
         """
-        self.client.login(username='super', password='abc')
+        self.login_user(self.super_user)
 
         status = self.statuses[0].pk
         query = 'a'
@@ -171,7 +171,7 @@ class ProjectListTest(TimepieceDataTestCase):
         total project count.
 
         """
-        self.client.login(username='super', password='abc')
+        self.login_user(self.super_user)
 
         total = 0
         for s in self.statuses:

@@ -5,14 +5,12 @@ from timepiece.tests.base import TimepieceDataTestCase
 
 
 class QuickSearchTest(TimepieceDataTestCase):
-    def setUp(self):
-        super(QuickSearchTest, self).setUp()
 
     def testUserSearch(self):
         """
         Test that you are redirected to the correct profile
         """
-        self.client.login(username='superuser', password='abc')
+        self.login_user(self.superuser)
 
         url = reverse('search')
 
@@ -22,7 +20,7 @@ class QuickSearchTest(TimepieceDataTestCase):
         }, follow=True)
 
         self.assertEquals(response.status_code, 200)
-        self.assertEquals(response.context['user'].username, 'superuser')
+        self.assertEquals(response.context['user'], self.superuser)
 
         # quick_search_0 can be anything (an artifact of django-selectable?)
         response = self.client.get(url, data={
@@ -31,13 +29,13 @@ class QuickSearchTest(TimepieceDataTestCase):
         }, follow=True)
 
         self.assertEquals(response.status_code, 200)
-        self.assertEquals(response.context['user'].username, 'superuser')
+        self.assertEquals(response.context['user'], self.superuser)
 
     def testMalformedUserSearch(self):
         """
         Test that the correct value error is thrown
         """
-        self.client.login(username='superuser', password='abc')
+        self.login_user(self.superuser)
 
         url = reverse('search')
 

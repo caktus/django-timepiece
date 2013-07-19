@@ -2,6 +2,7 @@ from django.core.urlresolvers import reverse
 from django.contrib.auth.models import User, Permission
 
 from timepiece.tests.base import TimepieceDataTestCase
+from timepiece.tests import factories
 
 from timepiece.crm.models import Business, Project
 
@@ -9,7 +10,8 @@ from timepiece.crm.models import Business, Project
 class BusinessTest(TimepieceDataTestCase):
 
     def setUp(self):
-        self.client.login(username='user', password='abc')
+        self.user = factories.UserFactory.create()
+        self.login_user(self.user)
         self.url = reverse('create_business')
         self.data = {
             'name': 'Business',
@@ -19,10 +21,10 @@ class BusinessTest(TimepieceDataTestCase):
         }
 
     def login_with_permission(self):
-        user = self.create_user('admin', 'e@e.com', 'abc')
+        user = factories.UserFactory.create()
         perm = Permission.objects.get(codename='add_business')
         user.user_permissions.add(perm)
-        self.client.login(username='admin', password='abc')
+        self.login_user(user)
 
     def test_user_create_business(self):
         """A regular user shouldnt be able to create a business"""
@@ -52,15 +54,15 @@ class DeleteObjectsTest(TimepieceDataTestCase):
         self.login_with_permission()
 
     def login_with_permission(self):
-        user = self.create_user('admin', 'e@e.com', 'abc')
+        user = factories.UserFactory.create()
         user.is_staff = True
         user.is_superuser = True
         user.save()
-        self.client.login(username='admin', password='abc')
+        self.login_user(user)
 
     def test_no_permissions_business(self):
         """Delete urls should not be accessed by regular users"""
-        self.client.login(username='user', password='abc')
+        self.login_user(self.user)
 
         url = reverse('delete_business', args=(self.business.pk,))
 
@@ -73,9 +75,9 @@ class DeleteObjectsTest(TimepieceDataTestCase):
 
     def test_no_permissions_user(self):
         """Delete urls should not be accessed by regular users"""
-        self.client.login(username='user', password='abc')
+        self.login_user(self.user)
 
-        user = self.create_user()
+        user = factories.UserFactory.create()
         url = reverse('delete_user', args=(user.pk,))
 
         response = self.client.get(url)
@@ -87,7 +89,7 @@ class DeleteObjectsTest(TimepieceDataTestCase):
 
     def test_no_permissions_project(self):
         """Delete urls should not be accessed by regular users"""
-        self.client.login(username='user', password='abc')
+        self.login_user(self.user)
 
         url = reverse('delete_project', args=(self.project.pk,))
 
@@ -112,7 +114,7 @@ class DeleteObjectsTest(TimepieceDataTestCase):
 
     def test_delete_user(self):
         """A superuser should be able to access the delete page"""
-        user = self.create_user()
+        user = factories.UserFactory.create()
         url = reverse('delete_user', args=(user.pk,))
 
         response = self.client.get(url)
@@ -143,11 +145,11 @@ class ProjectsTest(TimepieceDataTestCase):
         self.url = reverse('create_project')
 
     def login_with_permission(self):
-        user = self.create_user('admin', 'e@e.com', 'abc')
+        user = factories.UserFactory.create()
         user.is_staff = True
         user.is_superuser = True
         user.save()
-        self.client.login(username='admin', password='abc')
+        self.login_user(user)
 
     def test_create_project_no_business(self):
         """

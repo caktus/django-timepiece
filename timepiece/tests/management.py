@@ -7,9 +7,11 @@ from django.utils import timezone
 
 from timepiece import utils
 from timepiece.management.commands import check_entries
-from timepiece.tests.base import TimepieceDataTestCase
 
 from timepiece.entries.models import Entry
+
+from .base import TimepieceDataTestCase
+from . import factories
 
 
 class CheckEntries(TimepieceDataTestCase):
@@ -69,7 +71,7 @@ class CheckEntries(TimepieceDataTestCase):
             'start_time': start,
             'end_time': end,
         })
-        self.create_entry(data)
+        factories.EntryFactory.create(**data)
 
     def make_entry_bulk(self, users, days, *args, **kwargs):
         """
@@ -86,7 +88,7 @@ class CheckEntries(TimepieceDataTestCase):
                                   relativedelta(days=day, minutes=1),
                     'end_time': timezone.now() - relativedelta(days=day,)
                 })
-                self.create_entry(self.default_data)
+                factories.EntryFactory.create(**self.default_data)
 
     #tests
     def testFindStart(self):

@@ -170,7 +170,7 @@ class TestHourlyReport(ViewTestMixin, ReportsTestBase):
 
     def make_totals(self, args={}):
         """Return CSV from hourly report for verification in tests"""
-        self.client.login(username='superuser', password='abc')
+        self.login_user(self.superuser)
         response = self._get(data=args, follow=True)
         return [item.split(',') \
                 for item in response.content.split('\r\n')][:-1]
@@ -389,13 +389,13 @@ class TestHourlyReport(ViewTestMixin, ReportsTestBase):
 
     def test_no_permission(self):
         """view_entry_summary permission is required to view this report."""
-        self.client.login(username='user', password='abc')
+        self.login_user(self.user)
         response = self._get()
         self.assertEqual(response.status_code, 302)
 
     def test_entry_summary_permission(self):
         """view_entry_summary permission is required to view this report."""
-        self.client.login(username='user', password='abc')
+        self.login_user(self.user)
         entry_summ_perm = Permission.objects.get(codename='view_entry_summary')
         self.user.user_permissions.add(entry_summ_perm)
         self.user.save()

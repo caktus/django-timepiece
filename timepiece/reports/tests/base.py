@@ -4,6 +4,7 @@ from django.conf import settings
 
 from timepiece import utils
 from timepiece.tests.base import TimepieceDataTestCase
+from timepiece.tests import factories
 
 from timepiece.reports.utils import generate_dates
 
@@ -12,18 +13,18 @@ class ReportsTestBase(TimepieceDataTestCase):
 
     def setUp(self):
         super(ReportsTestBase, self).setUp()
-        self.sick = self.create_project()
-        self.vacation = self.create_project()
+        self.sick = factories.ProjectFactory.create()
+        self.vacation = factories.ProjectFactory.create()
         settings.TIMEPIECE_PAID_LEAVE_PROJECTS = {
             'sick': self.sick.pk,
             'vacation': self.vacation.pk,
         }
         self.leave = [self.sick.pk, self.vacation.pk]
-        self.p1 = self.create_project(billable=True, name='1')
-        self.p2 = self.create_project(billable=False, name='2')
-        self.p4 = self.create_project(billable=True, name='4')
-        self.p3 = self.create_project(billable=False, name='1')
-        self.p5 = self.create_project(billable=True, name='3')
+        self.p1 = factories.BillableProjectFactory.create(name='1')
+        self.p2 = factories.NonbillableProjectFactory.create(name='2')
+        self.p4 = factories.BillableProjectFactory.create(name='4')
+        self.p3 = factories.NonbillableProjectFactory.create(name='1')
+        self.p5 = factories.BillableProjectFactory.create(name='3')
         self.default_projects = [self.p1, self.p2, self.p3, self.p4, self.p5]
         self.default_dates = [
             utils.add_timezone(datetime.datetime(2011, 1, 3)),
