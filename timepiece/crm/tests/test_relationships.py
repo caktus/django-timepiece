@@ -6,6 +6,10 @@ from timepiece.tests.base import TimepieceDataTestCase, ViewTestMixin
 from timepiece.crm.models import ProjectRelationship
 
 
+__all__ = ['RelationshipTestBase', 'AddProjectToUserTestCase',
+        'AddUserToProjectTestCase', 'EditRelationshipTestCase',
+        'DeleteRelationshipTestCase']
+
 class RelationshipTestBase(TimepieceDataTestCase):
 
     def setUp(self):
@@ -16,11 +20,6 @@ class RelationshipTestBase(TimepieceDataTestCase):
         self.login_user(self.user)
 
         self.project = factories.ProjectFactory.create()
-
-    def _assertRedirectsNoFollow(self, response, url):
-        self.assertEquals(response.status_code, 302)
-        full_url = 'http://testserver' + url
-        self.assertEquals(response._headers['location'][1], full_url)
 
 
 class AddProjectToUserTestCase(ViewTestMixin, RelationshipTestBase):
@@ -78,7 +77,7 @@ class AddProjectToUserTestCase(ViewTestMixin, RelationshipTestBase):
         user_url = reverse('view_user', args=(self.user.pk,))
 
         response = self._post(data=self._data())
-        self._assertRedirectsNoFollow(response, user_url)
+        self.assertRedirectsNoFollow(response, user_url)
         rel = ProjectRelationship.objects.get()
         self.assertEquals(rel.project, self.project)
         self.assertEquals(rel.user, self.user)
@@ -88,7 +87,7 @@ class AddProjectToUserTestCase(ViewTestMixin, RelationshipTestBase):
         get_kwargs = self.get_kwargs
         get_kwargs.update({'next': '/hello'})
         response = self._post(data=self._data(), get_kwargs=get_kwargs)
-        self._assertRedirectsNoFollow(response, '/hello')
+        self.assertRedirectsNoFollow(response, '/hello')
         rel = ProjectRelationship.objects.get()
         self.assertEquals(rel.project, self.project)
         self.assertEquals(rel.user, self.user)
@@ -149,7 +148,7 @@ class AddUserToProjectTestCase(ViewTestMixin, RelationshipTestBase):
         project_url = reverse('view_project', args=(self.project.pk,))
 
         response = self._post(data=self._data())
-        self._assertRedirectsNoFollow(response, project_url)
+        self.assertRedirectsNoFollow(response, project_url)
         rel = ProjectRelationship.objects.get()
         self.assertEquals(rel.project, self.project)
         self.assertEquals(rel.user, self.user)
@@ -159,7 +158,7 @@ class AddUserToProjectTestCase(ViewTestMixin, RelationshipTestBase):
         get_kwargs = self.get_kwargs
         get_kwargs.update({'next': '/hello'})
         response = self._post(data=self._data(), get_kwargs=get_kwargs)
-        self._assertRedirectsNoFollow(response, '/hello')
+        self.assertRedirectsNoFollow(response, '/hello')
         rel = ProjectRelationship.objects.get()
         self.assertEquals(rel.project, self.project)
         self.assertEquals(rel.user, self.user)
@@ -236,7 +235,7 @@ class EditRelationshipTestCase(ViewTestMixin, RelationshipTestBase):
         project_url = reverse('view_project', args=(self.project.pk,))
 
         response = self._post(data=self._data())
-        self._assertRedirectsNoFollow(response, project_url)
+        self.assertRedirectsNoFollow(response, project_url)
         rel = ProjectRelationship.objects.get()
         self.assertEquals(rel.project, self.project)
         self.assertEquals(rel.user, self.user)
@@ -249,7 +248,7 @@ class EditRelationshipTestCase(ViewTestMixin, RelationshipTestBase):
         get_kwargs = self.get_kwargs
         get_kwargs.update({'next': '/hello'})
         response = self._post(data=self._data(), get_kwargs=get_kwargs)
-        self._assertRedirectsNoFollow(response, '/hello')
+        self.assertRedirectsNoFollow(response, '/hello')
         rel = ProjectRelationship.objects.get()
         self.assertEquals(rel.project, self.project)
         self.assertEquals(rel.user, self.user)
