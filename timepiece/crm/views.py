@@ -5,7 +5,7 @@ import urllib
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required, permission_required
 from django.contrib.auth.models import User
-from django.core.urlresolvers import reverse, resolve
+from django.core.urlresolvers import reverse, reverse_lazy, resolve
 from django.db import transaction
 from django.db.models import Sum, Q
 from django.http import HttpResponseRedirect, HttpResponseForbidden, Http404
@@ -13,7 +13,8 @@ from django.shortcuts import get_object_or_404, render, redirect
 from django.utils.decorators import method_decorator
 from django.views.decorators.csrf import csrf_exempt
 from django.views.decorators.http import require_POST
-from django.views.generic import DetailView, TemplateView, View
+from django.views.generic import (CreateView, DeleteView, DetailView,
+        TemplateView, UpdateView, View)
 
 from timepiece import utils
 from timepiece.forms import YearMonthForm, UserYearMonthForm, SearchForm
@@ -573,67 +574,28 @@ def edit_settings(request):
     })
 
 
-class DeleteView(TemplateView):
-    model = None
-    url_name = None
-    permissions = None
-    form_class = DeleteForm
-    template_name = 'timepiece/delete_object.html'
-    param = None
-
-    def dispatch(self, request, *args, **kwargs):
-        for permission in self.permissions:
-            if not request.user.has_perm(permission):
-                messages.info(request,
-                        'You do not have permission to access that.')
-                return HttpResponseRedirect(reverse('dashboard'))
-        return super(DeleteView, self).dispatch(request, *args, **kwargs)
-
-    def post(self, request, *args, **kwargs):
-        instance = self.get_queryset(**kwargs)
-        form = self.form_class(request.POST, instance=instance)
-        msg = '{0} could not be successfully deleted.'.format(instance)
-
-        if form.is_valid():
-            if form.save():
-                msg = '{0} was successfully deleted.'.format(instance)
-
-        messages.info(request, msg)
-        return HttpResponseRedirect(reverse(self.url_name))
-
-    def get(self, request, *args, **kwargs):
-        context = self.get_context_data(*args, **kwargs)
-        return self.render_to_response(context)
-
-    def get_queryset(self, **kwargs):
-        pk = kwargs.get(self.param, None)
-        return get_object_or_404(self.model, pk=pk)
-
-    def get_context_data(self, *args, **kwargs):
-        context = super(DeleteView, self).get_context_data(*args, **kwargs)
-        context['object'] = self.get_queryset(**kwargs)
-        return context
-
-
-class DeleteUserView(DeleteView):
+class DeleteUser(PermissionsRequiredMixin, DeleteView):
     model = User
-    url_name = 'list_users'
+    success_url = reverse_lazy('list_users')
     permissions = ('auth.add_user', 'auth.change_user',)
-    param = 'user_id'
+    pk_url_kwarg = 'user_id'
+    template_name = 'timepiece/delete_object.html'
 
 
-class DeleteBusinessView(DeleteView):
+class DeleteBusiness(PermissionsRequiredMixin, DeleteView):
     model = Business
-    url_name = 'list_businesses'
+    success_url = reverse_lazy('list_businesses')
     permissions = ('crm.add_business',)
-    param = 'business_id'
+    pk_url_kwarg = 'business_id'
+    template_name = 'timepiece/delete_object.html'
 
 
-class DeleteProjectView(DeleteView):
+class DeleteProject(PermissionsRequiredMixin, DeleteView):
     model = Project
-    url_name = 'list_projects'
+    success_url = reverse_lazy('list_projects')
     permissions = ('crm.add_project', 'crm.change_project',)
-    param = 'project_id'
+    pk_url_kwarg = 'project_id'
+    template_name = 'timepiece/delete_object.html'
 
 
 @login_required
