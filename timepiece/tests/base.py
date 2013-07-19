@@ -1,4 +1,3 @@
-from importlib import import_module
 import random
 import urllib
 
@@ -71,7 +70,7 @@ class TimepieceDataTestCase(TestCase):
         http://jameswestby.net/weblog/tech/17-directly-logging-in-a-user-in-django-tests.html
         """
         user.backend = 'django.contrib.auth.backends.ModelBackend'
-        engine = import_module(settings.SESSION_ENGINE)
+        engine = __import__(settings.SESSION_ENGINE, fromlist=['SessionStore'])
 
         # Create a fake request to store login details.
         request = HttpRequest()
