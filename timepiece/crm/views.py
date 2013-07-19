@@ -354,6 +354,14 @@ class CreateBusiness(PermissionsRequiredMixin, CreateView):
     permissions = ('crm.add_business',)
 
 
+class DeleteBusiness(PermissionsRequiredMixin, DeleteView):
+    model = Business
+    success_url = reverse_lazy('list_businesses')
+    permissions = ('crm.add_business',)
+    pk_url_kwarg = 'business_id'
+    template_name = 'timepiece/delete_object.html'
+
+
 class EditBusiness(PermissionsRequiredMixin, UpdateView):
     model = Business
     form_class = CreateEditBusinessForm
@@ -404,6 +412,14 @@ class CreateUser(PermissionsRequiredMixin, CreateView):
     permissions = ('auth.add_user',)
 
 
+class DeleteUser(PermissionsRequiredMixin, DeleteView):
+    model = User
+    success_url = reverse_lazy('list_users')
+    permissions = ('auth.add_user', 'auth.change_user',)
+    pk_url_kwarg = 'user_id'
+    template_name = 'timepiece/delete_object.html'
+
+
 class EditUser(PermissionsRequiredMixin, UpdateView):
     model = User
     form_class = EditUserForm
@@ -446,6 +462,29 @@ class ViewProject(PermissionsRequiredMixin, CommitOnSuccessMixin, DetailView):
             'add_user_form': SelectUserForm(),
         })
         return context
+
+
+class CreateProject(PermissionsRequiredMixin, CreateView):
+    model = Project
+    form_class = ProjectForm
+    permissions = ('crm.add_project', 'crm.change_project')
+    template_name = 'timepiece/project/create_edit.html'
+
+
+class DeleteProject(PermissionsRequiredMixin, DeleteView):
+    model = Project
+    success_url = reverse_lazy('list_projects')
+    permissions = ('crm.add_project', 'crm.change_project',)
+    pk_url_kwarg = 'project_id'
+    template_name = 'timepiece/delete_object.html'
+
+
+class EditProject(PermissionsRequiredMixin, UpdateView):
+    model = Project
+    form_class = ProjectForm
+    permissions = ('crm.add_project', 'crm.change_project')
+    template_name = 'timepiece/project/create_edit.html'
+    pk_url_kwarg = 'project_id'
 
 
 @csrf_exempt
@@ -523,21 +562,6 @@ def edit_relationship(request):
     })
 
 
-class CreateProject(PermissionsRequiredMixin, CreateView):
-    model = Project
-    form_class = ProjectForm
-    permissions = ('crm.add_project', 'crm.change_project')
-    template_name = 'timepiece/project/create_edit.html'
-
-
-class EditProject(PermissionsRequiredMixin, UpdateView):
-    model = Project
-    form_class = ProjectForm
-    permissions = ('crm.add_project', 'crm.change_project')
-    template_name = 'timepiece/project/create_edit.html'
-    pk_url_kwarg = 'project_id'
-
-
 @login_required
 def edit_settings(request):
     user = request.user
@@ -565,30 +589,6 @@ def edit_settings(request):
         'profile_form': profile_form,
         'user_form': user_form,
     })
-
-
-class DeleteUser(PermissionsRequiredMixin, DeleteView):
-    model = User
-    success_url = reverse_lazy('list_users')
-    permissions = ('auth.add_user', 'auth.change_user',)
-    pk_url_kwarg = 'user_id'
-    template_name = 'timepiece/delete_object.html'
-
-
-class DeleteBusiness(PermissionsRequiredMixin, DeleteView):
-    model = Business
-    success_url = reverse_lazy('list_businesses')
-    permissions = ('crm.add_business',)
-    pk_url_kwarg = 'business_id'
-    template_name = 'timepiece/delete_object.html'
-
-
-class DeleteProject(PermissionsRequiredMixin, DeleteView):
-    model = Project
-    success_url = reverse_lazy('list_projects')
-    permissions = ('crm.add_project', 'crm.change_project',)
-    pk_url_kwarg = 'project_id'
-    template_name = 'timepiece/delete_object.html'
 
 
 @login_required
