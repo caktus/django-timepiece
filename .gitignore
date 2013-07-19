@@ -10,3 +10,5 @@ build/
 */static/CACHE/
 *.swp
 *.DS_Store
+htmlcov/
+.coverage
