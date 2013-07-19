@@ -2,6 +2,7 @@ from django.contrib.auth.models import User, Permission
 from django.core.urlresolvers import reverse
 
 from timepiece.tests.base import TimepieceDataTestCase
+from timepiece.tests import factories
 
 
 class ProjectListTest(TimepieceDataTestCase):
@@ -9,29 +10,29 @@ class ProjectListTest(TimepieceDataTestCase):
     def setUp(self):
         self.url = reverse('list_projects')
 
-        self.user = self.create_user()
+        self.user = factories.UserFactory.create()
         self.user.save()
 
-        self.super_user = self.create_user(is_superuser=True)
+        self.super_user = factories.SuperuserFactory.create()
 
         self.statuses = []
-        self.statuses.append(self.create_project_status(data={'label': '1'}))
-        self.statuses.append(self.create_project_status(data={'label': '2'}))
-        self.statuses.append(self.create_project_status(data={'label': '3'}))
-        self.statuses.append(self.create_project_status(data={'label': '4'}))
-        self.statuses.append(self.create_project_status(data={'label': '5'}))
+        self.statuses.append(factories.StatusAttributeFactory.create(label='1'))
+        self.statuses.append(factories.StatusAttributeFactory.create(label='2'))
+        self.statuses.append(factories.StatusAttributeFactory.create(label='3'))
+        self.statuses.append(factories.StatusAttributeFactory.create(label='4'))
+        self.statuses.append(factories.StatusAttributeFactory.create(label='5'))
 
         self.projects = []
-        self.projects.append(self.create_project(name='a',
-                **{'description': 'a', 'status': self.statuses[0]}))
-        self.projects.append(self.create_project(name='b',
-                **{'description': 'a', 'status': self.statuses[0]}))
-        self.projects.append(self.create_project(name='c',
-                **{'description': 'b', 'status': self.statuses[1]}))
-        self.projects.append(self.create_project(name='c',
-                **{'description': 'd', 'status': self.statuses[2]}))
-        self.projects.append(self.create_project(name='d',
-                **{'description': 'e', 'status': self.statuses[3]}))
+        self.projects.append(factories.ProjectFactory.create(name='a',
+                description='a', status=self.statuses[0]))
+        self.projects.append(factories.ProjectFactory.create(name='b',
+                description='a', status=self.statuses[0]))
+        self.projects.append(factories.ProjectFactory.create(name='c',
+                description='b', status=self.statuses[1]))
+        self.projects.append(factories.ProjectFactory.create(name='c',
+                description='d', status=self.statuses[2]))
+        self.projects.append(factories.ProjectFactory.create(name='d',
+                description='e', status=self.statuses[3]))
 
     def testUserPermission(self):
         """Regular users should be redirected to the login page.

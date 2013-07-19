@@ -8,6 +8,7 @@ from django.utils import timezone
 
 from timepiece import utils
 from timepiece.tests.base import TimepieceDataTestCase
+from timepiece.tests import factories
 
 from timepiece.entries.models import Entry
 from timepiece.reports.utils import find_overtime
@@ -17,8 +18,8 @@ class PayrollTest(TimepieceDataTestCase):
 
     def setUp(self):
         super(PayrollTest, self).setUp()
-        self.sick = self.create_project(name='sick')
-        self.vacation = self.create_project(name='vacation')
+        self.sick = factories.ProjectFactory.create(name='sick')
+        self.vacation = factories.ProjectFactory.create(name='vacation')
         settings.TIMEPIECE_PAID_LEAVE_PROJECTS = {
             'sick': self.sick.pk, 'vacation': self.vacation.pk
         }
@@ -138,10 +139,8 @@ class PayrollTest(TimepieceDataTestCase):
         Helps set up environment for testing aspects of the monthly payroll
         summary.
         """
-        self.billable_project = self.create_project(name="Billable",
-                billable=True)
-        self.nonbillable_project = self.create_project(name="Nonbillable",
-                billable=False)
+        self.billable_project = factories.BillableProjectFactory.create()
+        self.nonbillable_project = factories.NonbillableProjectFactory.create()
         self.all_logs(self.user, self.billable_project,
                 self.nonbillable_project)
         self.all_logs(self.user2, self.billable_project,

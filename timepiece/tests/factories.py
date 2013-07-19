@@ -12,9 +12,10 @@ from timepiece.entries import models as entries
 from timepiece import utils
 
 
-class BaseUserFactory(factory.DjangoModelFactory):
+class UserFactory(factory.DjangoModelFactory):
     FACTORY_FOR = auth.User
 
+    # FIXME: Some tests depend on first_name/last_name being unique.
     first_name = factory.Sequence(lambda n: 'Sam{0}'.format(n))
     last_name = factory.Sequence(lambda n: 'Blue{0}'.format(n))
     username = factory.Sequence(lambda n: 'user{0}'.format(n))
@@ -22,11 +23,7 @@ class BaseUserFactory(factory.DjangoModelFactory):
     password = factory.LazyAttribute(lambda n: make_password('password'))
 
 
-class UserFactory(BaseUserFactory):
-    pass
-
-
-class SuperuserFactory(BaseUserFactory):
+class SuperuserFactory(UserFactory):
     is_superuser = True
     is_staff = True
 
@@ -97,25 +94,22 @@ class BusinessFactory(factory.DjangoModelFactory):
     name = factory.Sequence(lambda n: 'business{0}'.format(n))
 
 
-class BaseProjectFactory(factory.DjangoModelFactory):
+class ProjectFactory(factory.DjangoModelFactory):
     FACTORY_FOR = crm.Project
 
     name = factory.Sequence(lambda n: 'project{0}'.format(n))
     business = factory.SubFactory('timepiece.tests.factories.BusinessFactory')
     point_person = factory.SubFactory('timepiece.tests.factories.UserFactory')
-
-
-class ProjectFactory(BaseProjectFactory):
     type = factory.SubFactory('timepiece.tests.factories.TypeAttributeFactory')
     status = factory.SubFactory('timepiece.tests.factories.StatusAttributeFactory')
 
 
-class BillableProjectFactory(BaseProjectFactory):
+class BillableProjectFactory(ProjectFactory):
     type = factory.SubFactory('timepiece.tests.factories.TypeAttributeFactory', billable=True)
     status = factory.SubFactory('timepiece.tests.factories.StatusAttributeFactory', billable=True)
 
 
-class NonbillableProjectFactory(BaseProjectFactory):
+class NonbillableProjectFactory(ProjectFactory):
     type = factory.SubFactory('timepiece.tests.factories.TypeAttributeFactory', billable=False)
     status = factory.SubFactory('timepiece.tests.factories.StatusAttributeFactory', billable=False)
 
@@ -138,11 +132,20 @@ class UserProfileFactory(factory.DjangoModelFactory):
 
     user = factory.SubFactory('timepiece.tests.factories.UserFactory')
 
+
 class ActivityFactory(factory.DjangoModelFactory):
     FACTORY_FOR = entries.Activity
 
     code = factory.Sequence(lambda n: 'a{0}'.format(n))
     name = factory.Sequence(lambda n: 'activity{0}'.format(n))
+
+
+class BillableActivityFactory(ActivityFactory):
+    billable = True
+
+
+class NonbillableActivityFactory(ActivityFactory):
+    billable = False
 
 
 class ActivityGroupFactory(factory.DjangoModelFactory):

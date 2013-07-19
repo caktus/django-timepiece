@@ -2,6 +2,7 @@ from django.contrib.auth.models import User
 from django.core.urlresolvers import reverse
 
 from timepiece import forms
+from timepiece.tests import factories
 from timepiece.tests.base import TimepieceDataTestCase
 
 from timepiece.crm.models import UserProfile
@@ -15,7 +16,7 @@ class EditSettingsTest(TimepieceDataTestCase):
         self.login_user(self.user)
         self.activities = []
         for i in range(0, 5):
-            self.activities.append(self.create_activity())
+            self.activities.append(factories.ActivityFactory.create())
 
     def edit_profile(self, url, data):
         response = self.client.post(url, data)
@@ -62,7 +63,7 @@ class EditUserTest(TimepieceDataTestCase):
         }
 
     def login_with_permission(self):
-        user = self.create_user(is_superuser=True, is_staff=True)
+        user = factories.SuperuserFactory.create()
         self.login_user(user)
 
     def test_edit_user(self):
@@ -106,8 +107,8 @@ class EditUserTest(TimepieceDataTestCase):
         is correct
         """
         self.login_with_permission()
-        group1 = self.create_auth_group()
-        group2 = self.create_auth_group()
+        group1 = factories.GroupFactory.create()
+        group2 = factories.GroupFactory.create()
         self.data['groups'] = (group1.id,)
         response = self.client.post(self.url, data=self.data)
         self.assertEqual(response.status_code, 302)

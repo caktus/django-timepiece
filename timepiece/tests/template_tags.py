@@ -8,7 +8,9 @@ from django.utils.html import strip_tags
 
 from timepiece import utils
 from timepiece.templatetags import timepiece_tags as tags
-from timepiece.tests.base import TimepieceDataTestCase
+
+from .base import TimepieceDataTestCase
+from . import factories
 
 
 class HumanizeTimeTestCase(TestCase):
@@ -229,12 +231,12 @@ class ArithmeticTagTestCase(TestCase):
 class TestProjectHoursForContract(TimepieceDataTestCase):
 
     def setUp(self):
-        self.user = self.create_user()
+        self.user = factories.UserFactory.create()
 
-        self.a_project = self.create_project()
-        self.another_project = self.create_project()
-        self.billable_project = self.create_project(billable=True)
-        self.project_without_hours = self.create_project()
+        self.a_project = factories.NonbillableProjectFactory.create()
+        self.another_project = factories.NonbillableProjectFactory.create()
+        self.billable_project = factories.BillableProjectFactory.create()
+        self.project_without_hours = factories.NonbillableProjectFactory.create()
         projects = [
             self.a_project,
             self.another_project,
@@ -243,40 +245,25 @@ class TestProjectHoursForContract(TimepieceDataTestCase):
         ]
 
         self.contract = self.create_contract(projects=projects)
-        activity = self.create_activity(data={'billable': True})
-        unbillable_activity = self.create_activity(data={'billable': False})
+        activity = factories.ActivityFactory.create(billable=True)
+        unbillable_activity = factories.ActivityFactory.create(billable=False)
 
         start_time = datetime.datetime.now()
-        self.create_entry(data={
-            'project': self.a_project,
-            'activity': activity,
-            'start_time': start_time,
-            'end_time': start_time + relativedelta(hours=1),
-        })
-        self.create_entry(data={
-            'project': self.a_project,
-            'activity': unbillable_activity,
-            'start_time': start_time,
-            'end_time': start_time + relativedelta(hours=16),
-        })
-        self.create_entry(data={
-            'project': self.another_project,
-            'activity': activity,
-            'start_time': start_time,
-            'end_time': start_time + relativedelta(hours=2),
-        })
-        self.create_entry(data={
-            'project': self.billable_project,
-            'activity': activity,
-            'start_time': start_time,
-            'end_time': start_time + relativedelta(hours=4),
-        })
-        self.create_entry(data={
-            'project': self.billable_project,
-            'activity': unbillable_activity,
-            'start_time': start_time,
-            'end_time': start_time + relativedelta(hours=8),
-        })
+        factories.EntryFactory.create(project=self.a_project,
+                activity=activity, start_time=start_time,
+                end_time=start_time + relativedelta(hours=1))
+        factories.EntryFactory.create(project=self.a_project,
+                activity=unbillable_activity, start_time=start_time,
+                end_time=start_time + relativedelta(hours=16))
+        factories.EntryFactory.create(project=self.another_project,
+                activity=activity, start_time=start_time,
+                end_time=start_time + relativedelta(hours=2))
+        factories.EntryFactory.create(project=self.billable_project,
+                activity=activity, start_time=start_time,
+                end_time=start_time + relativedelta(hours=4))
+        factories.EntryFactory.create(project=self.billable_project,
+                activity=unbillable_activity, start_time=start_time,
+                end_time=start_time + relativedelta(hours=8))
 
     def test_project_hours_for_contract(self):
         retval = tags.project_hours_for_contract(self.contract, self.a_project)

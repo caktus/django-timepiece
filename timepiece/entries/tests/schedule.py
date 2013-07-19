@@ -9,6 +9,7 @@ from django.core.urlresolvers import reverse
 
 from timepiece import utils
 from timepiece.tests.base import TimepieceDataTestCase
+from timepiece.tests import factories
 
 from timepiece.entries.models import Entry, ProjectHours
 from timepiece.entries.views import ScheduleView
@@ -17,7 +18,7 @@ from timepiece.entries.views import ScheduleView
 class ProjectHoursTestCase(TimepieceDataTestCase):
 
     def setUp(self):
-        self.user = self.create_user()
+        self.user = factories.UserFactory.create()
         permissions = Permission.objects.filter(
             content_type=ContentType.objects.get_for_model(Entry),
             codename__in=('can_clock_in', 'can_clock_out', 'can_pause',
@@ -25,33 +26,27 @@ class ProjectHoursTestCase(TimepieceDataTestCase):
         )
         self.user.user_permissions = permissions
         self.user.save()
-        self.superuser = self.create_user(is_superuser=True)
+        self.superuser = factories.SuperuserFactory.create()
 
-        self.tracked_status = self.create_project_status(data={
-                'label': 'Current', 'billable': True,
-                'enable_timetracking': True})
-        self.untracked_status = self.create_project_status(data={
-                'label': 'Closed', 'billable': False,
-                'enable_timetracking': False})
-        self.tracked_type = self.create_project_type(data={
-                'label': 'Tracked', 'billable': True,
-                'enable_timetracking': True})
-        self.untracked_type = self.create_project_type(data={
-                'label': 'Untracked', 'billable': False,
-                'enable_timetracking': False})
+        self.tracked_status = factories.StatusAttributeFactory.create(
+                label='Current', billable=True, enable_timetracking=True)
+        self.untracked_status = factories.StatusAttributeFactory.create(
+                label='Closed', billable=False, enable_timetracking=False)
+        self.tracked_type = factories.TypeAttributeFactory.create(
+                label='Tracked', billable=True, enable_timetracking=True)
+        self.untracked_type = factories.TypeAttributeFactory.create(
+                label='Untracked', billable=False, enable_timetracking=False)
 
-        self.work_activities = self.create_activity_group(name='Work')
-        self.leave_activities = self.create_activity_group(name='Leave')
-        self.all_activities = self.create_activity_group(name='All')
+        self.work_activities = factories.ActivityGroupFactory.create(name='Work')
+        self.leave_activities = factories.ActivityGroupFactory.create(name='Leave')
+        self.all_activities = factories.ActivityGroupFactory.create(name='All')
 
-        self.leave_activity = self.create_activity(
-            data={'code': 'leave', 'name': 'Leave', 'billable': False}
-        )
+        self.leave_activity = factories.ActivityFactory.create(code='leave',
+                name='Leave', billable=False)
         self.leave_activity.activity_group.add(self.leave_activities,
                 self.all_activities)
-        self.work_activity = self.create_activity(
-            data={'code': 'work', 'name': 'Work', 'billable': True}
-        )
+        self.work_activity = factories.ActivityFactory.create(code='work',
+                name='Work', billable=True)
         self.work_activity.activity_group.add(self.work_activities,
                 self.all_activities)
 
@@ -60,13 +55,15 @@ class ProjectHoursTestCase(TimepieceDataTestCase):
             'status': self.tracked_status,
             'activity_group': self.work_activities,
         }
-        self.tracked_project = self.create_project(billable=True, name='Tracked', **data)
+        self.tracked_project = factories.BillableProjectFactory.create(
+                name='Tracked', **data)
         data = {
             'type': self.untracked_type,
             'status': self.untracked_status,
             'activity_group': self.all_activities,
         }
-        self.untracked_project = self.create_project(billable=True, name='Untracked', **data)
+        self.untracked_project = factories.BillableProjectFactory.create(
+                name='Untracked', **data)
 
 
 class ProjectHoursModelTestCase(ProjectHoursTestCase):
@@ -90,15 +87,17 @@ class ProjectHoursListViewTestCase(ProjectHoursTestCase):
         self.past_week = utils.get_week_start(datetime.date(2012, 4, 1)).date()
         self.current_week = utils.get_week_start().date()
         for i in range(5):
-            self.create_project_hours_entry(week_start=self.past_week, published=True)
-            self.create_project_hours_entry(week_start=self.current_week, published=True)
+            factories.ProjectHoursFactory.create(week_start=self.past_week,
+                    published=True)
+            factories.ProjectHoursFactory.create(week_start=self.current_week,
+                    published=True)
         self.url = reverse('view_schedule')
         self.login_user(self.user)
         self.date_format = '%Y-%m-%d'
 
     def test_no_permission(self):
         """User must have permission entries.can_clock_in to view page."""
-        self.basic_user = self.create_user()
+        self.basic_user = factories.UserFactory.create()
         self.login_user(self.basic_user)
         response = self.client.get(self.url)
         self.assertEquals(response.status_code, 302)
@@ -176,7 +175,7 @@ class ProjectHoursEditTestCase(ProjectHoursTestCase):
         super(ProjectHoursEditTestCase, self).setUp()
         self.permission = Permission.objects.filter(
             codename='add_projecthours')
-        self.manager = self.create_user()
+        self.manager = factories.UserFactory.create()
         self.manager.user_permissions = self.permission
         self.view_url = reverse('edit_schedule')
         self.ajax_url = reverse('ajax_schedule')
@@ -320,10 +319,10 @@ class ProjectHoursEditTestCase(ProjectHoursTestCase):
     def test_users(self):
         """Should retrieve all users who can_clock_in."""
         perm = Permission.objects.get(codename='can_clock_in')
-        group = self.create_auth_group()
+        group = factories.GroupFactory.create()
         group.permissions.add(perm)
 
-        group_user = self.create_user()
+        group_user = factories.UserFactory.create()
         group_user.groups.add(group)
         perm_user = self.user
         super_user = self.superuser

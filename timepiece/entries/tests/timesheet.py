@@ -14,6 +14,7 @@ from django.utils import timezone
 
 from timepiece import utils
 from timepiece.tests.base import TimepieceDataTestCase
+from timepiece.tests import factories
 
 from timepiece.crm.utils import grouped_totals
 from timepiece.entries.models import Entry
@@ -24,7 +25,7 @@ class EditableTest(TimepieceDataTestCase):
 
     def setUp(self):
         super(EditableTest, self).setUp()
-        self.entry = self.create_entry({
+        self.entry = self.create_entry(**{
             'user': self.user,
             'project': self.project,
             'start_time': timezone.now() - relativedelta(days=6),
@@ -32,7 +33,7 @@ class EditableTest(TimepieceDataTestCase):
             'seconds_paused': 0,
             'status': Entry.VERIFIED,
         })
-        self.entry2 = self.create_entry({
+        self.entry2 = self.create_entry(**{
             'user': self.user,
             'project': self.project,
             'start_time': timezone.now() - relativedelta(days=2),
@@ -57,7 +58,7 @@ class MyLedgerTest(TimepieceDataTestCase):
     def login_with_permissions(self):
         view_entry_summary = Permission.objects.get(
             codename='view_entry_summary')
-        user = self.create_user()
+        user = factories.UserFactory.create()
         user.user_permissions.add(view_entry_summary)
         user.save()
 
@@ -110,10 +111,10 @@ class MyLedgerTest(TimepieceDataTestCase):
             self.fail(e)
 
     def make_entries(self):
-        self.p1 = self.create_project(billable=True, name='1')
-        self.p2 = self.create_project(billable=False, name='2')
-        self.p4 = self.create_project(billable=True, name='4')
-        self.p3 = self.create_project(billable=False, name='1')
+        self.p1 = factories.BillableProjectFactory.create(name='1')
+        self.p2 = factories.NonbillableProjectFactory.create(name='2')
+        self.p4 = factories.BillableProjectFactory.create(name='4')
+        self.p3 = factories.NonbillableProjectFactory.create(name='1')
         days = [
             utils.add_timezone(datetime.datetime(2011, 1, 1)),
             utils.add_timezone(datetime.datetime(2011, 1, 28)),
@@ -192,7 +193,7 @@ class ClockInTest(TimepieceDataTestCase):
         entry one second before the new entry.
         """
         self.login_user(self.user)
-        entry1 = self.create_entry({
+        entry1 = self.create_entry(**{
             'start_time': self.ten_min_ago,
         })
         data = self.clock_in_form
@@ -219,10 +220,10 @@ class ClockInTest(TimepieceDataTestCase):
         a 500 error should be raised so that we are notified of the situation.
         """
         self.login_user(self.user)
-        entry1 = self.create_entry({
+        entry1 = self.create_entry(**{
             'start_time': self.ten_min_ago,
         })
-        entry2 = self.create_entry({
+        entry2 = self.create_entry(**{
             'start_time': self.now - relativedelta(minutes=20),
         })
         data = self.clock_in_form
@@ -243,7 +244,7 @@ class ClockInTest(TimepieceDataTestCase):
     def testClockInCurrentStatus(self):
         """Verify the status of the current entry shows what is expected"""
         self.login_user(self.user)
-        entry1 = self.create_entry({
+        entry1 = self.create_entry(**{
             'start_time': self.ten_min_ago,
         })
         data = self.clock_in_form
@@ -260,7 +261,7 @@ class ClockInTest(TimepieceDataTestCase):
         The current entry will be clocked out.
         """
         self.login_user(self.user)
-        entry1 = self.create_entry({
+        entry1 = self.create_entry(**{
             'start_time': self.ten_min_ago,
         })
         e_id = Entry.objects.get(pk=entry1.id)
@@ -289,7 +290,7 @@ class ClockInTest(TimepieceDataTestCase):
             'start_time': self.ten_min_ago,
             'end_time': self.now,
         }
-        entry1 = self.create_entry(entry1_data)
+        entry1 = self.create_entry(**entry1_data)
         entry1_data.update({
             'st_str': self.ten_min_ago.strftime('%H:%M:%S'),
             'end_str': self.now.strftime('%H:%M:%S'),
@@ -317,7 +318,7 @@ class ClockInTest(TimepieceDataTestCase):
             'project': self.project,
             'activity': self.devl_activity,
         }
-        entry1 = self.create_entry(entry1_data)
+        entry1 = self.create_entry(**entry1_data)
         entry1_data.update({
             'st_str': self.now.strftime('%H:%M:%S')
         })
@@ -345,7 +346,7 @@ class ClockInTest(TimepieceDataTestCase):
             'activity': self.devl_activity,
             'start_time': self.ten_min_ago,
         }
-        entry1 = self.create_entry(entry1_data)
+        entry1 = self.create_entry(**entry1_data)
         entry1_data.update({
             'st_str': self.ten_min_ago.strftime('%H:%M:%S')
         })
@@ -369,7 +370,7 @@ class ClockInTest(TimepieceDataTestCase):
         invalidate
         """
         self.login_user(self.user)
-        entry1 = self.create_entry({
+        entry1 = self.create_entry(**{
             'start_time': self.now - relativedelta(hours=13),
         })
         end_time = self.now - relativedelta(seconds=1)
@@ -485,7 +486,7 @@ class ClockInTest(TimepieceDataTestCase):
         Comments left from editing the current active entry should appear
         if you are clocking in
         """
-        entry = self.create_entry({
+        entry = self.create_entry(**{
             'start_time': self.ten_min_ago
         })
         entry.comments = u'Some comments'
@@ -559,7 +560,7 @@ class ClockOutTest(TimepieceDataTestCase):
         # Create an active entry, so that clock out tests don't have to.
         self.default_end_time = timezone.now()
         back = timezone.now() - relativedelta(hours=5)
-        self.entry = self.create_entry({
+        self.entry = self.create_entry(**{
             'user': self.user,
             'start_time': back,
             'project': self.project,
@@ -694,7 +695,7 @@ class ClockOutTest(TimepieceDataTestCase):
             'start_time': now,
             'end_time': self.default_end_time
         }
-        entry1 = self.create_entry(entry1_data)
+        entry1 = self.create_entry(**entry1_data)
         entry1_data.update({
             'st_str': entry1.start_time.strftime('%H:%M:%S'),
             'end_str': entry1.end_time.strftime('%H:%M:%S'),
@@ -703,7 +704,7 @@ class ClockOutTest(TimepieceDataTestCase):
         # Create a form with times that overlap with entry1
         bad_start = entry1.start_time - relativedelta(hours=1)
         bad_end = entry1.end_time + relativedelta(hours=1)
-        bad_entry = self.create_entry({
+        bad_entry = self.create_entry(**{
             'user': self.user,
             'start_time': bad_start,
             'end_time': bad_end,
@@ -856,8 +857,8 @@ class CreateEditEntry(TimepieceDataTestCase):
             'activity': self.devl_activity,
             'start_time': self.ten_min_ago,
         }
-        self.closed_entry = self.create_entry(self.closed_entry_data)
-        self.current_entry = self.create_entry(self.current_entry_data)
+        self.closed_entry = self.create_entry(**self.closed_entry_data)
+        self.current_entry = self.create_entry(**self.current_entry_data)
         self.closed_entry_data.update({
             'st_str': self.two_hour_ago.strftime('%H:%M:%S'),
             'end_str': self.one_hour_ago.strftime('%H:%M:%S'),
@@ -1045,7 +1046,7 @@ class CreateEditEntry(TimepieceDataTestCase):
         If your entries have been verified and then approved, you should
         not be able to add entries for that time period
         """
-        entry = self.create_entry({
+        entry = self.create_entry(**{
             'start_time': self.ten_min_ago,
             'end_time': self.ten_min_ago + relativedelta(minutes=1)
         })
@@ -1059,7 +1060,7 @@ class CreateEditEntry(TimepieceDataTestCase):
         If your entries have been verified, approved, and invoiced, you
         should not be able to add entries for that time period
         """
-        entry = self.create_entry({
+        entry = self.create_entry(**{
             'start_time': self.ten_min_ago,
             'end_time': self.ten_min_ago + relativedelta(minutes=1)
         })
@@ -1070,7 +1071,7 @@ class CreateEditEntry(TimepieceDataTestCase):
 
     def edit_entry_helper(self, status='approved'):
         """Helper function for editing approved entries"""
-        entry = self.create_entry({
+        entry = self.create_entry(**{
             'project': self.project,
             'start_time': self.now - relativedelta(hours=6),
             'end_time': self.now - relativedelta(hours=5),
@@ -1164,19 +1165,19 @@ class StatusTest(TimepieceDataTestCase):
 
     def login_as_admin(self):
         "Helper to login as an admin user"
-        self.admin = self.create_user(is_superuser=True)
+        self.admin = factories.SuperuserFactory.create()
         self.login_user(self.admin)
 
     def login_with_permissions(self, *codenames):
         """Helper to login as a user with correct permissions"""
         perms = Permission.objects.filter(codename__in=codenames)
-        self.perm_user = self.create_user()
+        self.perm_user = factories.UserFactory.create()
         self.perm_user.user_permissions.add(*perms)
         self.perm_user.save()
         self.login_user(self.perm_user)
 
     def test_verify_link(self):
-        entry = self.create_entry({
+        entry = self.create_entry(**{
             'user': self.user,
             'start_time': self.now - relativedelta(hours=1),
             'end_time': self.now
@@ -1190,7 +1191,7 @@ class StatusTest(TimepieceDataTestCase):
 
     def test_approve_link_no_permission(self):
         """Permission is required to see approve timesheet link."""
-        entry = self.create_entry({
+        entry = self.create_entry(**{
             'user': self.user,
             'start_time': self.now - relativedelta(hours=1),
             'end_time': self.now,
@@ -1201,7 +1202,7 @@ class StatusTest(TimepieceDataTestCase):
 
     def test_approve_link(self):
         self.login_with_permissions('view_entry_summary', 'approve_timesheet')
-        entry = self.create_entry({
+        entry = self.create_entry(**{
             'user': self.user,
             'start_time': self.now - relativedelta(hours=1),
             'end_time': self.now,
@@ -1238,7 +1239,7 @@ class StatusTest(TimepieceDataTestCase):
 
     def test_verify_other_user(self):
         """A user should not be able to verify another's timesheet"""
-        entry = self.create_entry({
+        entry = self.create_entry(**{
             'user': self.user2,
             'start_time': self.now - relativedelta(hours=1),
             'end_time': self.now,
@@ -1255,7 +1256,7 @@ class StatusTest(TimepieceDataTestCase):
 
     def test_approve_user(self):
         """A regular user should not be able to approve their timesheet"""
-        entry = self.create_entry({
+        entry = self.create_entry(**{
             'user': self.user,
             'start_time': self.now - relativedelta(hours=1),
             'end_time': self.now
@@ -1274,7 +1275,7 @@ class StatusTest(TimepieceDataTestCase):
 
     def test_approve_other_user(self):
         """A regular user should not be able to approve another's timesheet"""
-        entry = self.create_entry({
+        entry = self.create_entry(**{
             'user': self.user2,
             'start_time': self.now - relativedelta(hours=1),
             'end_time': self.now
@@ -1298,13 +1299,13 @@ class StatusTest(TimepieceDataTestCase):
         """
         self.login_as_admin()
 
-        entry1 = self.create_entry({
+        entry1 = self.create_entry(**{
             'user': self.user,
             'start_time': self.now - relativedelta(hours=5),
             'end_time': self.now - relativedelta(hours=4),
             'status': Entry.UNVERIFIED
         })
-        entry2 = self.create_entry({
+        entry2 = self.create_entry(**{
             'user': self.user,
             'start_time': self.now - relativedelta(hours=1),
             'status': Entry.UNVERIFIED
@@ -1333,7 +1334,7 @@ class StatusTest(TimepieceDataTestCase):
     def testVerifyButton(self):
         response = self.client.get(self.sheet_url)
         self.assertNotContains(response, self.verify_url())
-        entry = self.create_entry(data={
+        entry = self.create_entry(**{
             'user': self.user,
             'start_time': timezone.now() - \
                 relativedelta(hours=1),
@@ -1350,7 +1351,7 @@ class StatusTest(TimepieceDataTestCase):
         self.login_as_admin()
         response = self.client.get(self.sheet_url)
         self.assertFalse(response.context['show_approve'])
-        entry = self.create_entry(data={
+        entry = self.create_entry(**{
             'user': self.user,
             'start_time': timezone.now() - relativedelta(hours=1),
             'end_time':  timezone.now(),
@@ -1367,7 +1368,7 @@ class StatusTest(TimepieceDataTestCase):
         self.assertFalse(response.context['show_approve'])
 
     def testVerifyPage(self):
-        entry = self.create_entry(data={
+        entry = self.create_entry(**{
             'user': self.user,
             'start_time': timezone.now() - \
                 relativedelta(hours=1),
@@ -1381,7 +1382,7 @@ class StatusTest(TimepieceDataTestCase):
 
     def testApprovePage(self):
         self.login_with_permissions('approve_timesheet', 'view_entry_summary')
-        entry = self.create_entry(data={
+        entry = self.create_entry(**{
             'user': self.user,
             'start_time': timezone.now() - relativedelta(hours=1),
             'end_time':  timezone.now(),
@@ -1403,7 +1404,7 @@ class StatusTest(TimepieceDataTestCase):
         self.login_user(self.user)
 
         now = timezone.now()
-        entry = self.create_entry({
+        entry = self.create_entry(**{
             'user': self.user,
             'start_time': now - relativedelta(hours=1),
             'end_time': now,
@@ -1422,7 +1423,7 @@ class StatusTest(TimepieceDataTestCase):
         self.login_user(self.user2)
 
         now = timezone.now()
-        entry = self.create_entry({
+        entry = self.create_entry(**{
             'user': self.user,
             'start_time': now - relativedelta(hours=1),
             'end_time': now,
@@ -1435,7 +1436,7 @@ class StatusTest(TimepieceDataTestCase):
 
     def testRejectPage(self):
         self.login_as_admin()
-        entry = self.create_entry(data={
+        entry = self.create_entry(**{
             'user': self.user,
             'start_time': timezone.now() - \
                 relativedelta(hours=1),
@@ -1459,7 +1460,7 @@ class StatusTest(TimepieceDataTestCase):
         self.assertEqual(entry.status, Entry.UNVERIFIED)
 
     def testNotAllowedToRejectTimesheet(self):
-        entry = self.create_entry(data={
+        entry = self.create_entry(**{
             'user': self.user,
             'start_time': timezone.now() - \
                 relativedelta(hours=1),
@@ -1483,11 +1484,11 @@ class TestTotals(TimepieceDataTestCase):
 
     def setUp(self):
         super(TestTotals, self).setUp()
-        self.p1 = self.create_project(billable=True, name='1')
-        self.p2 = self.create_project(billable=False, name='2')
-        self.p4 = self.create_project(billable=True, name='4')
+        self.p1 = factories.BillableProjectFactory.create(name='1')
+        self.p2 = factories.NonbillableProjectFactory.create(name='2')
+        self.p4 = factories.BillableProjectFactory.create(name='4')
         #For use with daily totals (Same project, non-billable activity)
-        self.p3 = self.create_project(billable=False, name='1')
+        self.p3 = factories.NonbillableProjectFactory.create(name='1')
 
     def testGroupedTotals(self):
         self.login_user(self.user)
@@ -1556,22 +1557,22 @@ class HourlySummaryTest(TimepieceDataTestCase):
 
     def create_month_entries(self):
         """Create four entries, one for each week of the month"""
-        self.create_entry({
+        self.create_entry(**{
             'user': self.user,
             'start_time': self.month,
             'end_time': self.month + relativedelta(hours=1)
         })
-        self.create_entry({
+        self.create_entry(**{
             'user': self.user,
             'start_time': self.month + relativedelta(weeks=1),
             'end_time': self.month + relativedelta(weeks=1, hours=1)
         })
-        self.create_entry({
+        self.create_entry(**{
             'user': self.user,
             'start_time': self.month + relativedelta(weeks=2),
             'end_time': self.month + relativedelta(weeks=2, hours=1)
         })
-        self.create_entry({
+        self.create_entry(**{
             'user': self.user,
             'start_time': self.month + relativedelta(weeks=3),
             'end_time': self.month + relativedelta(weeks=3, hours=1)
@@ -1595,7 +1596,7 @@ class HourlySummaryTest(TimepieceDataTestCase):
         using default data from create_month_entries()
         """
         self.create_month_entries()
-        old_entry = self.create_entry({
+        old_entry = self.create_entry(**{
             'user': self.user,
             'start_time': self.month - relativedelta(days=1, hours=1),
             'end_time': self.month - relativedelta(days=1)
@@ -1620,17 +1621,17 @@ class HourlySummaryTest(TimepieceDataTestCase):
         march = utils.add_timezone(
             datetime.datetime(month=3, day=26, year=2012)
         )
-        self.create_entry({
+        self.create_entry(**{
             'user': self.user,
             'start_time': april,
             'end_time': april + relativedelta(hours=1)
         })
-        self.create_entry({
+        self.create_entry(**{
             'user': self.user,
             'start_time': april + relativedelta(weeks=1),
             'end_time': april + relativedelta(weeks=1, hours=1)
         })
-        self.create_entry({
+        self.create_entry(**{
             'user': self.user,
             'start_time': march,
             'end_time': march + relativedelta(hours=1)
@@ -1664,12 +1665,12 @@ class MonthlyRejectTestCase(TimepieceDataTestCase):
 
     def create_entries(self, date, status):
         """Create entries using a date and with a given status"""
-        self.create_entry({
+        self.create_entry(**{
             'start_time': date,
             'end_time': date + relativedelta(hours=1),
             'status': status
         })
-        self.create_entry({
+        self.create_entry(**{
             'start_time': date + relativedelta(hours=2),
             'end_time': date + relativedelta(hours=3),
             'status': status

@@ -9,6 +9,7 @@ from django.utils import timezone
 
 from timepiece import utils
 from timepiece.tests.base import TimepieceDataTestCase
+from timepiece.tests import factories
 
 from timepiece.entries.models import Entry, ProjectHours
 from timepiece.entries.views import Dashboard
@@ -25,14 +26,14 @@ class DashboardViewTestCase(TimepieceDataTestCase):
         get_params = {'week_start': self.this_week.strftime('%Y-%m-%d')}
         self.url = reverse('dashboard') + '?' + urlencode(get_params)
 
-        self.user = self.create_user()
+        self.user = factories.UserFactory.create()
         self.permission = Permission.objects.get(codename='can_clock_in')
         self.user.user_permissions.add(self.permission)
         self.login_user(self.user)
 
-        self.project = self.create_project()
-        self.activity = self.create_activity()
-        self.location = self.create_location()
+        self.project = factories.ProjectFactory.create()
+        self.activity = factories.ActivityFactory.create()
+        self.location = factories.LocationFactory.create()
         self.status = Entry.UNVERIFIED
 
     def _create_entry(self, start_time, end_time=None, user=None):
@@ -50,7 +51,7 @@ class DashboardViewTestCase(TimepieceDataTestCase):
         }
         if end_time:
             data['end_time'] = end_time
-        return self.create_entry(data=data)
+        return self.create_entry(**data)
 
     def _create_active_entry(self):
         start_time = datetime.datetime(2012, 11, 9, 0)
@@ -70,7 +71,7 @@ class DashboardViewTestCase(TimepieceDataTestCase):
         count = 5
         start_time = datetime.datetime(2012, 11, 6, 12)
         for i in range(count):
-            user = self.create_user()
+            user = factories.UserFactory.create()
             self._create_entry(start_time, user=user)
         return count
 
@@ -150,12 +151,12 @@ class ProcessProgressTestCase(TimepieceDataTestCase):
         self.this_week = utils.get_week_start(self.today)
         self.next_week = self.this_week + relativedelta(days=7)
 
-        self.user = self.create_user()
+        self.user = factories.UserFactory.create()
         self.login_user(self.user)
 
-        self.project = self.create_project()
-        self.activity = self.create_activity()
-        self.location = self.create_location()
+        self.project = factories.ProjectFactory.create()
+        self.activity = factories.ActivityFactory.create()
+        self.location = factories.LocationFactory.create()
         self.status = Entry.UNVERIFIED
 
     def _create_entry(self, start_time, end_time=None, project=None):
@@ -169,7 +170,7 @@ class ProcessProgressTestCase(TimepieceDataTestCase):
         }
         if end_time:
             data['end_time'] = end_time
-        return self.create_entry(data=data)
+        return self.create_entry(**data)
 
     def _create_hours(self, hours, project=None):
         data = {
@@ -178,7 +179,7 @@ class ProcessProgressTestCase(TimepieceDataTestCase):
             'week_start': self.this_week,
             'hours': hours,
         }
-        return self.create_project_hours_entry(**data)
+        return factories.ProjectHoursFactory.create(**data)
 
     def _get_progress(self):
         entries = Entry.objects.all()
@@ -228,9 +229,9 @@ class ProcessProgressTestCase(TimepieceDataTestCase):
     def test_ordering(self):
         """Progress list should be ordered by project name."""
         projects = [
-            self.create_project(name='a'),
-            self.create_project(name='b'),
-            self.create_project(name='c'),
+            factories.ProjectFactory.create(name='a'),
+            factories.ProjectFactory.create(name='b'),
+            factories.ProjectFactory.create(name='c'),
         ]
         for i in range(3):
             start_time = datetime.datetime(2012, 11, 5 + i, 8, 0)

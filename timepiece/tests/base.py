@@ -1,6 +1,5 @@
 from importlib import import_module
 import random
-import string
 import urllib
 
 from dateutil.relativedelta import relativedelta
@@ -10,9 +9,8 @@ from django.test import TestCase
 from django.core.urlresolvers import reverse
 from django.conf import settings
 from django.contrib.auth import login, SESSION_KEY
-from django.contrib.auth.models import User, Permission, Group
+from django.contrib.auth.models import Permission
 from django.contrib.contenttypes.models import ContentType
-from django.core.urlresolvers import reverse, reverse_lazy
 from django.http import HttpRequest
 from django.utils import timezone
 
@@ -98,55 +96,20 @@ class TimepieceDataTestCase(TestCase):
         # Save the session values.
         request.session.save()
 
-    def create_business(self, data=None):
-        return factories.BusinessFactory.create(**(data or {}))
-
-    def create_project_type(self, data=None):
-        return factories.TypeAttributeFactory.create(**(data or {}))
-
-    def create_project_status(self, data=None):
-        return factories.StatusAttributeFactory.create(**(data or {}))
-
-    def create_project(self, billable=False, **kwargs):
-        if billable:
-            return factories.BillableProjectFactory.create(**kwargs)
-        return factories.NonbillableProjectFactory.create(**kwargs)
-
-    def create_project_relationship(self, data=None):
-        return factories.ProjectRelationshipFactory.create(**(data or {}))
-
-    def create_relationship_type(self, data=None):
-        return factories.RelationshipTypeFactory.create(**(data or {}))
-
-    def create_activity(self, data=None):
-        return factories.ActivityFactory.create(**(data or {}))
-
-    def create_location(self, data=None):
-        return factories.LocationFactory.create(**(data or {}))
-
-    def create_entry(self, data=None):
-        data = data or {}
-        if 'user' not in data:
-            data['user'] = self.user
-        return factories.EntryFactory.create(**(data or {}))
-
-    def create_contract_hour(self, data=None):
-        return factories.ContractHourFactory.create(**(data or {}))
+    def create_entry(self, **kwargs):
+        if 'user' not in kwargs:
+            kwargs['user'] = self.user
+        return factories.EntryFactory.create(**kwargs)
 
     def create_contract(self, projects=None, **kwargs):
         num_hours = kwargs.pop('num_hours', random.randint(10, 400))
         contract = factories.ProjectContractFactory.create(**kwargs)
         contract.projects.add(*(projects or []))
         # Create 2 ContractHour objects that add up to the hours we want
-        for i in (1, 2):
-            factories.ContractHourFactory.create(**{
-                'hours': Decimal(str(num_hours / 2.0)),
-                'contract': contract,
-            })
+        for i in range(2):
+            factories.ContractHourFactory.create(
+                    hours=Decimal(str(num_hours/2.0)), contract=contract)
         return contract
-
-    def create_contract_assignment(self, data=None):
-        return factories.ContractAssignmentFactory.create(**(data or {}))
 
     def log_time(self, delta=None, billable=True, project=None, start=None,
             end=None, status=None, pause=0, activity=None, user=None):
@@ -172,7 +135,7 @@ class TimepieceDataTestCase(TestCase):
         if project:
             data['project'] = project
         else:
-            data['project'] = self.create_project(billable=billable)
+            data['project'] = factories.BillableProjectFactory.create()
         if activity:
             data['activity'] = activity
         else:
@@ -182,19 +145,7 @@ class TimepieceDataTestCase(TestCase):
                 data['activity'] = self.activity
         if status:
             data['status'] = status
-        return self.create_entry(data)
-
-    def create_user(self, **kwargs):
-        return factories.UserFactory.create(**kwargs)
-
-    def create_auth_group(self, **kwargs):
-        return factories.GroupFactory.create(**kwargs)
-
-    def create_activity_group(self, **kwargs):
-        return factories.ActivityGroupFactory.create(**kwargs)
-
-    def create_project_hours_entry(self, **kwargs):
-        return factories.ProjectHoursFactory.create(**kwargs)
+        return factories.EntryFactory.create(**data)
 
     def setUp(self):
         self.user = factories.UserFactory.create()

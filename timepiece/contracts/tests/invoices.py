@@ -8,6 +8,7 @@ from django.core.urlresolvers import reverse
 
 from timepiece import utils
 from timepiece.forms import DATE_FORM_FORMAT
+from timepiece.tests import factories
 from timepiece.tests.base import TimepieceDataTestCase, ViewTestMixin
 
 from timepiece.contracts.models import EntryGroup, HourGroup
@@ -23,8 +24,8 @@ class InvoiceViewPreviousTestCase(TimepieceDataTestCase):
         self.user.save()
         self.login_user(self.user)
         # Make some projects and entries for invoice creation
-        self.project = self.create_project(billable=True)
-        self.project2 = self.create_project(billable=True)
+        self.project = factories.BillableProjectFactory.create()
+        self.project2 = factories.BillableProjectFactory.create()
         last_start = self.log_many([self.project, self.project2])
         # Add some non-billable entries
         self.log_many([self.project, self.project2], start=last_start,
@@ -81,10 +82,13 @@ class InvoiceViewPreviousTestCase(TimepieceDataTestCase):
             return response.context['invoices']
 
         list_url = reverse('list_invoices')
-        project3 = self.create_project(billable=True, name=':-D')
+        project3 = factories.BillableProjectFactory.create(name=':-D')
         self.log_many([project3], 10)
-        self.create_invoice(project3, data={'status': EntryGroup.INVOICED,
-                'comments': 'comment!', 'number': '###'})
+        self.create_invoice(project=project3, data={
+            'status': EntryGroup.INVOICED,
+            'comments': 'comment!',
+            'number': '###',
+        })
 
         # Search comments, project name, and number.
         for query in ['comment!', ':-D', '###']:
@@ -246,40 +250,27 @@ class InvoiceCreateTestCase(TimepieceDataTestCase):
         self.login_user(self.user)
         start = utils.add_timezone(datetime.datetime(2011, 1, 1, 8))
         end = utils.add_timezone(datetime.datetime(2011, 1, 1, 12))
-        self.project_billable = self.create_project(billable=True)
-        self.project_billable2 = self.create_project(billable=True)
-        self.project_non_billable = self.create_project(billable=False)
-        self.entry1 = self.create_entry({
-            'user': self.user,
-            'project': self.project_billable,
-            'activity': self.create_activity(data={'billable': True}),
-            'start_time': start,
-            'end_time': end,
-            'status': Entry.APPROVED,
-        })
-        self.entry2 = self.create_entry({
-            'user': self.user,
-            'project': self.project_billable,
-            'activity': self.create_activity(data={'billable': True}),
-            'start_time': start - relativedelta(days=5),
-            'end_time': end - relativedelta(days=5),
-            'status': Entry.APPROVED,
-        })
-        self.entry3 = self.create_entry({
-            'user': self.user,
-            'project': self.project_billable2,
-            'activity': self.create_activity(data={'billable': False}),
-            'start_time': start - relativedelta(days=10),
-            'end_time': end - relativedelta(days=10),
-            'status': Entry.APPROVED,
-        })
-        self.entry4 = self.create_entry({
-            'user': self.user,
-            'project': self.project_non_billable,
-            'start_time': start + relativedelta(hours=11),
-            'end_time': end + relativedelta(hours=15),
-            'status': Entry.APPROVED,
-        })
+        self.project_billable = factories.BillableProjectFactory.create()
+        self.project_billable2 = factories.BillableProjectFactory.create()
+        self.project_non_billable = factories.NonbillableProjectFactory.create()
+        self.entry1 = self.create_entry(user=self.user,
+                project=self.project_billable,
+                activity=factories.ActivityFactory.create(billable=True),
+                start_time=start, end_time=end, status=Entry.APPROVED)
+        self.entry2 = self.create_entry(user=self.user,
+                project=self.project_billable,
+                activity=factories.ActivityFactory.create(billable=True),
+                start_time=start - relativedelta(days=5),
+                end_time=end - relativedelta(days=5), status=Entry.APPROVED)
+        self.entry3 = self.create_entry(user=self.user,
+                project=self.project_billable2,
+                activity=factories.ActivityFactory.create(billable=False),
+                start_time=start - relativedelta(days=10),
+                end_time=end - relativedelta(days=10), status=Entry.APPROVED)
+        self.entry4 = self.create_entry(user=self.user,
+                project=self.project_non_billable,
+                start_time=start + relativedelta(hours=11),
+                end_time=end + relativedelta(hours=15), status=Entry.APPROVED)
 
     def get_create_url(self, **kwargs):
         base_url = reverse('create_invoice')
@@ -300,7 +291,7 @@ class InvoiceCreateTestCase(TimepieceDataTestCase):
         """Helper to login as user with correct permissions"""
         generate_invoice = Permission.objects.get(
             codename='generate_project_invoice')
-        user = self.create_user()
+        user = factories.UserFactory.create()
         user.user_permissions.add(generate_invoice)
 
     def test_invoice_confirm_view_user(self):
@@ -356,17 +347,13 @@ class InvoiceCreateTestCase(TimepieceDataTestCase):
         end = utils.add_timezone(datetime.datetime(2011, 1, 1, 12))
         # start = utils.add_timezone(datetime.datetime.now())
         # end = start + relativedelta(hours=4)
-        activity = self.create_activity(data={'name': 'activity1',
-                                              'billable': True})
+        activity = factories.ActivityFactory.create(billable=True, name='activity1')
         for num in xrange(0, 4):
-            new_entry = self.create_entry({
-                'user': self.user,
-                'project': self.project_billable,
-                'start_time': start - relativedelta(days=num),
-                'end_time': end - relativedelta(days=num),
-                'status': Entry.APPROVED,
-                'activity': activity,
-            })
+            new_entry = self.create_entry(user=self.user,
+                    project=self.project_billable,
+                    start_time=start - relativedelta(days=num),
+                    end_time=end - relativedelta(days=num),
+                    status=Entry.APPROVED, activity=activity)
         self.make_hourgroups()
         to_date = datetime.datetime(2011, 1, 31)
         kwargs = {
@@ -473,41 +460,28 @@ class ListOutstandingInvoicesViewTestCase(ViewTestMixin, TimepieceDataTestCase):
         start = utils.add_timezone(datetime.datetime(2011, 1, 1, 8))
         end = utils.add_timezone(datetime.datetime(2011, 1, 1, 12))
 
-        self.project_billable = self.create_project(billable=True)
-        self.project_billable2 = self.create_project(billable=True)
-        self.project_non_billable = self.create_project(billable=False)
+        self.project_billable = factories.BillableProjectFactory.create()
+        self.project_billable2 = factories.BillableProjectFactory.create()
+        self.project_non_billable = factories.NonbillableProjectFactory.create()
 
-        self.entry1 = self.create_entry({
-            'user': self.user,
-            'project': self.project_billable,
-            'activity': self.create_activity(data={'billable': True}),
-            'start_time': start,
-            'end_time': end,
-            'status': Entry.APPROVED,
-        })
-        self.entry2 = self.create_entry({
-            'user': self.user,
-            'project': self.project_billable,
-            'activity': self.create_activity(data={'billable': True}),
-            'start_time': start - relativedelta(days=5),
-            'end_time': end - relativedelta(days=5),
-            'status': Entry.APPROVED,
-        })
-        self.entry3 = self.create_entry({
-            'user': self.user,
-            'project': self.project_billable2,
-            'activity': self.create_activity(data={'billable': False}),
-            'start_time': start - relativedelta(days=10),
-            'end_time': end - relativedelta(days=10),
-            'status': Entry.APPROVED,
-        })
-        self.entry4 = self.create_entry({
-            'user': self.user,
-            'project': self.project_non_billable,
-            'start_time': start + relativedelta(hours=11),
-            'end_time': end + relativedelta(hours=15),
-            'status': Entry.APPROVED,
-        })
+        self.entry1 = self.create_entry(user=self.user,
+                project=self.project_billable,
+                activity=factories.ActivityFactory.create(billable=True),
+                start_time=start, end_time=end, status=Entry.APPROVED)
+        self.entry2 = self.create_entry(user=self.user,
+                project=self.project_billable,
+                activity=factories.ActivityFactory.create(billable=True),
+                start_time=start - relativedelta(days=5),
+                end_time=end - relativedelta(days=5), status=Entry.APPROVED)
+        self.entry3 = self.create_entry(user=self.user,
+                project=self.project_billable2,
+                activity=factories.ActivityFactory.create(billable=False),
+                start_time=start - relativedelta(days=10),
+                end_time=end - relativedelta(days=10), status=Entry.APPROVED)
+        self.entry4 = self.create_entry(user=self.user,
+                project=self.project_non_billable,
+                start_time=start + relativedelta(hours=11),
+                end_time=end + relativedelta(hours=15), status=Entry.APPROVED)
 
         # Default get kwargs.
         self.to_date = utils.add_timezone(datetime.datetime(2011, 1, 31, 0, 0, 0))

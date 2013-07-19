@@ -7,6 +7,7 @@ from django.core.urlresolvers import reverse
 from django.db.models import Q
 
 from timepiece.forms import DATE_FORM_FORMAT
+from timepiece.tests import factories
 
 from timepiece.entries.models import Entry
 from timepiece.reports.tests.base import ReportsTestBase
@@ -22,7 +23,7 @@ class TestBillableHours(ReportsTestBase):
 
         self.url = reverse('report_billable_hours')
         self.perm = Permission.objects.filter(codename='view_entry_summary')
-        self.admin = self.create_user()
+        self.admin = factories.UserFactory.create()
         self.admin.user_permissions = self.perm
 
     def get_entries_data(self):
