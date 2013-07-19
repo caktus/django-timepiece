@@ -1,4 +1,5 @@
 from django.contrib.auth.models import User
+from django.core.urlresolvers import reverse
 from django.db import models
 from django.db.models import get_model
 
@@ -11,6 +12,9 @@ User.clocked_in = property(lambda user: user.timepiece_entries.filter(
 
 # Utility method to get user's name, falling back to username.
 User.get_name_or_username = lambda user: user.get_full_name() or user.username
+
+
+User.get_absolute_url = lambda user: reverse('view_user', args=(user.pk,))
 
 
 class UserProfile(models.Model):
@@ -84,16 +88,19 @@ class Business(models.Model):
     notes = models.TextField(blank=True)
     external_id = models.CharField(max_length=32, blank=True)
 
-    def get_display_name(self):
-        return self.short_name or self.name
-
-    def __unicode__(self):
-        return self.get_display_name()
-
     class Meta:
         db_table = 'timepiece_business'  # Using legacy table name.
         ordering = ('name',)
         verbose_name_plural = 'Businesses'
+
+    def __unicode__(self):
+        return self.get_display_name()
+
+    def get_absolute_url(self):
+        return reverse('view_business', args=(self.pk,))
+
+    def get_display_name(self):
+        return self.short_name or self.name
 
 
 class TrackableProjectManager(models.Manager):
@@ -155,6 +162,9 @@ class Project(models.Model):
     @property
     def billable(self):
         return self.type.billable
+
+    def get_absolute_url(self):
+        return reverse('view_project', args=(self.pk,))
 
     def get_active_contracts(self):
         """Returns all associated contracts which are not marked complete."""

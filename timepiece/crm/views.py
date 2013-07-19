@@ -23,10 +23,10 @@ from timepiece.utils.csv import CSVViewMixin
 from timepiece.utils.mixins import (CommitOnSuccessMixin,
         PermissionsRequiredMixin)
 
-from timepiece.crm.forms import BusinessForm, ProjectForm, UserProfileForm,\
-        ProjectRelationshipForm, SelectProjectForm, EditUserForm,\
-        CreateUserForm, SelectUserForm, UserForm, ProjectSearchForm,\
-        DeleteForm, QuickSearchForm
+from timepiece.crm.forms import (CreateEditBusinessForm, ProjectForm,
+        UserProfileForm, ProjectRelationshipForm, SelectProjectForm,
+        EditUserForm, CreateUserForm, SelectUserForm, UserForm,
+        ProjectSearchForm, QuickSearchForm)
 from timepiece.crm.models import Business, Project, ProjectRelationship,\
         UserProfile
 from timepiece.crm.utils import grouped_totals
@@ -347,21 +347,19 @@ class ViewBusiness(PermissionsRequiredMixin, DetailView):
     permissions = ['crm.view_business']
 
 
-@permission_required('crm.add_business')
-def create_edit_business(request, business_id=None):
-    business = None
-    if business_id:
-        business = get_object_or_404(Business, pk=business_id)
-    form = BusinessForm(request.POST or None,
-            instance=business)
-    if form.is_valid():
-        business = form.save()
-        url = reverse('view_business', args=(business.pk,))
-        return HttpResponseRedirect(url)
-    return render(request, 'timepiece/business/create_edit.html', {
-        'business': business,
-        'business_form': form,
-    })
+class CreateBusiness(PermissionsRequiredMixin, CreateView):
+    model = Business
+    form_class = CreateEditBusinessForm
+    template_name = 'timepiece/business/create_edit.html'
+    permissions = ('crm.add_business',)
+
+
+class EditBusiness(PermissionsRequiredMixin, UpdateView):
+    model = Business
+    form_class = CreateEditBusinessForm
+    template_name = 'timepiece/business/create_edit.html'
+    permissions = ('crm.edit_business',)
+    pk_url_kwarg = 'business_id'
 
 
 @permission_required('auth.view_user')
@@ -399,20 +397,19 @@ class ViewUser(PermissionsRequiredMixin, CommitOnSuccessMixin, DetailView):
         return context
 
 
-@permission_required('auth.add_user')
-@permission_required('auth.change_user')
-def create_edit_user(request, user_id=None):
-    user = get_object_or_404(User, pk=user_id) if user_id else None
-    form = EditUserForm(request.POST or None, instance=user)
-    if form.is_valid():
-        user = form.save()
-        url = request.REQUEST.get('next',
-                reverse('view_user', args=(user.pk,)))
-        return HttpResponseRedirect(url)
-    return render(request, 'timepiece/user/create_edit.html', {
-        'user': user,
-        'form': form,
-    })
+class CreateUser(PermissionsRequiredMixin, CreateView):
+    model = User
+    form_class = CreateUserForm
+    template_name = 'timepiece/user/create_edit.html'
+    permissions = ('auth.add_user',)
+
+
+class EditUser(PermissionsRequiredMixin, UpdateView):
+    model = User
+    form_class = EditUserForm
+    template_name = 'timepiece/user/create_edit.html'
+    permissions = ('auth.change_user',)
+    pk_url_kwarg = 'user_id'
 
 
 @permission_required('crm.view_project')
@@ -526,23 +523,19 @@ def edit_relationship(request):
     })
 
 
-@permission_required('crm.add_project')
-@permission_required('crm.change_project')
-def create_edit_project(request, project_id=None):
-    project = None
-    if project_id:
-        project = get_object_or_404(Project, pk=project_id)
-    form = ProjectForm(request.POST or None, instance=project)
-    if request.POST and form.is_valid():
-        project = form.save()
-        project.save()
-        url = request.REQUEST.get('next',
-                reverse('view_project', args=(project.id,)))
-        return HttpResponseRedirect(url)
-    return render(request, 'timepiece/project/create_edit.html', {
-        'project': project,
-        'project_form': form,
-    })
+class CreateProject(PermissionsRequiredMixin, CreateView):
+    model = Project
+    form_class = ProjectForm
+    permissions = ('crm.add_project', 'crm.change_project')
+    template_name = 'timepiece/project/create_edit.html'
+
+
+class EditProject(PermissionsRequiredMixin, UpdateView):
+    model = Project
+    form_class = ProjectForm
+    permissions = ('crm.add_project', 'crm.change_project')
+    template_name = 'timepiece/project/create_edit.html'
+    pk_url_kwarg = 'project_id'
 
 
 @login_required
