@@ -1,2 +1,2 @@
-from .contracts import *
-from .invoices import *
+from .test_contracts import *
+from .test_invoices import *
