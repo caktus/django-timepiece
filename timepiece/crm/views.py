@@ -19,6 +19,8 @@ from timepiece import utils
 from timepiece.forms import YearMonthForm, UserYearMonthForm, SearchForm
 from timepiece.templatetags.timepiece_tags import seconds_to_hours
 from timepiece.utils.csv import CSVViewMixin
+from timepiece.utils.mixins import (CommitOnSuccessMixin,
+        PermissionsRequiredMixin)
 
 from timepiece.crm.forms import BusinessForm, ProjectForm, UserProfileForm,\
         ProjectRelationshipForm, SelectProjectForm, EditUserForm,\
@@ -337,12 +339,11 @@ def list_businesses(request):
     })
 
 
-@permission_required('crm.view_business')
-def view_business(request, business_id):
-    business = get_object_or_404(Business, pk=business_id)
-    return render(request, 'timepiece/business/view.html', {
-        'business': business,
-    })
+class ViewBusiness(PermissionsRequiredMixin, DetailView):
+    model = Business
+    pk_url_kwarg = 'business_id'
+    template_name = 'timepiece/business/view.html'
+    permissions = ['crm.view_business']
 
 
 @permission_required('crm.add_business')
@@ -383,15 +384,18 @@ def list_users(request):
     })
 
 
-@permission_required('auth.view_user')
-@transaction.commit_on_success
-def view_user(request, user_id):
-    user = get_object_or_404(User, pk=user_id)
-    add_project_form = SelectProjectForm()
-    return render(request, 'timepiece/user/view.html', {
-        'user': user,
-        'add_project_form': add_project_form,
-    })
+class ViewUser(PermissionsRequiredMixin, CommitOnSuccessMixin, DetailView):
+    model = User
+    pk_url_kwarg = 'user_id'
+    template_name = 'timepiece/user/view.html'
+    permissions = ['auth.view_user']
+
+    def get_context_data(self, **kwargs):
+        context = super(ViewUser, self).get_context_data(**kwargs)
+        context.update({
+            'add_project_form': SelectProjectForm(),
+        })
+        return context
 
 
 @permission_required('auth.add_user')
@@ -432,15 +436,18 @@ def list_projects(request):
     })
 
 
-@permission_required('crm.view_project')
-@transaction.commit_on_success
-def view_project(request, project_id):
-    project = get_object_or_404(Project, pk=project_id)
-    add_user_form = SelectUserForm()
-    return render(request, 'timepiece/project/view.html', {
-        'project': project,
-        'add_user_form': add_user_form,
-    })
+class ViewProject(PermissionsRequiredMixin, CommitOnSuccessMixin, DetailView):
+    model = Project
+    pk_url_kwarg = 'project_id'
+    template_name = 'timepiece/project/view.html'
+    permissions = ['crm.view_project']
+
+    def get_context_data(self, **kwargs):
+        context = super(ViewProject, self).get_context_data(**kwargs)
+        context.update({
+            'add_user_form': SelectUserForm(),
+        })
+        return context
 
 
 @csrf_exempt
