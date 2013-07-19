@@ -481,7 +481,7 @@ class DeleteProject(PermissionsRequiredMixin, DeleteView):
 
 class EditProject(PermissionsRequiredMixin, UpdateView):
     model = Project
-    form_class = ProjectForm
+    form_class = CreateEditProjectForm
     permissions = ('crm.change_project',)
     template_name = 'timepiece/project/create_edit.html'
     pk_url_kwarg = 'project_id'
