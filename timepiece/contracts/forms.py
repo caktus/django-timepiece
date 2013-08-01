@@ -52,8 +52,8 @@ class OutstandingHoursFilterForm(DateForm):
 
     def get_to_date(self):
         if self.is_valid():
-            return self.cleaned_data['to_date'] + relativedelta(days=1)
-        return self.fields['to_date'].initial + relativedelta(days=1)
+            return self.cleaned_data['to_date']
+        return self.fields['to_date'].initial
 
     def get_statuses(self):
         if self.is_valid():
@@ -64,8 +64,9 @@ class OutstandingHoursFilterForm(DateForm):
         if not self.is_valid() and self.is_bound:
             return Entry.objects.none()
 
+        # Add one day to ensure we get entries from to_date.
+        to_date = self.get_to_date() + relativedelta(days=1)
         from_date = self.get_from_date()
-        to_date = self.get_to_date()
         statuses = self.get_statuses()
 
         dates = Q()
