@@ -52,8 +52,8 @@ class OutstandingHoursFilterForm(DateForm):
 
     def get_to_date(self):
         if self.is_valid():
-            return self.cleaned_data['to_date']
-        return self.fields['to_date'].initial
+            return self.cleaned_data['to_date'] + relativedelta(days=1)
+        return self.fields['to_date'].initial + relativedelta(days=1)
 
     def get_statuses(self):
         if self.is_valid():
