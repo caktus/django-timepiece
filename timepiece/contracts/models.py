@@ -121,6 +121,37 @@ class ProjectContract(models.Model):
             self._nb_worked = entries.aggregate(s=Sum('hours'))['s'] or 0
         return self._nb_worked or 0
 
+    @property
+    def fraction_hours(self):
+        """Fraction of contracted hours that have been worked.  E.g.
+        if 50 hours have been worked of 100 contracted, value is 0.5.
+        """
+        if self.contracted_hours():
+            return self.hours_worked / float(self.contracted_hours())
+        return 0.0
+
+    @property
+    def fraction_schedule(self):
+        """If contract status is current, return the current date as a
+        fraction of the scheduled period - e.g. if the contract period is
+        June 1 to July 31, and today is July 1, then the value is
+        about 0.5.
+
+        If the contract status is not current, or either the start or end
+        date is not set, returns 0.0
+        """
+        if self.status != ProjectContract.STATUS_CURRENT or \
+            not self.start_date or \
+            not self.end_date:
+                return 0.0
+        contract_period = (self.end_date - self.start_date).days
+        if contract_period <= 0.0:
+            return 0.0
+        days_elapsed = (datetime.date.today() - self.start_date).days
+        if days_elapsed <= 0.0:
+            return 0.0
+        return float(days_elapsed) / contract_period
+
 
 class ContractHour(models.Model):
     PENDING_STATUS = 1

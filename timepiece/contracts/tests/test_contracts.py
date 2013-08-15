@@ -182,6 +182,42 @@ class ContractHourTestCase(TimepieceDataTestCase):
         ch = ContractHour.objects.get(pk=ch.pk)
         self.assertEqual(datetime.date.today(), ch.date_approved)
 
+    def test_fraction_hours(self):
+        # fraction_hours returns what fraction of the contracted hours
+        # have been worked
+        contracted_hours = 0
+        pc = self.create_contract(num_hours=contracted_hours)
+        # If contracted hours 0, return 0 (don't div/0)
+        self.assertEqual(0.0, pc.fraction_hours)
+        contracted_hours = 10.0
+        pc = self.create_contract(num_hours=contracted_hours)
+        # If contracted hours non-zero, worked hours 0, return 0
+        self.assertEqual(0.0, pc.fraction_hours)
+        # Now do some work
+        pc._worked = 5.0
+        self.assertEqual(0.5, pc.fraction_hours)
+
+
+    def test_fraction_schedule(self):
+        # fraction_schedule returns what fraction of the contract period
+        # has elapsed - if the contract is current
+        one_month = datetime.timedelta(days=30)
+        today = datetime.date.today()
+        last_month = today - one_month
+        next_month = today + one_month
+        pc = self.create_contract(status=ProjectContract.STATUS_UPCOMING,
+                                  start_date=last_month,
+                                  end_date=next_month)
+        self.assertEqual(0.0, pc.fraction_schedule)
+        pc.status = ProjectContract.STATUS_COMPLETE
+        self.assertEqual(0.0, pc.fraction_schedule)
+        pc.status = ProjectContract.STATUS_CURRENT
+        self.assertEqual(0.5, pc.fraction_schedule)
+        # Just to be perverse, a contract in current state whose start
+        # date hasn't arrived yet
+        pc.start_date = today + datetime.timedelta(days=2)
+        self.assertEqual(0.0, pc.fraction_schedule)
+
 
 class ContractHourEmailTestCase(TimepieceDataTestCase):
 
