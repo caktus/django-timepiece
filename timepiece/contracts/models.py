@@ -127,7 +127,7 @@ class ProjectContract(models.Model):
         if 50 hours have been worked of 100 contracted, value is 0.5.
         """
         if self.contracted_hours():
-            return self.hours_worked / float(self.contracted_hours())
+            return float(self.hours_worked) / float(self.contracted_hours())
         return 0.0
 
     @property
