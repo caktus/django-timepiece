@@ -1,21 +1,14 @@
-import random
 from urllib import urlencode
 from urlparse import parse_qs, urlparse
 
 from dateutil.relativedelta import relativedelta
-from decimal import Decimal
 
-from django.test import TestCase
 from django.core.urlresolvers import reverse, reverse_lazy
 from django.conf import settings
 from django.contrib.auth import login
-from django.contrib.auth.models import Permission
-from django.contrib.contenttypes.models import ContentType
 from django.http import HttpRequest
 from django.utils import timezone
 from django.utils.encoding import force_unicode
-
-from timepiece.entries.models import Activity, Entry
 
 from . import factories
 
@@ -190,50 +183,3 @@ class LogTimeMixin(object):
         if status:
             data['status'] = status
         return factories.EntryFactory.create(**data)
-
-
-class TimepieceDataTestCase(TestCase):
-
-    def setUp(self):
-        self.user = factories.UserFactory.create()
-        self.user2 = factories.UserFactory.create()
-        self.superuser = factories.SuperuserFactory.create()
-        permissions = Permission.objects.filter(
-            content_type=ContentType.objects.get_for_model(Entry),
-            codename__in=('can_clock_in', 'can_clock_out',
-            'can_pause', 'change_entry')
-        )
-        self.user.user_permissions = permissions
-        self.user2.user_permissions = permissions
-        self.user.save()
-        self.user2.save()
-        self.activity = factories.ActivityFactory.create(code='WRK',
-                name='Work')
-        self.devl_activity = factories.ActivityFactory.create(code='devl',
-                name='development', billable=True)
-        self.sick_activity = factories.ActivityFactory.create(code="sick",
-                name="sick/personal", billable=False)
-        self.activity_group_all = factories.ActivityGroupFactory.create(
-                name='All')
-        self.activity_group_work = factories.ActivityGroupFactory.create(
-                name='Client work')
-
-        activities = Activity.objects.all()
-        for activity in activities:
-            activity.activity_group.add(self.activity_group_all)
-            if activity != self.sick_activity:
-                activity.activity_group.add(self.activity_group_work)
-        self.business = factories.BusinessFactory.create()
-        status = factories.StatusAttributeFactory.create(label='Current',
-                enable_timetracking=True)
-        type_ = factories.TypeAttributeFactory.create(label='Web Sites',
-            enable_timetracking=True)
-        self.project = factories.ProjectFactory.create(type=type_,
-                status=status, business=self.business, point_person=self.user,
-                activity_group=self.activity_group_work)
-        self.project2 = factories.ProjectFactory.create(type=type_,
-                status=status, business=self.business, point_person=self.user2,
-                activity_group=self.activity_group_all)
-        factories.ProjectRelationshipFactory.create(user=self.user,
-                project=self.project)
-        self.location = factories.LocationFactory.create()

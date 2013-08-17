@@ -6,16 +6,17 @@ from urllib import urlencode
 from django.contrib.auth.models import User, Permission
 from django.core.urlresolvers import reverse
 from django.utils import timezone
+from django.test import TestCase
 
 from timepiece import utils
-from timepiece.tests.base import TimepieceDataTestCase, ViewTestMixin
+from timepiece.tests.base import ViewTestMixin
 from timepiece.tests import factories
 
 from timepiece.entries.models import Entry, ProjectHours
 from timepiece.entries.views import Dashboard
 
 
-class DashboardViewTestCase(ViewTestMixin, TimepieceDataTestCase):
+class DashboardViewTestCase(ViewTestMixin, TestCase):
     """Tests the data that is passed to the dashboard template."""
 
     def setUp(self):
@@ -143,7 +144,7 @@ class DashboardViewTestCase(ViewTestMixin, TimepieceDataTestCase):
         self.assertEqual(len(response.context['others_active_entries']), 0)
 
 
-class ProcessProgressTestCase(TimepieceDataTestCase):
+class ProcessProgressTestCase(TestCase):
     """Tests for process_progress."""
 
     def setUp(self):

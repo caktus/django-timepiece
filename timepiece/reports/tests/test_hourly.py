@@ -11,10 +11,11 @@ from timepiece import utils
 from timepiece.entries.models import Entry
 from timepiece.reports.tests.base import ReportsTestBase
 from timepiece.reports.utils import get_project_totals, generate_dates
-from timepiece.tests.base import ViewTestMixin
+from timepiece.tests.base import ViewTestMixin, LogTimeMixin
+from timepiece.tests import factories
 
 
-class TestHourlyReport(ViewTestMixin, ReportsTestBase):
+class TestHourlyReport(ViewTestMixin, LogTimeMixin, ReportsTestBase):
     url_name = 'report_hourly'
 
     def test_generate_months(self):
@@ -27,11 +28,11 @@ class TestHourlyReport(ViewTestMixin, ReportsTestBase):
     def test_generate_weeks(self):
         dates = [
             utils.add_timezone(datetime.datetime(2010, 12, 27)),
-            utils.add_timezone(datetime.datetime(2011, 01, 03)),
-            utils.add_timezone(datetime.datetime(2011, 01, 10)),
-            utils.add_timezone(datetime.datetime(2011, 01, 17)),
-            utils.add_timezone(datetime.datetime(2011, 01, 24)),
-            utils.add_timezone(datetime.datetime(2011, 01, 31)),
+            utils.add_timezone(datetime.datetime(2011, 1, 03)),
+            utils.add_timezone(datetime.datetime(2011, 1, 10)),
+            utils.add_timezone(datetime.datetime(2011, 1, 17)),
+            utils.add_timezone(datetime.datetime(2011, 1, 24)),
+            utils.add_timezone(datetime.datetime(2011, 1, 31)),
         ]
         start = utils.add_timezone(datetime.datetime(2011, 1, 1))
         end = utils.add_timezone(datetime.datetime(2011, 2, 1))

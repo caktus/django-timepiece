@@ -4,21 +4,26 @@ from decimal import Decimal
 from django.conf import settings
 from django.core.urlresolvers import reverse
 from django.contrib.auth.models import Permission
+from django.test import TestCase
 from django.utils import timezone
 
 from timepiece import utils
-from timepiece.tests.base import TimepieceDataTestCase
 from timepiece.tests import factories
-from timepiece.tests.base import ViewTestMixin
+from timepiece.tests.base import ViewTestMixin, LogTimeMixin
 
 from timepiece.entries.models import Entry
 from timepiece.reports.utils import find_overtime
 
 
-class PayrollTest(ViewTestMixin, TimepieceDataTestCase):
+class PayrollTest(ViewTestMixin, LogTimeMixin, TestCase):
 
     def setUp(self):
         super(PayrollTest, self).setUp()
+        self.user = factories.UserFactory()
+        self.user2 = factories.UserFactory()
+        self.superuser = factories.SuperuserFactory()
+        self.devl_activity = factories.ActivityFactory(billable=True)
+        self.activity = factories.ActivityFactory()
         self.sick = factories.ProjectFactory.create(name='sick')
         self.vacation = factories.ProjectFactory.create(name='vacation')
         settings.TIMEPIECE_PAID_LEAVE_PROJECTS = {

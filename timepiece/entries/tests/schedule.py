@@ -6,9 +6,9 @@ from decimal import Decimal
 from django.contrib.auth.models import Permission, User
 from django.contrib.contenttypes.models import ContentType
 from django.core.urlresolvers import reverse
+from django.test import TestCase
 
 from timepiece import utils
-from timepiece.tests.base import TimepieceDataTestCase
 from timepiece.tests import factories
 from timepiece.tests.base import ViewTestMixin
 
@@ -16,7 +16,7 @@ from timepiece.entries.models import Entry, ProjectHours
 from timepiece.entries.views import ScheduleView
 
 
-class ProjectHoursTestCase(ViewTestMixin, TimepieceDataTestCase):
+class ProjectHoursTestCase(ViewTestMixin, TestCase):
 
     def setUp(self):
         self.user = factories.UserFactory.create()

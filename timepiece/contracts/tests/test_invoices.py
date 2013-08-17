@@ -5,24 +5,28 @@ import urllib
 
 from django.contrib.auth.models import User, Permission
 from django.core.urlresolvers import reverse
+from django.test import TestCase
 
 from timepiece import utils
 from timepiece.forms import DATE_FORM_FORMAT
 from timepiece.tests import factories
-from timepiece.tests.base import TimepieceDataTestCase, ViewTestMixin
+from timepiece.tests.base import ViewTestMixin, LogTimeMixin
 
 from timepiece.contracts.models import EntryGroup, HourGroup
 from timepiece.crm.models import Attribute
 from timepiece.entries.models import Activity, Entry
 
 
-class InvoiceViewPreviousTestCase(ViewTestMixin, TimepieceDataTestCase):
+class InvoiceViewPreviousTestCase(ViewTestMixin, LogTimeMixin, TestCase):
 
     def setUp(self):
         super(InvoiceViewPreviousTestCase, self).setUp()
-        self.user.is_superuser = True
-        self.user.save()
+        self.user = factories.SuperuserFactory()
         self.login_user(self.user)
+        self.devl_activity = factories.ActivityFactory(code='devl',
+                name='development', billable=True)
+        self.activity = factories.ActivityFactory.create(code='WRK',
+                name='Work')
         # Make some projects and entries for invoice creation
         self.project = factories.BillableProjectFactory.create()
         self.project2 = factories.BillableProjectFactory.create()
@@ -241,12 +245,11 @@ class InvoiceViewPreviousTestCase(ViewTestMixin, TimepieceDataTestCase):
         self.assertEqual(new_entry.entry_group, None)
 
 
-class InvoiceCreateTestCase(ViewTestMixin, TimepieceDataTestCase):
+class InvoiceCreateTestCase(ViewTestMixin, TestCase):
 
     def setUp(self):
         super(InvoiceCreateTestCase, self).setUp()
-        self.user.is_superuser = True
-        self.user.save()
+        self.user = factories.SuperuserFactory()
         self.login_user(self.user)
         start = utils.add_timezone(datetime.datetime(2011, 1, 1, 8))
         end = utils.add_timezone(datetime.datetime(2011, 1, 1, 12))
@@ -296,7 +299,7 @@ class InvoiceCreateTestCase(ViewTestMixin, TimepieceDataTestCase):
 
     def test_invoice_confirm_view_user(self):
         """A regular user should not be able to access this page"""
-        self.login_user(self.user2)
+        self.login_user(factories.UserFactory())
         to_date = utils.add_timezone(datetime.datetime(2011, 1, 31))
         url = self.get_create_url(project=self.project_billable.pk,
                 to_date=to_date.strftime(DATE_FORM_FORMAT))
@@ -448,13 +451,12 @@ class InvoiceCreateTestCase(ViewTestMixin, TimepieceDataTestCase):
             self.assertEqual(entry.entry_group_id, invoice.id)
 
 
-class ListOutstandingInvoicesViewTestCase(ViewTestMixin, TimepieceDataTestCase):
+class ListOutstandingInvoicesViewTestCase(ViewTestMixin, TestCase):
     url_name = 'list_outstanding_invoices'
 
     def setUp(self):
         super(ListOutstandingInvoicesViewTestCase, self).setUp()
-        self.user.is_superuser = True
-        self.user.save()
+        self.user = factories.SuperuserFactory()
         self.login_user(self.user)
 
         start = utils.add_timezone(datetime.datetime(2011, 1, 1, 8))

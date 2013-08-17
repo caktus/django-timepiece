@@ -3,13 +3,14 @@ import mock
 
 from django.contrib.auth.models import Permission
 from django.core.exceptions import ValidationError
+from django.test import TestCase
 
 from timepiece.contracts.models import ProjectContract, ContractHour
-from timepiece.tests.base import TimepieceDataTestCase, ViewTestMixin
+from timepiece.tests.base import ViewTestMixin
 from timepiece.tests import factories
 
 
-class ContractListTestCase(ViewTestMixin, TimepieceDataTestCase):
+class ContractListTestCase(ViewTestMixin, TestCase):
     url_name = 'list_contracts'
     perm_names = [('contracts', 'add_projectcontract')]
 
@@ -78,7 +79,7 @@ class ContractListTestCase(ViewTestMixin, TimepieceDataTestCase):
         self.assertEqual(len(contracts), 0)
 
 
-class ContractViewTestCase(ViewTestMixin, TimepieceDataTestCase):
+class ContractViewTestCase(ViewTestMixin, TestCase):
     url_name = 'view_contract'
     perm_names = [('contracts', 'add_projectcontract')]
 
@@ -138,7 +139,7 @@ class ContractViewTestCase(ViewTestMixin, TimepieceDataTestCase):
         self.assertEqual(contract, response.context['contract'])
 
 
-class ContractHourTestCase(TimepieceDataTestCase):
+class ContractHourTestCase(TestCase):
 
     def test_defaults(self):
         contract_hour = ContractHour()
@@ -183,7 +184,7 @@ class ContractHourTestCase(TimepieceDataTestCase):
         self.assertEqual(datetime.date.today(), ch.date_approved)
 
 
-class ContractHourEmailTestCase(TimepieceDataTestCase):
+class ContractHourEmailTestCase(TestCase):
 
     def test_save_pending_calls_send_email(self):
         with mock.patch('timepiece.contracts.models.ContractHour._send_mail') as send_mail:

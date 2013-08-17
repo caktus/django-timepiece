@@ -1,7 +1,6 @@
 import datetime
 
 from django.test import TestCase
-from timepiece.tests import TimepieceDataTestCase
 from timepiece.utils import get_active_entry, ActiveEntryError
 from django.utils import timezone
 
@@ -37,7 +36,7 @@ class UtilityFunctionsTest(TestCase):
                 utils.get_last_billable_day(date))
 
 
-class GetActiveEntryTest(TimepieceDataTestCase):
+class GetActiveEntryTest(TestCase):
 
     def setUp(self):
         self.user = factories.UserFactory.create()

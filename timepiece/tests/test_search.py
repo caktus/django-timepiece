@@ -1,10 +1,15 @@
-from django.test import TestCase
 from django.core.urlresolvers import reverse
+from django.test import TestCase
 
-from timepiece.tests.base import TimepieceDataTestCase, ViewTestMixin
+from . import factories
+from .base import ViewTestMixin
 
 
-class QuickSearchTest(ViewTestMixin, TimepieceDataTestCase):
+class QuickSearchTest(ViewTestMixin, TestCase):
+
+    def setUp(self):
+        super(QuickSearchTest, self).setUp()
+        self.superuser = factories.SuperuserFactory()
 
     def testUserSearch(self):
         """

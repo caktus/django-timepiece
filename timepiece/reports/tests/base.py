@@ -1,18 +1,24 @@
 import datetime
 
 from django.conf import settings
+from django.test import TestCase
 
 from timepiece import utils
-from timepiece.tests.base import TimepieceDataTestCase
+from timepiece.tests.base import TestCase
 from timepiece.tests import factories
 
 from timepiece.reports.utils import generate_dates
 
 
-class ReportsTestBase(TimepieceDataTestCase):
+class ReportsTestBase(TestCase):
 
     def setUp(self):
         super(ReportsTestBase, self).setUp()
+        self.user = factories.UserFactory()
+        self.user2 = factories.UserFactory()
+        self.superuser = factories.SuperuserFactory()
+        self.devl_activity = factories.ActivityFactory(billable=True)
+        self.activity = factories.ActivityFactory()
         self.sick = factories.ProjectFactory.create()
         self.vacation = factories.ProjectFactory.create()
         settings.TIMEPIECE_PAID_LEAVE_PROJECTS = {

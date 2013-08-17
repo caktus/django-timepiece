@@ -3,10 +3,11 @@ from decimal import Decimal
 
 from django.contrib.auth.models import Permission
 from django.utils import timezone
+from django.test import TestCase
 
 from timepiece import utils
 from timepiece.tests import factories
-from timepiece.tests.base import TimepieceDataTestCase, ViewTestMixin, LogTimeMixin
+from timepiece.tests.base import ViewTestMixin, LogTimeMixin
 
 from ..models import Project
 
@@ -15,7 +16,7 @@ __all__ = ['TestCreateProjectView', 'TestDeleteProjectView',
         'TestProjectListView', 'TestProjectTimesheetView']
 
 
-class TestCreateProjectView(ViewTestMixin, TimepieceDataTestCase):
+class TestCreateProjectView(ViewTestMixin, TestCase):
     url_name = 'create_project'
     template_name = 'timepiece/project/create_edit.html'
 
@@ -63,7 +64,7 @@ class TestCreateProjectView(ViewTestMixin, TimepieceDataTestCase):
         self.assertRedirectsNoFollow(response, project.get_absolute_url())
 
 
-class TestDeleteProjectView(ViewTestMixin, TimepieceDataTestCase):
+class TestDeleteProjectView(ViewTestMixin, TestCase):
     url_name = 'delete_project'
     template_name = 'timepiece/delete_object.html'
 
@@ -104,7 +105,7 @@ class TestDeleteProjectView(ViewTestMixin, TimepieceDataTestCase):
         self.assertEquals(Project.objects.count(), 0)
 
 
-class TestProjectListView(ViewTestMixin, TimepieceDataTestCase):
+class TestProjectListView(ViewTestMixin, TestCase):
     url_name = 'list_projects'
     template_name = 'timepiece/project/list.html'
 
@@ -181,16 +182,21 @@ class TestProjectListView(ViewTestMixin, TimepieceDataTestCase):
         self.assertRedirectsNoFollow(response, project.get_absolute_url())
 
 
-class TestProjectTimesheetView(ViewTestMixin, LogTimeMixin, TimepieceDataTestCase):
+class TestProjectTimesheetView(ViewTestMixin, LogTimeMixin, TestCase):
     url_name = 'view_project_timesheet'
 
     def setUp(self):
         super(TestProjectTimesheetView, self).setUp()
+        self.user = factories.UserFactory()
+        self.user2 = factories.UserFactory()
+        self.superuser = factories.SuperuserFactory()
         self.p1 = factories.BillableProjectFactory.create(name='1')
         self.p2 = factories.NonbillableProjectFactory.create(name='2')
         self.p4 = factories.BillableProjectFactory.create(name='4')
         self.p3 = factories.NonbillableProjectFactory.create(name='1')
         self.url_args = (self.p1.pk,)
+        self.devl_activity = factories.ActivityFactory(billable=True)
+        self.activity = factories.ActivityFactory()
 
     def make_entries(self):
         days = [

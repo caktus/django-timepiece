@@ -1,14 +1,15 @@
 from django.contrib.auth.models import User, Permission
 from django.core.urlresolvers import reverse
+from django.test import TestCase
 
 from timepiece.tests import factories
-from timepiece.tests.base import TimepieceDataTestCase, ViewTestMixin
+from timepiece.tests.base import ViewTestMixin
 
 
 __all__ = ['TestDeleteUserView', 'TestEditUserView', 'TestEditSettingsView']
 
 
-class TestDeleteUserView(ViewTestMixin, TimepieceDataTestCase):
+class TestDeleteUserView(ViewTestMixin, TestCase):
     url_name = 'delete_user'
     template_name = 'timepiece/delete_object.html'
 
@@ -49,7 +50,7 @@ class TestDeleteUserView(ViewTestMixin, TimepieceDataTestCase):
         self.assertEquals(User.objects.count(), 1)
 
 
-class TestEditUserView(ViewTestMixin, TimepieceDataTestCase):
+class TestEditUserView(ViewTestMixin, TestCase):
     url_name = 'edit_user'
     template_name = 'timepiece/user/create_edit.html'
 
@@ -121,7 +122,7 @@ class TestEditUserView(ViewTestMixin, TimepieceDataTestCase):
         self.assertTrue(groups[1] in updated_user.groups.all())
 
 
-class TestEditSettingsView(ViewTestMixin, TimepieceDataTestCase):
+class TestEditSettingsView(ViewTestMixin, TestCase):
     url_name = 'edit_settings'
     template_name = 'timepiece/user/settings.html'
 

@@ -1,7 +1,8 @@
 from django.contrib.auth.models import Permission
+from django.test import TestCase
 
 from timepiece.tests import factories
-from timepiece.tests.base import ViewTestMixin, TimepieceDataTestCase
+from timepiece.tests.base import ViewTestMixin
 
 from ..models import Business
 
@@ -9,7 +10,7 @@ from ..models import Business
 __all__ = ['TestCreateBusinessView', 'TestDeleteBusinessView']
 
 
-class TestCreateBusinessView(ViewTestMixin, TimepieceDataTestCase):
+class TestCreateBusinessView(ViewTestMixin, TestCase):
     url_name = 'create_business'
     template_name = 'timepiece/business/create_edit.html'
 
@@ -51,7 +52,7 @@ class TestCreateBusinessView(ViewTestMixin, TimepieceDataTestCase):
         self.assertEquals(Business.objects.count(), 1)
 
 
-class TestDeleteBusinessView(ViewTestMixin, TimepieceDataTestCase):
+class TestDeleteBusinessView(ViewTestMixin, TestCase):
     url_name = 'delete_business'
     template_name = 'timepiece/delete_object.html'
 

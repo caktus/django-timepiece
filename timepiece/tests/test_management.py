@@ -4,19 +4,25 @@ from StringIO import StringIO
 from django.contrib.auth.models import User, Permission
 from django.core.exceptions import ValidationError
 from django.utils import timezone
+from django.test import TestCase
 
 from timepiece import utils
 from timepiece.management.commands import check_entries
-
 from timepiece.entries.models import Entry
 
-from .base import TimepieceDataTestCase
 from . import factories
 
 
-class CheckEntries(TimepieceDataTestCase):
+class CheckEntries(TestCase):
+
     def setUp(self):
         super(CheckEntries, self).setUp()
+        self.user = factories.UserFactory.create()
+        self.user2 = factories.UserFactory.create()
+        self.superuser = factories.SuperuserFactory.create()
+        self.project = factories.ProjectFactory(type__enable_timetracking=True,
+                status__enable_timetracking=True, point_person=self.user)
+
         self.default_data = {
             'user': self.user,
             'project': self.project,

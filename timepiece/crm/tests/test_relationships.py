@@ -1,15 +1,17 @@
 from django.contrib.auth.models import Permission
 from django.core.urlresolvers import reverse
+from django.test import TestCase
 
 from timepiece.tests import factories
-from timepiece.tests.base import TimepieceDataTestCase, ViewTestMixin
+from timepiece.tests.base import ViewTestMixin
 from timepiece.crm.models import ProjectRelationship
 
 
 __all__ = ['AddProjectToUserTestCase', 'AddUserToProjectTestCase',
         'EditRelationshipTestCase', 'DeleteRelationshipTestCase']
 
-class RelationshipTestBase(TimepieceDataTestCase):
+
+class RelationshipTestBase(TestCase):
 
     def setUp(self):
         self.user = factories.UserFactory.create()

@@ -4,18 +4,20 @@ from dateutil.relativedelta import relativedelta
 import json
 
 from django.contrib.auth.models import Permission
+from django.test import TestCase
 
-from timepiece.tests.base import TimepieceDataTestCase, ViewTestMixin
+from timepiece.tests.base import ViewTestMixin
 from timepiece.tests import factories
 
 from timepiece.entries.models import Entry, ProjectHours
 
 
-class TestProductivityReport(ViewTestMixin, TimepieceDataTestCase):
+class TestProductivityReport(ViewTestMixin, TestCase):
     url_name = 'report_productivity'
 
     def setUp(self):
-        self.user = factories.UserFactory.create()
+        super(TestProductivityReport, self).setUp()
+        self.user = factories.UserFactory()
         self.permission = Permission.objects.get(codename='view_entry_summary')
         self.user.user_permissions.add(self.permission)
         self.login_user(self.user)

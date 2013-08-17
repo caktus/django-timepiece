@@ -9,7 +9,6 @@ from django.utils.html import strip_tags
 from timepiece import utils
 from timepiece.templatetags import timepiece_tags as tags
 
-from .base import TimepieceDataTestCase
 from . import factories
 
 
@@ -228,7 +227,7 @@ class ArithmeticTagTestCase(TestCase):
         self.assertEqual(0, tags.get_max_hours(ctx))
 
 
-class TestProjectHoursForContract(TimepieceDataTestCase):
+class TestProjectHoursForContract(TestCase):
 
     def setUp(self):
         self.user = factories.UserFactory.create()
