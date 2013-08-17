@@ -6,7 +6,7 @@ from django.utils import timezone
 
 from timepiece import utils
 from timepiece.tests import factories
-from timepiece.tests.base import TimepieceDataTestCase, ViewTestMixin
+from timepiece.tests.base import TimepieceDataTestCase, ViewTestMixin, LogTimeMixin
 
 from ..models import Project
 
@@ -181,7 +181,7 @@ class TestProjectListView(ViewTestMixin, TimepieceDataTestCase):
         self.assertRedirectsNoFollow(response, project.get_absolute_url())
 
 
-class TestProjectTimesheetView(ViewTestMixin, TimepieceDataTestCase):
+class TestProjectTimesheetView(ViewTestMixin, LogTimeMixin, TimepieceDataTestCase):
     url_name = 'view_project_timesheet'
 
     def setUp(self):

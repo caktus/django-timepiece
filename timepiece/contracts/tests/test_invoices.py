@@ -16,7 +16,7 @@ from timepiece.crm.models import Attribute
 from timepiece.entries.models import Activity, Entry
 
 
-class InvoiceViewPreviousTestCase(TimepieceDataTestCase):
+class InvoiceViewPreviousTestCase(ViewTestMixin, TimepieceDataTestCase):
 
     def setUp(self):
         super(InvoiceViewPreviousTestCase, self).setUp()
@@ -241,7 +241,7 @@ class InvoiceViewPreviousTestCase(TimepieceDataTestCase):
         self.assertEqual(new_entry.entry_group, None)
 
 
-class InvoiceCreateTestCase(TimepieceDataTestCase):
+class InvoiceCreateTestCase(ViewTestMixin, TimepieceDataTestCase):
 
     def setUp(self):
         super(InvoiceCreateTestCase, self).setUp()

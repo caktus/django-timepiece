@@ -8,14 +8,14 @@ from django.core.urlresolvers import reverse
 from django.utils import timezone
 
 from timepiece import utils
-from timepiece.tests.base import TimepieceDataTestCase
+from timepiece.tests.base import TimepieceDataTestCase, ViewTestMixin
 from timepiece.tests import factories
 
 from timepiece.entries.models import Entry, ProjectHours
 from timepiece.entries.views import Dashboard
 
 
-class DashboardViewTestCase(TimepieceDataTestCase):
+class DashboardViewTestCase(ViewTestMixin, TimepieceDataTestCase):
     """Tests the data that is passed to the dashboard template."""
 
     def setUp(self):
@@ -152,7 +152,6 @@ class ProcessProgressTestCase(TimepieceDataTestCase):
         self.next_week = self.this_week + relativedelta(days=7)
 
         self.user = factories.UserFactory.create()
-        self.login_user(self.user)
 
         self.project = factories.ProjectFactory.create()
         self.activity = factories.ActivityFactory.create()

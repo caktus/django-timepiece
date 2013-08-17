@@ -8,12 +8,13 @@ from django.db.models import Q
 
 from timepiece.forms import DATE_FORM_FORMAT
 from timepiece.tests import factories
+from timepiece.tests.base import ViewTestMixin
 
 from timepiece.entries.models import Entry
 from timepiece.reports.tests.base import ReportsTestBase
 
 
-class TestBillableHours(ReportsTestBase):
+class TestBillableHours(ViewTestMixin, ReportsTestBase):
 
     def setUp(self):
         super(TestBillableHours, self).setUp()

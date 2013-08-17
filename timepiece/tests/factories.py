@@ -1,7 +1,9 @@
 import datetime
 from dateutil.relativedelta import relativedelta
+from decimal import Decimal
 import factory
 from factory.fuzzy import FuzzyDate, FuzzyInteger
+import random
 
 from django.contrib.auth import models as auth
 from django.contrib.auth.hashers import make_password
@@ -47,6 +49,19 @@ class ProjectContractFactory(factory.DjangoModelFactory):
     end_date = datetime.date.today() + relativedelta(weeks=2)
     status = contracts.ProjectContract.STATUS_CURRENT,
     type = contracts.ProjectContract.PROJECT_PRE_PAID_HOURLY
+
+    @factory.post_generation
+    def contract_hours(self, create, extracted, **kwargs):
+        if create:
+            num_hours = extracted or random.randint(10, 400)
+            for i in range(2):
+                ContractHourFactory(contract=self,
+                        hours=Decimal(str(num_hours/2.0)))
+
+    @factory.post_generation
+    def projects(self, create, extracted, **kwargs):
+        if create and extracted:
+            self.projects.add(*extracted)
 
 
 class ContractHourFactory(factory.DjangoModelFactory):

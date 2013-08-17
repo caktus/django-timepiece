@@ -9,12 +9,13 @@ from django.utils import timezone
 from timepiece import utils
 from timepiece.tests.base import TimepieceDataTestCase
 from timepiece.tests import factories
+from timepiece.tests.base import ViewTestMixin
 
 from timepiece.entries.models import Entry
 from timepiece.reports.utils import find_overtime
 
 
-class PayrollTest(TimepieceDataTestCase):
+class PayrollTest(ViewTestMixin, TimepieceDataTestCase):
 
     def setUp(self):
         super(PayrollTest, self).setUp()

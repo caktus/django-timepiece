@@ -244,7 +244,7 @@ class TestProjectHoursForContract(TimepieceDataTestCase):
             self.project_without_hours
         ]
 
-        self.contract = self.create_contract(projects=projects)
+        self.contract = factories.ProjectContractFactory(projects=projects)
         activity = factories.ActivityFactory.create(billable=True)
         unbillable_activity = factories.ActivityFactory.create(billable=False)
 

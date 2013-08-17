@@ -120,9 +120,6 @@ class ViewTestMixin(object):
         return self.assertRedirectsNoFollow(response, login_url, use_params,
                 status_code)
 
-
-class TimepieceDataTestCase(TestCase):
-
     def login_user(self, user, strict=True):
         """Log in a user without need for a password.
 
@@ -155,15 +152,8 @@ class TimepieceDataTestCase(TestCase):
         # Save the session values.
         request.session.save()
 
-    def create_contract(self, projects=None, **kwargs):
-        num_hours = kwargs.pop('num_hours', random.randint(10, 400))
-        contract = factories.ProjectContractFactory.create(**kwargs)
-        contract.projects.add(*(projects or []))
-        # Create 2 ContractHour objects that add up to the hours we want
-        for i in range(2):
-            factories.ContractHourFactory.create(
-                    hours=Decimal(str(num_hours/2.0)), contract=contract)
-        return contract
+
+class LogTimeMixin(object):
 
     def log_time(self, delta=None, billable=True, project=None, start=None,
             end=None, status=None, pause=0, activity=None, user=None):
@@ -200,6 +190,9 @@ class TimepieceDataTestCase(TestCase):
         if status:
             data['status'] = status
         return factories.EntryFactory.create(**data)
+
+
+class TimepieceDataTestCase(TestCase):
 
     def setUp(self):
         self.user = factories.UserFactory.create()

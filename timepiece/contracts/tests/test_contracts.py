@@ -47,7 +47,7 @@ class ContractListTestCase(ViewTestMixin, TimepieceDataTestCase):
 
     def test_one_contract(self):
         """List should return all current contracts."""
-        correct_contract = self.create_contract(projects=self.projects,
+        correct_contract = factories.ProjectContractFactory(projects=self.projects,
                 status=ProjectContract.STATUS_CURRENT)
         response = self._get()
         self.assertEqual(response.status_code, 200)
@@ -57,7 +57,7 @@ class ContractListTestCase(ViewTestMixin, TimepieceDataTestCase):
 
     def test_contracts(self):
         """List should return all current contracts."""
-        correct_contracts = [self.create_contract(projects=self.projects,
+        correct_contracts = [factories.ProjectContractFactory(projects=self.projects,
                 status=ProjectContract.STATUS_CURRENT) for i in range(3)]
         response = self._get()
         self.assertEqual(response.status_code, 200)
@@ -68,9 +68,9 @@ class ContractListTestCase(ViewTestMixin, TimepieceDataTestCase):
 
     def test_non_current_contracts(self):
         """List should return all current contracts."""
-        complete_contract = self.create_contract(projects=self.projects,
+        complete_contract = factories.ProjectContractFactory(projects=self.projects,
                 status=ProjectContract.STATUS_COMPLETE)
-        upcoming_contract = self.create_contract(projects=self.projects,
+        upcoming_contract = factories.ProjectContractFactory(projects=self.projects,
                 status=ProjectContract.STATUS_UPCOMING)
         response = self._get()
         self.assertEqual(response.status_code, 200)
@@ -99,7 +99,7 @@ class ContractViewTestCase(ViewTestMixin, TimepieceDataTestCase):
         self.project2 = factories.ProjectFactory.create()
         self.projects = [self.project1, self.project2]
 
-        self.contract = self.create_contract(projects=self.projects)
+        self.contract = factories.ProjectContractFactory(projects=self.projects)
 
     def test_permission(self):
         """Permission is required to view a contract."""
@@ -117,21 +117,21 @@ class ContractViewTestCase(ViewTestMixin, TimepieceDataTestCase):
         self.assertEqual(response.status_code, 404)
 
     def test_current_contract(self):
-        contract = self.create_contract(projects=self.projects,
+        contract = factories.ProjectContractFactory(projects=self.projects,
                 status=ProjectContract.STATUS_CURRENT)
         response = self._get(url_args=(contract.pk,))
         self.assertEqual(response.status_code, 200)
         self.assertEqual(contract, response.context['contract'])
 
     def test_upcoming_contract(self):
-        contract = self.create_contract(projects=self.projects,
+        contract = factories.ProjectContractFactory(projects=self.projects,
                 status=ProjectContract.STATUS_UPCOMING)
         response = self._get(url_args=(contract.pk,))
         self.assertEqual(response.status_code, 200)
         self.assertEqual(contract, response.context['contract'])
 
     def test_complete_contract(self):
-        contract = self.create_contract(projects=self.projects,
+        contract = factories.ProjectContractFactory(projects=self.projects,
                 status=ProjectContract.STATUS_COMPLETE)
         response = self._get(url_args=(contract.pk,))
         self.assertEqual(response.status_code, 200)
@@ -149,7 +149,7 @@ class ContractHourTestCase(TimepieceDataTestCase):
         # If we create some Contract Hour objects and then go to the
         # project contract and get contracted_hours(), it gives the sum
         # of the hours
-        pc = self.create_contract(num_hours=4)
+        pc = factories.ProjectContractFactory(contract_hours=4)
         self.assertEqual(4, pc.contracted_hours())
         self.assertEqual(0, pc.pending_hours())
 
@@ -157,7 +157,7 @@ class ContractHourTestCase(TimepieceDataTestCase):
         # If we create some pending Contract Hour objects and then go to the
         # project contract and get pending_hours(), it gives the sum
         # of the hours
-        pc = self.create_contract(num_hours=4)
+        pc = factories.ProjectContractFactory(contract_hours=4)
         ch = factories.ContractHourFactory.create(contract=pc, hours=27,
                 status=ContractHour.PENDING_STATUS)
         self.assertEqual(4, pc.contracted_hours())

@@ -1,10 +1,10 @@
 from django.test import TestCase
 from django.core.urlresolvers import reverse
 
-from timepiece.tests.base import TimepieceDataTestCase
+from timepiece.tests.base import TimepieceDataTestCase, ViewTestMixin
 
 
-class QuickSearchTest(TimepieceDataTestCase):
+class QuickSearchTest(ViewTestMixin, TimepieceDataTestCase):
 
     def testUserSearch(self):
         """

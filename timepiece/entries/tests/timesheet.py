@@ -13,7 +13,7 @@ from django.forms import model_to_dict
 from django.utils import timezone
 
 from timepiece import utils
-from timepiece.tests.base import TimepieceDataTestCase
+from timepiece.tests.base import TimepieceDataTestCase, ViewTestMixin, LogTimeMixin
 from timepiece.tests import factories
 
 from timepiece.crm.utils import grouped_totals
@@ -49,7 +49,7 @@ class EditableTest(TimepieceDataTestCase):
         self.assertTrue(self.entry2.is_editable)
 
 
-class MyLedgerTest(TimepieceDataTestCase):
+class MyLedgerTest(ViewTestMixin, LogTimeMixin, TimepieceDataTestCase):
 
     def setUp(self):
         super(MyLedgerTest, self).setUp()
@@ -159,7 +159,7 @@ class MyLedgerTest(TimepieceDataTestCase):
         self.assertEqual(response.context['summary']['total'], Decimal(9))
 
 
-class ClockInTest(TimepieceDataTestCase):
+class ClockInTest(ViewTestMixin, TimepieceDataTestCase):
     def setUp(self):
         super(ClockInTest, self).setUp()
         self.url = reverse('clock_in')
@@ -508,7 +508,7 @@ class ClockInTest(TimepieceDataTestCase):
         self.assertContains(response, 'Some comments')
 
 
-class AutoActivityTest(TimepieceDataTestCase):
+class AutoActivityTest(ViewTestMixin, LogTimeMixin, TimepieceDataTestCase):
     """Test the initial value chosen for activity on clock in form"""
     def setUp(self):
         super(AutoActivityTest, self).setUp()
@@ -560,7 +560,7 @@ class AutoActivityTest(TimepieceDataTestCase):
         self.assertEqual(self.get_activity(project2), self.devl_activity.id)
 
 
-class ClockOutTest(TimepieceDataTestCase):
+class ClockOutTest(ViewTestMixin, TimepieceDataTestCase):
 
     def setUp(self):
         super(ClockOutTest, self).setUp()
@@ -759,7 +759,7 @@ class ClockOutTest(TimepieceDataTestCase):
 
 
 
-class CheckOverlap(TimepieceDataTestCase):
+class CheckOverlap(ViewTestMixin, LogTimeMixin, TimepieceDataTestCase):
     """
     With entry overlaps, entry.check_overlap method should return True
     With valid entries, check_overlap should return False
@@ -832,7 +832,7 @@ class CheckOverlap(TimepieceDataTestCase):
         self.assertEqual(user_total_overlaps, 1)
 
 
-class CreateEditEntry(TimepieceDataTestCase):
+class CreateEditEntry(ViewTestMixin, TimepieceDataTestCase):
 
     def setUp(self):
         super(CreateEditEntry, self).setUp()
@@ -1147,7 +1147,7 @@ class CreateEditEntry(TimepieceDataTestCase):
         self.assertContains(response, msg)
 
 
-class StatusTest(TimepieceDataTestCase):
+class StatusTest(ViewTestMixin, TimepieceDataTestCase):
 
     def setUp(self):
         super(StatusTest, self).setUp()
@@ -1493,7 +1493,7 @@ class StatusTest(TimepieceDataTestCase):
         self.assertTrue(response.status_code, 403)
 
 
-class TestTotals(TimepieceDataTestCase):
+class TestTotals(ViewTestMixin, LogTimeMixin, TimepieceDataTestCase):
 
     def setUp(self):
         super(TestTotals, self).setUp()
@@ -1559,7 +1559,7 @@ class TestTotals(TimepieceDataTestCase):
                         self.assertEqual(totals['total'], 1)
 
 
-class HourlySummaryTest(TimepieceDataTestCase):
+class HourlySummaryTest(ViewTestMixin, TimepieceDataTestCase):
 
     def setUp(self):
         super(HourlySummaryTest, self).setUp()
@@ -1664,7 +1664,7 @@ class HourlySummaryTest(TimepieceDataTestCase):
         self.assertEquals(list(entries), list(response.context['entries']))
 
 
-class MonthlyRejectTestCase(TimepieceDataTestCase):
+class MonthlyRejectTestCase(ViewTestMixin, TimepieceDataTestCase):
 
     def setUp(self):
         super(MonthlyRejectTestCase, self).setUp()

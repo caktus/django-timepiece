@@ -10,12 +10,13 @@ from django.core.urlresolvers import reverse
 from timepiece import utils
 from timepiece.tests.base import TimepieceDataTestCase
 from timepiece.tests import factories
+from timepiece.tests.base import ViewTestMixin
 
 from timepiece.entries.models import Entry, ProjectHours
 from timepiece.entries.views import ScheduleView
 
 
-class ProjectHoursTestCase(TimepieceDataTestCase):
+class ProjectHoursTestCase(ViewTestMixin, TimepieceDataTestCase):
 
     def setUp(self):
         self.user = factories.UserFactory.create()
