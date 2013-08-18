@@ -39,24 +39,24 @@ class UtilityFunctionsTest(TestCase):
 class GetActiveEntryTest(TestCase):
 
     def setUp(self):
-        self.user = factories.UserFactory.create()
+        self.user = factories.UserFactory()
 
     def test_get_active_entry_none(self):
         self.assertIsNone(get_active_entry(self.user))
 
     def test_get_active_entry_single(self):
         now = datetime.datetime.now()
-        entry = factories.EntryFactory.create(user=self.user, start_time=now)
+        entry = factories.EntryFactory(user=self.user, start_time=now)
         # not active
-        factories.EntryFactory.create(user=self.user, start_time=now,
+        factories.EntryFactory(user=self.user, start_time=now,
                 end_time=now)
         # different user
-        factories.EntryFactory.create(start_time=now)
+        factories.EntryFactory(start_time=now)
         self.assertEqual(entry, get_active_entry(self.user))
 
     def test_get_active_entry_multiple(self):
         now = datetime.datetime.now()
         # two active entries for same user
-        factories.EntryFactory.create(user=self.user, start_time=now)
-        factories.EntryFactory.create(user=self.user, start_time=now)
+        factories.EntryFactory(user=self.user, start_time=now)
+        factories.EntryFactory(user=self.user, start_time=now)
         self.assertRaises(ActiveEntryError, get_active_entry, self.user)

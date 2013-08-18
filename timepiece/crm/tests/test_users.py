@@ -18,7 +18,7 @@ class TestDeleteUserView(ViewTestMixin, TestCase):
         self.user = factories.UserFactory(permissions=self.permissions)
         self.login_user(self.user)
 
-        self.obj = factories.UserFactory.create()
+        self.obj = factories.UserFactory()
 
         self.url_kwargs = {'user_id': self.obj.pk}
 
@@ -59,7 +59,7 @@ class TestEditUserView(ViewTestMixin, TestCase):
         self.user = factories.UserFactory(permissions=self.permissions)
         self.login_user(self.user)
 
-        self.obj = factories.UserFactory.create()
+        self.obj = factories.UserFactory()
         self.url_kwargs = {'user_id': self.obj.pk}
 
         self.post_data = {
@@ -127,7 +127,7 @@ class TestEditSettingsView(ViewTestMixin, TestCase):
     template_name = 'timepiece/user/settings.html'
 
     def setUp(self):
-        self.user = factories.UserFactory.create()
+        self.user = factories.UserFactory()
         self.login_user(self.user)
 
         self.post_data = {

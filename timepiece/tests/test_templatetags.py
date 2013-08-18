@@ -230,12 +230,12 @@ class ArithmeticTagTestCase(TestCase):
 class TestProjectHoursForContract(TestCase):
 
     def setUp(self):
-        self.user = factories.UserFactory.create()
+        self.user = factories.UserFactory()
 
-        self.a_project = factories.NonbillableProjectFactory.create()
-        self.another_project = factories.NonbillableProjectFactory.create()
-        self.billable_project = factories.BillableProjectFactory.create()
-        self.project_without_hours = factories.NonbillableProjectFactory.create()
+        self.a_project = factories.NonbillableProjectFactory()
+        self.another_project = factories.NonbillableProjectFactory()
+        self.billable_project = factories.BillableProjectFactory()
+        self.project_without_hours = factories.NonbillableProjectFactory()
         projects = [
             self.a_project,
             self.another_project,
@@ -244,23 +244,23 @@ class TestProjectHoursForContract(TestCase):
         ]
 
         self.contract = factories.ProjectContractFactory(projects=projects)
-        activity = factories.ActivityFactory.create(billable=True)
-        unbillable_activity = factories.ActivityFactory.create(billable=False)
+        activity = factories.ActivityFactory(billable=True)
+        unbillable_activity = factories.ActivityFactory(billable=False)
 
         start_time = datetime.datetime.now()
-        factories.EntryFactory.create(project=self.a_project,
+        factories.EntryFactory(project=self.a_project,
                 activity=activity, start_time=start_time,
                 end_time=start_time + relativedelta(hours=1))
-        factories.EntryFactory.create(project=self.a_project,
+        factories.EntryFactory(project=self.a_project,
                 activity=unbillable_activity, start_time=start_time,
                 end_time=start_time + relativedelta(hours=16))
-        factories.EntryFactory.create(project=self.another_project,
+        factories.EntryFactory(project=self.another_project,
                 activity=activity, start_time=start_time,
                 end_time=start_time + relativedelta(hours=2))
-        factories.EntryFactory.create(project=self.billable_project,
+        factories.EntryFactory(project=self.billable_project,
                 activity=activity, start_time=start_time,
                 end_time=start_time + relativedelta(hours=4))
-        factories.EntryFactory.create(project=self.billable_project,
+        factories.EntryFactory(project=self.billable_project,
                 activity=unbillable_activity, start_time=start_time,
                 end_time=start_time + relativedelta(hours=8))
 

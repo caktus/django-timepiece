@@ -25,11 +25,11 @@ class InvoiceViewPreviousTestCase(ViewTestMixin, LogTimeMixin, TestCase):
         self.login_user(self.user)
         self.devl_activity = factories.ActivityFactory(code='devl',
                 name='development', billable=True)
-        self.activity = factories.ActivityFactory.create(code='WRK',
+        self.activity = factories.ActivityFactory(code='WRK',
                 name='Work')
         # Make some projects and entries for invoice creation
-        self.project = factories.BillableProjectFactory.create()
-        self.project2 = factories.BillableProjectFactory.create()
+        self.project = factories.BillableProjectFactory()
+        self.project2 = factories.BillableProjectFactory()
         last_start = self.log_many([self.project, self.project2])
         # Add some non-billable entries
         self.log_many([self.project, self.project2], start=last_start,
@@ -86,7 +86,7 @@ class InvoiceViewPreviousTestCase(ViewTestMixin, LogTimeMixin, TestCase):
             return response.context['invoices']
 
         list_url = reverse('list_invoices')
-        project3 = factories.BillableProjectFactory.create(name=':-D')
+        project3 = factories.BillableProjectFactory(name=':-D')
         self.log_many([project3], 10)
         self.create_invoice(project=project3, data={
             'status': EntryGroup.INVOICED,
@@ -253,24 +253,24 @@ class InvoiceCreateTestCase(ViewTestMixin, TestCase):
         self.login_user(self.user)
         start = utils.add_timezone(datetime.datetime(2011, 1, 1, 8))
         end = utils.add_timezone(datetime.datetime(2011, 1, 1, 12))
-        self.project_billable = factories.BillableProjectFactory.create()
-        self.project_billable2 = factories.BillableProjectFactory.create()
-        self.project_non_billable = factories.NonbillableProjectFactory.create()
-        self.entry1 = factories.EntryFactory.create(user=self.user,
+        self.project_billable = factories.BillableProjectFactory()
+        self.project_billable2 = factories.BillableProjectFactory()
+        self.project_non_billable = factories.NonbillableProjectFactory()
+        self.entry1 = factories.EntryFactory(user=self.user,
                 project=self.project_billable,
-                activity=factories.ActivityFactory.create(billable=True),
+                activity=factories.ActivityFactory(billable=True),
                 start_time=start, end_time=end, status=Entry.APPROVED)
-        self.entry2 = factories.EntryFactory.create(user=self.user,
+        self.entry2 = factories.EntryFactory(user=self.user,
                 project=self.project_billable,
-                activity=factories.ActivityFactory.create(billable=True),
+                activity=factories.ActivityFactory(billable=True),
                 start_time=start - relativedelta(days=5),
                 end_time=end - relativedelta(days=5), status=Entry.APPROVED)
-        self.entry3 = factories.EntryFactory.create(user=self.user,
+        self.entry3 = factories.EntryFactory(user=self.user,
                 project=self.project_billable2,
-                activity=factories.ActivityFactory.create(billable=False),
+                activity=factories.ActivityFactory(billable=False),
                 start_time=start - relativedelta(days=10),
                 end_time=end - relativedelta(days=10), status=Entry.APPROVED)
-        self.entry4 = factories.EntryFactory.create(user=self.user,
+        self.entry4 = factories.EntryFactory(user=self.user,
                 project=self.project_non_billable,
                 start_time=start + relativedelta(hours=11),
                 end_time=end + relativedelta(hours=15), status=Entry.APPROVED)
@@ -294,7 +294,7 @@ class InvoiceCreateTestCase(ViewTestMixin, TestCase):
         """Helper to login as user with correct permissions"""
         generate_invoice = Permission.objects.get(
             codename='generate_project_invoice')
-        user = factories.UserFactory.create()
+        user = factories.UserFactory()
         user.user_permissions.add(generate_invoice)
 
     def test_invoice_confirm_view_user(self):
@@ -350,9 +350,9 @@ class InvoiceCreateTestCase(ViewTestMixin, TestCase):
         end = utils.add_timezone(datetime.datetime(2011, 1, 1, 12))
         # start = utils.add_timezone(datetime.datetime.now())
         # end = start + relativedelta(hours=4)
-        activity = factories.ActivityFactory.create(billable=True, name='activity1')
+        activity = factories.ActivityFactory(billable=True, name='activity1')
         for num in xrange(0, 4):
-            new_entry = factories.EntryFactory.create(user=self.user,
+            new_entry = factories.EntryFactory(user=self.user,
                     project=self.project_billable,
                     start_time=start - relativedelta(days=num),
                     end_time=end - relativedelta(days=num),
@@ -462,25 +462,25 @@ class ListOutstandingInvoicesViewTestCase(ViewTestMixin, TestCase):
         start = utils.add_timezone(datetime.datetime(2011, 1, 1, 8))
         end = utils.add_timezone(datetime.datetime(2011, 1, 1, 12))
 
-        self.project_billable = factories.BillableProjectFactory.create()
-        self.project_billable2 = factories.BillableProjectFactory.create()
-        self.project_non_billable = factories.NonbillableProjectFactory.create()
+        self.project_billable = factories.BillableProjectFactory()
+        self.project_billable2 = factories.BillableProjectFactory()
+        self.project_non_billable = factories.NonbillableProjectFactory()
 
-        self.entry1 = factories.EntryFactory.create(user=self.user,
+        self.entry1 = factories.EntryFactory(user=self.user,
                 project=self.project_billable,
-                activity=factories.ActivityFactory.create(billable=True),
+                activity=factories.ActivityFactory(billable=True),
                 start_time=start, end_time=end, status=Entry.APPROVED)
-        self.entry2 = factories.EntryFactory.create(user=self.user,
+        self.entry2 = factories.EntryFactory(user=self.user,
                 project=self.project_billable,
-                activity=factories.ActivityFactory.create(billable=True),
+                activity=factories.ActivityFactory(billable=True),
                 start_time=start - relativedelta(days=5),
                 end_time=end - relativedelta(days=5), status=Entry.APPROVED)
-        self.entry3 = factories.EntryFactory.create(user=self.user,
+        self.entry3 = factories.EntryFactory(user=self.user,
                 project=self.project_billable2,
-                activity=factories.ActivityFactory.create(billable=False),
+                activity=factories.ActivityFactory(billable=False),
                 start_time=start - relativedelta(days=10),
                 end_time=end - relativedelta(days=10), status=Entry.APPROVED)
-        self.entry4 = factories.EntryFactory.create(user=self.user,
+        self.entry4 = factories.EntryFactory(user=self.user,
                 project=self.project_non_billable,
                 start_time=start + relativedelta(hours=11),
                 end_time=end + relativedelta(hours=15), status=Entry.APPROVED)

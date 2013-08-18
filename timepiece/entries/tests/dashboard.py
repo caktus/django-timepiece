@@ -27,14 +27,14 @@ class DashboardViewTestCase(ViewTestMixin, TestCase):
         get_params = {'week_start': self.this_week.strftime('%Y-%m-%d')}
         self.url = reverse('dashboard') + '?' + urlencode(get_params)
 
-        self.user = factories.UserFactory.create()
+        self.user = factories.UserFactory()
         self.permission = Permission.objects.get(codename='can_clock_in')
         self.user.user_permissions.add(self.permission)
         self.login_user(self.user)
 
-        self.project = factories.ProjectFactory.create()
-        self.activity = factories.ActivityFactory.create()
-        self.location = factories.LocationFactory.create()
+        self.project = factories.ProjectFactory()
+        self.activity = factories.ActivityFactory()
+        self.location = factories.LocationFactory()
         self.status = Entry.UNVERIFIED
 
     def _create_entry(self, start_time, end_time=None, user=None):
@@ -52,7 +52,7 @@ class DashboardViewTestCase(ViewTestMixin, TestCase):
         }
         if end_time:
             data['end_time'] = end_time
-        return factories.EntryFactory.create(**data)
+        return factories.EntryFactory(**data)
 
     def _create_active_entry(self):
         start_time = datetime.datetime(2012, 11, 9, 0)
@@ -72,7 +72,7 @@ class DashboardViewTestCase(ViewTestMixin, TestCase):
         count = 5
         start_time = datetime.datetime(2012, 11, 6, 12)
         for i in range(count):
-            user = factories.UserFactory.create()
+            user = factories.UserFactory()
             self._create_entry(start_time, user=user)
         return count
 
@@ -152,11 +152,11 @@ class ProcessProgressTestCase(TestCase):
         self.this_week = utils.get_week_start(self.today)
         self.next_week = self.this_week + relativedelta(days=7)
 
-        self.user = factories.UserFactory.create()
+        self.user = factories.UserFactory()
 
-        self.project = factories.ProjectFactory.create()
-        self.activity = factories.ActivityFactory.create()
-        self.location = factories.LocationFactory.create()
+        self.project = factories.ProjectFactory()
+        self.activity = factories.ActivityFactory()
+        self.location = factories.LocationFactory()
         self.status = Entry.UNVERIFIED
 
     def _create_entry(self, start_time, end_time=None, project=None):
@@ -170,7 +170,7 @@ class ProcessProgressTestCase(TestCase):
         }
         if end_time:
             data['end_time'] = end_time
-        return factories.EntryFactory.create(**data)
+        return factories.EntryFactory(**data)
 
     def _create_hours(self, hours, project=None):
         data = {
@@ -179,7 +179,7 @@ class ProcessProgressTestCase(TestCase):
             'week_start': self.this_week,
             'hours': hours,
         }
-        return factories.ProjectHoursFactory.create(**data)
+        return factories.ProjectHoursFactory(**data)
 
     def _get_progress(self):
         entries = Entry.objects.all()
@@ -229,9 +229,9 @@ class ProcessProgressTestCase(TestCase):
     def test_ordering(self):
         """Progress list should be ordered by project name."""
         projects = [
-            factories.ProjectFactory.create(name='a'),
-            factories.ProjectFactory.create(name='b'),
-            factories.ProjectFactory.create(name='c'),
+            factories.ProjectFactory(name='a'),
+            factories.ProjectFactory(name='b'),
+            factories.ProjectFactory(name='c'),
         ]
         for i in range(3):
             start_time = datetime.datetime(2012, 11, 5 + i, 8, 0)

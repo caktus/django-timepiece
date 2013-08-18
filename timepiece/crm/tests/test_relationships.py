@@ -14,13 +14,13 @@ __all__ = ['AddProjectToUserTestCase', 'AddUserToProjectTestCase',
 class RelationshipTestBase(TestCase):
 
     def setUp(self):
-        self.user = factories.UserFactory.create()
+        self.user = factories.UserFactory()
         self.permissions = [Permission.objects.get(codename=n) for n in
                 self.perm_names]
         self.user.user_permissions.add(*self.permissions)
         self.login_user(self.user)
 
-        self.project = factories.ProjectFactory.create()
+        self.project = factories.ProjectFactory()
 
 
 class AddProjectToUserTestCase(ViewTestMixin, RelationshipTestBase):
@@ -64,7 +64,7 @@ class AddProjectToUserTestCase(ViewTestMixin, RelationshipTestBase):
 
     def test_add_again(self):
         """Adding project again should have no effect."""
-        rel = factories.ProjectRelationshipFactory.create(project=self.project,
+        rel = factories.ProjectRelationshipFactory(project=self.project,
                 user=self.user)
 
         response = self._post(data=self._data())
@@ -135,7 +135,7 @@ class AddUserToProjectTestCase(ViewTestMixin, RelationshipTestBase):
 
     def test_add_again(self):
         """Adding user again should have no effect."""
-        rel = factories.ProjectRelationshipFactory.create(project=self.project,
+        rel = factories.ProjectRelationshipFactory(project=self.project,
                 user=self.user)
 
         response = self._post(data=self._data())
@@ -178,10 +178,10 @@ class EditRelationshipTestCase(ViewTestMixin, RelationshipTestBase):
 
     def setUp(self):
         super(EditRelationshipTestCase, self).setUp()
-        self.relationship = factories.ProjectRelationshipFactory.create(
+        self.relationship = factories.ProjectRelationshipFactory(
                 project=self.project, user=self.user)
-        self.rel_type1 = factories.RelationshipTypeFactory.create()
-        self.rel_type2 = factories.RelationshipTypeFactory.create()
+        self.rel_type1 = factories.RelationshipTypeFactory()
+        self.rel_type2 = factories.RelationshipTypeFactory()
 
     def test_permission(self):
         """Permission is required to edit a project relationship."""
@@ -264,7 +264,7 @@ class DeleteRelationshipTestCase(ViewTestMixin, RelationshipTestBase):
 
     def setUp(self):
         super(DeleteRelationshipTestCase, self).setUp()
-        self.relationship = factories.ProjectRelationshipFactory.create(
+        self.relationship = factories.ProjectRelationshipFactory(
                 project=self.project, user=self.user)
 
     @property

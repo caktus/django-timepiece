@@ -50,6 +50,22 @@ class TestCreateBusinessView(ViewTestMixin, TestCase):
         """POST should create a new business."""
         response = self._post()
         self.assertEquals(Business.objects.count(), 1)
+        business = Business.objects.get()
+        self.assertRedirectsNoFollow(response, business.get_absolute_url())
+        self.assertEquals(business.name, self.post_data['name'])
+        self.assertEquals(business.email, self.post_data['email'])
+        self.assertEquals(business.description, self.post_data['description'])
+        self.assertEquals(business.notes, self.post_data['notes'])
+
+    def test_post_invalid(self):
+        """Invalid POST should not create a new business."""
+        self.post_data['name'] = ''
+        response = self._post()
+        self.assertEquals(Business.objects.count(), 0)
+        self.assertEquals(response.status_code, 200)
+        self.assertTrue('form' in response.context)
+        self.assertTrue(response.context['form'].is_bound)
+        self.assertFalse(response.context['form'].is_valid())
 
 
 class TestDeleteBusinessView(ViewTestMixin, TestCase):
@@ -61,7 +77,7 @@ class TestDeleteBusinessView(ViewTestMixin, TestCase):
         self.user = factories.UserFactory(permissions=self.permissions)
         self.login_user(self.user)
 
-        self.obj = factories.BusinessFactory.create()
+        self.obj = factories.BusinessFactory()
 
         self.url_kwargs = {'business_id': self.obj.pk}
 
@@ -91,3 +107,8 @@ class TestDeleteBusinessView(ViewTestMixin, TestCase):
         """POST should delete the business."""
         response = self._post()
         self.assertEquals(Business.objects.count(), 0)
+
+
+class TestEditBusinessView(ViewTestMixin, TestCase):
+    url_name = 'edit_business'
+    template_name = 'timepiece/business/create_edit.html'

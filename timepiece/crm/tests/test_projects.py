@@ -27,11 +27,11 @@ class TestCreateProjectView(ViewTestMixin, TestCase):
 
         self.post_data = {
             'name': 'Project',
-            'business_1': factories.BusinessFactory.create().pk,
-            'point_person': factories.SuperuserFactory.create().pk,
-            'activity_group': factories.ActivityGroupFactory.create().pk,
-            'type': factories.TypeAttributeFactory.create().pk,
-            'status': factories.StatusAttributeFactory.create().pk,
+            'business_1': factories.BusinessFactory().pk,
+            'point_person': factories.SuperuserFactory().pk,
+            'activity_group': factories.ActivityGroupFactory().pk,
+            'type': factories.TypeAttributeFactory().pk,
+            'status': factories.StatusAttributeFactory().pk,
             'description': 'a project...',
         }
 
@@ -73,7 +73,7 @@ class TestDeleteProjectView(ViewTestMixin, TestCase):
         self.user = factories.UserFactory(permissions=self.permissions)
         self.login_user(self.user)
 
-        self.obj = factories.ProjectFactory.create()
+        self.obj = factories.ProjectFactory()
 
         self.url_kwargs = {'project_id': self.obj.pk}
 
@@ -190,10 +190,10 @@ class TestProjectTimesheetView(ViewTestMixin, LogTimeMixin, TestCase):
         self.user = factories.UserFactory()
         self.user2 = factories.UserFactory()
         self.superuser = factories.SuperuserFactory()
-        self.p1 = factories.BillableProjectFactory.create(name='1')
-        self.p2 = factories.NonbillableProjectFactory.create(name='2')
-        self.p4 = factories.BillableProjectFactory.create(name='4')
-        self.p3 = factories.NonbillableProjectFactory.create(name='1')
+        self.p1 = factories.BillableProjectFactory(name='1')
+        self.p2 = factories.NonbillableProjectFactory(name='2')
+        self.p4 = factories.BillableProjectFactory(name='4')
+        self.p3 = factories.NonbillableProjectFactory(name='1')
         self.url_args = (self.p1.pk,)
         self.devl_activity = factories.ActivityFactory(billable=True)
         self.activity = factories.ActivityFactory()

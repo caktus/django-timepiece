@@ -19,12 +19,12 @@ class ContractListTestCase(ViewTestMixin, TestCase):
                 content_type__app_label=ct, codename=n)
         self.permissions = [get_perm(*perm) for perm in self.perm_names]
 
-        self.user = factories.UserFactory.create()
+        self.user = factories.UserFactory()
         self.user.user_permissions.add(*self.permissions)
         self.login_user(self.user)
 
-        self.project1 = factories.ProjectFactory.create()
-        self.project2 = factories.ProjectFactory.create()
+        self.project1 = factories.ProjectFactory()
+        self.project2 = factories.ProjectFactory()
         self.projects = [self.project1, self.project2]
 
     def test_permission(self):
@@ -92,12 +92,12 @@ class ContractViewTestCase(ViewTestMixin, TestCase):
                 content_type__app_label=ct, codename=n)
         self.permissions = [get_perm(*perm) for perm in self.perm_names]
 
-        self.user = factories.UserFactory.create()
+        self.user = factories.UserFactory()
         self.user.user_permissions.add(*self.permissions)
         self.login_user(self.user)
 
-        self.project1 = factories.ProjectFactory.create()
-        self.project2 = factories.ProjectFactory.create()
+        self.project1 = factories.ProjectFactory()
+        self.project2 = factories.ProjectFactory()
         self.projects = [self.project1, self.project2]
 
         self.contract = factories.ProjectContractFactory(projects=self.projects)
@@ -159,7 +159,7 @@ class ContractHourTestCase(TestCase):
         # project contract and get pending_hours(), it gives the sum
         # of the hours
         pc = factories.ProjectContractFactory(contract_hours=4)
-        ch = factories.ContractHourFactory.create(contract=pc, hours=27,
+        ch = factories.ContractHourFactory(contract=pc, hours=27,
                 status=ContractHour.PENDING_STATUS)
         self.assertEqual(4, pc.contracted_hours())
         self.assertEqual(27, pc.pending_hours())
@@ -169,7 +169,7 @@ class ContractHourTestCase(TestCase):
 
     def test_validation(self):
         with self.assertRaises(ValidationError):
-            ch = factories.ContractHourFactory.create(
+            ch = factories.ContractHourFactory(
                     status=ContractHour.PENDING_STATUS,
                     date_approved=datetime.date.today())
             ch.clean()
@@ -177,7 +177,7 @@ class ContractHourTestCase(TestCase):
     def test_default_date_approved(self):
         # If saved with status approved and no date approved,
         # it sets it to today
-        ch = factories.ContractHourFactory.create(
+        ch = factories.ContractHourFactory(
                 status=ContractHour.APPROVED_STATUS,
                 date_approved=None)
         ch = ContractHour.objects.get(pk=ch.pk)
@@ -188,18 +188,18 @@ class ContractHourEmailTestCase(TestCase):
 
     def test_save_pending_calls_send_email(self):
         with mock.patch('timepiece.contracts.models.ContractHour._send_mail') as send_mail:
-            factories.ContractHourFactory.create(status=ContractHour.PENDING_STATUS)
+            factories.ContractHourFactory(status=ContractHour.PENDING_STATUS)
         self.assertTrue(send_mail.called)
         (subject, ctx) = send_mail.call_args[0]
         self.assertTrue(subject.startswith("New"))
 
     def test_save_approved_does_not_call_send_email(self):
         with mock.patch('timepiece.contracts.models.ContractHour._send_mail') as send_mail:
-            factories.ContractHourFactory.create(status=ContractHour.APPROVED_STATUS)
+            factories.ContractHourFactory(status=ContractHour.APPROVED_STATUS)
         self.assertFalse(send_mail.called)
 
     def test_delete_pending_calls_send_email(self):
-        ch = factories.ContractHourFactory.create(status=ContractHour.PENDING_STATUS)
+        ch = factories.ContractHourFactory(status=ContractHour.PENDING_STATUS)
         with mock.patch('timepiece.contracts.models.ContractHour._send_mail') as send_mail:
             ch.delete()
         self.assertTrue(send_mail.called)
@@ -207,7 +207,7 @@ class ContractHourEmailTestCase(TestCase):
         self.assertTrue(subject.startswith("Deleted"))
 
     def test_change_pending_calls_send_email(self):
-        ch = factories.ContractHourFactory.create(status=ContractHour.PENDING_STATUS)
+        ch = factories.ContractHourFactory(status=ContractHour.PENDING_STATUS)
         with mock.patch('timepiece.contracts.models.ContractHour._send_mail') as send_mail:
             ch.save()
         self.assertTrue(send_mail.called)

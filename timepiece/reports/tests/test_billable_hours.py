@@ -24,7 +24,7 @@ class TestBillableHours(ViewTestMixin, LogTimeMixin, ReportsTestBase):
 
         self.url = reverse('report_billable_hours')
         self.perm = Permission.objects.filter(codename='view_entry_summary')
-        self.admin = factories.UserFactory.create()
+        self.admin = factories.UserFactory()
         self.admin.user_permissions = self.perm
 
     def get_entries_data(self):
