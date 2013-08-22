@@ -8,7 +8,7 @@ from decimal import Decimal
 from django.test import TestCase
 from django.core.urlresolvers import reverse, reverse_lazy
 from django.conf import settings
-from django.contrib.auth import login, SESSION_KEY
+from django.contrib.auth import login
 from django.contrib.auth.models import Permission
 from django.contrib.contenttypes.models import ContentType
 from django.http import HttpRequest
@@ -68,9 +68,8 @@ class ViewTestMixin(object):
         return self.client.post(path=url, data=data, *args, **kwargs)
 
     def _post_ajax(self, *args, **kwargs):
-        """Convience wrapper for making an AJAX post."""
-        if 'HTTP_X_REQUESTED_WITH' not in kwargs:
-            kwargs['HTTP_X_REQUESTED_WITH'] = 'XMLHttpRequest'
+        """Convenience wrapper for making an AJAX post."""
+        kwargs.setdefault('HTTP_X_REQUESTED_WITH', 'XMLHttpRequest')
         return self._post(*args, **kwargs)
 
     def _post_raw(self, *args, **kwargs):
@@ -79,11 +78,10 @@ class ViewTestMixin(object):
         dictionary. By using a different content type, it will take the data
         as is.
         """
-        if 'content_type' not in kwargs:
-            kwargs['content_type'] = 'application/x-www-form-urlencoded'
+        kwargs.setdefault('content_type', 'application/x-www-form-urlencoded')
         return self._post(*args, **kwargs)
 
-    def assertRedirectsNoFollow(self, response, url, use_params=True,
+    def assertRedirectsNoFollow(self, response, expected_url, use_params=True,
             status_code=302):
         """Checks response redirect without loading the destination page.
 
@@ -100,9 +98,9 @@ class ViewTestMixin(object):
         # Use force_unicode to force evaluation of anything created by
         # reverse_lazy.
         response_url = force_unicode(response['location'])
-        correct_url = force_unicode(url)
+        expected_url = force_unicode(expected_url)
         parsed1 = urlparse(response_url)
-        parsed2 = urlparse(correct_url)
+        parsed2 = urlparse(expected_url)
         self.assertEquals(parsed1.path, parsed2.path,
                 "Response did not redirect to the expected URL: Redirect "
                 "location was {0} (expected {1})".format(parsed1.path,
@@ -116,10 +114,11 @@ class ViewTestMixin(object):
                     "parameters expected: GET parameters were {0} (expected "
                     "{1})".format(parsed1.query or {}, parsed2.query or {}))
 
-    def assertRedirectsToLogin(self, response, login_url=None):
+    def assertRedirectsToLogin(self, response, login_url=None,
+            use_params=False, status_code=302):
         login_url = login_url or self.login_url
-        return self.assertRedirectsNoFollow(response, login_url,
-                use_params=False)
+        return self.assertRedirectsNoFollow(response, login_url, use_params,
+                status_code)
 
 
 class TimepieceDataTestCase(TestCase):

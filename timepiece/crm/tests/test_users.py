@@ -45,7 +45,7 @@ class TestDeleteUserView(ViewTestMixin, TimepieceDataTestCase):
         self.assertEquals(User.objects.count(), 2)
 
     def test_post(self):
-        """POST should delete the business."""
+        """POST should delete the user."""
         response = self._post()
         self.assertEquals(User.objects.count(), 1)
 

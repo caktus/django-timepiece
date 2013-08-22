@@ -6,9 +6,8 @@ from timepiece.tests.base import TimepieceDataTestCase, ViewTestMixin
 from timepiece.crm.models import ProjectRelationship
 
 
-__all__ = ['RelationshipTestBase', 'AddProjectToUserTestCase',
-        'AddUserToProjectTestCase', 'EditRelationshipTestCase',
-        'DeleteRelationshipTestCase']
+__all__ = ['AddProjectToUserTestCase', 'AddUserToProjectTestCase',
+        'EditRelationshipTestCase', 'DeleteRelationshipTestCase']
 
 class RelationshipTestBase(TimepieceDataTestCase):
 
