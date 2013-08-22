@@ -13,9 +13,8 @@ class TestDeleteUserView(ViewTestMixin, TimepieceDataTestCase):
     template_name = 'timepiece/delete_object.html'
 
     def setUp(self):
-        self.user = factories.UserFactory.create()
-        self.perm = Permission.objects.get(codename='delete_user')
-        self.user.user_permissions.add(self.perm)
+        self.permissions = [Permission.objects.get(codename='delete_user')]
+        self.user = factories.UserFactory(permissions=self.permissions)
         self.login_user(self.user)
 
         self.obj = factories.UserFactory.create()
@@ -55,17 +54,14 @@ class TestEditUserView(ViewTestMixin, TimepieceDataTestCase):
     template_name = 'timepiece/user/create_edit.html'
 
     def setUp(self):
-        self.user = factories.UserFactory.create()
-        self.perm = Permission.objects.get(codename='change_user')
-        self.user.user_permissions.add(self.perm)
+        self.permissions = [Permission.objects.get(codename='change_user')]
+        self.user = factories.UserFactory(permissions=self.permissions)
         self.login_user(self.user)
 
         self.obj = factories.UserFactory.create()
         self.url_kwargs = {'user_id': self.obj.pk}
 
-    @property
-    def post_data(self):
-        return {
+        self.post_data = {
             'username': self.obj.username,
             'first_name': self.obj.first_name,
             'last_name': self.obj.last_name,
@@ -76,42 +72,48 @@ class TestEditUserView(ViewTestMixin, TimepieceDataTestCase):
         }
 
     def test_get_no_permission(self):
+        """Permission is required to edit a user."""
         self.user.user_permissions.clear()
         response = self._get()
         self.assertRedirectsToLogin(response)
 
     def test_post_no_permission(self):
+        """Permission is required to edit a user."""
         self.user.user_permissions.clear()
         response = self._post()
         self.assertRedirectsToLogin(response)
 
     def test_get(self):
+        """GET should return the page with an unbound form."""
         response = self._get()
         self.assertEquals(response.status_code, 200)
         self.assertTemplateUsed(response, self.template_name)
+        self.assertFalse(response.context['form'].is_bound)
 
     def test_post_valid(self):
-        data = self.post_data
-        data.update({'first_name': 'hello'})
-        response = self._post(data=data)
+        """POST should edit the existing user."""
+        self.post_data['first_name'] = 'hello'
+        response = self._post()
         self.assertRedirectsNoFollow(response, self.obj.get_absolute_url())
         updated_user = User.objects.get(pk=self.obj.pk)
-        self.assertEquals(updated_user.first_name, data['first_name'])
+        self.assertEquals(updated_user.first_name, self.post_data['first_name'])
 
     def test_matching_passwords(self):
-        data = {'password_one': 'aaa', 'password_two': 'bbb'}
-        response = self._post(data=data)
+        """Matching passwords are required."""
+        self.post_data['password_one'] = 'aaa'
+        self.post_data['password_two'] = 'bbb'
+        response = self._post()
         self.assertEquals(response.status_code, 200)
         self.assertTemplateUsed(response, self.template_name)
         form = response.context['form']
+        self.assertTrue(form.is_bound)
         self.assertFalse(form.is_valid())
 
     def test_edit_groups(self):
-        groups = [factories.GroupFactory.create(),
-                factories.GroupFactory.create()]
-        data = self.post_data
-        data.update({'groups': [g.pk for g in groups]})
-        response = self._post(data=data)
+        """Should be able to update user's auth groups."""
+        groups = [factories.GroupFactory() for i in range(2)]
+        self.post_data['groups'] = [g.pk for g in groups]
+        response = self._post()
         self.assertRedirectsNoFollow(response, self.obj.get_absolute_url())
         updated_user = User.objects.get(pk=self.obj.pk)
         self.assertEquals(updated_user.groups.count(), 2)
@@ -134,14 +136,15 @@ class TestEditSettingsView(ViewTestMixin, TimepieceDataTestCase):
         }
 
     def test_get(self):
+        """GET should return the page with an unbound form."""
         response = self._get()
         self.assertEquals(response.status_code, 200)
         self.assertTemplateUsed(response, self.template_name)
+        self.assertFalse(response.context['form'].is_bound)
 
     def test_post_valid(self):
         response = self._post()
         self.assertRedirectsNoFollow(response, reverse('dashboard'))
-
         updated_user = User.objects.get(pk=self.user.pk)
         for k, v in self.post_data.iteritems():
             self.assertEquals(getattr(updated_user, k), v)

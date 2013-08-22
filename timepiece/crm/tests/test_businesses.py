@@ -14,14 +14,11 @@ class TestCreateBusinessView(ViewTestMixin, TimepieceDataTestCase):
     template_name = 'timepiece/business/create_edit.html'
 
     def setUp(self):
-        self.user = factories.UserFactory.create()
-        self.perm = Permission.objects.get(codename='add_business')
-        self.user.user_permissions.add(self.perm)
+        self.permissions = [Permission.objects.get(codename='add_business')]
+        self.user = factories.UserFactory(permissions=self.permissions)
         self.login_user(self.user)
 
-    @property
-    def post_data(self):
-        return {
+        self.post_data = {
             'name': 'Business',
             'email': 'email@email.com',
             'description': 'Described',
@@ -59,9 +56,8 @@ class TestDeleteBusinessView(ViewTestMixin, TimepieceDataTestCase):
     template_name = 'timepiece/delete_object.html'
 
     def setUp(self):
-        self.user = factories.UserFactory.create()
-        self.perm = Permission.objects.get(codename='delete_business')
-        self.user.user_permissions.add(self.perm)
+        self.permissions = [Permission.objects.get(codename='delete_business')]
+        self.user = factories.UserFactory(permissions=self.permissions)
         self.login_user(self.user)
 
         self.obj = factories.BusinessFactory.create()

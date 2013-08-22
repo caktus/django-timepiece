@@ -22,6 +22,11 @@ class UserFactory(factory.DjangoModelFactory):
     email = factory.Sequence(lambda n: 'user{0}@example.com'.format(n))
     password = factory.LazyAttribute(lambda n: make_password('password'))
 
+    @factory.post_generation
+    def permissions(self, create, extracted, **kwargs):
+        if create and extracted:
+            self.user_permissions.add(*extracted)
+
 
 class SuperuserFactory(UserFactory):
     is_superuser = True
