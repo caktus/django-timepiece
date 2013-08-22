@@ -20,14 +20,11 @@ class TestCreateProjectView(ViewTestMixin, TimepieceDataTestCase):
     template_name = 'timepiece/project/create_edit.html'
 
     def setUp(self):
-        self.user = factories.UserFactory.create()
-        self.perm = Permission.objects.get(codename='add_project')
-        self.user.user_permissions.add(self.perm)
+        self.permissions = [Permission.objects.get(codename='add_project')]
+        self.user = factories.UserFactory(permissions=self.permissions)
         self.login_user(self.user)
 
-    @property
-    def post_data(self):
-        return {
+        self.post_data = {
             'name': 'Project',
             'business_1': factories.BusinessFactory.create().pk,
             'point_person': factories.SuperuserFactory.create().pk,
@@ -71,9 +68,8 @@ class TestDeleteProjectView(ViewTestMixin, TimepieceDataTestCase):
     template_name = 'timepiece/delete_object.html'
 
     def setUp(self):
-        self.user = factories.UserFactory.create()
-        self.perm = Permission.objects.get(codename='delete_project')
-        self.user.user_permissions.add(self.perm)
+        self.permissions = [Permission.objects.get(codename='delete_project')]
+        self.user = factories.UserFactory(permissions=self.permissions)
         self.login_user(self.user)
 
         self.obj = factories.ProjectFactory.create()
@@ -110,182 +106,79 @@ class TestDeleteProjectView(ViewTestMixin, TimepieceDataTestCase):
 
 class TestProjectListView(ViewTestMixin, TimepieceDataTestCase):
     url_name = 'list_projects'
-    template_name = 'timepiece/projects/list.html'
+    template_name = 'timepiece/project/list.html'
 
     def setUp(self):
-        self.user = factories.UserFactory.create()
-        self.super_user = factories.SuperuserFactory.create()
-
-        self.statuses = []
-        self.statuses.append(factories.StatusAttributeFactory.create(label='1'))
-        self.statuses.append(factories.StatusAttributeFactory.create(label='2'))
-        self.statuses.append(factories.StatusAttributeFactory.create(label='3'))
-        self.statuses.append(factories.StatusAttributeFactory.create(label='4'))
-        self.statuses.append(factories.StatusAttributeFactory.create(label='5'))
-
-        self.projects = []
-        self.projects.append(factories.ProjectFactory.create(name='a',
-                description='a', status=self.statuses[0]))
-        self.projects.append(factories.ProjectFactory.create(name='b',
-                description='a', status=self.statuses[0]))
-        self.projects.append(factories.ProjectFactory.create(name='c',
-                description='b', status=self.statuses[1]))
-        self.projects.append(factories.ProjectFactory.create(name='c',
-                description='d', status=self.statuses[2]))
-        self.projects.append(factories.ProjectFactory.create(name='d',
-                description='e', status=self.statuses[3]))
-
-    def testUserPermission(self):
-        """Regular users should be redirected to the login page.
-
-        As written, this test could fail to detect a problem if
-            1) the user is allowed to see the page, and
-            2) there is only one project in the database.
-        In that situation, a redirect will be issued to the individual
-        project view page.
-
-        """
+        self.permissions = [Permission.objects.get(codename='view_project')]
+        self.user = factories.UserFactory(permissions=self.permissions)
         self.login_user(self.user)
+
+    def test_get_no_permission(self):
+        """Permission is required to view the project list."""
+        self.user.user_permissions.clear()
         response = self._get()
-        self.assertEquals(response.status_code, 302)
+        self.assertRedirectsToLogin(response)
 
-    def testAddPermissionToUser(self):
-        """Users with view_project permission should see the project list view.
+    def test_list_all(self):
+        """If no filters are provided, all projects should be listed."""
+        projects = [factories.ProjectFactory() for i in range(3)]
+        response = self._get()
+        self.assertEquals(response.status_code, 200)
+        self.assertTemplateUsed(response, self.template_name)
+        self.assertEquals(response.context['projects'].count(),
+                Project.objects.count())
 
-        """
-        perm = Permission.objects.filter(codename__exact='view_project')
-        self.user.user_permissions = perm
-        self.user.save()
-        self.login_user(self.user)
-        response = self._get(follow=True)
+    def test_list_none(self):
+        """Page should render even if there are no projects."""
+        Project.objects.all().delete()
+        response = self._get()
+        self.assertEquals(response.status_code, 200)
+        self.assertTemplateUsed(response, self.template_name)
+        self.assertEquals(response.context['projects'].count(), 0)
 
-        self.assertEqual(response.status_code, 200)
-        if (hasattr(response, 'redirect_chain')
-                and len(response.redirect_chain) > 0):
-            self.assertTemplateUsed(response, 'timepiece/project/view.html')
+    def test_list_one(self):
+        """If there is only one project, and no search query, page should render."""
+        project = factories.ProjectFactory()
+        response = self._get()
+        self.assertEquals(response.status_code, 200)
+        self.assertTemplateUsed(response, self.template_name)
+        self.assertEquals(response.context['projects'].count(), 1)
 
-    def testSuperUserPermission(self):
-        """Super users should be able to see the project list view."""
-        self.login_user(self.super_user)
-        response = self._get(follow=True)
+    def test_one_result(self):
+        """If there is only one search result, user should be redirected."""
+        project = factories.ProjectFactory()
+        response = self._get(get_kwargs={'status': project.status.pk})
+        self.assertRedirectsNoFollow(response, project.get_absolute_url())
 
-        self.assertEqual(response.status_code, 200)
-        if (hasattr(response, 'redirect_chain')
-                and len(response.redirect_chain) > 0):
-            self.assertTemplateUsed(response, 'timepiece/project/view.html')
+    def test_filter_name(self):
+        """User should be able to filter by search query and status."""
+        project = factories.ProjectFactory(name='hello')
+        other_project = factories.ProjectFactory()
+        response = self._get(get_kwargs={'search': 'ello'})
+        self.assertRedirectsNoFollow(response, project.get_absolute_url())
 
-    def testNoSearch(self):
-        """Tests when no query string or status is searched for.
+    def test_filter_description(self):
+        """User should be able to filter by search query and status."""
+        project = factories.ProjectFactory(description='hello')
+        other_project = factories.ProjectFactory()
+        response = self._get(get_kwargs={'search': 'ello'})
+        self.assertRedirectsNoFollow(response, project.get_absolute_url())
 
-        Response should contain full project list. If only one project, user
-        should be redirected to individual project page.
+    def test_filter_status(self):
+        """User should be able to filter by search query and status."""
+        project = factories.ProjectFactory()
+        other_project = factories.ProjectFactory()
+        response = self._get(get_kwargs={'status': project.status.pk})
+        self.assertRedirectsNoFollow(response, project.get_absolute_url())
 
-        """
-        self.login_user(self.super_user)
-        data = {}
-        response = self._get(data=data, follow=True)
-
-        self.assertEqual(response.status_code, 200)
-        correct_len = len(self.projects)
-        if correct_len == 1:
-            self.assertTrue(len(response.redirect_chain) > 0)
-            self.assertTemplateUsed(response, 'timepiece/project/view.html')
-        else:
-            self.assertEqual(len(response.context['projects']), correct_len)
-
-    def testQuerySearch(self):
-        """Tests when only a query string is searched for.
-
-        Project list should contain projects which contain the query string
-        in the title or description, regardless of status. If only one
-        project, user should be redirected to individual project page.
-
-        """
-        self.login_user(self.super_user)
-        query = 'b'
-        data = {'search': query}
-        response = self._get(data=data, follow=True)
-
-        self.assertEqual(response.status_code, 200)
-        correct_len = len([p for p in self.projects
-                if query in p.name.lower() or
-                query in p.description.lower()])
-        if correct_len == 1:
-            self.assertTrue(len(response.redirect_chain) > 0)
-            self.assertTemplateUsed(response, 'timepiece/project/view.html')
-        else:
-            self.assertEqual(len(response.context['projects']), correct_len)
-
-    def testStatusSearch(self):
-        """Tests when only a status is searched for.
-
-        Project list should contain all projects which have the specified
-        status. If only one project, user should be redirected to individual
-        project page.
-
-        """
-        self.login_user(self.super_user)
-        status = self.statuses[2].pk
-        data = {'status': status}
-        response = self._get(data=data, follow=True)
-
-        self.assertEqual(response.status_code, 200)
-        correct_len = len([p for p in self.projects
-                if p.status.pk == status])
-        if correct_len == 1:
-            self.assertTrue(len(response.redirect_chain) > 0)
-            self.assertTemplateUsed(response, 'timepiece/project/view.html')
-        else:
-            self.assertEqual(len(response.context['projects']), correct_len)
-
-    def testQueryAndStatusSearch(self):
-        """Tests when a query string and a status are searched for.
-
-        Project list should only contain projects with the query string in the
-        title or description AND with the specified status. If only one
-        project, user should be redirected to individual project page.
-
-        """
-        self.login_user(self.super_user)
-
-        status = self.statuses[0].pk
-        query = 'a'
-        data = {'search': query, 'status': status}
-        response = self._get(data=data, follow=True)
-
-        self.assertEqual(response.status_code, 200)
-        correct_len = len([p for p in self.projects
-                if p.status.pk == status and
-                (query in p.name.lower() or
-                query in p.description.lower())])
-        if correct_len == 1:
-            self.assertTrue(len(response.redirect_chain) > 0)
-            self.assertTemplateUsed(response, 'timepiece/project/view.html')
-        else:
-            self.assertEqual(len(response.context['projects']), correct_len)
-
-    def testCanFindAll(self):
-        """All projects should be findable by status.
-
-        Because the status field of the Project model is required/cannot be
-        null, the sum of project counts for each status should equal the
-        total project count.
-
-        """
-        self.login_user(self.super_user)
-
-        total = 0
-        for s in self.statuses:
-            status = s.pk
-            data = {'status': str(status)}
-            response = self._get(data=data, follow=True)
-            if (hasattr(response, 'redirect_chain')
-                    and len(response.redirect_chain) > 0):
-                total += 1
-            else:
-                total += len(response.context['projects'])
-        correct_total = len(self.projects)
-        self.assertEqual(total, correct_total)
+    def test_filter_query_and_status(self):
+        """User should be able to filter by search query and status."""
+        project = factories.ProjectFactory(name='hello')
+        other_project1 = factories.ProjectFactory(description='hello')
+        other_project2 = factories.ProjectFactory(status=project.status)
+        get_kwargs = {'status': project.status.pk, 'search': 'ello'}
+        response = self._get(get_kwargs=get_kwargs)
+        self.assertRedirectsNoFollow(response, project.get_absolute_url())
 
 
 class TestProjectTimesheetView(ViewTestMixin, TimepieceDataTestCase):
