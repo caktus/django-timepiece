@@ -28,7 +28,7 @@ class TestHourlyReport(ViewTestMixin, LogTimeMixin, ReportsTestBase):
     def test_generate_weeks(self):
         dates = [
             utils.add_timezone(datetime.datetime(2010, 12, 27)),
-            utils.add_timezone(datetime.datetime(2011, 1, 03)),
+            utils.add_timezone(datetime.datetime(2011, 1, 3)),
             utils.add_timezone(datetime.datetime(2011, 1, 10)),
             utils.add_timezone(datetime.datetime(2011, 1, 17)),
             utils.add_timezone(datetime.datetime(2011, 1, 24)),
