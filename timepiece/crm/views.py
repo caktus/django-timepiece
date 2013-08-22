@@ -5,7 +5,7 @@ import urllib
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required, permission_required
 from django.contrib.auth.models import User
-from django.core.urlresolvers import reverse, reverse_lazy, resolve
+from django.core.urlresolvers import reverse, reverse_lazy
 from django.db import transaction
 from django.db.models import Sum, Q
 from django.http import HttpResponseRedirect, HttpResponseForbidden, Http404
@@ -14,7 +14,7 @@ from django.utils.decorators import method_decorator
 from django.views.decorators.csrf import csrf_exempt
 from django.views.decorators.http import require_POST
 from django.views.generic import (CreateView, DeleteView, DetailView,
-        TemplateView, UpdateView, View)
+        UpdateView)
 
 from timepiece import utils
 from timepiece.forms import YearMonthForm, UserYearMonthForm, SearchForm
@@ -23,8 +23,8 @@ from timepiece.utils.csv import CSVViewMixin
 from timepiece.utils.mixins import (CommitOnSuccessMixin, CsrfExemptMixin,
         PermissionsRequiredMixin)
 
-from timepiece.crm.forms import (CreateEditBusinessForm, ProjectForm,
-        UserProfileForm, ProjectRelationshipForm, SelectProjectForm,
+from timepiece.crm.forms import (CreateEditBusinessForm, CreateEditProjectForm,
+        EditUserProfileForm, EditProjectRelationshipForm, SelectProjectForm,
         EditUserForm, CreateUserForm, SelectUserForm, UserForm,
         ProjectSearchForm, QuickSearchForm)
 from timepiece.crm.models import Business, Project, ProjectRelationship,\
@@ -344,7 +344,7 @@ class ViewBusiness(PermissionsRequiredMixin, DetailView):
     model = Business
     pk_url_kwarg = 'business_id'
     template_name = 'timepiece/business/view.html'
-    permissions = ['crm.view_business']
+    permissions = ('crm.view_business',)
 
 
 class CreateBusiness(PermissionsRequiredMixin, CreateView):
@@ -357,7 +357,7 @@ class CreateBusiness(PermissionsRequiredMixin, CreateView):
 class DeleteBusiness(PermissionsRequiredMixin, DeleteView):
     model = Business
     success_url = reverse_lazy('list_businesses')
-    permissions = ('crm.add_business',)
+    permissions = ('crm.delete_business',)
     pk_url_kwarg = 'business_id'
     template_name = 'timepiece/delete_object.html'
 
@@ -395,7 +395,7 @@ class ViewUser(PermissionsRequiredMixin, CommitOnSuccessMixin, DetailView):
     model = User
     pk_url_kwarg = 'user_id'
     template_name = 'timepiece/user/view.html'
-    permissions = ['auth.view_user']
+    permissions = ('auth.view_user',)
 
     def get_context_data(self, **kwargs):
         context = super(ViewUser, self).get_context_data(**kwargs)
@@ -415,7 +415,7 @@ class CreateUser(PermissionsRequiredMixin, CreateView):
 class DeleteUser(PermissionsRequiredMixin, DeleteView):
     model = User
     success_url = reverse_lazy('list_users')
-    permissions = ('auth.add_user', 'auth.change_user',)
+    permissions = ('auth.delete_user',)
     pk_url_kwarg = 'user_id'
     template_name = 'timepiece/delete_object.html'
 
@@ -454,7 +454,7 @@ class ViewProject(PermissionsRequiredMixin, CommitOnSuccessMixin, DetailView):
     model = Project
     pk_url_kwarg = 'project_id'
     template_name = 'timepiece/project/view.html'
-    permissions = ['crm.view_project']
+    permissions = ('crm.view_project',)
 
     def get_context_data(self, **kwargs):
         context = super(ViewProject, self).get_context_data(**kwargs)
@@ -466,23 +466,23 @@ class ViewProject(PermissionsRequiredMixin, CommitOnSuccessMixin, DetailView):
 
 class CreateProject(PermissionsRequiredMixin, CreateView):
     model = Project
-    form_class = ProjectForm
-    permissions = ('crm.add_project', 'crm.change_project')
+    form_class = CreateEditProjectForm
+    permissions = ('crm.add_project',)
     template_name = 'timepiece/project/create_edit.html'
 
 
 class DeleteProject(PermissionsRequiredMixin, DeleteView):
     model = Project
     success_url = reverse_lazy('list_projects')
-    permissions = ('crm.add_project', 'crm.change_project',)
+    permissions = ('crm.delete_project',)
     pk_url_kwarg = 'project_id'
     template_name = 'timepiece/delete_object.html'
 
 
 class EditProject(PermissionsRequiredMixin, UpdateView):
     model = Project
-    form_class = ProjectForm
-    permissions = ('crm.add_project', 'crm.change_project')
+    form_class = CreateEditProjectForm
+    permissions = ('crm.change_project',)
     template_name = 'timepiece/project/create_edit.html'
     pk_url_kwarg = 'project_id'
 
@@ -544,7 +544,7 @@ class EditRelationship(PermissionsRequiredMixin, CommitOnSuccessMixin,
     model = ProjectRelationship
     permissions = ('crm.change_projectrelationship',)
     template_name = 'timepiece/relationship/edit.html'
-    form_class = ProjectRelationshipForm
+    form_class = EditProjectRelationshipForm
 
 
 class DeleteRelationship(PermissionsRequiredMixin, CsrfExemptMixin,
@@ -560,22 +560,16 @@ def edit_settings(request):
     profile, created = UserProfile.objects.get_or_create(user=user)
     if request.method == 'POST':
         user_form = UserForm(request.POST, instance=user)
-        profile_form = UserProfileForm(
+        profile_form = EditUserProfileForm(
                 request.POST, instance=profile)
         if user_form.is_valid() and profile_form.is_valid():
             user_form.save()
             profile_form.save()
             messages.info(request, 'Your settings have been updated.')
-            next_url = request.REQUEST.get('next', None)
-            if next_url:
-                try:
-                    resolve(next_url)
-                except Http404:
-                    next_url = None
-            next_url = next_url or reverse('dashboard')
+            next_url = request.REQUEST.get('next', None) or reverse('dashboard')
             return HttpResponseRedirect(next_url)
     else:
-        profile_form = UserProfileForm(instance=profile)
+        profile_form = EditUserProfileForm(instance=profile)
         user_form = UserForm(instance=user)
     return render(request, 'timepiece/user/settings.html', {
         'profile_form': profile_form,

@@ -20,62 +20,27 @@ class CreateEditBusinessForm(forms.ModelForm):
         fields = ('name', 'short_name', 'email', 'description', 'notes',)
 
 
-class ProjectForm(forms.ModelForm):
-    class Meta:
-        model = Project
-        fields = (
-            'name',
-            'business',
-            'tracker_url',
-            'point_person',
-            'type',
-            'status',
-            'activity_group',
-            'description',
-        )
-
-    business = selectable.AutoCompleteSelectField(
-        BusinessLookup,
-        label='Business',
-        required=True
-    )
+class CreateEditProjectForm(forms.ModelForm):
+    business = selectable.AutoCompleteSelectField(BusinessLookup)
     business.widget.attrs['placeholder'] = 'Search'
 
-    def __init__(self, *args, **kwargs):
-        super(ProjectForm, self).__init__(*args, **kwargs)
-
-    def save(self):
-        instance = super(ProjectForm, self).save(commit=False)
-        instance.save()
-        return instance
-
-
-class ProjectRelationshipForm(forms.ModelForm):
     class Meta:
-        model = ProjectRelationship
-        fields = ('types',)
-
-    def __init__(self, *args, **kwargs):
-        super(ProjectRelationshipForm, self).__init__(*args, **kwargs)
-        self.fields['types'].widget = forms.CheckboxSelectMultiple(
-            choices=self.fields['types'].choices
-        )
-        self.fields['types'].help_text = ''
+        model = Project
+        fields = ('name', 'business', 'tracker_url', 'point_person', 'type',
+                'status', 'activity_group', 'description')
 
 
-class UserProfileForm(forms.ModelForm):
+class CreateUserForm(UserCreationForm):
 
     class Meta:
-        model = UserProfile
-        exclude = ('user', 'hours_per_week')
+        model = User
+        fields = ('username', 'first_name', 'last_name', 'email', 'is_active',
+                'is_staff', 'groups')
 
-
-class SelectProjectForm(forms.Form):
-    project = selectable.AutoCompleteSelectField(ProjectLookup, label='')
-    project.widget.attrs['placeholder'] = 'Add Project'
-
-    def save(self):
-        return self.cleaned_data['project']
+    def __init__(self, *args, **kwargs):
+        super(CreateUserForm, self).__init__(*args, **kwargs)
+        self.fields['groups'].widget = forms.CheckboxSelectMultiple()
+        self.fields['groups'].help_text = None
 
 
 class EditUserForm(UserChangeForm):
@@ -84,6 +49,11 @@ class EditUserForm(UserChangeForm):
     password_two = forms.CharField(required=False, max_length=36,
         label=_(u'Repeat Password'),
         widget=forms.PasswordInput(render_value=False))
+
+    class Meta:
+        model = User
+        fields = ('username', 'first_name', 'last_name', 'email', 'is_active',
+                'is_staff', 'groups')
 
     def __init__(self, *args, **kwargs):
         super(EditUserForm, self).__init__(*args, **kwargs)
@@ -95,9 +65,6 @@ class EditUserForm(UserChangeForm):
         if 'password' in self.fields:
             del(self.fields['password'])
 
-    def clean_password(self):
-        return self.cleaned_data.get('password_one', None)
-
     def clean(self):
         super(EditUserForm, self).clean()
         password_one = self.cleaned_data.get('password_one', None)
@@ -105,6 +72,9 @@ class EditUserForm(UserChangeForm):
         if password_one and password_one != password_two:
             raise forms.ValidationError(_('Passwords Must Match.'))
         return self.cleaned_data
+
+    def clean_password(self):
+        return self.cleaned_data.get('password_one', None)
 
     def save(self, *args, **kwargs):
         commit = kwargs.get('commit', True)
@@ -118,24 +88,32 @@ class EditUserForm(UserChangeForm):
             self.save_m2m()
         return instance
 
+
+class EditProjectRelationshipForm(forms.ModelForm):
+
     class Meta:
-        model = User
-        fields = ('username', 'first_name', 'last_name', 'email', 'is_active',
-                'is_staff', 'groups')
-
-
-class CreateUserForm(UserCreationForm):
+        model = ProjectRelationship
+        fields = ('types',)
 
     def __init__(self, *args, **kwargs):
-        super(CreateUserForm, self).__init__(*args, **kwargs)
+        super(EditProjectRelationshipForm, self).__init__(*args, **kwargs)
+        self.fields['types'].widget = forms.CheckboxSelectMultiple(
+                choices=self.fields['types'].choices)
 
-        self.fields['groups'].widget = forms.CheckboxSelectMultiple()
-        self.fields['groups'].help_text = None
+
+class EditUserProfileForm(forms.ModelForm):
 
     class Meta:
-        model = User
-        fields = ('username', 'first_name', 'last_name', 'email', 'is_active',
-                'is_staff', 'groups')
+        model = UserProfile
+        exclude = ('user', 'hours_per_week')
+
+
+class SelectProjectForm(forms.Form):
+    project = selectable.AutoCompleteSelectField(ProjectLookup, label='')
+    project.widget.attrs['placeholder'] = 'Add Project'
+
+    def save(self):
+        return self.cleaned_data['project']
 
 
 class SelectUserForm(forms.Form):
@@ -175,11 +153,8 @@ class ProjectSearchForm(SearchForm):
 
 
 class QuickSearchForm(forms.Form):
-    quick_search = selectable.AutoCompleteSelectField(
-        QuickLookup,
-        label='Quick Search',
-        required=False
-    )
+    quick_search = selectable.AutoCompleteSelectField(QuickLookup,
+            required=False)
     quick_search.widget.attrs['placeholder'] = 'Search'
 
     def clean_quick_search(self):
@@ -209,6 +184,3 @@ class QuickSearchForm(forms.Form):
             return reverse('view_project', args=(pk,))
 
         raise forms.ValidationError('Must be a user, project, or business')
-
-
-
