@@ -22,16 +22,16 @@ class TestCreateProjectView(ViewTestMixin, TestCase):
 
     def setUp(self):
         self.permissions = [Permission.objects.get(codename='add_project')]
-        self.user = factories.UserFactory(permissions=self.permissions)
+        self.user = factories.User(permissions=self.permissions)
         self.login_user(self.user)
 
         self.post_data = {
             'name': 'Project',
-            'business_1': factories.BusinessFactory().pk,
-            'point_person': factories.SuperuserFactory().pk,
-            'activity_group': factories.ActivityGroupFactory().pk,
-            'type': factories.TypeAttributeFactory().pk,
-            'status': factories.StatusAttributeFactory().pk,
+            'business_1': factories.Business().pk,
+            'point_person': factories.Superuser().pk,
+            'activity_group': factories.ActivityGroup().pk,
+            'type': factories.TypeAttribute().pk,
+            'status': factories.StatusAttribute().pk,
             'description': 'a project...',
         }
 
@@ -70,10 +70,10 @@ class TestDeleteProjectView(ViewTestMixin, TestCase):
 
     def setUp(self):
         self.permissions = [Permission.objects.get(codename='delete_project')]
-        self.user = factories.UserFactory(permissions=self.permissions)
+        self.user = factories.User(permissions=self.permissions)
         self.login_user(self.user)
 
-        self.obj = factories.ProjectFactory()
+        self.obj = factories.Project()
 
         self.url_kwargs = {'project_id': self.obj.pk}
 
@@ -111,7 +111,7 @@ class TestProjectListView(ViewTestMixin, TestCase):
 
     def setUp(self):
         self.permissions = [Permission.objects.get(codename='view_project')]
-        self.user = factories.UserFactory(permissions=self.permissions)
+        self.user = factories.User(permissions=self.permissions)
         self.login_user(self.user)
 
     def test_get_no_permission(self):
@@ -122,7 +122,7 @@ class TestProjectListView(ViewTestMixin, TestCase):
 
     def test_list_all(self):
         """If no filters are provided, all projects should be listed."""
-        projects = [factories.ProjectFactory() for i in range(3)]
+        projects = [factories.Project() for i in range(3)]
         response = self._get()
         self.assertEquals(response.status_code, 200)
         self.assertTemplateUsed(response, self.template_name)
@@ -139,7 +139,7 @@ class TestProjectListView(ViewTestMixin, TestCase):
 
     def test_list_one(self):
         """If there is only one project, and no search query, page should render."""
-        project = factories.ProjectFactory()
+        project = factories.Project()
         response = self._get()
         self.assertEquals(response.status_code, 200)
         self.assertTemplateUsed(response, self.template_name)
@@ -147,36 +147,36 @@ class TestProjectListView(ViewTestMixin, TestCase):
 
     def test_one_result(self):
         """If there is only one search result, user should be redirected."""
-        project = factories.ProjectFactory()
+        project = factories.Project()
         response = self._get(get_kwargs={'status': project.status.pk})
         self.assertRedirectsNoFollow(response, project.get_absolute_url())
 
     def test_filter_name(self):
         """User should be able to filter by search query and status."""
-        project = factories.ProjectFactory(name='hello')
-        other_project = factories.ProjectFactory()
+        project = factories.Project(name='hello')
+        other_project = factories.Project()
         response = self._get(get_kwargs={'search': 'ello'})
         self.assertRedirectsNoFollow(response, project.get_absolute_url())
 
     def test_filter_description(self):
         """User should be able to filter by search query and status."""
-        project = factories.ProjectFactory(description='hello')
-        other_project = factories.ProjectFactory()
+        project = factories.Project(description='hello')
+        other_project = factories.Project()
         response = self._get(get_kwargs={'search': 'ello'})
         self.assertRedirectsNoFollow(response, project.get_absolute_url())
 
     def test_filter_status(self):
         """User should be able to filter by search query and status."""
-        project = factories.ProjectFactory()
-        other_project = factories.ProjectFactory()
+        project = factories.Project()
+        other_project = factories.Project()
         response = self._get(get_kwargs={'status': project.status.pk})
         self.assertRedirectsNoFollow(response, project.get_absolute_url())
 
     def test_filter_query_and_status(self):
         """User should be able to filter by search query and status."""
-        project = factories.ProjectFactory(name='hello')
-        other_project1 = factories.ProjectFactory(description='hello')
-        other_project2 = factories.ProjectFactory(status=project.status)
+        project = factories.Project(name='hello')
+        other_project1 = factories.Project(description='hello')
+        other_project2 = factories.Project(status=project.status)
         get_kwargs = {'status': project.status.pk, 'search': 'ello'}
         response = self._get(get_kwargs=get_kwargs)
         self.assertRedirectsNoFollow(response, project.get_absolute_url())
@@ -187,16 +187,16 @@ class TestProjectTimesheetView(ViewTestMixin, LogTimeMixin, TestCase):
 
     def setUp(self):
         super(TestProjectTimesheetView, self).setUp()
-        self.user = factories.UserFactory()
-        self.user2 = factories.UserFactory()
-        self.superuser = factories.SuperuserFactory()
-        self.p1 = factories.BillableProjectFactory(name='1')
-        self.p2 = factories.NonbillableProjectFactory(name='2')
-        self.p4 = factories.BillableProjectFactory(name='4')
-        self.p3 = factories.NonbillableProjectFactory(name='1')
+        self.user = factories.User()
+        self.user2 = factories.User()
+        self.superuser = factories.Superuser()
+        self.p1 = factories.BillableProject(name='1')
+        self.p2 = factories.NonbillableProject(name='2')
+        self.p4 = factories.BillableProject(name='4')
+        self.p3 = factories.NonbillableProject(name='1')
         self.url_args = (self.p1.pk,)
-        self.devl_activity = factories.ActivityFactory(billable=True)
-        self.activity = factories.ActivityFactory()
+        self.devl_activity = factories.Activity(billable=True)
+        self.activity = factories.Activity()
 
     def make_entries(self):
         days = [

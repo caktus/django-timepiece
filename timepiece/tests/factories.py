@@ -14,7 +14,7 @@ from timepiece.entries import models as entries
 from timepiece import utils
 
 
-class UserFactory(factory.DjangoModelFactory):
+class User(factory.DjangoModelFactory):
     FACTORY_FOR = auth.User
 
     # FIXME: Some tests depend on first_name/last_name being unique.
@@ -30,18 +30,18 @@ class UserFactory(factory.DjangoModelFactory):
             self.user_permissions.add(*extracted)
 
 
-class SuperuserFactory(UserFactory):
+class Superuser(User):
     is_superuser = True
     is_staff = True
 
 
-class GroupFactory(factory.DjangoModelFactory):
+class Group(factory.DjangoModelFactory):
     FACTORY_FOR = auth.Group
 
     name = factory.Sequence(lambda n: 'group{0}'.format(n))
 
 
-class ProjectContractFactory(factory.DjangoModelFactory):
+class ProjectContract(factory.DjangoModelFactory):
     FACTORY_FOR = contracts.ProjectContract
 
     name = factory.Sequence(lambda n: 'contract{0}'.format(n))
@@ -55,7 +55,7 @@ class ProjectContractFactory(factory.DjangoModelFactory):
         if create:
             num_hours = extracted or random.randint(10, 400)
             for i in range(2):
-                ContractHourFactory(contract=self,
+                ContractHour(contract=self,
                         hours=Decimal(str(num_hours/2.0)))
 
     @factory.post_generation
@@ -64,137 +64,137 @@ class ProjectContractFactory(factory.DjangoModelFactory):
             self.projects.add(*extracted)
 
 
-class ContractHourFactory(factory.DjangoModelFactory):
+class ContractHour(factory.DjangoModelFactory):
     FACTORY_FOR = contracts.ContractHour
 
     date_requested = datetime.date.today()
     status = contracts.ContractHour.APPROVED_STATUS
-    contract = factory.SubFactory('timepiece.tests.factories.ProjectContractFactory')
+    contract = factory.SubFactory('timepiece.tests.factories.ProjectContract')
 
 
-class ContractAssignmentFactory(factory.DjangoModelFactory):
+class ContractAssignment(factory.DjangoModelFactory):
     FACTORY_FOR = contracts.ContractAssignment
 
-    user = factory.SubFactory('timepiece.tests.factories.UserFactory')
-    contract = factory.SubFactory('timepiece.tests.factories.ProjectContractFactory')
+    user = factory.SubFactory('timepiece.tests.factories.User')
+    contract = factory.SubFactory('timepiece.tests.factories.ProjectContract')
     start_date = datetime.date.today()
     end_date = datetime.date.today() + relativedelta(weeks=2)
 
 
-class HourGroupFactory(factory.DjangoModelFactory):
+class HourGroup(factory.DjangoModelFactory):
     FACTORY_FOR = contracts.HourGroup
 
     name = factory.Sequence(lambda n: 'hourgroup{0}'.format(n))
 
 
-class EntryGroupFactory(factory.DjangoModelFactory):
+class EntryGroup(factory.DjangoModelFactory):
     FACTORY_FOR = contracts.EntryGroup
 
-    user = factory.SubFactory('timepiece.tests.factories.UserFactory')
-    project = factory.SubFactory('timepiece.tests.factories.ProjectFactory')
+    user = factory.SubFactory('timepiece.tests.factories.User')
+    project = factory.SubFactory('timepiece.tests.factories.Project')
     end = FuzzyDate(datetime.date.today() - relativedelta(months=1))
 
-class TypeAttributeFactory(factory.DjangoModelFactory):
+class TypeAttribute(factory.DjangoModelFactory):
     FACTORY_FOR = crm.Attribute
 
     label = factory.Sequence(lambda n: 'type{0}'.format(n))
     type = crm.Attribute.PROJECT_TYPE
 
 
-class StatusAttributeFactory(factory.DjangoModelFactory):
+class StatusAttribute(factory.DjangoModelFactory):
     FACTORY_FOR = crm.Attribute
 
     label = factory.Sequence(lambda n: 'status{0}'.format(n))
     type = crm.Attribute.PROJECT_STATUS
 
 
-class BusinessFactory(factory.DjangoModelFactory):
+class Business(factory.DjangoModelFactory):
     FACTORY_FOR = crm.Business
 
     name = factory.Sequence(lambda n: 'business{0}'.format(n))
 
 
-class ProjectFactory(factory.DjangoModelFactory):
+class Project(factory.DjangoModelFactory):
     FACTORY_FOR = crm.Project
 
     name = factory.Sequence(lambda n: 'project{0}'.format(n))
-    business = factory.SubFactory('timepiece.tests.factories.BusinessFactory')
-    point_person = factory.SubFactory('timepiece.tests.factories.UserFactory')
-    type = factory.SubFactory('timepiece.tests.factories.TypeAttributeFactory')
-    status = factory.SubFactory('timepiece.tests.factories.StatusAttributeFactory')
+    business = factory.SubFactory('timepiece.tests.factories.Business')
+    point_person = factory.SubFactory('timepiece.tests.factories.User')
+    type = factory.SubFactory('timepiece.tests.factories.TypeAttribute')
+    status = factory.SubFactory('timepiece.tests.factories.StatusAttribute')
 
 
-class BillableProjectFactory(ProjectFactory):
-    type = factory.SubFactory('timepiece.tests.factories.TypeAttributeFactory', billable=True)
-    status = factory.SubFactory('timepiece.tests.factories.StatusAttributeFactory', billable=True)
+class BillableProject(Project):
+    type = factory.SubFactory('timepiece.tests.factories.TypeAttribute', billable=True)
+    status = factory.SubFactory('timepiece.tests.factories.StatusAttribute', billable=True)
 
 
-class NonbillableProjectFactory(ProjectFactory):
-    type = factory.SubFactory('timepiece.tests.factories.TypeAttributeFactory', billable=False)
-    status = factory.SubFactory('timepiece.tests.factories.StatusAttributeFactory', billable=False)
+class NonbillableProject(Project):
+    type = factory.SubFactory('timepiece.tests.factories.TypeAttribute', billable=False)
+    status = factory.SubFactory('timepiece.tests.factories.StatusAttribute', billable=False)
 
 
-class RelationshipTypeFactory(factory.DjangoModelFactory):
+class RelationshipType(factory.DjangoModelFactory):
     FACTORY_FOR = crm.RelationshipType
 
     name = factory.Sequence(lambda n: 'reltype{0}'.format(n))
 
 
-class ProjectRelationshipFactory(factory.DjangoModelFactory):
+class ProjectRelationship(factory.DjangoModelFactory):
     FACTORY_FOR = crm.ProjectRelationship
 
-    user = factory.SubFactory('timepiece.tests.factories.UserFactory')
-    project = factory.SubFactory('timepiece.tests.factories.ProjectFactory')
+    user = factory.SubFactory('timepiece.tests.factories.User')
+    project = factory.SubFactory('timepiece.tests.factories.Project')
 
 
-class UserProfileFactory(factory.DjangoModelFactory):
+class UserProfile(factory.DjangoModelFactory):
     FACTORY_FOR = crm.UserProfile
 
-    user = factory.SubFactory('timepiece.tests.factories.UserFactory')
+    user = factory.SubFactory('timepiece.tests.factories.User')
 
 
-class ActivityFactory(factory.DjangoModelFactory):
+class Activity(factory.DjangoModelFactory):
     FACTORY_FOR = entries.Activity
 
     code = factory.Sequence(lambda n: 'a{0}'.format(n))
     name = factory.Sequence(lambda n: 'activity{0}'.format(n))
 
 
-class BillableActivityFactory(ActivityFactory):
+class BillableActivityFactory(Activity):
     billable = True
 
 
-class NonbillableActivityFactory(ActivityFactory):
+class NonbillableActivityFactory(Activity):
     billable = False
 
 
-class ActivityGroupFactory(factory.DjangoModelFactory):
+class ActivityGroup(factory.DjangoModelFactory):
     FACTORY_FOR = entries.ActivityGroup
 
     name = factory.Sequence(lambda n: 'activitygroup{0}'.format(n))
 
 
-class LocationFactory(factory.DjangoModelFactory):
+class Location(factory.DjangoModelFactory):
     FACTORY_FOR = entries.Location
 
     name = factory.Sequence(lambda n: 'location{0}'.format(n))
     slug = factory.Sequence(lambda n: 'location{0}'.format(n))
 
 
-class EntryFactory(factory.DjangoModelFactory):
+class Entry(factory.DjangoModelFactory):
     FACTORY_FOR = entries.Entry
 
     status = entries.Entry.UNVERIFIED
-    user = factory.SubFactory('timepiece.tests.factories.UserFactory')
-    activity = factory.SubFactory('timepiece.tests.factories.ActivityFactory')
-    project = factory.SubFactory('timepiece.tests.factories.ProjectFactory')
-    location = factory.SubFactory('timepiece.tests.factories.LocationFactory')
+    user = factory.SubFactory('timepiece.tests.factories.User')
+    activity = factory.SubFactory('timepiece.tests.factories.Activity')
+    project = factory.SubFactory('timepiece.tests.factories.Project')
+    location = factory.SubFactory('timepiece.tests.factories.Location')
 
 
-class ProjectHoursFactory(factory.DjangoModelFactory):
+class ProjectHours(factory.DjangoModelFactory):
     FACTORY_FOR = entries.ProjectHours
 
     week_start = utils.get_week_start()
-    project = factory.SubFactory('timepiece.tests.factories.ProjectFactory')
-    user = factory.SubFactory('timepiece.tests.factories.UserFactory')
+    project = factory.SubFactory('timepiece.tests.factories.Project')
+    user = factory.SubFactory('timepiece.tests.factories.User')
     hours = FuzzyInteger(0, 20)

@@ -17,10 +17,10 @@ class CheckEntries(TestCase):
 
     def setUp(self):
         super(CheckEntries, self).setUp()
-        self.user = factories.UserFactory()
-        self.user2 = factories.UserFactory()
-        self.superuser = factories.SuperuserFactory()
-        self.project = factories.ProjectFactory(type__enable_timetracking=True,
+        self.user = factories.User()
+        self.user2 = factories.User()
+        self.superuser = factories.Superuser()
+        self.project = factories.Project(type__enable_timetracking=True,
                 status__enable_timetracking=True, point_person=self.user)
 
         self.default_data = {
@@ -77,7 +77,7 @@ class CheckEntries(TestCase):
             'start_time': start,
             'end_time': end,
         })
-        factories.EntryFactory(**data)
+        factories.Entry(**data)
 
     def make_entry_bulk(self, users, days, *args, **kwargs):
         """
@@ -94,7 +94,7 @@ class CheckEntries(TestCase):
                                   relativedelta(days=day, minutes=1),
                     'end_time': timezone.now() - relativedelta(days=day,)
                 })
-                factories.EntryFactory(**self.default_data)
+                factories.Entry(**self.default_data)
 
     #tests
     def testFindStart(self):

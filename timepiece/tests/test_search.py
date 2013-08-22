@@ -9,7 +9,7 @@ class QuickSearchTest(ViewTestMixin, TestCase):
 
     def setUp(self):
         super(QuickSearchTest, self).setUp()
-        self.superuser = factories.SuperuserFactory()
+        self.superuser = factories.Superuser()
 
     def testUserSearch(self):
         """

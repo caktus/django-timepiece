@@ -13,23 +13,23 @@ class ReportsTestBase(TestCase):
 
     def setUp(self):
         super(ReportsTestBase, self).setUp()
-        self.user = factories.UserFactory()
-        self.user2 = factories.UserFactory()
-        self.superuser = factories.SuperuserFactory()
-        self.devl_activity = factories.ActivityFactory(billable=True)
-        self.activity = factories.ActivityFactory()
-        self.sick = factories.ProjectFactory()
-        self.vacation = factories.ProjectFactory()
+        self.user = factories.User()
+        self.user2 = factories.User()
+        self.superuser = factories.Superuser()
+        self.devl_activity = factories.Activity(billable=True)
+        self.activity = factories.Activity()
+        self.sick = factories.Project()
+        self.vacation = factories.Project()
         settings.TIMEPIECE_PAID_LEAVE_PROJECTS = {
             'sick': self.sick.pk,
             'vacation': self.vacation.pk,
         }
         self.leave = [self.sick.pk, self.vacation.pk]
-        self.p1 = factories.BillableProjectFactory(name='1')
-        self.p2 = factories.NonbillableProjectFactory(name='2')
-        self.p4 = factories.BillableProjectFactory(name='4')
-        self.p3 = factories.NonbillableProjectFactory(name='1')
-        self.p5 = factories.BillableProjectFactory(name='3')
+        self.p1 = factories.BillableProject(name='1')
+        self.p2 = factories.NonbillableProject(name='2')
+        self.p4 = factories.BillableProject(name='4')
+        self.p3 = factories.NonbillableProject(name='1')
+        self.p5 = factories.BillableProject(name='3')
         self.default_projects = [self.p1, self.p2, self.p3, self.p4, self.p5]
         self.default_dates = [
             utils.add_timezone(datetime.datetime(2011, 1, 3)),

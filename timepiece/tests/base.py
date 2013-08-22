@@ -172,7 +172,7 @@ class LogTimeMixin(object):
         if project:
             data['project'] = project
         else:
-            data['project'] = factories.BillableProjectFactory()
+            data['project'] = factories.BillableProject()
         if activity:
             data['activity'] = activity
         else:
@@ -182,4 +182,4 @@ class LogTimeMixin(object):
                 data['activity'] = self.activity
         if status:
             data['status'] = status
-        return factories.EntryFactory(**data)
+        return factories.Entry(**data)

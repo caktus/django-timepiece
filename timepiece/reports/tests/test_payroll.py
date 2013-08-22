@@ -19,13 +19,13 @@ class PayrollTest(ViewTestMixin, LogTimeMixin, TestCase):
 
     def setUp(self):
         super(PayrollTest, self).setUp()
-        self.user = factories.UserFactory()
-        self.user2 = factories.UserFactory()
-        self.superuser = factories.SuperuserFactory()
-        self.devl_activity = factories.ActivityFactory(billable=True)
-        self.activity = factories.ActivityFactory()
-        self.sick = factories.ProjectFactory(name='sick')
-        self.vacation = factories.ProjectFactory(name='vacation')
+        self.user = factories.User()
+        self.user2 = factories.User()
+        self.superuser = factories.Superuser()
+        self.devl_activity = factories.Activity(billable=True)
+        self.activity = factories.Activity()
+        self.sick = factories.Project(name='sick')
+        self.vacation = factories.Project(name='vacation')
         settings.TIMEPIECE_PAID_LEAVE_PROJECTS = {
             'sick': self.sick.pk, 'vacation': self.vacation.pk
         }
@@ -145,8 +145,8 @@ class PayrollTest(ViewTestMixin, LogTimeMixin, TestCase):
         Helps set up environment for testing aspects of the monthly payroll
         summary.
         """
-        self.billable_project = factories.BillableProjectFactory()
-        self.nonbillable_project = factories.NonbillableProjectFactory()
+        self.billable_project = factories.BillableProject()
+        self.nonbillable_project = factories.NonbillableProject()
         self.all_logs(self.user, self.billable_project,
                 self.nonbillable_project)
         self.all_logs(self.user2, self.billable_project,

@@ -17,16 +17,16 @@ class TestProductivityReport(ViewTestMixin, TestCase):
 
     def setUp(self):
         super(TestProductivityReport, self).setUp()
-        self.user = factories.UserFactory()
+        self.user = factories.User()
         self.permission = Permission.objects.get(codename='view_entry_summary')
         self.user.user_permissions.add(self.permission)
         self.login_user(self.user)
 
-        self.project = factories.ProjectFactory()
+        self.project = factories.Project()
         self.users = []
-        self.users.append(factories.UserFactory(first_name='User', last_name='1'))
-        self.users.append(factories.UserFactory(first_name='User', last_name='2'))
-        self.users.append(factories.UserFactory(first_name='User', last_name='3'))
+        self.users.append(factories.User(first_name='User', last_name='1'))
+        self.users.append(factories.User(first_name='User', last_name='2'))
+        self.users.append(factories.User(first_name='User', last_name='3'))
         self.weeks = []
         self.weeks.append(datetime.datetime(2012, 9, 24))
         self.weeks.append(datetime.datetime(2012, 10, 1))
@@ -42,14 +42,14 @@ class TestProductivityReport(ViewTestMixin, TestCase):
                 end_time = start_time + relativedelta(hours=2)
                 data = {'user': user, 'start_time': start_time,
                         'end_time': end_time, 'project': self.project}
-                factories.EntryFactory(**data)
+                factories.Entry(**data)
 
     def _create_assignments(self):
         for week_start in (self.weeks[0], self.weeks[1]):
             for user in (self.users[0], self.users[1]):
                 data = {'user': user, 'week_start': week_start,
                         'project': self.project, 'hours': 2}
-                factories.ProjectHoursFactory(**data)
+                factories.ProjectHours(**data)
 
     def _unpack(self, response):
         form = response.context['form']

@@ -16,7 +16,7 @@ class TestCreateBusinessView(ViewTestMixin, TestCase):
 
     def setUp(self):
         self.permissions = [Permission.objects.get(codename='add_business')]
-        self.user = factories.UserFactory(permissions=self.permissions)
+        self.user = factories.User(permissions=self.permissions)
         self.login_user(self.user)
 
         self.post_data = {
@@ -74,10 +74,10 @@ class TestDeleteBusinessView(ViewTestMixin, TestCase):
 
     def setUp(self):
         self.permissions = [Permission.objects.get(codename='delete_business')]
-        self.user = factories.UserFactory(permissions=self.permissions)
+        self.user = factories.User(permissions=self.permissions)
         self.login_user(self.user)
 
-        self.obj = factories.BusinessFactory()
+        self.obj = factories.Business()
 
         self.url_kwargs = {'business_id': self.obj.pk}
 

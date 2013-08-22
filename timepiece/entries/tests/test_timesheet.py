@@ -27,10 +27,10 @@ class EditableTest(TestCase):
 
     def setUp(self):
         super(EditableTest, self).setUp()
-        self.user = factories.UserFactory()
-        self.project = factories.ProjectFactory(type__enable_timetracking=True,
+        self.user = factories.User()
+        self.project = factories.Project(type__enable_timetracking=True,
                 status__enable_timetracking=True)
-        self.entry = factories.EntryFactory(**{
+        self.entry = factories.Entry(**{
             'user': self.user,
             'project': self.project,
             'start_time': timezone.now() - relativedelta(days=6),
@@ -38,7 +38,7 @@ class EditableTest(TestCase):
             'seconds_paused': 0,
             'status': Entry.VERIFIED,
         })
-        self.entry2 = factories.EntryFactory(**{
+        self.entry2 = factories.Entry(**{
             'user': self.user,
             'project': self.project,
             'start_time': timezone.now() - relativedelta(days=2),
@@ -58,17 +58,17 @@ class MyLedgerTest(ViewTestMixin, LogTimeMixin, TestCase):
 
     def setUp(self):
         super(MyLedgerTest, self).setUp()
-        self.user = factories.UserFactory()
-        self.user2 = factories.UserFactory()
-        self.superuser = factories.SuperuserFactory()
-        self.devl_activity = factories.ActivityFactory(billable=True)
-        self.activity = factories.ActivityFactory()
+        self.user = factories.User()
+        self.user2 = factories.User()
+        self.superuser = factories.Superuser()
+        self.devl_activity = factories.Activity(billable=True)
+        self.activity = factories.Activity()
         self.url = reverse('view_user_timesheet', args=(self.user.pk,))
 
     def login_with_permissions(self):
         view_entry_summary = Permission.objects.get(
             codename='view_entry_summary')
-        user = factories.UserFactory()
+        user = factories.User()
         user.user_permissions.add(view_entry_summary)
         user.save()
         self.login_user(user)
@@ -120,10 +120,10 @@ class MyLedgerTest(ViewTestMixin, LogTimeMixin, TestCase):
             self.fail(e)
 
     def make_entries(self):
-        self.p1 = factories.BillableProjectFactory(name='1')
-        self.p2 = factories.NonbillableProjectFactory(name='2')
-        self.p4 = factories.BillableProjectFactory(name='4')
-        self.p3 = factories.NonbillableProjectFactory(name='1')
+        self.p1 = factories.BillableProject(name='1')
+        self.p2 = factories.NonbillableProject(name='2')
+        self.p4 = factories.BillableProject(name='4')
+        self.p3 = factories.NonbillableProject(name='1')
         days = [
             utils.add_timezone(datetime.datetime(2011, 1, 1)),
             utils.add_timezone(datetime.datetime(2011, 1, 28)),
@@ -172,9 +172,9 @@ class ClockInTest(ViewTestMixin, TestCase):
 
     def setUp(self):
         super(ClockInTest, self).setUp()
-        self.user = factories.UserFactory()
-        self.user2 = factories.UserFactory()
-        self.superuser = factories.SuperuserFactory()
+        self.user = factories.User()
+        self.user2 = factories.User()
+        self.superuser = factories.Superuser()
         permissions = Permission.objects.filter(
             content_type=ContentType.objects.get_for_model(Entry),
             codename__in=('can_clock_in', 'can_clock_out',
@@ -184,35 +184,35 @@ class ClockInTest(ViewTestMixin, TestCase):
         self.user2.user_permissions = permissions
         self.user.save()
         self.user2.save()
-        self.activity = factories.ActivityFactory(code='WRK',
+        self.activity = factories.Activity(code='WRK',
                 name='Work')
-        self.devl_activity = factories.ActivityFactory(code='devl',
+        self.devl_activity = factories.Activity(code='devl',
                 name='development', billable=True)
-        self.sick_activity = factories.ActivityFactory(code="sick",
+        self.sick_activity = factories.Activity(code="sick",
                 name="sick/personal", billable=False)
-        self.activity_group_all = factories.ActivityGroupFactory(
+        self.activity_group_all = factories.ActivityGroup(
                 name='All')
-        self.activity_group_work = factories.ActivityGroupFactory(
+        self.activity_group_work = factories.ActivityGroup(
                 name='Client work')
         activities = Activity.objects.all()
         for activity in activities:
             activity.activity_group.add(self.activity_group_all)
             if activity != self.sick_activity:
                 activity.activity_group.add(self.activity_group_work)
-        self.business = factories.BusinessFactory()
-        status = factories.StatusAttributeFactory(label='Current',
+        self.business = factories.Business()
+        status = factories.StatusAttribute(label='Current',
                 enable_timetracking=True)
-        type_ = factories.TypeAttributeFactory(label='Web Sites',
+        type_ = factories.TypeAttribute(label='Web Sites',
                 enable_timetracking=True)
-        self.project = factories.ProjectFactory(type=type_,
+        self.project = factories.Project(type=type_,
                 status=status, business=self.business, point_person=self.user,
                 activity_group=self.activity_group_work)
-        self.project2 = factories.ProjectFactory(type=type_,
+        self.project2 = factories.Project(type=type_,
                 status=status, business=self.business, point_person=self.user2,
                 activity_group=self.activity_group_all)
-        factories.ProjectRelationshipFactory(user=self.user,
+        factories.ProjectRelationship(user=self.user,
                 project=self.project)
-        self.location = factories.LocationFactory()
+        self.location = factories.Location()
 
         self.url = reverse('clock_in')
         self.now = timezone.now()
@@ -245,7 +245,7 @@ class ClockInTest(ViewTestMixin, TestCase):
         entry one second before the new entry.
         """
         self.login_user(self.user)
-        entry1 = factories.EntryFactory(**{
+        entry1 = factories.Entry(**{
             'user': self.user,
             'start_time': self.ten_min_ago,
         })
@@ -273,11 +273,11 @@ class ClockInTest(ViewTestMixin, TestCase):
         a 500 error should be raised so that we are notified of the situation.
         """
         self.login_user(self.user)
-        entry1 = factories.EntryFactory(**{
+        entry1 = factories.Entry(**{
             'user': self.user,
             'start_time': self.ten_min_ago,
         })
-        entry2 = factories.EntryFactory(**{
+        entry2 = factories.Entry(**{
             'user': self.user,
             'start_time': self.now - relativedelta(minutes=20),
         })
@@ -299,7 +299,7 @@ class ClockInTest(ViewTestMixin, TestCase):
     def testClockInCurrentStatus(self):
         """Verify the status of the current entry shows what is expected"""
         self.login_user(self.user)
-        entry1 = factories.EntryFactory(**{
+        entry1 = factories.Entry(**{
             'user': self.user,
             'start_time': self.ten_min_ago,
         })
@@ -317,7 +317,7 @@ class ClockInTest(ViewTestMixin, TestCase):
         The current entry will be clocked out.
         """
         self.login_user(self.user)
-        entry1 = factories.EntryFactory(**{
+        entry1 = factories.Entry(**{
             'user': self.user,
             'start_time': self.ten_min_ago,
         })
@@ -348,7 +348,7 @@ class ClockInTest(ViewTestMixin, TestCase):
             'start_time': self.ten_min_ago,
             'end_time': self.now,
         }
-        entry1 = factories.EntryFactory(**entry1_data)
+        entry1 = factories.Entry(**entry1_data)
         entry1_data.update({
             'st_str': self.ten_min_ago.strftime('%H:%M:%S'),
             'end_str': self.now.strftime('%H:%M:%S'),
@@ -377,7 +377,7 @@ class ClockInTest(ViewTestMixin, TestCase):
             'project': self.project,
             'activity': self.devl_activity,
         }
-        entry1 = factories.EntryFactory(**entry1_data)
+        entry1 = factories.Entry(**entry1_data)
         entry1_data.update({
             'st_str': self.now.strftime('%H:%M:%S')
         })
@@ -406,7 +406,7 @@ class ClockInTest(ViewTestMixin, TestCase):
             'activity': self.devl_activity,
             'start_time': self.ten_min_ago,
         }
-        entry1 = factories.EntryFactory(**entry1_data)
+        entry1 = factories.Entry(**entry1_data)
         entry1_data.update({
             'st_str': self.ten_min_ago.strftime('%H:%M:%S')
         })
@@ -430,7 +430,7 @@ class ClockInTest(ViewTestMixin, TestCase):
         invalidate
         """
         self.login_user(self.user)
-        entry1 = factories.EntryFactory(**{
+        entry1 = factories.Entry(**{
             'user': self.user,
             'start_time': self.now - relativedelta(hours=13),
         })
@@ -547,7 +547,7 @@ class ClockInTest(ViewTestMixin, TestCase):
         Comments left from editing the current active entry should appear
         if you are clocking in
         """
-        entry = factories.EntryFactory(**{
+        entry = factories.Entry(**{
             'user': self.user,
             'start_time': self.ten_min_ago
         })
@@ -565,9 +565,9 @@ class AutoActivityTest(ViewTestMixin, LogTimeMixin, TestCase):
 
     def setUp(self):
         super(AutoActivityTest, self).setUp()
-        self.user = factories.UserFactory()
-        self.user2 = factories.UserFactory()
-        self.superuser = factories.SuperuserFactory()
+        self.user = factories.User()
+        self.user2 = factories.User()
+        self.superuser = factories.Superuser()
         permissions = Permission.objects.filter(
             content_type=ContentType.objects.get_for_model(Entry),
             codename__in=('can_clock_in', 'can_clock_out',
@@ -577,15 +577,15 @@ class AutoActivityTest(ViewTestMixin, LogTimeMixin, TestCase):
         self.user2.user_permissions = permissions
         self.user.save()
         self.user2.save()
-        self.activity = factories.ActivityFactory(code='WRK',
+        self.activity = factories.Activity(code='WRK',
                 name='Work')
-        self.devl_activity = factories.ActivityFactory(code='devl',
+        self.devl_activity = factories.Activity(code='devl',
                 name='development', billable=True)
-        self.sick_activity = factories.ActivityFactory(code="sick",
+        self.sick_activity = factories.Activity(code="sick",
                 name="sick/personal", billable=False)
-        self.activity_group_all = factories.ActivityGroupFactory(
+        self.activity_group_all = factories.ActivityGroup(
                 name='All')
-        self.activity_group_work = factories.ActivityGroupFactory(
+        self.activity_group_work = factories.ActivityGroup(
                 name='Client work')
 
         activities = Activity.objects.all()
@@ -593,20 +593,20 @@ class AutoActivityTest(ViewTestMixin, LogTimeMixin, TestCase):
             activity.activity_group.add(self.activity_group_all)
             if activity != self.sick_activity:
                 activity.activity_group.add(self.activity_group_work)
-        self.business = factories.BusinessFactory()
-        status = factories.StatusAttributeFactory(label='Current',
+        self.business = factories.Business()
+        status = factories.StatusAttribute(label='Current',
                 enable_timetracking=True)
-        type_ = factories.TypeAttributeFactory(label='Web Sites',
+        type_ = factories.TypeAttribute(label='Web Sites',
                 enable_timetracking=True)
-        self.project = factories.ProjectFactory(type=type_,
+        self.project = factories.Project(type=type_,
                 status=status, business=self.business, point_person=self.user,
                 activity_group=self.activity_group_work)
-        self.project2 = factories.ProjectFactory(type=type_,
+        self.project2 = factories.Project(type=type_,
                 status=status, business=self.business, point_person=self.user2,
                 activity_group=self.activity_group_all)
-        factories.ProjectRelationshipFactory(user=self.user,
+        factories.ProjectRelationship(user=self.user,
                 project=self.project)
-        self.location = factories.LocationFactory()
+        self.location = factories.Location()
 
     def get_activity(self, project=None):
         if not project:
@@ -659,9 +659,9 @@ class ClockOutTest(ViewTestMixin, TestCase):
 
     def setUp(self):
         super(ClockOutTest, self).setUp()
-        self.user = factories.UserFactory()
-        self.user2 = factories.UserFactory()
-        self.superuser = factories.SuperuserFactory()
+        self.user = factories.User()
+        self.user2 = factories.User()
+        self.superuser = factories.Superuser()
         permissions = Permission.objects.filter(
             content_type=ContentType.objects.get_for_model(Entry),
             codename__in=('can_clock_in', 'can_clock_out',
@@ -671,15 +671,15 @@ class ClockOutTest(ViewTestMixin, TestCase):
         self.user2.user_permissions = permissions
         self.user.save()
         self.user2.save()
-        self.activity = factories.ActivityFactory(code='WRK',
+        self.activity = factories.Activity(code='WRK',
                 name='Work')
-        self.devl_activity = factories.ActivityFactory(code='devl',
+        self.devl_activity = factories.Activity(code='devl',
                 name='development', billable=True)
-        self.sick_activity = factories.ActivityFactory(code="sick",
+        self.sick_activity = factories.Activity(code="sick",
                 name="sick/personal", billable=False)
-        self.activity_group_all = factories.ActivityGroupFactory(
+        self.activity_group_all = factories.ActivityGroup(
                 name='All')
-        self.activity_group_work = factories.ActivityGroupFactory(
+        self.activity_group_work = factories.ActivityGroup(
                 name='Client work')
 
         activities = Activity.objects.all()
@@ -687,20 +687,20 @@ class ClockOutTest(ViewTestMixin, TestCase):
             activity.activity_group.add(self.activity_group_all)
             if activity != self.sick_activity:
                 activity.activity_group.add(self.activity_group_work)
-        self.business = factories.BusinessFactory()
-        status = factories.StatusAttributeFactory(label='Current',
+        self.business = factories.Business()
+        status = factories.StatusAttribute(label='Current',
                 enable_timetracking=True)
-        type_ = factories.TypeAttributeFactory(label='Web Sites',
+        type_ = factories.TypeAttribute(label='Web Sites',
             enable_timetracking=True)
-        self.project = factories.ProjectFactory(type=type_,
+        self.project = factories.Project(type=type_,
                 status=status, business=self.business, point_person=self.user,
                 activity_group=self.activity_group_work)
-        self.project2 = factories.ProjectFactory(type=type_,
+        self.project2 = factories.Project(type=type_,
                 status=status, business=self.business, point_person=self.user2,
                 activity_group=self.activity_group_all)
-        factories.ProjectRelationshipFactory(user=self.user,
+        factories.ProjectRelationship(user=self.user,
                 project=self.project)
-        self.location = factories.LocationFactory()
+        self.location = factories.Location()
 
         self.url = reverse('clock_out')
         self.login_user(self.user)
@@ -708,7 +708,7 @@ class ClockOutTest(ViewTestMixin, TestCase):
         # Create an active entry, so that clock out tests don't have to.
         self.default_end_time = timezone.now()
         back = timezone.now() - relativedelta(hours=5)
-        self.entry = factories.EntryFactory(**{
+        self.entry = factories.Entry(**{
             'user': self.user,
             'start_time': back,
             'project': self.project,
@@ -843,7 +843,7 @@ class ClockOutTest(ViewTestMixin, TestCase):
             'start_time': now,
             'end_time': self.default_end_time
         }
-        entry1 = factories.EntryFactory(**entry1_data)
+        entry1 = factories.Entry(**entry1_data)
         entry1_data.update({
             'st_str': entry1.start_time.strftime('%H:%M:%S'),
             'end_str': entry1.end_time.strftime('%H:%M:%S'),
@@ -852,7 +852,7 @@ class ClockOutTest(ViewTestMixin, TestCase):
         # Create a form with times that overlap with entry1
         bad_start = entry1.start_time - relativedelta(hours=1)
         bad_end = entry1.end_time + relativedelta(hours=1)
-        bad_entry = factories.EntryFactory(**{
+        bad_entry = factories.Entry(**{
             'user': self.user,
             'start_time': bad_start,
             'end_time': bad_end,
@@ -906,9 +906,9 @@ class CheckOverlap(ViewTestMixin, LogTimeMixin, TestCase):
     def setUp(self):
         super(CheckOverlap, self).setUp()
 
-        self.user = factories.UserFactory()
-        self.user2 = factories.UserFactory()
-        self.superuser = factories.SuperuserFactory()
+        self.user = factories.User()
+        self.user2 = factories.User()
+        self.superuser = factories.Superuser()
         permissions = Permission.objects.filter(
             content_type=ContentType.objects.get_for_model(Entry),
             codename__in=('can_clock_in', 'can_clock_out',
@@ -918,15 +918,15 @@ class CheckOverlap(ViewTestMixin, LogTimeMixin, TestCase):
         self.user2.user_permissions = permissions
         self.user.save()
         self.user2.save()
-        self.activity = factories.ActivityFactory(code='WRK',
+        self.activity = factories.Activity(code='WRK',
                 name='Work')
-        self.devl_activity = factories.ActivityFactory(code='devl',
+        self.devl_activity = factories.Activity(code='devl',
                 name='development', billable=True)
-        self.sick_activity = factories.ActivityFactory(code="sick",
+        self.sick_activity = factories.Activity(code="sick",
                 name="sick/personal", billable=False)
-        self.activity_group_all = factories.ActivityGroupFactory(
+        self.activity_group_all = factories.ActivityGroup(
                 name='All')
-        self.activity_group_work = factories.ActivityGroupFactory(
+        self.activity_group_work = factories.ActivityGroup(
                 name='Client work')
 
         activities = Activity.objects.all()
@@ -934,20 +934,20 @@ class CheckOverlap(ViewTestMixin, LogTimeMixin, TestCase):
             activity.activity_group.add(self.activity_group_all)
             if activity != self.sick_activity:
                 activity.activity_group.add(self.activity_group_work)
-        self.business = factories.BusinessFactory()
-        status = factories.StatusAttributeFactory(label='Current',
+        self.business = factories.Business()
+        status = factories.StatusAttribute(label='Current',
                 enable_timetracking=True)
-        type_ = factories.TypeAttributeFactory(label='Web Sites',
+        type_ = factories.TypeAttribute(label='Web Sites',
             enable_timetracking=True)
-        self.project = factories.ProjectFactory(type=type_,
+        self.project = factories.Project(type=type_,
                 status=status, business=self.business, point_person=self.user,
                 activity_group=self.activity_group_work)
-        self.project2 = factories.ProjectFactory(type=type_,
+        self.project2 = factories.Project(type=type_,
                 status=status, business=self.business, point_person=self.user2,
                 activity_group=self.activity_group_all)
-        factories.ProjectRelationshipFactory(user=self.user,
+        factories.ProjectRelationship(user=self.user,
                 project=self.project)
-        self.location = factories.LocationFactory()
+        self.location = factories.Location()
 
         self.login_user(self.user)
         self.now = timezone.now()
@@ -1019,9 +1019,9 @@ class CreateEditEntry(ViewTestMixin, TestCase):
     def setUp(self):
         super(CreateEditEntry, self).setUp()
 
-        self.user = factories.UserFactory()
-        self.user2 = factories.UserFactory()
-        self.superuser = factories.SuperuserFactory()
+        self.user = factories.User()
+        self.user2 = factories.User()
+        self.superuser = factories.Superuser()
         permissions = Permission.objects.filter(
             content_type=ContentType.objects.get_for_model(Entry),
             codename__in=('can_clock_in', 'can_clock_out',
@@ -1031,15 +1031,15 @@ class CreateEditEntry(ViewTestMixin, TestCase):
         self.user2.user_permissions = permissions
         self.user.save()
         self.user2.save()
-        self.activity = factories.ActivityFactory(code='WRK',
+        self.activity = factories.Activity(code='WRK',
                 name='Work')
-        self.devl_activity = factories.ActivityFactory(code='devl',
+        self.devl_activity = factories.Activity(code='devl',
                 name='development', billable=True)
-        self.sick_activity = factories.ActivityFactory(code="sick",
+        self.sick_activity = factories.Activity(code="sick",
                 name="sick/personal", billable=False)
-        self.activity_group_all = factories.ActivityGroupFactory(
+        self.activity_group_all = factories.ActivityGroup(
                 name='All')
-        self.activity_group_work = factories.ActivityGroupFactory(
+        self.activity_group_work = factories.ActivityGroup(
                 name='Client work')
 
         activities = Activity.objects.all()
@@ -1047,20 +1047,20 @@ class CreateEditEntry(ViewTestMixin, TestCase):
             activity.activity_group.add(self.activity_group_all)
             if activity != self.sick_activity:
                 activity.activity_group.add(self.activity_group_work)
-        self.business = factories.BusinessFactory()
-        status = factories.StatusAttributeFactory(label='Current',
+        self.business = factories.Business()
+        status = factories.StatusAttribute(label='Current',
                 enable_timetracking=True)
-        type_ = factories.TypeAttributeFactory(label='Web Sites',
+        type_ = factories.TypeAttribute(label='Web Sites',
             enable_timetracking=True)
-        self.project = factories.ProjectFactory(type=type_,
+        self.project = factories.Project(type=type_,
                 status=status, business=self.business, point_person=self.user,
                 activity_group=self.activity_group_work)
-        self.project2 = factories.ProjectFactory(type=type_,
+        self.project2 = factories.Project(type=type_,
                 status=status, business=self.business, point_person=self.user2,
                 activity_group=self.activity_group_all)
-        factories.ProjectRelationshipFactory(user=self.user,
+        factories.ProjectRelationship(user=self.user,
                 project=self.project)
-        self.location = factories.LocationFactory()
+        self.location = factories.Location()
 
         self.login_user(self.user)
         self.now = timezone.now()
@@ -1093,8 +1093,8 @@ class CreateEditEntry(ViewTestMixin, TestCase):
             'activity': self.devl_activity,
             'start_time': self.ten_min_ago,
         }
-        self.closed_entry = factories.EntryFactory(**self.closed_entry_data)
-        self.current_entry = factories.EntryFactory(**self.current_entry_data)
+        self.closed_entry = factories.Entry(**self.closed_entry_data)
+        self.current_entry = factories.Entry(**self.current_entry_data)
         self.closed_entry_data.update({
             'st_str': self.two_hour_ago.strftime('%H:%M:%S'),
             'end_str': self.one_hour_ago.strftime('%H:%M:%S'),
@@ -1282,7 +1282,7 @@ class CreateEditEntry(ViewTestMixin, TestCase):
         If your entries have been verified and then approved, you should
         not be able to add entries for that time period
         """
-        entry = factories.EntryFactory(**{
+        entry = factories.Entry(**{
             'user': self.user,
             'start_time': self.ten_min_ago,
             'end_time': self.ten_min_ago + relativedelta(minutes=1)
@@ -1297,7 +1297,7 @@ class CreateEditEntry(ViewTestMixin, TestCase):
         If your entries have been verified, approved, and invoiced, you
         should not be able to add entries for that time period
         """
-        entry = factories.EntryFactory(**{
+        entry = factories.Entry(**{
             'user': self.user,
             'start_time': self.ten_min_ago,
             'end_time': self.ten_min_ago + relativedelta(minutes=1)
@@ -1309,7 +1309,7 @@ class CreateEditEntry(ViewTestMixin, TestCase):
 
     def edit_entry_helper(self, status='approved'):
         """Helper function for editing approved entries"""
-        entry = factories.EntryFactory(**{
+        entry = factories.Entry(**{
             'user': self.user,
             'project': self.project,
             'start_time': self.now - relativedelta(hours=6),
@@ -1378,9 +1378,9 @@ class StatusTest(ViewTestMixin, TestCase):
     def setUp(self):
         super(StatusTest, self).setUp()
 
-        self.user = factories.UserFactory()
-        self.user2 = factories.UserFactory()
-        self.superuser = factories.SuperuserFactory()
+        self.user = factories.User()
+        self.user2 = factories.User()
+        self.superuser = factories.Superuser()
         permissions = Permission.objects.filter(
             content_type=ContentType.objects.get_for_model(Entry),
             codename__in=('can_clock_in', 'can_clock_out',
@@ -1390,15 +1390,15 @@ class StatusTest(ViewTestMixin, TestCase):
         self.user2.user_permissions = permissions
         self.user.save()
         self.user2.save()
-        self.activity = factories.ActivityFactory(code='WRK',
+        self.activity = factories.Activity(code='WRK',
                 name='Work')
-        self.devl_activity = factories.ActivityFactory(code='devl',
+        self.devl_activity = factories.Activity(code='devl',
                 name='development', billable=True)
-        self.sick_activity = factories.ActivityFactory(code="sick",
+        self.sick_activity = factories.Activity(code="sick",
                 name="sick/personal", billable=False)
-        self.activity_group_all = factories.ActivityGroupFactory(
+        self.activity_group_all = factories.ActivityGroup(
                 name='All')
-        self.activity_group_work = factories.ActivityGroupFactory(
+        self.activity_group_work = factories.ActivityGroup(
                 name='Client work')
 
         activities = Activity.objects.all()
@@ -1406,20 +1406,20 @@ class StatusTest(ViewTestMixin, TestCase):
             activity.activity_group.add(self.activity_group_all)
             if activity != self.sick_activity:
                 activity.activity_group.add(self.activity_group_work)
-        self.business = factories.BusinessFactory()
-        status = factories.StatusAttributeFactory(label='Current',
+        self.business = factories.Business()
+        status = factories.StatusAttribute(label='Current',
                 enable_timetracking=True)
-        type_ = factories.TypeAttributeFactory(label='Web Sites',
+        type_ = factories.TypeAttribute(label='Web Sites',
             enable_timetracking=True)
-        self.project = factories.ProjectFactory(type=type_,
+        self.project = factories.Project(type=type_,
                 status=status, business=self.business, point_person=self.user,
                 activity_group=self.activity_group_work)
-        self.project2 = factories.ProjectFactory(type=type_,
+        self.project2 = factories.Project(type=type_,
                 status=status, business=self.business, point_person=self.user2,
                 activity_group=self.activity_group_all)
-        factories.ProjectRelationshipFactory(user=self.user,
+        factories.ProjectRelationship(user=self.user,
                 project=self.project)
-        self.location = factories.LocationFactory()
+        self.location = factories.Location()
 
         self.login_user(self.user)
         self.now = timezone.now()
@@ -1448,19 +1448,19 @@ class StatusTest(ViewTestMixin, TestCase):
 
     def login_as_admin(self):
         "Helper to login as an admin user"
-        self.admin = factories.SuperuserFactory()
+        self.admin = factories.Superuser()
         self.login_user(self.admin)
 
     def login_with_permissions(self, *codenames):
         """Helper to login as a user with correct permissions"""
         perms = Permission.objects.filter(codename__in=codenames)
-        self.perm_user = factories.UserFactory()
+        self.perm_user = factories.User()
         self.perm_user.user_permissions.add(*perms)
         self.perm_user.save()
         self.login_user(self.perm_user)
 
     def test_verify_link(self):
-        entry = factories.EntryFactory(**{
+        entry = factories.Entry(**{
             'user': self.user,
             'start_time': self.now - relativedelta(hours=1),
             'end_time': self.now
@@ -1474,7 +1474,7 @@ class StatusTest(ViewTestMixin, TestCase):
 
     def test_approve_link_no_permission(self):
         """Permission is required to see approve timesheet link."""
-        entry = factories.EntryFactory(**{
+        entry = factories.Entry(**{
             'user': self.user,
             'start_time': self.now - relativedelta(hours=1),
             'end_time': self.now,
@@ -1485,7 +1485,7 @@ class StatusTest(ViewTestMixin, TestCase):
 
     def test_approve_link(self):
         self.login_with_permissions('view_entry_summary', 'approve_timesheet')
-        entry = factories.EntryFactory(**{
+        entry = factories.Entry(**{
             'user': self.user,
             'start_time': self.now - relativedelta(hours=1),
             'end_time': self.now,
@@ -1522,7 +1522,7 @@ class StatusTest(ViewTestMixin, TestCase):
 
     def test_verify_other_user(self):
         """A user should not be able to verify another's timesheet"""
-        entry = factories.EntryFactory(**{
+        entry = factories.Entry(**{
             'user': self.user2,
             'start_time': self.now - relativedelta(hours=1),
             'end_time': self.now,
@@ -1539,7 +1539,7 @@ class StatusTest(ViewTestMixin, TestCase):
 
     def test_approve_user(self):
         """A regular user should not be able to approve their timesheet"""
-        entry = factories.EntryFactory(**{
+        entry = factories.Entry(**{
             'user': self.user,
             'start_time': self.now - relativedelta(hours=1),
             'end_time': self.now
@@ -1558,7 +1558,7 @@ class StatusTest(ViewTestMixin, TestCase):
 
     def test_approve_other_user(self):
         """A regular user should not be able to approve another's timesheet"""
-        entry = factories.EntryFactory(**{
+        entry = factories.Entry(**{
             'user': self.user2,
             'start_time': self.now - relativedelta(hours=1),
             'end_time': self.now
@@ -1582,13 +1582,13 @@ class StatusTest(ViewTestMixin, TestCase):
         """
         self.login_as_admin()
 
-        entry1 = factories.EntryFactory(**{
+        entry1 = factories.Entry(**{
             'user': self.user,
             'start_time': self.now - relativedelta(hours=5),
             'end_time': self.now - relativedelta(hours=4),
             'status': Entry.UNVERIFIED
         })
-        entry2 = factories.EntryFactory(**{
+        entry2 = factories.Entry(**{
             'user': self.user,
             'start_time': self.now - relativedelta(hours=1),
             'status': Entry.UNVERIFIED
@@ -1617,7 +1617,7 @@ class StatusTest(ViewTestMixin, TestCase):
     def testVerifyButton(self):
         response = self.client.get(self.sheet_url)
         self.assertNotContains(response, self.verify_url())
-        entry = factories.EntryFactory(**{
+        entry = factories.Entry(**{
             'user': self.user,
             'start_time': timezone.now() - \
                 relativedelta(hours=1),
@@ -1634,7 +1634,7 @@ class StatusTest(ViewTestMixin, TestCase):
         self.login_as_admin()
         response = self.client.get(self.sheet_url)
         self.assertFalse(response.context['show_approve'])
-        entry = factories.EntryFactory(**{
+        entry = factories.Entry(**{
             'user': self.user,
             'start_time': timezone.now() - relativedelta(hours=1),
             'end_time':  timezone.now(),
@@ -1651,7 +1651,7 @@ class StatusTest(ViewTestMixin, TestCase):
         self.assertFalse(response.context['show_approve'])
 
     def testVerifyPage(self):
-        entry = factories.EntryFactory(**{
+        entry = factories.Entry(**{
             'user': self.user,
             'start_time': timezone.now() - \
                 relativedelta(hours=1),
@@ -1665,7 +1665,7 @@ class StatusTest(ViewTestMixin, TestCase):
 
     def testApprovePage(self):
         self.login_with_permissions('approve_timesheet', 'view_entry_summary')
-        entry = factories.EntryFactory(**{
+        entry = factories.Entry(**{
             'user': self.user,
             'start_time': timezone.now() - relativedelta(hours=1),
             'end_time':  timezone.now(),
@@ -1687,7 +1687,7 @@ class StatusTest(ViewTestMixin, TestCase):
         self.login_user(self.user)
 
         now = timezone.now()
-        entry = factories.EntryFactory(**{
+        entry = factories.Entry(**{
             'user': self.user,
             'start_time': now - relativedelta(hours=1),
             'end_time': now,
@@ -1706,7 +1706,7 @@ class StatusTest(ViewTestMixin, TestCase):
         self.login_user(self.user2)
 
         now = timezone.now()
-        entry = factories.EntryFactory(**{
+        entry = factories.Entry(**{
             'user': self.user,
             'start_time': now - relativedelta(hours=1),
             'end_time': now,
@@ -1719,7 +1719,7 @@ class StatusTest(ViewTestMixin, TestCase):
 
     def testRejectPage(self):
         self.login_as_admin()
-        entry = factories.EntryFactory(**{
+        entry = factories.Entry(**{
             'user': self.user,
             'start_time': timezone.now() - \
                 relativedelta(hours=1),
@@ -1743,7 +1743,7 @@ class StatusTest(ViewTestMixin, TestCase):
         self.assertEqual(entry.status, Entry.UNVERIFIED)
 
     def testNotAllowedToRejectTimesheet(self):
-        entry = factories.EntryFactory(**{
+        entry = factories.Entry(**{
             'user': self.user,
             'start_time': timezone.now() - \
                 relativedelta(hours=1),
@@ -1768,9 +1768,9 @@ class TestTotals(ViewTestMixin, LogTimeMixin, TestCase):
     def setUp(self):
         super(TestTotals, self).setUp()
 
-        self.user = factories.UserFactory()
-        self.user2 = factories.UserFactory()
-        self.superuser = factories.SuperuserFactory()
+        self.user = factories.User()
+        self.user2 = factories.User()
+        self.superuser = factories.Superuser()
         permissions = Permission.objects.filter(
             content_type=ContentType.objects.get_for_model(Entry),
             codename__in=('can_clock_in', 'can_clock_out',
@@ -1780,15 +1780,15 @@ class TestTotals(ViewTestMixin, LogTimeMixin, TestCase):
         self.user2.user_permissions = permissions
         self.user.save()
         self.user2.save()
-        self.activity = factories.ActivityFactory(code='WRK',
+        self.activity = factories.Activity(code='WRK',
                 name='Work')
-        self.devl_activity = factories.ActivityFactory(code='devl',
+        self.devl_activity = factories.Activity(code='devl',
                 name='development', billable=True)
-        self.sick_activity = factories.ActivityFactory(code="sick",
+        self.sick_activity = factories.Activity(code="sick",
                 name="sick/personal", billable=False)
-        self.activity_group_all = factories.ActivityGroupFactory(
+        self.activity_group_all = factories.ActivityGroup(
                 name='All')
-        self.activity_group_work = factories.ActivityGroupFactory(
+        self.activity_group_work = factories.ActivityGroup(
                 name='Client work')
 
         activities = Activity.objects.all()
@@ -1796,26 +1796,26 @@ class TestTotals(ViewTestMixin, LogTimeMixin, TestCase):
             activity.activity_group.add(self.activity_group_all)
             if activity != self.sick_activity:
                 activity.activity_group.add(self.activity_group_work)
-        self.business = factories.BusinessFactory()
-        status = factories.StatusAttributeFactory(label='Current',
+        self.business = factories.Business()
+        status = factories.StatusAttribute(label='Current',
                 enable_timetracking=True)
-        type_ = factories.TypeAttributeFactory(label='Web Sites',
+        type_ = factories.TypeAttribute(label='Web Sites',
             enable_timetracking=True)
-        self.project = factories.ProjectFactory(type=type_,
+        self.project = factories.Project(type=type_,
                 status=status, business=self.business, point_person=self.user,
                 activity_group=self.activity_group_work)
-        self.project2 = factories.ProjectFactory(type=type_,
+        self.project2 = factories.Project(type=type_,
                 status=status, business=self.business, point_person=self.user2,
                 activity_group=self.activity_group_all)
-        factories.ProjectRelationshipFactory(user=self.user,
+        factories.ProjectRelationship(user=self.user,
                 project=self.project)
-        self.location = factories.LocationFactory()
+        self.location = factories.Location()
 
-        self.p1 = factories.BillableProjectFactory(name='1')
-        self.p2 = factories.NonbillableProjectFactory(name='2')
-        self.p4 = factories.BillableProjectFactory(name='4')
+        self.p1 = factories.BillableProject(name='1')
+        self.p2 = factories.NonbillableProject(name='2')
+        self.p4 = factories.BillableProject(name='4')
         #For use with daily totals (Same project, non-billable activity)
-        self.p3 = factories.NonbillableProjectFactory(name='1')
+        self.p3 = factories.NonbillableProject(name='1')
 
     def testGroupedTotals(self):
         self.login_user(self.user)
@@ -1878,9 +1878,9 @@ class HourlySummaryTest(ViewTestMixin, TestCase):
     def setUp(self):
         super(HourlySummaryTest, self).setUp()
 
-        self.user = factories.UserFactory()
-        self.user2 = factories.UserFactory()
-        self.superuser = factories.SuperuserFactory()
+        self.user = factories.User()
+        self.user2 = factories.User()
+        self.superuser = factories.Superuser()
         permissions = Permission.objects.filter(
             content_type=ContentType.objects.get_for_model(Entry),
             codename__in=('can_clock_in', 'can_clock_out',
@@ -1890,15 +1890,15 @@ class HourlySummaryTest(ViewTestMixin, TestCase):
         self.user2.user_permissions = permissions
         self.user.save()
         self.user2.save()
-        self.activity = factories.ActivityFactory(code='WRK',
+        self.activity = factories.Activity(code='WRK',
                 name='Work')
-        self.devl_activity = factories.ActivityFactory(code='devl',
+        self.devl_activity = factories.Activity(code='devl',
                 name='development', billable=True)
-        self.sick_activity = factories.ActivityFactory(code="sick",
+        self.sick_activity = factories.Activity(code="sick",
                 name="sick/personal", billable=False)
-        self.activity_group_all = factories.ActivityGroupFactory(
+        self.activity_group_all = factories.ActivityGroup(
                 name='All')
-        self.activity_group_work = factories.ActivityGroupFactory(
+        self.activity_group_work = factories.ActivityGroup(
                 name='Client work')
 
         activities = Activity.objects.all()
@@ -1906,20 +1906,20 @@ class HourlySummaryTest(ViewTestMixin, TestCase):
             activity.activity_group.add(self.activity_group_all)
             if activity != self.sick_activity:
                 activity.activity_group.add(self.activity_group_work)
-        self.business = factories.BusinessFactory()
-        status = factories.StatusAttributeFactory(label='Current',
+        self.business = factories.Business()
+        status = factories.StatusAttribute(label='Current',
                 enable_timetracking=True)
-        type_ = factories.TypeAttributeFactory(label='Web Sites',
+        type_ = factories.TypeAttribute(label='Web Sites',
             enable_timetracking=True)
-        self.project = factories.ProjectFactory(type=type_,
+        self.project = factories.Project(type=type_,
                 status=status, business=self.business, point_person=self.user,
                 activity_group=self.activity_group_work)
-        self.project2 = factories.ProjectFactory(type=type_,
+        self.project2 = factories.Project(type=type_,
                 status=status, business=self.business, point_person=self.user2,
                 activity_group=self.activity_group_all)
-        factories.ProjectRelationshipFactory(user=self.user,
+        factories.ProjectRelationship(user=self.user,
                 project=self.project)
-        self.location = factories.LocationFactory()
+        self.location = factories.Location()
 
         self.now = timezone.now()
         self.month = self.now.replace(day=1)
@@ -1928,22 +1928,22 @@ class HourlySummaryTest(ViewTestMixin, TestCase):
 
     def create_month_entries(self):
         """Create four entries, one for each week of the month"""
-        factories.EntryFactory(**{
+        factories.Entry(**{
             'user': self.user,
             'start_time': self.month,
             'end_time': self.month + relativedelta(hours=1)
         })
-        factories.EntryFactory(**{
+        factories.Entry(**{
             'user': self.user,
             'start_time': self.month + relativedelta(weeks=1),
             'end_time': self.month + relativedelta(weeks=1, hours=1)
         })
-        factories.EntryFactory(**{
+        factories.Entry(**{
             'user': self.user,
             'start_time': self.month + relativedelta(weeks=2),
             'end_time': self.month + relativedelta(weeks=2, hours=1)
         })
-        factories.EntryFactory(**{
+        factories.Entry(**{
             'user': self.user,
             'start_time': self.month + relativedelta(weeks=3),
             'end_time': self.month + relativedelta(weeks=3, hours=1)
@@ -1967,7 +1967,7 @@ class HourlySummaryTest(ViewTestMixin, TestCase):
         using default data from create_month_entries()
         """
         self.create_month_entries()
-        old_entry = factories.EntryFactory(**{
+        old_entry = factories.Entry(**{
             'user': self.user,
             'start_time': self.month - relativedelta(days=1, hours=1),
             'end_time': self.month - relativedelta(days=1)
@@ -1992,17 +1992,17 @@ class HourlySummaryTest(ViewTestMixin, TestCase):
         march = utils.add_timezone(
             datetime.datetime(month=3, day=26, year=2012)
         )
-        factories.EntryFactory(**{
+        factories.Entry(**{
             'user': self.user,
             'start_time': april,
             'end_time': april + relativedelta(hours=1)
         })
-        factories.EntryFactory(**{
+        factories.Entry(**{
             'user': self.user,
             'start_time': april + relativedelta(weeks=1),
             'end_time': april + relativedelta(weeks=1, hours=1)
         })
-        factories.EntryFactory(**{
+        factories.Entry(**{
             'user': self.user,
             'start_time': march,
             'end_time': march + relativedelta(hours=1)
@@ -2027,9 +2027,9 @@ class MonthlyRejectTestCase(ViewTestMixin, TestCase):
     def setUp(self):
         super(MonthlyRejectTestCase, self).setUp()
 
-        self.user = factories.UserFactory()
-        self.user2 = factories.UserFactory()
-        self.superuser = factories.SuperuserFactory()
+        self.user = factories.User()
+        self.user2 = factories.User()
+        self.superuser = factories.Superuser()
         permissions = Permission.objects.filter(
             content_type=ContentType.objects.get_for_model(Entry),
             codename__in=('can_clock_in', 'can_clock_out',
@@ -2039,15 +2039,15 @@ class MonthlyRejectTestCase(ViewTestMixin, TestCase):
         self.user2.user_permissions = permissions
         self.user.save()
         self.user2.save()
-        self.activity = factories.ActivityFactory(code='WRK',
+        self.activity = factories.Activity(code='WRK',
                 name='Work')
-        self.devl_activity = factories.ActivityFactory(code='devl',
+        self.devl_activity = factories.Activity(code='devl',
                 name='development', billable=True)
-        self.sick_activity = factories.ActivityFactory(code="sick",
+        self.sick_activity = factories.Activity(code="sick",
                 name="sick/personal", billable=False)
-        self.activity_group_all = factories.ActivityGroupFactory(
+        self.activity_group_all = factories.ActivityGroup(
                 name='All')
-        self.activity_group_work = factories.ActivityGroupFactory(
+        self.activity_group_work = factories.ActivityGroup(
                 name='Client work')
 
         activities = Activity.objects.all()
@@ -2055,20 +2055,20 @@ class MonthlyRejectTestCase(ViewTestMixin, TestCase):
             activity.activity_group.add(self.activity_group_all)
             if activity != self.sick_activity:
                 activity.activity_group.add(self.activity_group_work)
-        self.business = factories.BusinessFactory()
-        status = factories.StatusAttributeFactory(label='Current',
+        self.business = factories.Business()
+        status = factories.StatusAttribute(label='Current',
                 enable_timetracking=True)
-        type_ = factories.TypeAttributeFactory(label='Web Sites',
+        type_ = factories.TypeAttribute(label='Web Sites',
             enable_timetracking=True)
-        self.project = factories.ProjectFactory(type=type_,
+        self.project = factories.Project(type=type_,
                 status=status, business=self.business, point_person=self.user,
                 activity_group=self.activity_group_work)
-        self.project2 = factories.ProjectFactory(type=type_,
+        self.project2 = factories.Project(type=type_,
                 status=status, business=self.business, point_person=self.user2,
                 activity_group=self.activity_group_all)
-        factories.ProjectRelationshipFactory(user=self.user,
+        factories.ProjectRelationship(user=self.user,
                 project=self.project)
-        self.location = factories.LocationFactory()
+        self.location = factories.Location()
 
         self.now = timezone.now()
         self.data = {
@@ -2080,13 +2080,13 @@ class MonthlyRejectTestCase(ViewTestMixin, TestCase):
 
     def create_entries(self, date, status):
         """Create entries using a date and with a given status"""
-        factories.EntryFactory(**{
+        factories.Entry(**{
             'user': self.user,
             'start_time': date,
             'end_time': date + relativedelta(hours=1),
             'status': status
         })
-        factories.EntryFactory(**{
+        factories.Entry(**{
             'user': self.user,
             'start_time': date + relativedelta(hours=2),
             'end_time': date + relativedelta(hours=3),
