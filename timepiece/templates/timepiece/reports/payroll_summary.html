@@ -21,14 +21,12 @@
 {% endblock report_nav %}
 
 {% block extrajs %}
-    <script>
-        // "Sticky" row highlighting on click for each summary table.
+    <script charset="utf-8" src="{{ STATIC_URL }}timepiece/js/highlight.js"></script>
+    <script type="text/javascript">
         $(function() {
-            $('#hourly-summary tbody, #weekly-summary tbody').delegate('tr', 'click', function(event) {
-                var self = $(this);  // <tr> element
-                self.parent().parent().find('td.hover, th.hover').removeClass('hover');
-                self.find('td, th').addClass('hover');
-            });
+            // Since the #hourly-summary thead has cells that go across
+            // multiple rows/columns, only highlight cells in the tbody.
+            hover_highlight('#hourly-summary tbody, #weekly-summary');
         });
     </script>
 {% endblock extrajs %}
