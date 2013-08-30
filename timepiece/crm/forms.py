@@ -6,7 +6,7 @@ from django.utils.translation import ugettext_lazy as _
 
 from selectable import forms as selectable
 
-from timepiece.forms import SearchForm
+from timepiece.utils.search import SearchForm
 from timepiece.crm.lookups import BusinessLookup, ProjectLookup, UserLookup,\
         QuickLookup
 from timepiece.crm.models import Attribute, Business, Project,\
@@ -145,11 +145,6 @@ class ProjectSearchForm(SearchForm):
         PROJ_STATUS_CHOICES.extend([(a.pk, a.label) for a
                 in Attribute.statuses.all()])
         self.fields['status'].choices = PROJ_STATUS_CHOICES
-
-    def save(self):
-        search = self.cleaned_data.get('search', '')
-        status = self.cleaned_data.get('status', '')
-        return (search, status)
 
 
 class QuickSearchForm(forms.Form):
