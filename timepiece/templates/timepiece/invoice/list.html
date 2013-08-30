@@ -22,7 +22,7 @@
     <div class="row-fluid">
         <div class="span12">
             <form class="form-inline" accept-charset="UTF-8" method="get" action="">
-                {{ search_form|as_bootstrap:"inline" }}
+                {{ form|as_bootstrap:"inline" }}
                 <button type="submit" class="btn">Search</button>
             </form>
         </div>
@@ -32,8 +32,8 @@
 
     <div class="row-fluid">
         <div class="span12">
-            {% if invoices %}
-                {% autopaginate invoices %}
+            {% if object_list %}
+                {% autopaginate object_list %}
                 {% paginate %}
                 <table class="table table-bordered table-striped table-condensed">
                     <thead>
@@ -50,7 +50,7 @@
                         </tr>
                     </thead>
                     <tbody>
-                        {% for invoice in invoices %}
+                        {% for invoice in object_list %}
                             <tr>
                                 <td><a href="{% url 'view_invoice' invoice.pk %}">{{ invoice.pk }}</a></td>
                                 <td>{{ invoice.number|default:'' }}</td>

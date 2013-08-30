@@ -17,6 +17,103 @@ from timepiece.crm.models import Attribute
 from timepiece.entries.models import Activity, Entry
 
 
+class TestListInvoicesView(ViewTestMixin, TestCase):
+    url_name = 'list_invoices'
+    template_name = 'timepiece/invoice/list.html'
+    factory = factories.EntryGroup
+    model = EntryGroup
+
+    def setUp(self):
+        super(TestListInvoicesView, self).setUp()
+        self.permissions = [Permission.objects.get(codename='add_entrygroup')]
+        self.user = factories.User(permissions=self.permissions)
+        self.login_user(self.user)
+
+    def test_get_no_permission(self):
+        """Permission is required for this view."""
+        self.user.user_permissions.clear()
+        response = self._get()
+        self.assertRedirectsToLogin(response)
+
+    def test_list_all(self):
+        """If no filters are provided, all objects should be listed."""
+        object_list = [self.factory.create() for i in range(3)]
+        response = self._get()
+        self.assertEquals(response.status_code, 200)
+        self.assertTemplateUsed(response, self.template_name)
+        self.assertEquals(response.context['object_list'].count(), 3)
+        for obj in object_list:
+            self.assertTrue(obj in response.context['object_list'])
+
+    def test_list_one(self):
+        """Page should render if there is one object & no search query."""
+        obj = self.factory.create()
+        response = self._get()
+        self.assertEquals(response.status_code, 200)
+        self.assertTemplateUsed(response, self.template_name)
+        self.assertEquals(response.context['object_list'].count(), 1)
+        self.assertEquals(response.context['object_list'].get(), obj)
+
+    def test_no_results(self):
+        """Page should render if there are no search results."""
+        obj = self.factory.create()
+        response = self._get(get_kwargs={'search': 'hello'})
+        self.assertEquals(response.status_code, 200)
+        self.assertTemplateUsed(response, self.template_name)
+        self.assertEquals(response.context['object_list'].count(), 0)
+
+    def test_one_result(self):
+        """Page should render if there is only one search result."""
+        obj = self.factory.create(comments='hello')
+        response = self._get(get_kwargs={'search': 'hello'})
+        self.assertEquals(response.status_code, 200)
+        self.assertTemplateUsed(response, self.template_name)
+        self.assertEquals(response.context['object_list'].count(), 1)
+        self.assertEquals(response.context['object_list'].get(), obj)
+
+    def test_multiple_results(self):
+        """Page should render if there are multiple search results."""
+        obj_list = [self.factory.create(comments='hello') for i in range(2)]
+        response = self._get(get_kwargs={'search': 'hello'})
+        self.assertEquals(response.status_code, 200)
+        self.assertTemplateUsed(response, self.template_name)
+        self.assertEquals(response.context['object_list'].count(), 2)
+        for obj in obj_list:
+            self.assertTrue(obj in response.context['object_list'])
+
+    def test_filter_number(self):
+        """User should be able to filter by search query."""
+        obj = self.factory.create(number='hello')
+        other_obj = self.factory.create()
+        response = self._get(get_kwargs={'search': 'hello'})
+        self.assertEquals(response.status_code, 200)
+        self.assertEquals(response.context['object_list'].get(), obj)
+
+    def test_filter_comments(self):
+        """User should be able to filter by search query."""
+        obj = self.factory.create(comments='hello')
+        other_obj = self.factory.create()
+        response = self._get(get_kwargs={'search': 'hello'})
+        self.assertEquals(response.status_code, 200)
+        self.assertEquals(response.context['object_list'].get(), obj)
+
+    def test_filter_project_name(self):
+        """User should be able to filter by search query."""
+        obj = self.factory.create(project__name='hello')
+        other_obj = self.factory.create()
+        response = self._get(get_kwargs={'search': 'hello'})
+        self.assertEquals(response.status_code, 200)
+        self.assertEquals(response.context['object_list'].get(), obj)
+
+    def test_filter_user_username(self):
+        """User should be able to filter by search query."""
+        obj = self.factory.create(user__username='hello')
+        other_obj = self.factory.create()
+        response = self._get(get_kwargs={'search': 'hello'})
+        self.assertEquals(response.status_code, 200)
+        self.assertEquals(response.context['object_list'].get(), obj)
+
+
 class InvoiceViewPreviousTestCase(ViewTestMixin, LogTimeMixin, TestCase):
 
     def setUp(self):
@@ -76,14 +173,14 @@ class InvoiceViewPreviousTestCase(ViewTestMixin, LogTimeMixin, TestCase):
         url = reverse('list_invoices')
         response = self.client.get(url)
         self.assertEqual(response.status_code, 200)
-        invoices = response.context['invoices']
+        invoices = response.context['object_list']
         self.assertEqual(len(invoices), 2)
 
     def test_previous_invoice_list_search(self):
 
         def search(query):
             response = self.client.get(list_url, data={'search': query})
-            return response.context['invoices']
+            return response.context['object_list']
 
         list_url = reverse('list_invoices')
         project3 = factories.BillableProject(name=':-D')
