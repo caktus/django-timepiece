@@ -7,7 +7,8 @@ from timepiece.tests.base import ViewTestMixin
 from ..models import Business
 
 
-__all__ = ['TestCreateBusinessView', 'TestDeleteBusinessView']
+__all__ = ['TestCreateBusinessView', 'TestDeleteBusinessView',
+        'TestListBusinessesView']
 
 
 class TestCreateBusinessView(ViewTestMixin, TestCase):
@@ -112,3 +113,86 @@ class TestDeleteBusinessView(ViewTestMixin, TestCase):
 class TestEditBusinessView(ViewTestMixin, TestCase):
     url_name = 'edit_business'
     template_name = 'timepiece/business/create_edit.html'
+
+
+class TestListBusinessesView(ViewTestMixin, TestCase):
+    url_name = 'list_businesses'
+    template_name = 'timepiece/business/list.html'
+    factory = factories.Business
+    model = Business
+
+    def setUp(self):
+        self.permissions = [Permission.objects.get(codename='view_business')]
+        self.user = factories.User(permissions=self.permissions)
+        self.login_user(self.user)
+
+    def test_get_no_permission(self):
+        """Permission is required for this view."""
+        self.user.user_permissions.clear()
+        response = self._get()
+        self.assertRedirectsToLogin(response)
+
+    def test_list_all(self):
+        """If no filters are provided, all objects should be listed."""
+        object_list = [self.factory.create() for i in range(3)]
+        response = self._get()
+        self.assertEquals(response.status_code, 200)
+        self.assertTemplateUsed(response, self.template_name)
+        self.assertEquals(response.context['object_list'].count(), 3)
+        for obj in object_list:
+            self.assertTrue(obj in response.context['object_list'])
+
+    def test_list_none(self):
+        """Page should render even if there are no objects."""
+        self.model.objects.all().delete()
+        response = self._get()
+        self.assertEquals(response.status_code, 200)
+        self.assertTemplateUsed(response, self.template_name)
+        self.assertEquals(response.context['object_list'].count(), 0)
+
+    def test_list_one(self):
+        """Page should render if there is one object & no search query."""
+        obj = self.factory.create()
+        response = self._get()
+        self.assertEquals(response.status_code, 200)
+        self.assertTemplateUsed(response, self.template_name)
+        self.assertEquals(response.context['object_list'].count(), 1)
+        self.assertEquals(response.context['object_list'].get(), obj)
+
+    def test_no_results(self):
+        """Page should render if there are no search results."""
+        obj = self.factory.create()
+        response = self._get(get_kwargs={'search': 'hello'})
+        self.assertEquals(response.status_code, 200)
+        self.assertTemplateUsed(response, self.template_name)
+        self.assertEquals(response.context['object_list'].count(), 0)
+
+    def test_one_result(self):
+        """If there is only one search result, user should be redirected."""
+        obj = self.factory.create(name='hello')
+        response = self._get(get_kwargs={'search': 'hello'})
+        self.assertRedirectsNoFollow(response, obj.get_absolute_url())
+
+    def test_multiple_results(self):
+        """Page should render if there are multiple search results."""
+        obj_list = [self.factory.create(name='hello') for i in range(2)]
+        response = self._get(get_kwargs={'search': 'hello'})
+        self.assertEquals(response.status_code, 200)
+        self.assertTemplateUsed(response, self.template_name)
+        self.assertEquals(response.context['object_list'].count(), 2)
+        for obj in obj_list:
+            self.assertTrue(obj in response.context['object_list'])
+
+    def test_filter_name(self):
+        """User should be able to filter by search query."""
+        obj = self.factory.create(name='hello')
+        other_obj = self.factory.create()
+        response = self._get(get_kwargs={'search': 'hello'})
+        self.assertRedirectsNoFollow(response, obj.get_absolute_url())
+
+    def test_filter_description(self):
+        """User should be able to filter by search query."""
+        obj = self.factory.create(description='hello')
+        other_obj = self.factory.create()
+        response = self._get(get_kwargs={'search': 'hello'})
+        self.assertRedirectsNoFollow(response, obj.get_absolute_url())
