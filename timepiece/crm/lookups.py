@@ -1,5 +1,8 @@
+from collections import namedtuple
+
 from django.contrib.auth.models import User
 from django.db.models import Q
+from django.utils.safestring import mark_safe
 
 from selectable.base import LookupBase
 from selectable.base import ModelLookup
@@ -13,13 +16,24 @@ class ProjectLookup(ModelLookup):
     search_fields = ('name__icontains', 'business__name__icontains',
             'business__short_name__icontains')
 
+    def get_item_label(self, project):
+        return mark_safe(u'<span class="project">%s</span>' %
+                self.get_item_value(project))
+
+    def get_item_value(self, project):
+        return project.name
+
 
 class BusinessLookup(ModelLookup):
     model = Business
     search_fields = ('name__icontains', 'short_name__icontains')
 
     def get_item_label(self, business):
-        return '<span class="business">%s</span>' % business.name
+        return mark_safe(u'<span class="business">%s</span>' %
+                self.get_item_value(business))
+
+    def get_item_value(self, business):
+        return business.name
 
 
 class UserLookup(ModelLookup):
@@ -27,112 +41,58 @@ class UserLookup(ModelLookup):
     search_fields = ('username__icontains', 'first_name__icontains',
             'last_name__icontains', 'email__icontains')
 
-    def format_result(self, user):
-        """
-        a more verbose display, used in the search results display.
-        may contain html and multi-lines
-        """
-        return u"<span class='%s'>%s</span>" % ('individual',
-            user.get_name_or_username())
+    def get_query(self, request, q):
+        return super(UserLookup, self).get_query(request, q).order_by('last_name')
 
     def get_item_label(self, user):
-        return self.format_result(user)
-
-    def get_item_id(self, user):
-        return user.pk
+        return mark_safe(u'<span class="individual">%s</span>' %
+                self.get_item_value(user))
 
     def get_item_value(self, user):
         return user.get_name_or_username()
 
 
-class SearchResult(object):
-    """
-    Fake search result for concatenating search queries.
-    """
-    def __init__(self, pk, type, name):
-        self.pk = "%s-%d" % (type, pk)
-        self.type = type
-        self.name = name
-
-
 class QuickLookup(LookupBase):
 
+    def __init__(self, *args, **kwargs):
+        self.lookups = {
+            'individual': UserLookup(),
+            'project': ProjectLookup(),
+            'business': BusinessLookup(),
+        }
+        super(QuickLookup, self).__init__(*args, **kwargs)
+
     def get_query(self, request, q):
-        """
-        return a query set (or a fake one).  you also have access to
-        request.user if needed
-        """
         results = []
+        SearchResult = namedtuple('SearchResult', ['result_type', 'item', 'label', 'value'])
 
-        users = User.objects.filter(
-            Q(first_name__icontains=q) |
-            Q(last_name__icontains=q) |
-            Q(username__icontains=q) |
-            Q(email__icontains=q)
-        ).select_related().order_by('last_name')[:10]
+        for result_type, lookup in self.lookups.items():
+            for item in lookup.get_query(request, q)[:10]:
+                label = lookup.get_item_label(item)
+                value = lookup.get_item_value(item)
+                results.append(SearchResult(result_type, item, label, value))
 
-        for user in users:
-            name = user.get_name_or_username()
-            results.append(
-                SearchResult(user.pk, 'individual', name)
-            )
-
-        projects = Project.objects.filter(
-            name__icontains=q,
-        ).select_related()[:10]
-
-        for project in projects:
-            results.append(
-                SearchResult(project.pk, 'project', project.name)
-            )
-
-        businesses = Business.objects.filter(
-            name__icontains=q,
-        ).select_related()[:10]
-
-        for business in businesses:
-            results.append(
-                SearchResult(business.pk, 'business', business.name)
-            )
-
-        results.sort(lambda a, b: cmp(a.name, b.name))
+        results.sort(lambda a, b: cmp(a.value, b.value))
         return results
-
-    def format_result(self, item):
-        """
-        a more verbose display, used in the search results display.
-        may contain html and multi-lines
-        """
-        return u"<span class='%s'>%s</span>" % (item.type, item.name)
 
     def get_item_label(self, item):
-        return self.format_result(item)
+        return item.label
 
     def get_item_id(self, item):
-        return item.pk
+        return '{0}-{1}'.format(item.result_type, item.item.pk)
+
+    def get_item(self, value):
+        try:
+            result_type, pk = value.split('-', 1)
+            return self.lookups[result_type].get_item(pk)
+        except (ValueError, KeyError):
+            return None
 
     def get_item_value(self, item):
-        return item.name
-
-    def get_objects(self, ids):
-        """
-        given a list of ids, return the objects ordered as you would like them
-        on the admin page. this is for displaying the currently selected items
-        (in the case of a ManyToMany field)
-        """
-        results = []
-        for id in ids:
-            type, pk = id.split('-')
-            if type == 'project':
-                results.append(Project.objects.get(pk=pk))
-            elif type == 'business':
-                results.append(Business.objects.get(pk=pk))
-            elif type == 'individual':
-                results.append(User.objects.get(pk=pk))
-        return results
+        return item.value
 
 
-registry.register(QuickLookup)
-registry.register(ProjectLookup)
 registry.register(BusinessLookup)
+registry.register(ProjectLookup)
 registry.register(UserLookup)
+registry.register(QuickLookup)

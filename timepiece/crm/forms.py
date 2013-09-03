@@ -159,28 +159,10 @@ class QuickSearchForm(forms.Form):
 
     def clean_quick_search(self):
         item = self.cleaned_data['quick_search']
-
-        if item is not None:
-            try:
-                item = item.split('-')
-                if len(item) == 1 or '' in item:
-                    raise ValueError
-                return item
-            except ValueError:
-                raise forms.ValidationError('%s' %
-                    'User, business, or project does not exist')
-        else:
-            raise forms.ValidationError('%s' %
-                'User, business, or project does not exist')
+        if not item:
+            msg = 'No user, business, or project matches your query.'
+            raise forms.ValidationError(msg)
+        return item
 
     def save(self):
-        type, pk = self.cleaned_data['quick_search']
-
-        if type == 'individual':
-            return reverse('view_user', args=(pk,))
-        elif type == 'business':
-            return reverse('view_business', args=(pk,))
-        elif type == 'project':
-            return reverse('view_project', args=(pk,))
-
-        raise forms.ValidationError('Must be a user, project, or business')
+        return self.cleaned_data['quick_search'].get_absolute_url()
