@@ -21,7 +21,7 @@ from timepiece.forms import YearMonthForm, UserYearMonthForm, SearchForm
 from timepiece.templatetags.timepiece_tags import seconds_to_hours
 from timepiece.utils.csv import CSVViewMixin
 from timepiece.utils.mixins import (CommitOnSuccessMixin, CsrfExemptMixin,
-        PermissionsRequiredMixin, LoginRequiredMixin, GetDataFormMixin)
+        PermissionsRequiredMixin, LoginRequiredMixin)
 
 from timepiece.crm.forms import (CreateEditBusinessForm, CreateEditProjectForm,
         EditUserProfileForm, EditProjectRelationshipForm, SelectProjectForm,
@@ -33,7 +33,7 @@ from timepiece.crm.utils import grouped_totals
 from timepiece.entries.models import Entry
 
 
-class QuickSearch(LoginRequiredMixin, GetDataFormMixin, FormView):
+class QuickSearch(LoginRequiredMixin, FormView):
     form_class = QuickSearchForm
     template_name = 'timepiece/quick_search.html'
 
