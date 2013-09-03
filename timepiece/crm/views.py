@@ -14,14 +14,14 @@ from django.utils.decorators import method_decorator
 from django.views.decorators.csrf import csrf_exempt
 from django.views.decorators.http import require_POST
 from django.views.generic import (CreateView, DeleteView, DetailView,
-        UpdateView)
+        UpdateView, FormView)
 
 from timepiece import utils
 from timepiece.forms import YearMonthForm, UserYearMonthForm, SearchForm
 from timepiece.templatetags.timepiece_tags import seconds_to_hours
 from timepiece.utils.csv import CSVViewMixin
 from timepiece.utils.mixins import (CommitOnSuccessMixin, CsrfExemptMixin,
-        PermissionsRequiredMixin)
+        PermissionsRequiredMixin, LoginRequiredMixin, GetDataFormMixin)
 
 from timepiece.crm.forms import (CreateEditBusinessForm, CreateEditProjectForm,
         EditUserProfileForm, EditProjectRelationshipForm, SelectProjectForm,
@@ -31,6 +31,14 @@ from timepiece.crm.models import Business, Project, ProjectRelationship,\
         UserProfile
 from timepiece.crm.utils import grouped_totals
 from timepiece.entries.models import Entry
+
+
+class Search(LoginRequiredMixin, GetDataFormMixin, FormView):
+    form_class = QuickSearchForm
+    template_name = 'timepiece/search_results.html'
+
+    def form_valid(self, form):
+        return HttpResponseRedirect(form.save())
 
 
 @permission_required('entries.view_payroll_summary')
@@ -574,14 +582,4 @@ def edit_settings(request):
     return render(request, 'timepiece/user/settings.html', {
         'profile_form': profile_form,
         'user_form': user_form,
-    })
-
-
-@login_required
-def search(request):
-    form = QuickSearchForm(request.GET or None)
-    if form.is_valid():
-        return HttpResponseRedirect(form.save())
-    return render(request, 'timepiece/search_results.html', {
-        'form': form,
     })
