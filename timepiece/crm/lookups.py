@@ -45,7 +45,7 @@ class UserLookup(ModelLookup):
         return super(UserLookup, self).get_query(request, q).order_by('last_name')
 
     def get_item_label(self, user):
-        return mark_safe(u'<span class="individual">%s</span>' %
+        return mark_safe(u'<span class="user">%s</span>' %
                 self.get_item_value(user))
 
     def get_item_value(self, user):
@@ -56,7 +56,7 @@ class QuickLookup(LookupBase):
 
     def __init__(self, *args, **kwargs):
         self.lookups = {
-            'individual': UserLookup(),
+            'user': UserLookup(),
             'project': ProjectLookup(),
             'business': BusinessLookup(),
         }
