@@ -1,8 +1,8 @@
 from django.core.urlresolvers import reverse
 from django.test import TestCase
 
-from . import factories
-from .base import ViewTestMixin
+from timepiece.tests import factories
+from timepiece.tests.base import ViewTestMixin
 
 
 class QuickSearchTest(ViewTestMixin, TestCase):
