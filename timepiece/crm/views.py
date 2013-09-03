@@ -33,9 +33,9 @@ from timepiece.crm.utils import grouped_totals
 from timepiece.entries.models import Entry
 
 
-class Search(LoginRequiredMixin, GetDataFormMixin, FormView):
+class QuickSearch(LoginRequiredMixin, GetDataFormMixin, FormView):
     form_class = QuickSearchForm
-    template_name = 'timepiece/search_results.html'
+    template_name = 'timepiece/quick_search.html'
 
     def form_valid(self, form):
         return HttpResponseRedirect(form.save())

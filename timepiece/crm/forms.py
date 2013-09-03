@@ -153,8 +153,7 @@ class ProjectSearchForm(SearchForm):
 
 
 class QuickSearchForm(forms.Form):
-    quick_search = selectable.AutoCompleteSelectField(QuickLookup,
-            required=False)
+    quick_search = selectable.AutoCompleteSelectField(QuickLookup, required=False)
     quick_search.widget.attrs['placeholder'] = 'Search'
 
     def clean_quick_search(self):
