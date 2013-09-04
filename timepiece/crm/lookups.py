@@ -21,7 +21,7 @@ class ProjectLookup(ModelLookup):
                 self.get_item_value(project))
 
     def get_item_value(self, project):
-        return project.name
+        return project.name if project else ''
 
 
 class BusinessLookup(ModelLookup):
@@ -33,7 +33,7 @@ class BusinessLookup(ModelLookup):
                 self.get_item_value(business))
 
     def get_item_value(self, business):
-        return business.name
+        return business.name if business else ''
 
 
 class UserLookup(ModelLookup):
@@ -49,7 +49,7 @@ class UserLookup(ModelLookup):
                 self.get_item_value(user))
 
     def get_item_value(self, user):
-        return user.get_name_or_username()
+        return user.get_name_or_username() if user else ''
 
 
 class QuickLookup(LookupBase):
