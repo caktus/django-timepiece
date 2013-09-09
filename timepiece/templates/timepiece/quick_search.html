@@ -1,11 +1,20 @@
 {% extends "timepiece/base.html" %}
+{% load url from future %}
 
 {% block title %}Search Results{% endblock title %}
 
 {% block content %}
     {% if form.errors %}
         {% for field in form %}
-            {{ field.errors }}
+            {% for error in field.errors %}
+                <div class="alert alert-error">{{ error }}</div>
+            {% endfor %}
         {% endfor %}
     {% endif %}
+
+    <form class="form-inline" method="post" action="{% url 'quick_search' %}">
+        {% csrf_token %}
+        {{ form.quick_search }}
+        <button class="btn">Search</button>
+    </form>
 {% endblock content %}
