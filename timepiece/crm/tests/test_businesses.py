@@ -1,7 +1,8 @@
 from django.contrib.auth.models import Permission
+from django.test import TestCase
 
 from timepiece.tests import factories
-from timepiece.tests.base import ViewTestMixin, TimepieceDataTestCase
+from timepiece.tests.base import ViewTestMixin
 
 from ..models import Business
 
@@ -9,13 +10,13 @@ from ..models import Business
 __all__ = ['TestCreateBusinessView', 'TestDeleteBusinessView']
 
 
-class TestCreateBusinessView(ViewTestMixin, TimepieceDataTestCase):
+class TestCreateBusinessView(ViewTestMixin, TestCase):
     url_name = 'create_business'
     template_name = 'timepiece/business/create_edit.html'
 
     def setUp(self):
         self.permissions = [Permission.objects.get(codename='add_business')]
-        self.user = factories.UserFactory(permissions=self.permissions)
+        self.user = factories.User(permissions=self.permissions)
         self.login_user(self.user)
 
         self.post_data = {
@@ -49,18 +50,34 @@ class TestCreateBusinessView(ViewTestMixin, TimepieceDataTestCase):
         """POST should create a new business."""
         response = self._post()
         self.assertEquals(Business.objects.count(), 1)
+        business = Business.objects.get()
+        self.assertRedirectsNoFollow(response, business.get_absolute_url())
+        self.assertEquals(business.name, self.post_data['name'])
+        self.assertEquals(business.email, self.post_data['email'])
+        self.assertEquals(business.description, self.post_data['description'])
+        self.assertEquals(business.notes, self.post_data['notes'])
+
+    def test_post_invalid(self):
+        """Invalid POST should not create a new business."""
+        self.post_data['name'] = ''
+        response = self._post()
+        self.assertEquals(Business.objects.count(), 0)
+        self.assertEquals(response.status_code, 200)
+        self.assertTrue('form' in response.context)
+        self.assertTrue(response.context['form'].is_bound)
+        self.assertFalse(response.context['form'].is_valid())
 
 
-class TestDeleteBusinessView(ViewTestMixin, TimepieceDataTestCase):
+class TestDeleteBusinessView(ViewTestMixin, TestCase):
     url_name = 'delete_business'
     template_name = 'timepiece/delete_object.html'
 
     def setUp(self):
         self.permissions = [Permission.objects.get(codename='delete_business')]
-        self.user = factories.UserFactory(permissions=self.permissions)
+        self.user = factories.User(permissions=self.permissions)
         self.login_user(self.user)
 
-        self.obj = factories.BusinessFactory.create()
+        self.obj = factories.Business()
 
         self.url_kwargs = {'business_id': self.obj.pk}
 
@@ -90,3 +107,8 @@ class TestDeleteBusinessView(ViewTestMixin, TimepieceDataTestCase):
         """POST should delete the business."""
         response = self._post()
         self.assertEquals(Business.objects.count(), 0)
+
+
+class TestEditBusinessView(ViewTestMixin, TestCase):
+    url_name = 'edit_business'
+    template_name = 'timepiece/business/create_edit.html'

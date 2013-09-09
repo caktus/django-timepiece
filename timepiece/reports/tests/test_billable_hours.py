@@ -8,12 +8,13 @@ from django.db.models import Q
 
 from timepiece.forms import DATE_FORM_FORMAT
 from timepiece.tests import factories
+from timepiece.tests.base import ViewTestMixin, LogTimeMixin
 
 from timepiece.entries.models import Entry
 from timepiece.reports.tests.base import ReportsTestBase
 
 
-class TestBillableHours(ReportsTestBase):
+class TestBillableHours(ViewTestMixin, LogTimeMixin, ReportsTestBase):
 
     def setUp(self):
         super(TestBillableHours, self).setUp()
@@ -23,7 +24,7 @@ class TestBillableHours(ReportsTestBase):
 
         self.url = reverse('report_billable_hours')
         self.perm = Permission.objects.filter(codename='view_entry_summary')
-        self.admin = factories.UserFactory.create()
+        self.admin = factories.User()
         self.admin.user_permissions = self.perm
 
     def get_entries_data(self):
