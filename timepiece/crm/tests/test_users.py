@@ -1,23 +1,24 @@
 from django.contrib.auth.models import User, Permission
 from django.core.urlresolvers import reverse
+from django.test import TestCase
 
 from timepiece.tests import factories
-from timepiece.tests.base import TimepieceDataTestCase, ViewTestMixin
+from timepiece.tests.base import ViewTestMixin
 
 
 __all__ = ['TestDeleteUserView', 'TestEditUserView', 'TestEditSettingsView']
 
 
-class TestDeleteUserView(ViewTestMixin, TimepieceDataTestCase):
+class TestDeleteUserView(ViewTestMixin, TestCase):
     url_name = 'delete_user'
     template_name = 'timepiece/delete_object.html'
 
     def setUp(self):
         self.permissions = [Permission.objects.get(codename='delete_user')]
-        self.user = factories.UserFactory(permissions=self.permissions)
+        self.user = factories.User(permissions=self.permissions)
         self.login_user(self.user)
 
-        self.obj = factories.UserFactory.create()
+        self.obj = factories.User()
 
         self.url_kwargs = {'user_id': self.obj.pk}
 
@@ -49,16 +50,16 @@ class TestDeleteUserView(ViewTestMixin, TimepieceDataTestCase):
         self.assertEquals(User.objects.count(), 1)
 
 
-class TestEditUserView(ViewTestMixin, TimepieceDataTestCase):
+class TestEditUserView(ViewTestMixin, TestCase):
     url_name = 'edit_user'
     template_name = 'timepiece/user/create_edit.html'
 
     def setUp(self):
         self.permissions = [Permission.objects.get(codename='change_user')]
-        self.user = factories.UserFactory(permissions=self.permissions)
+        self.user = factories.User(permissions=self.permissions)
         self.login_user(self.user)
 
-        self.obj = factories.UserFactory.create()
+        self.obj = factories.User()
         self.url_kwargs = {'user_id': self.obj.pk}
 
         self.post_data = {
@@ -111,7 +112,7 @@ class TestEditUserView(ViewTestMixin, TimepieceDataTestCase):
 
     def test_edit_groups(self):
         """Should be able to update user's auth groups."""
-        groups = [factories.GroupFactory() for i in range(2)]
+        groups = [factories.Group() for i in range(2)]
         self.post_data['groups'] = [g.pk for g in groups]
         response = self._post()
         self.assertRedirectsNoFollow(response, self.obj.get_absolute_url())
@@ -121,12 +122,12 @@ class TestEditUserView(ViewTestMixin, TimepieceDataTestCase):
         self.assertTrue(groups[1] in updated_user.groups.all())
 
 
-class TestEditSettingsView(ViewTestMixin, TimepieceDataTestCase):
+class TestEditSettingsView(ViewTestMixin, TestCase):
     url_name = 'edit_settings'
     template_name = 'timepiece/user/settings.html'
 
     def setUp(self):
-        self.user = factories.UserFactory.create()
+        self.user = factories.User()
         self.login_user(self.user)
 
         self.post_data = {

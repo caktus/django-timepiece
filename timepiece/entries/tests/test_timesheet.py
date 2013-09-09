@@ -7,25 +7,30 @@ import random
 import urllib
 
 from django.contrib.auth.models import User, Permission
+from django.contrib.contenttypes.models import ContentType
 from django.core.exceptions import ValidationError
 from django.core.urlresolvers import reverse
 from django.forms import model_to_dict
 from django.utils import timezone
+from django.test import TestCase
 
 from timepiece import utils
-from timepiece.tests.base import TimepieceDataTestCase
+from timepiece.tests.base import ViewTestMixin, LogTimeMixin
 from timepiece.tests import factories
 
 from timepiece.crm.utils import grouped_totals
-from timepiece.entries.models import Entry
+from timepiece.entries.models import Activity, Entry
 from timepiece.entries.forms import ClockInForm
 
 
-class EditableTest(TimepieceDataTestCase):
+class EditableTest(TestCase):
 
     def setUp(self):
         super(EditableTest, self).setUp()
-        self.entry = factories.EntryFactory.create(**{
+        self.user = factories.User()
+        self.project = factories.Project(type__enable_timetracking=True,
+                status__enable_timetracking=True)
+        self.entry = factories.Entry(**{
             'user': self.user,
             'project': self.project,
             'start_time': timezone.now() - relativedelta(days=6),
@@ -33,7 +38,7 @@ class EditableTest(TimepieceDataTestCase):
             'seconds_paused': 0,
             'status': Entry.VERIFIED,
         })
-        self.entry2 = factories.EntryFactory.create(**{
+        self.entry2 = factories.Entry(**{
             'user': self.user,
             'project': self.project,
             'start_time': timezone.now() - relativedelta(days=2),
@@ -49,19 +54,23 @@ class EditableTest(TimepieceDataTestCase):
         self.assertTrue(self.entry2.is_editable)
 
 
-class MyLedgerTest(TimepieceDataTestCase):
+class MyLedgerTest(ViewTestMixin, LogTimeMixin, TestCase):
 
     def setUp(self):
         super(MyLedgerTest, self).setUp()
+        self.user = factories.User()
+        self.user2 = factories.User()
+        self.superuser = factories.Superuser()
+        self.devl_activity = factories.Activity(billable=True)
+        self.activity = factories.Activity()
         self.url = reverse('view_user_timesheet', args=(self.user.pk,))
 
     def login_with_permissions(self):
         view_entry_summary = Permission.objects.get(
             codename='view_entry_summary')
-        user = factories.UserFactory.create()
+        user = factories.User()
         user.user_permissions.add(view_entry_summary)
         user.save()
-
         self.login_user(user)
 
     def test_timesheet_view_permission(self):
@@ -111,10 +120,10 @@ class MyLedgerTest(TimepieceDataTestCase):
             self.fail(e)
 
     def make_entries(self):
-        self.p1 = factories.BillableProjectFactory.create(name='1')
-        self.p2 = factories.NonbillableProjectFactory.create(name='2')
-        self.p4 = factories.BillableProjectFactory.create(name='4')
-        self.p3 = factories.NonbillableProjectFactory.create(name='1')
+        self.p1 = factories.BillableProject(name='1')
+        self.p2 = factories.NonbillableProject(name='2')
+        self.p4 = factories.BillableProject(name='4')
+        self.p3 = factories.NonbillableProject(name='1')
         days = [
             utils.add_timezone(datetime.datetime(2011, 1, 1)),
             utils.add_timezone(datetime.datetime(2011, 1, 28)),
@@ -159,9 +168,52 @@ class MyLedgerTest(TimepieceDataTestCase):
         self.assertEqual(response.context['summary']['total'], Decimal(9))
 
 
-class ClockInTest(TimepieceDataTestCase):
+class ClockInTest(ViewTestMixin, TestCase):
+
     def setUp(self):
         super(ClockInTest, self).setUp()
+        self.user = factories.User()
+        self.user2 = factories.User()
+        self.superuser = factories.Superuser()
+        permissions = Permission.objects.filter(
+            content_type=ContentType.objects.get_for_model(Entry),
+            codename__in=('can_clock_in', 'can_clock_out',
+            'can_pause', 'change_entry')
+        )
+        self.user.user_permissions = permissions
+        self.user2.user_permissions = permissions
+        self.user.save()
+        self.user2.save()
+        self.activity = factories.Activity(code='WRK',
+                name='Work')
+        self.devl_activity = factories.Activity(code='devl',
+                name='development', billable=True)
+        self.sick_activity = factories.Activity(code="sick",
+                name="sick/personal", billable=False)
+        self.activity_group_all = factories.ActivityGroup(
+                name='All')
+        self.activity_group_work = factories.ActivityGroup(
+                name='Client work')
+        activities = Activity.objects.all()
+        for activity in activities:
+            activity.activity_group.add(self.activity_group_all)
+            if activity != self.sick_activity:
+                activity.activity_group.add(self.activity_group_work)
+        self.business = factories.Business()
+        status = factories.StatusAttribute(label='Current',
+                enable_timetracking=True)
+        type_ = factories.TypeAttribute(label='Web Sites',
+                enable_timetracking=True)
+        self.project = factories.Project(type=type_,
+                status=status, business=self.business, point_person=self.user,
+                activity_group=self.activity_group_work)
+        self.project2 = factories.Project(type=type_,
+                status=status, business=self.business, point_person=self.user2,
+                activity_group=self.activity_group_all)
+        factories.ProjectRelationship(user=self.user,
+                project=self.project)
+        self.location = factories.Location()
+
         self.url = reverse('clock_in')
         self.now = timezone.now()
         self.ten_min_ago = self.now - relativedelta(minutes=10)
@@ -193,7 +245,7 @@ class ClockInTest(TimepieceDataTestCase):
         entry one second before the new entry.
         """
         self.login_user(self.user)
-        entry1 = factories.EntryFactory.create(**{
+        entry1 = factories.Entry(**{
             'user': self.user,
             'start_time': self.ten_min_ago,
         })
@@ -221,11 +273,11 @@ class ClockInTest(TimepieceDataTestCase):
         a 500 error should be raised so that we are notified of the situation.
         """
         self.login_user(self.user)
-        entry1 = factories.EntryFactory.create(**{
+        entry1 = factories.Entry(**{
             'user': self.user,
             'start_time': self.ten_min_ago,
         })
-        entry2 = factories.EntryFactory.create(**{
+        entry2 = factories.Entry(**{
             'user': self.user,
             'start_time': self.now - relativedelta(minutes=20),
         })
@@ -247,7 +299,7 @@ class ClockInTest(TimepieceDataTestCase):
     def testClockInCurrentStatus(self):
         """Verify the status of the current entry shows what is expected"""
         self.login_user(self.user)
-        entry1 = factories.EntryFactory.create(**{
+        entry1 = factories.Entry(**{
             'user': self.user,
             'start_time': self.ten_min_ago,
         })
@@ -265,7 +317,7 @@ class ClockInTest(TimepieceDataTestCase):
         The current entry will be clocked out.
         """
         self.login_user(self.user)
-        entry1 = factories.EntryFactory.create(**{
+        entry1 = factories.Entry(**{
             'user': self.user,
             'start_time': self.ten_min_ago,
         })
@@ -296,7 +348,7 @@ class ClockInTest(TimepieceDataTestCase):
             'start_time': self.ten_min_ago,
             'end_time': self.now,
         }
-        entry1 = factories.EntryFactory.create(**entry1_data)
+        entry1 = factories.Entry(**entry1_data)
         entry1_data.update({
             'st_str': self.ten_min_ago.strftime('%H:%M:%S'),
             'end_str': self.now.strftime('%H:%M:%S'),
@@ -325,7 +377,7 @@ class ClockInTest(TimepieceDataTestCase):
             'project': self.project,
             'activity': self.devl_activity,
         }
-        entry1 = factories.EntryFactory.create(**entry1_data)
+        entry1 = factories.Entry(**entry1_data)
         entry1_data.update({
             'st_str': self.now.strftime('%H:%M:%S')
         })
@@ -354,7 +406,7 @@ class ClockInTest(TimepieceDataTestCase):
             'activity': self.devl_activity,
             'start_time': self.ten_min_ago,
         }
-        entry1 = factories.EntryFactory.create(**entry1_data)
+        entry1 = factories.Entry(**entry1_data)
         entry1_data.update({
             'st_str': self.ten_min_ago.strftime('%H:%M:%S')
         })
@@ -378,7 +430,7 @@ class ClockInTest(TimepieceDataTestCase):
         invalidate
         """
         self.login_user(self.user)
-        entry1 = factories.EntryFactory.create(**{
+        entry1 = factories.Entry(**{
             'user': self.user,
             'start_time': self.now - relativedelta(hours=13),
         })
@@ -495,7 +547,7 @@ class ClockInTest(TimepieceDataTestCase):
         Comments left from editing the current active entry should appear
         if you are clocking in
         """
-        entry = factories.EntryFactory.create(**{
+        entry = factories.Entry(**{
             'user': self.user,
             'start_time': self.ten_min_ago
         })
@@ -508,10 +560,53 @@ class ClockInTest(TimepieceDataTestCase):
         self.assertContains(response, 'Some comments')
 
 
-class AutoActivityTest(TimepieceDataTestCase):
+class AutoActivityTest(ViewTestMixin, LogTimeMixin, TestCase):
     """Test the initial value chosen for activity on clock in form"""
+
     def setUp(self):
         super(AutoActivityTest, self).setUp()
+        self.user = factories.User()
+        self.user2 = factories.User()
+        self.superuser = factories.Superuser()
+        permissions = Permission.objects.filter(
+            content_type=ContentType.objects.get_for_model(Entry),
+            codename__in=('can_clock_in', 'can_clock_out',
+            'can_pause', 'change_entry')
+        )
+        self.user.user_permissions = permissions
+        self.user2.user_permissions = permissions
+        self.user.save()
+        self.user2.save()
+        self.activity = factories.Activity(code='WRK',
+                name='Work')
+        self.devl_activity = factories.Activity(code='devl',
+                name='development', billable=True)
+        self.sick_activity = factories.Activity(code="sick",
+                name="sick/personal", billable=False)
+        self.activity_group_all = factories.ActivityGroup(
+                name='All')
+        self.activity_group_work = factories.ActivityGroup(
+                name='Client work')
+
+        activities = Activity.objects.all()
+        for activity in activities:
+            activity.activity_group.add(self.activity_group_all)
+            if activity != self.sick_activity:
+                activity.activity_group.add(self.activity_group_work)
+        self.business = factories.Business()
+        status = factories.StatusAttribute(label='Current',
+                enable_timetracking=True)
+        type_ = factories.TypeAttribute(label='Web Sites',
+                enable_timetracking=True)
+        self.project = factories.Project(type=type_,
+                status=status, business=self.business, point_person=self.user,
+                activity_group=self.activity_group_work)
+        self.project2 = factories.Project(type=type_,
+                status=status, business=self.business, point_person=self.user2,
+                activity_group=self.activity_group_all)
+        factories.ProjectRelationship(user=self.user,
+                project=self.project)
+        self.location = factories.Location()
 
     def get_activity(self, project=None):
         if not project:
@@ -560,17 +655,60 @@ class AutoActivityTest(TimepieceDataTestCase):
         self.assertEqual(self.get_activity(project2), self.devl_activity.id)
 
 
-class ClockOutTest(TimepieceDataTestCase):
+class ClockOutTest(ViewTestMixin, TestCase):
 
     def setUp(self):
         super(ClockOutTest, self).setUp()
+        self.user = factories.User()
+        self.user2 = factories.User()
+        self.superuser = factories.Superuser()
+        permissions = Permission.objects.filter(
+            content_type=ContentType.objects.get_for_model(Entry),
+            codename__in=('can_clock_in', 'can_clock_out',
+            'can_pause', 'change_entry')
+        )
+        self.user.user_permissions = permissions
+        self.user2.user_permissions = permissions
+        self.user.save()
+        self.user2.save()
+        self.activity = factories.Activity(code='WRK',
+                name='Work')
+        self.devl_activity = factories.Activity(code='devl',
+                name='development', billable=True)
+        self.sick_activity = factories.Activity(code="sick",
+                name="sick/personal", billable=False)
+        self.activity_group_all = factories.ActivityGroup(
+                name='All')
+        self.activity_group_work = factories.ActivityGroup(
+                name='Client work')
+
+        activities = Activity.objects.all()
+        for activity in activities:
+            activity.activity_group.add(self.activity_group_all)
+            if activity != self.sick_activity:
+                activity.activity_group.add(self.activity_group_work)
+        self.business = factories.Business()
+        status = factories.StatusAttribute(label='Current',
+                enable_timetracking=True)
+        type_ = factories.TypeAttribute(label='Web Sites',
+            enable_timetracking=True)
+        self.project = factories.Project(type=type_,
+                status=status, business=self.business, point_person=self.user,
+                activity_group=self.activity_group_work)
+        self.project2 = factories.Project(type=type_,
+                status=status, business=self.business, point_person=self.user2,
+                activity_group=self.activity_group_all)
+        factories.ProjectRelationship(user=self.user,
+                project=self.project)
+        self.location = factories.Location()
+
         self.url = reverse('clock_out')
         self.login_user(self.user)
 
         # Create an active entry, so that clock out tests don't have to.
         self.default_end_time = timezone.now()
         back = timezone.now() - relativedelta(hours=5)
-        self.entry = factories.EntryFactory.create(**{
+        self.entry = factories.Entry(**{
             'user': self.user,
             'start_time': back,
             'project': self.project,
@@ -705,7 +843,7 @@ class ClockOutTest(TimepieceDataTestCase):
             'start_time': now,
             'end_time': self.default_end_time
         }
-        entry1 = factories.EntryFactory.create(**entry1_data)
+        entry1 = factories.Entry(**entry1_data)
         entry1_data.update({
             'st_str': entry1.start_time.strftime('%H:%M:%S'),
             'end_str': entry1.end_time.strftime('%H:%M:%S'),
@@ -714,7 +852,7 @@ class ClockOutTest(TimepieceDataTestCase):
         # Create a form with times that overlap with entry1
         bad_start = entry1.start_time - relativedelta(hours=1)
         bad_end = entry1.end_time + relativedelta(hours=1)
-        bad_entry = factories.EntryFactory.create(**{
+        bad_entry = factories.Entry(**{
             'user': self.user,
             'start_time': bad_start,
             'end_time': bad_end,
@@ -759,7 +897,7 @@ class ClockOutTest(TimepieceDataTestCase):
 
 
 
-class CheckOverlap(TimepieceDataTestCase):
+class CheckOverlap(ViewTestMixin, LogTimeMixin, TestCase):
     """
     With entry overlaps, entry.check_overlap method should return True
     With valid entries, check_overlap should return False
@@ -767,6 +905,50 @@ class CheckOverlap(TimepieceDataTestCase):
 
     def setUp(self):
         super(CheckOverlap, self).setUp()
+
+        self.user = factories.User()
+        self.user2 = factories.User()
+        self.superuser = factories.Superuser()
+        permissions = Permission.objects.filter(
+            content_type=ContentType.objects.get_for_model(Entry),
+            codename__in=('can_clock_in', 'can_clock_out',
+            'can_pause', 'change_entry')
+        )
+        self.user.user_permissions = permissions
+        self.user2.user_permissions = permissions
+        self.user.save()
+        self.user2.save()
+        self.activity = factories.Activity(code='WRK',
+                name='Work')
+        self.devl_activity = factories.Activity(code='devl',
+                name='development', billable=True)
+        self.sick_activity = factories.Activity(code="sick",
+                name="sick/personal", billable=False)
+        self.activity_group_all = factories.ActivityGroup(
+                name='All')
+        self.activity_group_work = factories.ActivityGroup(
+                name='Client work')
+
+        activities = Activity.objects.all()
+        for activity in activities:
+            activity.activity_group.add(self.activity_group_all)
+            if activity != self.sick_activity:
+                activity.activity_group.add(self.activity_group_work)
+        self.business = factories.Business()
+        status = factories.StatusAttribute(label='Current',
+                enable_timetracking=True)
+        type_ = factories.TypeAttribute(label='Web Sites',
+            enable_timetracking=True)
+        self.project = factories.Project(type=type_,
+                status=status, business=self.business, point_person=self.user,
+                activity_group=self.activity_group_work)
+        self.project2 = factories.Project(type=type_,
+                status=status, business=self.business, point_person=self.user2,
+                activity_group=self.activity_group_all)
+        factories.ProjectRelationship(user=self.user,
+                project=self.project)
+        self.location = factories.Location()
+
         self.login_user(self.user)
         self.now = timezone.now()
         #define start and end times to create valid entries
@@ -832,10 +1014,54 @@ class CheckOverlap(TimepieceDataTestCase):
         self.assertEqual(user_total_overlaps, 1)
 
 
-class CreateEditEntry(TimepieceDataTestCase):
+class CreateEditEntry(ViewTestMixin, TestCase):
 
     def setUp(self):
         super(CreateEditEntry, self).setUp()
+
+        self.user = factories.User()
+        self.user2 = factories.User()
+        self.superuser = factories.Superuser()
+        permissions = Permission.objects.filter(
+            content_type=ContentType.objects.get_for_model(Entry),
+            codename__in=('can_clock_in', 'can_clock_out',
+            'can_pause', 'change_entry')
+        )
+        self.user.user_permissions = permissions
+        self.user2.user_permissions = permissions
+        self.user.save()
+        self.user2.save()
+        self.activity = factories.Activity(code='WRK',
+                name='Work')
+        self.devl_activity = factories.Activity(code='devl',
+                name='development', billable=True)
+        self.sick_activity = factories.Activity(code="sick",
+                name="sick/personal", billable=False)
+        self.activity_group_all = factories.ActivityGroup(
+                name='All')
+        self.activity_group_work = factories.ActivityGroup(
+                name='Client work')
+
+        activities = Activity.objects.all()
+        for activity in activities:
+            activity.activity_group.add(self.activity_group_all)
+            if activity != self.sick_activity:
+                activity.activity_group.add(self.activity_group_work)
+        self.business = factories.Business()
+        status = factories.StatusAttribute(label='Current',
+                enable_timetracking=True)
+        type_ = factories.TypeAttribute(label='Web Sites',
+            enable_timetracking=True)
+        self.project = factories.Project(type=type_,
+                status=status, business=self.business, point_person=self.user,
+                activity_group=self.activity_group_work)
+        self.project2 = factories.Project(type=type_,
+                status=status, business=self.business, point_person=self.user2,
+                activity_group=self.activity_group_all)
+        factories.ProjectRelationship(user=self.user,
+                project=self.project)
+        self.location = factories.Location()
+
         self.login_user(self.user)
         self.now = timezone.now()
         valid_start = self.now - relativedelta(days=1)
@@ -867,8 +1093,8 @@ class CreateEditEntry(TimepieceDataTestCase):
             'activity': self.devl_activity,
             'start_time': self.ten_min_ago,
         }
-        self.closed_entry = factories.EntryFactory.create(**self.closed_entry_data)
-        self.current_entry = factories.EntryFactory.create(**self.current_entry_data)
+        self.closed_entry = factories.Entry(**self.closed_entry_data)
+        self.current_entry = factories.Entry(**self.current_entry_data)
         self.closed_entry_data.update({
             'st_str': self.two_hour_ago.strftime('%H:%M:%S'),
             'end_str': self.one_hour_ago.strftime('%H:%M:%S'),
@@ -1056,7 +1282,7 @@ class CreateEditEntry(TimepieceDataTestCase):
         If your entries have been verified and then approved, you should
         not be able to add entries for that time period
         """
-        entry = factories.EntryFactory.create(**{
+        entry = factories.Entry(**{
             'user': self.user,
             'start_time': self.ten_min_ago,
             'end_time': self.ten_min_ago + relativedelta(minutes=1)
@@ -1071,7 +1297,7 @@ class CreateEditEntry(TimepieceDataTestCase):
         If your entries have been verified, approved, and invoiced, you
         should not be able to add entries for that time period
         """
-        entry = factories.EntryFactory.create(**{
+        entry = factories.Entry(**{
             'user': self.user,
             'start_time': self.ten_min_ago,
             'end_time': self.ten_min_ago + relativedelta(minutes=1)
@@ -1083,7 +1309,7 @@ class CreateEditEntry(TimepieceDataTestCase):
 
     def edit_entry_helper(self, status='approved'):
         """Helper function for editing approved entries"""
-        entry = factories.EntryFactory.create(**{
+        entry = factories.Entry(**{
             'user': self.user,
             'project': self.project,
             'start_time': self.now - relativedelta(hours=6),
@@ -1147,10 +1373,54 @@ class CreateEditEntry(TimepieceDataTestCase):
         self.assertContains(response, msg)
 
 
-class StatusTest(TimepieceDataTestCase):
+class StatusTest(ViewTestMixin, TestCase):
 
     def setUp(self):
         super(StatusTest, self).setUp()
+
+        self.user = factories.User()
+        self.user2 = factories.User()
+        self.superuser = factories.Superuser()
+        permissions = Permission.objects.filter(
+            content_type=ContentType.objects.get_for_model(Entry),
+            codename__in=('can_clock_in', 'can_clock_out',
+            'can_pause', 'change_entry')
+        )
+        self.user.user_permissions = permissions
+        self.user2.user_permissions = permissions
+        self.user.save()
+        self.user2.save()
+        self.activity = factories.Activity(code='WRK',
+                name='Work')
+        self.devl_activity = factories.Activity(code='devl',
+                name='development', billable=True)
+        self.sick_activity = factories.Activity(code="sick",
+                name="sick/personal", billable=False)
+        self.activity_group_all = factories.ActivityGroup(
+                name='All')
+        self.activity_group_work = factories.ActivityGroup(
+                name='Client work')
+
+        activities = Activity.objects.all()
+        for activity in activities:
+            activity.activity_group.add(self.activity_group_all)
+            if activity != self.sick_activity:
+                activity.activity_group.add(self.activity_group_work)
+        self.business = factories.Business()
+        status = factories.StatusAttribute(label='Current',
+                enable_timetracking=True)
+        type_ = factories.TypeAttribute(label='Web Sites',
+            enable_timetracking=True)
+        self.project = factories.Project(type=type_,
+                status=status, business=self.business, point_person=self.user,
+                activity_group=self.activity_group_work)
+        self.project2 = factories.Project(type=type_,
+                status=status, business=self.business, point_person=self.user2,
+                activity_group=self.activity_group_all)
+        factories.ProjectRelationship(user=self.user,
+                project=self.project)
+        self.location = factories.Location()
+
         self.login_user(self.user)
         self.now = timezone.now()
         self.from_date = utils.get_month_start(self.now)
@@ -1178,19 +1448,19 @@ class StatusTest(TimepieceDataTestCase):
 
     def login_as_admin(self):
         "Helper to login as an admin user"
-        self.admin = factories.SuperuserFactory.create()
+        self.admin = factories.Superuser()
         self.login_user(self.admin)
 
     def login_with_permissions(self, *codenames):
         """Helper to login as a user with correct permissions"""
         perms = Permission.objects.filter(codename__in=codenames)
-        self.perm_user = factories.UserFactory.create()
+        self.perm_user = factories.User()
         self.perm_user.user_permissions.add(*perms)
         self.perm_user.save()
         self.login_user(self.perm_user)
 
     def test_verify_link(self):
-        entry = factories.EntryFactory.create(**{
+        entry = factories.Entry(**{
             'user': self.user,
             'start_time': self.now - relativedelta(hours=1),
             'end_time': self.now
@@ -1204,7 +1474,7 @@ class StatusTest(TimepieceDataTestCase):
 
     def test_approve_link_no_permission(self):
         """Permission is required to see approve timesheet link."""
-        entry = factories.EntryFactory.create(**{
+        entry = factories.Entry(**{
             'user': self.user,
             'start_time': self.now - relativedelta(hours=1),
             'end_time': self.now,
@@ -1215,7 +1485,7 @@ class StatusTest(TimepieceDataTestCase):
 
     def test_approve_link(self):
         self.login_with_permissions('view_entry_summary', 'approve_timesheet')
-        entry = factories.EntryFactory.create(**{
+        entry = factories.Entry(**{
             'user': self.user,
             'start_time': self.now - relativedelta(hours=1),
             'end_time': self.now,
@@ -1252,7 +1522,7 @@ class StatusTest(TimepieceDataTestCase):
 
     def test_verify_other_user(self):
         """A user should not be able to verify another's timesheet"""
-        entry = factories.EntryFactory.create(**{
+        entry = factories.Entry(**{
             'user': self.user2,
             'start_time': self.now - relativedelta(hours=1),
             'end_time': self.now,
@@ -1269,7 +1539,7 @@ class StatusTest(TimepieceDataTestCase):
 
     def test_approve_user(self):
         """A regular user should not be able to approve their timesheet"""
-        entry = factories.EntryFactory.create(**{
+        entry = factories.Entry(**{
             'user': self.user,
             'start_time': self.now - relativedelta(hours=1),
             'end_time': self.now
@@ -1288,7 +1558,7 @@ class StatusTest(TimepieceDataTestCase):
 
     def test_approve_other_user(self):
         """A regular user should not be able to approve another's timesheet"""
-        entry = factories.EntryFactory.create(**{
+        entry = factories.Entry(**{
             'user': self.user2,
             'start_time': self.now - relativedelta(hours=1),
             'end_time': self.now
@@ -1312,13 +1582,13 @@ class StatusTest(TimepieceDataTestCase):
         """
         self.login_as_admin()
 
-        entry1 = factories.EntryFactory.create(**{
+        entry1 = factories.Entry(**{
             'user': self.user,
             'start_time': self.now - relativedelta(hours=5),
             'end_time': self.now - relativedelta(hours=4),
             'status': Entry.UNVERIFIED
         })
-        entry2 = factories.EntryFactory.create(**{
+        entry2 = factories.Entry(**{
             'user': self.user,
             'start_time': self.now - relativedelta(hours=1),
             'status': Entry.UNVERIFIED
@@ -1347,7 +1617,7 @@ class StatusTest(TimepieceDataTestCase):
     def testVerifyButton(self):
         response = self.client.get(self.sheet_url)
         self.assertNotContains(response, self.verify_url())
-        entry = factories.EntryFactory.create(**{
+        entry = factories.Entry(**{
             'user': self.user,
             'start_time': timezone.now() - \
                 relativedelta(hours=1),
@@ -1364,7 +1634,7 @@ class StatusTest(TimepieceDataTestCase):
         self.login_as_admin()
         response = self.client.get(self.sheet_url)
         self.assertFalse(response.context['show_approve'])
-        entry = factories.EntryFactory.create(**{
+        entry = factories.Entry(**{
             'user': self.user,
             'start_time': timezone.now() - relativedelta(hours=1),
             'end_time':  timezone.now(),
@@ -1381,7 +1651,7 @@ class StatusTest(TimepieceDataTestCase):
         self.assertFalse(response.context['show_approve'])
 
     def testVerifyPage(self):
-        entry = factories.EntryFactory.create(**{
+        entry = factories.Entry(**{
             'user': self.user,
             'start_time': timezone.now() - \
                 relativedelta(hours=1),
@@ -1395,7 +1665,7 @@ class StatusTest(TimepieceDataTestCase):
 
     def testApprovePage(self):
         self.login_with_permissions('approve_timesheet', 'view_entry_summary')
-        entry = factories.EntryFactory.create(**{
+        entry = factories.Entry(**{
             'user': self.user,
             'start_time': timezone.now() - relativedelta(hours=1),
             'end_time':  timezone.now(),
@@ -1417,7 +1687,7 @@ class StatusTest(TimepieceDataTestCase):
         self.login_user(self.user)
 
         now = timezone.now()
-        entry = factories.EntryFactory.create(**{
+        entry = factories.Entry(**{
             'user': self.user,
             'start_time': now - relativedelta(hours=1),
             'end_time': now,
@@ -1436,7 +1706,7 @@ class StatusTest(TimepieceDataTestCase):
         self.login_user(self.user2)
 
         now = timezone.now()
-        entry = factories.EntryFactory.create(**{
+        entry = factories.Entry(**{
             'user': self.user,
             'start_time': now - relativedelta(hours=1),
             'end_time': now,
@@ -1449,7 +1719,7 @@ class StatusTest(TimepieceDataTestCase):
 
     def testRejectPage(self):
         self.login_as_admin()
-        entry = factories.EntryFactory.create(**{
+        entry = factories.Entry(**{
             'user': self.user,
             'start_time': timezone.now() - \
                 relativedelta(hours=1),
@@ -1473,7 +1743,7 @@ class StatusTest(TimepieceDataTestCase):
         self.assertEqual(entry.status, Entry.UNVERIFIED)
 
     def testNotAllowedToRejectTimesheet(self):
-        entry = factories.EntryFactory.create(**{
+        entry = factories.Entry(**{
             'user': self.user,
             'start_time': timezone.now() - \
                 relativedelta(hours=1),
@@ -1493,15 +1763,59 @@ class StatusTest(TimepieceDataTestCase):
         self.assertTrue(response.status_code, 403)
 
 
-class TestTotals(TimepieceDataTestCase):
+class TestTotals(ViewTestMixin, LogTimeMixin, TestCase):
 
     def setUp(self):
         super(TestTotals, self).setUp()
-        self.p1 = factories.BillableProjectFactory.create(name='1')
-        self.p2 = factories.NonbillableProjectFactory.create(name='2')
-        self.p4 = factories.BillableProjectFactory.create(name='4')
+
+        self.user = factories.User()
+        self.user2 = factories.User()
+        self.superuser = factories.Superuser()
+        permissions = Permission.objects.filter(
+            content_type=ContentType.objects.get_for_model(Entry),
+            codename__in=('can_clock_in', 'can_clock_out',
+            'can_pause', 'change_entry')
+        )
+        self.user.user_permissions = permissions
+        self.user2.user_permissions = permissions
+        self.user.save()
+        self.user2.save()
+        self.activity = factories.Activity(code='WRK',
+                name='Work')
+        self.devl_activity = factories.Activity(code='devl',
+                name='development', billable=True)
+        self.sick_activity = factories.Activity(code="sick",
+                name="sick/personal", billable=False)
+        self.activity_group_all = factories.ActivityGroup(
+                name='All')
+        self.activity_group_work = factories.ActivityGroup(
+                name='Client work')
+
+        activities = Activity.objects.all()
+        for activity in activities:
+            activity.activity_group.add(self.activity_group_all)
+            if activity != self.sick_activity:
+                activity.activity_group.add(self.activity_group_work)
+        self.business = factories.Business()
+        status = factories.StatusAttribute(label='Current',
+                enable_timetracking=True)
+        type_ = factories.TypeAttribute(label='Web Sites',
+            enable_timetracking=True)
+        self.project = factories.Project(type=type_,
+                status=status, business=self.business, point_person=self.user,
+                activity_group=self.activity_group_work)
+        self.project2 = factories.Project(type=type_,
+                status=status, business=self.business, point_person=self.user2,
+                activity_group=self.activity_group_all)
+        factories.ProjectRelationship(user=self.user,
+                project=self.project)
+        self.location = factories.Location()
+
+        self.p1 = factories.BillableProject(name='1')
+        self.p2 = factories.NonbillableProject(name='2')
+        self.p4 = factories.BillableProject(name='4')
         #For use with daily totals (Same project, non-billable activity)
-        self.p3 = factories.NonbillableProjectFactory.create(name='1')
+        self.p3 = factories.NonbillableProject(name='1')
 
     def testGroupedTotals(self):
         self.login_user(self.user)
@@ -1559,10 +1873,54 @@ class TestTotals(TimepieceDataTestCase):
                         self.assertEqual(totals['total'], 1)
 
 
-class HourlySummaryTest(TimepieceDataTestCase):
+class HourlySummaryTest(ViewTestMixin, TestCase):
 
     def setUp(self):
         super(HourlySummaryTest, self).setUp()
+
+        self.user = factories.User()
+        self.user2 = factories.User()
+        self.superuser = factories.Superuser()
+        permissions = Permission.objects.filter(
+            content_type=ContentType.objects.get_for_model(Entry),
+            codename__in=('can_clock_in', 'can_clock_out',
+            'can_pause', 'change_entry')
+        )
+        self.user.user_permissions = permissions
+        self.user2.user_permissions = permissions
+        self.user.save()
+        self.user2.save()
+        self.activity = factories.Activity(code='WRK',
+                name='Work')
+        self.devl_activity = factories.Activity(code='devl',
+                name='development', billable=True)
+        self.sick_activity = factories.Activity(code="sick",
+                name="sick/personal", billable=False)
+        self.activity_group_all = factories.ActivityGroup(
+                name='All')
+        self.activity_group_work = factories.ActivityGroup(
+                name='Client work')
+
+        activities = Activity.objects.all()
+        for activity in activities:
+            activity.activity_group.add(self.activity_group_all)
+            if activity != self.sick_activity:
+                activity.activity_group.add(self.activity_group_work)
+        self.business = factories.Business()
+        status = factories.StatusAttribute(label='Current',
+                enable_timetracking=True)
+        type_ = factories.TypeAttribute(label='Web Sites',
+            enable_timetracking=True)
+        self.project = factories.Project(type=type_,
+                status=status, business=self.business, point_person=self.user,
+                activity_group=self.activity_group_work)
+        self.project2 = factories.Project(type=type_,
+                status=status, business=self.business, point_person=self.user2,
+                activity_group=self.activity_group_all)
+        factories.ProjectRelationship(user=self.user,
+                project=self.project)
+        self.location = factories.Location()
+
         self.now = timezone.now()
         self.month = self.now.replace(day=1)
         self.url = reverse('view_user_timesheet', args=(self.user.pk,))
@@ -1570,22 +1928,22 @@ class HourlySummaryTest(TimepieceDataTestCase):
 
     def create_month_entries(self):
         """Create four entries, one for each week of the month"""
-        factories.EntryFactory.create(**{
+        factories.Entry(**{
             'user': self.user,
             'start_time': self.month,
             'end_time': self.month + relativedelta(hours=1)
         })
-        factories.EntryFactory.create(**{
+        factories.Entry(**{
             'user': self.user,
             'start_time': self.month + relativedelta(weeks=1),
             'end_time': self.month + relativedelta(weeks=1, hours=1)
         })
-        factories.EntryFactory.create(**{
+        factories.Entry(**{
             'user': self.user,
             'start_time': self.month + relativedelta(weeks=2),
             'end_time': self.month + relativedelta(weeks=2, hours=1)
         })
-        factories.EntryFactory.create(**{
+        factories.Entry(**{
             'user': self.user,
             'start_time': self.month + relativedelta(weeks=3),
             'end_time': self.month + relativedelta(weeks=3, hours=1)
@@ -1609,7 +1967,7 @@ class HourlySummaryTest(TimepieceDataTestCase):
         using default data from create_month_entries()
         """
         self.create_month_entries()
-        old_entry = factories.EntryFactory.create(**{
+        old_entry = factories.Entry(**{
             'user': self.user,
             'start_time': self.month - relativedelta(days=1, hours=1),
             'end_time': self.month - relativedelta(days=1)
@@ -1634,17 +1992,17 @@ class HourlySummaryTest(TimepieceDataTestCase):
         march = utils.add_timezone(
             datetime.datetime(month=3, day=26, year=2012)
         )
-        factories.EntryFactory.create(**{
+        factories.Entry(**{
             'user': self.user,
             'start_time': april,
             'end_time': april + relativedelta(hours=1)
         })
-        factories.EntryFactory.create(**{
+        factories.Entry(**{
             'user': self.user,
             'start_time': april + relativedelta(weeks=1),
             'end_time': april + relativedelta(weeks=1, hours=1)
         })
-        factories.EntryFactory.create(**{
+        factories.Entry(**{
             'user': self.user,
             'start_time': march,
             'end_time': march + relativedelta(hours=1)
@@ -1664,10 +2022,54 @@ class HourlySummaryTest(TimepieceDataTestCase):
         self.assertEquals(list(entries), list(response.context['entries']))
 
 
-class MonthlyRejectTestCase(TimepieceDataTestCase):
+class MonthlyRejectTestCase(ViewTestMixin, TestCase):
 
     def setUp(self):
         super(MonthlyRejectTestCase, self).setUp()
+
+        self.user = factories.User()
+        self.user2 = factories.User()
+        self.superuser = factories.Superuser()
+        permissions = Permission.objects.filter(
+            content_type=ContentType.objects.get_for_model(Entry),
+            codename__in=('can_clock_in', 'can_clock_out',
+            'can_pause', 'change_entry')
+        )
+        self.user.user_permissions = permissions
+        self.user2.user_permissions = permissions
+        self.user.save()
+        self.user2.save()
+        self.activity = factories.Activity(code='WRK',
+                name='Work')
+        self.devl_activity = factories.Activity(code='devl',
+                name='development', billable=True)
+        self.sick_activity = factories.Activity(code="sick",
+                name="sick/personal", billable=False)
+        self.activity_group_all = factories.ActivityGroup(
+                name='All')
+        self.activity_group_work = factories.ActivityGroup(
+                name='Client work')
+
+        activities = Activity.objects.all()
+        for activity in activities:
+            activity.activity_group.add(self.activity_group_all)
+            if activity != self.sick_activity:
+                activity.activity_group.add(self.activity_group_work)
+        self.business = factories.Business()
+        status = factories.StatusAttribute(label='Current',
+                enable_timetracking=True)
+        type_ = factories.TypeAttribute(label='Web Sites',
+            enable_timetracking=True)
+        self.project = factories.Project(type=type_,
+                status=status, business=self.business, point_person=self.user,
+                activity_group=self.activity_group_work)
+        self.project2 = factories.Project(type=type_,
+                status=status, business=self.business, point_person=self.user2,
+                activity_group=self.activity_group_all)
+        factories.ProjectRelationship(user=self.user,
+                project=self.project)
+        self.location = factories.Location()
+
         self.now = timezone.now()
         self.data = {
             'month': self.now.month,
@@ -1678,13 +2080,13 @@ class MonthlyRejectTestCase(TimepieceDataTestCase):
 
     def create_entries(self, date, status):
         """Create entries using a date and with a given status"""
-        factories.EntryFactory.create(**{
+        factories.Entry(**{
             'user': self.user,
             'start_time': date,
             'end_time': date + relativedelta(hours=1),
             'status': status
         })
-        factories.EntryFactory.create(**{
+        factories.Entry(**{
             'user': self.user,
             'start_time': date + relativedelta(hours=2),
             'end_time': date + relativedelta(hours=3),

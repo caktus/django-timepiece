@@ -6,16 +6,17 @@ from urllib import urlencode
 from django.contrib.auth.models import User, Permission
 from django.core.urlresolvers import reverse
 from django.utils import timezone
+from django.test import TestCase
 
 from timepiece import utils
-from timepiece.tests.base import TimepieceDataTestCase
+from timepiece.tests.base import ViewTestMixin
 from timepiece.tests import factories
 
 from timepiece.entries.models import Entry, ProjectHours
 from timepiece.entries.views import Dashboard
 
 
-class DashboardViewTestCase(TimepieceDataTestCase):
+class DashboardViewTestCase(ViewTestMixin, TestCase):
     """Tests the data that is passed to the dashboard template."""
 
     def setUp(self):
@@ -26,14 +27,14 @@ class DashboardViewTestCase(TimepieceDataTestCase):
         get_params = {'week_start': self.this_week.strftime('%Y-%m-%d')}
         self.url = reverse('dashboard') + '?' + urlencode(get_params)
 
-        self.user = factories.UserFactory.create()
+        self.user = factories.User()
         self.permission = Permission.objects.get(codename='can_clock_in')
         self.user.user_permissions.add(self.permission)
         self.login_user(self.user)
 
-        self.project = factories.ProjectFactory.create()
-        self.activity = factories.ActivityFactory.create()
-        self.location = factories.LocationFactory.create()
+        self.project = factories.Project()
+        self.activity = factories.Activity()
+        self.location = factories.Location()
         self.status = Entry.UNVERIFIED
 
     def _create_entry(self, start_time, end_time=None, user=None):
@@ -51,7 +52,7 @@ class DashboardViewTestCase(TimepieceDataTestCase):
         }
         if end_time:
             data['end_time'] = end_time
-        return factories.EntryFactory.create(**data)
+        return factories.Entry(**data)
 
     def _create_active_entry(self):
         start_time = datetime.datetime(2012, 11, 9, 0)
@@ -71,7 +72,7 @@ class DashboardViewTestCase(TimepieceDataTestCase):
         count = 5
         start_time = datetime.datetime(2012, 11, 6, 12)
         for i in range(count):
-            user = factories.UserFactory.create()
+            user = factories.User()
             self._create_entry(start_time, user=user)
         return count
 
@@ -143,7 +144,7 @@ class DashboardViewTestCase(TimepieceDataTestCase):
         self.assertEqual(len(response.context['others_active_entries']), 0)
 
 
-class ProcessProgressTestCase(TimepieceDataTestCase):
+class ProcessProgressTestCase(TestCase):
     """Tests for process_progress."""
 
     def setUp(self):
@@ -151,12 +152,11 @@ class ProcessProgressTestCase(TimepieceDataTestCase):
         self.this_week = utils.get_week_start(self.today)
         self.next_week = self.this_week + relativedelta(days=7)
 
-        self.user = factories.UserFactory.create()
-        self.login_user(self.user)
+        self.user = factories.User()
 
-        self.project = factories.ProjectFactory.create()
-        self.activity = factories.ActivityFactory.create()
-        self.location = factories.LocationFactory.create()
+        self.project = factories.Project()
+        self.activity = factories.Activity()
+        self.location = factories.Location()
         self.status = Entry.UNVERIFIED
 
     def _create_entry(self, start_time, end_time=None, project=None):
@@ -170,7 +170,7 @@ class ProcessProgressTestCase(TimepieceDataTestCase):
         }
         if end_time:
             data['end_time'] = end_time
-        return factories.EntryFactory.create(**data)
+        return factories.Entry(**data)
 
     def _create_hours(self, hours, project=None):
         data = {
@@ -179,7 +179,7 @@ class ProcessProgressTestCase(TimepieceDataTestCase):
             'week_start': self.this_week,
             'hours': hours,
         }
-        return factories.ProjectHoursFactory.create(**data)
+        return factories.ProjectHours(**data)
 
     def _get_progress(self):
         entries = Entry.objects.all()
@@ -229,9 +229,9 @@ class ProcessProgressTestCase(TimepieceDataTestCase):
     def test_ordering(self):
         """Progress list should be ordered by project name."""
         projects = [
-            factories.ProjectFactory.create(name='a'),
-            factories.ProjectFactory.create(name='b'),
-            factories.ProjectFactory.create(name='c'),
+            factories.Project(name='a'),
+            factories.Project(name='b'),
+            factories.Project(name='c'),
         ]
         for i in range(3):
             start_time = datetime.datetime(2012, 11, 5 + i, 8, 0)

@@ -3,10 +3,11 @@ from decimal import Decimal
 
 from django.contrib.auth.models import Permission
 from django.utils import timezone
+from django.test import TestCase
 
 from timepiece import utils
 from timepiece.tests import factories
-from timepiece.tests.base import TimepieceDataTestCase, ViewTestMixin
+from timepiece.tests.base import ViewTestMixin, LogTimeMixin
 
 from ..models import Project
 
@@ -15,22 +16,22 @@ __all__ = ['TestCreateProjectView', 'TestDeleteProjectView',
         'TestProjectListView', 'TestProjectTimesheetView']
 
 
-class TestCreateProjectView(ViewTestMixin, TimepieceDataTestCase):
+class TestCreateProjectView(ViewTestMixin, TestCase):
     url_name = 'create_project'
     template_name = 'timepiece/project/create_edit.html'
 
     def setUp(self):
         self.permissions = [Permission.objects.get(codename='add_project')]
-        self.user = factories.UserFactory(permissions=self.permissions)
+        self.user = factories.User(permissions=self.permissions)
         self.login_user(self.user)
 
         self.post_data = {
             'name': 'Project',
-            'business_1': factories.BusinessFactory.create().pk,
-            'point_person': factories.SuperuserFactory.create().pk,
-            'activity_group': factories.ActivityGroupFactory.create().pk,
-            'type': factories.TypeAttributeFactory.create().pk,
-            'status': factories.StatusAttributeFactory.create().pk,
+            'business_1': factories.Business().pk,
+            'point_person': factories.Superuser().pk,
+            'activity_group': factories.ActivityGroup().pk,
+            'type': factories.TypeAttribute().pk,
+            'status': factories.StatusAttribute().pk,
             'description': 'a project...',
         }
 
@@ -63,16 +64,16 @@ class TestCreateProjectView(ViewTestMixin, TimepieceDataTestCase):
         self.assertRedirectsNoFollow(response, project.get_absolute_url())
 
 
-class TestDeleteProjectView(ViewTestMixin, TimepieceDataTestCase):
+class TestDeleteProjectView(ViewTestMixin, TestCase):
     url_name = 'delete_project'
     template_name = 'timepiece/delete_object.html'
 
     def setUp(self):
         self.permissions = [Permission.objects.get(codename='delete_project')]
-        self.user = factories.UserFactory(permissions=self.permissions)
+        self.user = factories.User(permissions=self.permissions)
         self.login_user(self.user)
 
-        self.obj = factories.ProjectFactory.create()
+        self.obj = factories.Project()
 
         self.url_kwargs = {'project_id': self.obj.pk}
 
@@ -104,13 +105,13 @@ class TestDeleteProjectView(ViewTestMixin, TimepieceDataTestCase):
         self.assertEquals(Project.objects.count(), 0)
 
 
-class TestProjectListView(ViewTestMixin, TimepieceDataTestCase):
+class TestProjectListView(ViewTestMixin, TestCase):
     url_name = 'list_projects'
     template_name = 'timepiece/project/list.html'
 
     def setUp(self):
         self.permissions = [Permission.objects.get(codename='view_project')]
-        self.user = factories.UserFactory(permissions=self.permissions)
+        self.user = factories.User(permissions=self.permissions)
         self.login_user(self.user)
 
     def test_get_no_permission(self):
@@ -121,7 +122,7 @@ class TestProjectListView(ViewTestMixin, TimepieceDataTestCase):
 
     def test_list_all(self):
         """If no filters are provided, all projects should be listed."""
-        projects = [factories.ProjectFactory() for i in range(3)]
+        projects = [factories.Project() for i in range(3)]
         response = self._get()
         self.assertEquals(response.status_code, 200)
         self.assertTemplateUsed(response, self.template_name)
@@ -138,7 +139,7 @@ class TestProjectListView(ViewTestMixin, TimepieceDataTestCase):
 
     def test_list_one(self):
         """If there is only one project, and no search query, page should render."""
-        project = factories.ProjectFactory()
+        project = factories.Project()
         response = self._get()
         self.assertEquals(response.status_code, 200)
         self.assertTemplateUsed(response, self.template_name)
@@ -146,51 +147,56 @@ class TestProjectListView(ViewTestMixin, TimepieceDataTestCase):
 
     def test_one_result(self):
         """If there is only one search result, user should be redirected."""
-        project = factories.ProjectFactory()
+        project = factories.Project()
         response = self._get(get_kwargs={'status': project.status.pk})
         self.assertRedirectsNoFollow(response, project.get_absolute_url())
 
     def test_filter_name(self):
         """User should be able to filter by search query and status."""
-        project = factories.ProjectFactory(name='hello')
-        other_project = factories.ProjectFactory()
+        project = factories.Project(name='hello')
+        other_project = factories.Project()
         response = self._get(get_kwargs={'search': 'ello'})
         self.assertRedirectsNoFollow(response, project.get_absolute_url())
 
     def test_filter_description(self):
         """User should be able to filter by search query and status."""
-        project = factories.ProjectFactory(description='hello')
-        other_project = factories.ProjectFactory()
+        project = factories.Project(description='hello')
+        other_project = factories.Project()
         response = self._get(get_kwargs={'search': 'ello'})
         self.assertRedirectsNoFollow(response, project.get_absolute_url())
 
     def test_filter_status(self):
         """User should be able to filter by search query and status."""
-        project = factories.ProjectFactory()
-        other_project = factories.ProjectFactory()
+        project = factories.Project()
+        other_project = factories.Project()
         response = self._get(get_kwargs={'status': project.status.pk})
         self.assertRedirectsNoFollow(response, project.get_absolute_url())
 
     def test_filter_query_and_status(self):
         """User should be able to filter by search query and status."""
-        project = factories.ProjectFactory(name='hello')
-        other_project1 = factories.ProjectFactory(description='hello')
-        other_project2 = factories.ProjectFactory(status=project.status)
+        project = factories.Project(name='hello')
+        other_project1 = factories.Project(description='hello')
+        other_project2 = factories.Project(status=project.status)
         get_kwargs = {'status': project.status.pk, 'search': 'ello'}
         response = self._get(get_kwargs=get_kwargs)
         self.assertRedirectsNoFollow(response, project.get_absolute_url())
 
 
-class TestProjectTimesheetView(ViewTestMixin, TimepieceDataTestCase):
+class TestProjectTimesheetView(ViewTestMixin, LogTimeMixin, TestCase):
     url_name = 'view_project_timesheet'
 
     def setUp(self):
         super(TestProjectTimesheetView, self).setUp()
-        self.p1 = factories.BillableProjectFactory.create(name='1')
-        self.p2 = factories.NonbillableProjectFactory.create(name='2')
-        self.p4 = factories.BillableProjectFactory.create(name='4')
-        self.p3 = factories.NonbillableProjectFactory.create(name='1')
+        self.user = factories.User()
+        self.user2 = factories.User()
+        self.superuser = factories.Superuser()
+        self.p1 = factories.BillableProject(name='1')
+        self.p2 = factories.NonbillableProject(name='2')
+        self.p4 = factories.BillableProject(name='4')
+        self.p3 = factories.NonbillableProject(name='1')
         self.url_args = (self.p1.pk,)
+        self.devl_activity = factories.Activity(billable=True)
+        self.activity = factories.Activity()
 
     def make_entries(self):
         days = [
