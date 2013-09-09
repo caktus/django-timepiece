@@ -89,7 +89,7 @@ class QuickLookup(LookupBase):
             return None
 
     def get_item_value(self, item):
-        return item.value
+        return item.value if item else ''
 
 
 registry.register(BusinessLookup)
