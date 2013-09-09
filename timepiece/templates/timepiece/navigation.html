@@ -105,10 +105,18 @@
 
                 {% block quick-search %}
                     {% if perms.crm.view_business %}
-                        <form class="navbar-search pull-right" action="{% url 'quick_search' %}" method="post" accept-charset="utf-8">
+                        <form id="quick_search" class="navbar-search pull-right" action="{% url 'quick_search' %}" method="post" accept-charset="utf-8">
                             {% csrf_token %}
                             {{ quick_search_form.quick_search }}
                         </form>
+                        <script>
+                            $(document).ready(function() {
+                                var quick_search = $('#quick_search :input[name=quick_search_0]');
+                                quick_search.bind('djselectableselect', function(event, ui) {
+                                    $(this).parents('form').submit();
+                                });
+                            });
+                        </script>
                     {% endif %}
                 {% endblock quick-search %}
             {% endblock navbar-right %}
