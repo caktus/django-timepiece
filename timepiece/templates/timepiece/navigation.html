@@ -105,7 +105,8 @@
 
                 {% block quick-search %}
                     {% if perms.crm.view_business %}
-                        <form class="navbar-search pull-right" action="{% url 'quick_search' %}" method="get" accept-charset="utf-8">
+                        <form class="navbar-search pull-right" action="{% url 'quick_search' %}" method="post" accept-charset="utf-8">
+                            {% csrf_token %}
                             {{ quick_search_form.quick_search }}
                         </form>
                     {% endif %}
