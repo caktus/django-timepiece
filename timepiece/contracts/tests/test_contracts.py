@@ -184,7 +184,7 @@ class ContractHourTestCase(TestCase):
         self.assertEqual(datetime.date.today(), ch.date_approved)
 
     def test_get_absolute_url(self):
-        ch = factories.ContractHourFactory.create()
+        ch = factories.ContractHour.create()
         url = '/admin/contracts/contracthour/%d/' % ch.pk
         self.assertEqual(url, ch.get_absolute_url())
 
