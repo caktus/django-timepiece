@@ -4,14 +4,14 @@ from timepiece.crm import views
 
 
 urlpatterns = patterns('',
-    url(r'^search/$', views.search, name='search'),
+    url(r'^quick_search/$', views.QuickSearch.as_view(), name='quick_search'),
 
     # Users
     url(r'^user/settings/$',
         views.edit_settings,
         name='edit_settings'),
     url(r'^user/$',
-        views.list_users,
+        views.ListUsers.as_view(),
         name='list_users'),
     url(r'^user/create/$',
         views.CreateUser.as_view(),
@@ -38,7 +38,7 @@ urlpatterns = patterns('',
 
     # Projects
     url(r'^project/$',
-        views.list_projects,
+        views.ListProjects.as_view(),
         name='list_projects'),
     url(r'^project/create/$',
         views.CreateProject.as_view(),
@@ -61,7 +61,7 @@ urlpatterns = patterns('',
 
     # Businesses
     url(r'^business/$',
-        views.list_businesses,
+        views.ListBusinesses.as_view(),
         name='list_businesses'),
     url(r'^business/create/$',
         views.CreateBusiness.as_view(),

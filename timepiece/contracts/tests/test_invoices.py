@@ -5,27 +5,128 @@ import urllib
 
 from django.contrib.auth.models import User, Permission
 from django.core.urlresolvers import reverse
+from django.test import TestCase
 
 from timepiece import utils
 from timepiece.forms import DATE_FORM_FORMAT
 from timepiece.tests import factories
-from timepiece.tests.base import TimepieceDataTestCase, ViewTestMixin
+from timepiece.tests.base import ViewTestMixin, LogTimeMixin
 
 from timepiece.contracts.models import EntryGroup, HourGroup
 from timepiece.crm.models import Attribute
 from timepiece.entries.models import Activity, Entry
 
 
-class InvoiceViewPreviousTestCase(TimepieceDataTestCase):
+class TestListInvoicesView(ViewTestMixin, TestCase):
+    url_name = 'list_invoices'
+    template_name = 'timepiece/invoice/list.html'
+    factory = factories.EntryGroup
+    model = EntryGroup
+
+    def setUp(self):
+        super(TestListInvoicesView, self).setUp()
+        self.permissions = [Permission.objects.get(codename='add_entrygroup')]
+        self.user = factories.User(permissions=self.permissions)
+        self.login_user(self.user)
+
+    def test_get_no_permission(self):
+        """Permission is required for this view."""
+        self.user.user_permissions.clear()
+        response = self._get()
+        self.assertRedirectsToLogin(response)
+
+    def test_list_all(self):
+        """If no filters are provided, all objects should be listed."""
+        object_list = [self.factory.create() for i in range(3)]
+        response = self._get()
+        self.assertEquals(response.status_code, 200)
+        self.assertTemplateUsed(response, self.template_name)
+        self.assertEquals(response.context['object_list'].count(), 3)
+        for obj in object_list:
+            self.assertTrue(obj in response.context['object_list'])
+
+    def test_list_one(self):
+        """Page should render if there is one object & no search query."""
+        obj = self.factory.create()
+        response = self._get()
+        self.assertEquals(response.status_code, 200)
+        self.assertTemplateUsed(response, self.template_name)
+        self.assertEquals(response.context['object_list'].count(), 1)
+        self.assertEquals(response.context['object_list'].get(), obj)
+
+    def test_no_results(self):
+        """Page should render if there are no search results."""
+        obj = self.factory.create()
+        response = self._get(get_kwargs={'search': 'hello'})
+        self.assertEquals(response.status_code, 200)
+        self.assertTemplateUsed(response, self.template_name)
+        self.assertEquals(response.context['object_list'].count(), 0)
+
+    def test_one_result(self):
+        """Page should render if there is only one search result."""
+        obj = self.factory.create(comments='hello')
+        response = self._get(get_kwargs={'search': 'hello'})
+        self.assertEquals(response.status_code, 200)
+        self.assertTemplateUsed(response, self.template_name)
+        self.assertEquals(response.context['object_list'].count(), 1)
+        self.assertEquals(response.context['object_list'].get(), obj)
+
+    def test_multiple_results(self):
+        """Page should render if there are multiple search results."""
+        obj_list = [self.factory.create(comments='hello') for i in range(2)]
+        response = self._get(get_kwargs={'search': 'hello'})
+        self.assertEquals(response.status_code, 200)
+        self.assertTemplateUsed(response, self.template_name)
+        self.assertEquals(response.context['object_list'].count(), 2)
+        for obj in obj_list:
+            self.assertTrue(obj in response.context['object_list'])
+
+    def test_filter_number(self):
+        """User should be able to filter by search query."""
+        obj = self.factory.create(number='hello')
+        other_obj = self.factory.create()
+        response = self._get(get_kwargs={'search': 'hello'})
+        self.assertEquals(response.status_code, 200)
+        self.assertEquals(response.context['object_list'].get(), obj)
+
+    def test_filter_comments(self):
+        """User should be able to filter by search query."""
+        obj = self.factory.create(comments='hello')
+        other_obj = self.factory.create()
+        response = self._get(get_kwargs={'search': 'hello'})
+        self.assertEquals(response.status_code, 200)
+        self.assertEquals(response.context['object_list'].get(), obj)
+
+    def test_filter_project_name(self):
+        """User should be able to filter by search query."""
+        obj = self.factory.create(project__name='hello')
+        other_obj = self.factory.create()
+        response = self._get(get_kwargs={'search': 'hello'})
+        self.assertEquals(response.status_code, 200)
+        self.assertEquals(response.context['object_list'].get(), obj)
+
+    def test_filter_user_username(self):
+        """User should be able to filter by search query."""
+        obj = self.factory.create(user__username='hello')
+        other_obj = self.factory.create()
+        response = self._get(get_kwargs={'search': 'hello'})
+        self.assertEquals(response.status_code, 200)
+        self.assertEquals(response.context['object_list'].get(), obj)
+
+
+class InvoiceViewPreviousTestCase(ViewTestMixin, LogTimeMixin, TestCase):
 
     def setUp(self):
         super(InvoiceViewPreviousTestCase, self).setUp()
-        self.user.is_superuser = True
-        self.user.save()
+        self.user = factories.Superuser()
         self.login_user(self.user)
+        self.devl_activity = factories.Activity(code='devl',
+                name='development', billable=True)
+        self.activity = factories.Activity(code='WRK',
+                name='Work')
         # Make some projects and entries for invoice creation
-        self.project = factories.BillableProjectFactory.create()
-        self.project2 = factories.BillableProjectFactory.create()
+        self.project = factories.BillableProject()
+        self.project2 = factories.BillableProject()
         last_start = self.log_many([self.project, self.project2])
         # Add some non-billable entries
         self.log_many([self.project, self.project2], start=last_start,
@@ -72,17 +173,17 @@ class InvoiceViewPreviousTestCase(TimepieceDataTestCase):
         url = reverse('list_invoices')
         response = self.client.get(url)
         self.assertEqual(response.status_code, 200)
-        invoices = response.context['invoices']
+        invoices = response.context['object_list']
         self.assertEqual(len(invoices), 2)
 
     def test_previous_invoice_list_search(self):
 
         def search(query):
             response = self.client.get(list_url, data={'search': query})
-            return response.context['invoices']
+            return response.context['object_list']
 
         list_url = reverse('list_invoices')
-        project3 = factories.BillableProjectFactory.create(name=':-D')
+        project3 = factories.BillableProject(name=':-D')
         self.log_many([project3], 10)
         self.create_invoice(project=project3, data={
             'status': EntryGroup.INVOICED,
@@ -241,33 +342,32 @@ class InvoiceViewPreviousTestCase(TimepieceDataTestCase):
         self.assertEqual(new_entry.entry_group, None)
 
 
-class InvoiceCreateTestCase(TimepieceDataTestCase):
+class InvoiceCreateTestCase(ViewTestMixin, TestCase):
 
     def setUp(self):
         super(InvoiceCreateTestCase, self).setUp()
-        self.user.is_superuser = True
-        self.user.save()
+        self.user = factories.Superuser()
         self.login_user(self.user)
         start = utils.add_timezone(datetime.datetime(2011, 1, 1, 8))
         end = utils.add_timezone(datetime.datetime(2011, 1, 1, 12))
-        self.project_billable = factories.BillableProjectFactory.create()
-        self.project_billable2 = factories.BillableProjectFactory.create()
-        self.project_non_billable = factories.NonbillableProjectFactory.create()
-        self.entry1 = factories.EntryFactory.create(user=self.user,
+        self.project_billable = factories.BillableProject()
+        self.project_billable2 = factories.BillableProject()
+        self.project_non_billable = factories.NonbillableProject()
+        self.entry1 = factories.Entry(user=self.user,
                 project=self.project_billable,
-                activity=factories.ActivityFactory.create(billable=True),
+                activity=factories.Activity(billable=True),
                 start_time=start, end_time=end, status=Entry.APPROVED)
-        self.entry2 = factories.EntryFactory.create(user=self.user,
+        self.entry2 = factories.Entry(user=self.user,
                 project=self.project_billable,
-                activity=factories.ActivityFactory.create(billable=True),
+                activity=factories.Activity(billable=True),
                 start_time=start - relativedelta(days=5),
                 end_time=end - relativedelta(days=5), status=Entry.APPROVED)
-        self.entry3 = factories.EntryFactory.create(user=self.user,
+        self.entry3 = factories.Entry(user=self.user,
                 project=self.project_billable2,
-                activity=factories.ActivityFactory.create(billable=False),
+                activity=factories.Activity(billable=False),
                 start_time=start - relativedelta(days=10),
                 end_time=end - relativedelta(days=10), status=Entry.APPROVED)
-        self.entry4 = factories.EntryFactory.create(user=self.user,
+        self.entry4 = factories.Entry(user=self.user,
                 project=self.project_non_billable,
                 start_time=start + relativedelta(hours=11),
                 end_time=end + relativedelta(hours=15), status=Entry.APPROVED)
@@ -291,12 +391,12 @@ class InvoiceCreateTestCase(TimepieceDataTestCase):
         """Helper to login as user with correct permissions"""
         generate_invoice = Permission.objects.get(
             codename='generate_project_invoice')
-        user = factories.UserFactory.create()
+        user = factories.User()
         user.user_permissions.add(generate_invoice)
 
     def test_invoice_confirm_view_user(self):
         """A regular user should not be able to access this page"""
-        self.login_user(self.user2)
+        self.login_user(factories.User())
         to_date = utils.add_timezone(datetime.datetime(2011, 1, 31))
         url = self.get_create_url(project=self.project_billable.pk,
                 to_date=to_date.strftime(DATE_FORM_FORMAT))
@@ -347,9 +447,9 @@ class InvoiceCreateTestCase(TimepieceDataTestCase):
         end = utils.add_timezone(datetime.datetime(2011, 1, 1, 12))
         # start = utils.add_timezone(datetime.datetime.now())
         # end = start + relativedelta(hours=4)
-        activity = factories.ActivityFactory.create(billable=True, name='activity1')
+        activity = factories.Activity(billable=True, name='activity1')
         for num in xrange(0, 4):
-            new_entry = factories.EntryFactory.create(user=self.user,
+            new_entry = factories.Entry(user=self.user,
                     project=self.project_billable,
                     start_time=start - relativedelta(days=num),
                     end_time=end - relativedelta(days=num),
@@ -448,37 +548,36 @@ class InvoiceCreateTestCase(TimepieceDataTestCase):
             self.assertEqual(entry.entry_group_id, invoice.id)
 
 
-class ListOutstandingInvoicesViewTestCase(ViewTestMixin, TimepieceDataTestCase):
+class ListOutstandingInvoicesViewTestCase(ViewTestMixin, TestCase):
     url_name = 'list_outstanding_invoices'
 
     def setUp(self):
         super(ListOutstandingInvoicesViewTestCase, self).setUp()
-        self.user.is_superuser = True
-        self.user.save()
+        self.user = factories.Superuser()
         self.login_user(self.user)
 
         start = utils.add_timezone(datetime.datetime(2011, 1, 1, 8))
         end = utils.add_timezone(datetime.datetime(2011, 1, 1, 12))
 
-        self.project_billable = factories.BillableProjectFactory.create()
-        self.project_billable2 = factories.BillableProjectFactory.create()
-        self.project_non_billable = factories.NonbillableProjectFactory.create()
+        self.project_billable = factories.BillableProject()
+        self.project_billable2 = factories.BillableProject()
+        self.project_non_billable = factories.NonbillableProject()
 
-        self.entry1 = factories.EntryFactory.create(user=self.user,
+        self.entry1 = factories.Entry(user=self.user,
                 project=self.project_billable,
-                activity=factories.ActivityFactory.create(billable=True),
+                activity=factories.Activity(billable=True),
                 start_time=start, end_time=end, status=Entry.APPROVED)
-        self.entry2 = factories.EntryFactory.create(user=self.user,
+        self.entry2 = factories.Entry(user=self.user,
                 project=self.project_billable,
-                activity=factories.ActivityFactory.create(billable=True),
+                activity=factories.Activity(billable=True),
                 start_time=start - relativedelta(days=5),
                 end_time=end - relativedelta(days=5), status=Entry.APPROVED)
-        self.entry3 = factories.EntryFactory.create(user=self.user,
+        self.entry3 = factories.Entry(user=self.user,
                 project=self.project_billable2,
-                activity=factories.ActivityFactory.create(billable=False),
+                activity=factories.Activity(billable=False),
                 start_time=start - relativedelta(days=10),
                 end_time=end - relativedelta(days=10), status=Entry.APPROVED)
-        self.entry4 = factories.EntryFactory.create(user=self.user,
+        self.entry4 = factories.Entry(user=self.user,
                 project=self.project_non_billable,
                 start_time=start + relativedelta(hours=11),
                 end_time=end + relativedelta(hours=15), status=Entry.APPROVED)

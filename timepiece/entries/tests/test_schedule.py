@@ -6,19 +6,20 @@ from decimal import Decimal
 from django.contrib.auth.models import Permission, User
 from django.contrib.contenttypes.models import ContentType
 from django.core.urlresolvers import reverse
+from django.test import TestCase
 
 from timepiece import utils
-from timepiece.tests.base import TimepieceDataTestCase
 from timepiece.tests import factories
+from timepiece.tests.base import ViewTestMixin
 
 from timepiece.entries.models import Entry, ProjectHours
 from timepiece.entries.views import ScheduleView
 
 
-class ProjectHoursTestCase(TimepieceDataTestCase):
+class ProjectHoursTestCase(ViewTestMixin, TestCase):
 
     def setUp(self):
-        self.user = factories.UserFactory.create()
+        self.user = factories.User()
         permissions = Permission.objects.filter(
             content_type=ContentType.objects.get_for_model(Entry),
             codename__in=('can_clock_in', 'can_clock_out', 'can_pause',
@@ -26,26 +27,26 @@ class ProjectHoursTestCase(TimepieceDataTestCase):
         )
         self.user.user_permissions = permissions
         self.user.save()
-        self.superuser = factories.SuperuserFactory.create()
+        self.superuser = factories.Superuser()
 
-        self.tracked_status = factories.StatusAttributeFactory.create(
+        self.tracked_status = factories.StatusAttribute(
                 label='Current', billable=True, enable_timetracking=True)
-        self.untracked_status = factories.StatusAttributeFactory.create(
+        self.untracked_status = factories.StatusAttribute(
                 label='Closed', billable=False, enable_timetracking=False)
-        self.tracked_type = factories.TypeAttributeFactory.create(
+        self.tracked_type = factories.TypeAttribute(
                 label='Tracked', billable=True, enable_timetracking=True)
-        self.untracked_type = factories.TypeAttributeFactory.create(
+        self.untracked_type = factories.TypeAttribute(
                 label='Untracked', billable=False, enable_timetracking=False)
 
-        self.work_activities = factories.ActivityGroupFactory.create(name='Work')
-        self.leave_activities = factories.ActivityGroupFactory.create(name='Leave')
-        self.all_activities = factories.ActivityGroupFactory.create(name='All')
+        self.work_activities = factories.ActivityGroup(name='Work')
+        self.leave_activities = factories.ActivityGroup(name='Leave')
+        self.all_activities = factories.ActivityGroup(name='All')
 
-        self.leave_activity = factories.ActivityFactory.create(code='leave',
+        self.leave_activity = factories.Activity(code='leave',
                 name='Leave', billable=False)
         self.leave_activity.activity_group.add(self.leave_activities,
                 self.all_activities)
-        self.work_activity = factories.ActivityFactory.create(code='work',
+        self.work_activity = factories.Activity(code='work',
                 name='Work', billable=True)
         self.work_activity.activity_group.add(self.work_activities,
                 self.all_activities)
@@ -55,14 +56,14 @@ class ProjectHoursTestCase(TimepieceDataTestCase):
             'status': self.tracked_status,
             'activity_group': self.work_activities,
         }
-        self.tracked_project = factories.BillableProjectFactory.create(
+        self.tracked_project = factories.BillableProject(
                 name='Tracked', **data)
         data = {
             'type': self.untracked_type,
             'status': self.untracked_status,
             'activity_group': self.all_activities,
         }
-        self.untracked_project = factories.BillableProjectFactory.create(
+        self.untracked_project = factories.BillableProject(
                 name='Untracked', **data)
 
 
@@ -87,9 +88,9 @@ class ProjectHoursListViewTestCase(ProjectHoursTestCase):
         self.past_week = utils.get_week_start(datetime.date(2012, 4, 1)).date()
         self.current_week = utils.get_week_start().date()
         for i in range(5):
-            factories.ProjectHoursFactory.create(week_start=self.past_week,
+            factories.ProjectHours(week_start=self.past_week,
                     published=True)
-            factories.ProjectHoursFactory.create(week_start=self.current_week,
+            factories.ProjectHours(week_start=self.current_week,
                     published=True)
         self.url = reverse('view_schedule')
         self.login_user(self.user)
@@ -97,7 +98,7 @@ class ProjectHoursListViewTestCase(ProjectHoursTestCase):
 
     def test_no_permission(self):
         """User must have permission entries.can_clock_in to view page."""
-        self.basic_user = factories.UserFactory.create()
+        self.basic_user = factories.User()
         self.login_user(self.basic_user)
         response = self.client.get(self.url)
         self.assertEquals(response.status_code, 302)
@@ -175,7 +176,7 @@ class ProjectHoursEditTestCase(ProjectHoursTestCase):
         super(ProjectHoursEditTestCase, self).setUp()
         self.permission = Permission.objects.filter(
             codename='add_projecthours')
-        self.manager = factories.UserFactory.create()
+        self.manager = factories.User()
         self.manager.user_permissions = self.permission
         self.view_url = reverse('edit_schedule')
         self.ajax_url = reverse('ajax_schedule')
@@ -319,10 +320,10 @@ class ProjectHoursEditTestCase(ProjectHoursTestCase):
     def test_users(self):
         """Should retrieve all users who can_clock_in."""
         perm = Permission.objects.get(codename='can_clock_in')
-        group = factories.GroupFactory.create()
+        group = factories.Group()
         group.permissions.add(perm)
 
-        group_user = factories.UserFactory.create()
+        group_user = factories.User()
         group_user.groups.add(group)
         perm_user = self.user
         super_user = self.superuser

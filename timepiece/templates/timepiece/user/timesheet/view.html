@@ -199,8 +199,8 @@
                 </div>
                 <div class="tab-pane{% if active_tab == 'daily-summary' %} active{% endif %}" id="daily-summary">
                     {% if grouped_totals %}
-                        {% for week, week_totals, days in grouped_totals %}
-                            <table class="table table-bordered table-condensed">
+                        <table class="table table-bordered table-condensed">
+                            {% for week, week_totals, days in grouped_totals %}
                                 <tr class="ledger_header">
                                     <th colspan="2">Week of {{ week|date:'M j, Y'}} </th>
                                     <th>Billable</th>
@@ -237,11 +237,12 @@
                                     <td class="hours">{{ week_totals.non_billable|humanize_hours:"{hours:02d}:{minutes:02d}" }}</td>
                                     <td class="hours">{{ week_totals.total|humanize_hours:"{hours:02d}:{minutes:02d}" }}</td>
                                 </tr>
-                            </table>
-                        {% endfor %}
-                        <table class="table table-bordered table-condensed totals">
+                                {% if not forloop.last %}
+                                    <tr><td colspan="5">&nbsp;</td></tr>
+                                {% endif %}
+                            {% endfor %}
                             <thead>
-                                <tr>
+                                <tr class="totals">
                                     <th></th>
                                     <th></th>
                                     <th class="billable"></th>
@@ -249,7 +250,7 @@
                                     <th class="total"></th>
                                 </tr>
                             </thead>
-                            <tr>
+                            <tr class="totals">
                                 <td colspan="4"><strong>Overall total for the period:</strong></td>
                                 <td class="hours">{{ summary.total|humanize_hours:"{hours:02d}:{minutes:02d}" }}</td>
                             </tr>

@@ -97,7 +97,7 @@ body {
     }
 
     span {
-        &.individual {
+        &.user {
             .bg-icon('user.png');
             padding-left: 20px;
         }
@@ -573,10 +573,8 @@ body {
     }
 
     &#payroll-summary {
-        #weekly-summary tbody tr, #hourly-summary tbody tr {
-            .hover {
-                background-color: @tableBackgroundHover !important;
-            }
+        .hover {
+            background-color: @tableBackgroundHover !important;
         }
     }
 

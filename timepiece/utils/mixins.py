@@ -52,3 +52,17 @@ class CsrfExemptMixin(object):
     @method_decorator(csrf_exempt)
     def dispatch(self, *args, **kwargs):
         return super(CsrfExemptMixin, self).dispatch(*args, **kwargs)
+
+
+class GetDataFormMixin(object):
+    """Used with subclasses of FormMixin to use GET data from the request."""
+
+    def get_form_data(self):
+        return self.request.GET or None
+
+    def get_form_kwargs(self):
+        kwargs = super(GetDataFormMixin, self).get_form_kwargs()
+        kwargs.update({
+            'data': self.get_form_data(),
+        })
+        return kwargs
