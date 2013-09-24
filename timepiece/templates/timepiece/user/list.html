@@ -28,7 +28,7 @@
     <div class="row-fluid">
         <div class="span12">
             {% load pagination_tags %}
-            {% autopaginate users %}
+            {% autopaginate object_list %}
 
             {% paginate %}
             <table class='table table-bordered table-striped table-condensed'>
@@ -43,7 +43,7 @@
                     </tr>
                 </thead>
                 <tbody>
-                    {% for user in users %}
+                    {% for user in object_list %}
                         <tr>
                             <td><a href='{% url 'view_user' user.pk %}'>{{ user.username }}</a></td>
                             <td>{{ user.first_name }}</td>

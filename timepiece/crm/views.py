@@ -17,11 +17,12 @@ from django.views.generic import (CreateView, DeleteView, DetailView,
         UpdateView, FormView)
 
 from timepiece import utils
-from timepiece.forms import YearMonthForm, UserYearMonthForm, SearchForm
+from timepiece.forms import YearMonthForm, UserYearMonthForm
 from timepiece.templatetags.timepiece_tags import seconds_to_hours
 from timepiece.utils.csv import CSVViewMixin
 from timepiece.utils.mixins import (CommitOnSuccessMixin, CsrfExemptMixin,
         PermissionsRequiredMixin, LoginRequiredMixin)
+from timepiece.utils.search import SearchListView
 
 from timepiece.crm.forms import (CreateEditBusinessForm, CreateEditProjectForm,
         EditUserProfileForm, EditProjectRelationshipForm, SelectProjectForm,
@@ -330,22 +331,15 @@ def change_user_timesheet(request, user_id, action):
     })
 
 
-@permission_required('crm.view_business')
-def list_businesses(request):
-    form = SearchForm(request.GET)
-    businesses = Business.objects.all()
-    if form.is_valid() and 'search' in request.GET:
-        search = form.cleaned_data['search']
-        searchQ = Q(name__icontains=search) | Q(description__icontains=search)
-        businesses = businesses.filter(searchQ)
-        if businesses.count() == 1:
-            url = request.REQUEST.get('next',
-                    reverse('view_business', args=(businesses[0].pk,)))
-            return HttpResponseRedirect(url)
-    return render(request, 'timepiece/business/list.html', {
-        'form': form,
-        'businesses': businesses,
-    })
+### Businesses ###
+
+
+class ListBusinesses(PermissionsRequiredMixin, SearchListView):
+    model = Business
+    permissions = ('crm.view_business',)
+    redirect_if_one_result = True
+    search_fields = ['name__icontains', 'description__icontains']
+    template_name = 'timepiece/business/list.html'
 
 
 class ViewBusiness(PermissionsRequiredMixin, DetailView):
@@ -378,25 +372,19 @@ class EditBusiness(PermissionsRequiredMixin, UpdateView):
     pk_url_kwarg = 'business_id'
 
 
-@permission_required('auth.view_user')
-def list_users(request):
-    form = SearchForm(request.GET)
-    users = User.objects.all().order_by('last_name')
-    if form.is_valid() and 'search' in request.GET:
-        search = form.cleaned_data['search']
-        users = users.filter(
-            Q(first_name__icontains=search) |
-            Q(last_name__icontains=search) |
-            Q(email__icontains=search)
-        )
-        if users.count() == 1:
-            url = request.REQUEST.get('next',
-                    reverse('view_user', args=(users[0].id,)))
-            return HttpResponseRedirect(url)
-    return render(request, 'timepiece/user/list.html', {
-        'form': form,
-        'users': users.select_related(),
-    })
+### Users ###
+
+
+class ListUsers(PermissionsRequiredMixin, SearchListView):
+    model = User
+    permissions = ('auth.view_user',)
+    redirect_if_one_result = True
+    search_fields = ['first_name__icontains', 'last_name__icontains',
+            'email__icontains', 'username__icontains']
+    template_name = 'timepiece/user/list.html'
+
+    def get_queryset(self):
+        return super(ListUsers, self).get_queryset().select_related()
 
 
 class ViewUser(PermissionsRequiredMixin, CommitOnSuccessMixin, DetailView):
@@ -436,26 +424,23 @@ class EditUser(PermissionsRequiredMixin, UpdateView):
     pk_url_kwarg = 'user_id'
 
 
-@permission_required('crm.view_project')
-def list_projects(request):
-    form = ProjectSearchForm(request.GET or None)
-    if form.is_valid() and ('search' in request.GET or 'status' in
-            request.GET):
-        search, status = form.save()
-        query = Q(name__icontains=search) | Q(description__icontains=search)
-        projects = Project.objects.filter(query)
-        projects = projects.filter(status=status) if status else projects
-        if projects.count() == 1:
-            url = request.REQUEST.get('next',
-                    reverse('view_project', args=(projects.get().id,)))
-            return HttpResponseRedirect(url)
-    else:
-        projects = Project.objects.all()
+### Projects ###
 
-    return render(request, 'timepiece/project/list.html', {
-        'form': form,
-        'projects': projects.select_related('business'),
-    })
+
+class ListProjects(PermissionsRequiredMixin, SearchListView):
+    model = Project
+    form_class = ProjectSearchForm
+    permissions = ['crm.view_project']
+    redirect_if_one_result = True
+    search_fields = ['name__icontains', 'description__icontains']
+    template_name = 'timepiece/project/list.html'
+
+    def filter_form_valid(self, form, queryset):
+        queryset = super(ListProjects, self).filter_form_valid(form, queryset)
+        status = form.cleaned_data['status']
+        if status:
+            queryset = queryset.filter(status=status)
+        return queryset
 
 
 class ViewProject(PermissionsRequiredMixin, CommitOnSuccessMixin, DetailView):
