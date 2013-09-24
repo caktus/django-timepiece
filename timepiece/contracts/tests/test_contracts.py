@@ -187,11 +187,11 @@ class ContractHourTestCase(TestCase):
         # fraction_hours returns what fraction of the contracted hours
         # have been worked
         contracted_hours = 0
-        pc = self.create_contract(num_hours=contracted_hours)
+        pc = factories.ProjectContract(contract_hours=contracted_hours)
         # If contracted hours 0, return 0 (don't div/0)
         self.assertEqual(0.0, pc.fraction_hours)
         contracted_hours = 10.0
-        pc = self.create_contract(num_hours=contracted_hours)
+        pc = factories.ProjectContract(contract_hours=contracted_hours)
         # If contracted hours non-zero, worked hours 0, return 0
         self.assertEqual(0.0, pc.fraction_hours)
         # Now do some work
@@ -206,9 +206,10 @@ class ContractHourTestCase(TestCase):
         today = datetime.date.today()
         last_month = today - one_month
         next_month = today + one_month
-        pc = self.create_contract(status=ProjectContract.STATUS_UPCOMING,
-                                  start_date=last_month,
-                                  end_date=next_month)
+        pc = factories.ProjectContract(
+            status=ProjectContract.STATUS_UPCOMING, start_date=last_month,
+            end_date=next_month
+        )
         self.assertEqual(0.0, pc.fraction_schedule)
         pc.status = ProjectContract.STATUS_COMPLETE
         self.assertEqual(0.0, pc.fraction_schedule)
