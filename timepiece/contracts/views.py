@@ -50,6 +50,10 @@ class ContractList(PermissionsRequiredMixin, ListView):
             kwargs['today'] = datetime.date.today()
         if 'warning_date' not in kwargs:
             kwargs['warning_date'] = datetime.date.today() + relativedelta(weeks=2)
+        kwargs['max_work_fraction'] = max(
+            [0.0] + [c.fraction_hours for c in self.queryset.all()])
+        kwargs['max_schedule_fraction'] = max(
+            [0.0] + [c.fraction_schedule for c in self.queryset.all()])
         return super(ContractList, self).get_context_data(*args, **kwargs)
 
 
@@ -178,10 +182,10 @@ class InvoiceDetail(PermissionsRequiredMixin, DetailView):
         return {
             'invoice': invoice,
             'billable_entries': billable_entries,
-            'billable_totals': HourGroup.objects\
+            'billable_totals': HourGroup.objects
                                         .summaries(billable_entries),
             'nonbillable_entries': nonbillable_entries,
-            'nonbillable_totals': HourGroup.objects\
+            'nonbillable_totals': HourGroup.objects
                                            .summaries(nonbillable_entries),
             'from_date': invoice.start,
             'to_date': invoice.end,
@@ -264,8 +268,8 @@ class InvoiceEdit(InvoiceDetail):
             'to_date': invoice.end,
         }
         invoice_form = InvoiceForm(request.POST,
-                                                   initial=initial,
-                                                   instance=invoice)
+                                   initial=initial,
+                                   instance=invoice)
         if invoice_form.is_valid():
             invoice_form.save()
             return HttpResponseRedirect(reverse('view_invoice', kwargs=kwargs))
