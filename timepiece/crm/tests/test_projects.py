@@ -13,7 +13,7 @@ from ..models import Project
 
 
 __all__ = ['TestCreateProjectView', 'TestDeleteProjectView',
-        'TestProjectListView', 'TestProjectTimesheetView']
+        'TestListProjectsView', 'TestProjectTimesheetView']
 
 
 class TestCreateProjectView(ViewTestMixin, TestCase):
@@ -60,8 +60,8 @@ class TestCreateProjectView(ViewTestMixin, TestCase):
         data = self.post_data
         response = self._post(data=data)
         self.assertEquals(Project.objects.count(), 1)
-        project = Project.objects.get()
-        self.assertRedirectsNoFollow(response, project.get_absolute_url())
+        obj = Project.objects.get()
+        self.assertRedirectsNoFollow(response, obj.get_absolute_url())
 
 
 class TestDeleteProjectView(ViewTestMixin, TestCase):
@@ -105,9 +105,11 @@ class TestDeleteProjectView(ViewTestMixin, TestCase):
         self.assertEquals(Project.objects.count(), 0)
 
 
-class TestProjectListView(ViewTestMixin, TestCase):
+class TestListProjectsView(ViewTestMixin, TestCase):
     url_name = 'list_projects'
     template_name = 'timepiece/project/list.html'
+    factory = factories.Project
+    model = Project
 
     def setUp(self):
         self.permissions = [Permission.objects.get(codename='view_project')]
@@ -115,71 +117,91 @@ class TestProjectListView(ViewTestMixin, TestCase):
         self.login_user(self.user)
 
     def test_get_no_permission(self):
-        """Permission is required to view the project list."""
+        """Permission is required for this view."""
         self.user.user_permissions.clear()
         response = self._get()
         self.assertRedirectsToLogin(response)
 
     def test_list_all(self):
-        """If no filters are provided, all projects should be listed."""
-        projects = [factories.Project() for i in range(3)]
+        """If no filters are provided, all objects should be listed."""
+        object_list = [self.factory.create() for i in range(3)]
         response = self._get()
         self.assertEquals(response.status_code, 200)
         self.assertTemplateUsed(response, self.template_name)
-        self.assertEquals(response.context['projects'].count(),
-                Project.objects.count())
+        self.assertEquals(response.context['object_list'].count(), 3)
+        for obj in object_list:
+            self.assertTrue(obj in response.context['object_list'])
 
     def test_list_none(self):
-        """Page should render even if there are no projects."""
-        Project.objects.all().delete()
+        """Page should render even if there are no objects."""
+        self.model.objects.all().delete()
         response = self._get()
         self.assertEquals(response.status_code, 200)
         self.assertTemplateUsed(response, self.template_name)
-        self.assertEquals(response.context['projects'].count(), 0)
+        self.assertEquals(response.context['object_list'].count(), 0)
 
     def test_list_one(self):
-        """If there is only one project, and no search query, page should render."""
-        project = factories.Project()
+        """Page should render if there is one object & no search query."""
+        obj = self.factory.create()
         response = self._get()
         self.assertEquals(response.status_code, 200)
         self.assertTemplateUsed(response, self.template_name)
-        self.assertEquals(response.context['projects'].count(), 1)
+        self.assertEquals(response.context['object_list'].count(), 1)
+        self.assertEquals(response.context['object_list'].get(), obj)
+
+    def test_no_results(self):
+        """Page should render if there are no search results."""
+        obj = self.factory.create(name='hello')
+        response = self._get(get_kwargs={'search': 'goodbye'})
+        self.assertEquals(response.status_code, 200)
+        self.assertTemplateUsed(response, self.template_name)
+        self.assertEquals(response.context['object_list'].count(), 0)
 
     def test_one_result(self):
         """If there is only one search result, user should be redirected."""
-        project = factories.Project()
-        response = self._get(get_kwargs={'status': project.status.pk})
-        self.assertRedirectsNoFollow(response, project.get_absolute_url())
+        obj = self.factory.create()
+        response = self._get(get_kwargs={'status': obj.status.pk})
+        self.assertRedirectsNoFollow(response, obj.get_absolute_url())
+
+    def test_multiple_results(self):
+        """Page should render if there are multiple search results."""
+        obj_list = [self.factory.create(name='hello') for i in range(2)]
+        response = self._get(get_kwargs={'search': 'ello'})
+        self.assertEquals(response.status_code, 200)
+        self.assertTemplateUsed(response, self.template_name)
+        self.assertEquals(response.context['object_list'].count(), 2)
+        for obj in obj_list:
+            self.assertTrue(obj in response.context['object_list'])
 
     def test_filter_name(self):
         """User should be able to filter by search query and status."""
-        project = factories.Project(name='hello')
-        other_project = factories.Project()
+        obj = self.factory.create(name='hello')
+        other_obj = self.factory.create()
         response = self._get(get_kwargs={'search': 'ello'})
-        self.assertRedirectsNoFollow(response, project.get_absolute_url())
+        self.assertRedirectsNoFollow(response, obj.get_absolute_url())
 
     def test_filter_description(self):
         """User should be able to filter by search query and status."""
-        project = factories.Project(description='hello')
-        other_project = factories.Project()
+        obj = self.factory.create(description='hello')
+        other_obj = self.factory.create()
         response = self._get(get_kwargs={'search': 'ello'})
-        self.assertRedirectsNoFollow(response, project.get_absolute_url())
+        self.assertRedirectsNoFollow(response, obj.get_absolute_url())
 
     def test_filter_status(self):
         """User should be able to filter by search query and status."""
-        project = factories.Project()
-        other_project = factories.Project()
-        response = self._get(get_kwargs={'status': project.status.pk})
-        self.assertRedirectsNoFollow(response, project.get_absolute_url())
+        obj = self.factory.create()
+        other_obj = self.factory.create()
+        response = self._get(get_kwargs={'status': obj.status.pk})
+        self.assertRedirectsNoFollow(response, obj.get_absolute_url())
 
     def test_filter_query_and_status(self):
         """User should be able to filter by search query and status."""
-        project = factories.Project(name='hello')
-        other_project1 = factories.Project(description='hello')
-        other_project2 = factories.Project(status=project.status)
-        get_kwargs = {'status': project.status.pk, 'search': 'ello'}
+        obj = self.factory.create(name='hello')
+        other_obj1 = self.factory.create(description='hello')
+        other_obj2 = self.factory.create(status=obj.status)
+        get_kwargs = {'status': obj.status.pk, 'search': 'ello'}
         response = self._get(get_kwargs=get_kwargs)
-        self.assertRedirectsNoFollow(response, project.get_absolute_url())
+        self.assertRedirectsNoFollow(response, obj.get_absolute_url())
 
 
 class TestProjectTimesheetView(ViewTestMixin, LogTimeMixin, TestCase):

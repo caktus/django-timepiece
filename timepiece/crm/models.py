@@ -92,6 +92,9 @@ class Business(models.Model):
         db_table = 'timepiece_business'  # Using legacy table name.
         ordering = ('name',)
         verbose_name_plural = 'Businesses'
+        permissions = (
+            ('view_business', 'Can view businesses'),
+        )
 
     def __unicode__(self):
         return self.get_display_name()

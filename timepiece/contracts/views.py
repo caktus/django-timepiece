@@ -12,10 +12,10 @@ from django.shortcuts import get_object_or_404, redirect, render
 from django.views.generic import ListView, DetailView
 
 from timepiece import utils
-from timepiece.forms import SearchForm
 from timepiece.templatetags.timepiece_tags import seconds_to_hours
 from timepiece.utils.csv import CSVViewMixin
 from timepiece.utils.mixins import PermissionsRequiredMixin
+from timepiece.utils.search import SearchListView
 
 from timepiece.contracts.forms import InvoiceForm, OutstandingHoursFilterForm
 from timepiece.contracts.models import ProjectContract, HourGroup, EntryGroup
@@ -151,21 +151,12 @@ def list_outstanding_invoices(request):
     })
 
 
-@permission_required('contracts.add_entrygroup')
-def list_invoices(request):
-    search_form = SearchForm(request.GET)
-    query = Q()
-    if search_form.is_valid():
-        search = search_form.save()
-        query |= Q(user__username__icontains=search)
-        query |= Q(project__name__icontains=search)
-        query |= Q(comments__icontains=search)
-        query |= Q(number__icontains=search)
-    invoices = EntryGroup.objects.filter(query).order_by('-created')
-    return render(request, 'timepiece/invoice/list.html', {
-        'invoices': invoices,
-        'search_form': search_form,
-    })
+class ListInvoices(PermissionsRequiredMixin, SearchListView):
+    model = EntryGroup
+    permissions = ('contracts.add_entrygroup',)
+    search_fields = ['user__username__icontains', 'project__name__icontains',
+            'comments__icontains', 'number__icontains']
+    template_name = 'timepiece/invoice/list.html'
 
 
 class InvoiceDetail(PermissionsRequiredMixin, DetailView):
