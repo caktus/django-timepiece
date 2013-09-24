@@ -612,6 +612,55 @@ class ListOutstandingInvoicesViewTestCase(ViewTestMixin, TestCase):
         self.assertEquals(response.context['project_totals'].count(), 3)
         # Verify that the date on the mark as invoiced links will be correct
         self.assertEquals(response.context['to_date'], self.to_date.date())
+        self.assertEquals(list(response.context['unverified']), [])
+        self.assertEquals(list(response.context['unapproved']), [])
+
+    def test_unverified(self):
+        start = utils.add_timezone(datetime.datetime(2011, 1, 1, 8))
+        end = utils.add_timezone(datetime.datetime(2011, 1, 1, 12))
+        unverified_entry = factories.Entry(user=self.user,
+            project=self.project_non_billable,
+            start_time=start + relativedelta(hours=11),
+            end_time=end + relativedelta(hours=15), status=Entry.UNVERIFIED
+        )
+        response = self._get()
+        self.assertEquals(response.status_code, 200)
+        form = response.context['form']
+        self.assertTrue(form.is_valid(), form.errors)
+        unverified = list(response.context['unverified'])
+        unapproved = list(response.context['unapproved'])
+        expected_unverified = [
+            (self.user.pk, self.user.first_name, self.user.last_name)
+        ]
+        self.assertEquals(unverified, expected_unverified)
+        self.assertEquals(unapproved, [])
+
+    def test_approved(self):
+        start = utils.add_timezone(datetime.datetime(2011, 1, 1, 8))
+        end = utils.add_timezone(datetime.datetime(2011, 1, 1, 12))
+        unapproved_entry_a = factories.Entry(user=self.user,
+            project=self.project_non_billable,
+            start_time=start + relativedelta(hours=11),
+            end_time=end + relativedelta(hours=15), status=Entry.VERIFIED
+        )
+        unapproved_entry_b = factories.Entry(user=self.user,
+            project=self.project_non_billable,
+            start_time=start + relativedelta(hours=11),
+            end_time=end + relativedelta(hours=15), status=Entry.VERIFIED
+        )
+        response = self._get()
+        self.assertEquals(response.status_code, 200)
+        form = response.context['form']
+        self.assertTrue(form.is_valid(), form.errors)
+        unverified = set(response.context['unverified'])
+        unapproved = set(response.context['unapproved'])
+        user_a, user_b = unapproved_entry_a.user, unapproved_entry_b.user
+        expected_unapproved = set([
+            (user_a.pk, user_a.first_name, user_a.last_name),
+            (user_b.pk, user_b.first_name, user_b.last_name),
+        ])
+        self.assertEquals(unverified, set())
+        self.assertEquals(unapproved, expected_unapproved)
 
     def test_no_statuses(self):
         self.get_kwargs.pop('statuses')

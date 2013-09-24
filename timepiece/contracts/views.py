@@ -146,10 +146,39 @@ def create_invoice(request):
 @permission_required('contracts.change_entrygroup')
 def list_outstanding_invoices(request):
     form = OutstandingHoursFilterForm(request.GET or None)
-    project_totals = form.get_project_totals()
+    # Determine the query to make based on the form
+    if form.is_valid() or not form.is_bound:
+        form_data = form.get_form_data()
+        # Adjust to_date so the query includes all of the last day
+        to_date = form_data['to_date'] + relativedelta(days=1)
+        from_date = form_data['from_date']
+        statuses = form_data['statuses']
+        dates = Q()
+        dates &= Q(end_time__gte=from_date) if from_date else Q()
+        dates &= Q(end_time__lt=to_date) if to_date else Q()
+        billable = Q(project__type__billable=True, project__status__billable=True)
+        entry_status = Q(status=Entry.APPROVED)
+        project_status = Q(project__status__in=statuses)\
+                if statuses is not None else Q()
+        # Calculate hours for each project
+        ordering = ('project__type__label', 'project__status__label',
+                'project__business__name', 'project__name', 'status')
+        project_totals = Entry.objects.filter(
+            dates, billable, entry_status, project_status).order_by(*ordering)
+        # Find users with unverified/unapproved entries to warn invoice creator
+        date_range_entries = Entry.objects.filter(dates)
+        user_values = ['user__pk', 'user__first_name', 'user__last_name']
+        unverified = date_range_entries.filter(
+            status=Entry.UNVERIFIED).values_list(*user_values).order_by('user__first_name').distinct()
+        unapproved = date_range_entries.filter(
+            status=Entry.VERIFIED).values_list(*user_values).order_by('user__first_name').distinct()
+    else:
+        project_totals = unverified = unapproved = Entry.objects.none()
     return render(request, 'timepiece/invoice/outstanding.html', {
         'date_form': form,
         'project_totals': project_totals,
+        'unverified': unverified,
+        'unapproved': unapproved,
         'to_date': form.get_to_date(),
         'from_date': form.get_from_date(),
     })
