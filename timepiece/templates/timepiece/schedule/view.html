@@ -7,22 +7,10 @@
 {% block bodyid %}project-hours{% endblock bodyid %}
 
 {% block extrajs %}
+    <script charset="utf-8" src="{{ STATIC_URL }}timepiece/js/highlight.js"></script>
     <script>
-        // Highlight the current row & column on hover.
         $(function() {
-            $('#schedule').delegate('td, th', 'mouseover mouseout', function(event) {
-                var self = $(this),  // <td> or <th> element
-                    num = self.index() + 1;
-                if (event.type === 'mouseover') {
-                    self.parent().find('td, th').addClass('hover');
-                    $('#schedule tr td:nth-child(' + num + ')').addClass('hover');
-                    $('#schedule tr th:nth-child(' + num + ')').addClass('hover');
-                } else {
-                    self.parent().find('td, th').removeClass('hover');
-                    $('#schedule tr td:nth-child(' + num + ')').removeClass('hover');
-                    $('#schedule tr th:nth-child(' + num + ')').removeClass('hover');
-                }
-            });
+            hover_highlight('#schedule');
         });
     </script>
 {% endblock extrajs %}
