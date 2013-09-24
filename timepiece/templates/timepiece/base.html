@@ -18,7 +18,7 @@
         <script charset="utf-8" src="{{ STATIC_URL }}selectable/js/jquery.dj.selectable.js"></script>
         {% if perms.crm.view_business %}  {# FIXME: Permission doesn't exist #}
             {{ quick_search_form.media.js }}
-            <script charset="utf-8" src="{{ STATIC_URL }}timepiece/js/quicksearch.js"></script>
+            <script charset="utf-8" src="{{ STATIC_URL }}timepiece/js/quick_search.js"></script>
         {% endif %}
         <script charset="utf-8" src="{{ STATIC_URL }}timepiece/js/widgets.js"></script>
     {% endblock javascript %}
