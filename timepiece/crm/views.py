@@ -32,6 +32,7 @@ from timepiece.crm.models import Business, Project, ProjectRelationship,\
         UserProfile
 from timepiece.crm.utils import grouped_totals
 from timepiece.entries.models import Entry
+from timepiece.contracts.models import ProjectContract
 
 
 class QuickSearch(LoginRequiredMixin, FormView):
@@ -451,7 +452,9 @@ class ViewProject(PermissionsRequiredMixin, CommitOnSuccessMixin, DetailView):
 
     def get_context_data(self, **kwargs):
         context = super(ViewProject, self).get_context_data(**kwargs)
-        contracts = context['project'].contracts.all()
+        contracts = context['project'].contracts.filter(
+            status=ProjectContract.STATUS_CURRENT
+        )
         contract_data = ({
             'name': contract.name,
             'status': contract.status,
