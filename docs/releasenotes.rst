@@ -19,6 +19,8 @@ Related issues are in the `0.10.0 milestone
   (`#727 <https://github.com/caktus/django-timepiece/issues/727>`_).
 * Bump `django-selectable <https://django-selectable.readthedocs.org/en/version-0.7.0/>`_
   version number to 0.7.0.
+* Added a warning on the outstanding invoices page if users have unverified/unapproved
+  entries for the selected time period (`#744 <https://github.com/caktus/django-timepiece/pull/744>`_).
 
 *Bugfixes*
 
