@@ -451,8 +451,20 @@ class ViewProject(PermissionsRequiredMixin, CommitOnSuccessMixin, DetailView):
 
     def get_context_data(self, **kwargs):
         context = super(ViewProject, self).get_context_data(**kwargs)
+        contracts = context['project'].contracts.all()
+        contract_data = ({
+            'name': contract.name,
+            'status': contract.status,
+            'start_date': contract.start_date,
+            'end_date': contract.end_date,
+            'total': contract.contracted_hours(),
+            'worked': contract.hours_worked,
+            } for contract in contracts
+        )
         context.update({
             'add_user_form': SelectUserForm(),
+            'today': datetime.datetime.today(),
+            'contract_data': contract_data,
         })
         return context
 
