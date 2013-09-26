@@ -120,7 +120,6 @@ INSTALLED_APPS = (
     'django.contrib.messages',
     'django.contrib.staticfiles',
     'django.contrib.admin',
-    'django.contrib.markup',
 
     # Timepiece apps must be listed before third-party apps in order
     # for template overrides to work.
