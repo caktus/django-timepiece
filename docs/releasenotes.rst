@@ -1,7 +1,7 @@
 Release Notes
 =============
 
-0.10.0 (Unreleased)
+0.9.3 (Unreleased)
 -------------------
 
 Related issues are in the `0.10.0 milestone
@@ -28,8 +28,6 @@ Related issues are in the `0.10.0 milestone
   (`#718 <https://github.com/caktus/django-timepiece/issues/727>`_).
 * Display correct user name on the timesheet rejection confirmation page
   (`#726 <https://github.com/caktus/django-timepiece/issues/727>`_).
-* Restore missing bracket on the project creation page
-  (`#733 <https://github.com/caktus/django-timepiece/issues/727>`_).
 * Register `contracts.ContractHour` in the admin so that the
   `get_absolute_url()` method can work.
 
