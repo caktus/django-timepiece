@@ -47,6 +47,36 @@
     </div>
 
     <div class="row-fluid">
+        <div class="span6">
+            {% if unverified %}
+                <i class="icon-warning-sign"></i>
+                <p><strong>Warning:</strong> The following users have <strong>unverified</strong> time during this period:</p>
+                <ul>
+                    {% for pk, first, last in unverified %}
+                        <li>
+                            <a href="{% user_timesheet_url pk from_date %}">{{ first }} {{ last }}</a>
+                        </li>
+                    {% endfor %}
+                </ul>
+            {% endif %}
+            {% if unapproved %}
+                <i class="icon-warning-sign"></i>
+                <p><strong>Warning:</strong> The following users have <strong>unapproved</strong> time during this period:</p>
+                <ul>
+                    {% for pk, first, last in unapproved %}
+                        <li>
+                            <a href="{% user_timesheet_url pk from_date %}">{{ first }} {{ last }}</a>
+                        </li>
+                    {% endfor %}
+                </ul>
+            {% endif %}
+            {% if not unverified and not unapproved %}
+                <p>All time verified and approved</p>
+            {% endif %}
+        </div>
+    </div>
+
+    <div class="row-fluid">
         <div class="span12">
             {# Display each project type as a separate table. #}
             {# For each table, order by project status, then business display name, then project name. #}

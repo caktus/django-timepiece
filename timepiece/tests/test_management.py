@@ -4,17 +4,25 @@ from StringIO import StringIO
 from django.contrib.auth.models import User, Permission
 from django.core.exceptions import ValidationError
 from django.utils import timezone
+from django.test import TestCase
 
 from timepiece import utils
 from timepiece.management.commands import check_entries
-from timepiece.tests.base import TimepieceDataTestCase
-
 from timepiece.entries.models import Entry
 
+from . import factories
 
-class CheckEntries(TimepieceDataTestCase):
+
+class CheckEntries(TestCase):
+
     def setUp(self):
         super(CheckEntries, self).setUp()
+        self.user = factories.User()
+        self.user2 = factories.User()
+        self.superuser = factories.Superuser()
+        self.project = factories.Project(type__enable_timetracking=True,
+                status__enable_timetracking=True, point_person=self.user)
+
         self.default_data = {
             'user': self.user,
             'project': self.project,
@@ -69,7 +77,7 @@ class CheckEntries(TimepieceDataTestCase):
             'start_time': start,
             'end_time': end,
         })
-        self.create_entry(data)
+        factories.Entry(**data)
 
     def make_entry_bulk(self, users, days, *args, **kwargs):
         """
@@ -86,7 +94,7 @@ class CheckEntries(TimepieceDataTestCase):
                                   relativedelta(days=day, minutes=1),
                     'end_time': timezone.now() - relativedelta(days=day,)
                 })
-                self.create_entry(self.default_data)
+                factories.Entry(**self.default_data)
 
     #tests
     def testFindStart(self):

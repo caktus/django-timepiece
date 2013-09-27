@@ -1,8 +1,50 @@
 Release Notes
 =============
 
-0.9.2 (05-31-2013)
-------------------
+0.9.3 (Unreleased)
+-------------------
+
+Related issues are in the `0.10.0 milestone
+<https://github.com/caktus/django-timepiece/issues?milestone=39&state=closed>`_.
+
+*Features*
+
+* Allow using compress when `DEBUG = True` with a new context processor,
+  `timepiece.context_processors.extra_settings`.
+* Align daily summary tables on the user timesheet
+  (`#725 <https://github.com/caktus/django-timepiece/pull/725>`_).
+* Add progress bars on the contract listing page
+  (`#707 <https://github.com/caktus/django-timepiece/pull/707>`_).
+* Add vertical highlighting to the payroll summary report
+  (`#727 <https://github.com/caktus/django-timepiece/issues/727>`_).
+* Bump `django-selectable <https://django-selectable.readthedocs.org/en/version-0.7.0/>`_
+  version number to 0.7.0.
+* Added a warning on the outstanding invoices page if users have unverified/unapproved
+  entries for the selected time period (`#744 <https://github.com/caktus/django-timepiece/pull/744>`_).
+
+*Bugfixes*
+
+* Include entries on last date of query on invoice listing page
+  (`#718 <https://github.com/caktus/django-timepiece/issues/727>`_).
+* Display correct user name on the timesheet rejection confirmation page
+  (`#726 <https://github.com/caktus/django-timepiece/issues/727>`_).
+* Register `contracts.ContractHour` in the admin so that the
+  `get_absolute_url()` method can work.
+
+*Code Quality*
+
+* Started refactoring and improving the test suite. `factory_boy
+  <https://factoryboy.readthedocs.org/en/latest/>`_ is now required to run the
+  tests.
+* Refactored most CRM views to be class-based, and added more tests.
+* Added several CBV mixins to `utils.mixins`.
+
+
+0.9.2 (Released 05-31-2013)
+---------------------------
+
+Related issues are in the `0.9.2 milestone
+<https://github.com/caktus/django-timepiece/issues?milestone=34&state=closed>`_.
 
 *Features*
 
@@ -43,16 +85,19 @@ Release Notes
 * Specified browser support in README.
 * Refreshed template tags, and removed some unused ones.
 
-0.9.1 (05-14-2013)
-------------------
+0.9.1 (Released 05-14-2013)
+---------------------------
 Related issues are in the `0.9.1 milestone
 <https://github.com/caktus/django-timepiece/issues?milestone=38&page=1&state=closed>`_.
 
 * Fixed a bug with the 'db_name' of some contract models that was causing
   database queries to use the wrong table name.
 
-0.9.0 (05-10-2013)
-------------------
+0.9.0 (Released 05-10-2013)
+---------------------------
+
+Related issues are in the `0.9.0 milestone
+<https://github.com/caktus/django-timepiece/issues?milestone=33&state=closed>_`.
 
 We have reorganized the django-timepiece code into 5 co-dependent apps to make
 the code more modular, readable, and updatable. To upgrade your installation

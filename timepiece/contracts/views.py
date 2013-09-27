@@ -9,24 +9,25 @@ from django.db.models import Sum, Q
 from django.http import HttpResponse, HttpResponseRedirect, Http404,\
         HttpResponseForbidden
 from django.shortcuts import get_object_or_404, redirect, render
-from django.utils.decorators import method_decorator
 from django.views.generic import ListView, DetailView
 
 from timepiece import utils
-from timepiece.forms import SearchForm
 from timepiece.templatetags.timepiece_tags import seconds_to_hours
 from timepiece.utils.csv import CSVViewMixin
+from timepiece.utils.mixins import PermissionsRequiredMixin
+from timepiece.utils.search import SearchListView
 
 from timepiece.contracts.forms import InvoiceForm, OutstandingHoursFilterForm
 from timepiece.contracts.models import ProjectContract, HourGroup, EntryGroup
 from timepiece.entries.models import Project, Entry
 
 
-class ContractDetail(DetailView):
+class ContractDetail(PermissionsRequiredMixin, DetailView):
     template_name = 'timepiece/contract/view.html'
     model = ProjectContract
     context_object_name = 'contract'
     pk_url_kwarg = 'contract_id'
+    permissions = ('contracts.add_projectcontract',)
 
     def get_context_data(self, *args, **kwargs):
         if 'today' not in kwargs:
@@ -35,28 +36,25 @@ class ContractDetail(DetailView):
             kwargs['warning_date'] = datetime.date.today() + relativedelta(weeks=2)
         return super(ContractDetail, self).get_context_data(*args, **kwargs)
 
-    @method_decorator(permission_required('contracts.add_projectcontract'))
-    def dispatch(self, *args, **kwargs):
-        return super(ContractDetail, self).dispatch(*args, **kwargs)
 
-
-class ContractList(ListView):
+class ContractList(PermissionsRequiredMixin, ListView):
     template_name = 'timepiece/contract/list.html'
     model = ProjectContract
     context_object_name = 'contracts'
     queryset = ProjectContract.objects.filter(
             status=ProjectContract.STATUS_CURRENT).order_by('name')
+    permissions = ('contracts.add_projectcontract',)
 
     def get_context_data(self, *args, **kwargs):
         if 'today' not in kwargs:
             kwargs['today'] = datetime.date.today()
         if 'warning_date' not in kwargs:
             kwargs['warning_date'] = datetime.date.today() + relativedelta(weeks=2)
+        kwargs['max_work_fraction'] = max(
+            [0.0] + [c.fraction_hours for c in self.queryset.all()])
+        kwargs['max_schedule_fraction'] = max(
+            [0.0] + [c.fraction_schedule for c in self.queryset.all()])
         return super(ContractList, self).get_context_data(*args, **kwargs)
-
-    @method_decorator(permission_required('contracts.add_projectcontract'))
-    def dispatch(self, *args, **kwargs):
-        return super(ContractList, self).dispatch(*args, **kwargs)
 
 
 @login_required
@@ -148,41 +146,58 @@ def create_invoice(request):
 @permission_required('contracts.change_entrygroup')
 def list_outstanding_invoices(request):
     form = OutstandingHoursFilterForm(request.GET or None)
-    project_totals = form.get_project_totals()
+    # Determine the query to make based on the form
+    if form.is_valid() or not form.is_bound:
+        form_data = form.get_form_data()
+        # Adjust to_date so the query includes all of the last day
+        to_date = form_data['to_date'] + relativedelta(days=1)
+        from_date = form_data['from_date']
+        statuses = form_data['statuses']
+        dates = Q()
+        dates &= Q(end_time__gte=from_date) if from_date else Q()
+        dates &= Q(end_time__lt=to_date) if to_date else Q()
+        billable = Q(project__type__billable=True, project__status__billable=True)
+        entry_status = Q(status=Entry.APPROVED)
+        project_status = Q(project__status__in=statuses)\
+                if statuses is not None else Q()
+        # Calculate hours for each project
+        ordering = ('project__type__label', 'project__status__label',
+                'project__business__name', 'project__name', 'status')
+        project_totals = Entry.objects.filter(
+            dates, billable, entry_status, project_status).order_by(*ordering)
+        # Find users with unverified/unapproved entries to warn invoice creator
+        date_range_entries = Entry.objects.filter(dates)
+        user_values = ['user__pk', 'user__first_name', 'user__last_name']
+        unverified = date_range_entries.filter(
+            status=Entry.UNVERIFIED).values_list(*user_values).order_by('user__first_name').distinct()
+        unapproved = date_range_entries.filter(
+            status=Entry.VERIFIED).values_list(*user_values).order_by('user__first_name').distinct()
+    else:
+        project_totals = unverified = unapproved = Entry.objects.none()
     return render(request, 'timepiece/invoice/outstanding.html', {
         'date_form': form,
         'project_totals': project_totals,
+        'unverified': unverified,
+        'unapproved': unapproved,
         'to_date': form.get_to_date(),
         'from_date': form.get_from_date(),
     })
 
 
-@permission_required('contracts.add_entrygroup')
-def list_invoices(request):
-    search_form = SearchForm(request.GET)
-    query = Q()
-    if search_form.is_valid():
-        search = search_form.save()
-        query |= Q(user__username__icontains=search)
-        query |= Q(project__name__icontains=search)
-        query |= Q(comments__icontains=search)
-        query |= Q(number__icontains=search)
-    invoices = EntryGroup.objects.filter(query).order_by('-created')
-    return render(request, 'timepiece/invoice/list.html', {
-        'invoices': invoices,
-        'search_form': search_form,
-    })
+class ListInvoices(PermissionsRequiredMixin, SearchListView):
+    model = EntryGroup
+    permissions = ('contracts.add_entrygroup',)
+    search_fields = ['user__username__icontains', 'project__name__icontains',
+            'comments__icontains', 'number__icontains']
+    template_name = 'timepiece/invoice/list.html'
 
 
-class InvoiceDetail(DetailView):
+class InvoiceDetail(PermissionsRequiredMixin, DetailView):
     template_name = 'timepiece/invoice/view.html'
     model = EntryGroup
     context_object_name = 'invoice'
     pk_url_kwarg = 'invoice_id'
-
-    @method_decorator(permission_required('contracts.change_entrygroup'))
-    def dispatch(self, *args, **kwargs):
-        return super(InvoiceDetail, self).dispatch(*args, **kwargs)
+    permissions = ('contracts.change_entrygroup',)
 
     def get_context_data(self, **kwargs):
         context = super(InvoiceDetail, self).get_context_data(**kwargs)
@@ -196,10 +211,10 @@ class InvoiceDetail(DetailView):
         return {
             'invoice': invoice,
             'billable_entries': billable_entries,
-            'billable_totals': HourGroup.objects\
+            'billable_totals': HourGroup.objects
                                         .summaries(billable_entries),
             'nonbillable_entries': nonbillable_entries,
-            'nonbillable_totals': HourGroup.objects\
+            'nonbillable_totals': HourGroup.objects
                                            .summaries(nonbillable_entries),
             'from_date': invoice.start,
             'to_date': invoice.end,
@@ -282,8 +297,8 @@ class InvoiceEdit(InvoiceDetail):
             'to_date': invoice.end,
         }
         invoice_form = InvoiceForm(request.POST,
-                                                   initial=initial,
-                                                   instance=invoice)
+                                   initial=initial,
+                                   instance=invoice)
         if invoice_form.is_valid():
             invoice_form.save()
             return HttpResponseRedirect(reverse('view_invoice', kwargs=kwargs))
@@ -322,5 +337,3 @@ def delete_invoice_entry(request, invoice_id, entry_id):
         'invoice': invoice,
         'entry': entry,
     })
-
-

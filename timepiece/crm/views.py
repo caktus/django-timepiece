@@ -5,7 +5,7 @@ import urllib
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required, permission_required
 from django.contrib.auth.models import User
-from django.core.urlresolvers import reverse, resolve
+from django.core.urlresolvers import reverse, reverse_lazy
 from django.db import transaction
 from django.db.models import Sum, Q
 from django.http import HttpResponseRedirect, HttpResponseForbidden, Http404
@@ -13,21 +13,33 @@ from django.shortcuts import get_object_or_404, render, redirect
 from django.utils.decorators import method_decorator
 from django.views.decorators.csrf import csrf_exempt
 from django.views.decorators.http import require_POST
-from django.views.generic import DetailView, TemplateView, View
+from django.views.generic import (CreateView, DeleteView, DetailView,
+        UpdateView, FormView)
 
 from timepiece import utils
-from timepiece.forms import YearMonthForm, UserYearMonthForm, SearchForm
+from timepiece.forms import YearMonthForm, UserYearMonthForm
 from timepiece.templatetags.timepiece_tags import seconds_to_hours
 from timepiece.utils.csv import CSVViewMixin
+from timepiece.utils.mixins import (CommitOnSuccessMixin, CsrfExemptMixin,
+        PermissionsRequiredMixin, LoginRequiredMixin)
+from timepiece.utils.search import SearchListView
 
-from timepiece.crm.forms import BusinessForm, ProjectForm, UserProfileForm,\
-        ProjectRelationshipForm, SelectProjectForm, EditUserForm,\
-        CreateUserForm, SelectUserForm, UserForm, ProjectSearchForm,\
-        DeleteForm, QuickSearchForm
+from timepiece.crm.forms import (CreateEditBusinessForm, CreateEditProjectForm,
+        EditUserProfileForm, EditProjectRelationshipForm, SelectProjectForm,
+        EditUserForm, CreateUserForm, SelectUserForm, UserForm,
+        ProjectSearchForm, QuickSearchForm)
 from timepiece.crm.models import Business, Project, ProjectRelationship,\
         UserProfile
 from timepiece.crm.utils import grouped_totals
 from timepiece.entries.models import Entry
+
+
+class QuickSearch(LoginRequiredMixin, FormView):
+    form_class = QuickSearchForm
+    template_name = 'timepiece/quick_search.html'
+
+    def form_valid(self, form):
+        return HttpResponseRedirect(form.save())
 
 
 @permission_required('entries.view_payroll_summary')
@@ -319,128 +331,153 @@ def change_user_timesheet(request, user_id, action):
     })
 
 
-@permission_required('crm.view_business')
-def list_businesses(request):
-    form = SearchForm(request.GET)
-    businesses = Business.objects.all()
-    if form.is_valid() and 'search' in request.GET:
-        search = form.cleaned_data['search']
-        searchQ = Q(name__icontains=search) | Q(description__icontains=search)
-        businesses = businesses.filter(searchQ)
-        if businesses.count() == 1:
-            url = request.REQUEST.get('next',
-                    reverse('view_business', args=(businesses[0].pk,)))
-            return HttpResponseRedirect(url)
-    return render(request, 'timepiece/business/list.html', {
-        'form': form,
-        'businesses': businesses,
-    })
+### Businesses ###
 
 
-@permission_required('crm.view_business')
-def view_business(request, business_id):
-    business = get_object_or_404(Business, pk=business_id)
-    return render(request, 'timepiece/business/view.html', {
-        'business': business,
-    })
+class ListBusinesses(PermissionsRequiredMixin, SearchListView):
+    model = Business
+    permissions = ('crm.view_business',)
+    redirect_if_one_result = True
+    search_fields = ['name__icontains', 'description__icontains']
+    template_name = 'timepiece/business/list.html'
 
 
-@permission_required('crm.add_business')
-def create_edit_business(request, business_id=None):
-    business = None
-    if business_id:
-        business = get_object_or_404(Business, pk=business_id)
-    form = BusinessForm(request.POST or None,
-            instance=business)
-    if form.is_valid():
-        business = form.save()
-        url = reverse('view_business', args=(business.pk,))
-        return HttpResponseRedirect(url)
-    return render(request, 'timepiece/business/create_edit.html', {
-        'business': business,
-        'business_form': form,
-    })
+class ViewBusiness(PermissionsRequiredMixin, DetailView):
+    model = Business
+    pk_url_kwarg = 'business_id'
+    template_name = 'timepiece/business/view.html'
+    permissions = ('crm.view_business',)
 
 
-@permission_required('auth.view_user')
-def list_users(request):
-    form = SearchForm(request.GET)
-    users = User.objects.all().order_by('last_name')
-    if form.is_valid() and 'search' in request.GET:
-        search = form.cleaned_data['search']
-        users = users.filter(
-            Q(first_name__icontains=search) |
-            Q(last_name__icontains=search) |
-            Q(email__icontains=search)
-        )
-        if users.count() == 1:
-            url = request.REQUEST.get('next',
-                    reverse('view_user', args=(users[0].id,)))
-            return HttpResponseRedirect(url)
-    return render(request, 'timepiece/user/list.html', {
-        'form': form,
-        'users': users.select_related(),
-    })
+class CreateBusiness(PermissionsRequiredMixin, CreateView):
+    model = Business
+    form_class = CreateEditBusinessForm
+    template_name = 'timepiece/business/create_edit.html'
+    permissions = ('crm.add_business',)
 
 
-@permission_required('auth.view_user')
-@transaction.commit_on_success
-def view_user(request, user_id):
-    user = get_object_or_404(User, pk=user_id)
-    add_project_form = SelectProjectForm()
-    return render(request, 'timepiece/user/view.html', {
-        'user': user,
-        'add_project_form': add_project_form,
-    })
+class DeleteBusiness(PermissionsRequiredMixin, DeleteView):
+    model = Business
+    success_url = reverse_lazy('list_businesses')
+    permissions = ('crm.delete_business',)
+    pk_url_kwarg = 'business_id'
+    template_name = 'timepiece/delete_object.html'
 
 
-@permission_required('auth.add_user')
-@permission_required('auth.change_user')
-def create_edit_user(request, user_id=None):
-    user = get_object_or_404(User, pk=user_id) if user_id else None
-    form = EditUserForm(request.POST or None, instance=user)
-    if form.is_valid():
-        user = form.save()
-        url = request.REQUEST.get('next',
-                reverse('view_user', args=(user.pk,)))
-        return HttpResponseRedirect(url)
-    return render(request, 'timepiece/user/create_edit.html', {
-        'user': user,
-        'form': form,
-    })
+class EditBusiness(PermissionsRequiredMixin, UpdateView):
+    model = Business
+    form_class = CreateEditBusinessForm
+    template_name = 'timepiece/business/create_edit.html'
+    permissions = ('crm.edit_business',)
+    pk_url_kwarg = 'business_id'
 
 
-@permission_required('crm.view_project')
-def list_projects(request):
-    form = ProjectSearchForm(request.GET or None)
-    if form.is_valid() and ('search' in request.GET or 'status' in
-            request.GET):
-        search, status = form.save()
-        query = Q(name__icontains=search) | Q(description__icontains=search)
-        projects = Project.objects.filter(query)
-        projects = projects.filter(status=status) if status else projects
-        if projects.count() == 1:
-            url = request.REQUEST.get('next',
-                    reverse('view_project', args=(projects.get().id,)))
-            return HttpResponseRedirect(url)
-    else:
-        projects = Project.objects.all()
-
-    return render(request, 'timepiece/project/list.html', {
-        'form': form,
-        'projects': projects.select_related('business'),
-    })
+### Users ###
 
 
-@permission_required('crm.view_project')
-@transaction.commit_on_success
-def view_project(request, project_id):
-    project = get_object_or_404(Project, pk=project_id)
-    add_user_form = SelectUserForm()
-    return render(request, 'timepiece/project/view.html', {
-        'project': project,
-        'add_user_form': add_user_form,
-    })
+class ListUsers(PermissionsRequiredMixin, SearchListView):
+    model = User
+    permissions = ('auth.view_user',)
+    redirect_if_one_result = True
+    search_fields = ['first_name__icontains', 'last_name__icontains',
+            'email__icontains', 'username__icontains']
+    template_name = 'timepiece/user/list.html'
+
+    def get_queryset(self):
+        return super(ListUsers, self).get_queryset().select_related()
+
+
+class ViewUser(PermissionsRequiredMixin, CommitOnSuccessMixin, DetailView):
+    model = User
+    pk_url_kwarg = 'user_id'
+    template_name = 'timepiece/user/view.html'
+    permissions = ('auth.view_user',)
+
+    def get_context_data(self, **kwargs):
+        context = super(ViewUser, self).get_context_data(**kwargs)
+        context.update({
+            'add_project_form': SelectProjectForm(),
+        })
+        return context
+
+
+class CreateUser(PermissionsRequiredMixin, CreateView):
+    model = User
+    form_class = CreateUserForm
+    template_name = 'timepiece/user/create_edit.html'
+    permissions = ('auth.add_user',)
+
+
+class DeleteUser(PermissionsRequiredMixin, DeleteView):
+    model = User
+    success_url = reverse_lazy('list_users')
+    permissions = ('auth.delete_user',)
+    pk_url_kwarg = 'user_id'
+    template_name = 'timepiece/delete_object.html'
+
+
+class EditUser(PermissionsRequiredMixin, UpdateView):
+    model = User
+    form_class = EditUserForm
+    template_name = 'timepiece/user/create_edit.html'
+    permissions = ('auth.change_user',)
+    pk_url_kwarg = 'user_id'
+
+
+### Projects ###
+
+
+class ListProjects(PermissionsRequiredMixin, SearchListView):
+    model = Project
+    form_class = ProjectSearchForm
+    permissions = ['crm.view_project']
+    redirect_if_one_result = True
+    search_fields = ['name__icontains', 'description__icontains']
+    template_name = 'timepiece/project/list.html'
+
+    def filter_form_valid(self, form, queryset):
+        queryset = super(ListProjects, self).filter_form_valid(form, queryset)
+        status = form.cleaned_data['status']
+        if status:
+            queryset = queryset.filter(status=status)
+        return queryset
+
+
+class ViewProject(PermissionsRequiredMixin, CommitOnSuccessMixin, DetailView):
+    model = Project
+    pk_url_kwarg = 'project_id'
+    template_name = 'timepiece/project/view.html'
+    permissions = ('crm.view_project',)
+
+    def get_context_data(self, **kwargs):
+        context = super(ViewProject, self).get_context_data(**kwargs)
+        context.update({
+            'add_user_form': SelectUserForm(),
+        })
+        return context
+
+
+class CreateProject(PermissionsRequiredMixin, CreateView):
+    model = Project
+    form_class = CreateEditProjectForm
+    permissions = ('crm.add_project',)
+    template_name = 'timepiece/project/create_edit.html'
+
+
+class DeleteProject(PermissionsRequiredMixin, DeleteView):
+    model = Project
+    success_url = reverse_lazy('list_projects')
+    permissions = ('crm.delete_project',)
+    pk_url_kwarg = 'project_id'
+    template_name = 'timepiece/delete_object.html'
+
+
+class EditProject(PermissionsRequiredMixin, UpdateView):
+    model = Project
+    form_class = CreateEditProjectForm
+    permissions = ('crm.change_project',)
+    template_name = 'timepiece/project/create_edit.html'
+    pk_url_kwarg = 'project_id'
 
 
 @csrf_exempt
@@ -478,63 +515,36 @@ def create_relationship(request):
     return HttpResponseRedirect(url)
 
 
-@csrf_exempt
-@permission_required('crm.delete_projectrelationship')
-@transaction.commit_on_success
-def delete_relationship(request):
-    user_id = request.REQUEST.get('user_id', None)
-    project_id = request.REQUEST.get('project_id', None)
-    rel = get_object_or_404(ProjectRelationship,
-            user__id=user_id, project__id=project_id)
-    if request.method == 'POST':
-        rel.delete()
-        url = request.REQUEST.get('next',
-                reverse('view_project', args=(rel.project.pk,)))
-        return HttpResponseRedirect(url)
-    return render(request, 'timepiece/relationship/delete.html', {
-        'user': rel.user,
-        'project': rel.project,
-    })
+class RelationshipObjectMixin(object):
+    """Handles retrieving and redirecting for ProjectRelationship objects."""
+
+    def get_object(self, queryset=None):
+        if queryset is None:
+            queryset = self.get_queryset()
+
+        user_id = self.request.REQUEST.get('user_id', None)
+        project_id = self.request.REQUEST.get('project_id', None)
+        return get_object_or_404(self.model, user__id=user_id,
+                project__id=project_id)
+
+    def get_success_url(self):
+        return self.request.REQUEST.get('next',
+                self.object.project.get_absolute_url())
 
 
-@permission_required('crm.change_projectrelationship')
-@transaction.commit_on_success
-def edit_relationship(request):
-    user_id = request.REQUEST.get('user_id', None)
-    project_id = request.REQUEST.get('project_id', None)
-    rel = get_object_or_404(ProjectRelationship,
-            user__id=user_id, project__id=project_id)
-    data = request.POST if request.method == 'POST' else None
-    form = ProjectRelationshipForm(data, instance=rel)
-    if request.method == 'POST' and form.is_valid():
-        rel = form.save()
-        url = request.REQUEST.get('next',
-                reverse('view_project', args=(project_id,)))
-        return HttpResponseRedirect(url)
-    return render(request, 'timepiece/relationship/edit.html', {
-        'user': rel.user,
-        'project': rel.project,
-        'relationship_form': form,
-    })
+class EditRelationship(PermissionsRequiredMixin, CommitOnSuccessMixin,
+        RelationshipObjectMixin, UpdateView):
+    model = ProjectRelationship
+    permissions = ('crm.change_projectrelationship',)
+    template_name = 'timepiece/relationship/edit.html'
+    form_class = EditProjectRelationshipForm
 
 
-@permission_required('crm.add_project')
-@permission_required('crm.change_project')
-def create_edit_project(request, project_id=None):
-    project = None
-    if project_id:
-        project = get_object_or_404(Project, pk=project_id)
-    form = ProjectForm(request.POST or None, instance=project)
-    if request.POST and form.is_valid():
-        project = form.save()
-        project.save()
-        url = request.REQUEST.get('next',
-                reverse('view_project', args=(project.id,)))
-        return HttpResponseRedirect(url)
-    return render(request, 'timepiece/project/create_edit.html', {
-        'project': project,
-        'project_form': form,
-    })
+class DeleteRelationship(PermissionsRequiredMixin, CsrfExemptMixin,
+        CommitOnSuccessMixin, RelationshipObjectMixin, DeleteView):
+    model = ProjectRelationship
+    permissions = ('crm.delete_projectrelationship',)
+    template_name = 'timepiece/relationship/delete.html'
 
 
 @login_required
@@ -543,97 +553,18 @@ def edit_settings(request):
     profile, created = UserProfile.objects.get_or_create(user=user)
     if request.method == 'POST':
         user_form = UserForm(request.POST, instance=user)
-        profile_form = UserProfileForm(
+        profile_form = EditUserProfileForm(
                 request.POST, instance=profile)
         if user_form.is_valid() and profile_form.is_valid():
             user_form.save()
             profile_form.save()
             messages.info(request, 'Your settings have been updated.')
-            next_url = request.REQUEST.get('next', None)
-            if next_url:
-                try:
-                    resolve(next_url)
-                except Http404:
-                    next_url = None
-            next_url = next_url or reverse('dashboard')
+            next_url = request.REQUEST.get('next', None) or reverse('dashboard')
             return HttpResponseRedirect(next_url)
     else:
-        profile_form = UserProfileForm(instance=profile)
+        profile_form = EditUserProfileForm(instance=profile)
         user_form = UserForm(instance=user)
     return render(request, 'timepiece/user/settings.html', {
         'profile_form': profile_form,
         'user_form': user_form,
-    })
-
-
-class DeleteView(TemplateView):
-    model = None
-    url_name = None
-    permissions = None
-    form_class = DeleteForm
-    template_name = 'timepiece/delete_object.html'
-    param = None
-
-    def dispatch(self, request, *args, **kwargs):
-        for permission in self.permissions:
-            if not request.user.has_perm(permission):
-                messages.info(request,
-                        'You do not have permission to access that.')
-                return HttpResponseRedirect(reverse('dashboard'))
-        return super(DeleteView, self).dispatch(request, *args, **kwargs)
-
-    def post(self, request, *args, **kwargs):
-        instance = self.get_queryset(**kwargs)
-        form = self.form_class(request.POST, instance=instance)
-        msg = '{0} could not be successfully deleted.'.format(instance)
-
-        if form.is_valid():
-            if form.save():
-                msg = '{0} was successfully deleted.'.format(instance)
-
-        messages.info(request, msg)
-        return HttpResponseRedirect(reverse(self.url_name))
-
-    def get(self, request, *args, **kwargs):
-        context = self.get_context_data(*args, **kwargs)
-        return self.render_to_response(context)
-
-    def get_queryset(self, **kwargs):
-        pk = kwargs.get(self.param, None)
-        return get_object_or_404(self.model, pk=pk)
-
-    def get_context_data(self, *args, **kwargs):
-        context = super(DeleteView, self).get_context_data(*args, **kwargs)
-        context['object'] = self.get_queryset(**kwargs)
-        return context
-
-
-class DeleteUserView(DeleteView):
-    model = User
-    url_name = 'list_users'
-    permissions = ('auth.add_user', 'auth.change_user',)
-    param = 'user_id'
-
-
-class DeleteBusinessView(DeleteView):
-    model = Business
-    url_name = 'list_businesses'
-    permissions = ('crm.add_business',)
-    param = 'business_id'
-
-
-class DeleteProjectView(DeleteView):
-    model = Project
-    url_name = 'list_projects'
-    permissions = ('crm.add_project', 'crm.change_project',)
-    param = 'project_id'
-
-
-@login_required
-def search(request):
-    form = QuickSearchForm(request.GET or None)
-    if form.is_valid():
-        return HttpResponseRedirect(form.save())
-    return render(request, 'timepiece/search_results.html', {
-        'form': form,
     })

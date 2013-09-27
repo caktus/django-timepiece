@@ -1,29 +1,26 @@
 from django.contrib.auth.models import Permission
 from django.core.urlresolvers import reverse
+from django.test import TestCase
 
-from timepiece.tests.base import TimepieceDataTestCase, ViewTestMixin
-
+from timepiece.tests import factories
+from timepiece.tests.base import ViewTestMixin
 from timepiece.crm.models import ProjectRelationship
 
 
-class RelationshipTestBase(TimepieceDataTestCase):
+__all__ = ['AddProjectToUserTestCase', 'AddUserToProjectTestCase',
+        'EditRelationshipTestCase', 'DeleteRelationshipTestCase']
+
+
+class RelationshipTestBase(TestCase):
 
     def setUp(self):
-        self.username = self.random_string(25)
-        self.password = self.random_string(25)
-        self.user = self.create_user(username=self.username,
-                password=self.password)
+        self.user = factories.User()
         self.permissions = [Permission.objects.get(codename=n) for n in
                 self.perm_names]
         self.user.user_permissions.add(*self.permissions)
-        self.client.login(username=self.username, password=self.password)
+        self.login_user(self.user)
 
-        self.project = self.create_project()
-
-    def _assertRedirectsNoFollow(self, response, url):
-        self.assertEquals(response.status_code, 302)
-        full_url = 'http://testserver' + url
-        self.assertEquals(response._headers['location'][1], full_url)
+        self.project = factories.Project()
 
 
 class AddProjectToUserTestCase(ViewTestMixin, RelationshipTestBase):
@@ -67,8 +64,8 @@ class AddProjectToUserTestCase(ViewTestMixin, RelationshipTestBase):
 
     def test_add_again(self):
         """Adding project again should have no effect."""
-        rel_data = {'project': self.project, 'user': self.user}
-        rel = self.create_project_relationship(data=rel_data)
+        rel = factories.ProjectRelationship(project=self.project,
+                user=self.user)
 
         response = self._post(data=self._data())
         self.assertEquals(response.status_code, 302)
@@ -81,7 +78,7 @@ class AddProjectToUserTestCase(ViewTestMixin, RelationshipTestBase):
         user_url = reverse('view_user', args=(self.user.pk,))
 
         response = self._post(data=self._data())
-        self._assertRedirectsNoFollow(response, user_url)
+        self.assertRedirectsNoFollow(response, user_url)
         rel = ProjectRelationship.objects.get()
         self.assertEquals(rel.project, self.project)
         self.assertEquals(rel.user, self.user)
@@ -91,7 +88,7 @@ class AddProjectToUserTestCase(ViewTestMixin, RelationshipTestBase):
         get_kwargs = self.get_kwargs
         get_kwargs.update({'next': '/hello'})
         response = self._post(data=self._data(), get_kwargs=get_kwargs)
-        self._assertRedirectsNoFollow(response, '/hello')
+        self.assertRedirectsNoFollow(response, '/hello')
         rel = ProjectRelationship.objects.get()
         self.assertEquals(rel.project, self.project)
         self.assertEquals(rel.user, self.user)
@@ -138,8 +135,8 @@ class AddUserToProjectTestCase(ViewTestMixin, RelationshipTestBase):
 
     def test_add_again(self):
         """Adding user again should have no effect."""
-        rel_data = {'project': self.project, 'user': self.user}
-        rel = self.create_project_relationship(data=rel_data)
+        rel = factories.ProjectRelationship(project=self.project,
+                user=self.user)
 
         response = self._post(data=self._data())
         self.assertEquals(response.status_code, 302)
@@ -152,7 +149,7 @@ class AddUserToProjectTestCase(ViewTestMixin, RelationshipTestBase):
         project_url = reverse('view_project', args=(self.project.pk,))
 
         response = self._post(data=self._data())
-        self._assertRedirectsNoFollow(response, project_url)
+        self.assertRedirectsNoFollow(response, project_url)
         rel = ProjectRelationship.objects.get()
         self.assertEquals(rel.project, self.project)
         self.assertEquals(rel.user, self.user)
@@ -162,7 +159,7 @@ class AddUserToProjectTestCase(ViewTestMixin, RelationshipTestBase):
         get_kwargs = self.get_kwargs
         get_kwargs.update({'next': '/hello'})
         response = self._post(data=self._data(), get_kwargs=get_kwargs)
-        self._assertRedirectsNoFollow(response, '/hello')
+        self.assertRedirectsNoFollow(response, '/hello')
         rel = ProjectRelationship.objects.get()
         self.assertEquals(rel.project, self.project)
         self.assertEquals(rel.user, self.user)
@@ -181,10 +178,10 @@ class EditRelationshipTestCase(ViewTestMixin, RelationshipTestBase):
 
     def setUp(self):
         super(EditRelationshipTestCase, self).setUp()
-        rel_data = {'project': self.project, 'user': self.user}
-        self.relationship = self.create_project_relationship(data=rel_data)
-        self.rel_type1 = self.create_relationship_type()
-        self.rel_type2 = self.create_relationship_type()
+        self.relationship = factories.ProjectRelationship(
+                project=self.project, user=self.user)
+        self.rel_type1 = factories.RelationshipType()
+        self.rel_type2 = factories.RelationshipType()
 
     def test_permission(self):
         """Permission is required to edit a project relationship."""
@@ -228,10 +225,9 @@ class EditRelationshipTestCase(ViewTestMixin, RelationshipTestBase):
         response = self._get()
         self.assertEquals(response.status_code, 200)
         context = response.context
-        form = context['relationship_form']
+        form = context['form']
         self.assertEquals(ProjectRelationship.objects.get(), self.relationship)
-        self.assertEqual(context['user'], self.user)
-        self.assertEqual(context['project'], self.project)
+        self.assertEqual(context['object'], self.relationship)
         self.assertFalse(form.is_bound)
         self.assertEquals(form.instance, self.relationship)
 
@@ -240,7 +236,7 @@ class EditRelationshipTestCase(ViewTestMixin, RelationshipTestBase):
         project_url = reverse('view_project', args=(self.project.pk,))
 
         response = self._post(data=self._data())
-        self._assertRedirectsNoFollow(response, project_url)
+        self.assertRedirectsNoFollow(response, project_url)
         rel = ProjectRelationship.objects.get()
         self.assertEquals(rel.project, self.project)
         self.assertEquals(rel.user, self.user)
@@ -253,7 +249,7 @@ class EditRelationshipTestCase(ViewTestMixin, RelationshipTestBase):
         get_kwargs = self.get_kwargs
         get_kwargs.update({'next': '/hello'})
         response = self._post(data=self._data(), get_kwargs=get_kwargs)
-        self._assertRedirectsNoFollow(response, '/hello')
+        self.assertRedirectsNoFollow(response, '/hello')
         rel = ProjectRelationship.objects.get()
         self.assertEquals(rel.project, self.project)
         self.assertEquals(rel.user, self.user)
@@ -268,8 +264,8 @@ class DeleteRelationshipTestCase(ViewTestMixin, RelationshipTestBase):
 
     def setUp(self):
         super(DeleteRelationshipTestCase, self).setUp()
-        rel_data = {'project': self.project, 'user': self.user}
-        self.relationship = self.create_project_relationship(data=rel_data)
+        self.relationship = factories.ProjectRelationship(
+                project=self.project, user=self.user)
 
     @property
     def get_kwargs(self):

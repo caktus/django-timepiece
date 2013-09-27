@@ -4,21 +4,28 @@ from decimal import Decimal
 from django.conf import settings
 from django.core.urlresolvers import reverse
 from django.contrib.auth.models import Permission
+from django.test import TestCase
 from django.utils import timezone
 
 from timepiece import utils
-from timepiece.tests.base import TimepieceDataTestCase
+from timepiece.tests import factories
+from timepiece.tests.base import ViewTestMixin, LogTimeMixin
 
 from timepiece.entries.models import Entry
 from timepiece.reports.utils import find_overtime
 
 
-class PayrollTest(TimepieceDataTestCase):
+class PayrollTest(ViewTestMixin, LogTimeMixin, TestCase):
 
     def setUp(self):
         super(PayrollTest, self).setUp()
-        self.sick = self.create_project(name='sick')
-        self.vacation = self.create_project(name='vacation')
+        self.user = factories.User()
+        self.user2 = factories.User()
+        self.superuser = factories.Superuser()
+        self.devl_activity = factories.Activity(billable=True)
+        self.activity = factories.Activity()
+        self.sick = factories.Project(name='sick')
+        self.vacation = factories.Project(name='vacation')
         settings.TIMEPIECE_PAID_LEAVE_PROJECTS = {
             'sick': self.sick.pk, 'vacation': self.vacation.pk
         }
@@ -88,7 +95,7 @@ class PayrollTest(TimepieceDataTestCase):
     def testWeeklyTotals(self):
         self.all_logs(self.user)
         self.all_logs(self.user2)
-        self.client.login(username='superuser', password='abc')
+        self.login_user(self.superuser)
         response = self.client.get(self.url, self.args)
         weekly_totals = response.context['weekly_totals']
         self.assertEqual(weekly_totals[0][0][0][2],
@@ -114,7 +121,7 @@ class PayrollTest(TimepieceDataTestCase):
 
         def check_overtime(week0=Decimal('55.00'), week1=Decimal('55.00'),
                            overtime=Decimal('30.00')):
-            self.client.login(username='superuser', password='abc')
+            self.login_user(self.superuser)
             response = self.client.get(self.url, self.args)
             weekly_totals = response.context['weekly_totals'][0][0][0][2]
             self.assertEqual(weekly_totals[0], week0)
@@ -138,15 +145,13 @@ class PayrollTest(TimepieceDataTestCase):
         Helps set up environment for testing aspects of the monthly payroll
         summary.
         """
-        self.billable_project = self.create_project(name="Billable",
-                billable=True)
-        self.nonbillable_project = self.create_project(name="Nonbillable",
-                billable=False)
+        self.billable_project = factories.BillableProject()
+        self.nonbillable_project = factories.NonbillableProject()
         self.all_logs(self.user, self.billable_project,
                 self.nonbillable_project)
         self.all_logs(self.user2, self.billable_project,
                 self.nonbillable_project)
-        self.client.login(username='superuser', password='abc')
+        self.login_user(self.superuser)
         self.response = self.client.get(self.url, self.args)
         self.rows = self.response.context['monthly_totals']
         self.labels = self.response.context['labels']
@@ -248,13 +253,13 @@ class PayrollTest(TimepieceDataTestCase):
         page.
 
         """
-        self.client.login(username='user', password='abc')
+        self.login_user(self.user)
         response = self.client.get(self.url, self.args)
         self.assertEqual(response.status_code, 302)
 
     def testSuperUserPermission(self):
         """Super users should be able to retrieve the payroll report page."""
-        self.client.login(username='superuser', password='abc')
+        self.login_user(self.superuser)
         response = self.client.get(self.url, self.args)
         self.assertEqual(response.status_code, 200)
 
@@ -264,7 +269,7 @@ class PayrollTest(TimepieceDataTestCase):
         should be able to retrieve the payroll summary page.
 
         """
-        self.client.login(username='user', password='abc')
+        self.login_user(self.user)
         payroll_perm = Permission.objects.get(codename='view_payroll_summary')
         self.user.user_permissions.add(payroll_perm)
         self.user.save()

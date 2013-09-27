@@ -18,7 +18,7 @@
         <script charset="utf-8" src="{{ STATIC_URL }}selectable/js/jquery.dj.selectable.js"></script>
         {% if perms.crm.view_business %}  {# FIXME: Permission doesn't exist #}
             {{ quick_search_form.media.js }}
-            <script charset="utf-8" src="{{ STATIC_URL }}timepiece/js/quicksearch.js"></script>
+            <script charset="utf-8" src="{{ STATIC_URL }}timepiece/js/quick_search.js"></script>
         {% endif %}
         <script charset="utf-8" src="{{ STATIC_URL }}timepiece/js/widgets.js"></script>
     {% endblock javascript %}
@@ -32,17 +32,17 @@
     {% endblock css %}
 
     {% block staticfiles %}
-        {% if debug %}
-            <link rel="stylesheet/less" type="text/css" href="{{ STATIC_URL }}timepiece/less/style.less" />
-            {% block extrastaticfiles_debug %}{% endblock extrastaticfiles_debug %}
-            <script charset="utf-8" src="{{ STATIC_URL }}less/less-1.3.3.min.js"></script>
-        {% else %}
+        {% if not debug or COMPRESS_ENABLED %}
             {% load compress %}
             {% compress css %}
                 <link rel="stylesheet" type="text/less"
                         href="{{ STATIC_URL }}timepiece/less/style.less" />
                 {% block extrastaticfiles_compress %}{% endblock extrastaticfiles_compress %}
             {% endcompress %}
+        {% else %}
+            <link rel="stylesheet/less" type="text/css" href="{{ STATIC_URL }}timepiece/less/style.less" />
+            {% block extrastaticfiles_debug %}{% endblock extrastaticfiles_debug %}
+            <script charset="utf-8" src="{{ STATIC_URL }}less/less-1.3.3.min.js"></script>
         {% endif %}
     {% endblock staticfiles %}
 

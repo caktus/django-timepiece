@@ -11,10 +11,10 @@ To run a subset of the Django tests for django-timepiece, you can pass their nam
 
 django-timepiece inclues a Tox configuration file to run tests in a variety of environments:
 
- * `py26-1.3` - Test using Python 2.6 and Django 1.3.x
  * `py26-1.4` - Test using Python 2.6 and Django 1.4.x
- * `py27-1.3` - Test using Python 2.7 and Django 1.3.x
+ * `py26-1.5` - Test using Python 2.6 and Django 1.5.x
  * `py27-1.4` - Test using Python 2.7 and Django 1.4.x
+ * `py27-1.5` - Test using Python 2.7 and Django 1.5.x
 
 You can run any of the environments listed above using: ``tox -e name``. The tests are run through Django's default test runner, but you can also run the tests using django-jenkins along with tox by providing an extra argument: ``tox -e name -- jenkins``.
 

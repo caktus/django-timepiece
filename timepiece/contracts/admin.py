@@ -44,3 +44,4 @@ class HourGroupAdmin(admin.ModelAdmin):
 
 admin.site.register(ProjectContract, ProjectContractAdmin)
 admin.site.register(HourGroup, HourGroupAdmin)
+admin.site.register(ContractHour)

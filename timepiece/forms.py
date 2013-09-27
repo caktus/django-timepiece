@@ -100,12 +100,3 @@ class UserYearMonthForm(YearMonthForm):
     def save(self):
         from_date, to_date = super(UserYearMonthForm, self).save()
         return (from_date, to_date, self.cleaned_data.get('user', None))
-
-
-class SearchForm(forms.Form):
-    search = forms.CharField(required=False, label='')
-    search.widget.attrs['placeholder'] = 'Search'
-
-    def save(self):
-        search = self.cleaned_data.get('search', '')
-        return search
