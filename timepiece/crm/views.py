@@ -1,6 +1,7 @@
 import datetime
 from dateutil.relativedelta import relativedelta
 import urllib
+import json
 
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required, permission_required
@@ -19,7 +20,7 @@ from django.views.generic import (CreateView, DeleteView, DetailView,
 from timepiece import utils
 from timepiece.forms import YearMonthForm, UserYearMonthForm
 from timepiece.templatetags.timepiece_tags import seconds_to_hours
-from timepiece.utils.csv import CSVViewMixin
+from timepiece.utils.csv import CSVViewMixin, DecimalEncoder
 from timepiece.utils.mixins import (CommitOnSuccessMixin, CsrfExemptMixin,
         PermissionsRequiredMixin, LoginRequiredMixin)
 from timepiece.utils.search import SearchListView
@@ -455,15 +456,15 @@ class ViewProject(PermissionsRequiredMixin, CommitOnSuccessMixin, DetailView):
         contracts = context['project'].contracts.filter(
             status=ProjectContract.STATUS_CURRENT
         )
-        contract_data = ({
+        contract_data = json.dumps([{
             'name': contract.name,
             'status': contract.status,
-            'start_date': contract.start_date,
-            'end_date': contract.end_date,
+            'start_date': contract.start_date.isoformat(),
+            'end_date': contract.end_date.isoformat(),
             'total': contract.contracted_hours(),
             'worked': contract.hours_worked,
             } for contract in contracts
-        )
+        ], cls=DecimalEncoder)
         context.update({
             'add_user_form': SelectUserForm(),
             'today': datetime.datetime.today(),
