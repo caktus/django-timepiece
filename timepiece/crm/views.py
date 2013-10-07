@@ -454,8 +454,12 @@ class ViewProject(PermissionsRequiredMixin, CommitOnSuccessMixin, DetailView):
     def get_context_data(self, **kwargs):
         context = super(ViewProject, self).get_context_data(**kwargs)
         contracts = context['project'].contracts.filter(
-            status=ProjectContract.STATUS_CURRENT
+#            status=ProjectContract.STATUS_CURRENT
         )
+        max_work_fraction = max(
+            [0.0] + [c.fraction_hours for c in contracts])
+        max_schedule_fraction = max(
+            [0.0] + [c.fraction_schedule for c in contracts])
         contract_data = json.dumps([{
             'name': contract.name,
             'status': contract.status,
@@ -469,6 +473,8 @@ class ViewProject(PermissionsRequiredMixin, CommitOnSuccessMixin, DetailView):
             'add_user_form': SelectUserForm(),
             'today': datetime.datetime.today(),
             'contract_data': contract_data,
+            'max_work_fraction':max_work_fraction,
+            'max_schedule_fraction':max_schedule_fraction,
         })
         return context
 
