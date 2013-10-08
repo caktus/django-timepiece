@@ -78,11 +78,15 @@ class ProjectContract(models.Model):
         :rtype: Decimal
         """
 
-        qset = self.contract_hours
-        if approved_only:
-            qset = qset.filter(status=ContractHour.APPROVED_STATUS)
-        result = qset.aggregate(sum=Sum('hours'))['sum']
-        return result or 0
+        cached_attrname = '_approved_contracted_hours' \
+            if approved_only else '_all_contracted_hours'
+        if not hasattr(self, cached_attrname):
+            qset = self.contract_hours
+            if approved_only:
+                qset = qset.filter(status=ContractHour.APPROVED_STATUS)
+            result = qset.aggregate(sum=Sum('hours'))['sum']
+            setattr(self, cached_attrname, result)
+        return getattr(self, cached_attrname, 0)
 
     def pending_hours(self):
         """Compute the contract hours still in pending status"""

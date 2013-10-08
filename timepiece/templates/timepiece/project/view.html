@@ -66,7 +66,7 @@
                 <tr>
                     <th>Contracts</th>
                     <td>
-                        {% for contract in object.contracts.all %}
+                        {% for contract in contracts %}
                             <a href="{% url 'view_contract' contract.pk %}">{{ contract }}</a>
                             ({{ contract.start_date|date:'M j, Y'}} - {{ contract.end_date|date:'M j, Y'}})
                             <br />
