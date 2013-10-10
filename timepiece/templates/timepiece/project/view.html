@@ -7,8 +7,7 @@
 {% block extrajs %}
     <script charset="utf-8" src="{{ STATIC_URL }}timepiece/js/contract.js"></script>
     <script>
-        var max_work_fraction = {{ max_work_fraction }};
-        var max_schedule_fraction = {{ max_schedule_fraction }};
+        var user_hours = {{ user_hours|safe }};
     </script>
 {% endblock extrajs %}
 
