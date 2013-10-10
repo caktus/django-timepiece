@@ -201,9 +201,13 @@ def project_timesheet_url(project_id, date=None):
 
 @register.filter
 def seconds_to_hours(seconds):
-    """Given time in int seconds, return decimal seconds."""
+    """Given time in int seconds, return decimal hours."""
     return round(seconds / 3600.0, 2)
 
+@register.filter
+def hours_to_seconds(seconds):
+    """Given time in decimal hours, return int seconds."""
+    return round(seconds * 3600)
 
 @register.assignment_tag
 def sum_hours(entries):

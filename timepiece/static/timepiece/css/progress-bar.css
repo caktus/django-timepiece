@@ -1,0 +1,46 @@
+.progress-bar{
+	margin:10px 0;
+	line-height:3em;
+	white-space:nowrap;
+	letter-spacing:0.1em;
+	border-radius:3px;
+}
+
+.progress-bar,
+.progress-bar > *{
+	text-indent:0.3em;
+	display:flex;
+	overflow:hidden;
+}
+
+.progress-bar > *{
+	-webkit-transition: flex 0.3s ease-out;
+	 -moz-transition: flex 0.3s ease-out;
+	   -o-transition: flex 0.3s ease-out;
+	      transition: flex 0.3s ease-out;
+}
+
+.progress-bar .worked{
+	background-color:#43df85;
+	color:white;
+}
+
+.progress-bar .remaining{
+	background-color:#eee;
+	color:#333;
+}
+
+.progress-bar .remaining:hover{
+	background-color:#eee;
+	color:#333;
+	overflow:visible;
+}
+
+
+.progress-bar .over{
+	color:white;
+	background-color:#ff7340;
+}
+
+.progress-bar-big{}
+.progress-bar-small{}
