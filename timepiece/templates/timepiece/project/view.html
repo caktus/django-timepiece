@@ -7,6 +7,9 @@
 {% block extrajs %}
     <link rel="stylesheet" type="text/css" href="{{ STATIC_URL }}timepiece/css/progress-bar.css">
     <script charset="utf-8" src="{{ STATIC_URL }}timepiece/js/progress-bar.js"></script>
+    <script>
+        var user_hours = {{ user_hours|safe }};
+    </script>
 {% endblock extrajs %}
 
 {% block crumbs %}
@@ -69,13 +72,13 @@
                 <tr>
                     <th>Contracts</th>
                     <td>
-                        {% for contract in object.contracts.all %}
+                        {% if contract %}
                             <a href="{% url 'view_contract' contract.pk %}">{{ contract }}</a>
                             ({{ contract.start_date|date:'M j, Y'}} - {{ contract.end_date|date:'M j, Y'}})
                             <div class="progress-bar" data-seconds-worked="{{ contract.hours_worked|hours_to_seconds }}" data-seconds-assigned="{{ contract.contracted_hours|hours_to_seconds }}"></div>
-                        {% empty %}
-                            This project is not associated with any contracts.
-                        {% endfor %}
+                        {% else %}
+                            This project is not associated with any active contracts.
+                        {% endif %}
                     </td>
                 </tr>
             </table>

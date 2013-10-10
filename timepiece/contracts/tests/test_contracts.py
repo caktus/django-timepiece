@@ -154,6 +154,18 @@ class ContractHourTestCase(TestCase):
         self.assertEqual(4, pc.contracted_hours())
         self.assertEqual(0, pc.pending_hours())
 
+    def test_approved_contracted_hours(self):
+        # If we create some approved and some pending Contract Hour objects and
+        # then go to the project contract and get contracted_hours(), it gives
+        # the approved hours, lest we pass approved_only=False
+        pc = factories.ProjectContract(contract_hours=3)
+        factories.ContractHour(contract=pc, hours=27,
+            status=ContractHour.PENDING_STATUS
+        )
+        self.assertEqual(3, pc.contracted_hours())
+        self.assertEqual(27, pc.pending_hours())
+        self.assertEqual(30, pc.contracted_hours(approved_only=False))
+
     def test_pending_hours(self):
         # If we create some pending Contract Hour objects and then go to the
         # project contract and get pending_hours(), it gives the sum

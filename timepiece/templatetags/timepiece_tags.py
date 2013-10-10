@@ -166,7 +166,7 @@ def project_hours_for_contract(contract, project, billable=None):
     If billable is passed as 'billable' or 'nonbillable', limits to
     the corresponding hours.  (Must pass a variable name first, of course.)
     """
-    hours = contract.entries.filter(project=project)
+    hours = contract.entries().filter(project=project)
     if billable is not None:
         if billable in (u'billable', u'nonbillable'):
             billable = (billable.lower() == u'billable')
