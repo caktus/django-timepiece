@@ -66,15 +66,15 @@
                 <tr>
                     <th>Contracts</th>
                     <td>
-                        {% for contract in contracts %}
+                        {% if contract %}
                             <a href="{% url 'view_contract' contract.pk %}">{{ contract }}</a>
                             ({{ contract.start_date|date:'M j, Y'}} - {{ contract.end_date|date:'M j, Y'}})
                             <br />
                             <div class="project-bar" style="width: 100%" data-fraction="{{ contract.fraction_schedule }}"></div>
                             <div class="project-bar" style="width: 100%" data-fraction="{{ contract.fraction_hours }}"></div>
-                        {% empty %}
-                            This project is not associated with any contracts.
-                        {% endfor %}
+                        {% else %}
+                            This project is not associated with any active contracts.
+                        {% endif %}
                     </td>
                 </tr>
             </table>
