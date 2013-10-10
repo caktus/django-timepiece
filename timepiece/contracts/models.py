@@ -57,13 +57,14 @@ class ProjectContract(models.Model):
     def get_absolute_url(self):
         return reverse('view_contract', args=[self.pk])
 
-    @property
-    def entries(self):
+    def entries(self, projects=None):
         """
         All Entries worked on projects in this contract during the contract
-        period.
+        period. Takes a `projects` kwarg to limit to a list of projects,
+        which defaults to all projects for the contract.
         """
-        return Entry.objects.filter(project__in=self.projects.all(),
+        projects = projects or self.projects.all()
+        return Entry.objects.filter(project__in=projects,
                 start_time__gte=self.start_date,
                 end_time__lt=self.end_date + relativedelta(days=1))
 
@@ -112,7 +113,7 @@ class ProjectContract(models.Model):
         """Number of billable hours worked on the contract."""
         if not hasattr(self, '_worked'):
             # TODO put this in a .extra w/a subselect
-            entries = self.entries.filter(activity__billable=True)
+            entries = self.entries().filter(activity__billable=True)
             self._worked = entries.aggregate(s=Sum('hours'))['s'] or 0
         return self._worked or 0
 
@@ -121,7 +122,7 @@ class ProjectContract(models.Model):
         """Number of non-billable hours worked on the contract."""
         if not hasattr(self, '_nb_worked'):
             # TODO put this in a .extra w/a subselect
-            entries = self.entries.filter(activity__billable=False)
+            entries = self.entries().filter(activity__billable=False)
             self._nb_worked = entries.aggregate(s=Sum('hours'))['s'] or 0
         return self._nb_worked or 0
 
@@ -303,7 +304,7 @@ class ContractAssignment(models.Model):
     @property
     def hours_worked(self):
         if not hasattr(self, '_worked'):
-            self._worked = self.entries.aggregate(s=Sum('hours'))['s'] or 0
+            self._worked = self.entries().aggregate(s=Sum('hours'))['s'] or 0
         return self._worked or 0
 
 
