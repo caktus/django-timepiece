@@ -154,6 +154,12 @@ class ContractHourTestCase(TestCase):
         self.assertEqual(4, pc.contracted_hours())
         self.assertEqual(0, pc.pending_hours())
 
+    def test_no_contracted_hours(self):
+        # If no ContractHour objects exist, simply return 0
+        pc = factories.ProjectContract(contract_hours=0)
+        pc.contract_hours.all().delete()
+        self.assertEqual(0, pc.contracted_hours())
+
     def test_approved_contracted_hours(self):
         # If we create some approved and some pending Contract Hour objects and
         # then go to the project contract and get contracted_hours(), it gives

@@ -87,7 +87,7 @@ class ProjectContract(models.Model):
                 qset = qset.filter(status=ContractHour.APPROVED_STATUS)
             result = qset.aggregate(sum=Sum('hours'))['sum']
             setattr(self, cached_attrname, result)
-        return getattr(self, cached_attrname, 0)
+        return getattr(self, cached_attrname) or 0
 
     def pending_hours(self):
         """Compute the contract hours still in pending status"""
