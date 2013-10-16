@@ -34,7 +34,7 @@
     </div>
 
     <div class="row-fluid">
-        <div class="span6">
+        <div class="span7">
             <table class="table table-bordered">
                 
                 <tr>
@@ -64,13 +64,7 @@
                     <tr><th>Tracker URL</th><td>{{ object.tracker_url }}</td></tr>
                 {% endif %}
                 <tr>
-                    <th>Current Contract Hours</th>
-                    <td>
-                        <div class="progress-bar" data-seconds-worked="{{ contract.hours_worked }}" data-seconds-assigned="{{ contract.contracted_hours }}"></div>
-                    </td>
-                </tr>
-                <tr>
-                    <th>Contracts</th>
+                    <th>Contracted Hours</th>
                     <td>
                         {% if contract %}
                             <a href="{% url 'view_contract' contract.pk %}">{{ contract }}</a>
@@ -84,7 +78,7 @@
             </table>
         </div>
 
-        <div class="span4 offset2">
+        <div class="span4 offset1">
             {% url 'view_project' object.id as next_url %}
             <h3>Users</h3>
             <ul class="users">

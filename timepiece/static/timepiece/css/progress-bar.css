@@ -10,14 +10,19 @@
 .progress-bar > *{
 	text-indent:0.3em;
 	display:flex;
-	overflow:hidden;
 }
 
 .progress-bar > *{
+	overflow:hidden;
 	-webkit-transition: flex 0.3s ease-out;
 	 -moz-transition: flex 0.3s ease-out;
 	   -o-transition: flex 0.3s ease-out;
 	      transition: flex 0.3s ease-out;
+}
+
+.progress-bar > *:hover{
+	overflow:visible;
+	cursor:crosshair;
 }
 
 .progress-bar .worked{
@@ -26,16 +31,9 @@
 }
 
 .progress-bar .remaining{
-	background-color:#eee;
+	background-color:#e0e0e0;
 	color:#333;
 }
-
-.progress-bar .remaining:hover{
-	background-color:#eee;
-	color:#333;
-	overflow:visible;
-}
-
 
 .progress-bar .over{
 	color:white;
