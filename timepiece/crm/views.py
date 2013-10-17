@@ -492,6 +492,8 @@ class ViewProject(PermissionsRequiredMixin, CommitOnSuccessMixin, DetailView):
             'user_hours': json.dumps(user_hours, cls=DecimalEncoder),
             'add_user_form': SelectUserForm(),
             'today': today,
+            'contract_progress': (today - contract.start_date).days * 60 * 60 * 24,
+            'contract_duration': (contract.end_date - contract.start_date).days * 60 * 60 * 24,
         })
         return context
 

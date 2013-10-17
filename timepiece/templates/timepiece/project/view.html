@@ -68,8 +68,20 @@
                     <td>
                         {% if contract %}
                             <a href="{% url 'view_contract' contract.pk %}">{{ contract }}</a>
-                            ({{ contract.start_date|date:'M j, Y'}} - {{ contract.end_date|date:'M j, Y'}})
-                            <div class="progress-bar" data-seconds-worked="{{ contract.hours_worked|hours_to_seconds }}" data-seconds-assigned="{{ contract.contracted_hours|hours_to_seconds }}"></div>
+                            ({{ contract.start_date|date:'M j, Y'}} - {{ contract.end_date|date:'M j, Y'}})                            
+                            <embed class="progress-bar" src="{{ STATIC_URL }}/svg/progress-bar.svg"  data-seconds-worked="{{ contract.hours_worked|hours_to_seconds }}" data-seconds-assigned="{{ contract.contracted_hours|hours_to_seconds }}">
+                        {% else %}
+                            This project is not associated with any active contracts.
+                        {% endif %}
+                    </td>
+                </tr>
+                <tr>
+                    <th>Contracted Timeline</th>
+                    <td>
+                        {% if contract %}
+                            <a href="{% url 'view_contract' contract.pk %}">{{ contract }}</a>
+                            ({{ contract.start_date|date:'M j, Y'}} - {{ contract.end_date|date:'M j, Y'}})                            
+                            <embed class="progress-bar humanize" src="{{ STATIC_URL }}/svg/progress-bar.svg"  data-seconds-worked="{{ contract_progress }}" data-seconds-assigned="{{ contract_duration }}">
                         {% else %}
                             This project is not associated with any active contracts.
                         {% endif %}

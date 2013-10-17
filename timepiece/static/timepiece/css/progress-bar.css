@@ -1,44 +1,4 @@
 .progress-bar{
-	margin:10px 0;
-	line-height:3em;
-	white-space:nowrap;
-	letter-spacing:0.1em;
-	border-radius:3px;
+	height:3em;
+	width:100%;
 }
-
-.progress-bar,
-.progress-bar > *{
-	text-indent:0.3em;
-	display:flex;
-}
-
-.progress-bar > *{
-	overflow:hidden;
-	-webkit-transition: flex 0.3s ease-out;
-	 -moz-transition: flex 0.3s ease-out;
-	   -o-transition: flex 0.3s ease-out;
-	      transition: flex 0.3s ease-out;
-}
-
-.progress-bar > *:hover{
-	overflow:visible;
-	cursor:crosshair;
-}
-
-.progress-bar .worked{
-	background-color:#43df85;
-	color:white;
-}
-
-.progress-bar .remaining{
-	background-color:#e0e0e0;
-	color:#333;
-}
-
-.progress-bar .over{
-	color:white;
-	background-color:#ff7340;
-}
-
-.progress-bar-big{}
-.progress-bar-small{}
