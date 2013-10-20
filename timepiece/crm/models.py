@@ -17,6 +17,9 @@ User.get_name_or_username = lambda user: user.get_full_name() or user.username
 User.get_absolute_url = lambda user: reverse('view_user', args=(user.pk,))
 
 
+User.get_timesheet_url = lambda user: reverse('view_user_timesheet', args=(user.pk,))
+
+
 class UserProfile(models.Model):
     user = models.OneToOneField(User, unique=True, related_name='profile')
     hours_per_week = models.DecimalField(max_digits=8, decimal_places=2,
