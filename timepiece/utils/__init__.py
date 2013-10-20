@@ -98,3 +98,25 @@ def get_year_start(day=None):
 def to_datetime(date):
     """Transforms a date or datetime object into a date object."""
     return datetime.datetime(date.year, date.month, date.day)
+
+
+def get_model_summary(obj, attrs):
+
+    def _get_model_attribute(obj, attr):
+        if not hasattr(obj, attr):
+            name = obj._meta.verbose_name.title()
+            raise Exception('{0} has no attribute {1}'.format(name, attr))
+        value = getattr(obj, attr)
+        if callable(value):
+            try:
+                return value()
+            except TypeError:
+                raise Exception('Received TypeError: Most likely the {0}() '
+                        'requires arguments.'.format(attr))
+        else:
+            return value
+
+    def _rec_get_model_attribute(obj, attr):
+        return reduce(_get_model_attribute, attr.split('__'), obj)
+
+    return dict([(attr, _rec_get_model_attribute(obj, attr)) for attr in attrs])

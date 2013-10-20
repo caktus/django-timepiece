@@ -95,6 +95,9 @@ class EntryQuerySet(models.query.QuerySet):
         datesQ |= Q(end_time__isnull=True) if current else Q()
         return self.filter(datesQ)
 
+    def summaries(self, attrs=None):
+        return [e.get_summary(attrs) for e in self]
+
 
 class EntryManager(models.Manager):
 
@@ -181,6 +184,17 @@ class Entry(models.Model):
 
     def __unicode__(self):
         return '%s on %s' % (self.user, self.project)
+
+    def get_summary(self, attrs=None):
+        if not attrs:
+            attrs = ['project__id',
+                'project__name', 'project__business__id',
+                'project__business__name', 'project__business__short_name',
+                'activity__id', 'activity__name',
+                'location__id', 'location__name',
+                'start_time', 'end_time', 'total_seconds', 'paused_seconds',
+                'id', 'status', 'get_status_display', 'comments']
+        return utils.get_model_summary(self, attrs)
 
     def check_overlap(self, entry_b, **kwargs):
         """Return True if the two entries overlap."""
@@ -355,6 +369,8 @@ class Entry(models.Model):
         seconds = delta.seconds - self.get_paused_seconds()
         return seconds + (delta.days * 86400)
 
+    total_seconds = property(get_total_seconds)
+
     def get_paused_seconds(self):
         """
         Returns the total seconds that this entry has been paused. If the
@@ -368,6 +384,8 @@ class Entry(models.Model):
             extra_pause = max(0, delta.seconds + (delta.days * 24 * 60 * 60))
             return self.seconds_paused + extra_pause
         return self.seconds_paused
+
+    paused_seconds = property(get_paused_seconds)
 
     @property
     def total_hours(self):
