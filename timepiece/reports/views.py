@@ -13,7 +13,7 @@ from django.utils.decorators import method_decorator
 from django.views.generic import TemplateView
 
 from timepiece import utils
-from timepiece.utils.csv import CSVViewMixin, DecimalEncoder
+from timepiece.utils.csv import CSVViewMixin, ExtendedJSONEncoder
 
 from timepiece.entries.models import Entry, ProjectHours
 from timepiece.reports.forms import BillableHoursReportForm, HourlyReportForm,\
@@ -299,7 +299,7 @@ class BillableHours(ReportMixin, TemplateView):
             data_list.append([label, billable, nonbillable])
 
         context.update({
-            'data': json.dumps(data_list, cls=DecimalEncoder),
+            'data': json.dumps(data_list, cls=ExtendedJSONEncoder),
         })
         return context
 
@@ -456,7 +456,7 @@ def report_productivity(request):
 
     return render(request, 'timepiece/reports/productivity.html', {
         'form': form,
-        'report': json.dumps(report, cls=DecimalEncoder),
+        'report': json.dumps(report, cls=ExtendedJSONEncoder),
         'type': organize_by or '',
         'total_worked': sum([r[1] for r in report[1:]]),
         'total_assigned': sum([r[2] for r in report[1:]]),

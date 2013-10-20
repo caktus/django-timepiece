@@ -1,18 +1,22 @@
 from __future__ import absolute_import
 
 import csv
+import datetime
 from decimal import Decimal
 from json import JSONEncoder
 
 from django.http import HttpResponse
 
 
-class DecimalEncoder(JSONEncoder):
+class ExtendedJSONEncoder(JSONEncoder):
+    """Also converts Decimal, datetime, and date object."""
 
     def default(self, obj):
         if isinstance(obj, Decimal):
             return float(obj)
-        return super(DecimalEncoder, self).default(obj)
+        if isinstance(obj, datetime.datetime) or isinstance(obj, datetime.date):
+            return obj.isoformat()
+        return super(ExtendedJSONEncoder, self).default(obj)
 
 
 class CSVViewMixin(object):

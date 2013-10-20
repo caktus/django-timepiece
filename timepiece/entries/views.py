@@ -21,7 +21,7 @@ from django.views.generic import TemplateView, View
 
 from timepiece import utils
 from timepiece.forms import DATE_FORM_FORMAT
-from timepiece.utils.csv import DecimalEncoder
+from timepiece.utils.csv import ExtendedJSONEncoder
 
 from timepiece.crm.models import Project, UserProfile
 from timepiece.entries.forms import ClockInForm, ClockOutForm, \
@@ -504,7 +504,7 @@ class ScheduleAjaxView(ScheduleMixin, View):
             'all_users': list(all_users),
             'ajax_url': reverse('ajax_schedule'),
         }
-        return HttpResponse(json.dumps(data, cls=DecimalEncoder),
+        return HttpResponse(json.dumps(data, cls=ExtendedJSONEncoder),
             mimetype='application/json')
 
     def duplicate_entries(self, duplicate, week_update):
