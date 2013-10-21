@@ -82,9 +82,12 @@ $(function() {
         get_start_time_display: function() {
             return display_time(this.get_start_time());
         },
-        get_date_display: function() {
+        get_date: function() {
             // The "date" of this entry is tied to its end time.
-            var d = this.get_end_time();
+            return this.get_end_time();
+        },
+        get_date_display: function() {
+            var d = this.get_date();
             return days[d.getDay()] + ", " + months[d.getMonth()] + " " + d.getDate();
         },
         isFromCurrentMonth: function() {
@@ -144,6 +147,9 @@ $(function() {
 
     var EntriesCollection = Backbone.Collection.extend({
         model: Entry,
+        comparator: function(item) {
+            return item.get_date();
+        },
         get_current_month_ids: function() {
             var entryIds = [];
             this.each(function(entry) {
