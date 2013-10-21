@@ -1,6 +1,10 @@
+import datetime
+from dateutil.relativedelta import relativedelta
+
 from django import forms
 from django.contrib.auth.forms import UserCreationForm, UserChangeForm
 from django.contrib.auth.models import User
+from django.utils.dates import MONTHS
 
 from selectable import forms as selectable
 
@@ -151,3 +155,60 @@ class SelectUserForm(forms.Form):
 
     def get_user(self):
         return self.cleaned_data['user'] if self.is_valid() else None
+
+
+class TimesheetSelectMonthForm(forms.Form):
+    month = forms.ChoiceField(choices=MONTHS.items(), label='')
+    year = forms.IntegerField(label='')
+
+    def __init__(self, *args, **kwargs):
+        # By default, select the current month.
+        today = datetime.datetime.today()
+        kwargs['initial'] = {'month': today.month, 'year': today.year}
+        super(TimesheetSelectMonthForm, self).__init__(*args, **kwargs)
+
+    def _get_week_start(self, day=None):
+        """Returns the first microsecond on the Monday of the given week."""
+        day = day or datetime.date.today()
+        monday = 1  # ISO.
+        first_day = day - relativedelta(days=day.isoweekday() - monday)
+        return first_day.replace(hour=0, minute=0, second=0, microsecond=0)
+
+    def _get_week_end(self, day=None):
+        """Returns the last microsecond on the Sunday of the given week."""
+        day = day or datetime.date.today()
+        sunday = 7  # ISO.
+        last_day = day + relativedelta(days=sunday - day.isoweekday())
+        return last_day.replace(hour=23, minute=59, second=59, microsecond=999999)
+
+    def _get_month_end(self, day=None):
+        """Returns the last microsecond of the last day of the given month."""
+        last_day = day.replace(day=1) + relativedelta(months=1, days=-1)
+        return last_day.replace(hour=23, minute=59, second=59, microsecond=999999)
+
+    def clean_month(self):
+        # Choice field normalizes to string by default.
+        return int(self.cleaned_data['month'])
+
+    def get_month_range(self):
+        month_start = self.get_month_start()
+        month_end = self._get_month_end(month_start)
+        return month_start, month_end
+
+    def get_extended_month_range(self):
+        """
+        Returns the first microsecond of the Monday of the first week of the
+        month, and the last microsecond of the Sunday of the last week of the
+        month.
+        """
+        month_start, month_end = self.get_month_range()
+        return self._get_week_start(month_start), self._get_week_end(month_end)
+
+    def get_month_start(self):
+        if self.is_valid():
+            year = self.cleaned_data['year']
+            month = self.cleaned_data['month']
+        else:
+            year = self.initial['year']
+            month = self.initial['month']
+        return datetime.datetime(year, month, 1, 0, 0)
