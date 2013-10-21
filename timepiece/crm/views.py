@@ -20,8 +20,7 @@ from timepiece import utils
 from timepiece.forms import YearMonthForm, UserYearMonthForm
 from timepiece.templatetags.timepiece_tags import seconds_to_hours
 from timepiece.utils.csv import CSVViewMixin
-from timepiece.utils.mixins import (CommitOnSuccessMixin, CsrfExemptMixin,
-        PermissionsRequiredMixin, LoginRequiredMixin)
+from timepiece.utils.cbv import cbv_decorator, PermissionsRequiredMixin
 from timepiece.utils.search import SearchListView
 
 from timepiece.crm.forms import (CreateEditBusinessForm, CreateEditProjectForm,
@@ -34,7 +33,8 @@ from timepiece.crm.utils import grouped_totals
 from timepiece.entries.models import Entry
 
 
-class QuickSearch(LoginRequiredMixin, FormView):
+@cbv_decorator(login_required)
+class QuickSearch(FormView):
     form_class = QuickSearchForm
     template_name = 'timepiece/quick_search.html'
 
@@ -387,7 +387,8 @@ class ListUsers(PermissionsRequiredMixin, SearchListView):
         return super(ListUsers, self).get_queryset().select_related()
 
 
-class ViewUser(PermissionsRequiredMixin, CommitOnSuccessMixin, DetailView):
+@cbv_decorator(transaction.commit_on_success)
+class ViewUser(PermissionsRequiredMixin, DetailView):
     model = User
     pk_url_kwarg = 'user_id'
     template_name = 'timepiece/user/view.html'
@@ -443,7 +444,8 @@ class ListProjects(PermissionsRequiredMixin, SearchListView):
         return queryset
 
 
-class ViewProject(PermissionsRequiredMixin, CommitOnSuccessMixin, DetailView):
+@cbv_decorator(transaction.commit_on_success)
+class ViewProject(PermissionsRequiredMixin, DetailView):
     model = Project
     pk_url_kwarg = 'project_id'
     template_name = 'timepiece/project/view.html'
@@ -532,16 +534,17 @@ class RelationshipObjectMixin(object):
                 self.object.project.get_absolute_url())
 
 
-class EditRelationship(PermissionsRequiredMixin, CommitOnSuccessMixin,
-        RelationshipObjectMixin, UpdateView):
+@cbv_decorator(transaction.commit_on_success)
+class EditRelationship(PermissionsRequiredMixin, RelationshipObjectMixin, UpdateView):
     model = ProjectRelationship
     permissions = ('crm.change_projectrelationship',)
     template_name = 'timepiece/relationship/edit.html'
     form_class = EditProjectRelationshipForm
 
 
-class DeleteRelationship(PermissionsRequiredMixin, CsrfExemptMixin,
-        CommitOnSuccessMixin, RelationshipObjectMixin, DeleteView):
+@cbv_decorator(csrf_exempt)
+@cbv_decorator(transaction.commit_on_success)
+class DeleteRelationship(PermissionsRequiredMixin, RelationshipObjectMixin, DeleteView):
     model = ProjectRelationship
     permissions = ('crm.delete_projectrelationship',)
     template_name = 'timepiece/relationship/delete.html'
