@@ -1,11 +1,9 @@
 import datetime
 from dateutil.relativedelta import relativedelta
-from random import randrange
 from urllib import urlencode
 
-from django.contrib.auth.models import User, Permission
+from django.contrib.auth.models import Permission
 from django.core.urlresolvers import reverse
-from django.utils import timezone
 from django.test import TestCase
 
 from timepiece import utils

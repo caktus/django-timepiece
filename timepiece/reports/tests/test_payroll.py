@@ -5,7 +5,6 @@ from django.conf import settings
 from django.core.urlresolvers import reverse
 from django.contrib.auth.models import Permission
 from django.test import TestCase
-from django.utils import timezone
 
 from timepiece import utils
 from timepiece.tests import factories

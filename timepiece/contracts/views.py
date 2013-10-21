@@ -4,10 +4,9 @@ from dateutil.relativedelta import relativedelta
 from django.contrib.auth.decorators import login_required, permission_required
 from django.contrib import messages
 from django.core.urlresolvers import reverse
-from django.db import transaction
+from django.db import transaction, DatabaseError
 from django.db.models import Sum, Q
-from django.http import HttpResponse, HttpResponseRedirect, Http404,\
-        HttpResponseForbidden
+from django.http import HttpResponseRedirect, Http404, HttpResponseForbidden
 from django.shortcuts import get_object_or_404, redirect, render
 from django.views.generic import ListView, DetailView
 

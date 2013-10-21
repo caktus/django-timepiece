@@ -12,7 +12,6 @@ from timepiece.entries.models import Entry
 from timepiece.reports.tests.base import ReportsTestBase
 from timepiece.reports.utils import get_project_totals, generate_dates
 from timepiece.tests.base import ViewTestMixin, LogTimeMixin
-from timepiece.tests import factories
 
 
 class TestHourlyReport(ViewTestMixin, LogTimeMixin, ReportsTestBase):

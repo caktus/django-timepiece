@@ -3,7 +3,7 @@ from dateutil.relativedelta import relativedelta
 import random
 import urllib
 
-from django.contrib.auth.models import User, Permission
+from django.contrib.auth.models import Permission
 from django.core.urlresolvers import reverse
 from django.test import TestCase
 
