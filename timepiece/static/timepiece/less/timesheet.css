@@ -1,0 +1,44 @@
+.page-header {
+    margin: 5px 0 18px;
+    padding-bottom: 5px;
+}
+.header-split div {
+    display: inline-block;
+}
+.header-split .header-title {
+    display: inline;
+}
+.header-split .header-buttons {
+    line-height: 40px;
+    vertical-align: top;
+    margin: -1px 0 0 15px;
+}
+.align-right {
+    text-align: right !important;
+}
+.muted .label, .muted i {
+    opacity: 0.5;
+}
+.btn.verify i {
+    color: #3a87ad;
+}
+.btn.approve i {
+    color: #468847;
+}
+.btn.reject i {
+    color: #b94a48;
+}
+.top-actions .btn-toolbar {
+    margin-top: 0px;
+    margin-bottom: 30px;
+}
+.top-actions .btn-group {
+    margin-right: 5px;
+}
+#select-month form {
+    margin: 0px;
+}
+.actions a {
+    text-decoration: none;
+    color: black;
+}
