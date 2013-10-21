@@ -1,5 +1,6 @@
 import datetime
 from dateutil.relativedelta import relativedelta
+import json
 import urllib
 
 from django.contrib import messages
@@ -9,6 +10,8 @@ from django.core.urlresolvers import reverse, reverse_lazy
 from django.db import transaction
 from django.db.models import Sum
 from django.http import HttpResponseRedirect, HttpResponseForbidden, Http404
+from django.http import (HttpResponse, HttpResponseRedirect,
+        HttpResponseForbidden, Http404, HttpResponseBadRequest)
 from django.shortcuts import get_object_or_404, render, redirect
 from django.views.decorators.csrf import csrf_exempt
 from django.views.generic import (CreateView, DeleteView, DetailView,
@@ -17,17 +20,20 @@ from django.views.generic import (CreateView, DeleteView, DetailView,
 from timepiece import utils
 from timepiece.forms import YearMonthForm, UserYearMonthForm
 from timepiece.templatetags.timepiece_tags import seconds_to_hours
-from timepiece.utils.csv import CSVViewMixin
+        QuickSearchForm)
+from timepiece.utils.csv import CSVViewMixin, ExtendedJSONEncoder
 from timepiece.utils.cbv import cbv_decorator, PermissionsRequiredMixin
 from timepiece.utils.search import SearchListView
 
 from timepiece.crm.forms import (CreateEditBusinessForm, CreateEditProjectForm,
         EditUserSettingsForm, EditProjectRelationshipForm, SelectProjectForm,
         EditUserForm, CreateUserForm, SelectUserForm, ProjectSearchForm,
-        QuickSearchForm)
 from timepiece.crm.models import Business, Project, ProjectRelationship
 from timepiece.crm.utils import grouped_totals
 from timepiece.entries.models import Entry
+
+
+# Search
 
 
 @cbv_decorator(login_required)
@@ -42,196 +48,183 @@ class QuickSearch(FormView):
 # User timesheets
 
 
-@permission_required('entries.view_payroll_summary')
-def reject_user_timesheet(request, user_id):
+class ViewUserTimesheet(LoginRequiredMixin, View):
+    """Summarizes a month of entries."""
+
+    form_class = TimesheetSelectMonthForm
+    template_name = 'timepiece/user/timesheet/view.html'
+
+    def has_permission_for(self, request_user, timesheet_user):
+        """
+        User may only view their own timesheet unless they have administrative
+        permission.
+        """
+        if request_user == timesheet_user:
+            return True
+        return request_user.has_perm('entries.view_entry_summary')
+
+    def get(self, request, user_id, active_tab=None, *args, **kwargs):
+        self.timesheet_user = get_object_or_404(User, pk=user_id)
+        if not self.has_permission_for(request.user, self.timesheet_user):
+            return HttpResponseForbidden("You do not have permission to "
+                    "view this user's timesheet.")
+
+        # TODO: Handle invalid form.
+        self.month_form = self.form_class(data=request.GET or None)
+
+        this_month = self.month_form.get_month_start()
+        entries = self.get_month_entries()
+        return render(self.request, self.template_name, {
+            'month_form': self.month_form,
+            'timesheet_user': self.timesheet_user,
+            'active_tab': active_tab or 'all-entries',
+            'today': datetime.datetime.today(),
+            'this_month': this_month,
+            'last_month': this_month - relativedelta(months=1),
+            'next_month': this_month + relativedelta(months=1),
+            'entries_data': json.dumps(entries, cls=ExtendedJSONEncoder),
+            'entry_statuses': json.dumps(Entry.STATUSES),
+        })
+
+    def get_month_entries(self):
+        """
+        Return a list of summaries of the entries in the month's extended date
+        range, ordered by end_time.
+        """
+        start, end = self.month_form.get_extended_month_range()
+        entries = Entry.objects.filter(user=self.timesheet_user)
+        entries = entries.filter(end_time__range=(start, end))
+        entries = entries.order_by('end_time')
+        return entries.summaries()
+
+
+# Not using LoginRequiredMixin here to avoid redirecting an AJAX request.
+# The case is handled in dispatch().
+class TimesheetEntryAPI(View):
+    """AJAX view to add, edit, and delete entries.
+
+    To change the status of entries, use the TimesheetEntryStatusAPI view.
     """
-    This allows admins to reject all entries, instead of just one
+
+    def has_permission_for(self, request_user, timesheet_user):
+        """
+        User may only edit their own entries unless they have administrative
+        permission.
+        """
+        if request_user == timesheet_user:
+            return True
+        return request_user.has_perm('entries.view_entry_summary')
+
+    def dispatch(self, request, user_id, *args, **kwargs):
+        self.timesheet_user = get_object_or_404(User, pk=user_id)
+        if not self.has_permission_for(request.user, self.timesheet_user):
+            return HttpResponseForbidden("You do not have permission to "
+                    "edit this user's timesheet.")
+        return super(TimesheetEntryAPI, self).dispatch(request, *args, **kwargs)
+
+    def post(self, request, *args, **kwargs):
+        pass  # TODO - Implement add and edit.
+
+    def delete(self, request, *args, **kwargs):
+        """Delete an existing entry."""
+        entry_id = request.GET.get('entry_id', None)
+        try:
+            entry_id = int(entry_id)
+            if entry_id <= 0:
+                raise ValueError('')
+        except (ValueError, TypeError):
+            return HttpResponseBadRequest('An error occurred while '
+                    'processing the request: A bad entry id was passed. '
+                    'Please contact an administrator.')
+
+        try:
+            entry = Entry.objects.get(pk=entry_id, user=self.timesheet_user)
+        except Entry.DoesNotExist:
+            return HttpResponseBadRequest('The system is unable to find '
+                    'the entry to delete. Please refresh the page and try '
+                    'again. If the problem persists, please contact an '
+                    'administrator.')
+
+        entry.delete()
+        return HttpResponse(json.dumps(entry_id, cls=ExtendedJSONEncoder))
+
+
+# Not using LoginRequiredMixin here to avoid redirecting an AJAX request.
+# The case is handled by has_permission_for().
+class TimesheetEntryStatusAPI(View):
+    """AJAX view to verify, approve, and reject entries.
+
+    At the end of each pay period, users **verify** that their entries are
+    ready for an adminstrator to approve for payment.
+
+    After each pay period, an administrator may **approve** user-verified
+    entries for payment.
+
+    After each pay period, an administrator may **reject** user-verified
+    entries that need additional revision before they can be approved for
+    payment.
     """
-    form = YearMonthForm(request.GET or request.POST)
-    user = User.objects.get(pk=user_id)
-    if form.is_valid():
-        from_date, to_date = form.save()
-        entries = Entry.no_join.filter(status=Entry.VERIFIED, user=user,
-            start_time__gte=from_date, end_time__lte=to_date)
-        if request.POST.get('yes'):
-            if entries.exists():
-                count = entries.count()
-                entries.update(status=Entry.UNVERIFIED)
-                msg = 'You have rejected %d previously verified entries.' \
-                    % count
-            else:
-                msg = 'There are no verified entries to reject.'
-            messages.info(request, msg)
-        else:
-            return render(request, 'timepiece/user/timesheet/reject.html', {
-                'date': from_date,
-                'timesheet_user': user
-            })
-    else:
-        msg = 'You must provide a month and year for entries to be rejected.'
-        messages.error(request, msg)
 
-    url = reverse('view_user_timesheet', args=(user_id,))
-    return HttpResponseRedirect(url)
+    def has_permission_for(self, request_user, timesheet_user, action):
+        """
+        Users may verify their own entries, but otherwise must have permission.
+        """
+        if action == 'verify' and request_user == timesheet_user:
+            return True
+        return request_user.has_perm('entries.view_entry_summary')
 
+    def post(self, request, user_id, action, *args, **kwargs):
+        self.timesheet_user = get_object_or_404(User, pk=user_id)
 
-@login_required
-def view_user_timesheet(request, user_id, active_tab):
-    # User can only view their own time sheet unless they have a permission.
-    user = get_object_or_404(User, pk=user_id)
-    has_perm = request.user.has_perm('entries.view_entry_summary')
-    if not (has_perm or user.pk == request.user.pk):
-        return HttpResponseForbidden('Forbidden')
+        if not self.has_permission_for(request.user, self.timesheet_user, action):
+            return HttpResponseForbidden("You do not have permission to "
+                    "change this user's timesheet.")
 
-    FormClass = UserYearMonthForm if has_perm else YearMonthForm
-    form = FormClass(request.GET or None)
-    if form.is_valid():
-        if has_perm:
-            from_date, to_date, form_user = form.save()
-            if form_user and request.GET.get('yearmonth', None):
-                # Redirect to form_user's time sheet.
-                # Do not use request.GET in urlencode to prevent redirect
-                # loop caused by yearmonth parameter.
-                url = reverse('view_user_timesheet', args=(form_user.pk,))
-                request_data = {
-                    'month': from_date.month,
-                    'year': from_date.year,
-                    'user': form_user.pk,  # Keep so that user appears in form.
-                }
-                url += '?{0}'.format(urllib.urlencode(request_data))
-                return HttpResponseRedirect(url)
-        else:  # User must be viewing their own time sheet; no redirect needed.
-            from_date, to_date = form.save()
-        from_date = utils.add_timezone(from_date)
-        to_date = utils.add_timezone(to_date)
-    else:
-        # Default to showing this month.
-        from_date = utils.get_month_start()
-        to_date = from_date + relativedelta(months=1)
+        try:
+            entry_ids = set(json.loads(request.body))  # Discard duplicates.
+        except (ValueError, TypeError):
+            return HttpResponseBadRequest('An error occurred while '
+                    'processing the request: Entry ids must be passed as a '
+                    'JSON-encoded list. Please contact an administrator.')
 
-    entries_qs = Entry.objects.filter(user=user)
-    month_qs = entries_qs.timespan(from_date, span='month')
-    extra_values = ('start_time', 'end_time', 'comments', 'seconds_paused',
-            'id', 'location__name', 'project__name', 'activity__name',
-            'status')
-    month_entries = month_qs.date_trunc('month', extra_values)
-    # For grouped entries, back date up to the start of the week.
-    first_week = utils.get_week_start(from_date)
-    month_week = first_week + relativedelta(weeks=1)
-    grouped_qs = entries_qs.timespan(first_week, to_date=to_date)
-    intersection = grouped_qs.filter(start_time__lt=month_week,
-        start_time__gte=from_date)
-    # If the month of the first week starts in the previous
-    # month and we dont have entries in that previous ISO
-    # week, then update the first week to start at the first
-    # of the actual month
-    if not intersection and first_week.month < from_date.month:
-        grouped_qs = entries_qs.timespan(from_date, to_date=to_date)
-    totals = grouped_totals(grouped_qs) if month_entries else ''
-    project_entries = month_qs.order_by().values(
-        'project__name').annotate(sum=Sum('hours')).order_by('-sum')
-    summary = Entry.summary(user, from_date, to_date)
+        # Retrieve entries that belong to the correct user.
+        entries = Entry.objects.filter(pk__in=entry_ids, user=self.timesheet_user)
+        if entries.count() != len(entry_ids):
+            return HttpResponseBadRequest('The system is unable to find '
+                    'all of the entries to be changed. Please refresh the '
+                    'page and try again. If the problem persists, please '
+                    'contact an administrator.')
 
-    show_approve = show_verify = False
-    can_change = request.user.has_perm('entries.change_entry')
-    can_approve = request.user.has_perm('entries.approve_timesheet')
-    if can_change or can_approve or user == request.user:
-        statuses = list(month_qs.values_list('status', flat=True))
-        total_statuses = len(statuses)
-        unverified_count = statuses.count(Entry.UNVERIFIED)
-        verified_count = statuses.count(Entry.VERIFIED)
-        approved_count = statuses.count(Entry.APPROVED)
-    if can_change or user == request.user:
-        show_verify = unverified_count != 0
-    if can_approve:
-        show_approve = verified_count + approved_count == total_statuses \
-                and verified_count > 0 and total_statuses != 0
+        if action not in ['approve', 'verify', 'reject']:
+            # Something has become very misconfigured and needs human
+            # intervention.
+            raise Exception('Unexpected action "{0}".'.format(action))
 
-    return render(request, 'timepiece/user/timesheet/view.html', {
-        'active_tab': active_tab or 'overview',
-        'year_month_form': form,
-        'from_date': from_date,
-        'to_date': to_date - relativedelta(days=1),
-        'show_verify': show_verify,
-        'show_approve': show_approve,
-        'timesheet_user': user,
-        'entries': month_entries,
-        'grouped_totals': totals,
-        'project_entries': project_entries,
-        'summary': summary,
-    })
+        return getattr(self, action)(entries)
 
+    def approve(self, entries):
+        if entries.filter(status=Entry.UNVERIFIED).exists():
+            return HttpResponseBadRequest('There are unverified entries in '
+                    'this list. All entries must be verified before they '
+                    'can be approved.')
 
-@login_required
-def change_user_timesheet(request, user_id, action):
-    user = get_object_or_404(User, pk=user_id)
-    admin_verify = request.user.has_perm('entries.view_entry_summary')
-    perm = True
+        # No need to update entries that are invoiced/uninvoiced.
+        entries.filter(status=Entry.VERIFIED).update(status=Entry.APPROVED)
+        return HttpResponse(json.dumps(entries.summaries(), cls=ExtendedJSONEncoder))
 
-    if not admin_verify and action == 'verify' and user != request.user:
-        perm = False
-    if not admin_verify and action == 'approve':
-        perm = False
+    def reject(self, entries):
+        # TODO: Who should be able to reject an entry which has been
+        # marked as invoiced or uninvoiced? Should attempting this throw
+        # a 400 error?
+        # FYI, there are no 'uninvoiced' entries in our database.
+        entries.update(status=Entry.UNVERIFIED)
+        return HttpResponse(json.dumps(entries.summaries(), cls=ExtendedJSONEncoder))
 
-    if not perm:
-        return HttpResponseForbidden('Forbidden: You cannot {0} this '
-                'timesheet.'.format(action))
-
-    try:
-        from_date = request.GET.get('from_date')
-        from_date = utils.add_timezone(
-            datetime.datetime.strptime(from_date, '%Y-%m-%d'))
-    except (ValueError, OverflowError, KeyError):
-        raise Http404
-    to_date = from_date + relativedelta(months=1)
-    entries = Entry.no_join.filter(user=user_id,
-                                   end_time__gte=from_date,
-                                   end_time__lt=to_date)
-    active_entries = Entry.no_join.filter(
-        user=user_id,
-        start_time__lt=to_date,
-        end_time=None,
-        status=Entry.UNVERIFIED,
-    )
-    filter_status = {
-        'verify': Entry.UNVERIFIED,
-        'approve': Entry.VERIFIED,
-    }
-    entries = entries.filter(status=filter_status[action])
-
-    return_url = reverse('view_user_timesheet', args=(user_id,))
-    return_url += '?%s' % urllib.urlencode({
-        'year': from_date.year,
-        'month': from_date.month,
-    })
-    if active_entries:
-        msg = 'You cannot verify/approve this timesheet while the user {0} ' \
-            'has an active entry. Please have them close any active ' \
-            'entries.'.format(user.get_name_or_username())
-        messages.error(request, msg)
-        return redirect(return_url)
-    if request.POST.get('do_action') == 'Yes':
-        update_status = {
-            'verify': 'verified',
-            'approve': 'approved',
-        }
-        entries.update(status=update_status[action])
-        messages.info(request,
-            'Your entries have been %s' % update_status[action])
-        return redirect(return_url)
-    hours = entries.all().aggregate(s=Sum('hours'))['s']
-    if not hours:
-        msg = 'You cannot verify/approve a timesheet with no hours'
-        messages.error(request, msg)
-        return redirect(return_url)
-    return render(request, 'timepiece/user/timesheet/change.html', {
-        'action': action,
-        'timesheet_user': user,
-        'from_date': from_date,
-        'to_date': to_date - relativedelta(days=1),
-        'return_url': return_url,
-        'hours': hours,
-    })
+    def verify(self, entries):
+        # No need to update entries that are approved, invoiced, or
+        # uninvoiced.
+        entries.filter(status=Entry.UNVERIFIED).update(status=Entry.VERIFIED)
+        return HttpResponse(json.dumps(entries.summaries(), cls=ExtendedJSONEncoder))
 
 
 # Project timesheets
