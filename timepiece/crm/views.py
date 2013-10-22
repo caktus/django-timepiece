@@ -464,7 +464,11 @@ class ViewProject(PermissionsRequiredMixin, CommitOnSuccessMixin, DetailView):
         except IndexError:
             contract = None
             user_hours = None
+            contract_progress = None
+            contract_duration = None
         else:
+            contract_progress = (today - contract.start_date).days * 60 * 60 * 24
+            contract_duration = (contract.end_date - contract.start_date).days * 60 * 60 * 24
             entries = contract.entries(projects=[project]).date_trunc('day')
             user_hours = defaultdict(list)
             # TODO: Move user_hours calculation into separate function
@@ -492,8 +496,8 @@ class ViewProject(PermissionsRequiredMixin, CommitOnSuccessMixin, DetailView):
             'user_hours': json.dumps(user_hours, cls=DecimalEncoder),
             'add_user_form': SelectUserForm(),
             'today': today,
-            'contract_progress': (today - contract.start_date).days * 60 * 60 * 24,
-            'contract_duration': (contract.end_date - contract.start_date).days * 60 * 60 * 24,
+            'contract_progress': contract_progress,
+            'contract_duration': contract_duration,
         })
         return context
 
