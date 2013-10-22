@@ -102,6 +102,7 @@ var progressBars = {
 };
 
 $(document).ready(function(){
-	progressBars.init('.progress-bar');
+	// FIXME There is a race between the Document of the embedded svgs and the page embedding them.
+	setTimeout(progressBars.init,100);
 	setInterval(progressBars.increment,1000);	
 });
