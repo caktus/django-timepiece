@@ -5,8 +5,8 @@
 {% block title %}{{ object }}{% endblock title %}
 
 {% block extrajs %}
-    <link rel="stylesheet" type="text/css" href="{{ STATIC_URL }}timepiece/css/progress-bar.css">
-    <script charset="utf-8" src="{{ STATIC_URL }}timepiece/js/progress-bar.js"></script>
+    <link rel="stylesheet" type="text/css" href="{{ STATIC_URL }}timepiece/css/progress_bar.css">
+    <script charset="utf-8" src="{{ STATIC_URL }}timepiece/js/progress_bar.js"></script>
     <script>
         var user_hours = {{ user_hours|safe }};
     </script>
