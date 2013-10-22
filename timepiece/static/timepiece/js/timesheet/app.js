@@ -145,7 +145,7 @@ $(function() {
         }
     });
 
-    var EntriesCollection = Backbone.Collection.extend({
+    var EntryCollection = Backbone.Collection.extend({
         model: Entry,
         comparator: function(item) {
             return item.get_date();
@@ -176,7 +176,7 @@ $(function() {
         }
     });
 
-    var EntriesTable = Backbone.View.extend({
+    var EntryRow = Backbone.View.extend({
         tagName: "tr",
         initialize: function() {
             this.listenTo(this.model, "change", this.render);
@@ -218,7 +218,7 @@ $(function() {
                     'title': 'You cannot edit an entry from another month.'
                 });
             }
-            template = _.template($('#entry-view').html(), {
+            template = _.template($('#entry-row').html(), {
                 model: this.model
             });
             this.$el.html(template);
@@ -226,15 +226,31 @@ $(function() {
         }
     });
 
+    var EntryTable = Backbone.View.extend({
+        initialize: function() {
+            this.table = $(_.template($('#entry-table').html(), {}));
+            _.each(this.collection, function(entry) {
+                var row = new EntryRow({ model: entry });
+                row.render().$el.insertBefore(this.table.find('tbody tr.week-summary'));
+            }, this);
+        },
+        render: function() {
+            return this;
+        }
+    });
+
     var App = Backbone.View.extend({
         el: $("body"),
         initialize: function() {
-            this.table = $("#all-entries table tbody");
+            this.container = $('#all-entries #entries-tables');
             this.listenTo(this.collection, "change", this.render);
-            this.collection.each(function(entry) {
-                var view = new EntriesTable({ model: entry });
-                this.table.append(view.render().el);
-            }, this);
+            this.groups = this.collection.groupBy(function(entry) {
+                return entry.get('project__name');
+            });
+            _.each(this.groups, function(group) {
+                var table = new EntryTable({ collection: group });
+                this.container.append(table.render().table);
+            }, this)
         },
         events: {
             "click .btn[title='Verify All']": "verifyAll",
@@ -243,6 +259,7 @@ $(function() {
             "change #filter-entries select": "filterEntries"
         },
         filterEntries: function(event) {
+            /*
             entry_status = event.currentTarget.value;
             var coll;
             if (entry_status !== "") {
@@ -253,9 +270,10 @@ $(function() {
             }
             this.table.empty();
             _.each(coll, function(entry) {
-                var view = new EntriesTable({ model: entry });
+                var view = new EntryRow({ model: entry });
                 this.table.append(view.render().el);
             }, this)
+            */
         },
         verifyAll: function(event) {
             event.preventDefault();
@@ -275,6 +293,6 @@ $(function() {
     });
 
     app = new App({
-        collection: new EntriesCollection(JSON.parse(raw_entries))
+        collection: new EntryCollection(JSON.parse(raw_entries))
     });
 });

@@ -154,6 +154,28 @@
                 {{ filter_form }}  {# TODO: build from front end? #}
             </form>
 
+            <div id="entries-tables"></div>
+
+            <!-- Underscore template used to render a table for each week of entries. -->
+            <script type="text/template" id="entry-table">
+            <div class="header-split">
+                <h3 class="header-title">A Week in Time</h3>
+                <div class="header-buttons btn-toolbar">
+                    <div class="btn-group" style="margin-right: 5px;">
+                        <button class="btn btn-mini verify" data-toggle="tooltip" title="Verify Week">
+                            <i class="icon icon-ok"></i> Verify Week
+                        </button>
+                    </div>
+                    <div class="btn-group">
+                        <button class="btn btn-mini approve" data-toggle="tooltip" title="Approve Week">
+                            <i class="icon icon-thumbs-up"></i> Approve Week
+                        </button>
+                        <button class="btn btn-mini reject" data-toggle="tooltip" title="Reject Week">
+                            <i class="icon icon-thumbs-down"></i> Reject Week
+                        </button>
+                    </div>
+                </div>
+            </div>
             <table class="table table-bordered table-condensed table-hover">
                 <thead>
                     <tr>
@@ -169,11 +191,18 @@
                         <th>Admin</th>
                     </tr>
                 </thead>
-                <tbody></tbody>
+                <tbody>
+                    <tr class="week-summary emphasized-row">
+                        <th colspan="7" class="align-right">Week Total:</th>
+                        <th class="align-right">0h 0m</th>
+                        <th colspan="2"></th>
+                    </tr>
+                </tbody>
             </table>
+            </script>
 
             <!-- Underscore template used to render each entry in the table. -->
-            <script type="text/template" id="entry-view">
+            <script type="text/template" id="entry-row">
             <td class="actions">
                 <%= model.get_status_label() %>
                 <% if (model.get('status') === 'unverified') { %>
@@ -195,10 +224,10 @@
                 @
                 <%= model.get('location__name') %>
             </td>
-            <td><%= model.get_start_time_display() %></td>
-            <td><%= model.get_end_time_display() %></td>
-            <td><%= model.get('paused_seconds') %></td>
-            <td><%= model.get('total_seconds') %></td>
+            <td class="align-right"><%= model.get_start_time_display() %></td>
+            <td class="align-right"><%= model.get_end_time_display() %></td>
+            <td class="align-right"><%= model.get('paused_seconds') %></td>
+            <td class="align-right"><%= model.get('total_seconds') %></td>
             <td><%= model.get('comments') %></td>
             <td<% if (model.get('status') === 'unverified' && model.isFromCurrentMonth()) { %> data-toggle="tooltip" title="The entry must be verified before it can be approved."<% } %>>
                 <% if (model.isFromCurrentMonth()) { %>
