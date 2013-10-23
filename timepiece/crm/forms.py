@@ -104,16 +104,16 @@ class SelectProjectForm(forms.Form):
     project = selectable.AutoCompleteSelectField(ProjectLookup, label='')
     project.widget.attrs['placeholder'] = 'Add Project'
 
-    def save(self):
-        return self.cleaned_data['project']
+    def get_project(self):
+        return self.cleaned_data['project'] if self.is_valid() else None
 
 
 class SelectUserForm(forms.Form):
     user = selectable.AutoCompleteSelectField(UserLookup, label='')
     user.widget.attrs['placeholder'] = 'Add User'
 
-    def save(self):
-        return self.cleaned_data['user']
+    def get_user(self):
+        return self.cleaned_data['user'] if self.is_valid() else None
 
 
 class EditUserSettingsForm(forms.ModelForm):

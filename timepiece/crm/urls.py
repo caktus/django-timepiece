@@ -85,7 +85,7 @@ urlpatterns = patterns('',
 
     # User-project relationships
     url(r'^relationship/create/$',
-        views.create_relationship,
+        views.CreateRelationship.as_view(),
         name='create_relationship'),
     url(r'^relationship/edit/$',
         views.EditRelationship.as_view(),

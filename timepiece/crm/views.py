@@ -503,39 +503,29 @@ class EditProject(PermissionsRequiredMixin, UpdateView):
 # User-project relationships
 
 
-@csrf_exempt
-@require_POST
-@permission_required('crm.add_projectrelationship')
-@transaction.commit_on_success
-def create_relationship(request):
-    user_id = request.REQUEST.get('user_id', None)
-    project_id = request.REQUEST.get('project_id', None)
-    url = reverse('dashboard')  # Default if nothing else comes up
+class CreateRelationship(CsrfExemptMixin, PermissionsRequiredMixin,
+        CommitOnSuccessMixin, View):
+    permissions = ('crm.add_projectrelationship',)
 
-    project = None
-    if project_id:
-        project = get_object_or_404(Project, pk=project_id)
-        url = reverse('view_project', args=(project_id,))
-    else:  # Adding a user to a specific project
-        project_form = SelectProjectForm(request.POST)
-        if project_form.is_valid():
-            project = project_form.save()
+    def post(self, request, *args, **kwargs):
+        user = self.get_user()
+        project = self.get_project()
+        if user and project:
+            ProjectRelationship.objects.create(user=user, project=project)
+        redirect_to = request.REQUEST.get('next', None) or reverse('dashboard')
+        return HttpResponseRedirect(redirect_to)
 
-    user = None
-    if user_id:
-        user = get_object_or_404(User, pk=user_id)
-        url = reverse('view_user', args=(user_id,))
-    else:  # Adding a project to a specific user
-        user_form = SelectUserForm(request.POST)
-        if user_form.is_valid():
-            user = user_form.save()
+    def get_user(self):
+        user_id = self.request.REQUEST.get('user_id', None)
+        if user_id:
+            return get_object_or_404(User, pk=user_id)
+        return SelectUserForm(self.request.POST).get_user()
 
-    if user and project:
-        ProjectRelationship.objects.get_or_create(
-                user=user, project=project)
-
-    url = request.REQUEST.get('next', url)
-    return HttpResponseRedirect(url)
+    def get_project(self):
+        project_id = self.request.REQUEST.get('project_id', None)
+        if project_id:
+            return get_object_or_404(Project, pk=project_id)
+        return SelectProjectForm(self.request.POST).get_project()
 
 
 class RelationshipObjectMixin(object):
@@ -544,7 +534,6 @@ class RelationshipObjectMixin(object):
     def get_object(self, queryset=None):
         if queryset is None:
             queryset = self.get_queryset()
-
         user_id = self.request.REQUEST.get('user_id', None)
         project_id = self.request.REQUEST.get('project_id', None)
         return get_object_or_404(self.model, user__id=user_id,
