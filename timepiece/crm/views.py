@@ -24,11 +24,11 @@ from timepiece.utils.cbv import cbv_decorator, PermissionsRequiredMixin
 from timepiece.utils.search import SearchListView
 
 from timepiece.crm.forms import (CreateEditBusinessForm, CreateEditProjectForm,
-        EditUserProfileForm, EditProjectRelationshipForm, SelectProjectForm,
-        EditUserForm, CreateUserForm, SelectUserForm, UserForm,
-        ProjectSearchForm, QuickSearchForm)
-from timepiece.crm.models import Business, Project, ProjectRelationship,\
-        UserProfile
+        EditUserSettingsForm, EditProjectRelationshipForm, SelectProjectForm,
+        EditUserForm, CreateUserForm, SelectUserForm, ProjectSearchForm,
+        QuickSearchForm)
+from timepiece.crm.models import (Business, Project, ProjectRelationship,
+        UserProfile)
 from timepiece.crm.utils import grouped_totals
 from timepiece.entries.models import Entry
 
@@ -381,27 +381,16 @@ class EditBusiness(PermissionsRequiredMixin, UpdateView):
 # Users
 
 
-@login_required
-def edit_settings(request):
-    user = request.user
-    profile, created = UserProfile.objects.get_or_create(user=user)
-    if request.method == 'POST':
-        user_form = UserForm(request.POST, instance=user)
-        profile_form = EditUserProfileForm(
-                request.POST, instance=profile)
-        if user_form.is_valid() and profile_form.is_valid():
-            user_form.save()
-            profile_form.save()
-            messages.info(request, 'Your settings have been updated.')
-            next_url = request.REQUEST.get('next', None) or reverse('dashboard')
-            return HttpResponseRedirect(next_url)
-    else:
-        profile_form = EditUserProfileForm(instance=profile)
-        user_form = UserForm(instance=user)
-    return render(request, 'timepiece/user/settings.html', {
-        'profile_form': profile_form,
-        'user_form': user_form,
-    })
+class EditSettings(LoginRequiredMixin, UpdateView):
+    form_class = UserForm
+    template = 'timepiece/user/settings.html'
+
+    def get_object(self, queryset=None):
+        return self.request.user
+
+    def get_success_url(self):
+        messages.info(self.request, 'Your settings have been updated.')
+        return request.REQUEST.get('next', None) or reverse('dashboard')
 
 
 class ListUsers(PermissionsRequiredMixin, SearchListView):

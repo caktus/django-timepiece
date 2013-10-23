@@ -18,8 +18,7 @@
 
             <form class="form-horizontal" action="" method="post" accept-charset="utf-8">
                 {% csrf_token %}
-                {{ user_form|as_bootstrap:"horizontal" }}
-                {{ profile_form|as_bootstrap:"horizontal" }}
+                {{ form|as_bootstrap:"horizontal" }}
                 <div class="form-actions">
                     <input class="btn btn-primary" type="submit" value="Save" name="submit">
                     <input class="btn" type="button" onclick="history.go(-1)" value="Cancel">

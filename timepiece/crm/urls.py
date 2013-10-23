@@ -11,7 +11,7 @@ urlpatterns = patterns('',
 
     # Users
     url(r'^user/settings/$',
-        views.edit_settings,
+        views.EditSettings.as_view(),
         name='edit_settings'),
     url(r'^user/$',
         views.ListUsers.as_view(),

@@ -9,7 +9,7 @@ from timepiece.utils.search import SearchForm
 from timepiece.crm.lookups import BusinessLookup, ProjectLookup, UserLookup,\
         QuickLookup
 from timepiece.crm.models import Attribute, Business, Project,\
-        ProjectRelationship, UserProfile
+        ProjectRelationship
 
 
 class CreateEditBusinessForm(forms.ModelForm):
@@ -100,13 +100,6 @@ class EditProjectRelationshipForm(forms.ModelForm):
                 choices=self.fields['types'].choices)
 
 
-class EditUserProfileForm(forms.ModelForm):
-
-    class Meta:
-        model = UserProfile
-        exclude = ('user', 'hours_per_week')
-
-
 class SelectProjectForm(forms.Form):
     project = selectable.AutoCompleteSelectField(ProjectLookup, label='')
     project.widget.attrs['placeholder'] = 'Add Project'
@@ -123,14 +116,14 @@ class SelectUserForm(forms.Form):
         return self.cleaned_data['user']
 
 
-class UserForm(forms.ModelForm):
+class EditUserSettingsForm(forms.ModelForm):
 
     class Meta:
         model = User
         fields = ('first_name', 'last_name', 'email')
 
     def __init__(self, *args, **kwargs):
-        super(UserForm, self).__init__(*args, **kwargs)
+        super(EditUserSettingsForm, self).__init__(*args, **kwargs)
         for name in self.fields:
             self.fields[name].required = True
 
