@@ -4,7 +4,10 @@ from timepiece.crm import views
 
 
 urlpatterns = patterns('',
-    url(r'^quick_search/$', views.QuickSearch.as_view(), name='quick_search'),
+    # Search
+    url(r'^quick_search/$',
+        views.QuickSearch.as_view(),
+        name='quick_search'),
 
     # Users
     url(r'^user/settings/$',
@@ -25,6 +28,8 @@ urlpatterns = patterns('',
     url(r'^user/(?P<user_id>\d+)/delete/$',
         views.DeleteUser.as_view(),
         name='delete_user'),
+
+    # User timesheets
     url(r'^user/(?P<user_id>\d+)/timesheet/' +
                 '(?:(?P<active_tab>overview|all-entries|daily-summary)/)?$',
         views.view_user_timesheet,
@@ -52,6 +57,8 @@ urlpatterns = patterns('',
     url(r'^project/(?P<project_id>\d+)/delete/$',
         views.DeleteProject.as_view(),
         name='delete_project'),
+
+    # Project timesheets
     url(r'^project/(?P<project_id>\d+)/timesheet/$',
         views.ProjectTimesheet.as_view(),
         name='view_project_timesheet'),
@@ -76,7 +83,7 @@ urlpatterns = patterns('',
         views.DeleteBusiness.as_view(),
         name='delete_business'),
 
-    # Project relationships
+    # User-project relationships
     url(r'^relationship/create/$',
         views.create_relationship,
         name='create_relationship'),

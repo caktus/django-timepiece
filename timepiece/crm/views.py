@@ -42,6 +42,9 @@ class QuickSearch(FormView):
         return HttpResponseRedirect(form.save())
 
 
+# User timesheets
+
+
 @permission_required('entries.view_payroll_summary')
 def reject_user_timesheet(request, user_id):
     """
@@ -73,103 +76,6 @@ def reject_user_timesheet(request, user_id):
 
     url = reverse('view_user_timesheet', args=(user_id,))
     return HttpResponseRedirect(url)
-
-
-class ProjectTimesheet(DetailView):
-    template_name = 'timepiece/project/timesheet.html'
-    model = Project
-    context_object_name = 'project'
-    pk_url_kwarg = 'project_id'
-
-    # FIXME: this permission doesn't seem to exist
-    @method_decorator(permission_required('entries.view_project_time_sheet'))
-    def dispatch(self, *args, **kwargs):
-        return super(ProjectTimesheet, self).dispatch(*args, **kwargs)
-
-    def get(self, *args, **kwargs):
-        if 'csv' in self.request.GET:
-            request_get = self.request.GET.copy()
-            request_get.pop('csv')
-            return_url = reverse('view_project_timesheet_csv',
-                                 args=(self.get_object().pk,))
-            return_url += '?%s' % urllib.urlencode(request_get)
-            return redirect(return_url)
-        return super(ProjectTimesheet, self).get(*args, **kwargs)
-
-    def get_context_data(self, **kwargs):
-        context = super(ProjectTimesheet, self).get_context_data(**kwargs)
-        project = self.object
-        year_month_form = YearMonthForm(self.request.GET or None)
-        if self.request.GET and year_month_form.is_valid():
-            from_date, to_date = year_month_form.save()
-        else:
-            date = utils.add_timezone(datetime.datetime.today())
-            from_date = utils.get_month_start(date).date()
-            to_date = from_date + relativedelta(months=1)
-        entries_qs = Entry.objects
-        entries_qs = entries_qs.timespan(from_date, span='month').filter(
-            project=project
-        )
-        extra_values = ('start_time', 'end_time', 'comments', 'seconds_paused',
-                'id', 'location__name', 'project__name', 'activity__name',
-                'status')
-        month_entries = entries_qs.date_trunc('month', extra_values)
-        total = entries_qs.aggregate(hours=Sum('hours'))['hours']
-        user_entries = entries_qs.order_by().values(
-            'user__first_name', 'user__last_name').annotate(
-            sum=Sum('hours')).order_by('-sum'
-        )
-        activity_entries = entries_qs.order_by().values(
-            'activity__name').annotate(
-            sum=Sum('hours')).order_by('-sum'
-        )
-        context.update({
-            'project': project,
-            'year_month_form': year_month_form,
-            'from_date': from_date,
-            'to_date': to_date - relativedelta(days=1),
-            'entries': month_entries,
-            'total': total,
-            'user_entries': user_entries,
-            'activity_entries': activity_entries,
-        })
-        return context
-
-
-class ProjectTimesheetCSV(CSVViewMixin, ProjectTimesheet):
-
-    def get_filename(self, context):
-        project = self.object.name
-        to_date_str = context['to_date'].strftime('%m-%d-%Y')
-        return 'Project_timesheet {0} {1}'.format(project, to_date_str)
-
-    def convert_context_to_csv(self, context):
-        rows = []
-        rows.append([
-            'Date',
-            'User',
-            'Activity',
-            'Location',
-            'Time In',
-            'Time Out',
-            'Breaks',
-            'Hours',
-        ])
-        for entry in context['entries']:
-            data = [
-                entry['start_time'].strftime('%x'),
-                entry['user__first_name'] + ' ' + entry['user__last_name'],
-                entry['activity__name'],
-                entry['location__name'],
-                entry['start_time'].strftime('%X'),
-                entry['end_time'].strftime('%X'),
-                seconds_to_hours(entry['seconds_paused']),
-                entry['hours'],
-            ]
-            rows.append(data)
-        total = context['total']
-        rows.append(('', '', '', '', '', '', 'Total:', total))
-        return rows
 
 
 @login_required
@@ -331,7 +237,107 @@ def change_user_timesheet(request, user_id, action):
     })
 
 
-### Businesses ###
+# Project timesheets
+
+
+class ProjectTimesheet(DetailView):
+    template_name = 'timepiece/project/timesheet.html'
+    model = Project
+    context_object_name = 'project'
+    pk_url_kwarg = 'project_id'
+
+    # FIXME: this permission doesn't seem to exist
+    @method_decorator(permission_required('entries.view_project_time_sheet'))
+    def dispatch(self, *args, **kwargs):
+        return super(ProjectTimesheet, self).dispatch(*args, **kwargs)
+
+    def get(self, *args, **kwargs):
+        if 'csv' in self.request.GET:
+            request_get = self.request.GET.copy()
+            request_get.pop('csv')
+            return_url = reverse('view_project_timesheet_csv',
+                                 args=(self.get_object().pk,))
+            return_url += '?%s' % urllib.urlencode(request_get)
+            return redirect(return_url)
+        return super(ProjectTimesheet, self).get(*args, **kwargs)
+
+    def get_context_data(self, **kwargs):
+        context = super(ProjectTimesheet, self).get_context_data(**kwargs)
+        project = self.object
+        year_month_form = YearMonthForm(self.request.GET or None)
+        if self.request.GET and year_month_form.is_valid():
+            from_date, to_date = year_month_form.save()
+        else:
+            date = utils.add_timezone(datetime.datetime.today())
+            from_date = utils.get_month_start(date).date()
+            to_date = from_date + relativedelta(months=1)
+        entries_qs = Entry.objects
+        entries_qs = entries_qs.timespan(from_date, span='month').filter(
+            project=project
+        )
+        extra_values = ('start_time', 'end_time', 'comments', 'seconds_paused',
+                'id', 'location__name', 'project__name', 'activity__name',
+                'status')
+        month_entries = entries_qs.date_trunc('month', extra_values)
+        total = entries_qs.aggregate(hours=Sum('hours'))['hours']
+        user_entries = entries_qs.order_by().values(
+            'user__first_name', 'user__last_name').annotate(
+            sum=Sum('hours')).order_by('-sum'
+        )
+        activity_entries = entries_qs.order_by().values(
+            'activity__name').annotate(
+            sum=Sum('hours')).order_by('-sum'
+        )
+        context.update({
+            'project': project,
+            'year_month_form': year_month_form,
+            'from_date': from_date,
+            'to_date': to_date - relativedelta(days=1),
+            'entries': month_entries,
+            'total': total,
+            'user_entries': user_entries,
+            'activity_entries': activity_entries,
+        })
+        return context
+
+
+class ProjectTimesheetCSV(CSVViewMixin, ProjectTimesheet):
+
+    def get_filename(self, context):
+        project = self.object.name
+        to_date_str = context['to_date'].strftime('%m-%d-%Y')
+        return 'Project_timesheet {0} {1}'.format(project, to_date_str)
+
+    def convert_context_to_csv(self, context):
+        rows = []
+        rows.append([
+            'Date',
+            'User',
+            'Activity',
+            'Location',
+            'Time In',
+            'Time Out',
+            'Breaks',
+            'Hours',
+        ])
+        for entry in context['entries']:
+            data = [
+                entry['start_time'].strftime('%x'),
+                entry['user__first_name'] + ' ' + entry['user__last_name'],
+                entry['activity__name'],
+                entry['location__name'],
+                entry['start_time'].strftime('%X'),
+                entry['end_time'].strftime('%X'),
+                seconds_to_hours(entry['seconds_paused']),
+                entry['hours'],
+            ]
+            rows.append(data)
+        total = context['total']
+        rows.append(('', '', '', '', '', '', 'Total:', total))
+        return rows
+
+
+# Businesses
 
 
 class ListBusinesses(PermissionsRequiredMixin, SearchListView):
@@ -372,7 +378,30 @@ class EditBusiness(PermissionsRequiredMixin, UpdateView):
     pk_url_kwarg = 'business_id'
 
 
-### Users ###
+# Users
+
+
+@login_required
+def edit_settings(request):
+    user = request.user
+    profile, created = UserProfile.objects.get_or_create(user=user)
+    if request.method == 'POST':
+        user_form = UserForm(request.POST, instance=user)
+        profile_form = EditUserProfileForm(
+                request.POST, instance=profile)
+        if user_form.is_valid() and profile_form.is_valid():
+            user_form.save()
+            profile_form.save()
+            messages.info(request, 'Your settings have been updated.')
+            next_url = request.REQUEST.get('next', None) or reverse('dashboard')
+            return HttpResponseRedirect(next_url)
+    else:
+        profile_form = EditUserProfileForm(instance=profile)
+        user_form = UserForm(instance=user)
+    return render(request, 'timepiece/user/settings.html', {
+        'profile_form': profile_form,
+        'user_form': user_form,
+    })
 
 
 class ListUsers(PermissionsRequiredMixin, SearchListView):
@@ -425,7 +454,7 @@ class EditUser(PermissionsRequiredMixin, UpdateView):
     pk_url_kwarg = 'user_id'
 
 
-### Projects ###
+# Projects
 
 
 class ListProjects(PermissionsRequiredMixin, SearchListView):
@@ -480,6 +509,9 @@ class EditProject(PermissionsRequiredMixin, UpdateView):
     permissions = ('crm.change_project',)
     template_name = 'timepiece/project/create_edit.html'
     pk_url_kwarg = 'project_id'
+
+
+# User-project relationships
 
 
 @csrf_exempt
@@ -548,26 +580,3 @@ class DeleteRelationship(PermissionsRequiredMixin, RelationshipObjectMixin, Dele
     model = ProjectRelationship
     permissions = ('crm.delete_projectrelationship',)
     template_name = 'timepiece/relationship/delete.html'
-
-
-@login_required
-def edit_settings(request):
-    user = request.user
-    profile, created = UserProfile.objects.get_or_create(user=user)
-    if request.method == 'POST':
-        user_form = UserForm(request.POST, instance=user)
-        profile_form = EditUserProfileForm(
-                request.POST, instance=profile)
-        if user_form.is_valid() and profile_form.is_valid():
-            user_form.save()
-            profile_form.save()
-            messages.info(request, 'Your settings have been updated.')
-            next_url = request.REQUEST.get('next', None) or reverse('dashboard')
-            return HttpResponseRedirect(next_url)
-    else:
-        profile_form = EditUserProfileForm(instance=profile)
-        user_form = UserForm(instance=user)
-    return render(request, 'timepiece/user/settings.html', {
-        'profile_form': profile_form,
-        'user_form': user_form,
-    })
