@@ -11,10 +11,8 @@ from django.db.models import Sum
 from django.http import HttpResponseRedirect, HttpResponseForbidden, Http404
 from django.shortcuts import get_object_or_404, render, redirect
 from django.utils.decorators import method_decorator
-from django.views.decorators.csrf import csrf_exempt
-from django.views.decorators.http import require_POST
 from django.views.generic import (CreateView, DeleteView, DetailView,
-        UpdateView, FormView)
+        UpdateView, FormView, View)
 
 from timepiece import utils
 from timepiece.forms import YearMonthForm, UserYearMonthForm
@@ -27,8 +25,7 @@ from timepiece.crm.forms import (CreateEditBusinessForm, CreateEditProjectForm,
         EditUserSettingsForm, EditProjectRelationshipForm, SelectProjectForm,
         EditUserForm, CreateUserForm, SelectUserForm, ProjectSearchForm,
         QuickSearchForm)
-from timepiece.crm.models import (Business, Project, ProjectRelationship,
-        UserProfile)
+from timepiece.crm.models import Business, Project, ProjectRelationship
 from timepiece.crm.utils import grouped_totals
 from timepiece.entries.models import Entry
 
@@ -130,7 +127,7 @@ def view_user_timesheet(request, user_id, active_tab):
     # of the actual month
     if not intersection and first_week.month < from_date.month:
         grouped_qs = entries_qs.timespan(from_date, to_date=to_date)
-    totals =grouped_totals(grouped_qs) if month_entries else ''
+    totals = grouped_totals(grouped_qs) if month_entries else ''
     project_entries = month_qs.order_by().values(
         'project__name').annotate(sum=Sum('hours')).order_by('-sum')
     summary = Entry.summary(user, from_date, to_date)
@@ -382,7 +379,7 @@ class EditBusiness(PermissionsRequiredMixin, UpdateView):
 
 
 class EditSettings(LoginRequiredMixin, UpdateView):
-    form_class = UserForm
+    form_class = EditUserSettingsForm
     template = 'timepiece/user/settings.html'
 
     def get_object(self, queryset=None):
@@ -390,7 +387,7 @@ class EditSettings(LoginRequiredMixin, UpdateView):
 
     def get_success_url(self):
         messages.info(self.request, 'Your settings have been updated.')
-        return request.REQUEST.get('next', None) or reverse('dashboard')
+        return self.request.REQUEST.get('next', None) or reverse('dashboard')
 
 
 class ListUsers(PermissionsRequiredMixin, SearchListView):
