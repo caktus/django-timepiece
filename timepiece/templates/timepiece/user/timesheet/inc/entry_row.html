@@ -1,0 +1,38 @@
+{# Underscore template used to render each entry row in a table. #}
+<td class="actions">
+    <%= model.get_status_label() %>
+    <% if (model.get('status') === 'unverified') { %>
+    <a href="#" data-toggle="tooltip" title="Edit">
+        <i class="icon icon-pencil"></i>
+    </a>
+    <a href="#" data-toggle="tooltip" title="Delete">
+        <i class="icon icon-remove"></i>
+    </a>
+    <a href="#" data-toggle="tooltip" title="Verify">
+        <i class="icon icon-ok"></i>
+    </a>
+    <% } %>
+</td>
+<td><%= model.get_date_display() %></td>
+<td><%= model.get('project__name') %></td>
+<td>
+    <%= model.get('activity__name') %>
+    @
+    <%= model.get('location__name') %>
+</td>
+<td class="align-right"><%= model.get_start_time_display() %></td>
+<td class="align-right"><%= model.get_end_time_display() %></td>
+<td class="align-right"><%= model.get('paused_seconds') %></td>
+<td class="align-right"><%= model.get('total_seconds') %></td>
+<td><%= model.get('comments') %></td>
+<td<% if (model.get('status') === 'unverified' && model.isFromCurrentMonth()) { %> data-toggle="tooltip" title="The entry must be verified before it can be approved."<% } %>>
+    <% if (model.isFromCurrentMonth()) { %>
+        <% if (model.get('status') === 'verified') { %>
+        <a href="#" data-toggle="tooltip" title="Approve">Approve</a>
+        |
+        <a href="#" data-toggle="tooltip" title="Reject">Reject</a>
+        <% } else if (model.get('status') !== 'unverified') { %>
+        <a href="#" data-toggle="tooltip" title="Reject">Reject</a>
+        <% } %>
+    <% } %>
+</td>

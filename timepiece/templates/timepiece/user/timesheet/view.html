@@ -1,5 +1,6 @@
 {% extends "timepiece/base.html" %}
 {% load url from future %}
+{% load timepiece_tags %}
 
 {% block title %}
     {{ timesheet_user.get_name_or_username }} - {{ this_month|date:"F Y" }}
@@ -15,9 +16,27 @@
 {% endblock extracss %}
 
 {% block extrajs %}
+<script src="{{ STATIC_URL }}timepiece/js/ajax.js"></script>
 <script src="//cdnjs.cloudflare.com/ajax/libs/underscore.js/1.4.4/underscore-min.js"></script>
 <script src="//cdnjs.cloudflare.com/ajax/libs/backbone.js/1.0.0/backbone-min.js"></script>
-<script src="{{ STATIC_URL }}timepiece/js/ajax.js"></script>
+
+{# Underscore templates. #}
+<script type="text/template" id="week-template">
+    {% include "timepiece/user/timesheet/inc/week.html" %}
+</script>
+<script type="text/template" id="entry-row-template">
+    {% include "timepiece/user/timesheet/inc/entry_row.html" %}
+</script>
+<script type="text/template" id="project-summary-template">
+    {% include "timepiece/user/timesheet/inc/project_summary.html" %}
+</script>
+<script type="text/template" id="weekly-summary-template">
+    {% include "timepiece/user/timesheet/inc/weekly_summary.html" %}
+</script>
+<script type="text/template" id="paid-leave-summary-template">
+    {% include "timepiece/user/timesheet/inc/paid_leave_summary.html" %}
+</script>
+
 <script>
     var this_month = new Date("{{ this_month|date:'r' }}"),
         next_month = new Date("{{ next_month|date:'r' }}"),
@@ -26,10 +45,18 @@
         raw_entries = "{{ entries_data|safe|escapejs }}",
         verify_url = "{% url 'verify_timesheet_entries' timesheet_user.pk %}",
         reject_url = "{% url 'reject_timesheet_entries' timesheet_user.pk %}",
-        approve_url = "{% url 'approve_timesheet_entries' timesheet_user.pk %}",
-        app;
+        approve_url = "{% url 'approve_timesheet_entries' timesheet_user.pk %}";
 </script>
-<script src="{{ STATIC_URL }}timepiece/js/timesheet/app.js"></script>
+<script src="{{ STATIC_URL }}timepiece/js/timesheet/utils.js"></script>
+<script src="{{ STATIC_URL }}timepiece/js/timesheet/models.js"></script>
+<script src="{{ STATIC_URL }}timepiece/js/timesheet/views.js"></script>
+<script>
+    $(function() {
+        var timesheet = new Timesheet({
+            collection: new EntryCollection(JSON.parse(raw_entries))
+        });
+    });
+</script>
 {% endblock extrajs %}
 
 {% block content %}
@@ -65,11 +92,11 @@
         </div>
         <div class="btn-toolbar pull-right">
             <div class="btn-group">
-                <a class="btn" href="{{ timesheet_user.get_timesheet_url }}?month={{ last_month.month }}&year={{ last_month.year }}">
+                <a class="btn" href="{% user_timesheet_url timesheet_user.pk last_month %}">
                     <i class="icon icon-arrow-left"></i>
                     {{ last_month|date:"F" }}
                 </a>
-                <a class="btn" href="{{ timesheet_user.get_timesheet_url }}?month={{ next_month.month }}&year={{ next_month.year }}">
+                <a class="btn" href="{% user_timesheet_url timesheet_user.pk next_month %}">
                     {{ next_month|date:"F" }}
                     <i class="icon icon-arrow-right"></i>
                 </a>
@@ -106,143 +133,14 @@
             <a href="#all-entries" data-toggle="tab">All Entries</a>
         </li>
     </ul>
-
     <div class="tab-content">
-        <div id="overview" class="tab-pane{% if active_tab == 'overview' %} active{% endif %}">
-            <h3>Project Summary</h3>
-            <table id="project-summary" class="table table-bordered">
-                <thead>
-                    <th>Project</th>
-                    <th>Billable</th>
-                    <th>Non-billable</th>
-                    <th>Invoiced</th>
-                    <th>Uninvoiced</th>
-                    <th>Total Hours</th>
-                </thead>
-                <tbody>
-                </tbody>
-            </table>
-
-            <h3>Weekly Summary</h3>
-            <table id="weekly-summary" class="table table-bordered">
-                <thead>
-                    <th>Week</th>
-                    <th>Billable</th>
-                    <th>Non-Billable</th>
-                    <th>Invoiced</th>
-                    <th>Uninvoiced</th>
-                    <th>Total Hours</th>
-                </thead>
-                <tbody>
-                </tbody>
-            </table>
-
-            <h3>Paid Leave Summary</h3>
-            <table id="paid-leave-summary" class="table table-bordered">
-                <thead>
-                    <th>Leave Type</th>
-                    <th>{{ this_month|date:'F' }}</th>
-                    <th>{{ this_month|date:'Y' }} Total</th>
-                </thead>
-                <tbody>
-                </tbody>
-            </table>
+        <div id="overview"
+                class="tab-pane{% if active_tab == 'overview' %} active{% endif %}">
         </div>
 
-        <div id="all-entries" class="tab-pane{% if active_tab == 'all-entries' %} active{% endif %}">
-            <form id="filter-entries" class="form-inline" method="get">{# TODO - add action #}
-                {{ filter_form }}  {# TODO: build from front end? #}
-            </form>
-
-            <div id="entries-tables"></div>
-
-            <!-- Underscore template used to render a table for each week of entries. -->
-            <script type="text/template" id="entry-table">
-            <div class="header-split">
-                <h3 class="header-title">A Week in Time</h3>
-                <div class="header-buttons btn-toolbar">
-                    <div class="btn-group" style="margin-right: 5px;">
-                        <button class="btn btn-mini verify" data-toggle="tooltip" title="Verify Week">
-                            <i class="icon icon-ok"></i> Verify Week
-                        </button>
-                    </div>
-                    <div class="btn-group">
-                        <button class="btn btn-mini approve" data-toggle="tooltip" title="Approve Week">
-                            <i class="icon icon-thumbs-up"></i> Approve Week
-                        </button>
-                        <button class="btn btn-mini reject" data-toggle="tooltip" title="Reject Week">
-                            <i class="icon icon-thumbs-down"></i> Reject Week
-                        </button>
-                    </div>
-                </div>
-            </div>
-            <table class="table table-bordered table-condensed table-hover">
-                <thead>
-                    <tr>
-                        <th>Actions</th>
-                        <th>End Date</th>
-                        <th>Project</th>
-                        <th>Activity</th>
-                        <th>Start</th>
-                        <th>End</th>
-                        <th>Pause</th>
-                        <th>Total</th>
-                        <th>Comments</th>
-                        <th>Admin</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    <tr class="week-summary emphasized-row">
-                        <th colspan="7" class="align-right">Week Total:</th>
-                        <th class="align-right">0h 0m</th>
-                        <th colspan="2"></th>
-                    </tr>
-                </tbody>
-            </table>
-            </script>
-
-            <!-- Underscore template used to render each entry in the table. -->
-            <script type="text/template" id="entry-row">
-            <td class="actions">
-                <%= model.get_status_label() %>
-                <% if (model.get('status') === 'unverified') { %>
-                <a href="#" data-toggle="tooltip" title="Edit">
-                    <i class="icon icon-pencil"></i>
-                </a>
-                <a href="#" data-toggle="tooltip" title="Delete">
-                    <i class="icon icon-remove"></i>
-                </a>
-                <a href="#" data-toggle="tooltip" title="Verify">
-                    <i class="icon icon-ok"></i>
-                </a>
-                <% } %>
-            </td>
-            <td><%= model.get_date_display() %></td>
-            <td><%= model.get('project__name') %></td>
-            <td>
-                <%= model.get('activity__name') %>
-                @
-                <%= model.get('location__name') %>
-            </td>
-            <td class="align-right"><%= model.get_start_time_display() %></td>
-            <td class="align-right"><%= model.get_end_time_display() %></td>
-            <td class="align-right"><%= model.get('paused_seconds') %></td>
-            <td class="align-right"><%= model.get('total_seconds') %></td>
-            <td><%= model.get('comments') %></td>
-            <td<% if (model.get('status') === 'unverified' && model.isFromCurrentMonth()) { %> data-toggle="tooltip" title="The entry must be verified before it can be approved."<% } %>>
-                <% if (model.isFromCurrentMonth()) { %>
-                    <% if (model.get('status') === 'verified') { %>
-                    <a href="#" data-toggle="tooltip" title="Approve">Approve</a>
-                    |
-                    <a href="#" data-toggle="tooltip" title="Reject">Reject</a>
-                    <% } else if (model.get('status') !== 'unverified') { %>
-                    <a href="#" data-toggle="tooltip" title="Reject">Reject</a>
-                    <% } %>
-                <% } %>
-            </td>
-            </script>
+        <div id="all-entries"
+                class="tab-pane{% if active_tab == 'all-entries' %} active{% endif %}">
         </div>
     </div>
 </div>
-
 {% endblock content %}

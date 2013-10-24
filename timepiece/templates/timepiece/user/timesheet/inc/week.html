@@ -1,0 +1,42 @@
+{# Underscore template used to render a table for each week of entries. #}
+<div class="header-split">
+    <h3 class="header-title">A Week in Time</h3>
+    <div class="header-buttons btn-toolbar">
+        <div class="btn-group" style="margin-right: 5px;">
+            <button class="btn btn-mini verify" data-toggle="tooltip" title="Verify Week">
+                <i class="icon icon-ok"></i> Verify Week
+            </button>
+        </div>
+        <div class="btn-group">
+            <button class="btn btn-mini approve" data-toggle="tooltip" title="Approve Week">
+                <i class="icon icon-thumbs-up"></i> Approve Week
+            </button>
+            <button class="btn btn-mini reject" data-toggle="tooltip" title="Reject Week">
+                <i class="icon icon-thumbs-down"></i> Reject Week
+            </button>
+        </div>
+    </div>
+</div>
+<table class="table table-bordered table-condensed table-hover">
+    <thead>
+        <tr>
+            <th>Actions</th>
+            <th>End Date</th>
+            <th>Project</th>
+            <th>Activity</th>
+            <th>Start</th>
+            <th>End</th>
+            <th>Pause</th>
+            <th>Total</th>
+            <th>Comments</th>
+            <th>Admin</th>
+        </tr>
+    </thead>
+    <tbody>
+        <tr class="week-summary emphasized-row">
+            <th colspan="7" class="align-right">Week Total:</th>
+            <th class="total-hours align-right">0h 0m</th>
+            <th colspan="2"></th>
+        </tr>
+    </tbody>
+</table>
