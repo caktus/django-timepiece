@@ -29,19 +29,19 @@ var progressBars = {
 			
 			if( $(this_elem).hasClass('humanize') ){
 				var time_worked = {
-					hours: progressBars.humanizeSeconds(worked)
+					hours: progressBars.toStandardHumanized(worked)
 					,minutes:''
 					,seconds:''
 				};
 				var time_remaining = {
-					hours: progressBars.humanizeSeconds(remaining)
+					hours: progressBars.toStandardHumanized(remaining)
 					,minutes:''
 					,seconds:''
 				};
 				var separator = '';
 			}else{
-				var time_worked = progressBars.standardizeSeconds(worked);
-				var time_remaining = progressBars.standardizeSeconds(remaining);
+				var time_worked = progressBars.toStandardClock(worked);
+				var time_remaining = progressBars.toStandardClock(remaining);
 				var separator = ':';
 			}
 
@@ -65,13 +65,31 @@ var progressBars = {
 			}
 		}
 	}
-	,humanizeSeconds:function(seconds){
+	,toWorkHumanized:function(seconds){
 		var minutes = seconds / 60;
 		var hours = minutes / 60;
 		var days = hours / 8;
 		var weeks = days / 5;
 		var months = days / 30;
 		var years = months / 12;
+
+		if(years >= 2) return Math.floor(years) + ' workyears';
+		if(months >= 2) return Math.floor(months) + ' workmonths';
+		if(weeks >= 2) return Math.floor(weeks) + ' workweeks';
+		if(days >= 2) return Math.floor(days) + ' workdays';
+		if(hours >= 2) return Math.floor(hours) + ' workhours';
+		if(minutes >= 2) return Math.floor(minutes) + ' workminutes';
+		if(seconds >= 2) return Math.floor(seconds) + ' workseconds';
+		return '';
+		
+	}
+	,toStandardHumanized:function(seconds){
+		var minutes = seconds / 60;
+		var hours = minutes / 60;
+		var days = hours / 24;
+		var weeks = days / 7;
+		var months = days / 30.4;
+		var years = days / 365.24;
 
 		if(years >= 2) return Math.floor(years) + ' years';
 		if(months >= 2) return Math.floor(months) + ' months';
@@ -83,7 +101,7 @@ var progressBars = {
 		return '';
 		
 	}
-	,standardizeSeconds:function(seconds){
+	,toStandardClock:function(seconds){
 		var minutes = seconds / 60;
 		var hours = minutes / 60;
 
