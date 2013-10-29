@@ -36,7 +36,6 @@
     <div class="row-fluid">
         <div class="span7">
             <table class="table table-bordered">
-                
                 <tr>
                     <th>Business</th>
                     <td>
@@ -48,7 +47,7 @@
                     </td>
                 </tr>
                 <tr><th>Status</th><td>{{ object.status }}</td></tr>
-                
+
                 <tr>
                     <th>Point Person</th>
                     <td>
@@ -68,8 +67,79 @@
                     <td>
                         {% if contract %}
                             <a href="{% url 'view_contract' contract.pk %}">{{ contract }}</a>
-                            ({{ contract.start_date|date:'M j, Y'}} - {{ contract.end_date|date:'M j, Y'}})                            
-                            <embed class="progress-bar" src="{{ STATIC_URL }}svg/progress-bar.svg"  data-seconds-worked="{{ contract.hours_worked|hours_to_seconds }}" data-seconds-assigned="{{ contract.contracted_hours|hours_to_seconds }}">
+                            ({{ contract.start_date|date:'M j, Y'}} - {{ contract.end_date|date:'M j, Y'}})
+                            <div class="progress-bar" data-seconds-worked="{{ contract.hours_worked|hours_to_seconds }}" data-seconds-assigned="{{ contract.contracted_hours|hours_to_seconds }}">
+
+
+                            <svg xmlns="http://www.w3.org/2000/svg">
+                                <style>
+                                    .progress-bar{
+                                        font-family:Helvetica Neue;
+                                        font-size:11pt;
+                                        background-color:#e0e0e0;
+                                    }
+
+                                    .progress-bar .unfilled text{
+                                        fill:black;
+                                    }
+
+                                    .progress-bar text.remaining{
+                                        text-anchor:end;
+                                    }
+
+                                    .progress-bar .filled rect{
+                                        fill:#43df85;
+                                    }
+
+                                    .progress-bar .filled text{
+                                        fill:white;
+                                    }
+
+                                    .progress-bar .hours{ font-weight: 800; }
+                                    .progress-bar .minutes{ font-weight: 300; opacity:0.9;}
+                                    .progress-bar .seconds{ font-weight: 100; opacity:0.6;}
+                                </style>
+
+                                <defs>
+                                    <clipPath id="progress">
+                                        <rect height="100%"/>
+                                    </clipPath>
+                                </defs>
+                                
+                                <g class="unfilled">
+                                    <text class="worked" y="1.7em" x="0">
+                                        <tspan class="hours" x="0.3em">-</tspan>
+                                        <tspan class="minutes" dx="-0.2em">-</tspan>
+                                        <tspan class="seconds" dx="-0.3em">-</tspan>
+                                        <tspan class="label">WORKED</tspan>
+                                    </text>
+                                    <text class="remaining" y="1.7em" x="100%">
+                                        <tspan class="hours" dx="-0.3em">-</tspan>
+                                        <tspan class="minutes" dx="-0.2em">-</tspan>
+                                        <tspan class="seconds" dx="-0.3em">-</tspan>
+                                        <tspan class="label">REMAIN</tspan>
+                                    </text>
+                                </g>
+                                
+                                <g class="filled" clip-path="url(#progress)">
+                                    <rect width="100%" height="100%"/>
+                                    <text class="worked" y="1.7em" x="0">
+                                        <tspan class="hours" x="0.3em">-</tspan>
+                                        <tspan class="minutes" dx="-0.2em">-</tspan>
+                                        <tspan class="seconds" dx="-0.3em">-</tspan>
+                                        <tspan class="label">WORKED</tspan>
+                                    </text>
+                                    <text class="remaining" y="1.7em" x="100%">
+                                        <tspan class="hours" dx="-0.3em">-</tspan>
+                                        <tspan class="minutes" dx="-0.2em">-</tspan>
+                                        <tspan class="seconds" dx="-0.3em">-</tspan>
+                                        <tspan class="label">REMAIN</tspan>
+                                    </text>
+                                </g>
+                            </svg>
+                        </div>
+
+
                         {% else %}
                             This project is not associated with any active contracts.
                         {% endif %}
@@ -80,8 +150,75 @@
                     <td>
                         {% if contract %}
                             <a href="{% url 'view_contract' contract.pk %}">{{ contract }}</a>
-                            ({{ contract.start_date|date:'M j, Y'}} - {{ contract.end_date|date:'M j, Y'}})                            
-                            <embed class="progress-bar humanize" src="{{ STATIC_URL }}svg/progress-bar.svg"  data-seconds-worked="{{ contract_progress }}" data-seconds-assigned="{{ contract_duration }}">
+                            ({{ contract.start_date|date:'M j, Y'}} - {{ contract.end_date|date:'M j, Y'}})
+                            <div class="progress-bar humanize" data-seconds-worked="{{ contract_progress }}" data-seconds-assigned="{{ contract_duration }}">
+                                <svg class="progress-bar" xmlns="http://www.w3.org/2000/svg">
+                                    <style>
+                                        .progress-bar{
+                                            font-family:Helvetica Neue;
+                                            font-size:11pt;
+                                            background-color:#e0e0e0;
+                                        }
+
+                                        .progress-bar .unfilled text{
+                                            fill:black;
+                                        }
+
+                                        .progress-bar text.remaining{
+                                            text-anchor:end;
+                                        }
+
+                                        .progress-bar .filled rect{
+                                            fill:#43df85;
+                                        }
+
+                                        .progress-bar .filled text{
+                                            fill:white;
+                                        }
+
+                                        .progress-bar .hours{ font-weight: 800; }
+                                        .progress-bar .minutes{ font-weight: 300; opacity:0.9;}
+                                        .progress-bar .seconds{ font-weight: 100; opacity:0.6;}
+                                    </style>
+
+                                    <defs>
+                                        <clipPath id="progress">
+                                            <rect height="100%"/>
+                                        </clipPath>
+                                    </defs>
+                                    
+                                    <g class="unfilled">
+                                        <text class="worked" y="1.7em" x="0">
+                                            <tspan class="hours" x="0.3em">-</tspan>
+                                            <tspan class="minutes" dx="-0.2em">-</tspan>
+                                            <tspan class="seconds" dx="-0.3em">-</tspan>
+                                            <tspan class="label">WORKED</tspan>
+                                        </text>
+                                        <text class="remaining" y="1.7em" x="100%">
+                                            <tspan class="hours" dx="-0.3em">-</tspan>
+                                            <tspan class="minutes" dx="-0.2em">-</tspan>
+                                            <tspan class="seconds" dx="-0.3em">-</tspan>
+                                            <tspan class="label">REMAIN</tspan>
+                                        </text>
+                                    </g>
+                                    
+                                    <g class="filled" clip-path="url(#progress)">
+                                        <rect width="100%" height="100%"/>
+                                        <text class="worked" y="1.7em" x="0">
+                                            <tspan class="hours" x="0.3em">-</tspan>
+                                            <tspan class="minutes" dx="-0.2em">-</tspan>
+                                            <tspan class="seconds" dx="-0.3em">-</tspan>
+                                            <tspan class="label">WORKED</tspan>
+                                        </text>
+                                        <text class="remaining" y="1.7em" x="100%">
+                                            <tspan class="hours" dx="-0.3em">-</tspan>
+                                            <tspan class="minutes" dx="-0.2em">-</tspan>
+                                            <tspan class="seconds" dx="-0.3em">-</tspan>
+                                            <tspan class="label">REMAIN</tspan>
+                                        </text>
+                                    </g>
+                                </svg>
+                            </div>
                         {% else %}
                             This project is not associated with any active contracts.
                         {% endif %}

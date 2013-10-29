@@ -23,10 +23,10 @@ var progressBars = {
 			var remaining = Math.max(0,this_elem.dataset.secondsAssigned - this_elem.dataset.secondsWorked);
 			var over = Math.max(0,this_elem.dataset.secondsWorked - this_elem.dataset.secondsAssigned);
 
-			var svg = progressBars.getSubDocument(this_elem);
+			var svg = this_elem.querySelector('svg');
+            var svg_id = '#progress-' + i;
 
-			svg.querySelector("#progress rect").setAttribute('width', worked/scheduled*100+'%');
-			
+			svg.querySelector(svg_id + " rect").setAttribute('width', worked/scheduled*100+'%');
 			if( $(this_elem).hasClass('humanize') ){
 				var time_worked = {
 					hours: progressBars.toStandardHumanized(worked)
@@ -121,6 +121,6 @@ var progressBars = {
 
 $(document).ready(function(){
 	// FIXME There is a race between the Document of the embedded svgs and the page embedding them.
-	setTimeout(progressBars.init,100);
+    progressBars.init();
 	setInterval(progressBars.increment,1000);	
 });
