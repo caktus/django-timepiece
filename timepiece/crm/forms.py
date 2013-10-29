@@ -212,3 +212,13 @@ class TimesheetSelectMonthForm(forms.Form):
             year = self.initial['year']
             month = self.initial['month']
         return datetime.datetime(year, month, 1, 0, 0)
+
+    def get_weeks(self):
+        start, end = self.get_extended_month_range()
+        weeks = []
+        cursor = start
+        while cursor < end:
+            next_week = cursor + relativedelta(days=7)
+            weeks.append((cursor, next_week - relativedelta(microseconds=1)))
+            cursor = next_week
+        return weeks

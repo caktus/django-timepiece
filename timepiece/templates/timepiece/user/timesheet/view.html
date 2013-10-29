@@ -45,7 +45,8 @@
         raw_entries = "{{ entries_data|safe|escapejs }}",
         verify_url = "{% url 'verify_timesheet_entries' timesheet_user.pk %}",
         reject_url = "{% url 'reject_timesheet_entries' timesheet_user.pk %}",
-        approve_url = "{% url 'approve_timesheet_entries' timesheet_user.pk %}";
+        approve_url = "{% url 'approve_timesheet_entries' timesheet_user.pk %}",
+        weeks = JSON.parse("{{ weeks|safe|escapejs }}");
 </script>
 <script src="{{ STATIC_URL }}timepiece/js/timesheet/utils.js"></script>
 <script src="{{ STATIC_URL }}timepiece/js/timesheet/models.js"></script>

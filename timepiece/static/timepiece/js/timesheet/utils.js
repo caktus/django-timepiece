@@ -2,6 +2,10 @@ var days = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"],
     months = [
         "Jan", "Feb", "Mar", "Apr", "May", "June",
         "July", "Aug", "Sep", "Oct", "Nov", "Dec"
+    ],
+    fullMonths = [
+        "January", "February", "March", "April", "May", "June",
+        "July", "August", "September", "October", "November", "December"
     ];
 
 // Display a message to the user.
@@ -58,7 +62,7 @@ var approveEntries = function(collection, entryIds, success_msg) {
     changeEntries(changeUrl, collection, entryIds, success_msg);
 }
 
-var display_time = function(d) {
+var displayTime = function(d) {
     // TODO: handle timezone.
     hours = "" + (d.getHours() % 12 || 12);
     minutes = d.getMinutes();
@@ -67,7 +71,20 @@ var display_time = function(d) {
     return hours + ":" + minutes + " " + ampm;
 }
 
-var get_ids_from_current_month = function(entries) {
+var displayWeekHeader = function(weekStart, weekEnd) {
+    var header = fullMonths[weekStart.getMonth()] + " " + weekStart.getDate();
+    if (weekStart.getYear() !== weekEnd.getYear()) {
+        header += ", " + weekStart.getFullYear();
+    }
+    header += " - ";
+    if (weekStart.getMonth() !== weekEnd.getMonth()) {
+        header += fullMonths[weekEnd.getMonth()] + " ";
+    }
+    header += weekEnd.getDate() + ", " + weekEnd.getFullYear();
+    return header;
+}
+
+var getIdsFromCurrentMonth = function(entries) {
     var entryIds = [];
     _.each(entries, function(entry) {
         if (entry.isFromCurrentMonth()) {

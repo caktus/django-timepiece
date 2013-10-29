@@ -1,6 +1,6 @@
 {# Underscore template used to render a table for each week of entries. #}
 <div class="header-split">
-    <h3 class="header-title">A Week in Time</h3>
+    <h3 class="header-title"><%= displayWeekHeader(weekStart, weekEnd) %></h3>
     <div class="header-buttons btn-toolbar">
         <div class="btn-group" style="margin-right: 5px;">
             <button class="btn btn-mini verify" data-toggle="tooltip" title="Verify Week">

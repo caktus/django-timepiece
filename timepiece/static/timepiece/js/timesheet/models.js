@@ -29,13 +29,13 @@ var Entry = Backbone.Model.extend({
         return new Date(this.get('end_time'));
     },
     get_end_time_display: function() {
-        return display_time(this.get_end_time());
+        return displayTime(this.get_end_time());
     },
     get_start_time: function() {
         return new Date(this.get('start_time'));
     },
     get_start_time_display: function() {
-        return display_time(this.get_start_time());
+        return displayTime(this.get_start_time());
     },
     get_status_label: function() {
         // Returns nothing if this entry is unverified.

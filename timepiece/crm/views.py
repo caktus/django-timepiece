@@ -54,15 +54,6 @@ class ViewUserTimesheet(LoginRequiredMixin, View):
     form_class = TimesheetSelectMonthForm
     template_name = 'timepiece/user/timesheet/view.html'
 
-    def has_permission_for(self, request_user, timesheet_user):
-        """
-        User may only view their own timesheet unless they have administrative
-        permission.
-        """
-        if request_user == timesheet_user:
-            return True
-        return request_user.has_perm('entries.view_entry_summary')
-
     def get(self, request, user_id, active_tab=None, *args, **kwargs):
         self.timesheet_user = get_object_or_404(User, pk=user_id)
         if not self.has_permission_for(request.user, self.timesheet_user):
@@ -73,17 +64,18 @@ class ViewUserTimesheet(LoginRequiredMixin, View):
         self.month_form = self.form_class(data=request.GET or None)
 
         this_month = self.month_form.get_month_start()
+        weeks = self.month_form.get_weeks()
         entries = self.get_month_entries()
         return render(self.request, self.template_name, {
-            'month_form': self.month_form,
-            'timesheet_user': self.timesheet_user,
             'active_tab': active_tab or 'all-entries',
-            'today': datetime.datetime.today(),
-            'this_month': this_month,
+            'entries_data': json.dumps(entries, cls=ExtendedJSONEncoder),
+            'month_form': self.month_form,
             'last_month': this_month - relativedelta(months=1),
             'next_month': this_month + relativedelta(months=1),
-            'entries_data': json.dumps(entries, cls=ExtendedJSONEncoder),
-            'entry_statuses': json.dumps(Entry.STATUSES),
+            'this_month': this_month,
+            'timesheet_user': self.timesheet_user,
+            'today': datetime.datetime.today(),
+            'weeks': json.dumps(weeks, cls=ExtendedJSONEncoder),
         })
 
     def get_month_entries(self):
@@ -96,6 +88,15 @@ class ViewUserTimesheet(LoginRequiredMixin, View):
         entries = entries.filter(end_time__range=(start, end))
         entries = entries.order_by('end_time')
         return entries.summaries()
+
+    def has_permission_for(self, request_user, timesheet_user):
+        """
+        User may only view their own timesheet unless they have administrative
+        permission.
+        """
+        if request_user == timesheet_user:
+            return True
+        return request_user.has_perm('entries.view_entry_summary')
 
 
 # Not using LoginRequiredMixin here to avoid redirecting an AJAX request.

@@ -62,14 +62,17 @@ var EntryWeekTable = Backbone.View.extend({
     initialize: function() {
         this.weekGroup = this.options.weekGroup;
         this.$el.addClass('week');
-        this.$el.append($(_.template($('#week-template').html(), {})));
-        this.total_hours = 0;
+        this.$el.append($(_.template($('#week-template').html(), {
+            weekStart: this.options.weekStart,
+            weekEnd: this.options.weekEnd
+        })));
+        this.totalHours = 0;
         _.each(this.weekGroup, function(entry) {
             var row = new EntryRow({ model: entry });
-            this.total_hours += entry.get('total_seconds');
+            this.totalHours += entry.get('total_seconds');
             row.render().$el.insertBefore(this.$el.find('tbody tr.week-summary'));
         }, this);
-        this.$el.find('.week-summary .total-hours').text(this.total_hours);
+        this.$el.find('.week-summary .total-hours').text(this.totalHours);
     },
     events: {
         "click .btn[title='Approve Week']": "approveWeek",
@@ -83,19 +86,19 @@ var EntryWeekTable = Backbone.View.extend({
     approveWeek: function(event) {
         event.preventDefault();
         var msg = "All verified entries from this week are now approved.",
-            entryIds = get_ids_from_current_month(this.weekGroup);
+            entryIds = getIdsFromCurrentMonth(this.weekGroup);
         approveEntries(this.collection, entryIds, msg);
     },
     rejectWeek: function(event) {
         event.preventDefault();
         var msg = "All entries from this week are now unverified.",
-            entryIds = get_ids_from_current_month(this.weekGroup);
+            entryIds = getIdsFromCurrentMonth(this.weekGroup);
         rejectEntries(this.collection, entryIds, msg);
     },
     verifyWeek: function(event) {
         event.preventDefault();
         var msg = "All entries from this week are now verified.",
-            entryIds = get_ids_from_current_month(this.weekGroup);
+            entryIds = getIdsFromCurrentMonth(this.weekGroup);
         verifyEntries(this.collection, entryIds, msg);
     }
 });
@@ -104,12 +107,37 @@ var Timesheet = Backbone.View.extend({
     el: $("html"),
     initialize: function() {
         this.allEntries = $('#all-entries');
-        this.weekGroups = this.collection.groupBy(function(entry) {
-            return entry.get('project__name');  // FIXME
-        });
+        this.weekGroups = [];
+
+        // Split entries into groups by week.
+        _.each(weeks, function(week) {
+            this.weekGroups.push([new Date(week[0]), new Date(week[1]),[]]);
+        }, this);
+        var weekCursor = entryCursor = 0, _collection = this.collection.toArray();
+        for (entryCursor; entryCursor < _collection.length;) {
+            if (weekCursor >= weeks.length) {
+                break;
+            }
+            var weekStart = new Date(weeks[weekCursor][0]),
+                weekEnd = new Date(weeks[weekCursor][1]),
+                entry = _collection[entryCursor],
+                date = new Date(entry.get('end_time'));
+            if (date > weekEnd) {
+                weekCursor++;
+            } else if (date < weekStart) {
+                entryCursor++;
+            } else {
+                this.weekGroups[weekCursor][2].push(entry);
+                entryCursor++;
+            }
+        }
+
+        // Render each week group.
         _.each(this.weekGroups, function(group) {
             var weekTable = new EntryWeekTable({
-                weekGroup: group,
+                weekStart: group[0],
+                weekEnd: group[1],
+                weekGroup: group[2],
                 collection: this.collection
             });
             this.allEntries.append(weekTable.render().el);
@@ -126,10 +154,10 @@ var Timesheet = Backbone.View.extend({
     },
     /*
     filterEntries: function(event) {
-        entry_status = event.currentTarget.value;
+        entryStatus = event.currentTarget.value;
         var coll;
-        if (entry_status !== "") {
-            this.filter = {'status': entry_status};
+        if (entryStatus !== "") {
+            this.filter = {'status': entryStatus};
             coll = this.collection.where(this.filter);
         } else {
             coll = this.collection.toArray();
@@ -144,19 +172,19 @@ var Timesheet = Backbone.View.extend({
     approveAll: function(event) {
         event.preventDefault();
         var msg = "All verified entries from this month are now approved.",
-            entryIds = get_ids_from_current_month(this.collection.toArray());
+            entryIds = getIdsFromCurrentMonth(this.collection.toArray());
         approveEntries(this.collection, entryIds, msg);
     },
     rejectAll: function(event) {
         event.preventDefault();
         var msg = "All entries from this month are now unverified.",
-            entryIds = get_ids_from_current_month(this.collection.toArray());
+            entryIds = getIdsFromCurrentMonth(this.collection.toArray());
         rejectEntries(this.collection, entryIds, msg);
     },
     verifyAll: function(event) {
         event.preventDefault();
         var msg = "All entries from this month are now verified.",
-            entryIds = get_ids_from_current_month(this.collection.toArray());
+            entryIds = getIdsFromCurrentMonth(this.collection.toArray());
         verifyEntries(this.collection, entryIds, msg);
     }
 });
