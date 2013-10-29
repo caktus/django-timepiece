@@ -2,8 +2,6 @@ import datetime
 from dateutil.relativedelta import relativedelta
 import urllib
 import json
-from itertools import groupby, repeat
-from collections import defaultdict
 
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required, permission_required
@@ -33,7 +31,7 @@ from timepiece.crm.forms import (CreateEditBusinessForm, CreateEditProjectForm,
         ProjectSearchForm, QuickSearchForm)
 from timepiece.crm.models import Business, Project, ProjectRelationship,\
         UserProfile
-from timepiece.crm.utils import grouped_totals
+from timepiece.crm.utils import grouped_totals, grouped_user_hours
 from timepiece.entries.models import Entry
 from timepiece.contracts.models import ProjectContract
 
@@ -469,28 +467,7 @@ class ViewProject(PermissionsRequiredMixin, CommitOnSuccessMixin, DetailView):
         else:
             contract_progress = (today - contract.start_date).days * 60 * 60 * 24
             contract_duration = (contract.end_date - contract.start_date).days * 60 * 60 * 24
-            entries = contract.entries(projects=[project]).date_trunc('day')
-            user_hours = defaultdict(list)
-            # TODO: Move user_hours calculation into separate function
-            for user, entries in groupby(entries, lambda e: e['user']):
-                previous_date = contract.start_date - relativedelta(days=1)
-                indexed_dated_entries = enumerate(groupby(entries, lambda e: e['date']))
-                for index, (date_time, date_entries) in indexed_dated_entries:
-                    if index == 0:
-                        for entry_datum in date_entries:
-                            user_name = u' '.join((
-                                entry_datum['user__first_name'],
-                                entry_datum['user__last_name']
-                            ))
-                            break;
-                    delta_days = (date_time.date() - previous_date).days
-                    user_hours[user_name].extend(repeat(0, delta_days - 1))
-                    user_hours[user_name].append(
-                        sum(d['hours'] for d in date_entries)
-                    )
-                    previous_date = date_time.date()
-                remaining_days = (contract.end_date - previous_date).days
-                user_hours[user_name].extend(repeat(0, remaining_days))
+            user_hours = grouped_user_hours(contract, project)
         context.update({
             'contract': contract,
             'user_hours': json.dumps(user_hours, cls=DecimalEncoder),
