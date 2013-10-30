@@ -243,37 +243,6 @@ def create_edit_entry(request, entry_id=None):
     })
 
 
-@permission_required('entries.view_payroll_summary')
-def reject_entry(request, entry_id):
-    """
-    Admins can reject an entry that has been verified or approved but not
-    invoiced to set its status to 'unverified' for the user to fix.
-    """
-    return_url = request.REQUEST.get('next', reverse('dashboard'))
-    try:
-        entry = Entry.no_join.get(pk=entry_id)
-    except:
-        message = 'No such log entry.'
-        messages.error(request, message)
-        return redirect(return_url)
-
-    if entry.status == Entry.UNVERIFIED or entry.status == Entry.INVOICED:
-        msg_text = 'This entry is unverified or is already invoiced.'
-        messages.error(request, msg_text)
-        return redirect(return_url)
-
-    if request.POST.get('Yes'):
-        entry.status = Entry.UNVERIFIED
-        entry.save()
-        msg_text = 'The entry\'s status was set to unverified.'
-        messages.info(request, msg_text)
-        return redirect(return_url)
-    return render(request, 'timepiece/entry/reject.html', {
-        'entry': entry,
-        'next': request.REQUEST.get('next'),
-    })
-
-
 @permission_required('entries.delete_entry')
 def delete_entry(request, entry_id):
     """
