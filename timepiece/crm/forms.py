@@ -8,6 +8,7 @@ from django.utils.dates import MONTHS
 
 from selectable import forms as selectable
 
+from timepiece.utils import add_timezone
 from timepiece.utils.search import SearchForm
 
 from timepiece.crm.lookups import (BusinessLookup, ProjectLookup, UserLookup,
@@ -219,6 +220,9 @@ class TimesheetSelectMonthForm(forms.Form):
         cursor = start
         while cursor < end:
             next_week = cursor + relativedelta(days=7)
-            weeks.append((cursor, next_week - relativedelta(microseconds=1)))
+            weeks.append((
+                add_timezone(cursor),
+                add_timezone(next_week - relativedelta(microseconds=1)),
+            ))
             cursor = next_week
         return weeks
