@@ -17,11 +17,12 @@ from django.db.models import Q
 from django.http import HttpResponse, HttpResponseRedirect, Http404
 from django.shortcuts import redirect, render
 from django.utils.decorators import method_decorator
-from django.views.generic import TemplateView, View
+from django.views.generic import TemplateView, View, DeleteView
 
 from timepiece import utils
 from timepiece.forms import DATE_FORM_FORMAT
 from timepiece.utils.csv import ExtendedJSONEncoder
+from timepiece.utils.mixins import LoginRequiredMixin
 
 from timepiece.crm.models import Project, UserProfile
 from timepiece.entries.forms import ClockInForm, ClockOutForm, \
@@ -243,38 +244,24 @@ def create_edit_entry(request, entry_id=None):
     })
 
 
-@permission_required('entries.delete_entry')
-def delete_entry(request, entry_id):
-    """
-    Give the user the ability to delete a log entry, with a confirmation
-    beforehand.  If this method is invoked via a GET request, a form asking
-    for a confirmation of intent will be presented to the user. If this method
-    is invoked via a POST request, the entry will be deleted.
-    """
-    try:
-        entry = Entry.no_join.get(pk=entry_id, user=request.user)
-    except Entry.DoesNotExist:
-        message = 'No such entry found.'
-        messages.info(request, message)
-        url = request.REQUEST.get('next', reverse('dashboard'))
-        return HttpResponseRedirect(url)
+class DeleteEntry(LoginRequiredMixin, DeleteView):
+    model = Entry
+    pk_url_kwarg = 'entry_id'
+    template_name = 'timepiece/entries/delete.html'
 
-    if request.method == 'POST':
-        key = request.POST.get('key', None)
-        if key and key == entry.delete_key:
-            entry.delete()
-            message = 'Deleted {0} for {1}.'.format(entry.activity.name,
-                    entry.project)
-            messages.info(request, message)
-            url = request.REQUEST.get('next', reverse('dashboard'))
-            return HttpResponseRedirect(url)
-        else:
-            message = 'You are not authorized to delete this entry!'
-            messages.error(request, message)
+    def get_object(self, queryset=None):
+        """Users without specific permission may delete their own entries."""
+        obj = super(DeleteEntry, self).get_object(queryset)
+        if not self.request.user.has_perm('entries.delete_entry'):
+            if obj.user != self.request.user:
+                raise Http404("No entry found matching this query.")
+        return obj
 
-    return render(request, 'timepiece/entry/delete.html', {
-        'entry': entry,
-    })
+    def get_success_url(self):
+        message = "You have deleted {0} for {1}.".format(
+                self.object.activity.name, self.object.project)
+        messages.info(self.request, message)
+        return self.request.REQUEST.get('next', reverse('dashboard'))
 
 
 class ScheduleMixin(object):

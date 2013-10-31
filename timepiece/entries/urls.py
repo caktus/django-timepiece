@@ -27,7 +27,7 @@ urlpatterns = patterns('',
         views.create_edit_entry,
         name='edit_entry'),
     url(r'^entry/(?P<entry_id>\d+)/delete/$',
-        views.delete_entry,
+        views.DeleteEntry.as_view(),
         name='delete_entry'),
 
     # Schedule
