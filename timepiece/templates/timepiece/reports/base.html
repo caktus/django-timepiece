@@ -23,6 +23,11 @@
                             <a href="{% ifequal active 'productivity_report' %}#{% else %}{% url 'report_productivity' %}{% endifequal %}">Productivity</a>
                         </li>
                     {% endif %}
+                    {% if perms.contracts.view_estimation_accuracy %}
+                        <li{% ifequal active 'estimation_accuracy' %} class="active"{% endifequal %}>
+                            <a href="{% ifequal active 'estimation_accuracy' %}#{% else %}{% url 'report_estimation_accuracy' %}{% endifequal %}">Estimation Accuracy</a>
+                        </li>
+                    {% endif %}
                 </ul>
             </div>
         </div>
