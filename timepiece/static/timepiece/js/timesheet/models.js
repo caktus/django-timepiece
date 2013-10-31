@@ -5,7 +5,7 @@ var Entry = Backbone.Model.extend({
 
         switch (method) {
             case "delete":
-                options.url = api_url + '?entry_id=' + model.get('id');
+                options.url = model.get('get_ajax_delete_url');
                 break;
         }
 

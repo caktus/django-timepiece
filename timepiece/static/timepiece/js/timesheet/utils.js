@@ -25,6 +25,10 @@ var showSuccess = function(message) { showMessage("success", message); }
 var handleAjaxFailure = function(xhr, status, error) {
     if (xhr.status === 400 || xhr.status === 403) {
         showError(xhr.responseText);
+    } else if (xhr.status === 404) {
+        showError("Unable to find content. Please refresh the page and " +
+                  "try again. If the problem persists, contact an " +
+                  "administrator.");
     } else {  // Probably a 404 or 500 error.
         showError("An internal error has occurred. Please contact an " +
                   "administrator.");

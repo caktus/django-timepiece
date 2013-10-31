@@ -247,7 +247,14 @@ def create_edit_entry(request, entry_id=None):
 class DeleteEntry(LoginRequiredMixin, DeleteView):
     model = Entry
     pk_url_kwarg = 'entry_id'
-    template_name = 'timepiece/entries/delete.html'
+    template_name = 'timepiece/entry/delete.html'
+
+    def delete(self, request, ajax=False, *args, **kwargs):
+        self.object = self.get_object()
+        self.object.delete()
+        if ajax:
+            return HttpResponse(json.dumps(self.object.pk))
+        return HttpResponseRedirect(self.get_success_url())
 
     def get_object(self, queryset=None):
         """Users without specific permission may delete their own entries."""

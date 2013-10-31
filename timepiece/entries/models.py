@@ -4,6 +4,7 @@ from decimal import Decimal
 from django.contrib.auth.models import User
 from django.core import validators
 from django.core.exceptions import ValidationError
+from django.core.urlresolvers import reverse
 from django.db import models
 from django.db.models import Q, Sum, Max, Min
 from django.utils import timezone
@@ -185,6 +186,12 @@ class Entry(models.Model):
     def __unicode__(self):
         return '%s on %s' % (self.user, self.project)
 
+    def get_delete_url(self):
+        return reverse('delete_entry', args=(self.pk,))
+
+    def get_ajax_delete_url(self):
+        return reverse('delete_entry_ajax', args=(self.pk,))
+
     def get_summary(self, attrs=None):
         if not attrs:
             attrs = ['project__id',
@@ -193,7 +200,8 @@ class Entry(models.Model):
                 'activity__id', 'activity__name',
                 'location__id', 'location__name',
                 'start_time', 'end_time', 'total_seconds', 'paused_seconds',
-                'id', 'status', 'get_status_display', 'comments']
+                'id', 'status', 'get_status_display', 'comments',
+                'get_delete_url', 'get_ajax_delete_url']
         return utils.get_model_summary(self, attrs)
 
     def check_overlap(self, entry_b, **kwargs):
