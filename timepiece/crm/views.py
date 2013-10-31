@@ -100,57 +100,6 @@ class ViewUserTimesheet(LoginRequiredMixin, View):
 
 
 # Not using LoginRequiredMixin here to avoid redirecting an AJAX request.
-# The case is handled in dispatch().
-class TimesheetEntryAPI(View):
-    """AJAX view to add, edit, and delete entries.
-
-    To change the status of entries, use the TimesheetEntryStatusAPI view.
-    """
-
-    def has_permission_for(self, request_user, timesheet_user):
-        """
-        User may only edit their own entries unless they have administrative
-        permission.
-        """
-        if request_user == timesheet_user:
-            return True
-        return request_user.has_perm('entries.view_entry_summary')
-
-    def dispatch(self, request, user_id, *args, **kwargs):
-        self.timesheet_user = get_object_or_404(User, pk=user_id)
-        if not self.has_permission_for(request.user, self.timesheet_user):
-            return HttpResponseForbidden("You do not have permission to "
-                    "edit this user's timesheet.")
-        return super(TimesheetEntryAPI, self).dispatch(request, *args, **kwargs)
-
-    def post(self, request, *args, **kwargs):
-        pass  # TODO - Implement add and edit.
-
-    def delete(self, request, *args, **kwargs):
-        """Delete an existing entry."""
-        entry_id = request.GET.get('entry_id', None)
-        try:
-            entry_id = int(entry_id)
-            if entry_id <= 0:
-                raise ValueError('')
-        except (ValueError, TypeError):
-            return HttpResponseBadRequest('An error occurred while '
-                    'processing the request: A bad entry id was passed. '
-                    'Please contact an administrator.')
-
-        try:
-            entry = Entry.objects.get(pk=entry_id, user=self.timesheet_user)
-        except Entry.DoesNotExist:
-            return HttpResponseBadRequest('The system is unable to find '
-                    'the entry to delete. Please refresh the page and try '
-                    'again. If the problem persists, please contact an '
-                    'administrator.')
-
-        entry.delete()
-        return HttpResponse(json.dumps(entry_id, cls=ExtendedJSONEncoder))
-
-
-# Not using LoginRequiredMixin here to avoid redirecting an AJAX request.
 # The case is handled by has_permission_for().
 class TimesheetEntryStatusAPI(View):
     """AJAX view to verify, approve, and reject entries.

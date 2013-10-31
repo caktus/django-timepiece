@@ -40,7 +40,6 @@
 <script>
     var this_month = new Date("{{ this_month|date:'r' }}"),
         next_month = new Date("{{ next_month|date:'r' }}"),
-        api_url = "{% url 'timesheet_entries_api' timesheet_user.pk %}",
         entry_statuses = "{{ entry_statuses|safe|escapejs }}",
         raw_entries = "{{ entries_data|safe|escapejs }}",
         verify_url = "{% url 'verify_timesheet_entries' timesheet_user.pk %}",
