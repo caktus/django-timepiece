@@ -38,6 +38,9 @@ var EntryRow = Backbone.View.extend({
             }
         });
         this.$el.remove();  // TODO: move this to success function.
+        // FIXME: the EntryWeekTable with this row retains the reference
+        // to it and therefore you can't verify/approve/reject by week
+        // after deleting an entry from it (but you can by month).
     },
     rejectEntry: function(event) {
         event.preventDefault();
