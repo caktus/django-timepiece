@@ -42,9 +42,9 @@
         next_month = new Date("{{ next_month|date:'r' }}"),
         entry_statuses = "{{ entry_statuses|safe|escapejs }}",
         raw_entries = "{{ entries_data|safe|escapejs }}",
-        verify_url = "{% url 'verify_timesheet_entries' timesheet_user.pk %}",
-        reject_url = "{% url 'reject_timesheet_entries' timesheet_user.pk %}",
-        approve_url = "{% url 'approve_timesheet_entries' timesheet_user.pk %}",
+        verify_url = "{% url 'verify_entries' %}",
+        reject_url = "{% url 'reject_entries' %}",
+        approve_url = "{% url 'approve_entries' %}",
         weeks = JSON.parse("{{ weeks|safe|escapejs }}");
 </script>
 <script src="{{ STATIC_URL }}timepiece/js/timesheet/utils.js"></script>

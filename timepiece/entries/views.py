@@ -14,8 +14,9 @@ from django.core import exceptions
 from django.core.urlresolvers import reverse
 from django.db import transaction
 from django.db.models import Q
-from django.http import HttpResponse, HttpResponseRedirect, Http404
-from django.shortcuts import redirect, render
+from django.http import (HttpResponse, HttpResponseRedirect, Http404,
+        HttpResponseBadRequest)
+from django.shortcuts import get_object_or_404, redirect, render
 from django.utils.decorators import method_decorator
 from django.views.generic import TemplateView, View, DeleteView
 
@@ -269,6 +270,80 @@ class DeleteEntry(LoginRequiredMixin, DeleteView):
                 self.object.activity.name, self.object.project)
         messages.info(self.request, message)
         return self.request.REQUEST.get('next', reverse('dashboard'))
+
+
+class ChangeEntryStatus(View):
+    """AJAX view to verify, approve, and reject entries.
+
+    At the end of each pay period, users **verify** that their entries are
+    ready for an adminstrator to approve for payment.
+
+    After each pay period, an administrator may **approve** user-verified
+    entries for payment.
+
+    After each pay period, an administrator may **reject** user-verified
+    entries that need additional revision before they can be approved for
+    payment.
+    """
+
+    def post(self, request, action, *args, **kwargs):
+        # Not using LoginRequiredMixin here to avoid redirecting an AJAX
+        # request.
+        if not request.user.is_authenticated():
+            raise exceptions.PermissionDenied
+
+        try:
+            entry_ids = set(json.loads(request.body))  # Discard duplicates.
+        except (ValueError, TypeError):
+            return HttpResponseBadRequest('An error occurred while '
+                    'processing the request: Entry ids must be passed as a '
+                    'JSON-encoded list. Please contact an administrator.')
+
+        # If the user does not have an administrative permission, they may
+        # only change their own entries.
+        entries = Entry.objects.filter(pk__in=entry_ids)
+        if not request.user.has_perm('entries.view_entry_summary'):
+            entries = entries.filter(user=request.user)
+
+        # Sanity check that all entries exist, and that the user has the
+        # permission to change them.
+        if entries.count() != len(entry_ids):
+            return HttpResponseBadRequest('The system is unable to find '
+                    'all of the entries to be changed. Please refresh the '
+                    'page and try again. If the problem persists, please '
+                    'contact an administrator.')
+
+        if action not in ['approve', 'verify', 'reject']:
+            # Something has become very misconfigured and needs human
+            # intervention.
+            raise Exception('Unexpected action "{0}".'.format(action))
+
+        return getattr(self, action)(entries)
+
+    def approve(self, entries):
+        if entries.filter(status=Entry.UNVERIFIED).exists():
+            return HttpResponseBadRequest('There are unverified entries in '
+                    'this list. All entries must be verified before they '
+                    'can be approved.')
+
+        # No need to update entries that are invoiced/uninvoiced.
+        entries.filter(status=Entry.VERIFIED).update(status=Entry.APPROVED)
+        return HttpResponse(json.dumps(entries.summaries(), cls=ExtendedJSONEncoder))
+
+    def reject(self, entries):
+        # TODO: Who should be able to reject an entry which has been
+        # marked as invoiced or uninvoiced? Should attempting this throw
+        # a 400 error?
+        # FYI, there are no 'uninvoiced' entries in our database.
+        entries.update(status=Entry.UNVERIFIED)
+        return HttpResponse(json.dumps(entries.summaries(), cls=ExtendedJSONEncoder))
+
+    def verify(self, entries):
+        # No need to update entries that are approved, invoiced, or
+        # uninvoiced.
+        entries.filter(status=Entry.UNVERIFIED).update(status=Entry.VERIFIED)
+        return HttpResponse(json.dumps(entries.summaries(), cls=ExtendedJSONEncoder))
+
 
 
 class ScheduleMixin(object):

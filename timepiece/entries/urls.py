@@ -35,6 +35,20 @@ urlpatterns = patterns('',
         {'ajax': True},
         name='delete_entry_ajax'),
 
+    # Change entry status
+    url(r'^entry/verify/$',
+        views.ChangeEntryStatus.as_view(),
+        {'action': 'verify'},
+        name='verify_entries'),
+    url(r'^entry/approve/$',
+        views.ChangeEntryStatus.as_view(),
+        {'action': 'approve'},
+        name='approve_entries'),
+    url(r'^entry/reject/$',
+        views.ChangeEntryStatus.as_view(),
+        {'action': 'reject'},
+        name='reject_entries'),
+
     # Schedule
     url(r'^schedule/$',
         views.ScheduleView.as_view(),
