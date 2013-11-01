@@ -10,7 +10,6 @@ from django.db import transaction
 from django.db.models import Sum
 from django.http import HttpResponseRedirect, HttpResponseForbidden, Http404
 from django.shortcuts import get_object_or_404, render, redirect
-from django.utils.decorators import method_decorator
 from django.views.decorators.csrf import csrf_exempt
 from django.views.generic import (CreateView, DeleteView, DetailView,
         UpdateView, FormView, View)
@@ -238,16 +237,12 @@ def change_user_timesheet(request, user_id, action):
 # Project timesheets
 
 
-class ProjectTimesheet(DetailView):
+class ProjectTimesheet(PermissionsRequiredMixin, DetailView):
     template_name = 'timepiece/project/timesheet.html'
     model = Project
+    permissions = ('entries.view_project_time_sheet',)
     context_object_name = 'project'
     pk_url_kwarg = 'project_id'
-
-    # FIXME: this permission doesn't seem to exist
-    @method_decorator(permission_required('entries.view_project_time_sheet'))
-    def dispatch(self, *args, **kwargs):
-        return super(ProjectTimesheet, self).dispatch(*args, **kwargs)
 
     def get(self, *args, **kwargs):
         if 'csv' in self.request.GET:
