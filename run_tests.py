@@ -63,6 +63,7 @@ if not settings.configured:
             'django.core.context_processors.request',
             'timepiece.context_processors.quick_search',
             'timepiece.context_processors.quick_clock_in',
+            'timepiece.context_processors.extra_settings',
         ),
         TEMPLATE_DIRS=(
             '%s/example_project/templates' % directory,
