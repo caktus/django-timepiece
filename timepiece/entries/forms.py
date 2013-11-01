@@ -2,11 +2,10 @@ import datetime
 from dateutil.relativedelta import relativedelta
 
 from django import forms
-from django.db.models import Q
 
 from timepiece import utils
 from timepiece.crm.models import Project
-from timepiece.entries.models import Entry, Activity, Location, ProjectHours
+from timepiece.entries.models import Entry, Location, ProjectHours
 from timepiece.forms import INPUT_FORMATS, TimepieceSplitDateTimeWidget,\
         TimepieceDateInput
 

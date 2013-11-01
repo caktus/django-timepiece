@@ -1,16 +1,12 @@
-import time
 import datetime
 from dateutil.relativedelta import relativedelta
 from decimal import Decimal
-import itertools
 import random
 import urllib
 
-from django.contrib.auth.models import User, Permission
+from django.contrib.auth.models import Permission
 from django.contrib.contenttypes.models import ContentType
-from django.core.exceptions import ValidationError
 from django.core.urlresolvers import reverse
-from django.forms import model_to_dict
 from django.utils import timezone
 from django.test import TestCase
 

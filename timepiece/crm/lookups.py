@@ -1,7 +1,6 @@
 from collections import namedtuple
 
 from django.contrib.auth.models import User
-from django.db.models import Q
 from django.utils.safestring import mark_safe
 
 from selectable.base import LookupBase

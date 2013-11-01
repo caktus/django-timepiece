@@ -1,6 +1,5 @@
 import datetime
 from dateutil.relativedelta import relativedelta
-from decimal import Decimal
 
 from django.conf import settings
 from django.db.models import get_model

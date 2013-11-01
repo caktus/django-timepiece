@@ -1,12 +1,10 @@
 from dateutil.relativedelta import relativedelta
 
 from django import forms
-from django.db.models import Q
 
 from timepiece import utils
 from timepiece.contracts.models import EntryGroup
 from timepiece.crm.models import Attribute
-from timepiece.entries.models import Entry
 from timepiece.forms import DateForm
 
 
