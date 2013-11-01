@@ -2,6 +2,7 @@ import datetime
 from decimal import Decimal
 
 from django.contrib.auth.models import Permission
+from django.core.urlresolvers import reverse
 from django.utils import timezone
 from django.test import TestCase
 
@@ -98,6 +99,7 @@ class TestDeleteProjectView(ViewTestMixin, TestCase):
     def test_post(self):
         """POST should delete the project."""
         response = self._post()
+        self.assertRedirectsNoFollow(response, reverse('list_projects'))
         self.assertEquals(Project.objects.count(), 0)
 
 
@@ -147,8 +149,8 @@ class TestListProjectsView(ViewTestMixin, TestCase):
 
     def test_no_results(self):
         """Page should render if there are no search results."""
-        obj = self.factory.create(name='hello')
-        response = self._get(get_kwargs={'search': 'goodbye'})
+        self.factory.create()
+        response = self._get(get_kwargs={'search': 'hello'})
         self.assertEquals(response.status_code, 200)
         self.assertTemplateUsed(response, self.template_name)
         self.assertEquals(response.context['object_list'].count(), 0)
@@ -171,30 +173,30 @@ class TestListProjectsView(ViewTestMixin, TestCase):
 
     def test_filter_name(self):
         """User should be able to filter by search query and status."""
+        self.factory.create()
         obj = self.factory.create(name='hello')
-        other_obj = self.factory.create()
         response = self._get(get_kwargs={'search': 'ello'})
         self.assertRedirectsNoFollow(response, obj.get_absolute_url())
 
     def test_filter_description(self):
         """User should be able to filter by search query and status."""
+        self.factory.create()
         obj = self.factory.create(description='hello')
-        other_obj = self.factory.create()
         response = self._get(get_kwargs={'search': 'ello'})
         self.assertRedirectsNoFollow(response, obj.get_absolute_url())
 
     def test_filter_status(self):
         """User should be able to filter by search query and status."""
+        self.factory.create()
         obj = self.factory.create()
-        other_obj = self.factory.create()
         response = self._get(get_kwargs={'status': obj.status.pk})
         self.assertRedirectsNoFollow(response, obj.get_absolute_url())
 
     def test_filter_query_and_status(self):
         """User should be able to filter by search query and status."""
         obj = self.factory.create(name='hello')
-        other_obj1 = self.factory.create(description='hello')
-        other_obj2 = self.factory.create(status=obj.status)
+        self.factory.create(status=obj.status)
+        self.factory.create(description='hello')
         get_kwargs = {'status': obj.status.pk, 'search': 'ello'}
         response = self._get(get_kwargs=get_kwargs)
         self.assertRedirectsNoFollow(response, obj.get_absolute_url())

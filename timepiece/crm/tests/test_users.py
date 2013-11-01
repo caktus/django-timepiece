@@ -45,6 +45,7 @@ class TestDeleteUserView(ViewTestMixin, TestCase):
     def test_post(self):
         """POST should delete the user."""
         response = self._post()
+        self.assertRedirectsNoFollow(response, reverse('list_users'))
         self.assertEquals(User.objects.count(), 1)
 
 
@@ -159,7 +160,7 @@ class TestListUsersView(ViewTestMixin, TestCase):
 
     def test_no_results(self):
         """Page should render if there are no search results."""
-        obj = self.factory.create()
+        self.factory.create()
         response = self._get(get_kwargs={'search': 'hello'})
         self.assertEquals(response.status_code, 200)
         self.assertTemplateUsed(response, self.template_name)
@@ -183,29 +184,29 @@ class TestListUsersView(ViewTestMixin, TestCase):
 
     def test_filter_first_name(self):
         """User should be able to filter by search query."""
+        self.factory.create()
         obj = self.factory.create(first_name='hello')
-        other_obj = self.factory.create()
         response = self._get(get_kwargs={'search': 'hello'})
         self.assertRedirectsNoFollow(response, obj.get_absolute_url())
 
     def test_filter_last_name(self):
         """User should be able to filter by search query."""
+        self.factory.create()
         obj = self.factory.create(last_name='hello')
-        other_obj = self.factory.create()
         response = self._get(get_kwargs={'search': 'hello'})
         self.assertRedirectsNoFollow(response, obj.get_absolute_url())
 
     def test_filter_email(self):
         """User should be able to filter by search query."""
+        self.factory.create()
         obj = self.factory.create(email='hello@example.com')
-        other_obj = self.factory.create()
         response = self._get(get_kwargs={'search': 'hello'})
         self.assertRedirectsNoFollow(response, obj.get_absolute_url())
 
     def test_filter_username(self):
         """User should be able to filter by search query."""
+        self.factory.create()
         obj = self.factory.create(username='hello')
-        other_obj = self.factory.create()
         response = self._get(get_kwargs={'search': 'hello'})
         self.assertRedirectsNoFollow(response, obj.get_absolute_url())
 

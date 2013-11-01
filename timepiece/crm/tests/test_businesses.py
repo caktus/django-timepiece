@@ -1,4 +1,5 @@
 from django.contrib.auth.models import Permission
+from django.core.urlresolvers import reverse
 from django.test import TestCase
 
 from timepiece.tests import factories
@@ -103,6 +104,7 @@ class TestDeleteBusinessView(ViewTestMixin, TestCase):
     def test_post(self):
         """POST should delete the business."""
         response = self._post()
+        self.assertRedirectsNoFollow(response, reverse('list_businesses'))
         self.assertEquals(Business.objects.count(), 0)
 
 
@@ -157,7 +159,7 @@ class TestListBusinessesView(ViewTestMixin, TestCase):
 
     def test_no_results(self):
         """Page should render if there are no search results."""
-        obj = self.factory.create()
+        self.factory.create()
         response = self._get(get_kwargs={'search': 'hello'})
         self.assertEquals(response.status_code, 200)
         self.assertTemplateUsed(response, self.template_name)
@@ -181,14 +183,14 @@ class TestListBusinessesView(ViewTestMixin, TestCase):
 
     def test_filter_name(self):
         """User should be able to filter by search query."""
+        self.factory.create()
         obj = self.factory.create(name='hello')
-        other_obj = self.factory.create()
         response = self._get(get_kwargs={'search': 'hello'})
         self.assertRedirectsNoFollow(response, obj.get_absolute_url())
 
     def test_filter_description(self):
         """User should be able to filter by search query."""
+        self.factory.create()
         obj = self.factory.create(description='hello')
-        other_obj = self.factory.create()
         response = self._get(get_kwargs={'search': 'hello'})
         self.assertRedirectsNoFollow(response, obj.get_absolute_url())
