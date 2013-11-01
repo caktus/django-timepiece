@@ -122,6 +122,7 @@ Installation
             "django.core.context_processors.request",           # <----
             "timepiece.context_processors.quick_clock_in",      # <----
             "timepiece.context_processors.quick_search",        # <----
+            "timepiece.context_processors.extra_settings",        # <----
         )
 
    - Configure compressor settings::
