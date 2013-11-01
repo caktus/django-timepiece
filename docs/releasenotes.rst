@@ -4,7 +4,7 @@ Release Notes
 0.9.3 (Unreleased)
 -------------------
 
-Related issues are in the `0.10.0 milestone
+Related issues are in the `0.9.3. milestone
 <https://github.com/caktus/django-timepiece/issues?milestone=39&state=closed>`_.
 
 *Features*
@@ -25,9 +25,9 @@ Related issues are in the `0.10.0 milestone
 *Bugfixes*
 
 * Include entries on last date of query on invoice listing page
-  (`#718 <https://github.com/caktus/django-timepiece/issues/727>`_).
+  (`#718 <https://github.com/caktus/django-timepiece/issues/718>`_).
 * Display correct user name on the timesheet rejection confirmation page
-  (`#726 <https://github.com/caktus/django-timepiece/issues/727>`_).
+  (`#726 <https://github.com/caktus/django-timepiece/issues/726>`_).
 * Register `contracts.ContractHour` in the admin so that the
   `get_absolute_url()` method can work.
 
