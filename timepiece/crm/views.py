@@ -382,7 +382,7 @@ class EditBusiness(PermissionsRequiredMixin, UpdateView):
 @cbv_decorator(login_required)
 class EditSettings(UpdateView):
     form_class = EditUserSettingsForm
-    template = 'timepiece/user/settings.html'
+    template_name = 'timepiece/user/settings.html'
 
     def get_object(self, queryset=None):
         return self.request.user
@@ -511,7 +511,7 @@ class CreateRelationship(PermissionsRequiredMixin, View):
         user = self.get_user()
         project = self.get_project()
         if user and project:
-            ProjectRelationship.objects.create(user=user, project=project)
+            ProjectRelationship.objects.get_or_create(user=user, project=project)
         redirect_to = request.REQUEST.get('next', None) or reverse('dashboard')
         return HttpResponseRedirect(redirect_to)
 
