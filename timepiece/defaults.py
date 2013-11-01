@@ -1,5 +1,3 @@
-from django.conf import settings
-
 
 class TimepieceDefaults(object):
 

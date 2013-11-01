@@ -9,12 +9,12 @@ projects. Complete documentation is available on `Read The Docs
 :develop: |develop-status|
 
 .. |master-status| image::
-    https://secure.travis-ci.org/caktus/django-timepiece.png?branch=master
+    https://api.travis-ci.org/caktus/django-timepiece.png?branch=master
     :alt: Build Status
     :target: https://travis-ci.org/caktus/django-timepiece
 
 .. |develop-status| image::
-    https://secure.travis-ci.org/caktus/django-timepiece.png?branch=develop
+    https://api.travis-ci.org/caktus/django-timepiece.png?branch=develop
     :alt: Build Status
     :target: https://travis-ci.org/caktus/django-timepiece
 
@@ -99,6 +99,17 @@ Installation
             ...
         )
 
+   - Configure your middleware::
+
+        MIDDLEWARE_CLASSES = (
+            'django.middleware.common.CommonMiddleware',
+            'django.contrib.sessions.middleware.SessionMiddleware',
+            'django.middleware.csrf.CsrfViewMiddleware',
+            'django.contrib.auth.middleware.AuthenticationMiddleware',
+            'django.contrib.messages.middleware.MessageMiddleware',
+            'pagination.middleware.PaginationMiddleware',
+        )
+
    - Add `django.core.context_processors.request` and django-timepiece context
      processors to ``TEMPLATE_CONTEXT_PROCESSORS``::
 
@@ -111,6 +122,7 @@ Installation
             "django.core.context_processors.request",           # <----
             "timepiece.context_processors.quick_clock_in",      # <----
             "timepiece.context_processors.quick_search",        # <----
+            "timepiece.context_processors.extra_settings",        # <----
         )
 
    - Configure compressor settings::

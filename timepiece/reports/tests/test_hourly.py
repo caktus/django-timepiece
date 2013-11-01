@@ -11,10 +11,10 @@ from timepiece import utils
 from timepiece.entries.models import Entry
 from timepiece.reports.tests.base import ReportsTestBase
 from timepiece.reports.utils import get_project_totals, generate_dates
-from timepiece.tests.base import ViewTestMixin
+from timepiece.tests.base import ViewTestMixin, LogTimeMixin
 
 
-class TestHourlyReport(ViewTestMixin, ReportsTestBase):
+class TestHourlyReport(ViewTestMixin, LogTimeMixin, ReportsTestBase):
     url_name = 'report_hourly'
 
     def test_generate_months(self):
@@ -27,11 +27,11 @@ class TestHourlyReport(ViewTestMixin, ReportsTestBase):
     def test_generate_weeks(self):
         dates = [
             utils.add_timezone(datetime.datetime(2010, 12, 27)),
-            utils.add_timezone(datetime.datetime(2011, 01, 03)),
-            utils.add_timezone(datetime.datetime(2011, 01, 10)),
-            utils.add_timezone(datetime.datetime(2011, 01, 17)),
-            utils.add_timezone(datetime.datetime(2011, 01, 24)),
-            utils.add_timezone(datetime.datetime(2011, 01, 31)),
+            utils.add_timezone(datetime.datetime(2011, 1, 3)),
+            utils.add_timezone(datetime.datetime(2011, 1, 10)),
+            utils.add_timezone(datetime.datetime(2011, 1, 17)),
+            utils.add_timezone(datetime.datetime(2011, 1, 24)),
+            utils.add_timezone(datetime.datetime(2011, 1, 31)),
         ]
         start = utils.add_timezone(datetime.datetime(2011, 1, 1))
         end = utils.add_timezone(datetime.datetime(2011, 2, 1))
@@ -170,7 +170,7 @@ class TestHourlyReport(ViewTestMixin, ReportsTestBase):
 
     def make_totals(self, args={}):
         """Return CSV from hourly report for verification in tests"""
-        self.client.login(username='superuser', password='abc')
+        self.login_user(self.superuser)
         response = self._get(data=args, follow=True)
         return [item.split(',') \
                 for item in response.content.split('\r\n')][:-1]
@@ -389,13 +389,13 @@ class TestHourlyReport(ViewTestMixin, ReportsTestBase):
 
     def test_no_permission(self):
         """view_entry_summary permission is required to view this report."""
-        self.client.login(username='user', password='abc')
+        self.login_user(self.user)
         response = self._get()
         self.assertEqual(response.status_code, 302)
 
     def test_entry_summary_permission(self):
         """view_entry_summary permission is required to view this report."""
-        self.client.login(username='user', password='abc')
+        self.login_user(self.user)
         entry_summ_perm = Permission.objects.get(codename='view_entry_summary')
         self.user.user_permissions.add(entry_summ_perm)
         self.user.save()

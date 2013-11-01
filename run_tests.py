@@ -4,7 +4,6 @@ import sys
 import optparse
 
 from django.conf import settings
-from django.core.management import call_command
 
 
 parser = optparse.OptionParser()
@@ -64,6 +63,7 @@ if not settings.configured:
             'django.core.context_processors.request',
             'timepiece.context_processors.quick_search',
             'timepiece.context_processors.quick_clock_in',
+            'timepiece.context_processors.extra_settings',
         ),
         TEMPLATE_DIRS=(
             '%s/example_project/templates' % directory,
@@ -85,23 +85,6 @@ if not settings.configured:
     )
 
 
-def run_jenkins_tests():
-    kwargs = {
-        'pep8-exclude': 'migrations',
-        'pep8-select': '',
-        'pep8-ignore': '',
-        'pep8-max-line-length': 80,
-        'coverage-exclude': 'timepiece.migrations',
-        'coverage_with_migrations': False,
-        'coverage_html_report_dir': '',
-        'coverage_excludes': [],
-        'coverage_measure_branch': False,
-        'coverage_rcfile': '',
-        'output_dir': 'reports/',
-    }
-    call_command('jenkins', **kwargs)
-
-
 def run_django_tests():
     from django.test.utils import get_runner
     TestRunner = get_runner(settings)
@@ -112,7 +95,4 @@ def run_django_tests():
 
 
 if __name__ == '__main__':
-    if 'jenkins' in args:
-        run_jenkins_tests()
-    else:
-        run_django_tests()
+    run_django_tests()

@@ -3,21 +3,23 @@ import datetime
 from dateutil.relativedelta import relativedelta
 from decimal import Decimal
 
-from django.contrib.auth.models import Permission, User
+from django.contrib.auth.models import Permission
 from django.contrib.contenttypes.models import ContentType
 from django.core.urlresolvers import reverse
+from django.test import TestCase
 
 from timepiece import utils
-from timepiece.tests.base import TimepieceDataTestCase
+from timepiece.tests import factories
+from timepiece.tests.base import ViewTestMixin
 
 from timepiece.entries.models import Entry, ProjectHours
 from timepiece.entries.views import ScheduleView
 
 
-class ProjectHoursTestCase(TimepieceDataTestCase):
+class ProjectHoursTestCase(ViewTestMixin, TestCase):
 
     def setUp(self):
-        self.user = self.create_user('user', 'u@abc.com', 'abc')
+        self.user = factories.User()
         permissions = Permission.objects.filter(
             content_type=ContentType.objects.get_for_model(Entry),
             codename__in=('can_clock_in', 'can_clock_out', 'can_pause',
@@ -25,47 +27,44 @@ class ProjectHoursTestCase(TimepieceDataTestCase):
         )
         self.user.user_permissions = permissions
         self.user.save()
-        self.superuser = self.create_user('super', 's@abc.com', 'abc',
-                is_superuser=True)
+        self.superuser = factories.Superuser()
 
-        self.tracked_status = self.create_project_status(data={
-                'label': 'Current', 'billable': True,
-                'enable_timetracking': True})
-        self.untracked_status = self.create_project_status(data={
-                'label': 'Closed', 'billable': False,
-                'enable_timetracking': False})
-        self.tracked_type = self.create_project_type(data={
-                'label': 'Tracked', 'billable': True,
-                'enable_timetracking': True})
-        self.untracked_type = self.create_project_type(data={
-                'label': 'Untracked', 'billable': False,
-                'enable_timetracking': False})
+        self.tracked_status = factories.StatusAttribute(
+                label='Current', billable=True, enable_timetracking=True)
+        self.untracked_status = factories.StatusAttribute(
+                label='Closed', billable=False, enable_timetracking=False)
+        self.tracked_type = factories.TypeAttribute(
+                label='Tracked', billable=True, enable_timetracking=True)
+        self.untracked_type = factories.TypeAttribute(
+                label='Untracked', billable=False, enable_timetracking=False)
 
-        self.work_activities = self.create_activity_group('Work')
-        self.leave_activities = self.create_activity_group('Leave')
-        self.all_activities = self.create_activity_group('All')
+        self.work_activities = factories.ActivityGroup(name='Work')
+        self.leave_activities = factories.ActivityGroup(name='Leave')
+        self.all_activities = factories.ActivityGroup(name='All')
 
-        self.leave_activity = self.create_activity(
-            activity_groups=[self.leave_activities, self.all_activities],
-            data={'code': 'leave', 'name': 'Leave', 'billable': False}
-        )
-        self.work_activity = self.create_activity(
-            activity_groups=[self.work_activities, self.all_activities],
-            data={'code': 'work', 'name': 'Work', 'billable': True}
-        )
+        self.leave_activity = factories.Activity(code='leave',
+                name='Leave', billable=False)
+        self.leave_activity.activity_group.add(self.leave_activities,
+                self.all_activities)
+        self.work_activity = factories.Activity(code='work',
+                name='Work', billable=True)
+        self.work_activity.activity_group.add(self.work_activities,
+                self.all_activities)
 
         data = {
             'type': self.tracked_type,
             'status': self.tracked_status,
             'activity_group': self.work_activities,
         }
-        self.tracked_project = self.create_project(True, 'Tracked', data)
+        self.tracked_project = factories.BillableProject(
+                name='Tracked', **data)
         data = {
             'type': self.untracked_type,
             'status': self.untracked_status,
             'activity_group': self.all_activities,
         }
-        self.untracked_project = self.create_project(True, 'Untracked', data)
+        self.untracked_project = factories.BillableProject(
+                name='Untracked', **data)
 
 
 class ProjectHoursModelTestCase(ProjectHoursTestCase):
@@ -89,16 +88,18 @@ class ProjectHoursListViewTestCase(ProjectHoursTestCase):
         self.past_week = utils.get_week_start(datetime.date(2012, 4, 1)).date()
         self.current_week = utils.get_week_start().date()
         for i in range(5):
-            self.create_project_hours_entry(self.past_week, published=True)
-            self.create_project_hours_entry(self.current_week, published=True)
+            factories.ProjectHours(week_start=self.past_week,
+                    published=True)
+            factories.ProjectHours(week_start=self.current_week,
+                    published=True)
         self.url = reverse('view_schedule')
-        self.client.login(username='user', password='abc')
+        self.login_user(self.user)
         self.date_format = '%Y-%m-%d'
 
     def test_no_permission(self):
         """User must have permission entries.can_clock_in to view page."""
-        basic_user = self.create_user('basic', 'b@e.com', 'abc')
-        self.client.login(username='basic', password='abc')
+        self.basic_user = factories.User()
+        self.login_user(self.basic_user)
         response = self.client.get(self.url)
         self.assertEquals(response.status_code, 302)
 
@@ -175,7 +176,7 @@ class ProjectHoursEditTestCase(ProjectHoursTestCase):
         super(ProjectHoursEditTestCase, self).setUp()
         self.permission = Permission.objects.filter(
             codename='add_projecthours')
-        self.manager = self.create_user('manager', 'e@e.com', 'abc')
+        self.manager = factories.User()
         self.manager.user_permissions = self.permission
         self.view_url = reverse('edit_schedule')
         self.ajax_url = reverse('ajax_schedule')
@@ -280,7 +281,7 @@ class ProjectHoursEditTestCase(ProjectHoursTestCase):
         You must have the permission to view the edit page or
         the ajax page
         """
-        self.client.login(username='manager', password='abc')
+        self.login_user(self.manager)
 
         response = self.client.get(self.view_url)
         self.assertEquals(response.status_code, 200)
@@ -293,7 +294,7 @@ class ProjectHoursEditTestCase(ProjectHoursTestCase):
         If you are a regular user, edit view should redirect to regular view
         and you should not be able to request any ajax data.
         """
-        self.client.login(username='basic', password='abc')
+        self.login_user(self.user)
 
         response = self.client.get(self.view_url)
         self.assertEquals(response.status_code, 302)
@@ -306,7 +307,7 @@ class ProjectHoursEditTestCase(ProjectHoursTestCase):
         An ajax call should return empty data sets when project hours
         do not exist
         """
-        self.client.login(username='manager', password='abc')
+        self.login_user(self.manager)
 
         response = self.client.get(self.ajax_url)
         self.assertEquals(response.status_code, 200)
@@ -319,13 +320,15 @@ class ProjectHoursEditTestCase(ProjectHoursTestCase):
     def test_users(self):
         """Should retrieve all users who can_clock_in."""
         perm = Permission.objects.get(codename='can_clock_in')
-        group = self.create_auth_group(permissions=[perm])
+        group = factories.Group()
+        group.permissions.add(perm)
 
-        group_user = self.create_user(username='groupie', groups=[group])
-        perm_user = User.objects.get(username='user')
-        super_user = User.objects.get(username='super')
+        group_user = factories.User()
+        group_user.groups.add(group)
+        perm_user = self.user
+        super_user = self.superuser
 
-        self.client.login(username='manager', password='abc')
+        self.login_user(self.manager)
         response = self.client.get(self.ajax_url)
         self.assertEquals(response.status_code, 200)
         users = [u['id'] for u in json.loads(response.content)['all_users']]
@@ -339,7 +342,7 @@ class ProjectHoursEditTestCase(ProjectHoursTestCase):
         An ajax call without any parameters should return the current
         weeks data
         """
-        self.client.login(username='manager', password='abc')
+        self.login_user(self.manager)
         self.create_project_hours()
 
         response = self.client.get(self.ajax_url)
@@ -351,7 +354,7 @@ class ProjectHoursEditTestCase(ProjectHoursTestCase):
         An ajax call with the parameter present, but empty value, should
         return the same as a call with no parameter
         """
-        self.client.login(username='manager', password='abc')
+        self.login_user(self.manager)
         self.create_project_hours()
 
         response = self.client.get(self.ajax_url, data={
@@ -365,7 +368,7 @@ class ProjectHoursEditTestCase(ProjectHoursTestCase):
         An ajax call with the 'week_of' parameter should return
         the data for that week
         """
-        self.client.login(username='manager', password='abc')
+        self.login_user(self.manager)
         self.create_project_hours()
 
         date = datetime.datetime.now() + relativedelta(days=7)
@@ -390,7 +393,7 @@ class ProjectHoursEditTestCase(ProjectHoursTestCase):
         A post request on the ajax url should create a new project
         hour entry and return the entry's pk
         """
-        self.client.login(username='manager', password='abc')
+        self.login_user(self.manager)
 
         self.assertEquals(ProjectHours.objects.count(), 0)
 
@@ -413,7 +416,7 @@ class ProjectHoursEditTestCase(ProjectHoursTestCase):
         If any of the data is missing, the server response should
         be a 500 error
         """
-        self.client.login(username='manager', password='abc')
+        self.login_user(self.manager)
 
         self.assertEquals(ProjectHours.objects.count(), 0)
 
@@ -426,7 +429,7 @@ class ProjectHoursEditTestCase(ProjectHoursTestCase):
         A put request to the url with the correct data should update
         an existing project hour entry
         """
-        self.client.login(username='manager', password='abc')
+        self.login_user(self.manager)
 
         ph = ProjectHours.objects.create(
             hours=Decimal('5.0'),
@@ -450,7 +453,7 @@ class ProjectHoursEditTestCase(ProjectHoursTestCase):
         If the request to update is missing data, the server should respond
         with a 500 error
         """
-        self.client.login(username='manager', password='abc')
+        self.login_user(self.manager)
 
         ph = ProjectHours.objects.create(
             hours=Decimal('10.0'),
@@ -468,7 +471,7 @@ class ProjectHoursEditTestCase(ProjectHoursTestCase):
         A delete request with a valid pk should delete the project
         hours entry from the database
         """
-        self.client.login(username='manager', password='abc')
+        self.login_user(self.manager)
 
         ph = ProjectHours.objects.create(
             hours=Decimal('5.0'),
@@ -489,7 +492,7 @@ class ProjectHoursEditTestCase(ProjectHoursTestCase):
         active week. A request with the duplicate key present will
         start the duplication process
         """
-        self.client.login(username='manager', password='abc')
+        self.login_user(self.manager)
         self.create_project_hours()
 
         msg = 'Project hours were copied'
@@ -512,7 +515,7 @@ class ProjectHoursEditTestCase(ProjectHoursTestCase):
         Both week_update and duplicate must be present if hours
         duplication is to take place
         """
-        self.client.login(username='manager', password='abc')
+        self.login_user(self.manager)
         self.create_project_hours()
 
         response = self.client.post(self.ajax_url, data={
@@ -532,7 +535,7 @@ class ProjectHoursEditTestCase(ProjectHoursTestCase):
         If you specify a week and hours current exist for that week,
         the previous weeks hours will be copied over the current entries
         """
-        self.client.login(username='manager', password='abc')
+        self.login_user(self.manager)
         self.create_project_hours()
 
         msg = 'Project hours were copied'
@@ -567,7 +570,7 @@ class ProjectHoursEditTestCase(ProjectHoursTestCase):
         You should be notified if there are no hours to copy
         from the previous week
         """
-        self.client.login(username='manager', password='abc')
+        self.login_user(self.manager)
 
         msg = 'There are no hours to copy'
 
@@ -585,7 +588,7 @@ class ProjectHoursEditTestCase(ProjectHoursTestCase):
         If you post to the edit view, you can publish the hours for
         the given week
         """
-        self.client.login(username='manager', password='abc')
+        self.login_user(self.manager)
         self.create_project_hours()
 
         msg = 'Unpublished project hours are now published'
@@ -610,7 +613,7 @@ class ProjectHoursEditTestCase(ProjectHoursTestCase):
         If you post to the edit view and there are no hours to
         publish, you are told so
         """
-        self.client.login(username='manager', password='abc')
+        self.login_user(self.manager)
         self.create_project_hours()
 
         msg = 'There were no hours to publish'

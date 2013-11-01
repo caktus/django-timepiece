@@ -97,7 +97,7 @@ body {
     }
 
     span {
-        &.individual {
+        &.user {
             .bg-icon('user.png');
             padding-left: 20px;
         }
@@ -393,7 +393,7 @@ body {
         }
     }
 
-    &#dashboard {
+    &#dashboard, &#contracts {
         .negative-time {
             color: @red;
         }
@@ -411,10 +411,13 @@ body {
                 font-size: 16px;
             }
         }
-        #progress {
+        #progress, .contracts {
             .progress {
                 border: 1px solid @lightgray;
                 margin-bottom: 0px;
+            }
+            .contract-progress {
+              height: 9px;
             }
             .bar, .remaining {
                 float: left;
@@ -427,6 +430,12 @@ body {
             }
             .bar-overtime {
                 #gradient > .vertical(#458745, #346534);  // dark green
+            }
+            .bar-yellow {
+                #gradient > .vertical(@yellow, @yellow);
+            }
+            .bar-red {
+                #gradient > .vertical(@red, @red);
             }
         }
        #overall-progress {
@@ -441,7 +450,7 @@ body {
                 height: 28px;
             }
         }
-        #project-progress {
+        #project-progress, #contract-progress {
             margin-top: 18px;
             table {
                 table-layout: fixed;
@@ -564,10 +573,8 @@ body {
     }
 
     &#payroll-summary {
-        #weekly-summary tbody tr, #hourly-summary tbody tr {
-            .hover {
-                background-color: @tableBackgroundHover !important;
-            }
+        .hover {
+            background-color: @tableBackgroundHover !important;
         }
     }
 

@@ -95,6 +95,7 @@ TEMPLATE_CONTEXT_PROCESSORS = (
     'django.core.context_processors.request',
     'timepiece.context_processors.quick_search',
     'timepiece.context_processors.quick_clock_in',
+    'timepiece.context_processors.extra_settings',
 )
 
 TEMPLATE_DIRS = (
@@ -120,7 +121,6 @@ INSTALLED_APPS = (
     'django.contrib.messages',
     'django.contrib.staticfiles',
     'django.contrib.admin',
-    'django.contrib.markup',
 
     # Timepiece apps must be listed before third-party apps in order
     # for template overrides to work.
