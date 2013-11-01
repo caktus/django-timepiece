@@ -76,12 +76,10 @@ class AddProjectToUserTestCase(ViewTestMixin, RelationshipTestBase):
         self.assertEquals(rel.project, self.project)
         self.assertEquals(rel.user, self.user)
 
-    def test_redirect_to_user_page(self):
-        """Adding a relationship should redirect to user page by default."""
-        user_url = reverse('view_user', args=(self.user.pk,))
-
+    def test_redirect_to_dashboard(self):
+        """Adding a relationship should redirect to the dashboard by default."""
         response = self._post(data=self._data())
-        self.assertRedirectsNoFollow(response, user_url)
+        self.assertRedirectsNoFollow(response, reverse('dashboard'))
         rel = ProjectRelationship.objects.get()
         self.assertEquals(rel.project, self.project)
         self.assertEquals(rel.user, self.user)
@@ -150,12 +148,10 @@ class AddUserToProjectTestCase(ViewTestMixin, RelationshipTestBase):
         self.assertEquals(rel.project, self.project)
         self.assertEquals(rel.user, self.user)
 
-    def test_redirect_to_project_page(self):
-        """Adding a relationship hould redirect to user page by default."""
-        project_url = reverse('view_project', args=(self.project.pk,))
-
+    def test_redirect_to_dashboard(self):
+        """Adding a relationship hould redirect to the dashboard by default."""
         response = self._post(data=self._data())
-        self.assertRedirectsNoFollow(response, project_url)
+        self.assertRedirectsNoFollow(response, reverse('dashboard'))
         rel = ProjectRelationship.objects.get()
         self.assertEquals(rel.project, self.project)
         self.assertEquals(rel.user, self.user)
