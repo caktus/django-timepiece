@@ -287,10 +287,21 @@ class ChangeEntryStatus(View):
     """
 
     def post(self, request, action, *args, **kwargs):
+        if action not in ['approve', 'verify', 'reject']:
+            # Something has become very misconfigured and needs human
+            # intervention.
+            raise Exception('Unexpected action "{0}".'.format(action))
+
         # Not using LoginRequiredMixin here to avoid redirecting an AJAX
         # request.
         if not request.user.is_authenticated():
             raise exceptions.PermissionDenied
+
+        # Only administrators may approve or reject entries.
+        # (Any user may verify their own entries.)
+        if action in ['approve', 'reject']:
+            if not request.user.has_perm('entries.view_entry_summary'):
+                raise exceptions.PermissionDenied
 
         try:
             entry_ids = set(json.loads(request.body))  # Discard duplicates.
@@ -312,11 +323,6 @@ class ChangeEntryStatus(View):
                     'all of the entries to be changed. Please refresh the '
                     'page and try again. If the problem persists, please '
                     'contact an administrator.')
-
-        if action not in ['approve', 'verify', 'reject']:
-            # Something has become very misconfigured and needs human
-            # intervention.
-            raise Exception('Unexpected action "{0}".'.format(action))
 
         return getattr(self, action)(entries)
 
