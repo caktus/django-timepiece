@@ -7,10 +7,6 @@ from timepiece.tests.base import ViewTestMixin
 from ..models import Business
 
 
-__all__ = ['TestCreateBusinessView', 'TestDeleteBusinessView',
-        'TestListBusinessesView']
-
-
 class TestCreateBusinessView(ViewTestMixin, TestCase):
     url_name = 'create_business'
     template_name = 'timepiece/business/create_edit.html'

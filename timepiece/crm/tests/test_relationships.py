@@ -7,13 +7,10 @@ from timepiece.tests.base import ViewTestMixin
 from timepiece.crm.models import ProjectRelationship
 
 
-__all__ = ['AddProjectToUserTestCase', 'AddUserToProjectTestCase',
-        'EditRelationshipTestCase', 'DeleteRelationshipTestCase']
-
-
 class RelationshipTestBase(TestCase):
 
     def setUp(self):
+        super(RelationshipTestBase, self).setUp()
         self.user = factories.User()
         self.permissions = [Permission.objects.get(codename=n) for n in
                 self.perm_names]
@@ -23,7 +20,7 @@ class RelationshipTestBase(TestCase):
         self.project = factories.Project()
 
 
-class AddProjectToUserTestCase(ViewTestMixin, RelationshipTestBase):
+class TestAddProjectToUser(ViewTestMixin, RelationshipTestBase):
     url_name = 'create_relationship'
     perm_names = ['add_projectrelationship']
 
@@ -95,7 +92,7 @@ class AddProjectToUserTestCase(ViewTestMixin, RelationshipTestBase):
         self.assertEquals(rel.user, self.user)
 
 
-class AddUserToProjectTestCase(ViewTestMixin, RelationshipTestBase):
+class TestAddUserToProject(ViewTestMixin, RelationshipTestBase):
     url_name = 'create_relationship'
     perm_names = ['change_projectrelationship', 'add_projectrelationship']
 
@@ -167,7 +164,7 @@ class AddUserToProjectTestCase(ViewTestMixin, RelationshipTestBase):
         self.assertEquals(rel.user, self.user)
 
 
-class EditRelationshipTestCase(ViewTestMixin, RelationshipTestBase):
+class TestEditRelationshipView(ViewTestMixin, RelationshipTestBase):
     url_name = 'edit_relationship'
     perm_names = ['change_projectrelationship']
 
@@ -179,7 +176,7 @@ class EditRelationshipTestCase(ViewTestMixin, RelationshipTestBase):
         return {'types': [self.rel_type1.pk, self.rel_type2.pk]}
 
     def setUp(self):
-        super(EditRelationshipTestCase, self).setUp()
+        super(TestEditRelationshipView, self).setUp()
         self.relationship = factories.ProjectRelationship(
                 project=self.project, user=self.user)
         self.rel_type1 = factories.RelationshipType()
@@ -260,12 +257,12 @@ class EditRelationshipTestCase(ViewTestMixin, RelationshipTestBase):
         self.assertTrue(self.rel_type2 in rel.types.all())
 
 
-class DeleteRelationshipTestCase(ViewTestMixin, RelationshipTestBase):
+class TestDeleteRelationshipView(ViewTestMixin, RelationshipTestBase):
     url_name = 'delete_relationship'
     perm_names = ['delete_projectrelationship']
 
     def setUp(self):
-        super(DeleteRelationshipTestCase, self).setUp()
+        super(TestDeleteRelationshipView, self).setUp()
         self.relationship = factories.ProjectRelationship(
                 project=self.project, user=self.user)
 

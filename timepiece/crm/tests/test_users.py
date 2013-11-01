@@ -7,10 +7,6 @@ from timepiece.tests import factories
 from timepiece.tests.base import ViewTestMixin
 
 
-__all__ = ['TestDeleteUserView', 'TestEditUserView', 'TestListUsersView',
-        'TestEditSettingsView']
-
-
 class TestDeleteUserView(ViewTestMixin, TestCase):
     url_name = 'delete_user'
     template_name = 'timepiece/delete_object.html'

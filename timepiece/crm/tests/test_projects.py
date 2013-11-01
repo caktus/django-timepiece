@@ -12,10 +12,6 @@ from timepiece.tests.base import ViewTestMixin, LogTimeMixin
 from ..models import Project
 
 
-__all__ = ['TestCreateProjectView', 'TestDeleteProjectView',
-        'TestListProjectsView', 'TestProjectTimesheetView']
-
-
 class TestCreateProjectView(ViewTestMixin, TestCase):
     url_name = 'create_project'
     template_name = 'timepiece/project/create_edit.html'
