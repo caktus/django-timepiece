@@ -407,11 +407,8 @@ class ViewUser(PermissionsRequiredMixin, DetailView):
     permissions = ('auth.view_user',)
 
     def get_context_data(self, **kwargs):
-        context = super(ViewUser, self).get_context_data(**kwargs)
-        context.update({
-            'add_project_form': SelectProjectForm(),
-        })
-        return context
+        kwargs.update({'add_project_form': SelectProjectForm()})
+        return super(ViewUser, self).get_context_data(**kwargs)
 
 
 class CreateUser(PermissionsRequiredMixin, CreateView):
@@ -464,11 +461,8 @@ class ViewProject(PermissionsRequiredMixin, DetailView):
     permissions = ('crm.view_project',)
 
     def get_context_data(self, **kwargs):
-        context = super(ViewProject, self).get_context_data(**kwargs)
-        context.update({
-            'add_user_form': SelectUserForm(),
-        })
-        return context
+        kwargs.update({'add_user_form': SelectUserForm()})
+        return super(ViewProject, self).get_context_data(**kwargs)
 
 
 class CreateProject(PermissionsRequiredMixin, CreateView):
@@ -527,8 +521,7 @@ class RelationshipObjectMixin(object):
     """Handles retrieving and redirecting for ProjectRelationship objects."""
 
     def get_object(self, queryset=None):
-        if queryset is None:
-            queryset = self.get_queryset()
+        queryset = self.get_queryset() if queryset is None else queryset
         user_id = self.request.REQUEST.get('user_id', None)
         project_id = self.request.REQUEST.get('project_id', None)
         return get_object_or_404(self.model, user__id=user_id,
@@ -540,7 +533,8 @@ class RelationshipObjectMixin(object):
 
 
 @cbv_decorator(transaction.commit_on_success)
-class EditRelationship(PermissionsRequiredMixin, RelationshipObjectMixin, UpdateView):
+class EditRelationship(PermissionsRequiredMixin, RelationshipObjectMixin,
+        UpdateView):
     model = ProjectRelationship
     permissions = ('crm.change_projectrelationship',)
     template_name = 'timepiece/relationship/edit.html'
@@ -549,7 +543,8 @@ class EditRelationship(PermissionsRequiredMixin, RelationshipObjectMixin, Update
 
 @cbv_decorator(csrf_exempt)
 @cbv_decorator(transaction.commit_on_success)
-class DeleteRelationship(PermissionsRequiredMixin, RelationshipObjectMixin, DeleteView):
+class DeleteRelationship(PermissionsRequiredMixin, RelationshipObjectMixin,
+        DeleteView):
     model = ProjectRelationship
     permissions = ('crm.delete_projectrelationship',)
     template_name = 'timepiece/relationship/delete.html'
