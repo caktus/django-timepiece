@@ -11,6 +11,7 @@ from django.db.models import Sum
 from django.http import HttpResponseRedirect, HttpResponseForbidden, Http404
 from django.shortcuts import get_object_or_404, render, redirect
 from django.utils.decorators import method_decorator
+from django.views.decorators.csrf import csrf_exempt
 from django.views.generic import (CreateView, DeleteView, DetailView,
         UpdateView, FormView, View)
 
@@ -378,7 +379,8 @@ class EditBusiness(PermissionsRequiredMixin, UpdateView):
 # Users
 
 
-class EditSettings(LoginRequiredMixin, UpdateView):
+@cbv_decorator(login_required)
+class EditSettings(UpdateView):
     form_class = EditUserSettingsForm
     template = 'timepiece/user/settings.html'
 
@@ -500,8 +502,9 @@ class EditProject(PermissionsRequiredMixin, UpdateView):
 # User-project relationships
 
 
-class CreateRelationship(CsrfExemptMixin, PermissionsRequiredMixin,
-        CommitOnSuccessMixin, View):
+@cbv_decorator(csrf_exempt)
+@cbv_decorator(transaction.commit_on_success)
+class CreateRelationship(PermissionsRequiredMixin, View):
     permissions = ('crm.add_projectrelationship',)
 
     def post(self, request, *args, **kwargs):
