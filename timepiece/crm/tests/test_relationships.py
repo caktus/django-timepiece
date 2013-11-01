@@ -36,10 +36,13 @@ class AddProjectToUserTestCase(ViewTestMixin, RelationshipTestBase):
 
     def test_other_methods(self):
         """Add Project Relationship requires POST."""
-        for method in (self.client.get, self.client.head, self.client.options,
-                self.client.put, self.client.delete):
+        for method in (self.client.get, self.client.head, self.client.put,
+                self.client.delete):
             response = method(self._url())
-            self.assertEquals(response.status_code, 405)
+            self.assertEquals(response.status_code, 405, '{method} request '
+                    'did not have expected code: {actual} instead of '
+                    '{expected}'.format(method=method,
+                    actual=response.status_code, expected=405))
             self.assertEquals(ProjectRelationship.objects.count(), 0)
 
     def test_permission(self):
@@ -107,10 +110,13 @@ class AddUserToProjectTestCase(ViewTestMixin, RelationshipTestBase):
 
     def test_other_methods(self):
         """Add Project Relationship requires POST."""
-        for method in (self.client.get, self.client.head, self.client.options,
-                self.client.put, self.client.delete):
+        for method in (self.client.get, self.client.head, self.client.put,
+                self.client.delete):
             response = method(self._url())
-            self.assertEquals(response.status_code, 405)
+            self.assertEquals(response.status_code, 405, '{method} request '
+                    'did not have expected code: {actual} instead of '
+                    '{expected}'.format(method=method,
+                    actual=response.status_code, expected=405))
             self.assertEquals(ProjectRelationship.objects.count(), 0)
 
     def test_permission(self):
