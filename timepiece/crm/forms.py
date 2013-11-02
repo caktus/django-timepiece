@@ -1,7 +1,6 @@
 from django import forms
 from django.contrib.auth.forms import UserCreationForm, UserChangeForm
 from django.contrib.auth.models import User
-from django.utils.translation import ugettext_lazy as _
 
 from selectable import forms as selectable
 
@@ -62,11 +61,10 @@ class EditProjectRelationshipForm(forms.ModelForm):
 
 
 class EditUserForm(UserChangeForm):
-    password_one = forms.CharField(required=False, max_length=36,
-            label=_(u'Password'),
-            widget=forms.PasswordInput(render_value=False))
-    password_two = forms.CharField(required=False, max_length=36,
-            label=_(u'Repeat Password'),
+    password1 = forms.CharField(required=False, max_length=36,
+            label='Password', widget=forms.PasswordInput(render_value=False))
+    password2 = forms.CharField(required=False, max_length=36,
+            label='Repeat Password',
             widget=forms.PasswordInput(render_value=False))
 
     class Meta:
@@ -85,19 +83,17 @@ class EditUserForm(UserChangeForm):
 
     def clean(self):
         super(EditUserForm, self).clean()
-        password_one = self.cleaned_data.get('password_one', None)
-        password_two = self.cleaned_data.get('password_two', None)
-        if password_one and password_one != password_two:
-            raise forms.ValidationError(_('Passwords Must Match.'))
+        password1 = self.cleaned_data.get('password1', None)
+        password2 = self.cleaned_data.get('password2', None)
+        if password1 and password1 != password2:
+            raise forms.ValidationError('Passwords must match.')
         return self.cleaned_data
 
-    def save(self, *args, **kwargs):
-        commit = kwargs.get('commit', True)
-        kwargs['commit'] = False
-        instance = super(EditUserForm, self).save(*args, **kwargs)
-        password_one = self.cleaned_data.get('password_one', None)
-        if password_one:
-            instance.set_password(password_one)
+    def save(self, commit=True):
+        instance = super(EditUserForm, self).save(commit=False)
+        password1 = self.cleaned_data.get('password1', None)
+        if password1:
+            instance.set_password(password1)
         if commit:
             instance.save()
             self.save_m2m()
@@ -137,7 +133,7 @@ class QuickSearchForm(forms.Form):
             raise forms.ValidationError(msg)
         return item
 
-    def save(self):
+    def get_result(self):
         return self.cleaned_data['quick_search'].get_absolute_url()
 
 

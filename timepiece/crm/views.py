@@ -36,7 +36,7 @@ class QuickSearch(FormView):
     template_name = 'timepiece/quick_search.html'
 
     def form_valid(self, form):
-        return HttpResponseRedirect(form.save())
+        return HttpResponseRedirect(form.get_result())
 
 
 # User timesheets
