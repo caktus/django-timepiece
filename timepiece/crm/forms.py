@@ -42,6 +42,12 @@ class CreateUserForm(UserCreationForm):
         self.fields['groups'].widget = forms.CheckboxSelectMultiple()
         self.fields['groups'].help_text = None
 
+    def save(self, commit=True):
+        user = super(CreateUserForm, self).save(commit)
+        if commit:
+            self.save_m2m()
+        return user
+
 
 class EditProjectRelationshipForm(forms.ModelForm):
 
