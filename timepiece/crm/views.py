@@ -367,7 +367,7 @@ class EditBusiness(PermissionsRequiredMixin, UpdateView):
     model = Business
     form_class = CreateEditBusinessForm
     template_name = 'timepiece/business/create_edit.html'
-    permissions = ('crm.edit_business',)
+    permissions = ('crm.change_business',)
     pk_url_kwarg = 'business_id'
 
 
