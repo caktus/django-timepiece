@@ -1,9 +1,10 @@
-from .test_businesses import (TestCreateBusinessView, TestDeleteBusinessView,
-        TestEditBusinessView, TestListBusinessesView)
-from .test_projects import (TestCreateProjectView, TestDeleteProjectView,
-        TestListProjectsView, TestProjectTimesheetView)
+from .test_businesses import (TestCreateBusiness, TestDeleteBusiness,
+        TestEditBusiness, TestListBusinesses, TestViewBusiness)
+from .test_projects import (TestCreateProject, TestDeleteProject,
+        TestEditProject, TestListProjects, TestViewProject)
+from .test_project_timesheet import TestProjectTimesheet
 from .test_quick_search import TestQuickSearchView
 from .test_relationships import (TestAddUserToProject, TestAddProjectToUser,
-        TestEditRelationshipView, TestDeleteRelationshipView)
-from .test_users import (TestDeleteUserView, TestEditUserView,
-        TestListUsersView, TestEditSettingsView)
+        TestEditRelationship, TestDeleteRelationship)
+from .test_users import (TestCreateUser, TestDeleteUser, TestEditUser,
+        TestListUsers, TestViewUser, TestEditSettings)

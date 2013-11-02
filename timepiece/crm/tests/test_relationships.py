@@ -164,7 +164,7 @@ class TestAddUserToProject(ViewTestMixin, RelationshipTestBase):
         self.assertEquals(rel.user, self.user)
 
 
-class TestEditRelationshipView(ViewTestMixin, RelationshipTestBase):
+class TestEditRelationship(ViewTestMixin, RelationshipTestBase):
     url_name = 'edit_relationship'
     perm_names = ['change_projectrelationship']
 
@@ -176,7 +176,7 @@ class TestEditRelationshipView(ViewTestMixin, RelationshipTestBase):
         return {'types': [self.rel_type1.pk, self.rel_type2.pk]}
 
     def setUp(self):
-        super(TestEditRelationshipView, self).setUp()
+        super(TestEditRelationship, self).setUp()
         self.relationship = factories.ProjectRelationship(
                 project=self.project, user=self.user)
         self.rel_type1 = factories.RelationshipType()
@@ -257,12 +257,12 @@ class TestEditRelationshipView(ViewTestMixin, RelationshipTestBase):
         self.assertTrue(self.rel_type2 in rel.types.all())
 
 
-class TestDeleteRelationshipView(ViewTestMixin, RelationshipTestBase):
+class TestDeleteRelationship(ViewTestMixin, RelationshipTestBase):
     url_name = 'delete_relationship'
     perm_names = ['delete_projectrelationship']
 
     def setUp(self):
-        super(TestDeleteRelationshipView, self).setUp()
+        super(TestDeleteRelationship, self).setUp()
         self.relationship = factories.ProjectRelationship(
                 project=self.project, user=self.user)
 
