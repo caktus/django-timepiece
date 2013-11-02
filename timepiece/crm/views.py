@@ -399,7 +399,6 @@ class ListUsers(PermissionsRequiredMixin, SearchListView):
         return super(ListUsers, self).get_queryset().select_related()
 
 
-@cbv_decorator(transaction.commit_on_success)
 class ViewUser(PermissionsRequiredMixin, DetailView):
     model = User
     pk_url_kwarg = 'user_id'
@@ -453,7 +452,6 @@ class ListProjects(PermissionsRequiredMixin, SearchListView):
         return queryset
 
 
-@cbv_decorator(transaction.commit_on_success)
 class ViewProject(PermissionsRequiredMixin, DetailView):
     model = Project
     pk_url_kwarg = 'project_id'
