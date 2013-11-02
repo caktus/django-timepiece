@@ -20,7 +20,7 @@ User.get_absolute_url = lambda user: reverse('view_user', args=(user.pk,))
 class UserProfile(models.Model):
     user = models.OneToOneField(User, unique=True, related_name='profile')
     hours_per_week = models.DecimalField(max_digits=8, decimal_places=2,
-                                         default=40)
+            default=40)
 
     class Meta:
         db_table = 'timepiece_userprofile'  # Using legacy table name.
@@ -56,15 +56,11 @@ class Attribute(models.Model):
 
     type = models.CharField(max_length=32, choices=ATTRIBUTE_TYPES.items())
     label = models.CharField(max_length=255)
-    sort_order = models.SmallIntegerField(
-        null=True,
-        blank=True,
-        choices=SORT_ORDER_CHOICES,
-    )
+    sort_order = models.SmallIntegerField(null=True, blank=True,
+            choices=SORT_ORDER_CHOICES)
     enable_timetracking = models.BooleanField(default=False,
-        help_text='Enable time tracking functionality for projects with this '
-                  'type or status.',
-    )
+            help_text='Enable time tracking functionality for projects '
+            'with this type or status.')
     billable = models.BooleanField(default=False)
 
     objects = models.Manager()
@@ -119,30 +115,20 @@ class Project(models.Model):
     name = models.CharField(max_length=255)
     tracker_url = models.CharField(max_length=255, blank=True, null=False,
             default="")
-    business = models.ForeignKey(
-        Business,
-        related_name='new_business_projects',
-    )
+    business = models.ForeignKey(Business,
+            related_name='new_business_projects')
     point_person = models.ForeignKey(User, limit_choices_to={'is_staff': True})
-    users = models.ManyToManyField(
-        User,
-        related_name='user_projects',
-        through='ProjectRelationship',
-    )
+    users = models.ManyToManyField(User, related_name='user_projects',
+            through='ProjectRelationship')
     activity_group = models.ForeignKey('entries.ActivityGroup',
-        related_name='activity_group', null=True, blank=True,
-        verbose_name='restrict activities to',
-    )
-    type = models.ForeignKey(
-        Attribute,
-        limit_choices_to={'type': 'project-type'},
-        related_name='projects_with_type',
-    )
-    status = models.ForeignKey(
-        Attribute,
-        limit_choices_to={'type': 'project-status'},
-        related_name='projects_with_status',
-    )
+            related_name='activity_group', null=True, blank=True,
+            verbose_name='restrict activities to')
+    type = models.ForeignKey(Attribute,
+            limit_choices_to={'type': 'project-type'},
+            related_name='projects_with_type')
+    status = models.ForeignKey(Attribute,
+            limit_choices_to={'type': 'project-status'},
+            related_name='projects_with_status')
     description = models.TextField()
 
     objects = models.Manager()
@@ -197,7 +183,7 @@ class ProjectRelationship(models.Model):
         unique_together = ('user', 'project')
 
     def __unicode__(self):
-        return "%s's relationship to %s" % (
-            self.project.name,
-            self.user.get_name_or_username(),
+        return "{project}'s relationship to {user}".format(
+            project=self.project.name,
+            user=self.user.get_name_or_username(),
         )
