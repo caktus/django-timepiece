@@ -34,6 +34,9 @@ urlpatterns = patterns('',
             '(?:(?P<active_tab>overview|all-entries|daily-summary)/)?$',
         views.ViewUserTimesheet.as_view(),
         name='view_user_timesheet'),
+    url(r'^user/(?P<user_id>\d+)/timesheet/ajax/$',
+        views.ViewUserTimesheetAjax.as_view(),
+        name='view_user_timesheet_ajax'),
 
     # Projects
     url(r'^project/$',

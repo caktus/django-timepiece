@@ -3,7 +3,7 @@
 {% load timepiece_tags %}
 
 {% block title %}
-    {{ timesheet_user.get_name_or_username }} - {{ this_month|date:"F Y" }}
+    {{ timesheet_user.get_name_or_username }} - Timesheet
 {% endblock title %}
 
 {% block breadcrumb %}{% endblock breadcrumb %}
@@ -16,9 +16,8 @@
 {% endblock extracss %}
 
 {% block extrajs %}
+{# So that we can make CSRF-friendly AJAX requests. #}
 <script src="{{ STATIC_URL }}timepiece/js/ajax.js"></script>
-<script src="//cdnjs.cloudflare.com/ajax/libs/underscore.js/1.4.4/underscore-min.js"></script>
-<script src="//cdnjs.cloudflare.com/ajax/libs/backbone.js/1.0.0/backbone-min.js"></script>
 
 {# Underscore templates. #}
 <script type="text/template" id="week-template">
@@ -37,31 +36,25 @@
     {% include "timepiece/user/timesheet/inc/paid_leave_summary.html" %}
 </script>
 
-<script>
-    var this_month = new Date("{{ this_month|date:'r' }}"),
-        next_month = new Date("{{ next_month|date:'r' }}"),
-        entry_statuses = "{{ entry_statuses|safe|escapejs }}",
-        raw_entries = "{{ entries_data|safe|escapejs }}",
-        verify_url = "{% url 'verify_entries' %}",
-        reject_url = "{% url 'reject_entries' %}",
-        approve_url = "{% url 'approve_entries' %}",
-        weeks = JSON.parse("{{ weeks|safe|escapejs }}");
-</script>
+{# Backbone & related scripts to power the timesheet. #}
+<script src="//cdnjs.cloudflare.com/ajax/libs/underscore.js/1.4.4/underscore-min.js"></script>
+<script src="//cdnjs.cloudflare.com/ajax/libs/backbone.js/1.0.0/backbone-min.js"></script>
 <script src="{{ STATIC_URL }}timepiece/js/timesheet/utils.js"></script>
 <script src="{{ STATIC_URL }}timepiece/js/timesheet/models.js"></script>
 <script src="{{ STATIC_URL }}timepiece/js/timesheet/views.js"></script>
 <script>
-    $(function() {
-        var timesheet = new Timesheet({
-            collection: new EntryCollection(JSON.parse(raw_entries))
-        });
-    });
+$(function() {
+
+})
 </script>
 {% endblock extrajs %}
 
 {% block content %}
 <div class="page-header">
-    <h1>{{ timesheet_user.get_name_or_username }} - {{ this_month|date:"F Y" }}</h1>
+    <h1>
+        {{ timesheet_user.get_name_or_username }} -
+        <span class="this-month">{{ this_month|date:"F Y" }}</span>
+    </h1>
 </div>
 
 <div class="tabbable">
@@ -92,11 +85,14 @@
         </div>
         <div class="btn-toolbar pull-right">
             <div class="btn-group">
-                <a class="btn" href="{% user_timesheet_url timesheet_user.pk last_month %}">
+                <a class="btn refresh" href=""><i class="icon icon-refresh"></i></a>
+            </div>
+            <div class="btn-group">
+                <a class="btn last-month" href="{% user_timesheet_url timesheet_user.pk last_month %}">
                     <i class="icon icon-arrow-left"></i>
                     {{ last_month|date:"F" }}
                 </a>
-                <a class="btn" href="{% user_timesheet_url timesheet_user.pk next_month %}">
+                <a class="btn next-month" href="{% user_timesheet_url timesheet_user.pk next_month %}">
                     {{ next_month|date:"F" }}
                     <i class="icon icon-arrow-right"></i>
                 </a>

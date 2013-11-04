@@ -6,18 +6,20 @@ import urllib
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth.models import User
+from django.core.exceptions import PermissionDenied
 from django.core.urlresolvers import reverse, reverse_lazy
 from django.db import transaction
 from django.db.models import Sum
-from django.http import HttpResponseRedirect, HttpResponseForbidden
-from django.shortcuts import get_object_or_404, render, redirect
+from django.http import HttpResponse, HttpResponseRedirect
+from django.shortcuts import get_object_or_404, redirect
 from django.views.decorators.csrf import csrf_exempt
 from django.views.generic import (CreateView, DeleteView, DetailView,
-        UpdateView, FormView, View)
+        UpdateView, FormView, View, TemplateView)
 
 from timepiece import utils
 from timepiece.forms import YearMonthForm
 from timepiece.templatetags.timepiece_tags import seconds_to_hours
+from timepiece.utils import add_timezone
 from timepiece.utils.csv import CSVViewMixin, ExtendedJSONEncoder
 from timepiece.utils.cbv import cbv_decorator, PermissionsRequiredMixin
 from timepiece.utils.search import SearchListView
@@ -45,36 +47,75 @@ class QuickSearch(FormView):
 # User timesheets
 
 
-@cbv_decorator(login_required)
-class ViewUserTimesheet(View):
-    """Summarizes a month of entries."""
-
+class UserTimesheetMixin(object):
+    """Checks permission & evaluates the month form for timesheet views."""
     form_class = TimesheetSelectMonthForm
+
+    def dispatch(self, request, user_id, *args, **kwargs):
+        # If the user does not have an administrative permission, they may
+        # only view their own timesheet.
+        self.timesheet_user = get_object_or_404(User, pk=user_id)
+        if not request.user == self.timesheet_user:
+            if not request.user.has_perm('entries.view_entry_summary'):
+                raise PermissionDenied
+
+        self.month_form = self.form_class(data=request.GET or None)
+        self.this_month = self.month_form.get_month_start()
+
+        return super(UserTimesheetMixin, self).dispatch(request, *args, **kwargs)
+
+
+@cbv_decorator(login_required)
+class ViewUserTimesheet(UserTimesheetMixin, TemplateView):
+    """Renders basic data for the monthly timesheet.
+
+    Backbone.js is used to retrieve the month's entries through the
+    ViewUserTimesheetAjax view.
+    """
     template_name = 'timepiece/user/timesheet/view.html'
 
-    def get(self, request, user_id, active_tab=None, *args, **kwargs):
-        self.timesheet_user = get_object_or_404(User, pk=user_id)
-        if not self.has_permission_for(request.user, self.timesheet_user):
-            return HttpResponseForbidden("You do not have permission to "
-                    "view this user's timesheet.")
-
-        # TODO: Handle invalid form.
-        self.month_form = self.form_class(data=request.GET or None)
-
-        this_month = self.month_form.get_month_start()
-        weeks = self.month_form.get_weeks()
-        entries = self.get_month_entries()
-        return render(self.request, self.template_name, {
+    def get_context_data(self, active_tab=None, **kwargs):
+        return {
             'active_tab': active_tab or 'all-entries',
-            'entries_data': json.dumps(entries, cls=ExtendedJSONEncoder),
             'month_form': self.month_form,
-            'last_month': this_month - relativedelta(months=1),
-            'next_month': this_month + relativedelta(months=1),
-            'this_month': this_month,
+            'last_month': self.this_month - relativedelta(months=1),
+            'next_month': self.this_month + relativedelta(months=1),
+            'this_month': self.this_month,
             'timesheet_user': self.timesheet_user,
-            'today': datetime.datetime.today(),
-            'weeks': json.dumps(weeks, cls=ExtendedJSONEncoder),
-        })
+        }
+
+
+# Not using login_required here to avoid redirecting an AJAX request.
+# The logic in UserTimesheetMixin.dispatch prevents unauthenticated access.
+class ViewUserTimesheetAjax(UserTimesheetMixin, View):
+    """AJAX view for Backbone to retrieve entries for the monthly timesheet."""
+
+    def get(self, request, *args, **kwargs):
+        data = {
+            'entries': self.get_month_entries(),
+            'weeks': self.get_weeks(),
+            'this_month': self.this_month,
+            'last_month': self.this_month - relativedelta(months=1),
+            'next_month': self.this_month + relativedelta(months=1),
+            'verify_url': reverse('verify_entries'),
+            'reject_url': reverse('reject_entries'),
+            'approve_url': reverse('approve_entries'),
+        }
+        return HttpResponse(json.dumps(data, cls=ExtendedJSONEncoder),
+                content_type='application/json')
+
+    def get_weeks(self):
+        start, end = self.month_form.get_extended_month_range()
+        weeks = []
+        cursor = start
+        while cursor < end:
+            next_week = cursor + relativedelta(days=7)
+            weeks.append((
+                add_timezone(cursor),
+                add_timezone(next_week - relativedelta(microseconds=1)),
+            ))
+            cursor = next_week
+        return weeks
 
     def get_month_entries(self):
         """
@@ -86,15 +127,6 @@ class ViewUserTimesheet(View):
         entries = entries.filter(end_time__range=(start, end))
         entries = entries.order_by('end_time')
         return entries.summaries()
-
-    def has_permission_for(self, request_user, timesheet_user):
-        """
-        User may only view their own timesheet unless they have administrative
-        permission.
-        """
-        if request_user == timesheet_user:
-            return True
-        return request_user.has_perm('entries.view_entry_summary')
 
 
 # Project timesheets

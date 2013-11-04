@@ -168,21 +168,19 @@ class TimesheetSelectMonthForm(forms.Form):
         kwargs['initial'] = {'month': today.month, 'year': today.year}
         super(TimesheetSelectMonthForm, self).__init__(*args, **kwargs)
 
-    def _get_week_start(self, day=None):
+    def _get_week_start(self, day):
         """Returns the first microsecond on the Monday of the given week."""
-        day = day or datetime.date.today()
         monday = 1  # ISO.
         first_day = day - relativedelta(days=day.isoweekday() - monday)
         return first_day.replace(hour=0, minute=0, second=0, microsecond=0)
 
-    def _get_week_end(self, day=None):
+    def _get_week_end(self, day):
         """Returns the last microsecond on the Sunday of the given week."""
-        day = day or datetime.date.today()
         sunday = 7  # ISO.
         last_day = day + relativedelta(days=sunday - day.isoweekday())
         return last_day.replace(hour=23, minute=59, second=59, microsecond=999999)
 
-    def _get_month_end(self, day=None):
+    def _get_month_end(self, day):
         """Returns the last microsecond of the last day of the given month."""
         last_day = day.replace(day=1) + relativedelta(months=1, days=-1)
         return last_day.replace(hour=23, minute=59, second=59, microsecond=999999)
@@ -192,6 +190,10 @@ class TimesheetSelectMonthForm(forms.Form):
         return int(self.cleaned_data['month'])
 
     def get_month_range(self):
+        """
+        Returns the first microsecond of the first day of the month, and
+        the last microsecond of the last day of the month.
+        """
         month_start = self.get_month_start()
         month_end = self._get_month_end(month_start)
         return month_start, month_end
@@ -213,16 +215,3 @@ class TimesheetSelectMonthForm(forms.Form):
             year = self.initial['year']
             month = self.initial['month']
         return datetime.datetime(year, month, 1, 0, 0)
-
-    def get_weeks(self):
-        start, end = self.get_extended_month_range()
-        weeks = []
-        cursor = start
-        while cursor < end:
-            next_week = cursor + relativedelta(days=7)
-            weeks.append((
-                add_timezone(cursor),
-                add_timezone(next_week - relativedelta(microseconds=1)),
-            ))
-            cursor = next_week
-        return weeks

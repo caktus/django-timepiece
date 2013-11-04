@@ -150,6 +150,9 @@ var Timesheet = Backbone.View.extend({
         "click .btn[title='Verify All']": "verifyAll",
         "click .btn[title='Approve All']": "approveAll",
         "click .btn[title='Reject All']": "rejectAll",
+        "click .btn.last-month": "",
+        "click .btn.next-month": "",
+        "click .btn.refresh": "",
         //"change #filter-entries select": "filterEntries"
     },
     render: function() {
