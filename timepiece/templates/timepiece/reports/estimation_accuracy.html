@@ -24,7 +24,7 @@
     {{ block.super }}
     <script charset="utf-8" src="https://www.google.com/jsapi"></script>
     <script charset="utf-8" src="{{ STATIC_URL }}timepiece/js/chart/estimation_accuracy_chart.js"
-            data="{{ data }}"></script>
+	    data="{{ data }}" chart_max="{{ chart_max }}"></script>
 {% endblock extrajs %}
 
 {% block report_content %}

@@ -465,16 +465,22 @@ def report_productivity(request):
 
 @permission_required('contracts.view_estimation_accuracy')
 def report_estimation_accuracy(request):
-    data = [ ('Contracted (hrs)', 'Worked (hrs)', 'Name') ]
+    """
+    Idea from Software Estimation, Demystifying the Black Art, McConnel 2006 Fig 3-3.
+    """
     contracts = ProjectContract.objects.filter(
         status=ProjectContract.STATUS_COMPLETE,
         type=ProjectContract.PROJECT_FIXED
     )
+    data = [('Target (hrs)', 'Actual (hrs)', 'Point Label')]
     for c in contracts:
         if c.contracted_hours() == 0:
             continue
-        percent = c.hours_worked / c.contracted_hours() * 100
-        data.append( (c.contracted_hours(), c.hours_worked, "%s (%.2f)" % (c.name, percent) ))
+        pt_label = "%s (%.2f%%)" % (c.name, 
+                                    c.hours_worked / c.contracted_hours() * 100)
+        data.append((c.contracted_hours(), c.hours_worked, pt_label))
+        chart_max = max([max(x[0], x[1]) for x in data[1:]]) #max of all targets & actuals
     return render(request, 'timepiece/reports/estimation_accuracy.html', {
         'data': json.dumps(data, cls=DecimalEncoder),
+        'chart_max': chart_max,
     })
