@@ -4,23 +4,20 @@ import json
 import urllib
 
 from django.contrib import messages
-from django.contrib.auth.decorators import login_required, permission_required
+from django.contrib.auth.decorators import login_required
 from django.contrib.auth.models import User
 from django.core.urlresolvers import reverse, reverse_lazy
 from django.db import transaction
 from django.db.models import Sum
-from django.http import HttpResponseRedirect, HttpResponseForbidden, Http404
-from django.http import (HttpResponse, HttpResponseRedirect,
-        HttpResponseForbidden, Http404, HttpResponseBadRequest)
+from django.http import HttpResponseRedirect, HttpResponseForbidden
 from django.shortcuts import get_object_or_404, render, redirect
 from django.views.decorators.csrf import csrf_exempt
 from django.views.generic import (CreateView, DeleteView, DetailView,
         UpdateView, FormView, View)
 
 from timepiece import utils
-from timepiece.forms import YearMonthForm, UserYearMonthForm
+from timepiece.forms import YearMonthForm
 from timepiece.templatetags.timepiece_tags import seconds_to_hours
-        QuickSearchForm)
 from timepiece.utils.csv import CSVViewMixin, ExtendedJSONEncoder
 from timepiece.utils.cbv import cbv_decorator, PermissionsRequiredMixin
 from timepiece.utils.search import SearchListView
@@ -28,8 +25,8 @@ from timepiece.utils.search import SearchListView
 from timepiece.crm.forms import (CreateEditBusinessForm, CreateEditProjectForm,
         EditUserSettingsForm, EditProjectRelationshipForm, SelectProjectForm,
         EditUserForm, CreateUserForm, SelectUserForm, ProjectSearchForm,
+        QuickSearchForm, TimesheetSelectMonthForm)
 from timepiece.crm.models import Business, Project, ProjectRelationship
-from timepiece.crm.utils import grouped_totals
 from timepiece.entries.models import Entry
 
 
@@ -48,7 +45,8 @@ class QuickSearch(FormView):
 # User timesheets
 
 
-class ViewUserTimesheet(LoginRequiredMixin, View):
+@cbv_decorator(login_required)
+class ViewUserTimesheet(View):
     """Summarizes a month of entries."""
 
     form_class = TimesheetSelectMonthForm
