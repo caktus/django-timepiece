@@ -12,9 +12,9 @@ from django.views.generic import ListView, DetailView
 
 from timepiece import utils
 from timepiece.templatetags.timepiece_tags import seconds_to_hours
-from timepiece.utils.cbv import PermissionsRequiredMixin
 from timepiece.utils.csv import CSVViewMixin
 from timepiece.utils.search import SearchListView
+from timepiece.utils.views import PermissionsRequiredMixin
 
 from timepiece.contracts.forms import InvoiceForm, OutstandingHoursFilterForm
 from timepiece.contracts.models import ProjectContract, HourGroup, EntryGroup

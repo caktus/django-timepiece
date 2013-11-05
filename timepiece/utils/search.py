@@ -5,7 +5,7 @@ from django.shortcuts import redirect
 from django.views.generic import ListView
 from django.views.generic.edit import FormMixin
 
-from .cbv import GetDataFormMixin
+from .views import GetDataFormMixin
 
 
 class SearchForm(forms.Form):
