@@ -22,6 +22,7 @@ from django.views.generic import TemplateView, View
 from timepiece import utils
 from timepiece.forms import DATE_FORM_FORMAT
 from timepiece.utils.csv import DecimalEncoder
+from timepiece.utils.views import cbv_decorator
 
 from timepiece.crm.models import Project, UserProfile
 from timepiece.entries.forms import ClockInForm, ClockOutForm, \
@@ -444,8 +445,8 @@ class EditScheduleView(ScheduleMixin, TemplateView):
         return HttpResponseRedirect(url)
 
 
+@cbv_decorator(permission_required('entries.add_projecthours'))
 class ScheduleAjaxView(ScheduleMixin, View):
-    permissions = ('entries.add_projecthours',)
 
     def dispatch(self, request, *args, **kwargs):
         if not request.user.has_perm('entries.add_projecthours'):
@@ -586,8 +587,8 @@ class ScheduleAjaxView(ScheduleMixin, View):
         return self.update_week(week_start)
 
 
+@cbv_decorator(permission_required('entries.add_projecthours'))
 class ScheduleDetailView(ScheduleMixin, View):
-    permissions = ('entries.add_projecthours',)
 
     def delete(self, request, *args, **kwargs):
         """Remove a project from the database."""
