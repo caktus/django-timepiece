@@ -1,12 +1,18 @@
 from django.contrib.auth import REDIRECT_FIELD_NAME
-from django.contrib.auth.decorators import login_required
 from django.contrib.auth.views import redirect_to_login
 from django.core.exceptions import ImproperlyConfigured, PermissionDenied
-from django.db import transaction
 from django.utils.decorators import method_decorator
-from django.views.decorators.csrf import csrf_exempt
 
 from timepiece import utils
+
+
+def cbv_decorator(function_decorator):
+    """Allows a function-based decorator to be used on a CBV."""
+
+    def class_decorator(View):
+        View.dispatch = method_decorator(function_decorator)(View.dispatch)
+        return View
+    return class_decorator
 
 
 class PermissionsRequiredMixin(object):
@@ -31,27 +37,6 @@ class PermissionsRequiredMixin(object):
 
         return super(PermissionsRequiredMixin, self).dispatch(request, *args,
                 **kwargs)
-
-
-class LoginRequiredMixin(object):
-
-    @method_decorator(login_required)
-    def dispatch(self, *args, **kwargs):
-        return super(LoginRequiredMixin, self).dispatch(*args, **kwargs)
-
-
-class CommitOnSuccessMixin(object):
-
-    @method_decorator(transaction.commit_on_success)
-    def dispatch(self, *args, **kwargs):
-        return super(CommitOnSuccessMixin, self).dispatch(*args, **kwargs)
-
-
-class CsrfExemptMixin(object):
-
-    @method_decorator(csrf_exempt)
-    def dispatch(self, *args, **kwargs):
-        return super(CsrfExemptMixin, self).dispatch(*args, **kwargs)
 
 
 class GetDataFormMixin(object):
