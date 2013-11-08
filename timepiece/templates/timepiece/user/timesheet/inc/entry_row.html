@@ -1,7 +1,7 @@
 {# Underscore template used to render each entry row in a table. #}
 <td class="actions">
     <%= model.get_status_label() %>
-    <% if (model.get('status') === 'unverified') { %>
+    <% if (model.isFromCurrentMonth() && model.get('status') === 'unverified') { %>
     <a href="#" data-toggle="tooltip" title="Edit">
         <i class="icon icon-pencil"></i>
     </a>

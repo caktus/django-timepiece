@@ -112,6 +112,8 @@ var Timesheet = Backbone.View.extend({
         this.allEntries = $('#all-entries');
         this.weekGroups = [];
 
+        var weeks = this.options['weeks'];
+
         // Split entries into groups by week.
         _.each(weeks, function(week) {
             this.weekGroups.push([new Date(week[0]), new Date(week[1]),[]]);

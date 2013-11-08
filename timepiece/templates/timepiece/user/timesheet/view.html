@@ -43,8 +43,23 @@
 <script src="{{ STATIC_URL }}timepiece/js/timesheet/models.js"></script>
 <script src="{{ STATIC_URL }}timepiece/js/timesheet/views.js"></script>
 <script>
+var timesheet;
 $(function() {
-
+    $.ajax({
+        url: "{% user_timesheet_url timesheet_user.pk this_month ajax=True %}",
+        dataType: 'json'
+    }).done(function(data, status, xhr) {
+        timesheet = new Timesheet({
+            'weeks': data['weeks'],
+            'collection': new EntryCollection(data['entries'], {
+                'this_month': new Date(data['this_month']),
+                'next_month': new Date(data['next_month']),
+                'last_month': new Date(data['last_month'])
+            })
+        });
+    }).fail(function(xhr, status, error) {
+        alert('There was an error loading the data.');  // TODO
+    });
 })
 </script>
 {% endblock extrajs %}

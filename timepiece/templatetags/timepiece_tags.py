@@ -221,9 +221,10 @@ def _timesheet_url(url_name, pk, date=None):
 
 
 @register.simple_tag
-def user_timesheet_url(user_id, date=None):
+def user_timesheet_url(user_id, date=None, ajax=False):
     """Shortcut to create a time sheet URL with optional date parameters."""
-    return _timesheet_url('view_user_timesheet', user_id, date)
+    url_name = 'view_user_timesheet_ajax' if ajax else 'view_user_timesheet'
+    return _timesheet_url(url_name, user_id, date)
 
 
 @register.filter
