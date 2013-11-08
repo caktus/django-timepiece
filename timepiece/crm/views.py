@@ -64,6 +64,15 @@ class UserTimesheetMixin(object):
 
         return super(UserTimesheetMixin, self).dispatch(request, *args, **kwargs)
 
+    def get_context_data(self, **kwargs):
+        # No call to super, as View doesn't define this method.
+        kwargs.update({
+            'last_month': self.this_month - relativedelta(months=1),
+            'next_month': self.this_month + relativedelta(months=1),
+            'this_month': self.this_month,
+        })
+        return kwargs
+
 
 @cbv_decorator(login_required)
 class ViewUserTimesheet(UserTimesheetMixin, TemplateView):
@@ -75,14 +84,12 @@ class ViewUserTimesheet(UserTimesheetMixin, TemplateView):
     template_name = 'timepiece/user/timesheet/view.html'
 
     def get_context_data(self, active_tab=None, **kwargs):
-        return {
+        kwargs.update({
             'active_tab': active_tab or 'all-entries',
             'month_form': self.month_form,
-            'last_month': self.this_month - relativedelta(months=1),
-            'next_month': self.this_month + relativedelta(months=1),
-            'this_month': self.this_month,
             'timesheet_user': self.timesheet_user,
-        }
+        })
+        return super(ViewUserTimesheet, self).get_context_data(**kwargs)
 
 
 # Not using login_required here to avoid redirecting an AJAX request.
@@ -91,18 +98,26 @@ class ViewUserTimesheetAjax(UserTimesheetMixin, View):
     """AJAX view for Backbone to retrieve entries for the monthly timesheet."""
 
     def get(self, request, *args, **kwargs):
-        data = {
+        data = json.dumps(self.get_context_data(), cls=ExtendedJSONEncoder)
+        return HttpResponse(data, content_type='application/json')
+
+    def get_context_data(self, **kwargs):
+        kwargs.update({
             'entries': self.get_month_entries(),
             'weeks': self.get_weeks(),
-            'this_month': self.this_month,
-            'last_month': self.this_month - relativedelta(months=1),
-            'next_month': self.this_month + relativedelta(months=1),
-            'verify_url': reverse('verify_entries'),
-            'reject_url': reverse('reject_entries'),
-            'approve_url': reverse('approve_entries'),
-        }
-        return HttpResponse(json.dumps(data, cls=ExtendedJSONEncoder),
-                content_type='application/json')
+        })
+        return super(ViewUserTimesheetAjax, self).get_context_data(**kwargs)
+
+    def get_month_entries(self):
+        """
+        Return a list of summaries of the entries in the month's extended date
+        range, ordered by end_time.
+        """
+        start, end = self.month_form.get_extended_month_range()
+        entries = Entry.objects.filter(user=self.timesheet_user)
+        entries = entries.filter(end_time__range=(start, end))
+        entries = entries.order_by('end_time')
+        return entries.summaries()
 
     def get_weeks(self):
         start, end = self.month_form.get_extended_month_range()
@@ -116,17 +131,6 @@ class ViewUserTimesheetAjax(UserTimesheetMixin, View):
             ))
             cursor = next_week
         return weeks
-
-    def get_month_entries(self):
-        """
-        Return a list of summaries of the entries in the month's extended date
-        range, ordered by end_time.
-        """
-        start, end = self.month_form.get_extended_month_range()
-        entries = Entry.objects.filter(user=self.timesheet_user)
-        entries = entries.filter(end_time__range=(start, end))
-        entries = entries.order_by('end_time')
-        return entries.summaries()
 
 
 # Project timesheets

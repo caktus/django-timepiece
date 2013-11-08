@@ -31,7 +31,7 @@ urlpatterns = patterns('',
 
     # User timesheets
     url(r'^user/(?P<user_id>\d+)/timesheet/' +
-            '(?:(?P<active_tab>overview|all-entries|daily-summary)/)?$',
+            '(?:(?P<active_tab>overview|all-entries)/)?$',
         views.ViewUserTimesheet.as_view(),
         name='view_user_timesheet'),
     url(r'^user/(?P<user_id>\d+)/timesheet/ajax/$',
