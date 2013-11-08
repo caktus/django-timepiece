@@ -43,7 +43,10 @@
 <script src="{{ STATIC_URL }}timepiece/js/timesheet/models.js"></script>
 <script src="{{ STATIC_URL }}timepiece/js/timesheet/views.js"></script>
 <script>
-var timesheet;
+var verify_url = "{% url 'verify_entries' %}",
+    approve_url = "{% url 'approve_entries' %}",
+    reject_url = "{% url 'reject_entries' %}",
+    timesheet;
 $(function() {
     $.ajax({
         url: "{% user_timesheet_url timesheet_user.pk this_month ajax=True %}",
