@@ -63,14 +63,13 @@ var EntryRow = Backbone.View.extend({
 var EntryWeekTable = Backbone.View.extend({
     tagName: "div",
     initialize: function() {
-        this.weekGroup = this.options.weekGroup;
         this.$el.addClass('week');
         this.$el.append($(_.template($('#week-template').html(), {
-            weekStart: this.options.weekStart,
-            weekEnd: this.options.weekEnd
+            weekStart: this.collection.weekStart,
+            weekEnd: this.collection.weekEnd
         })));
         this.totalHours = 0;
-        _.each(this.weekGroup, function(entry) {
+        _.each(this.collection.toArray(), function(entry) {
             var row = new EntryRow({ model: entry });
             this.totalHours += entry.get('total_seconds');
             row.render().$el.insertBefore(this.$el.find('tbody tr.week-summary'));
@@ -89,63 +88,65 @@ var EntryWeekTable = Backbone.View.extend({
     approveWeek: function(event) {
         event.preventDefault();
         var msg = "All verified entries from this week are now approved.",
-            entryIds = getIdsFromCurrentMonth(this.weekGroup);
+            entryIds = getIdsFromCurrentMonth(this.collection);
         approveEntries(this.collection, entryIds, msg);
     },
     rejectWeek: function(event) {
         event.preventDefault();
         var msg = "All entries from this week are now unverified.",
-            entryIds = getIdsFromCurrentMonth(this.weekGroup);
+            entryIds = getIdsFromCurrentMonth(this.collection);
         rejectEntries(this.collection, entryIds, msg);
     },
     verifyWeek: function(event) {
         event.preventDefault();
         var msg = "All entries from this week are now verified.",
-            entryIds = getIdsFromCurrentMonth(this.weekGroup);
-        verifyEntries(this.collection, entryIds, msg);
-    }
+            entryIds = getIdsFromCurrentMonth(this.collection);
+        verifyEntries(this.collection, entryIds, msg); }
 });
 
 var Timesheet = Backbone.View.extend({
     el: $("html"),
     initialize: function() {
-        this.allEntries = $('#all-entries');
+        var weekRanges = this.options['weekRanges'],
+            entries = this.options['entries'];
+
+        // Create an empty EntryCollection for each week of the month.
         this.weekGroups = [];
-
-        var weeks = this.options['weeks'];
-
-        // Split entries into groups by week.
-        _.each(weeks, function(week) {
-            this.weekGroups.push([new Date(week[0]), new Date(week[1]),[]]);
+        _.each(weekRanges, function(range) {
+            this.weekGroups.push(
+                new EntryCollection([], {
+                    thisMonth: this.options['thisMonth'],
+                    nextMonth: this.options['nextMonth'],
+                    lastMonth: this.options['lastMonth'],
+                    weekStart: new Date(range[0]),
+                    weekEnd: new Date(range[1])
+                })
+            );
         }, this);
-        var weekCursor = entryCursor = 0, _collection = this.collection.toArray();
-        for (entryCursor; entryCursor < _collection.length;) {
-            if (weekCursor >= weeks.length) {
-                break;
-            }
-            var weekStart = new Date(weeks[weekCursor][0]),
-                weekEnd = new Date(weeks[weekCursor][1]),
-                entry = _collection[entryCursor],
+
+        // Split entries by week.
+        // Assumes that entries are in ascending order by end_time.
+        var weekCursor = entryCursor = 0;
+        for (entryCursor; entryCursor < entries.length;) {
+            if (weekCursor >= weekRanges.length) { break; }
+
+            var collection = this.weekGroups[weekCursor],
+                entry = new Entry(entries[entryCursor]),
                 date = new Date(entry.get('end_time'));
-            if (date > weekEnd) {
-                weekCursor++;
-            } else if (date < weekStart) {
-                entryCursor++;
-            } else {
-                this.weekGroups[weekCursor][2].push(entry);
+
+            if (date > collection.weekEnd) { weekCursor++; }
+            else if (date < collection.weekStart) { entryCursor++; }
+            else {
+                collection.add(entry);
                 entryCursor++;
             }
         }
-
         // Render each week group.
-        _.each(this.weekGroups, function(group) {
+        _.each(this.weekGroups, function(entryCollection) {
             var weekTable = new EntryWeekTable({
-                weekStart: group[0],
-                weekEnd: group[1],
-                weekGroup: group[2],
-                collection: this.collection
+                collection: entryCollection
             });
-            this.allEntries.append(weekTable.render().el);
+            $('#all-entries').append(weekTable.render().el);
         }, this)
     },
     events: {

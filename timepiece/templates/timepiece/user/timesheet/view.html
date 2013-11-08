@@ -50,12 +50,11 @@ $(function() {
         dataType: 'json'
     }).done(function(data, status, xhr) {
         timesheet = new Timesheet({
-            'weeks': data['weeks'],
-            'collection': new EntryCollection(data['entries'], {
-                'this_month': new Date(data['this_month']),
-                'next_month': new Date(data['next_month']),
-                'last_month': new Date(data['last_month'])
-            })
+            'weekRanges': data['weeks'],
+            'entries': data['entries'],
+            'thisMonth': new Date(data['this_month']),
+            'nextMonth': new Date(data['next_month']),
+            'lastMonth': new Date(data['last_month'])
         });
     }).fail(function(xhr, status, error) {
         alert('There was an error loading the data.');  // TODO
