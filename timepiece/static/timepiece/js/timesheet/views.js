@@ -88,19 +88,19 @@ var EntryWeekTable = Backbone.View.extend({
     approveWeek: function(event) {
         event.preventDefault();
         var msg = "All verified entries from this week are now approved.",
-            entryIds = getIdsFromCurrentMonth(this.collection);
+            entryIds = getIdsFromCurrentMonth(this.collection.toArray());
         approveEntries(this.collection, entryIds, msg);
     },
     rejectWeek: function(event) {
         event.preventDefault();
         var msg = "All entries from this week are now unverified.",
-            entryIds = getIdsFromCurrentMonth(this.collection);
+            entryIds = getIdsFromCurrentMonth(this.collection.toArray());
         rejectEntries(this.collection, entryIds, msg);
     },
     verifyWeek: function(event) {
         event.preventDefault();
         var msg = "All entries from this week are now verified.",
-            entryIds = getIdsFromCurrentMonth(this.collection);
+            entryIds = getIdsFromCurrentMonth(this.collection.toArray());
         verifyEntries(this.collection, entryIds, msg); }
 });
 
