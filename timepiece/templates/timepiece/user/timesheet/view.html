@@ -121,19 +121,22 @@ $(function() {
                 </a>
             </div>
             <div id="select-month" class="modal hide fade">
-                <div class="modal-header">
-                    <button type="button" class="close"
-                            data-dismiss="modal" aria-hidden="true">&times;</button>
-                    <h3>Select month</h3>
-                </div>
-                <div class="modal-body">
-                     <form method="get" class="form-inline"
-                           action="{{ timesheet_user.get_timesheet_url }}">
+                <form method="get" class="form-inline"
+                        action="{{ timesheet_user.get_timesheet_url }}">
+                    <div class="modal-header">
+                        <button type="button" class="close"
+                                data-dismiss="modal" aria-hidden="true">&times;</button>
+                        <h3>Select month</h3>
+                    </div>
+                    <div class="modal-body">
                         {{ month_form.month }}
                         {{ month_form.year }}
-                        <button type="submit" class="btn">Update</button>
-                    </form>
-                </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button class="btn" data-dismiss="modal">Cancel</button>
+                        <button type="submit" class="btn btn-primary">Update</button>
+                    </div>
+                </form>
             </div>
         </div>
     </div>

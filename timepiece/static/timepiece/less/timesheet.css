@@ -42,3 +42,10 @@
     text-decoration: none;
     color: black;
 }
+#select-month form [name=month] {
+    width: 9em;
+    margin-right: 10px;
+}
+#select-month form [name=year] {
+    width: 4em;
+}
