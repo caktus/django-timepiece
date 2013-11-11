@@ -51,19 +51,12 @@ var Entry = Backbone.Model.extend({
     },
     isFromCurrentMonth: function() {
         var d = this.get_end_time();
-        return d >= this.collection.thisMonth && d <= this.collection.nextMonth;
+        return d >= this.weekTable.thisMonth && d <= this.weekTable.nextMonth;
     }
 });
 
 var EntryCollection = Backbone.Collection.extend({
     model: Entry,
-    initialize: function(models, options) {
-        this.thisMonth = options['thisMonth'];
-        this.lastMonth = options['lastMonth'];
-        this.nextMonth = options['nextMonth'];
-        this.weekStart = options['weekStart'];
-        this.weekEnd = options['weekEnd'];
-    },
     comparator: function(item) {
         return item.get_date();
     }

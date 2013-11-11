@@ -53,8 +53,8 @@ $(function() {
         dataType: 'json'
     }).done(function(data, status, xhr) {
         timesheet = new Timesheet({
+            'collection': new EntryCollection(data['entries']),
             'weekRanges': data['weeks'],
-            'entries': data['entries'],
             'thisMonth': new Date(data['this_month']),
             'nextMonth': new Date(data['next_month']),
             'lastMonth': new Date(data['last_month'])
