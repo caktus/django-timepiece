@@ -33,8 +33,15 @@ var EntryRow = Backbone.View.extend({
     deleteEntry: function() {
         event.preventDefault();
         this.model.destroy({
-            success: function(model, response) {
-                showSuccess(model.description() + " has been deleted.");
+            success: function(deletedModel, response) {
+                showSuccess(deletedModel.description() + " has been deleted.");
+                for (var i=0; i < deletedModel.weekTable.models.length; i++) {
+                    var model = deletedModel.weekTable.models[i];
+                    if (model.get('id') == deletedModel.get('id')) {
+                        deletedModel.weekTable.models.splice(i, 1);
+                        break;
+                    }
+                }
             }
         });
         this.$el.remove();  // TODO: move this to success function.
