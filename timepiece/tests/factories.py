@@ -27,7 +27,14 @@ class User(factory.DjangoModelFactory):
     @factory.post_generation
     def permissions(self, create, extracted, **kwargs):
         if create and extracted:
-            self.user_permissions.add(*extracted)
+            for perm in extracted:
+                if isinstance(perm, basestring):
+                    app_label, codename = perm.split('.')
+                    perm = auth.Permission.objects.get(
+                        content_type__app_label=app_label,
+                        codename=codename,
+                    )
+                self.user_permissions.add(perm)
 
 
 class Superuser(User):

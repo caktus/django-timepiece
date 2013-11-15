@@ -1,7 +1,7 @@
 from django.contrib import admin
 
-from timepiece.crm.models import Attribute, Business, Project,\
-        RelationshipType, UserProfile
+from timepiece.crm.models import (Attribute, Business, Project,
+        RelationshipType, UserProfile)
 
 
 class AttributeAdmin(admin.ModelAdmin):

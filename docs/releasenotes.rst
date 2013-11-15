@@ -1,6 +1,20 @@
 Release Notes
 =============
 
+0.9.4 (Unreleased)
+------------------
+
+*Bugfixes*
+
+* Save auth groups when creating a new user.
+* Require `crm.change_business` permission rather than `crm.edit_business`
+  permission for EditUser view.
+* Don't use transaction.commit_on_success on ViewUser or ViewProject views.
+
+*Code Quality*
+
+* Additional tests and code cleanup in the CRM app.
+
 0.9.3 (Unreleased)
 -------------------
 

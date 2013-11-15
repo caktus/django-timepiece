@@ -4,12 +4,12 @@ from timepiece.tests import factories
 from timepiece.tests.base import ViewTestMixin
 
 
-class QuickSearchTest(ViewTestMixin, TestCase):
+class TestQuickSearchView(ViewTestMixin, TestCase):
     url_name = 'quick_search'
     template_name = 'timepiece/quick_search.html'
 
     def setUp(self):
-        super(QuickSearchTest, self).setUp()
+        super(TestQuickSearchView, self).setUp()
         self.user = factories.User()
         self.login_user(self.user)
 
