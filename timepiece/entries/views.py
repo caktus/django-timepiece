@@ -23,7 +23,7 @@ from django.views.generic import TemplateView, View, DeleteView
 from timepiece import utils
 from timepiece.forms import DATE_FORM_FORMAT
 from timepiece.utils.csv import ExtendedJSONEncoder
-from timepiece.utils.mixins import LoginRequiredMixin
+from timepiece.utils.views import cbv_decorator
 
 from timepiece.crm.models import Project, UserProfile
 from timepiece.entries.forms import ClockInForm, ClockOutForm, \
@@ -245,7 +245,8 @@ def create_edit_entry(request, entry_id=None):
     })
 
 
-class DeleteEntry(LoginRequiredMixin, DeleteView):
+@cbv_decorator(login_required)
+class DeleteEntry(DeleteView):
     model = Entry
     pk_url_kwarg = 'entry_id'
     template_name = 'timepiece/entry/delete.html'
@@ -292,7 +293,7 @@ class ChangeEntryStatus(View):
             # intervention.
             raise Exception('Unexpected action "{0}".'.format(action))
 
-        # Not using LoginRequiredMixin here to avoid redirecting an AJAX
+        # Not using @login_required here to avoid redirecting an AJAX
         # request.
         if not request.user.is_authenticated():
             raise exceptions.PermissionDenied
@@ -349,7 +350,6 @@ class ChangeEntryStatus(View):
         # uninvoiced.
         entries.filter(status=Entry.UNVERIFIED).update(status=Entry.VERIFIED)
         return HttpResponse(json.dumps(entries.summaries(), cls=ExtendedJSONEncoder))
-
 
 
 class ScheduleMixin(object):
