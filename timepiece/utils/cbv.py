@@ -1,6 +1,8 @@
+from django.contrib import messages
 from django.contrib.auth import REDIRECT_FIELD_NAME
 from django.contrib.auth.views import redirect_to_login
 from django.core.exceptions import ImproperlyConfigured, PermissionDenied
+from django.core.urlresolvers import reverse_lazy
 from django.utils.decorators import method_decorator
 
 from timepiece import utils
@@ -51,3 +53,52 @@ class GetDataFormMixin(object):
             'data': self.get_form_data(),
         })
         return kwargs
+
+
+class RedirectMessageMixin(object):
+    """Mix in messages to the user and allow custom redirects."""
+    next_url_get_kwarg = 'next'
+    success_url = reverse_lazy('dashboard')
+
+    success_message = None
+    success_message_type = messages.SUCCESS
+    failure_message = None
+    failure_message_type = messages.ERROR
+
+    def add_failure_message(self):
+        """Message to the user when the action cannot be completed."""
+        if self.failure_message:
+            messages.add_message(self.request, self.failure_message_type,
+                    self.failure_message)
+
+    def add_success_message(self):
+        """Message when the user has successfully completed an action."""
+        if self.success_message:
+            message = self.success_message.format(obj=self.object)
+            messages.add_message(self.request, self.success_message_type,
+                    message)
+
+    def form_invalid(self, form):
+        """Add a failure message before processing the invalid form."""
+        self.add_failure_message()
+        return super(RedirectMessageMixin, self).form_invalid(form)
+
+    def get_success_url(self):
+        """Add a success message and redirect the user.
+
+        If a 'next' URL is specified in the request, redirect there rather
+        than the default success URL.
+        """
+        self.add_success_message()
+
+        next_url = None
+        if self.next_url_get_kwarg:
+            next_url = self.request.REQUEST.get(self.next_url_get_kwarg, None)
+        if next_url:
+            return next_url
+        if hasattr(super(RedirectMessageMixin, self), 'get_success_url'):
+            return super(RedirectMessageMixin, self).get_success_url()
+        if getattr(self, 'success_url', None):
+            return self.success_url
+        raise ImproperlyConfigured("No URL to redirect to. Please provide a "
+                "success_url.")
