@@ -28,12 +28,7 @@ urlpatterns = patterns('',
         name='edit_entry'),
     url(r'^entry/(?P<entry_id>\d+)/delete/$',
         views.DeleteEntry.as_view(),
-        {'ajax': False},
         name='delete_entry'),
-    url(r'^entry/(?P<entry_id>\d+)/delete/ajax/$',
-        views.DeleteEntry.as_view(),
-        {'ajax': True},
-        name='delete_entry_ajax'),
 
     # Change entry status
     url(r'^entry/verify/$',

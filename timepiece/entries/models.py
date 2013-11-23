@@ -189,9 +189,6 @@ class Entry(models.Model):
     def get_delete_url(self):
         return reverse('delete_entry', args=(self.pk,))
 
-    def get_ajax_delete_url(self):
-        return reverse('delete_entry_ajax', args=(self.pk,))
-
     def get_summary(self, attrs=None):
         if not attrs:
             attrs = ['project__id',
@@ -201,7 +198,7 @@ class Entry(models.Model):
                 'location__id', 'location__name',
                 'start_time', 'end_time', 'total_seconds', 'paused_seconds',
                 'id', 'status', 'get_status_display', 'comments',
-                'get_delete_url', 'get_ajax_delete_url']
+                'get_delete_url']
         return utils.get_model_summary(self, attrs)
 
     def check_overlap(self, entry_b, **kwargs):

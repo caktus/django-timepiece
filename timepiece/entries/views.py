@@ -15,15 +15,16 @@ from django.core.urlresolvers import reverse
 from django.db import transaction
 from django.db.models import Q
 from django.http import (HttpResponse, HttpResponseRedirect, Http404,
-        HttpResponseBadRequest)
+        HttpResponseBadRequest, HttpResponseForbidden)
 from django.shortcuts import get_object_or_404, redirect, render
 from django.utils.decorators import method_decorator
-from django.views.generic import TemplateView, View, DeleteView
+from django.views.generic import DeleteView, TemplateView, View
 
 from timepiece import utils
 from timepiece.forms import DATE_FORM_FORMAT
 from timepiece.utils.csv import ExtendedJSONEncoder
-from timepiece.utils.views import cbv_decorator
+from timepiece.utils.cbv import (cbv_decorator, RedirectMessageMixin,
+        AjaxableDeleteMixin)
 
 from timepiece.crm.models import Project, UserProfile
 from timepiece.entries.forms import ClockInForm, ClockOutForm, \
@@ -245,32 +246,21 @@ def create_edit_entry(request, entry_id=None):
     })
 
 
-@cbv_decorator(login_required)
-class DeleteEntry(DeleteView):
+@cbv_decorator(permission_required('entries.delete_entry'))
+class DeleteEntry(RedirectMessageMixin, AjaxableDeleteMixin, DeleteView):
     model = Entry
     pk_url_kwarg = 'entry_id'
+    success_message = "You have deleted {obj.activity.name} for {obj.project}."
     template_name = 'timepiece/entry/delete.html'
-
-    def delete(self, request, ajax=False, *args, **kwargs):
-        self.object = self.get_object()
-        self.object.delete()
-        if ajax:
-            return HttpResponse(json.dumps(self.object.pk))
-        return HttpResponseRedirect(self.get_success_url())
 
     def get_object(self, queryset=None):
         """Users without specific permission may delete their own entries."""
         obj = super(DeleteEntry, self).get_object(queryset)
-        if not self.request.user.has_perm('entries.delete_entry'):
-            if obj.user != self.request.user:
-                raise Http404("No entry found matching this query.")
+        if obj.user != self.request.user:
+            if not self.request.user.has_perm('entries.view_payroll_summary'):
+                raise HttpResponseForbidden("You do not have permission to "
+                        "delete this entry.")
         return obj
-
-    def get_success_url(self):
-        message = "You have deleted {0} for {1}.".format(
-                self.object.activity.name, self.object.project)
-        messages.info(self.request, message)
-        return self.request.REQUEST.get('next', reverse('dashboard'))
 
 
 class ChangeEntryStatus(View):

@@ -1,8 +1,11 @@
+import json
+
 from django.contrib import messages
 from django.contrib.auth import REDIRECT_FIELD_NAME
 from django.contrib.auth.views import redirect_to_login
 from django.core.exceptions import ImproperlyConfigured, PermissionDenied
 from django.core.urlresolvers import reverse_lazy
+from django.http import HttpResponse, HttpResponseRedirect
 from django.utils.decorators import method_decorator
 
 from timepiece import utils
@@ -68,15 +71,20 @@ class RedirectMessageMixin(object):
     def add_failure_message(self):
         """Message to the user when the action cannot be completed."""
         if self.failure_message:
-            messages.add_message(self.request, self.failure_message_type,
-                    self.failure_message)
+            msg = self.get_failure_message()
+            messages.add_message(self.request, self.failure_message_type, msg)
 
     def add_success_message(self):
         """Message when the user has successfully completed an action."""
         if self.success_message:
-            message = self.success_message.format(obj=self.object)
-            messages.add_message(self.request, self.success_message_type,
-                    message)
+            msg = self.get_success_message()
+            messages.add_message(self.request, self.success_message_type, msg)
+
+    def get_failure_message(self):
+        return self.failure_message
+
+    def get_success_message(self):
+        return self.success_message.format(obj=self.object)
 
     def form_invalid(self, form):
         """Add a failure message before processing the invalid form."""
@@ -102,3 +110,16 @@ class RedirectMessageMixin(object):
             return self.success_url
         raise ImproperlyConfigured("No URL to redirect to. Please provide a "
                 "success_url.")
+
+
+class AjaxableDeleteMixin(object):
+    """Used with DeleteView to respond appropriately to AJAX POSTs."""
+
+    def delete(self, request, *args, **kwargs):
+        self.object = self.get_object()
+        self.object.delete()
+        if self.request.is_ajax():
+            data = self.object.pk
+            return HttpResponse(json.dumps(data),
+                    content_type="application/json")
+        return HttpResponseRedirect(self.get_success_url())
