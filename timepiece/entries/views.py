@@ -10,25 +10,26 @@ from django.contrib import messages
 from django.contrib.auth.decorators import login_required, permission_required
 from django.contrib.auth.models import User, Permission
 from django.contrib.contenttypes.models import ContentType
-from django.core import exceptions
+from django.core.exceptions import PermissionDenied, ObjectDoesNotExist
 from django.core.urlresolvers import reverse
 from django.db import transaction
 from django.db.models import Q
 from django.http import (HttpResponse, HttpResponseRedirect, Http404,
-        HttpResponseBadRequest, HttpResponseForbidden)
-from django.shortcuts import get_object_or_404, redirect, render
+        HttpResponseBadRequest)
+from django.shortcuts import render
 from django.utils.decorators import method_decorator
-from django.views.generic import DeleteView, TemplateView, View
+from django.views.generic import (CreateView, DeleteView, TemplateView,
+        UpdateView, View)
 
 from timepiece import utils
 from timepiece.forms import DATE_FORM_FORMAT
 from timepiece.utils.csv import ExtendedJSONEncoder
 from timepiece.utils.cbv import (cbv_decorator, RedirectMessageMixin,
-        AjaxableDeleteMixin)
+        AjaxableDeleteMixin, AjaxableUpdateMixin)
 
 from timepiece.crm.models import Project, UserProfile
-from timepiece.entries.forms import ClockInForm, ClockOutForm, \
-        AddUpdateEntryForm, ProjectHoursForm, ProjectHoursSearchForm
+from timepiece.entries.forms import (ClockInForm, ClockOutForm,
+        CreateEditEntryForm, ProjectHoursForm, ProjectHoursSearchForm)
 from timepiece.entries.models import Entry, ProjectHours
 
 
@@ -206,51 +207,55 @@ def toggle_pause(request):
     return HttpResponseRedirect(reverse('dashboard'))
 
 
-@permission_required('entries.change_entry')
-def create_edit_entry(request, entry_id=None):
-    if entry_id:
-        try:
-            entry = Entry.no_join.get(pk=entry_id)
-        except Entry.DoesNotExist:
-            entry = None
-        if not entry or not (entry.is_editable or
-                request.user.has_perm('entries.view_payroll_summary')):
-            raise Http404
-    else:
-        entry = None
+@cbv_decorator(permission_required('entries.add_entry'))
+class CreateEntry(AjaxableUpdateMixin, RedirectMessageMixin, CreateView):
+    failure_message = "Please fix the errors below."
+    form_class = CreateEditEntryForm
+    model = Entry
+    success_message = "The entry has been created successfully."
+    template_name = 'timepiece/entry/create_edit.html'
+    template_name_ajax = 'timepiece/entry/create_edit_ajax.html'
 
-    entry_user = entry.user if entry else request.user
-    if request.method == 'POST':
-        form = AddUpdateEntryForm(data=request.POST, instance=entry,
-                user=entry_user)
-        if form.is_valid():
-            entry = form.save()
-            if entry_id:
-                message = 'The entry has been updated successfully.'
-            else:
-                message = 'The entry has been created successfully.'
-            messages.info(request, message)
-            url = request.REQUEST.get('next', reverse('dashboard'))
-            return HttpResponseRedirect(url)
-        else:
-            message = 'Please fix the errors below.'
-            messages.error(request, message)
-    else:
-        initial = dict([(k, request.GET[k]) for k in request.GET.keys()])
-        form = AddUpdateEntryForm(instance=entry, user=entry_user,
-                initial=initial)
+    def get_form_kwargs(self):
+        # TODO: Superusers should be able to create entries for others.
+        kwargs = super(CreateEntry, self).get_form_kwargs()
+        kwargs['user'] = self.request.user
+        return kwargs
 
-    return render(request, 'timepiece/entry/create_edit.html', {
-        'form': form,
-        'entry': entry,
-    })
+    def get_initial(self):
+        return dict(self.request.GET)
+
+
+@cbv_decorator(permission_required('entries.change_entry'))
+class EditEntry(AjaxableUpdateMixin, RedirectMessageMixin, UpdateView):
+    failure_message = "Please fix the errors below."
+    form_class = CreateEditEntryForm
+    model = Entry
+    pk_url_kwarg = 'entry_id'
+    success_message = "{obj} has been successfully updated."
+    template_name = 'timepiece/entry/create_edit.html'
+    template_name_ajax = 'timepiece/entry/create_edit_ajax.html'
+
+    def get_form_kwargs(self):
+        kwargs = super(EditEntry, self).get_form_kwargs()
+        kwargs['user'] = self.object.user
+        return kwargs
+
+    def get_object(self, queryset=None):
+        """Users without specific permission may edit their own entries."""
+        obj = super(EditEntry, self).get_object(queryset)
+        if obj.user != self.request.user:
+            if not self.request.user.has_perm('entries.view_payroll_summary'):
+                raise PermissionDenied("You do not have permission to "
+                        "edit this entry.")
+        return obj
 
 
 @cbv_decorator(permission_required('entries.delete_entry'))
 class DeleteEntry(RedirectMessageMixin, AjaxableDeleteMixin, DeleteView):
     model = Entry
     pk_url_kwarg = 'entry_id'
-    success_message = "You have deleted {obj.activity.name} for {obj.project}."
+    success_message = "You have deleted {obj}."
     template_name = 'timepiece/entry/delete.html'
 
     def get_object(self, queryset=None):
@@ -258,7 +263,7 @@ class DeleteEntry(RedirectMessageMixin, AjaxableDeleteMixin, DeleteView):
         obj = super(DeleteEntry, self).get_object(queryset)
         if obj.user != self.request.user:
             if not self.request.user.has_perm('entries.view_payroll_summary'):
-                raise HttpResponseForbidden("You do not have permission to "
+                raise PermissionDenied("You do not have permission to "
                         "delete this entry.")
         return obj
 
@@ -286,13 +291,13 @@ class ChangeEntryStatus(View):
         # Not using @login_required here to avoid redirecting an AJAX
         # request.
         if not request.user.is_authenticated():
-            raise exceptions.PermissionDenied
+            raise PermissionDenied
 
         # Only administrators may approve or reject entries.
         # (Any user may verify their own entries.)
         if action in ['approve', 'reject']:
             if not request.user.has_perm('entries.view_entry_summary'):
-                raise exceptions.PermissionDenied
+                raise PermissionDenied
 
         try:
             entry_ids = set(json.loads(request.body))  # Discard duplicates.
@@ -499,7 +504,7 @@ class ScheduleAjaxView(ScheduleMixin, View):
             ph = ProjectHours.objects.get(user=user, project=project,
                     week_start=week)
             ph.hours = Decimal(hours)
-        except (exceptions.ObjectDoesNotExist):
+        except (ObjectDoesNotExist):
             ph = None
 
         return ph

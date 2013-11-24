@@ -1,0 +1,15 @@
+{% load bootstrap_toolkit %}
+{% load url from future %}
+<form class="form" method="post" accept-charset="utf-8"
+        action="{% if object %}{{ entry.get_edit_url }}{% else %}{% url 'create_entry' %}{% endif %}">
+    <div class="modal-body">
+        {% csrf_token %}
+        {{ form|as_bootstrap }}
+    </div>
+    <div class="modal-footer">
+        <button class="btn" data-dismiss="modal">Cancel</button>
+        <button type="submit" class="btn btn-primary">
+            {% if object %}Update{% else %}Add{% endif %}
+        </button>
+    </div>
+</form>

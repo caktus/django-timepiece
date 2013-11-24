@@ -123,3 +123,29 @@ class AjaxableDeleteMixin(object):
             return HttpResponse(json.dumps(data),
                     content_type="application/json")
         return HttpResponseRedirect(self.get_success_url())
+
+
+class AjaxableUpdateMixin(object):
+    """Responds appropriately to AJAX GETs and POSTs."""
+    template_name = None
+    template_name_ajax = None
+
+    def form_invalid(self, form):
+        if self.request.is_ajax():
+            return HttpResponse()  # TODO: more info.
+        return super(AjaxableUpdateMixin, self).form_invalid(form)
+
+    def form_valid(self, form):
+        self.object = form.save()
+        if self.request.is_ajax():
+            data = self.object.get_summary()
+            return HttpResponse(json.dumps(data), content_type="application/json")
+        return HttpResponseRedirect(self.get_success_url())
+
+    def get_template_names(self):
+        if not self.template_name or not self.template_name_ajax:
+            raise ImproperlyConfigured("AjaxableUpdateMixin requires "
+                    "definition of template_name and template_name_ajax.")
+        if self.request.is_ajax():
+            return [self.template_name_ajax]
+        return [self.template_name]

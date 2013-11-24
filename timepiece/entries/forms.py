@@ -112,7 +112,7 @@ class ClockOutForm(forms.ModelForm):
         return entry
 
 
-class AddUpdateEntryForm(forms.ModelForm):
+class CreateEditEntryForm(forms.ModelForm):
     start_time = forms.DateTimeField(widget=TimepieceSplitDateTimeWidget(),
             required=True)
     end_time = forms.DateTimeField(widget=TimepieceSplitDateTimeWidget())
@@ -124,7 +124,7 @@ class AddUpdateEntryForm(forms.ModelForm):
 
     def __init__(self, *args, **kwargs):
         self.user = kwargs.pop('user')
-        super(AddUpdateEntryForm, self).__init__(*args, **kwargs)
+        super(CreateEditEntryForm, self).__init__(*args, **kwargs)
         self.instance.user = self.user
 
         self.fields['project'].queryset = Project.trackable.filter(
@@ -145,12 +145,11 @@ class AddUpdateEntryForm(forms.ModelForm):
             if (start_time and start_time > active.start_time) or \
                     (end_time and end_time > active.start_time):
                 raise forms.ValidationError('The start time or end time '
-                        'conflict with the active entry: {activity} on '
-                        '{project} starting at {start_time}.'.format(**{
-                            'project': active.project,
-                            'activity': active.activity,
-                            'start_time': active.start_time.strftime('%H:%M:%S'),
-                        }))
+                        'conflict with the active entry: {active} starting '
+                        'at {start_time}.'.format(
+                            active=active,
+                            start_time=active.start_time.strftime('%H:%M:%S'),
+                        ))
         return self.cleaned_data
 
 
