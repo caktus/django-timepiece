@@ -18,8 +18,8 @@ from timepiece import utils
 from timepiece.forms import YearMonthForm, UserYearMonthForm
 from timepiece.templatetags.timepiece_tags import seconds_to_hours
 from timepiece.utils.csv import CSVViewMixin
-from timepiece.utils.cbv import cbv_decorator, PermissionsRequiredMixin
 from timepiece.utils.search import SearchListView
+from timepiece.utils.views import cbv_decorator
 
 from timepiece.crm.forms import (CreateEditBusinessForm, CreateEditProjectForm,
         EditUserSettingsForm, EditProjectRelationshipForm, SelectProjectForm,
@@ -237,10 +237,10 @@ def change_user_timesheet(request, user_id, action):
 # Project timesheets
 
 
-class ProjectTimesheet(PermissionsRequiredMixin, DetailView):
+@cbv_decorator(permission_required('entries.view_project_timesheet'))
+class ProjectTimesheet(DetailView):
     template_name = 'timepiece/project/timesheet.html'
     model = Project
-    permissions = ('entries.view_project_time_sheet',)
     context_object_name = 'project'
     pk_url_kwarg = 'project_id'
 
@@ -333,41 +333,41 @@ class ProjectTimesheetCSV(CSVViewMixin, ProjectTimesheet):
 # Businesses
 
 
-class ListBusinesses(PermissionsRequiredMixin, SearchListView):
+@cbv_decorator(permission_required('crm.view_business'))
+class ListBusinesses(SearchListView):
     model = Business
-    permissions = ('crm.view_business',)
     redirect_if_one_result = True
     search_fields = ['name__icontains', 'description__icontains']
     template_name = 'timepiece/business/list.html'
 
 
-class ViewBusiness(PermissionsRequiredMixin, DetailView):
+@cbv_decorator(permission_required('crm.view_business'))
+class ViewBusiness(DetailView):
     model = Business
     pk_url_kwarg = 'business_id'
     template_name = 'timepiece/business/view.html'
-    permissions = ('crm.view_business',)
 
 
-class CreateBusiness(PermissionsRequiredMixin, CreateView):
+@cbv_decorator(permission_required('crm.add_business'))
+class CreateBusiness(CreateView):
     model = Business
     form_class = CreateEditBusinessForm
     template_name = 'timepiece/business/create_edit.html'
-    permissions = ('crm.add_business',)
 
 
-class DeleteBusiness(PermissionsRequiredMixin, DeleteView):
+@cbv_decorator(permission_required('crm.delete_business'))
+class DeleteBusiness(DeleteView):
     model = Business
     success_url = reverse_lazy('list_businesses')
-    permissions = ('crm.delete_business',)
     pk_url_kwarg = 'business_id'
     template_name = 'timepiece/delete_object.html'
 
 
-class EditBusiness(PermissionsRequiredMixin, UpdateView):
+@cbv_decorator(permission_required('crm.change_business'))
+class EditBusiness(UpdateView):
     model = Business
     form_class = CreateEditBusinessForm
     template_name = 'timepiece/business/create_edit.html'
-    permissions = ('crm.change_business',)
     pk_url_kwarg = 'business_id'
 
 
@@ -387,9 +387,9 @@ class EditSettings(UpdateView):
         return self.request.REQUEST.get('next', None) or reverse('dashboard')
 
 
-class ListUsers(PermissionsRequiredMixin, SearchListView):
+@cbv_decorator(permission_required('auth.view_user'))
+class ListUsers(SearchListView):
     model = User
-    permissions = ('auth.view_user',)
     redirect_if_one_result = True
     search_fields = ['first_name__icontains', 'last_name__icontains',
             'email__icontains', 'username__icontains']
@@ -399,47 +399,47 @@ class ListUsers(PermissionsRequiredMixin, SearchListView):
         return super(ListUsers, self).get_queryset().select_related()
 
 
-class ViewUser(PermissionsRequiredMixin, DetailView):
+@cbv_decorator(permission_required('auth.view_user'))
+class ViewUser(DetailView):
     model = User
     pk_url_kwarg = 'user_id'
     template_name = 'timepiece/user/view.html'
-    permissions = ('auth.view_user',)
 
     def get_context_data(self, **kwargs):
         kwargs.update({'add_project_form': SelectProjectForm()})
         return super(ViewUser, self).get_context_data(**kwargs)
 
 
-class CreateUser(PermissionsRequiredMixin, CreateView):
+@cbv_decorator(permission_required('auth.add_user'))
+class CreateUser(CreateView):
     model = User
     form_class = CreateUserForm
     template_name = 'timepiece/user/create_edit.html'
-    permissions = ('auth.add_user',)
 
 
-class DeleteUser(PermissionsRequiredMixin, DeleteView):
+@cbv_decorator(permission_required('auth.delete_user'))
+class DeleteUser(DeleteView):
     model = User
     success_url = reverse_lazy('list_users')
-    permissions = ('auth.delete_user',)
     pk_url_kwarg = 'user_id'
     template_name = 'timepiece/delete_object.html'
 
 
-class EditUser(PermissionsRequiredMixin, UpdateView):
+@cbv_decorator(permission_required('auth.change_user'))
+class EditUser(UpdateView):
     model = User
     form_class = EditUserForm
     template_name = 'timepiece/user/create_edit.html'
-    permissions = ('auth.change_user',)
     pk_url_kwarg = 'user_id'
 
 
 # Projects
 
 
-class ListProjects(PermissionsRequiredMixin, SearchListView):
+@cbv_decorator(permission_required('crm.view_project'))
+class ListProjects(SearchListView):
     model = Project
     form_class = ProjectSearchForm
-    permissions = ['crm.view_project']
     redirect_if_one_result = True
     search_fields = ['name__icontains', 'description__icontains']
     template_name = 'timepiece/project/list.html'
@@ -452,36 +452,36 @@ class ListProjects(PermissionsRequiredMixin, SearchListView):
         return queryset
 
 
-class ViewProject(PermissionsRequiredMixin, DetailView):
+@cbv_decorator(permission_required('crm.view_project'))
+class ViewProject(DetailView):
     model = Project
     pk_url_kwarg = 'project_id'
     template_name = 'timepiece/project/view.html'
-    permissions = ('crm.view_project',)
 
     def get_context_data(self, **kwargs):
         kwargs.update({'add_user_form': SelectUserForm()})
         return super(ViewProject, self).get_context_data(**kwargs)
 
 
-class CreateProject(PermissionsRequiredMixin, CreateView):
+@cbv_decorator(permission_required('crm.add_project'))
+class CreateProject(CreateView):
     model = Project
     form_class = CreateEditProjectForm
-    permissions = ('crm.add_project',)
     template_name = 'timepiece/project/create_edit.html'
 
 
-class DeleteProject(PermissionsRequiredMixin, DeleteView):
+@cbv_decorator(permission_required('crm.delete_project'))
+class DeleteProject(DeleteView):
     model = Project
     success_url = reverse_lazy('list_projects')
-    permissions = ('crm.delete_project',)
     pk_url_kwarg = 'project_id'
     template_name = 'timepiece/delete_object.html'
 
 
-class EditProject(PermissionsRequiredMixin, UpdateView):
+@cbv_decorator(permission_required('crm.change_project'))
+class EditProject(UpdateView):
     model = Project
     form_class = CreateEditProjectForm
-    permissions = ('crm.change_project',)
     template_name = 'timepiece/project/create_edit.html'
     pk_url_kwarg = 'project_id'
 
@@ -489,10 +489,10 @@ class EditProject(PermissionsRequiredMixin, UpdateView):
 # User-project relationships
 
 
+@cbv_decorator(permission_required('crm.add_projectrelationship'))
 @cbv_decorator(csrf_exempt)
 @cbv_decorator(transaction.commit_on_success)
-class CreateRelationship(PermissionsRequiredMixin, View):
-    permissions = ('crm.add_projectrelationship',)
+class CreateRelationship(View):
 
     def post(self, request, *args, **kwargs):
         user = self.get_user()
@@ -530,19 +530,17 @@ class RelationshipObjectMixin(object):
                 self.object.project.get_absolute_url())
 
 
+@cbv_decorator(permission_required('crm.change_projectrelationship'))
 @cbv_decorator(transaction.commit_on_success)
-class EditRelationship(PermissionsRequiredMixin, RelationshipObjectMixin,
-        UpdateView):
+class EditRelationship(RelationshipObjectMixin, UpdateView):
     model = ProjectRelationship
-    permissions = ('crm.change_projectrelationship',)
     template_name = 'timepiece/relationship/edit.html'
     form_class = EditProjectRelationshipForm
 
 
+@cbv_decorator(permission_required('crm.delete_projectrelationship'))
 @cbv_decorator(csrf_exempt)
 @cbv_decorator(transaction.commit_on_success)
-class DeleteRelationship(PermissionsRequiredMixin, RelationshipObjectMixin,
-        DeleteView):
+class DeleteRelationship(RelationshipObjectMixin, DeleteView):
     model = ProjectRelationship
-    permissions = ('crm.delete_projectrelationship',)
     template_name = 'timepiece/relationship/delete.html'

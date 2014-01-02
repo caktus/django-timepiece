@@ -12,21 +12,21 @@ from django.views.generic import ListView, DetailView
 
 from timepiece import utils
 from timepiece.templatetags.timepiece_tags import seconds_to_hours
-from timepiece.utils.cbv import PermissionsRequiredMixin
 from timepiece.utils.csv import CSVViewMixin
 from timepiece.utils.search import SearchListView
+from timepiece.utils.views import cbv_decorator
 
 from timepiece.contracts.forms import InvoiceForm, OutstandingHoursFilterForm
 from timepiece.contracts.models import ProjectContract, HourGroup, EntryGroup
 from timepiece.entries.models import Project, Entry
 
 
-class ContractDetail(PermissionsRequiredMixin, DetailView):
+@cbv_decorator(permission_required('contracts.add_projectcontract'))
+class ContractDetail(DetailView):
     template_name = 'timepiece/contract/view.html'
     model = ProjectContract
     context_object_name = 'contract'
     pk_url_kwarg = 'contract_id'
-    permissions = ('contracts.add_projectcontract',)
 
     def get_context_data(self, *args, **kwargs):
         if 'today' not in kwargs:
@@ -36,13 +36,13 @@ class ContractDetail(PermissionsRequiredMixin, DetailView):
         return super(ContractDetail, self).get_context_data(*args, **kwargs)
 
 
-class ContractList(PermissionsRequiredMixin, ListView):
+@cbv_decorator(permission_required('contracts.add_projectcontract'))
+class ContractList(ListView):
     template_name = 'timepiece/contract/list.html'
     model = ProjectContract
     context_object_name = 'contracts'
     queryset = ProjectContract.objects.filter(
             status=ProjectContract.STATUS_CURRENT).order_by('name')
-    permissions = ('contracts.add_projectcontract',)
 
     def get_context_data(self, *args, **kwargs):
         if 'today' not in kwargs:
@@ -183,20 +183,20 @@ def list_outstanding_invoices(request):
     })
 
 
-class ListInvoices(PermissionsRequiredMixin, SearchListView):
+@cbv_decorator(permission_required('contracts.add_entrygroup'))
+class ListInvoices(SearchListView):
     model = EntryGroup
-    permissions = ('contracts.add_entrygroup',)
     search_fields = ['user__username__icontains', 'project__name__icontains',
             'comments__icontains', 'number__icontains']
     template_name = 'timepiece/invoice/list.html'
 
 
-class InvoiceDetail(PermissionsRequiredMixin, DetailView):
+@cbv_decorator(permission_required('contracts.change_entrygroup'))
+class InvoiceDetail(DetailView):
     template_name = 'timepiece/invoice/view.html'
     model = EntryGroup
     context_object_name = 'invoice'
     pk_url_kwarg = 'invoice_id'
-    permissions = ('contracts.change_entrygroup',)
 
     def get_context_data(self, **kwargs):
         context = super(InvoiceDetail, self).get_context_data(**kwargs)
