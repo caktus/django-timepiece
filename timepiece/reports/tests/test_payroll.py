@@ -61,9 +61,9 @@ class PayrollTest(ViewTestMixin, LogTimeMixin, TestCase):
                 project=billable_project)
         non_billable = self.make_entry(user, day, (2, 0),
                 project=nonbillable_project)
-        invoiced = self.make_entry(user, day, (5, 30), status=Entry.INVOICED,
+        invoiced = self.make_entry(user, day, (5, 30), status=Entry.STATUSES.invoiced,
                 project=billable_project)
-        unapproved = self.make_entry(user, day, (6, 0), status=Entry.VERIFIED,
+        unapproved = self.make_entry(user, day, (6, 0), status=Entry.STATUSES.verified,
                 project=billable_project)
         sick = self.make_entry(user, day, (8, 0), project=self.sick)
         vacation = self.make_entry(user, day, (4, 0), project=self.vacation)

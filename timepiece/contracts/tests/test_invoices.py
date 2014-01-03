@@ -144,7 +144,7 @@ class InvoiceViewPreviousTestCase(ViewTestMixin, LogTimeMixin, TestCase):
         for index in xrange(0, num_entries):
             start += relativedelta(hours=(5 * index))
             project = projects[index % len(projects)]  # Alternate projects
-            self.log_time(start=start, status=Entry.APPROVED, project=project,
+            self.log_time(start=start, status=Entry.STATUSES.approved, project=project,
                           billable=billable)
         return start
 
@@ -292,7 +292,7 @@ class InvoiceViewPreviousTestCase(ViewTestMixin, LogTimeMixin, TestCase):
         self.assertFalse(EntryGroup.objects.filter(pk=invoice.id))
         entries = Entry.objects.filter(pk__in=entry_ids)
         for entry in entries:
-            self.assertEqual(entry.status, Entry.APPROVED)
+            self.assertEqual(entry.status, Entry.STATUSES.approved)
 
     def test_invoice_delete_cancel(self):
         invoice = self.get_invoice()
@@ -338,7 +338,7 @@ class InvoiceViewPreviousTestCase(ViewTestMixin, LogTimeMixin, TestCase):
         rm_entry = new_invoice.entries.filter(pk=entry.id)
         self.assertFalse(rm_entry)
         new_entry = Entry.objects.get(pk=entry.pk)
-        self.assertEqual(new_entry.status, Entry.APPROVED)
+        self.assertEqual(new_entry.status, Entry.STATUSES.approved)
         self.assertEqual(new_entry.entry_group, None)
 
 
@@ -356,21 +356,21 @@ class InvoiceCreateTestCase(ViewTestMixin, TestCase):
         self.entry1 = factories.Entry(user=self.user,
                 project=self.project_billable,
                 activity=factories.Activity(billable=True),
-                start_time=start, end_time=end, status=Entry.APPROVED)
+                start_time=start, end_time=end, status=Entry.STATUSES.approved)
         self.entry2 = factories.Entry(user=self.user,
                 project=self.project_billable,
                 activity=factories.Activity(billable=True),
                 start_time=start - relativedelta(days=5),
-                end_time=end - relativedelta(days=5), status=Entry.APPROVED)
+                end_time=end - relativedelta(days=5), status=Entry.STATUSES.approved)
         self.entry3 = factories.Entry(user=self.user,
                 project=self.project_billable2,
                 activity=factories.Activity(billable=False),
                 start_time=start - relativedelta(days=10),
-                end_time=end - relativedelta(days=10), status=Entry.APPROVED)
+                end_time=end - relativedelta(days=10), status=Entry.STATUSES.approved)
         self.entry4 = factories.Entry(user=self.user,
                 project=self.project_non_billable,
                 start_time=start + relativedelta(hours=11),
-                end_time=end + relativedelta(hours=15), status=Entry.APPROVED)
+                end_time=end + relativedelta(hours=15), status=Entry.STATUSES.approved)
 
     def get_create_url(self, **kwargs):
         base_url = reverse('create_invoice')
@@ -453,7 +453,7 @@ class InvoiceCreateTestCase(ViewTestMixin, TestCase):
                     project=self.project_billable,
                     start_time=start - relativedelta(days=num),
                     end_time=end - relativedelta(days=num),
-                    status=Entry.APPROVED, activity=activity)
+                    status=Entry.STATUSES.approved, activity=activity)
         self.make_hourgroups()
         to_date = datetime.datetime(2011, 1, 31)
         kwargs = {
@@ -518,7 +518,7 @@ class InvoiceCreateTestCase(ViewTestMixin, TestCase):
         invoiced = entries.filter(status=EntryGroup.STATUSES.invoiced)
         for entry in invoiced:
             self.assertEqual(entry.entry_group_id, invoice.id)
-        approved = entries.filter(status=Entry.APPROVED)
+        approved = entries.filter(status=Entry.STATUSES.approved)
         self.assertEqual(len(approved), 2)
         self.assertEqual(approved[0].entry_group_id, None)
 
@@ -543,7 +543,7 @@ class InvoiceCreateTestCase(ViewTestMixin, TestCase):
         # Verify that the entries were invoiced appropriately
         # and the unrelated entries were untouched
         entries = Entry.objects.all()
-        uninvoiced = entries.filter(status=Entry.NOT_INVOICED)
+        uninvoiced = entries.filter(status=Entry.STATUSES.not_invoiced)
         for entry in uninvoiced:
             self.assertEqual(entry.entry_group_id, invoice.id)
 
@@ -566,21 +566,21 @@ class ListOutstandingInvoicesViewTestCase(ViewTestMixin, TestCase):
         self.entry1 = factories.Entry(user=self.user,
                 project=self.project_billable,
                 activity=factories.Activity(billable=True),
-                start_time=start, end_time=end, status=Entry.APPROVED)
+                start_time=start, end_time=end, status=Entry.STATUSES.approved)
         self.entry2 = factories.Entry(user=self.user,
                 project=self.project_billable,
                 activity=factories.Activity(billable=True),
                 start_time=start - relativedelta(days=5),
-                end_time=end - relativedelta(days=5), status=Entry.APPROVED)
+                end_time=end - relativedelta(days=5), status=Entry.STATUSES.approved)
         self.entry3 = factories.Entry(user=self.user,
                 project=self.project_billable2,
                 activity=factories.Activity(billable=False),
                 start_time=start - relativedelta(days=10),
-                end_time=end - relativedelta(days=10), status=Entry.APPROVED)
+                end_time=end - relativedelta(days=10), status=Entry.STATUSES.approved)
         self.entry4 = factories.Entry(user=self.user,
                 project=self.project_non_billable,
                 start_time=start + relativedelta(hours=11),
-                end_time=end + relativedelta(hours=15), status=Entry.APPROVED)
+                end_time=end + relativedelta(hours=15), status=Entry.STATUSES.approved)
 
         # Default get kwargs.
         self.to_date = utils.add_timezone(datetime.datetime(2011, 1, 31, 0, 0, 0))
@@ -621,7 +621,7 @@ class ListOutstandingInvoicesViewTestCase(ViewTestMixin, TestCase):
         unverified_entry = factories.Entry(user=self.user,
             project=self.project_non_billable,
             start_time=start + relativedelta(hours=11),
-            end_time=end + relativedelta(hours=15), status=Entry.UNVERIFIED
+            end_time=end + relativedelta(hours=15), status=Entry.STATUSES.unverified
         )
         response = self._get()
         self.assertEquals(response.status_code, 200)
@@ -641,12 +641,12 @@ class ListOutstandingInvoicesViewTestCase(ViewTestMixin, TestCase):
         unapproved_entry_a = factories.Entry(user=self.user,
             project=self.project_non_billable,
             start_time=start + relativedelta(hours=11),
-            end_time=end + relativedelta(hours=15), status=Entry.VERIFIED
+            end_time=end + relativedelta(hours=15), status=Entry.STATUSES.verified
         )
         unapproved_entry_b = factories.Entry(user=self.user,
             project=self.project_non_billable,
             start_time=start + relativedelta(hours=11),
-            end_time=end + relativedelta(hours=15), status=Entry.VERIFIED
+            end_time=end + relativedelta(hours=15), status=Entry.STATUSES.verified
         )
         response = self._get()
         self.assertEquals(response.status_code, 200)

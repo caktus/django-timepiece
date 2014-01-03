@@ -258,13 +258,13 @@ def reject_entry(request, entry_id):
         messages.error(request, message)
         return redirect(return_url)
 
-    if entry.status == Entry.UNVERIFIED or entry.status == Entry.INVOICED:
+    if entry.status == Entry.STATUSES.unverified or entry.status == Entry.STATUSES.invoiced:
         msg_text = 'This entry is unverified or is already invoiced.'
         messages.error(request, msg_text)
         return redirect(return_url)
 
     if request.POST.get('Yes'):
-        entry.status = Entry.UNVERIFIED
+        entry.status = Entry.STATUSES.unverified
         entry.save()
         msg_text = 'The entry\'s status was set to unverified.'
         messages.info(request, msg_text)

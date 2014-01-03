@@ -191,7 +191,7 @@ class Location(factory.DjangoModelFactory):
 class Entry(factory.DjangoModelFactory):
     FACTORY_FOR = entries.Entry
 
-    status = entries.Entry.UNVERIFIED
+    status = entries.Entry.STATUSES.unverified
     user = factory.SubFactory('timepiece.tests.factories.User')
     activity = factory.SubFactory('timepiece.tests.factories.Activity')
     project = factory.SubFactory('timepiece.tests.factories.Project')
