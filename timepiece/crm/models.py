@@ -158,7 +158,7 @@ class Project(models.Model):
     def get_active_contracts(self):
         """Returns all associated contracts which are not marked complete."""
         ProjectContract = get_model('contracts', 'ProjectContract')
-        return self.contracts.exclude(status=ProjectContract.STATUS_COMPLETE)
+        return self.contracts.exclude(status=ProjectContract.STATUSES.complete)
 
 
 class RelationshipType(models.Model):

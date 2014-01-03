@@ -131,8 +131,8 @@ class InvoiceViewPreviousTestCase(ViewTestMixin, LogTimeMixin, TestCase):
         # Add some non-billable entries
         self.log_many([self.project, self.project2], start=last_start,
                       billable=False)
-        self.create_invoice(self.project, {'static': EntryGroup.INVOICED})
-        self.create_invoice(self.project2, {'status': EntryGroup.NOT_INVOICED})
+        self.create_invoice(self.project, {'static': EntryGroup.STATUSES.invoiced})
+        self.create_invoice(self.project2, {'status': EntryGroup.STATUSES.not_invoiced})
 
     def get_create_url(self, **kwargs):
         base_url = reverse('create_invoice')
@@ -156,7 +156,7 @@ class InvoiceViewPreviousTestCase(ViewTestMixin, LogTimeMixin, TestCase):
         url = self.get_create_url(project=project.id, to_date=to_date.strftime('%Y-%m-%d'))
         params = {
             'number': str(random.randint(999, 9999)),
-            'status': EntryGroup.INVOICED,
+            'status': EntryGroup.STATUSES.invoiced,
         }
         params.update(data)
         response = self.client.post(url, params)
@@ -186,7 +186,7 @@ class InvoiceViewPreviousTestCase(ViewTestMixin, LogTimeMixin, TestCase):
         project3 = factories.BillableProject(name=':-D')
         self.log_many([project3], 10)
         self.create_invoice(project=project3, data={
-            'status': EntryGroup.INVOICED,
+            'status': EntryGroup.STATUSES.invoiced,
             'comments': 'comment!',
             'number': '###',
         })
@@ -251,8 +251,8 @@ class InvoiceViewPreviousTestCase(ViewTestMixin, LogTimeMixin, TestCase):
     def test_invoice_edit_post(self):
         invoice = self.get_invoice()
         url = reverse('edit_invoice', args=(invoice.id,))
-        status = EntryGroup.INVOICED if invoice.status != EntryGroup.INVOICED \
-                else EntryGroup.NOT_INVOICED
+        status = EntryGroup.STATUSES.invoiced if invoice.status != EntryGroup.STATUSES.invoiced \
+                else EntryGroup.STATUSES.not_invoiced
         params = {
             'number': int(invoice.number) + 1,
             'status': status,
@@ -504,7 +504,7 @@ class InvoiceCreateTestCase(ViewTestMixin, TestCase):
         }
         url = self.get_create_url(**kwargs)
         response = self.client.post(url, {'number': '3',
-                'status': EntryGroup.INVOICED})
+                'status': EntryGroup.STATUSES.invoiced})
         self.assertEqual(response.status_code, 302)
         # Verify an invoice was created with the correct attributes
         invoice = EntryGroup.objects.get(number=3)
@@ -515,7 +515,7 @@ class InvoiceCreateTestCase(ViewTestMixin, TestCase):
         # Verify that the entries were invoiced appropriately
         # and the unrelated entries were untouched
         entries = Entry.objects.all()
-        invoiced = entries.filter(status=EntryGroup.INVOICED)
+        invoiced = entries.filter(status=EntryGroup.STATUSES.invoiced)
         for entry in invoiced:
             self.assertEqual(entry.entry_group_id, invoice.id)
         approved = entries.filter(status=Entry.APPROVED)
@@ -532,7 +532,7 @@ class InvoiceCreateTestCase(ViewTestMixin, TestCase):
         }
         url = self.get_create_url(**kwargs)
         response = self.client.post(url, {'number': '5',
-                                          'status': EntryGroup.NOT_INVOICED})
+                                          'status': EntryGroup.STATUSES.not_invoiced})
         self.assertEqual(response.status_code, 302)
         # Verify an invoice was created with the correct attributes
         invoice = EntryGroup.objects.get(number=5)

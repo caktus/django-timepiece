@@ -54,8 +54,8 @@ class ProjectContract(factory.DjangoModelFactory):
     name = factory.Sequence(lambda n: 'contract{0}'.format(n))
     start_date = datetime.date.today()
     end_date = datetime.date.today() + relativedelta(weeks=2)
-    status = contracts.ProjectContract.STATUS_CURRENT,
-    type = contracts.ProjectContract.PROJECT_PRE_PAID_HOURLY
+    status = contracts.ProjectContract.STATUSES.current,
+    type = contracts.ProjectContract.TYPES.prepaid_hourly
 
     @factory.post_generation
     def contract_hours(self, create, extracted, **kwargs):
@@ -75,7 +75,7 @@ class ContractHour(factory.DjangoModelFactory):
     FACTORY_FOR = contracts.ContractHour
 
     date_requested = datetime.date.today()
-    status = contracts.ContractHour.APPROVED_STATUS
+    status = contracts.ContractHour.STATUSES.approved
     contract = factory.SubFactory('timepiece.tests.factories.ProjectContract')
 
 

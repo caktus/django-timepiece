@@ -49,7 +49,7 @@ class ContractListTestCase(ViewTestMixin, TestCase):
     def test_one_contract(self):
         """List should return all current contracts."""
         correct_contract = factories.ProjectContract(projects=self.projects,
-                status=ProjectContract.STATUS_CURRENT)
+                status=ProjectContract.STATUSES.current)
         response = self._get()
         self.assertEqual(response.status_code, 200)
         contracts = response.context['contracts']
@@ -59,7 +59,7 @@ class ContractListTestCase(ViewTestMixin, TestCase):
     def test_contracts(self):
         """List should return all current contracts."""
         correct_contracts = [factories.ProjectContract(projects=self.projects,
-                status=ProjectContract.STATUS_CURRENT) for i in range(3)]
+                status=ProjectContract.STATUSES.current) for i in range(3)]
         response = self._get()
         self.assertEqual(response.status_code, 200)
         contracts = response.context['contracts']
@@ -70,9 +70,9 @@ class ContractListTestCase(ViewTestMixin, TestCase):
     def test_non_current_contracts(self):
         """List should return all current contracts."""
         complete_contract = factories.ProjectContract(projects=self.projects,
-                status=ProjectContract.STATUS_COMPLETE)
+                status=ProjectContract.STATUSES.complete)
         upcoming_contract = factories.ProjectContract(projects=self.projects,
-                status=ProjectContract.STATUS_UPCOMING)
+                status=ProjectContract.STATUSES.upcoming)
         response = self._get()
         self.assertEqual(response.status_code, 200)
         contracts = response.context['contracts']
@@ -119,21 +119,21 @@ class ContractViewTestCase(ViewTestMixin, TestCase):
 
     def test_current_contract(self):
         contract = factories.ProjectContract(projects=self.projects,
-                status=ProjectContract.STATUS_CURRENT)
+                status=ProjectContract.STATUSES.current)
         response = self._get(url_args=(contract.pk,))
         self.assertEqual(response.status_code, 200)
         self.assertEqual(contract, response.context['contract'])
 
     def test_upcoming_contract(self):
         contract = factories.ProjectContract(projects=self.projects,
-                status=ProjectContract.STATUS_UPCOMING)
+                status=ProjectContract.STATUSES.upcoming)
         response = self._get(url_args=(contract.pk,))
         self.assertEqual(response.status_code, 200)
         self.assertEqual(contract, response.context['contract'])
 
     def test_complete_contract(self):
         contract = factories.ProjectContract(projects=self.projects,
-                status=ProjectContract.STATUS_COMPLETE)
+                status=ProjectContract.STATUSES.complete)
         response = self._get(url_args=(contract.pk,))
         self.assertEqual(response.status_code, 200)
         self.assertEqual(contract, response.context['contract'])
@@ -144,7 +144,7 @@ class ContractHourTestCase(TestCase):
     def test_defaults(self):
         contract_hour = ContractHour()
         self.assertEqual(0, contract_hour.hours)
-        self.assertEqual(ContractHour.PENDING_STATUS, contract_hour.status)
+        self.assertEqual(ContractHour.STATUSES.pending, contract_hour.status)
 
     def test_contracted_hours(self):
         # If we create some Contract Hour objects and then go to the
@@ -160,7 +160,7 @@ class ContractHourTestCase(TestCase):
         # of the hours
         pc = factories.ProjectContract(contract_hours=4)
         ch = factories.ContractHour(contract=pc, hours=27,
-                status=ContractHour.PENDING_STATUS)
+                status=ContractHour.STATUSES.pending)
         self.assertEqual(4, pc.contracted_hours())
         self.assertEqual(27, pc.pending_hours())
         ch.delete()
@@ -170,7 +170,7 @@ class ContractHourTestCase(TestCase):
     def test_validation(self):
         with self.assertRaises(ValidationError):
             ch = factories.ContractHour(
-                    status=ContractHour.PENDING_STATUS,
+                    status=ContractHour.STATUSES.pending,
                     date_approved=datetime.date.today())
             ch.clean()
 
@@ -178,7 +178,7 @@ class ContractHourTestCase(TestCase):
         # If saved with status approved and no date approved,
         # it sets it to today
         ch = factories.ContractHour(
-                status=ContractHour.APPROVED_STATUS,
+                status=ContractHour.STATUSES.approved,
                 date_approved=None)
         ch = ContractHour.objects.get(pk=ch.pk)
         self.assertEqual(datetime.date.today(), ch.date_approved)
@@ -207,13 +207,13 @@ class ContractHourTestCase(TestCase):
         last_month = today - one_month
         next_month = today + one_month
         pc = factories.ProjectContract(
-            status=ProjectContract.STATUS_UPCOMING, start_date=last_month,
+            status=ProjectContract.STATUSES.upcoming, start_date=last_month,
             end_date=next_month
         )
         self.assertEqual(0.0, pc.fraction_schedule)
-        pc.status = ProjectContract.STATUS_COMPLETE
+        pc.status = ProjectContract.STATUSES.complete
         self.assertEqual(0.0, pc.fraction_schedule)
-        pc.status = ProjectContract.STATUS_CURRENT
+        pc.status = ProjectContract.STATUSES.current
         self.assertEqual(0.5, pc.fraction_schedule)
         # Just to be perverse, a contract in current state whose start
         # date hasn't arrived yet
@@ -230,18 +230,18 @@ class ContractHourEmailTestCase(TestCase):
 
     def test_save_pending_calls_send_email(self):
         with mock.patch('timepiece.contracts.models.ContractHour._send_mail') as send_mail:
-            factories.ContractHour(status=ContractHour.PENDING_STATUS)
+            factories.ContractHour(status=ContractHour.STATUSES.pending)
         self.assertTrue(send_mail.called)
         (subject, ctx) = send_mail.call_args[0]
         self.assertTrue(subject.startswith("New"))
 
     def test_save_approved_does_not_call_send_email(self):
         with mock.patch('timepiece.contracts.models.ContractHour._send_mail') as send_mail:
-            factories.ContractHour(status=ContractHour.APPROVED_STATUS)
+            factories.ContractHour(status=ContractHour.STATUSES.approved)
         self.assertFalse(send_mail.called)
 
     def test_delete_pending_calls_send_email(self):
-        ch = factories.ContractHour(status=ContractHour.PENDING_STATUS)
+        ch = factories.ContractHour(status=ContractHour.STATUSES.pending)
         with mock.patch('timepiece.contracts.models.ContractHour._send_mail') as send_mail:
             ch.delete()
         self.assertTrue(send_mail.called)
@@ -249,7 +249,7 @@ class ContractHourEmailTestCase(TestCase):
         self.assertTrue(subject.startswith("Deleted"))
 
     def test_change_pending_calls_send_email(self):
-        ch = factories.ContractHour(status=ContractHour.PENDING_STATUS)
+        ch = factories.ContractHour(status=ContractHour.STATUSES.pending)
         with mock.patch('timepiece.contracts.models.ContractHour._send_mail') as send_mail:
             ch.save()
         self.assertTrue(send_mail.called)
