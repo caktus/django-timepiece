@@ -6,5 +6,5 @@ from .test_project_timesheet import TestProjectTimesheet
 from .test_quick_search import TestQuickSearchView
 from .test_relationships import (TestAddUserToProject, TestAddProjectToUser,
         TestEditRelationship, TestDeleteRelationship)
-from .test_users import (TestCreateUser, TestDeleteUser, TestEditUser,
-        TestListUsers, TestViewUser, TestEditSettings)
+from .test_users import (TestAddToUserClass, TestCreateUser, TestDeleteUser,
+        TestEditUser, TestListUsers, TestViewUser, TestEditSettings)
