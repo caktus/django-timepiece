@@ -4,6 +4,7 @@ from django.test import TestCase
 from timepiece.utils import get_active_entry, ActiveEntryError
 
 from timepiece import utils
+from timepiece.utils.models import Constants
 
 from . import factories
 
@@ -59,3 +60,31 @@ class GetActiveEntryTest(TestCase):
         factories.Entry(user=self.user, start_time=now)
         factories.Entry(user=self.user, start_time=now)
         self.assertRaises(ActiveEntryError, get_active_entry, self.user)
+
+
+class TestConstants(TestCase):
+
+    def test_bad_format(self):
+        with self.assertRaises(Exception):
+            Constants(foo=('one',))
+        with self.assertRaises(Exception):
+            Constants(foo=('one', 'two', 'three'))
+
+    def test_conflicting_codename(self):
+        with self.assertRaises(Exception):
+            Constants(choices=('2', 'two'))
+
+    def test_choices(self):
+        constants = Constants(foo=('1', 'one'), bar=('2', 'two'))
+        choices = constants.choices()
+        self.assertEquals(choices, [('1', 'one'), ('2', 'two')])
+
+    def test_get_list(self):
+        constants = Constants(foo=('1', 'one'), bar=('2', 'two'))
+        clist = constants.get_list('foo', 'bar')
+        self.assertEquals(clist, ['1', '2'])
+
+    def test_get_list_bad_element(self):
+        constants = Constants(foo=('1', 'one'), bar=('2', 'two'))
+        with self.assertRaises(Exception):
+            constants.get_list('foo', 'bar', 'baz')
