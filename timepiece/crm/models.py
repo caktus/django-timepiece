@@ -3,6 +3,8 @@ from django.core.urlresolvers import reverse
 from django.db import models
 from django.db.models import get_model
 
+from timepiece.utils.models import Constants
+
 
 # Add a utility method to the User class that will tell whether or not a
 # particular user has any unclosed entries
@@ -34,7 +36,7 @@ class TypeAttributeManager(models.Manager):
 
     def get_query_set(self):
         qs = super(TypeAttributeManager, self).get_query_set()
-        return qs.filter(type=Attribute.PROJECT_TYPE)
+        return qs.filter(type=Attribute.TYPES.project_type)
 
 
 class StatusAttributeManager(models.Manager):
@@ -42,19 +44,17 @@ class StatusAttributeManager(models.Manager):
 
     def get_query_set(self):
         qs = super(StatusAttributeManager, self).get_query_set()
-        return qs.filter(type=Attribute.PROJECT_STATUS)
+        return qs.filter(type=Attribute.TYPES.project_status)
 
 
 class Attribute(models.Model):
-    PROJECT_TYPE = 'project-type'
-    PROJECT_STATUS = 'project-status'
-    ATTRIBUTE_TYPES = {
-        PROJECT_TYPE: 'Project Type',
-        PROJECT_STATUS: 'Project Status',
-    }
+    TYPES = Constants(
+        project_type=('project-type', 'Project Type'),
+        project_status=('project-status', 'Project Status'),
+    )
     SORT_ORDER_CHOICES = [(x, x) for x in xrange(-20, 21)]
 
-    type = models.CharField(max_length=32, choices=ATTRIBUTE_TYPES.items())
+    type = models.CharField(max_length=32, choices=TYPES.choices())
     label = models.CharField(max_length=255)
     sort_order = models.SmallIntegerField(null=True, blank=True,
             choices=SORT_ORDER_CHOICES)
@@ -124,10 +124,10 @@ class Project(models.Model):
             related_name='activity_group', null=True, blank=True,
             verbose_name='restrict activities to')
     type = models.ForeignKey(Attribute,
-            limit_choices_to={'type': 'project-type'},
+            limit_choices_to={'type': Attribute.TYPES.project_type},
             related_name='projects_with_type')
     status = models.ForeignKey(Attribute,
-            limit_choices_to={'type': 'project-status'},
+            limit_choices_to={'type': Attribute.TYPES.project_status},
             related_name='projects_with_status')
     description = models.TextField()
 

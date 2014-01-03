@@ -105,14 +105,14 @@ class TypeAttribute(factory.DjangoModelFactory):
     FACTORY_FOR = crm.Attribute
 
     label = factory.Sequence(lambda n: 'type{0}'.format(n))
-    type = crm.Attribute.PROJECT_TYPE
+    type = crm.Attribute.TYPES.project_type
 
 
 class StatusAttribute(factory.DjangoModelFactory):
     FACTORY_FOR = crm.Attribute
 
     label = factory.Sequence(lambda n: 'status{0}'.format(n))
-    type = crm.Attribute.PROJECT_STATUS
+    type = crm.Attribute.TYPES.project_status
 
 
 class Business(factory.DjangoModelFactory):
