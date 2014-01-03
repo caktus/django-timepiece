@@ -38,7 +38,7 @@ class Constants(object):
                 else:
                     setattr(self, codename, value)
                 self._constants.append(self.Constant(codename, value, description))
-        except ValueError, TypeError:
+        except (ValueError, TypeError):
             msg = "Must pass in kwargs in format: **{'codename': (value, description)}"
             raise Exception(msg)
 
