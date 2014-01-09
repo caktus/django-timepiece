@@ -66,7 +66,12 @@ var approveEntries = function(collection, entryIds, success_msg) {
     changeEntries(changeUrl, collection, entryIds, success_msg);
 }
 
+var displayDate = function(d) {
+    return fullMonths[d.getMonth()] + " " + d.getDate();
+}
+
 var displayTime = function(d) {
+    // e.g., 8:00 am, 12:01 pm, 1:00 pm
     // TODO: handle timezone.
     hours = "" + (d.getHours() % 12 || 12);
     minutes = d.getMinutes();

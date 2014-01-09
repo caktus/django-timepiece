@@ -26,7 +26,8 @@ var EntryRow = Backbone.View.extend({
     approveEntry: function(event) {
         event.preventDefault();
         if (this.model.isFromCurrentMonth()) {
-            approveEntries(this.model.collection, [this.model.get("id")]);
+            var msg = this.model.description() + " is now approved.";
+            approveEntries(this.model.collection, [this.model.get("id")], msg);
         } else {
             showError("You can't edit an entry from another month.");
         }
@@ -95,7 +96,8 @@ var EntryRow = Backbone.View.extend({
     rejectEntry: function(event) {
         event.preventDefault();
         if (this.model.isFromCurrentMonth()) {
-            rejectEntries(this.model.collection, [this.model.get("id")]);
+            var msg = this.model.description() + " is now unverified.";
+            rejectEntries(this.model.collection, [this.model.get("id")], msg);
         } else {
             showError("You can't edit an entry from another month.");
         }
@@ -103,7 +105,8 @@ var EntryRow = Backbone.View.extend({
     verifyEntry: function(event) {
         event.preventDefault();
         if (this.model.isFromCurrentMonth()) {
-            verifyEntries(this.model.collection, [this.model.get("id")]);
+            var msg = this.model.description() + " is now verified.";
+            verifyEntries(this.model.collection, [this.model.get("id")], msg);
         } else {
             showError("You can't edit an entry from another month.");
         }
@@ -144,36 +147,42 @@ var WeekTable = Backbone.View.extend({
 
     approveWeek: function(event) {
         event.preventDefault();
-        var msg = "All verified entries from this week are now approved.",
+        var msg = "All verified entries from the week of " +
+                displayDate(this.weekStart) + " are now approved.",
             entryIds = getIdsFromCurrentMonth(this.models);
         approveEntries(this.collection, entryIds, msg);
     },
     rejectWeek: function(event) {
         event.preventDefault();
-        var msg = "All entries from this week are now unverified.",
+        var msg = "All entries from the week of " +
+                displayDate(this.weekStart) + " are now unverified.",
             entryIds = getIdsFromCurrentMonth(this.models);
         rejectEntries(this.collection, entryIds, msg);
     },
     verifyWeek: function(event) {
         event.preventDefault();
-        var msg = "All entries from this week are now verified.",
+        var msg = "All entries from the week of " +
+                displayDate(this.weekStart) + " are now verified.",
             entryIds = getIdsFromCurrentMonth(this.models);
         verifyEntries(this.collection, entryIds, msg);
     }
 });
 
 var Timesheet = Backbone.View.extend({
-    el: $("body"),
+    el: "body",
     initialize: function() {
         // Create a table view for each week of the month.
+        this.thisMonth = this.options['thisMonth']
+        this.nextMonth = this.options['nextMonth']
+        this.lastMonth = this.options['lastMonth']
         this.weekTables = [];
         _.each(this.options['weekRanges'], function(range) {
             this.weekTables.push(new WeekTable({
                 collection: this.collection,  // Pass for reference.
                 models: [],  // The entries which are a part of the week.
-                thisMonth: this.options['thisMonth'],
-                nextMonth: this.options['nextMonth'],
-                lastMonth: this.options['lastMonth'],
+                thisMonth: this.thisMonth,
+                nextMonth: this.nextMonth,
+                lastMonth: this.lastMonth,
                 weekStart: new Date(range[0]),
                 weekEnd: new Date(range[1]),
                 timesheet: this
@@ -238,19 +247,22 @@ var Timesheet = Backbone.View.extend({
     */
     approveMonth: function(event) {
         event.preventDefault();
-        var msg = "All verified entries from this month are now approved.",
+        var msg = "All verified entries from the month of " +
+                fullMonths[this.thisMonth.getMonth()] + " are now approved.",
             entryIds = getIdsFromCurrentMonth(this.collection.toArray());
         approveEntries(this.collection, entryIds, msg);
     },
     rejectMonth: function(event) {
         event.preventDefault();
-        var msg = "All entries from this month are now unverified.",
+        var msg = "All entries from the month of " +
+                fullMonths[this.thisMonth.getMonth()] + " are now unverified.",
             entryIds = getIdsFromCurrentMonth(this.collection.toArray());
         rejectEntries(this.collection, entryIds, msg);
     },
     verifyMonth: function(event) {
         event.preventDefault();
-        var msg = "All entries from this month are now verified.",
+        var msg = "All entries from the month of " +
+                fullMonths[this.thisMonth.getMonth()] + " are now verified.",
             entryIds = getIdsFromCurrentMonth(this.collection.toArray());
         verifyEntries(this.collection, entryIds, msg);
     }
