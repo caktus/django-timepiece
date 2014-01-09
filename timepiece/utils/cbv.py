@@ -7,8 +7,10 @@ from django.core.exceptions import ImproperlyConfigured, PermissionDenied
 from django.core.urlresolvers import reverse_lazy
 from django.http import HttpResponse, HttpResponseRedirect
 from django.utils.decorators import method_decorator
+from django.views.generic import CreateView, DeleteView, UpdateView
 
 from timepiece import utils
+from timepiece.utils.csv import ExtendedJSONEncoder
 
 
 def cbv_decorator(function_decorator):
@@ -71,14 +73,16 @@ class RedirectMessageMixin(object):
     def add_failure_message(self):
         """Message to the user when the action cannot be completed."""
         if self.failure_message:
-            msg = self.get_failure_message()
-            messages.add_message(self.request, self.failure_message_type, msg)
+            if not self.request.is_ajax():
+                msg = self.get_failure_message()
+                messages.add_message(self.request, self.failure_message_type, msg)
 
     def add_success_message(self):
         """Message when the user has successfully completed an action."""
         if self.success_message:
-            msg = self.get_success_message()
-            messages.add_message(self.request, self.success_message_type, msg)
+            if not self.request.is_ajax():
+                msg = self.get_success_message()
+                messages.add_message(self.request, self.success_message_type, msg)
 
     def get_failure_message(self):
         return self.failure_message
@@ -112,7 +116,7 @@ class RedirectMessageMixin(object):
                 "success_url.")
 
 
-class AjaxableDeleteMixin(object):
+class AjaxableDeleteView(DeleteView):
     """Used with DeleteView to respond appropriately to AJAX POSTs."""
 
     def delete(self, request, *args, **kwargs):
@@ -120,32 +124,46 @@ class AjaxableDeleteMixin(object):
         self.object.delete()
         if self.request.is_ajax():
             data = self.object.pk
-            return HttpResponse(json.dumps(data),
+            return HttpResponse(json.dumps(data, cls=ExtendedJSONEncoder),
                     content_type="application/json")
         return HttpResponseRedirect(self.get_success_url())
 
 
-class AjaxableUpdateMixin(object):
+class AjaxableCreateUpdateMixin(object):
     """Responds appropriately to AJAX GETs and POSTs."""
     template_name = None
     template_name_ajax = None
 
     def form_invalid(self, form):
         if self.request.is_ajax():
-            return HttpResponse()  # TODO: more info.
+            context = self.get_context_data(form=form)
+            return self.render_to_response(context, status=400)
         return super(AjaxableUpdateMixin, self).form_invalid(form)
 
     def form_valid(self, form):
         self.object = form.save()
         if self.request.is_ajax():
             data = self.object.get_summary()
-            return HttpResponse(json.dumps(data), content_type="application/json")
+            return HttpResponse(json.dumps(data, cls=ExtendedJSONEncoder),
+                    content_type="application/json")
         return HttpResponseRedirect(self.get_success_url())
 
     def get_template_names(self):
-        if not self.template_name or not self.template_name_ajax:
+        if not self.template_name:
             raise ImproperlyConfigured("AjaxableUpdateMixin requires "
                     "definition of template_name and template_name_ajax.")
         if self.request.is_ajax():
+            if not self.template_name_ajax:
+                # Guess template_name_ajax using the regular template_name.
+                name, extension = self.template_name.split(".")
+                return [".".join([name + "_ajax", extension])]
             return [self.template_name_ajax]
         return [self.template_name]
+
+
+class AjaxableUpdateView(AjaxableCreateUpdateMixin, UpdateView):
+    pass
+
+
+class AjaxableCreateView(AjaxableCreateUpdateMixin, CreateView):
+    pass

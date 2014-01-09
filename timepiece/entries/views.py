@@ -25,7 +25,7 @@ from timepiece import utils
 from timepiece.forms import DATE_FORM_FORMAT
 from timepiece.utils.csv import ExtendedJSONEncoder
 from timepiece.utils.cbv import (cbv_decorator, RedirectMessageMixin,
-        AjaxableDeleteMixin, AjaxableUpdateMixin)
+        AjaxableCreateView, AjaxableDeleteView, AjaxableUpdateView)
 
 from timepiece.crm.models import Project, UserProfile
 from timepiece.entries.forms import (ClockInForm, ClockOutForm,
@@ -208,13 +208,12 @@ def toggle_pause(request):
 
 
 @cbv_decorator(permission_required('entries.add_entry'))
-class CreateEntry(AjaxableUpdateMixin, RedirectMessageMixin, CreateView):
+class CreateEntry(RedirectMessageMixin, AjaxableCreateView):
     failure_message = "Please fix the errors below."
     form_class = CreateEditEntryForm
     model = Entry
     success_message = "The entry has been created successfully."
     template_name = 'timepiece/entry/create_edit.html'
-    template_name_ajax = 'timepiece/entry/create_edit_ajax.html'
 
     def get_form_kwargs(self):
         # TODO: Superusers should be able to create entries for others.
@@ -227,14 +226,13 @@ class CreateEntry(AjaxableUpdateMixin, RedirectMessageMixin, CreateView):
 
 
 @cbv_decorator(permission_required('entries.change_entry'))
-class EditEntry(AjaxableUpdateMixin, RedirectMessageMixin, UpdateView):
+class EditEntry(RedirectMessageMixin, AjaxableUpdateView):
     failure_message = "Please fix the errors below."
     form_class = CreateEditEntryForm
     model = Entry
     pk_url_kwarg = 'entry_id'
     success_message = "{obj} has been successfully updated."
     template_name = 'timepiece/entry/create_edit.html'
-    template_name_ajax = 'timepiece/entry/create_edit_ajax.html'
 
     def get_form_kwargs(self):
         kwargs = super(EditEntry, self).get_form_kwargs()
@@ -252,7 +250,7 @@ class EditEntry(AjaxableUpdateMixin, RedirectMessageMixin, UpdateView):
 
 
 @cbv_decorator(permission_required('entries.delete_entry'))
-class DeleteEntry(RedirectMessageMixin, AjaxableDeleteMixin, DeleteView):
+class DeleteEntry(RedirectMessageMixin, AjaxableDeleteView):
     model = Entry
     pk_url_kwarg = 'entry_id'
     success_message = "You have deleted {obj}."

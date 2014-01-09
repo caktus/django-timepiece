@@ -7,6 +7,9 @@ var Entry = Backbone.Model.extend({
             case "delete":
                 options.url = model.get('get_delete_url');
                 break;
+            case "update":
+                options.url = model.get('get_edit_url');
+                break;
         }
 
         if (options.url) {

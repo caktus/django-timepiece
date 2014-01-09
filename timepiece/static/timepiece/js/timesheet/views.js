@@ -4,10 +4,11 @@ var EntryRow = Backbone.View.extend({
         this.listenTo(this.model, "change", this.render);
     },
     events: {
-        "click a[title='Delete']": "deleteEntry",
-        "click a[title='Verify']": "verifyEntry",
         "click a[title='Approve']": "approveEntry",
-        "click a[title='Reject']": "rejectEntry"
+        "click a[title='Delete']": "deleteEntry",
+        "click a[title='Edit']": "editEntry",
+        "click a[title='Reject']": "rejectEntry",
+        "click a[title='Verify']": "verifyEntry"
     },
     render: function() {
         if (!this.model.isFromCurrentMonth()) {
@@ -46,6 +47,51 @@ var EntryRow = Backbone.View.extend({
         });
         this.$el.remove();  // TODO: move this to success function.
     },
+    editEntry: function(event) {
+        event.preventDefault();
+        var self = this;
+        $.ajax({
+            url: this.model.get('get_edit_url'),
+            dataType: 'html'
+        }).done(function(data, status, xhr) {
+            var modal = self.model.weekTable.timesheet.modal;
+            modal.setTitle("Update Entry");
+            modal.setContent(data);
+
+            var onSubmit = function(event) {
+                // It would be too hard to parse the form, set elements on
+                // the model, and then call Backbone's save. Instead, we'll
+                // submit the form for server-side validation. If the form
+                // is valid, we update the model using the returned data.
+                // If the form is invalid, we update the form & reattach the
+                // this function.
+                event.preventDefault();
+                $.ajax({
+                    type: "POST",
+                    url: self.model.get("get_edit_url"),
+                    data: $(this).serialize(),
+                    success: function(data, status, xhr) {
+                        self.model.set(data);
+                        self.model.weekTable.timesheet.modal.hide();
+                        showSuccess(self.model.description() + " has been updated.");
+                    },
+                    error: function(xhr, status, error) {
+                        if (xhr.status === 400) {
+                            var modal = self.model.weekTable.timesheet.modal;
+                            modal.setContent(xhr.responseText);
+                            modal.$el.find('form').on('submit', onSubmit);
+                            return;
+                        }
+                        return handleAjaxFailure(xhr, status, error);
+                    }
+                })
+            };
+            modal.$el.find('form').on('submit', onSubmit);
+            modal.show();
+        }, this).fail(function(xhr, status, error) {
+            alert('There was an error loading the data.');  // TODO
+        });
+    },
     rejectEntry: function(event) {
         event.preventDefault();
         if (this.model.isFromCurrentMonth()) {
@@ -73,6 +119,7 @@ var WeekTable = Backbone.View.extend({
         this.thisMonth = this.options['thisMonth'];
         this.lastMonth = this.options['lastMonth'];
         this.nextMonth = this.options['nextMonth'];
+        this.timesheet = this.options['timesheet'];
     },
     events: {
         "click .btn[title='Approve Week']": "approveWeek",
@@ -116,7 +163,7 @@ var WeekTable = Backbone.View.extend({
 });
 
 var Timesheet = Backbone.View.extend({
-    el: $("html"),
+    el: $("body"),
     initialize: function() {
         // Create a table view for each week of the month.
         this.weekTables = [];
@@ -128,7 +175,8 @@ var Timesheet = Backbone.View.extend({
                 nextMonth: this.options['nextMonth'],
                 lastMonth: this.options['lastMonth'],
                 weekStart: new Date(range[0]),
-                weekEnd: new Date(range[1])
+                weekEnd: new Date(range[1]),
+                timesheet: this
             }));
         }, this);
 
@@ -155,6 +203,9 @@ var Timesheet = Backbone.View.extend({
         _.each(this.weekTables, function(weekTable) {
             $('#all-entries').append(weekTable.render().el);
         }, this)
+
+        this.modal = new Modal();
+        this.$el.append(this.modal.render());
     },
     events: {
         "click .btn[title='Verify All']": "verifyMonth",
@@ -204,3 +255,35 @@ var Timesheet = Backbone.View.extend({
         verifyEntries(this.collection, entryIds, msg);
     }
 });
+
+var Modal = Backbone.View.extend({
+    tagName: "div",
+    initialize: function() {
+        this.$el.addClass("modal hide fade");
+        this.template = _.template($("#modal-template").html());
+        this.modalTitle = "";
+        this.modalContent = "";
+        this.render();
+    },
+    setContent: function(content) {
+        this.modalContent = content;
+        this.render();
+    },
+    setTitle: function(title) {
+        this.modalTitle = title;
+        this.render();
+    },
+    hide: function() {
+        this.$el.modal('hide');
+    },
+    show: function() {
+        this.$el.modal('show');
+    },
+    render: function() {
+        this.$el.html(this.template({
+            "modalTitle": this.modalTitle,
+            "modalContent": this.modalContent
+        }));
+        return this.$el;
+    }
+})
