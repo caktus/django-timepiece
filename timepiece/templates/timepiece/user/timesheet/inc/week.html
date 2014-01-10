@@ -1,7 +1,7 @@
 {# Underscore template used to render a table for each week of entries. #}
 <div class="header-split">
     <h3 class="header-title"><%= displayWeekHeader(weekStart, weekEnd) %></h3>
-    <div class="header-buttons btn-toolbar">
+    <div class="header-buttons btn-toolbar hide-if-empty">
         <div class="btn-group" style="margin-right: 5px;">
             <button class="btn btn-mini verify" data-toggle="tooltip" title="Verify Week">
                 <i class="icon icon-ok"></i> Verify Week
@@ -17,7 +17,9 @@
         </div>
     </div>
 </div>
-<table class="table table-bordered table-condensed table-hover">
+<p class="empty-message show-if-empty">There are no entries in this week.</p>
+<table class="table table-bordered table-condensed table-hover hide-if-empty"
+        style="display: none;">
     <thead>
         <tr>
             <th>Actions</th>

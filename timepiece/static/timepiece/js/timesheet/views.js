@@ -146,6 +146,13 @@ var WeekTable = Backbone.View.extend({
             this.totalHours += entry.get("total_seconds");
         }, this);
         this.$el.find(".week-summary .total-hours").text(formatHoursMinutes(this.totalHours));
+        if (this.models.length > 0) {
+            this.$el.find(".hide-if-empty").attr({style: ""});
+            this.$el.find(".show-if-empty").attr({style: "display:none;"});
+        } else {
+            this.$el.find(".hide-if-empty").attr({style: "display:none;"});
+            this.$el.find(".show-if-empty").attr({style: ""});
+        }
     },
     render: function() {
         this.$el.addClass('week');
