@@ -1,8 +1,5 @@
 var EntryRow = Backbone.View.extend({
     tagName: "tr",
-    initialize: function() {
-        this.listenTo(this.model, "change", this.render);
-    },
     events: {
         "click a[title='Approve']": "approveEntry",
         "click a[title='Delete']": "deleteEntry",
@@ -10,8 +7,8 @@ var EntryRow = Backbone.View.extend({
         "click a[title='Reject']": "rejectEntry",
         "click a[title='Verify']": "verifyEntry"
     },
-    getTagId: function() {
-        return "entry-" + this.model.get("id");
+    initialize: function() {
+        this.listenTo(this.model, "change", this.render);
     },
     render: function() {
         this.$el.attr({id: this.getTagId()});
@@ -26,6 +23,8 @@ var EntryRow = Backbone.View.extend({
         this.$el.html(template);
         return this;
     },
+
+    // === Custom Methods === //
 
     approveEntry: function(event) {
         event.preventDefault();
@@ -104,6 +103,9 @@ var EntryRow = Backbone.View.extend({
             timesheet.modal.show();
         }).fail(handleAjaxFailure);
     },
+    getTagId: function() {
+        return "entry-" + this.model.get("id");
+    },
     rejectEntry: function(event) {
         event.preventDefault();
         if (this.model.isFromCurrentMonth()) {
@@ -126,6 +128,11 @@ var EntryRow = Backbone.View.extend({
 
 var WeekTable = Backbone.View.extend({
     tagName: "div",
+    events: {
+        "click .btn[title='Approve Week']": "approveWeek",
+        "click .btn[title='Reject Week']": "rejectWeek",
+        "click .btn[title='Verify Week']": "verifyWeek"
+    },
     initialize: function() {
         this.models = this.options['models'];
         this.weekStart = this.options['weekStart'];
@@ -134,25 +141,6 @@ var WeekTable = Backbone.View.extend({
         this.lastMonth = this.options['lastMonth'];
         this.nextMonth = this.options['nextMonth'];
         this.timesheet = this.options['timesheet'];
-    },
-    events: {
-        "click .btn[title='Approve Week']": "approveWeek",
-        "click .btn[title='Reject Week']": "rejectWeek",
-        "click .btn[title='Verify Week']": "verifyWeek"
-    },
-    updateTotalHours: function() {
-        this.totalHours = 0;
-        _.each(this.models, function(entry) {
-            this.totalHours += entry.get("total_seconds");
-        }, this);
-        this.$el.find(".week-summary .total-hours").text(formatHoursMinutes(this.totalHours));
-        if (this.models.length > 0) {
-            this.$el.find(".hide-if-empty").attr({style: ""});
-            this.$el.find(".show-if-empty").attr({style: "display:none;"});
-        } else {
-            this.$el.find(".hide-if-empty").attr({style: "display:none;"});
-            this.$el.find(".show-if-empty").attr({style: ""});
-        }
     },
     render: function() {
         this.$el.addClass('week');
@@ -169,6 +157,8 @@ var WeekTable = Backbone.View.extend({
         return this;
     },
 
+    // === Custom Methods === //
+
     approveWeek: function(event) {
         event.preventDefault();
         var msg = "All verified entries from the week of " +
@@ -183,6 +173,20 @@ var WeekTable = Backbone.View.extend({
             entryIds = getIdsFromCurrentMonth(this.models);
         rejectEntries(this.collection, entryIds, msg);
     },
+    updateTotalHours: function() {
+        this.totalHours = 0;
+        _.each(this.models, function(entry) {
+            this.totalHours += entry.get("total_seconds");
+        }, this);
+        this.$el.find(".week-summary .total-hours").text(formatHoursMinutes(this.totalHours));
+        if (this.models.length > 0) {
+            this.$el.find(".hide-if-empty").attr({style: ""});
+            this.$el.find(".show-if-empty").attr({style: "display:none;"});
+        } else {
+            this.$el.find(".hide-if-empty").attr({style: "display:none;"});
+            this.$el.find(".show-if-empty").attr({style: ""});
+        }
+    },
     verifyWeek: function(event) {
         event.preventDefault();
         var msg = "All entries from the week of " +
@@ -192,55 +196,27 @@ var WeekTable = Backbone.View.extend({
     }
 });
 
+
 var Timesheet = Backbone.View.extend({
     el: "body",
-    addEntryToTimesheet: function(newEntry) {
-        // Adds entry to the correct week table & place within the table.
-        var newEndTime = newEntry.getEndTime();
-
-        // Find the week which contains the newEndTime.
-        var weekTable = _.find(this.weekTables, function(weekTable) {
-            return newEndTime >= weekTable.weekStart && newEndTime <= weekTable.weekEnd;
-        });
-        newEntry.weekTable = weekTable;
-
-        // If no week is found, entry is from either before or after this
-        // month.
-        if (!weekTable) { return false; }
-
-        // Otherwise, find the first entry in the week whose end time is
-        // larger than the newEndTime - the new entry should be inserted
-        // before this entry.
-        found = _.find(weekTable.models, function(old_entry, index, models) {
-            if (old_entry.getEndTime() > newEndTime) {
-                // Add newEntry to the weekTable, and render it.
-                var newEntry = this;
-                models.splice(index, 0, newEntry);
-                var row = new EntryRow({ model: newEntry });
-                newEntry.row = row;
-                row.render().$el.insertBefore(row.model.weekTable.$el.find("tbody tr#" + old_entry.row.getTagId()));
-                return true;
-            }
-            return false;
-        }, newEntry); // bind to newEntry
-
-        // If no such entry was found, then the entry should be inserted at
-        // the end of the table.
-        if (!found) {
-            weekTable.models.push(newEntry);
-            var row = new EntryRow({model: newEntry});
-            newEntry.row = row;
-            row.render().$el.insertBefore(row.model.weekTable.$el.find("tbody tr.week-summary"));
-        }
-
-        return true;
+    events: {
+        "click .btn[title='Verify All']": "verifyMonth",
+        "click .btn[title='Approve All']": "approveMonth",
+        "click .btn[title='Reject All']": "rejectMonth",
+        "click a[title='Add Entry']": "createEntry",
+        "click .btn.last-month": "",
+        "click .btn.next-month": "",
+        "click .btn.refresh": "",
+//        "change #filter-entries select": "filterEntries"
     },
     initialize: function() {
-        // Create a table view for each week of the month.
-        this.thisMonth = this.options['thisMonth']
-        this.nextMonth = this.options['nextMonth']
-        this.lastMonth = this.options['lastMonth']
+        this.thisMonth = this.options['thisMonth'];
+        this.nextMonth = this.options['nextMonth'];
+        this.lastMonth = this.options['lastMonth'];
         this.weekTables = [];
+        this.modal = new Modal();
+
+        // Create a table view for each week of the month.
         _.each(this.options['weekRanges'], function(range) {
             this.weekTables.push(new WeekTable({
                 collection: this.collection,  // Pass for reference.
@@ -273,44 +249,61 @@ var Timesheet = Backbone.View.extend({
             }
         }
 
-        // Render the table for each week.
+        // Render the table for each week, and render the modal.
         _.each(this.weekTables, function(weekTable) {
             $('#all-entries').append(weekTable.render().el);
         }, this)
-
-        this.modal = new Modal();
         this.$el.append(this.modal.render());
-    },
-    events: {
-        "click .btn[title='Verify All']": "verifyMonth",
-        "click .btn[title='Approve All']": "approveMonth",
-        "click .btn[title='Reject All']": "rejectMonth",
-        "click a[title='Add Entry']": "createEntry",
-        "click .btn.last-month": "",
-        "click .btn.next-month": "",
-        "click .btn.refresh": "",
-        //"change #filter-entries select": "filterEntries"
     },
     render: function() {
         return this;
     },
-    /*
-    filterEntries: function(event) {
-        entryStatus = event.currentTarget.value;
-        var coll;
-        if (entryStatus !== "") {
-            this.filter = {'status': entryStatus};
-            coll = this.collection.where(this.filter);
-        } else {
-            coll = this.collection.toArray();
+
+    // === Custom Methods === //
+
+    addEntryToTimesheet: function(newEntry) {
+        // Adds entry to the correct week table & place within the table.
+        var newEndTime = newEntry.getEndTime();
+
+        // Find the week which contains the newEndTime.
+        var weekTable = _.find(this.weekTables, function(weekTable) {
+            return newEndTime >= weekTable.weekStart && newEndTime <= weekTable.weekEnd;
+        });
+        newEntry.weekTable = weekTable;
+
+        // If no week is found, entry is from either before or after this
+        // month.
+        if (!weekTable) { return false; }
+
+        // Otherwise, find the first entry in the week whose end time is
+        // larger than the newEndTime - the new entry should be inserted
+        // before this entry.
+        found = _.find(weekTable.models, function(old_entry, index, models) {
+            if (old_entry.getEndTime() > newEndTime) {
+                // Add newEntry to the weekTable, and render it.
+                var newEntry = this;
+                models.splice(index, 0, newEntry);
+                var row = new EntryRow({ model: newEntry });
+                newEntry.row = row;
+                row.render().$el.insertBefore(row.model.weekTable.$el.find("tbody tr#" + old_entry.row.getTagId()));
+                return true;
+            }
+            return false;
+        }, newEntry); // bind to newEntry
+
+        timesheet.collection.add(newEntry)
+
+        // If no such entry was found, then the entry should be inserted at
+        // the end of the table.
+        if (!found) {
+            weekTable.models.push(newEntry);
+            var row = new EntryRow({model: newEntry});
+            newEntry.row = row;
+            row.render().$el.insertBefore(row.model.weekTable.$el.find("tbody tr.week-summary"));
         }
-        this.table.empty();
-        _.each(coll, function(entry) {
-            var view = new EntryRow({ model: entry });
-            this.table.append(view.render().el);
-        }, this)
+
+        return true;
     },
-    */
     approveMonth: function(event) {
         event.preventDefault();
         var msg = "All verified entries from the month of " +
@@ -360,6 +353,23 @@ var Timesheet = Backbone.View.extend({
             timesheet.modal.show();
         }).fail(handleAjaxFailure);
     },
+/*
+    filterEntries: function(event) {
+        entryStatus = event.currentTarget.value;
+        var coll;
+        if (entryStatus !== "") {
+            this.filter = {'status': entryStatus};
+            coll = this.collection.where(this.filter);
+        } else {
+            coll = this.collection.toArray();
+        }
+        this.table.empty();
+        _.each(coll, function(entry) {
+            var view = new EntryRow({ model: entry });
+            this.table.append(view.render().el);
+        }, this)
+    },
+*/
     rejectMonth: function(event) {
         event.preventDefault();
         var msg = "All entries from the month of " +
@@ -376,6 +386,7 @@ var Timesheet = Backbone.View.extend({
     }
 });
 
+
 var Modal = Backbone.View.extend({
     tagName: "div",
     initialize: function() {
@@ -385,6 +396,19 @@ var Modal = Backbone.View.extend({
         this.modalContent = "";
         this.render();
     },
+    render: function() {
+        this.$el.html(this.template({
+            "modalTitle": this.modalTitle,
+            "modalContent": this.modalContent
+        }));
+        return this.$el;
+    },
+
+    // === Custom Methods === //
+
+    hide: function() {
+        this.$el.modal('hide');
+    },
     setContent: function(content) {
         this.modalContent = content;
         this.render();
@@ -393,17 +417,7 @@ var Modal = Backbone.View.extend({
         this.modalTitle = title;
         this.render();
     },
-    hide: function() {
-        this.$el.modal('hide');
-    },
     show: function() {
         this.$el.modal('show');
-    },
-    render: function() {
-        this.$el.html(this.template({
-            "modalTitle": this.modalTitle,
-            "modalContent": this.modalContent
-        }));
-        return this.$el;
     }
 })
