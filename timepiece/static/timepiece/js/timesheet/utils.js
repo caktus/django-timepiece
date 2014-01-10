@@ -102,3 +102,13 @@ var getIdsFromCurrentMonth = function(entries) {
     });
     return entryIds;
 }
+
+var formatHoursMinutes = function(totalSeconds, long_format) {
+    seconds = totalSeconds % 60;
+    minutes = (totalSeconds - seconds) % 3600 / 60;
+    hours = (totalSeconds - 60 * minutes - seconds) / 3600;
+
+    minutes = minutes < 10 ? "0" + minutes : "" + minutes;
+    seconds = seconds < 10 ? "0" + seconds : "" + seconds;
+    return hours + "h " + minutes + "m " + seconds + "s";
+}

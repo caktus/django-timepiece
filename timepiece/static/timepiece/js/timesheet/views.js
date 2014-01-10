@@ -10,7 +10,11 @@ var EntryRow = Backbone.View.extend({
         "click a[title='Reject']": "rejectEntry",
         "click a[title='Verify']": "verifyEntry"
     },
+    getTagId: function() {
+        return "entry-" + this.model.get("id");
+    },
     render: function() {
+        this.$el.attr({id: this.getTagId()});
         if (!this.model.isFromCurrentMonth()) {
             this.$el.addClass('muted')
                     .attr({
@@ -36,6 +40,7 @@ var EntryRow = Backbone.View.extend({
         event.preventDefault();
         this.model.destroy({
             success: function(deletedModel, response) {
+                deletedModel.weekTable.updateTotalHours();
                 showSuccess(deletedModel.description() + " has been deleted.");
                 for (var i=0; i < deletedModel.weekTable.models.length; i++) {
                     var model = deletedModel.weekTable.models[i];
@@ -55,10 +60,9 @@ var EntryRow = Backbone.View.extend({
             url: this.model.get('get_edit_url'),
             dataType: 'html'
         }).done(function(data, status, xhr) {
-            var modal = self.model.weekTable.timesheet.modal;
-            modal.setTitle("Update Entry");
-            modal.setContent(data);
-
+            timesheet.modal.setTitle("Update Entry");
+            timesheet.modal.setContent(data);
+            initializeDatepickers();  // For start and end dates.
             var onSubmit = function(event) {
                 // It would be too hard to parse the form, set elements on
                 // the model, and then call Backbone's save. Instead, we'll
@@ -73,25 +77,24 @@ var EntryRow = Backbone.View.extend({
                     data: $(this).serialize(),
                     success: function(data, status, xhr) {
                         self.model.set(data);
-                        self.model.weekTable.timesheet.modal.hide();
+                        self.model.weekTable.updateTotalHours();
+                        timesheet.modal.hide();
                         showSuccess(self.model.description() + " has been updated.");
                     },
                     error: function(xhr, status, error) {
                         if (xhr.status === 400) {
-                            var modal = self.model.weekTable.timesheet.modal;
-                            modal.setContent(xhr.responseText);
-                            modal.$el.find('form').on('submit', onSubmit);
+                            timesheet.modal.setContent(xhr.responseText);
+                            initializeDatepickers();  // For start and end dates.
+                            timesheet.modal.$el.find('form').on('submit', onSubmit);
                             return;
                         }
                         return handleAjaxFailure(xhr, status, error);
                     }
                 })
             };
-            modal.$el.find('form').on('submit', onSubmit);
-            modal.show();
-        }, this).fail(function(xhr, status, error) {
-            alert('There was an error loading the data.');  // TODO
-        });
+            timesheet.modal.$el.find('form').on('submit', onSubmit);
+            timesheet.modal.show();
+        }).fail(handleAjaxFailure);
     },
     rejectEntry: function(event) {
         event.preventDefault();
@@ -129,19 +132,25 @@ var WeekTable = Backbone.View.extend({
         "click .btn[title='Reject Week']": "rejectWeek",
         "click .btn[title='Verify Week']": "verifyWeek"
     },
+    updateTotalHours: function() {
+        this.totalHours = 0;
+        _.each(this.models, function(entry) {
+            this.totalHours += entry.get("total_seconds");
+        }, this);
+        this.$el.find(".week-summary .total-hours").text(formatHoursMinutes(this.totalHours));
+    },
     render: function() {
         this.$el.addClass('week');
         this.$el.append($(_.template($('#week-template').html(), {
             weekStart: this.weekStart,
             weekEnd: this.weekEnd
         })));
-        this.totalHours = 0;
         _.each(this.models, function(entry) {
             var row = new EntryRow({ model: entry });
-            this.totalHours += entry.get('total_seconds');
+            entry.row = row;
             row.render().$el.insertBefore(this.$el.find('tbody tr.week-summary'));
         }, this);
-        this.$el.find('.week-summary .total-hours').text(this.totalHours);
+        this.updateTotalHours();
         return this;
     },
 
@@ -197,7 +206,7 @@ var Timesheet = Backbone.View.extend({
 
             var weekTable = this.weekTables[weekCursor],
                 entry = this.collection.at(entryCursor);
-                date = new Date(entry.get('end_time'));
+                date = entry.getEndTime();
 
             if (date > weekTable.weekEnd) { weekCursor++; }
             else if (date < weekTable.weekStart) { entryCursor++; }

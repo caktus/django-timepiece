@@ -40,6 +40,15 @@ var Entry = Backbone.Model.extend({
     getStartTimeDisplay: function() {
         return displayTime(this.getStartTime());
     },
+    getPausedTimeDisplay: function() {
+        if (this.get("paused_seconds")) {
+            return formatHoursMinutes(this.get("paused_seconds"));
+        }
+        return "";
+    },
+    getTotalTimeDisplay: function() {
+        return formatHoursMinutes(this.get("total_seconds"));
+    },
     getStatusLabel: function() {
         // Returns nothing if this entry is unverified.
         var sts = this.get('status'),

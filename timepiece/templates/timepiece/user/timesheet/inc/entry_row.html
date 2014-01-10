@@ -22,8 +22,8 @@
 </td>
 <td class="align-right"><%= model.getStartTimeDisplay() %></td>
 <td class="align-right"><%= model.getEndTimeDisplay() %></td>
-<td class="align-right"><%= model.get('paused_seconds') %></td>
-<td class="align-right"><%= model.get('total_seconds') %></td>
+<td class="align-right"><%= model.getPausedTimeDisplay() %></td>
+<td class="align-right"><%= model.getTotalTimeDisplay() %></td>
 <td><%= model.get('comments') %></td>
 <td<% if (model.get('status') === 'unverified' && model.isFromCurrentMonth()) { %> data-toggle="tooltip" title="The entry must be verified before it can be approved."<% } %>>
     <% if (model.isFromCurrentMonth()) { %>
