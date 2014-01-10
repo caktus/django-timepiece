@@ -19,6 +19,15 @@
 {# So that we can make CSRF-friendly AJAX requests. #}
 <script src="{{ STATIC_URL }}timepiece/js/ajax.js"></script>
 
+{# For permanent tabs. #}
+<script>
+    var basePath = "{% user_timesheet_url timesheet_user.pk %}",  // FIXME
+        tabIds = ['overview', 'all-entries'],
+        defaultTab = 'all-entries';
+</script>
+<script src="{{ STATIC_URL }}timepiece/js/permanent_tabs.js"></script>
+
+
 {# Underscore templates. #}
 <script type="text/template" id="week-template">
     {% include "timepiece/user/timesheet/inc/week.html" %}
@@ -147,10 +156,14 @@ $(function() {
 
     <ul class="nav nav-tabs">
         <li{% if active_tab == "overview" %} class="active"{% endif %}>
-            <a href="#overview" data-toggle="tab">Overview</a>
+            {% url "view_user_timesheet" timesheet_user.pk "overview" as link %}
+            <a class="tab-link" to="overview" data-toggle="tab"
+                href="{{ link|add_parameters:request.GET }}">Overview</a>
         </li>
         <li{% if active_tab == "all-entries" %} class="active"{% endif %}>
-            <a href="#all-entries" data-toggle="tab">All Entries</a>
+            {% url "view_user_timesheet" timesheet_user.pk "all-entries" as link %}
+            <a class="tab-link" to="all-entries" data-toggle="tab"
+                href="{{ link|add_parameters:request.GET }}">All Entries</a>
         </li>
     </ul>
     <div class="tab-content">
