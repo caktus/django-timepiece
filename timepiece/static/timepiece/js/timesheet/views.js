@@ -38,20 +38,28 @@ var EntryRow = Backbone.View.extend({
     },
     deleteEntry: function() {
         event.preventDefault();
-        this.model.destroy({
-            success: function(deletedModel, response) {
-                deletedModel.weekTable.updateTotalHours();
-                showSuccess(deletedModel.description() + " has been deleted.");
-                for (var i=0; i < deletedModel.weekTable.models.length; i++) {
-                    var model = deletedModel.weekTable.models[i];
-                    if (model.get('id') == deletedModel.get('id')) {
-                        deletedModel.weekTable.models.splice(i, 1);
-                        break;
+        timesheet.modal.setTitle("Confirm Deletion");
+        template = _.template($("#delete-template").html(), { entry: this.model });
+        timesheet.modal.setContent(template);
+        timesheet.modal.$el.find("#confirm-delete").on("click", function(event) {
+            event.preventDefault();
+            this.model.destroy({
+                success: function(deletedModel, response) {
+                    for (var i=0; i < deletedModel.weekTable.models.length; i++) {
+                        var model = deletedModel.weekTable.models[i];
+                        if (model.get('id') == deletedModel.get('id')) {
+                            deletedModel.weekTable.models.splice(i, 1);
+                            deletedModel.row.$el.remove();
+                            deletedModel.weekTable.updateTotalHours();
+                            timesheet.modal.hide();
+                            break;
+                        }
                     }
+                    showSuccess(deletedModel.description() + " has been deleted.");
                 }
-            }
-        });
-        this.$el.remove();  // TODO: move this to success function.
+            });
+        }.bind(this));
+        timesheet.modal.show();
     },
     editEntry: function(event) {
         event.preventDefault();
