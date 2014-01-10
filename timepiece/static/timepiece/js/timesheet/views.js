@@ -194,6 +194,47 @@ var WeekTable = Backbone.View.extend({
 
 var Timesheet = Backbone.View.extend({
     el: "body",
+    addEntryToTimesheet: function(newEntry) {
+        // Adds entry to the correct week table & place within the table.
+        var newEndTime = newEntry.getEndTime();
+
+        // Find the week which contains the newEndTime.
+        var weekTable = _.find(this.weekTables, function(weekTable) {
+            return newEndTime >= weekTable.weekStart && newEndTime <= weekTable.weekEnd;
+        });
+        newEntry.weekTable = weekTable;
+
+        // If no week is found, entry is from either before or after this
+        // month.
+        if (!weekTable) { return false; }
+
+        // Otherwise, find the first entry in the week whose end time is
+        // larger than the newEndTime - the new entry should be inserted
+        // before this entry.
+        found = _.find(weekTable.models, function(old_entry, index, models) {
+            if (old_entry.getEndTime() > newEndTime) {
+                // Add newEntry to the weekTable, and render it.
+                var newEntry = this;
+                models.splice(index, 0, newEntry);
+                var row = new EntryRow({ model: newEntry });
+                newEntry.row = row;
+                row.render().$el.insertBefore(row.model.weekTable.$el.find("tbody tr#" + old_entry.row.getTagId()));
+                return true;
+            }
+            return false;
+        }, newEntry); // bind to newEntry
+
+        // If no such entry was found, then the entry should be inserted at
+        // the end of the table.
+        if (!found) {
+            weekTable.models.push(newEntry);
+            var row = new EntryRow({model: newEntry});
+            newEntry.row = row;
+            row.render().$el.insertBefore(row.model.weekTable.$el.find("tbody tr.week-summary"));
+        }
+
+        return true;
+    },
     initialize: function() {
         // Create a table view for each week of the month.
         this.thisMonth = this.options['thisMonth']
@@ -244,6 +285,7 @@ var Timesheet = Backbone.View.extend({
         "click .btn[title='Verify All']": "verifyMonth",
         "click .btn[title='Approve All']": "approveMonth",
         "click .btn[title='Reject All']": "rejectMonth",
+        "click a[title='Add Entry']": "createEntry",
         "click .btn.last-month": "",
         "click .btn.next-month": "",
         "click .btn.refresh": "",
@@ -275,6 +317,48 @@ var Timesheet = Backbone.View.extend({
                 fullMonths[this.thisMonth.getMonth()] + " are now approved.",
             entryIds = getIdsFromCurrentMonth(this.collection.toArray());
         approveEntries(this.collection, entryIds, msg);
+    },
+    createEntry: function(event) {
+        event.preventDefault();
+        $.ajax({
+            url: createEntryUrl,
+            dataType: 'html'
+        }).done(function(data, status, xhr) {
+            timesheet.modal.setTitle("Add Entry");
+            timesheet.modal.setContent(data);
+            initializeDatepickers();  // For start and end dates.
+            var onSubmit = function(event) {
+                event.preventDefault();
+                $.ajax({
+                    type: "POST",
+                    url: createEntryUrl,
+                    data: $(this).serialize(),
+                    success: function(data, status, xhr) {
+                        var entry = new Entry(data);
+                        var added = timesheet.addEntryToTimesheet(entry);
+                        if (entry.weekTable) { entry.weekTable.updateTotalHours(); }
+                        timesheet.modal.hide();
+                        if (added) {
+                            showSuccess(entry.description() + " has been created.");
+                        } else {
+                            showSuccess(entry.description() + " has been added to " +
+                                    fullMonths[entry.getEndTime().getMonth()] + ".");
+                        }
+                    },
+                    error: function(xhr, status, error) {
+                        if (xhr.status === 400) {
+                            timesheet.modal.setContent(xhr.responseText);
+                            initializeDatepickers();  // For start and end dates.
+                            timesheet.modal.$el.find('form').on('submit', onSubmit);
+                            return;
+                        }
+                        return handleAjaxFailure(xhr, status, error);
+                    }
+                });
+            };
+            timesheet.modal.$el.find('form').on('submit', onSubmit);
+            timesheet.modal.show();
+        }).fail(handleAjaxFailure);
     },
     rejectMonth: function(event) {
         event.preventDefault();

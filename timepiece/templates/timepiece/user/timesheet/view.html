@@ -98,10 +98,11 @@ $(function() {
     <div class="top-actions clearfix">
         <div class="btn-toolbar pull-left">
             <div class="btn-group">
-                <button class="btn" data-toggle="tooltip" title="Add Entry">
+                <a class="btn" data-toggle="tooltip" title="Add Entry"
+                    href="{% url 'create_entry' %}">
                     <i class="icon icon-plus"></i>
                     Add Entry
-                </button>
+                </a>
             </div>
             <div class="btn-group">
                 <button class="btn verify" data-toggle="tooltip" title="Verify All">
