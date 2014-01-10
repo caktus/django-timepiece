@@ -181,6 +181,22 @@ $(function() {
 
         <div id="all-entries"
                 class="tab-pane{% if active_tab == 'all-entries' %} active{% endif %}">
+            <div>
+                <form id="filter-entries" class="form-inline">
+                    <span class="form-name">Filter Entries:</span>
+                    <select name="project">
+                        <option value="">By project...</option>
+                    </select>
+                    <select name="status">
+                        <option value="">By status...</option>
+                        <option value="unverified">Unverified</option>
+                        <option value="verified">Verified</option>
+                        <option value="approved">Approved</option>
+                        <option value="invoiced">Invoiced</option>
+                        <option value="uninvoiced">Uninvoiced</option>
+                    </select>
+                </form>
+            </div>
         </div>
     </div>
 </div>

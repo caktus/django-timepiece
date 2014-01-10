@@ -50,6 +50,7 @@ var EntryRow = Backbone.View.extend({
                             deletedModel.weekTable.models.splice(i, 1);
                             deletedModel.row.$el.remove();
                             deletedModel.weekTable.updateTotalHours();
+                            timesheet.updateProjects();
                             timesheet.modal.hide();
                             break;
                         }
@@ -85,6 +86,7 @@ var EntryRow = Backbone.View.extend({
                     success: function(data, status, xhr) {
                         self.model.set(data);
                         self.model.weekTable.updateTotalHours();
+                        timesheet.updateProjects();
                         timesheet.modal.hide();
                         showSuccess(self.model.description() + " has been updated.");
                     },
@@ -207,7 +209,7 @@ var Timesheet = Backbone.View.extend({
         "click .btn.last-month": "",
         "click .btn.next-month": "",
         "click .btn.refresh": "",
-//        "change #filter-entries select": "filterEntries"
+        "change #filter-entries select": "filterEntries"
     },
     initialize: function() {
         this.thisMonth = this.options['thisMonth'];
@@ -254,6 +256,7 @@ var Timesheet = Backbone.View.extend({
             $('#all-entries').append(weekTable.render().el);
         }, this)
         this.$el.append(this.modal.render());
+        this.updateProjects();
     },
     render: function() {
         return this;
@@ -329,9 +332,10 @@ var Timesheet = Backbone.View.extend({
                     success: function(data, status, xhr) {
                         var entry = new Entry(data);
                         var added = timesheet.addEntryToTimesheet(entry);
-                        if (entry.weekTable) { entry.weekTable.updateTotalHours(); }
                         timesheet.modal.hide();
                         if (added) {
+                            timesheet.updateProjects();
+                            entry.weekTable.updateTotalHours();
                             showSuccess(entry.description() + " has been created.");
                         } else {
                             showSuccess(entry.description() + " has been added to " +
@@ -353,29 +357,49 @@ var Timesheet = Backbone.View.extend({
             timesheet.modal.show();
         }).fail(handleAjaxFailure);
     },
-/*
     filterEntries: function(event) {
-        entryStatus = event.currentTarget.value;
-        var coll;
-        if (entryStatus !== "") {
-            this.filter = {'status': entryStatus};
-            coll = this.collection.where(this.filter);
-        } else {
-            coll = this.collection.toArray();
-        }
-        this.table.empty();
-        _.each(coll, function(entry) {
-            var view = new EntryRow({ model: entry });
-            this.table.append(view.render().el);
-        }, this)
+        // TODO
     },
-*/
     rejectMonth: function(event) {
         event.preventDefault();
         var msg = "All entries from the month of " +
                 fullMonths[this.thisMonth.getMonth()] + " are now unverified.",
             entryIds = getIdsFromCurrentMonth(this.collection.toArray());
         rejectEntries(this.collection, entryIds, msg);
+    },
+    updateProjects: function(event) {
+        // Maintain the "Filter by projects" dropdown menu.
+
+        // Find all current projects.
+        projects = {};
+        _.each(this.collection.models, function(entry) {
+            projects[entry.get("project__id")] = entry.get("project__name")
+        }, this);
+
+        // Create a sorted list of options.
+        var options = [];
+        for (var project_id in projects) {
+            name = projects[project_id];
+            options.push($("<option />").attr({value: project_id}).html(name));
+        }
+        options = _.sortBy(options, function(option) { return option.html().toLowerCase(); });
+        options.splice(0, 0, $("<option />").attr({value: ""}).html("By project..."));
+
+        // Build a brand new select.
+        var oldSelect = this.$el.find("#filter-entries [name='project']")
+        var newSelect = $("<select>").attr({name: "project", id: "filter-entries"});
+        _.each(options, function(option) {
+            this.append(option);
+        }, newSelect)
+
+        // Retain the old selected option if possible.
+        var selected = oldSelect.find(":selected");
+        if (selected) {
+            val = selected[0].value;
+            newSelect.find("[value='" + val + "']").attr({selected: "true"});
+        }
+
+        oldSelect.replaceWith(newSelect);
     },
     verifyMonth: function(event) {
         event.preventDefault();

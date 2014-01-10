@@ -41,6 +41,8 @@
 .actions a {
     text-decoration: none;
     color: black;
+    margin-right: 2px;
+    margin-left: 2px;
 }
 #select-month form [name=month] {
     width: 9em;
@@ -48,4 +50,10 @@
 }
 #select-month form [name=year] {
     width: 4em;
+}
+#filter-entries .form-name {
+    font-weight: bold;
+    height: 100%;
+    vertical-align: middle;
+    margin-right: 5px;
 }
