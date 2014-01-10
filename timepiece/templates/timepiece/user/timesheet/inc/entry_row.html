@@ -1,6 +1,6 @@
 {# Underscore template used to render each entry row in a table. #}
 <td class="actions">
-    <%= model.get_status_label() %>
+    <%= model.getStatusLabel() %>
     <% if (model.isFromCurrentMonth() && model.get('status') === 'unverified') { %>
     <a href="#" data-toggle="tooltip" title="Edit">
         <i class="icon icon-pencil"></i>
@@ -13,15 +13,15 @@
     </a>
     <% } %>
 </td>
-<td><%= model.get_date_display() %></td>
+<td><%= model.getDateDisplay() %></td>
 <td><%= model.get('project__name') %></td>
 <td>
     <%= model.get('activity__name') %>
     @
     <%= model.get('location__name') %>
 </td>
-<td class="align-right"><%= model.get_start_time_display() %></td>
-<td class="align-right"><%= model.get_end_time_display() %></td>
+<td class="align-right"><%= model.getStartTimeDisplay() %></td>
+<td class="align-right"><%= model.getEndTimeDisplay() %></td>
 <td class="align-right"><%= model.get('paused_seconds') %></td>
 <td class="align-right"><%= model.get('total_seconds') %></td>
 <td><%= model.get('comments') %></td>

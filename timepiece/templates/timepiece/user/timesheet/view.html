@@ -46,9 +46,10 @@
 <script src="{{ STATIC_URL }}timepiece/js/timesheet/models.js"></script>
 <script src="{{ STATIC_URL }}timepiece/js/timesheet/views.js"></script>
 <script>
-var verify_url = "{% url 'verify_entries' %}",
-    approve_url = "{% url 'approve_entries' %}",
-    reject_url = "{% url 'reject_entries' %}",
+var verifyUrl = "{% url 'verify_entries' %}",
+    approveUrl = "{% url 'approve_entries' %}",
+    rejectUrl = "{% url 'reject_entries' %}",
+    createEntryUrl = "{% url 'create_entry' %}",
     timesheet;
 $(function() {
     $.ajax({

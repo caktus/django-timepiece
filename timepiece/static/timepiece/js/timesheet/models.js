@@ -20,27 +20,27 @@ var Entry = Backbone.Model.extend({
     description: function() {
         return this.get('activity__name') + " on " + this.get('project__name');
     },
-    get_date: function() {
+    getDate: function() {
         // The "date" of this entry is tied to its end time.
-        return this.get_end_time();
+        return this.getEndTime();
     },
-    get_date_display: function() {
-        var d = this.get_date();
+    getDateDisplay: function() {
+        var d = this.getDate();
         return days[d.getDay()] + ", " + months[d.getMonth()] + " " + d.getDate();
     },
-    get_end_time: function() {
+    getEndTime: function() {
         return new Date(this.get('end_time'));
     },
-    get_end_time_display: function() {
-        return displayTime(this.get_end_time());
+    getEndTimeDisplay: function() {
+        return displayTime(this.getEndTime());
     },
-    get_start_time: function() {
+    getStartTime: function() {
         return new Date(this.get('start_time'));
     },
-    get_start_time_display: function() {
-        return displayTime(this.get_start_time());
+    getStartTimeDisplay: function() {
+        return displayTime(this.getStartTime());
     },
-    get_status_label: function() {
+    getStatusLabel: function() {
         // Returns nothing if this entry is unverified.
         var sts = this.get('status'),
             label = "";
@@ -53,7 +53,7 @@ var Entry = Backbone.Model.extend({
         return label;
     },
     isFromCurrentMonth: function() {
-        var d = this.get_end_time();
+        var d = this.getEndTime();
         return d >= this.weekTable.thisMonth && d <= this.weekTable.nextMonth;
     }
 });
@@ -61,6 +61,6 @@ var Entry = Backbone.Model.extend({
 var EntryCollection = Backbone.Collection.extend({
     model: Entry,
     comparator: function(item) {
-        return item.get_date();
+        return item.getDate();
     }
 });

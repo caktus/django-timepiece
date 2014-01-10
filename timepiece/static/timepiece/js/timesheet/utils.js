@@ -45,25 +45,25 @@ var changeEntries = function(changeUrl, collection, entryIds, successMsg) {
         dataType: "json"
     }).done(function(data, status, xhr) {
         // API returns the updated data for the changed entries.
-        $(data).each(function(i, raw_entry) {
-            collection.get(raw_entry.id).set(raw_entry);
+        $(data).each(function(i, rawEntry) {
+            collection.get(rawEntry.id).set(rawEntry);
         });
         if (successMsg) {
             showSuccess(successMsg);
         }
     }).fail(handleAjaxFailure);
 }
-var verifyEntries = function(collection, entryIds, success_msg) {
-    var changeUrl = verify_url;
-    changeEntries(changeUrl, collection, entryIds, success_msg);
+var verifyEntries = function(collection, entryIds, successMsg) {
+    var changeUrl = verifyUrl;
+    changeEntries(changeUrl, collection, entryIds, successMsg);
 }
-var rejectEntries = function(collection, entryIds, success_msg) {
-    var changeUrl = reject_url;
-    changeEntries(changeUrl, collection, entryIds, success_msg);
+var rejectEntries = function(collection, entryIds, successMsg) {
+    var changeUrl = rejectUrl;
+    changeEntries(changeUrl, collection, entryIds, successMsg);
 }
-var approveEntries = function(collection, entryIds, success_msg) {
-    var changeUrl = approve_url;
-    changeEntries(changeUrl, collection, entryIds, success_msg);
+var approveEntries = function(collection, entryIds, successMsg) {
+    var changeUrl = approveUrl;
+    changeEntries(changeUrl, collection, entryIds, successMsg);
 }
 
 var displayDate = function(d) {
