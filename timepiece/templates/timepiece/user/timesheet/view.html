@@ -12,6 +12,8 @@
 <link rel="stylesheet"
         href="//netdna.bootstrapcdn.com/font-awesome/3.2.1/css/font-awesome.css">
 <link rel="stylesheet"
+        href="{{ STATIC_URL }}timepiece/lib/pnotify-1.2.0/jquery.pnotify.default.css">
+<link rel="stylesheet"
         href="{{ STATIC_URL }}timepiece/less/timesheet.css">
 {% endblock extracss %}
 
@@ -27,6 +29,8 @@
 </script>
 <script src="{{ STATIC_URL }}timepiece/js/permanent_tabs.js"></script>
 
+{# For pretty user messages. #}
+<script src="{{ STATIC_URL }}timepiece/lib/pnotify-1.2.0/jquery.pnotify.min.js"></script>
 
 {# Underscore templates. #}
 <script type="text/template" id="week-template">

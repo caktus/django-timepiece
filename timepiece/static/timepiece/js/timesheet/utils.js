@@ -10,13 +10,11 @@ var days = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"],
 
 // Display a message to the user.
 var showMessage = function(type, message) {
-    var container = $("<div />").addClass("alert alert-" + type)
-    var close = $("<a />").addClass("close").attr({
-        "data-dismiss": "alert",
-        "href": "#"
-    }).text("x");
-    container.append(close).append(message);
-    $("#alerts").empty().append(container);
+    $.pnotify({
+        text: message,
+        type: type,
+        icon: false
+    });
 }
 var showError = function(message) { showMessage("error", message); }
 var showSuccess = function(message) { showMessage("success", message); }
