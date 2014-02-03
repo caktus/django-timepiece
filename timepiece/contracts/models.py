@@ -13,35 +13,28 @@ from django.template.loader import get_template
 
 from timepiece import utils
 from timepiece.entries.models import Entry
+from timepiece.utils.models import Constants
 
 
 class ProjectContract(models.Model):
-    STATUS_UPCOMING = 'upcoming'
-    STATUS_CURRENT = 'current'
-    STATUS_COMPLETE = 'complete'
-    CONTRACT_STATUS = {
-        STATUS_UPCOMING: 'Upcoming',
-        STATUS_CURRENT: 'Current',
-        STATUS_COMPLETE: 'Complete',
-    }
-
-    PROJECT_UNSET = 0  # Have to set existing contracts to something...
-    PROJECT_FIXED = 1
-    PROJECT_PRE_PAID_HOURLY = 2
-    PROJECT_POST_PAID_HOURLY = 3
-    PROJECT_TYPE = {   # UNSET is not an option
-        PROJECT_FIXED: 'Fixed',
-        PROJECT_PRE_PAID_HOURLY: 'Pre-paid Hourly',
-        PROJECT_POST_PAID_HOURLY: 'Post-paid Hourly',
-    }
+    STATUSES = Constants(
+        upcoming=('upcoming', 'Upcoming'),
+        current=('current', 'Current'),
+        complete=('complete', 'Complete'),
+    )
+    TYPES = Constants(
+        fixed=(1, 'Fixed'),
+        prepaid_hourly=(2, 'Pre-paid Hourly'),
+        postpaid_hourly=(3, 'Post-paid Hourly'),
+    )
 
     name = models.CharField(max_length=255)
     projects = models.ManyToManyField('crm.Project', related_name='contracts')
     start_date = models.DateField()
     end_date = models.DateField()
-    status = models.CharField(choices=CONTRACT_STATUS.items(),
-            default=STATUS_UPCOMING, max_length=32)
-    type = models.IntegerField(choices=PROJECT_TYPE.items())
+    status = models.CharField(choices=STATUSES.choices(),
+            default=STATUSES.upcoming, max_length=32)
+    type = models.IntegerField(choices=TYPES.choices())
 
     class Meta:
         ordering = ('-end_date',)
@@ -80,13 +73,13 @@ class ProjectContract(models.Model):
 
         qset = self.contract_hours
         if approved_only:
-            qset = qset.filter(status=ContractHour.APPROVED_STATUS)
+            qset = qset.filter(status=ContractHour.STATUSES.approved)
         result = qset.aggregate(sum=Sum('hours'))['sum']
         return result or 0
 
     def pending_hours(self):
         """Compute the contract hours still in pending status"""
-        qset = self.contract_hours.filter(status=ContractHour.PENDING_STATUS)
+        qset = self.contract_hours.filter(status=ContractHour.STATUSES.pending)
         result = qset.aggregate(sum=Sum('hours'))['sum']
         return result or 0
 
@@ -140,7 +133,7 @@ class ProjectContract(models.Model):
         If the contract status is not current, or either the start or end
         date is not set, returns 0.0
         """
-        if self.status != ProjectContract.STATUS_CURRENT or \
+        if self.status != ProjectContract.STATUSES.current or \
             not self.start_date or \
             not self.end_date:
                 return 0.0
@@ -154,12 +147,10 @@ class ProjectContract(models.Model):
 
 
 class ContractHour(models.Model):
-    PENDING_STATUS = 1
-    APPROVED_STATUS = 2
-    CONTRACT_HOUR_STATUS = (
-        (PENDING_STATUS, 'Pending'), # default
-        (APPROVED_STATUS, 'Approved')
-        )
+    STATUSES = Constants(
+        pending=(1, 'Pending'),
+        approved=(2, 'Approved'),
+    )
 
     hours = models.DecimalField(max_digits=8, decimal_places=2,
             default=0)
@@ -167,8 +158,8 @@ class ContractHour(models.Model):
             related_name='contract_hours')
     date_requested = models.DateField()
     date_approved = models.DateField(blank=True, null=True)
-    status = models.IntegerField(choices=CONTRACT_HOUR_STATUS,
-            default=PENDING_STATUS)
+    status = models.IntegerField(choices=STATUSES.choices(),
+            default=STATUSES.pending)
     notes = models.TextField(blank=True)
 
     class Meta(object):
@@ -194,7 +185,7 @@ class ContractHour(models.Model):
 
     def clean(self):
         # Note: this is called when editing in the admin, but not otherwise
-        if self.status == self.PENDING_STATUS and self.date_approved:
+        if self.status == ContractHour.STATUSES.pending and self.date_approved:
             raise ValidationError(
                 "Pending contracthours should not have an approved date, did "
                 "you mean to change status to approved?"
@@ -219,15 +210,15 @@ class ContractHour(models.Model):
     def save(self, *args, **kwargs):
         # Let the date_approved default to today if it's been set approved
         # and doesn't have one
-        if self.status == self.APPROVED_STATUS and not self.date_approved:
+        if self.status == ContractHour.STATUSES.approved and not self.date_approved:
             self.date_approved = datetime.date.today()
 
         # If we have an email address to send to, and this record was
         # or is in pending status, we'll send an email about the change.
-        if ContractHour.PENDING_STATUS in (self.status, self._original['status']):
+        if ContractHour.STATUSES.pending in (self.status, self._original['status']):
             is_new = self.pk is None
         super(ContractHour, self).save(*args, **kwargs)
-        if ContractHour.PENDING_STATUS in (self.status, self._original['status']):
+        if ContractHour.STATUSES.pending in (self.status, self._original['status']):
             domain = Site.objects.get_current().domain
             method = 'https' if utils.get_setting('TIMEPIECE_EMAILS_USE_HTTPS')\
                 else 'http'
@@ -253,7 +244,7 @@ class ContractHour(models.Model):
         super(ContractHour, self).delete(*args, **kwargs)
         # If we have an email address to send to, and this record was in
         # pending status, we'll send an email about the change.
-        if ContractHour.PENDING_STATUS in (self.status, self._original['status']):
+        if ContractHour.STATUSES.pending in (self.status, self._original['status']):
             domain = Site.objects.get_current().domain
             method = 'https' if utils.get_setting('TIMEPIECE_EMAILS_USE_HTTPS')\
                 else 'http'
@@ -364,17 +355,15 @@ class HourGroup(models.Model):
 
 
 class EntryGroup(models.Model):
-    INVOICED = Entry.INVOICED
-    NOT_INVOICED = Entry.NOT_INVOICED
-    STATUSES = {
-        INVOICED: 'Invoiced',
-        NOT_INVOICED: 'Not Invoiced',
-    }
+    STATUSES = Constants(
+        invoiced=('invoiced', 'Invoiced'),
+        not_invoiced=('not-invoiced', 'Not Invoiced'),
+    )
 
     user = models.ForeignKey(User, related_name='entry_group')
     project = models.ForeignKey('crm.Project', related_name='entry_group')
-    status = models.CharField(max_length=24, choices=STATUSES.items(),
-                              default=INVOICED)
+    status = models.CharField(max_length=24, choices=STATUSES.choices(),
+                              default=STATUSES.invoiced)
     number = models.CharField("Reference #", max_length=50, blank=True,
                               null=True)
     comments = models.TextField(blank=True, null=True)
@@ -387,7 +376,7 @@ class EntryGroup(models.Model):
         db_table = 'timepiece_entrygroup'  # Using legacy table name.
 
     def delete(self):
-        self.entries.update(status=Entry.APPROVED)
+        self.entries.update(status=Entry.STATUSES.approved)
         super(EntryGroup, self).delete()
 
     def __unicode__(self):

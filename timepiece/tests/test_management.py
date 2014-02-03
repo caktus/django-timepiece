@@ -24,7 +24,7 @@ class CheckEntries(TestCase):
             'user': self.user,
             'project': self.project,
             'seconds_paused': 0,
-            'status': Entry.VERIFIED,
+            'status': Entry.STATUSES.verified,
         }
         self.good_start = timezone.now() - relativedelta(days=0, hours=8)
         self.good_end = timezone.now() - relativedelta(days=0)

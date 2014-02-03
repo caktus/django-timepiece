@@ -33,7 +33,7 @@ class DashboardViewTestCase(ViewTestMixin, TestCase):
         self.project = factories.Project()
         self.activity = factories.Activity()
         self.location = factories.Location()
-        self.status = Entry.UNVERIFIED
+        self.status = Entry.STATUSES.unverified
 
     def _create_entry(self, start_time, end_time=None, user=None):
         """
@@ -155,7 +155,7 @@ class ProcessProgressTestCase(TestCase):
         self.project = factories.Project()
         self.activity = factories.Activity()
         self.location = factories.Location()
-        self.status = Entry.UNVERIFIED
+        self.status = Entry.STATUSES.unverified
 
     def _create_entry(self, start_time, end_time=None, project=None):
         data = {

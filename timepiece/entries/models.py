@@ -10,6 +10,7 @@ from django.utils import timezone
 
 from timepiece import utils
 from timepiece.crm.models import Project
+from timepiece.utils.models import Constants
 
 
 class Activity(models.Model):
@@ -131,18 +132,13 @@ class Entry(models.Model):
     """
     This class is where all of the time logs are taken care of
     """
-    UNVERIFIED = 'unverified'
-    VERIFIED = 'verified'
-    APPROVED = 'approved'
-    INVOICED = 'invoiced'
-    NOT_INVOICED = 'not-invoiced'
-    STATUSES = {
-        UNVERIFIED: 'Unverified',
-        VERIFIED: 'Verified',
-        APPROVED: 'Approved',
-        INVOICED: 'Invoiced',
-        NOT_INVOICED: 'Not Invoiced',
-    }
+    STATUSES = Constants(
+        unverified=('unverified', 'Unverified'),
+        verified=('verified', 'Verified'),
+        approved=('approved', 'Approved'),
+        invoiced=('invoiced', 'Invoiced'),
+        not_invoiced=('not-invoiced', 'Not Invoiced'),
+    )
 
     user = models.ForeignKey(User, related_name='timepiece_entries')
     project = models.ForeignKey('crm.Project', related_name='entries')
@@ -150,8 +146,8 @@ class Entry(models.Model):
     location = models.ForeignKey(Location, related_name='entries')
     entry_group = models.ForeignKey('contracts.EntryGroup', blank=True,
             null=True, related_name='entries', on_delete=models.SET_NULL)
-    status = models.CharField(max_length=24, choices=STATUSES.items(),
-            default=UNVERIFIED)
+    status = models.CharField(max_length=24, choices=STATUSES.choices(),
+            default=STATUSES.unverified)
 
     start_time = models.DateTimeField()
     end_time = models.DateTimeField(blank=True, null=True, db_index=True)
@@ -325,12 +321,12 @@ class Entry(models.Model):
         month_start = utils.get_month_start(start)
         next_month = month_start + relativedelta(months=1)
         entries = self.user.timepiece_entries.filter(
-            Q(status=Entry.APPROVED) | Q(status=Entry.INVOICED),
+            Q(status=Entry.STATUSES.approved) | Q(status=Entry.STATUSES.invoiced),
             start_time__gte=month_start,
             end_time__lt=next_month
         )
         if (entries.exists() and not self.id
-                or self.id and self.status == Entry.INVOICED):
+                or self.id and self.status == Entry.STATUSES.invoiced):
             msg = 'You cannot add/edit entries after a timesheet has been ' \
                 'approved or invoiced. Please correct the start and end times.'
             raise ValidationError(msg)
@@ -431,7 +427,7 @@ class Entry(models.Model):
 
     @property
     def is_editable(self):
-        return self.status == Entry.UNVERIFIED
+        return self.status == Entry.STATUSES.unverified
 
     @property
     def delete_key(self):
@@ -468,9 +464,9 @@ class Entry(models.Model):
             'total': Decimal('0')
             }
         invoiced = entries.filter(
-            status=Entry.INVOICED).aggregate(i=Sum('hours'))['i']
+            status=Entry.STATUSES.invoiced).aggregate(i=Sum('hours'))['i']
         uninvoiced = entries.exclude(
-            status=Entry.INVOICED).aggregate(uninv=Sum('hours'))['uninv']
+            status=Entry.STATUSES.invoiced).aggregate(uninv=Sum('hours'))['uninv']
         total = entries.aggregate(s=Sum('hours'))['s']
         if invoiced:
             data['invoiced'] = invoiced

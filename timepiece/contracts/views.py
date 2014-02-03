@@ -42,7 +42,7 @@ class ContractList(ListView):
     model = ProjectContract
     context_object_name = 'contracts'
     queryset = ProjectContract.objects.filter(
-            status=ProjectContract.STATUS_CURRENT).order_by('name')
+            status=ProjectContract.STATUSES.current).order_by('name')
 
     def get_context_data(self, *args, **kwargs):
         if 'today' not in kwargs:
@@ -82,7 +82,7 @@ def create_invoice(request):
         'to_date': to_date,
     }
     entries_query = {
-        'status': Entry.APPROVED,
+        'status': Entry.STATUSES.approved,
         'end_time__lt': to_date + relativedelta(days=1),
         'project__id': project.id
     }
@@ -156,7 +156,7 @@ def list_outstanding_invoices(request):
         dates &= Q(end_time__gte=from_date) if from_date else Q()
         dates &= Q(end_time__lt=to_date) if to_date else Q()
         billable = Q(project__type__billable=True, project__status__billable=True)
-        entry_status = Q(status=Entry.APPROVED)
+        entry_status = Q(status=Entry.STATUSES.approved)
         project_status = Q(project__status__in=statuses)\
                 if statuses is not None else Q()
         # Calculate hours for each project
@@ -168,9 +168,9 @@ def list_outstanding_invoices(request):
         date_range_entries = Entry.objects.filter(dates)
         user_values = ['user__pk', 'user__first_name', 'user__last_name']
         unverified = date_range_entries.filter(
-            status=Entry.UNVERIFIED).values_list(*user_values).order_by('user__first_name').distinct()
+            status=Entry.STATUSES.unverified).values_list(*user_values).order_by('user__first_name').distinct()
         unapproved = date_range_entries.filter(
-            status=Entry.VERIFIED).values_list(*user_values).order_by('user__first_name').distinct()
+            status=Entry.STATUSES.verified).values_list(*user_values).order_by('user__first_name').distinct()
     else:
         project_totals = unverified = unapproved = Entry.objects.none()
     return render(request, 'timepiece/invoice/outstanding.html', {
@@ -327,7 +327,7 @@ def delete_invoice_entry(request, invoice_id, entry_id):
     invoice = get_object_or_404(EntryGroup, pk=invoice_id)
     entry = get_object_or_404(Entry, pk=entry_id)
     if request.POST:
-        entry.status = Entry.APPROVED
+        entry.status = Entry.STATUSES.approved
         entry.entry_group = None
         entry.save()
         url = reverse('edit_invoice', args=(invoice_id,))

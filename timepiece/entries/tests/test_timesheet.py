@@ -32,7 +32,7 @@ class EditableTest(TestCase):
             'start_time': timezone.now() - relativedelta(days=6),
             'end_time':  timezone.now() - relativedelta(days=6),
             'seconds_paused': 0,
-            'status': Entry.VERIFIED,
+            'status': Entry.STATUSES.verified,
         })
         self.entry2 = factories.Entry(**{
             'user': self.user,
@@ -40,7 +40,7 @@ class EditableTest(TestCase):
             'start_time': timezone.now() - relativedelta(days=2),
             'end_time':  timezone.now() - relativedelta(days=2),
             'seconds_paused': 0,
-            'status': Entry.UNVERIFIED,
+            'status': Entry.STATUSES.unverified,
         })
 
     def testUnEditable(self):
@@ -1283,7 +1283,7 @@ class CreateEditEntry(ViewTestMixin, TestCase):
             'start_time': self.ten_min_ago,
             'end_time': self.ten_min_ago + relativedelta(minutes=1)
         })
-        entry.status = Entry.INVOICED
+        entry.status = Entry.STATUSES.invoiced
         entry.save()
 
         self.add_entry_test_helper()
@@ -1298,7 +1298,7 @@ class CreateEditEntry(ViewTestMixin, TestCase):
             'start_time': self.ten_min_ago,
             'end_time': self.ten_min_ago + relativedelta(minutes=1)
         })
-        entry.status = Entry.INVOICED
+        entry.status = Entry.STATUSES.invoiced
         entry.save()
 
         self.add_entry_test_helper()
@@ -1359,7 +1359,7 @@ class CreateEditEntry(ViewTestMixin, TestCase):
         self.client.logout()
         self.login_user(self.superuser)
 
-        url, entry, data = self.edit_entry_helper(Entry.INVOICED)
+        url, entry, data = self.edit_entry_helper(Entry.STATUSES.invoiced)
 
         response = self.client.post(url, data=data, follow=True)
         self.assertEqual(response.status_code, 200)
@@ -1474,7 +1474,7 @@ class StatusTest(ViewTestMixin, TestCase):
             'user': self.user,
             'start_time': self.now - relativedelta(hours=1),
             'end_time': self.now,
-            'status': Entry.VERIFIED
+            'status': Entry.STATUSES.verified
         })
         response = self.client.get(self.sheet_url)
         self.assertFalse(response.context['show_approve'])
@@ -1485,7 +1485,7 @@ class StatusTest(ViewTestMixin, TestCase):
             'user': self.user,
             'start_time': self.now - relativedelta(hours=1),
             'end_time': self.now,
-            'status': Entry.VERIFIED
+            'status': Entry.STATUSES.verified
         })
         response = self.client.get(self.sheet_url)
         self.assertEquals(response.status_code, 200)
@@ -1527,11 +1527,11 @@ class StatusTest(ViewTestMixin, TestCase):
         response = self.client.get(url)
 
         self.assertEquals(response.status_code, 403)
-        self.assertEquals(entry.status, Entry.UNVERIFIED)
+        self.assertEquals(entry.status, Entry.STATUSES.unverified)
 
         response = self.client.post(url, {'do_action': 'Yes'})
         self.assertEquals(response.status_code, 403)
-        self.assertEquals(entry.status, Entry.UNVERIFIED)
+        self.assertEquals(entry.status, Entry.STATUSES.unverified)
 
     def test_approve_user(self):
         """A regular user should not be able to approve their timesheet"""
@@ -1546,7 +1546,7 @@ class StatusTest(ViewTestMixin, TestCase):
 
         response = self.client.post(self.approve_url(), {'do_action': 'Yes'})
         self.assertEquals(response.status_code, 403)
-        self.assertNotEquals(entry.status, Entry.APPROVED)
+        self.assertNotEquals(entry.status, Entry.STATUSES.approved)
         self.assertContains(response,
             'Forbidden: You cannot approve this timesheet',
             status_code=403
@@ -1565,7 +1565,7 @@ class StatusTest(ViewTestMixin, TestCase):
 
         response = self.client.post(self.approve_url(), {'do_action': 'Yes'})
         self.assertEquals(response.status_code, 403)
-        self.assertNotEquals(entry.status, Entry.APPROVED)
+        self.assertNotEquals(entry.status, Entry.STATUSES.approved)
         self.assertContains(response,
             'Forbidden: You cannot approve this timesheet',
             status_code=403
@@ -1582,12 +1582,12 @@ class StatusTest(ViewTestMixin, TestCase):
             'user': self.user,
             'start_time': self.now - relativedelta(hours=5),
             'end_time': self.now - relativedelta(hours=4),
-            'status': Entry.UNVERIFIED
+            'status': Entry.STATUSES.unverified
         })
         entry2 = factories.Entry(**{
             'user': self.user,
             'start_time': self.now - relativedelta(hours=1),
-            'status': Entry.UNVERIFIED
+            'status': Entry.STATUSES.unverified
         })
 
         response = self.client.get(self.verify_url(), follow=True)
@@ -1599,16 +1599,16 @@ class StatusTest(ViewTestMixin, TestCase):
             'entries.'.format(self.user.get_name_or_username())
 
         self.assertEquals(messages._loaded_messages[0].message, msg)
-        self.assertEquals(entry1.status, Entry.UNVERIFIED)
-        self.assertEquals(entry2.status, Entry.UNVERIFIED)
+        self.assertEquals(entry1.status, Entry.STATUSES.unverified)
+        self.assertEquals(entry2.status, Entry.STATUSES.unverified)
 
         response = self.client.post(self.verify_url(), follow=True)
         self.assertEquals(response.status_code, 200)
         messages = response.context['messages']
 
         self.assertEquals(messages._loaded_messages[0].message, msg)
-        self.assertEquals(entry1.status, Entry.UNVERIFIED)
-        self.assertEquals(entry2.status, Entry.UNVERIFIED)
+        self.assertEquals(entry1.status, Entry.STATUSES.unverified)
+        self.assertEquals(entry2.status, Entry.STATUSES.unverified)
 
     def testVerifyButton(self):
         response = self.client.get(self.sheet_url)
@@ -1621,7 +1621,7 @@ class StatusTest(ViewTestMixin, TestCase):
         })
         response = self.client.get(self.sheet_url)
         self.assertTrue(response.context['show_verify'])
-        entry.status = Entry.VERIFIED
+        entry.status = Entry.STATUSES.verified
         entry.save()
         response = self.client.get(self.sheet_url)
         self.assertFalse(response.context['show_verify'])
@@ -1637,11 +1637,11 @@ class StatusTest(ViewTestMixin, TestCase):
         })
         response = self.client.get(self.sheet_url)
         self.assertFalse(response.context['show_approve'])
-        entry.status = Entry.VERIFIED
+        entry.status = Entry.STATUSES.verified
         entry.save()
         response = self.client.get(self.sheet_url)
         self.assertTrue(response.context['show_approve'])
-        entry.status = Entry.APPROVED
+        entry.status = Entry.STATUSES.approved
         entry.save()
         response = self.client.get(self.sheet_url)
         self.assertFalse(response.context['show_approve'])
@@ -1655,9 +1655,9 @@ class StatusTest(ViewTestMixin, TestCase):
         })
         response = self.client.get(self.verify_url())
         entries = self.user.timepiece_entries.all()
-        self.assertEquals(entries[0].status, Entry.UNVERIFIED)
+        self.assertEquals(entries[0].status, Entry.STATUSES.unverified)
         response = self.client.post(self.verify_url(), {'do_action': 'Yes'})
-        self.assertEquals(entries[0].status, Entry.VERIFIED)
+        self.assertEquals(entries[0].status, Entry.STATUSES.verified)
 
     def testApprovePage(self):
         self.login_with_permissions('approve_timesheet', 'view_entry_summary')
@@ -1667,16 +1667,16 @@ class StatusTest(ViewTestMixin, TestCase):
             'end_time':  timezone.now(),
         })
 
-        self.assertEquals(entry.status, Entry.UNVERIFIED)
-        entry.status = Entry.VERIFIED
+        self.assertEquals(entry.status, Entry.STATUSES.unverified)
+        entry.status = Entry.STATUSES.verified
         entry.save()
 
         response = self.client.get(self.approve_url(),)
-        self.assertEquals(entry.status, Entry.VERIFIED)
+        self.assertEquals(entry.status, Entry.STATUSES.verified)
 
         response = self.client.post(self.approve_url(), {'do_action': 'Yes'})
         entry = Entry.objects.get(pk=entry.pk)
-        self.assertEquals(entry.status, Entry.APPROVED)
+        self.assertEquals(entry.status, Entry.STATUSES.approved)
 
     def test_reject_user(self):
         """A regular user should not be able to reject an entry"""
@@ -1687,12 +1687,12 @@ class StatusTest(ViewTestMixin, TestCase):
             'user': self.user,
             'start_time': now - relativedelta(hours=1),
             'end_time': now,
-            'status': Entry.VERIFIED
+            'status': Entry.STATUSES.verified
         })
         url = self.get_reject_url(entry.pk)
 
         response = self.client.post(url, {'Yes': 'yes'})
-        self.assertEquals(entry.status, Entry.VERIFIED)
+        self.assertEquals(entry.status, Entry.STATUSES.verified)
 
     def test_reject_other_user(self):
         """
@@ -1706,12 +1706,12 @@ class StatusTest(ViewTestMixin, TestCase):
             'user': self.user,
             'start_time': now - relativedelta(hours=1),
             'end_time': now,
-            'status': Entry.VERIFIED
+            'status': Entry.STATUSES.verified
         })
         url = self.get_reject_url(entry.pk)
 
         response = self.client.post(url, {'Yes': 'yes'})
-        self.assertEquals(entry.status, Entry.VERIFIED)
+        self.assertEquals(entry.status, Entry.STATUSES.verified)
 
     def testRejectPage(self):
         self.login_as_admin()
@@ -1729,14 +1729,14 @@ class StatusTest(ViewTestMixin, TestCase):
             response = self.client.get(reject_url)
             self.assertEqual(response.status_code, status_code)
 
-        check_entry_against_code(Entry.UNVERIFIED, 302)
-        check_entry_against_code(Entry.INVOICED, 302)
-        check_entry_against_code(Entry.APPROVED, 200)
-        check_entry_against_code(Entry.VERIFIED, 200)
+        check_entry_against_code(Entry.STATUSES.unverified, 302)
+        check_entry_against_code(Entry.STATUSES.invoiced, 302)
+        check_entry_against_code(Entry.STATUSES.approved, 200)
+        check_entry_against_code(Entry.STATUSES.verified, 200)
         response = self.client.post(reject_url, {'Yes': 'yes'})
         self.assertTrue(response.status_code, 302)
         entry = Entry.objects.get(user=self.user)
-        self.assertEqual(entry.status, Entry.UNVERIFIED)
+        self.assertEqual(entry.status, Entry.STATUSES.unverified)
 
     def testNotAllowedToRejectTimesheet(self):
         entry = factories.Entry(**{
@@ -2095,14 +2095,14 @@ class MonthlyRejectTestCase(ViewTestMixin, TestCase):
         and unverify them
         """
         self.login_user(self.superuser)
-        self.create_entries(self.now, Entry.VERIFIED)
+        self.create_entries(self.now, Entry.STATUSES.verified)
 
         response = self.client.get(self.url, data=self.data)
         self.assertEqual(response.status_code, 200)
 
         response = self.client.post(self.url, data=self.data)
 
-        entries = Entry.no_join.filter(status=Entry.VERIFIED)
+        entries = Entry.no_join.filter(status=Entry.STATUSES.verified)
         self.assertEquals(entries.count(), 0)
 
     def test_page_no_permissions(self):
@@ -2111,14 +2111,14 @@ class MonthlyRejectTestCase(ViewTestMixin, TestCase):
         get or post to the page
         """
         self.login_user(self.user)
-        self.create_entries(timezone.now(), Entry.VERIFIED)
+        self.create_entries(timezone.now(), Entry.STATUSES.verified)
 
         response = self.client.get(self.url, data=self.data)
         self.assertEqual(response.status_code, 302)
 
         response = self.client.post(self.url, data=self.data)
 
-        entries = Entry.no_join.filter(status=Entry.VERIFIED)
+        entries = Entry.no_join.filter(status=Entry.STATUSES.verified)
         self.assertEquals(entries.count(), 2)
 
     def test_reject_entries_no_date(self):
@@ -2127,7 +2127,7 @@ class MonthlyRejectTestCase(ViewTestMixin, TestCase):
         then the reject page should not show
         """
         self.login_user(self.superuser)
-        self.create_entries(timezone.now(), Entry.VERIFIED)
+        self.create_entries(timezone.now(), Entry.STATUSES.verified)
 
         data = {
             'month': self.now.month
@@ -2147,23 +2147,23 @@ class MonthlyRejectTestCase(ViewTestMixin, TestCase):
         'yes', then the entries are not rejected
         """
         self.login_user(self.superuser)
-        self.create_entries(timezone.now(), Entry.VERIFIED)
+        self.create_entries(timezone.now(), Entry.STATUSES.verified)
 
         data = self.data
         data.pop('yes')
 
         response = self.client.post(self.url, data=data)
 
-        entries = Entry.no_join.filter(status=Entry.VERIFIED)
+        entries = Entry.no_join.filter(status=Entry.STATUSES.verified)
         self.assertEquals(entries.count(), 2)
 
     def test_reject_approved_invoiced_entries(self):
         """Entries that are approved invoiced should not be rejected"""
         self.login_user(self.superuser)
-        self.create_entries(timezone.now(), Entry.APPROVED)
-        self.create_entries(timezone.now(), Entry.INVOICED)
+        self.create_entries(timezone.now(), Entry.STATUSES.approved)
+        self.create_entries(timezone.now(), Entry.STATUSES.invoiced)
 
         response = self.client.post(self.url, data=self.data)
 
-        entries = Entry.no_join.filter(status=Entry.UNVERIFIED)
+        entries = Entry.no_join.filter(status=Entry.STATUSES.unverified)
         self.assertEquals(entries.count(), 0)

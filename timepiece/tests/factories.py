@@ -54,8 +54,8 @@ class ProjectContract(factory.DjangoModelFactory):
     name = factory.Sequence(lambda n: 'contract{0}'.format(n))
     start_date = datetime.date.today()
     end_date = datetime.date.today() + relativedelta(weeks=2)
-    status = contracts.ProjectContract.STATUS_CURRENT,
-    type = contracts.ProjectContract.PROJECT_PRE_PAID_HOURLY
+    status = contracts.ProjectContract.STATUSES.current,
+    type = contracts.ProjectContract.TYPES.prepaid_hourly
 
     @factory.post_generation
     def contract_hours(self, create, extracted, **kwargs):
@@ -75,7 +75,7 @@ class ContractHour(factory.DjangoModelFactory):
     FACTORY_FOR = contracts.ContractHour
 
     date_requested = datetime.date.today()
-    status = contracts.ContractHour.APPROVED_STATUS
+    status = contracts.ContractHour.STATUSES.approved
     contract = factory.SubFactory('timepiece.tests.factories.ProjectContract')
 
 
@@ -105,14 +105,14 @@ class TypeAttribute(factory.DjangoModelFactory):
     FACTORY_FOR = crm.Attribute
 
     label = factory.Sequence(lambda n: 'type{0}'.format(n))
-    type = crm.Attribute.PROJECT_TYPE
+    type = crm.Attribute.TYPES.project_type
 
 
 class StatusAttribute(factory.DjangoModelFactory):
     FACTORY_FOR = crm.Attribute
 
     label = factory.Sequence(lambda n: 'status{0}'.format(n))
-    type = crm.Attribute.PROJECT_STATUS
+    type = crm.Attribute.TYPES.project_status
 
 
 class Business(factory.DjangoModelFactory):
@@ -191,7 +191,7 @@ class Location(factory.DjangoModelFactory):
 class Entry(factory.DjangoModelFactory):
     FACTORY_FOR = entries.Entry
 
-    status = entries.Entry.UNVERIFIED
+    status = entries.Entry.STATUSES.unverified
     user = factory.SubFactory('timepiece.tests.factories.User')
     activity = factory.SubFactory('timepiece.tests.factories.Activity')
     project = factory.SubFactory('timepiece.tests.factories.Project')

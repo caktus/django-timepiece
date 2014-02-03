@@ -51,12 +51,12 @@ def reject_user_timesheet(request, user_id):
     user = User.objects.get(pk=user_id)
     if form.is_valid():
         from_date, to_date = form.save()
-        entries = Entry.no_join.filter(status=Entry.VERIFIED, user=user,
+        entries = Entry.no_join.filter(status=Entry.STATUSES.verified, user=user,
             start_time__gte=from_date, end_time__lte=to_date)
         if request.POST.get('yes'):
             if entries.exists():
                 count = entries.count()
-                entries.update(status=Entry.UNVERIFIED)
+                entries.update(status=Entry.STATUSES.unverified)
                 msg = 'You have rejected %d previously verified entries.' \
                     % count
             else:
@@ -138,9 +138,9 @@ def view_user_timesheet(request, user_id, active_tab):
     if can_change or can_approve or user == request.user:
         statuses = list(month_qs.values_list('status', flat=True))
         total_statuses = len(statuses)
-        unverified_count = statuses.count(Entry.UNVERIFIED)
-        verified_count = statuses.count(Entry.VERIFIED)
-        approved_count = statuses.count(Entry.APPROVED)
+        unverified_count = statuses.count(Entry.STATUSES.unverified)
+        verified_count = statuses.count(Entry.STATUSES.verified)
+        approved_count = statuses.count(Entry.STATUSES.approved)
     if can_change or user == request.user:
         show_verify = unverified_count != 0
     if can_approve:
@@ -191,11 +191,11 @@ def change_user_timesheet(request, user_id, action):
         user=user_id,
         start_time__lt=to_date,
         end_time=None,
-        status=Entry.UNVERIFIED,
+        status=Entry.STATUSES.unverified,
     )
     filter_status = {
-        'verify': Entry.UNVERIFIED,
-        'approve': Entry.VERIFIED,
+        'verify': Entry.STATUSES.unverified,
+        'approve': Entry.STATUSES.verified,
     }
     entries = entries.filter(status=filter_status[action])
 
