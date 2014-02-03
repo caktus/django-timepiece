@@ -3,18 +3,22 @@ from django.core.urlresolvers import reverse
 from django.db import models
 from django.db.models import get_model
 
+from timepiece.utils import get_active_entry
+
 
 # Add a utility method to the User class that will tell whether or not a
 # particular user has any unclosed entries
-User.clocked_in = property(lambda user: user.timepiece_entries.filter(
-    end_time__isnull=True).count() > 0)
+_clocked_in = lambda user: bool(get_active_entry(user))
+User.add_to_class('clocked_in', property(_clocked_in))
 
 
 # Utility method to get user's name, falling back to username.
-User.get_name_or_username = lambda user: user.get_full_name() or user.username
+_get_name_or_username = lambda user: user.get_full_name() or user.username
+User.add_to_class('get_name_or_username', _get_name_or_username)
 
 
-User.get_absolute_url = lambda user: reverse('view_user', args=(user.pk,))
+_get_absolute_url = lambda user: reverse('view_user', args=(user.pk,))
+User.add_to_class('get_absolute_url', _get_absolute_url)
 
 
 class UserProfile(models.Model):

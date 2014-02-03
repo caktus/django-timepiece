@@ -1,3 +1,5 @@
+import mock
+
 from django.contrib.auth.models import User, Permission
 from django.contrib.contenttypes.models import ContentType
 from django.core.urlresolvers import reverse, reverse_lazy
@@ -5,6 +7,36 @@ from django.test import TestCase
 
 from timepiece.tests import factories
 from timepiece.tests.base import ViewTestMixin
+
+
+class TestAddToUserClass(TestCase):
+    """Tests for methods added to the user model via User.add_to_class."""
+
+    def setUp(self):
+        super(TestAddToUserClass, self).setUp()
+        self.user = factories.User()
+
+    @mock.patch('timepiece.crm.models.get_active_entry')
+    def test_clocked_in(self, get_active_entry):
+        get_active_entry.return_value = True
+        self.assertTrue(self.user.clocked_in)
+
+    @mock.patch('timepiece.crm.models.get_active_entry')
+    def test_not_clocked_in(self, get_active_entry):
+        get_active_entry.return_value = None
+        self.assertFalse(self.user.clocked_in)
+
+    def test_get_name(self):
+        self.assertEquals(self.user.get_name_or_username(), self.user.get_full_name())
+
+    def test_get_username(self):
+        self.user.first_name = ""
+        self.user.last_name = ""
+        self.assertEquals(self.user.get_name_or_username(), self.user.username)
+
+    def test_get_absolute_url(self):
+        correct = reverse('view_user', args=(self.user.pk,))
+        self.assertEquals(self.user.get_absolute_url(), correct)
 
 
 class TestCreateUser(ViewTestMixin, TestCase):
