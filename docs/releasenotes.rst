@@ -1,8 +1,14 @@
 Release Notes
 =============
 
-0.9.4 (Unreleased)
-------------------
+0.9.4 (Released 04-01-2014)
+---------------------------
+
+*Features*
+
+* Click-to-highlight row/column on payroll summary page
+* Use Bootstrap 2.3.2
+* Estimation Accuracy report
 
 *Bugfixes*
 
@@ -14,9 +20,10 @@ Release Notes
 *Code Quality*
 
 * Additional tests and code cleanup in the CRM app.
+* Use Model.add_to_class to augment class
 
-0.9.3 (Unreleased)
--------------------
+0.9.3 (Released 2013-11-06)
+---------------------------
 
 Related issues are in the `0.9.3. milestone
 <https://github.com/caktus/django-timepiece/issues?milestone=39&state=closed>`_.
