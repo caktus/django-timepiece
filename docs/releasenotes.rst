@@ -1,8 +1,13 @@
 Release Notes
 =============
 
-0.9.3 (Unreleased)
--------------------
+0.9.4 (Released 04-01-2014)
+---------------------------
+
+* Click to highlight row/column on Payroll summary page
+
+0.9.3 (Released 11-06-2013)
+---------------------------
 
 Related issues are in the `0.9.3. milestone
 <https://github.com/caktus/django-timepiece/issues?milestone=39&state=closed>`_.
