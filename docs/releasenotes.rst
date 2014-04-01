@@ -1,12 +1,11 @@
 Release Notes
 =============
 
-0.9.4 (Released 04-01-2014)
----------------------------
+0.9.5 (Unreleased)
+------------------
 
 *Features*
 
-* Click-to-highlight row/column on payroll summary page
 * Use Bootstrap 2.3.2
 * Estimation Accuracy report
 
@@ -22,7 +21,12 @@ Release Notes
 * Additional tests and code cleanup in the CRM app.
 * Use Model.add_to_class to augment class
 
-0.9.3 (Released 2013-11-06)
+0.9.4 (Released 04-01-2014)
+---------------------------
+
+* Click to highlight row/column on Payroll summary page
+
+0.9.3 (Released 11-06-2013)
 ---------------------------
 
 Related issues are in the `0.9.3. milestone
