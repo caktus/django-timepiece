@@ -40,7 +40,8 @@ $(function () {
             history.pushState({}, '', basePath + to + '/' + search);
             changeActiveTab(to);
         }
-        recalculateCutoffs();
+        calculateHeaderCutoffs();
+        calculateColumnCutoffs();
     });
 });
 
