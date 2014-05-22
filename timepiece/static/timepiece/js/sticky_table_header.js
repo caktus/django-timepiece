@@ -1,77 +1,82 @@
-var tables = $('table');
-var i, navbarHeight;
+var stickyHeader = function(){
+	var tables = $('table');
+	var i, navbarHeight, scroll;
 
-function calculateNavbar(){
-	if( window.innerWidth >= 840){
-		navbarHeight = $('.navbar').height();
-	}else{
-		navbarHeight = 0;
+	function calculateNavbar(){
+		if( window.innerWidth >= 840){
+			navbarHeight = $('.navbar').height();
+		}else{
+			navbarHeight = 0;
+		}
 	}
-}
-calculateNavbar();
+	calculateNavbar();
 
-function calculateHeaderCutoffs(){
-	for (i = 0; i < tables.length; i++) {
-		tables[i].querySelector('thead').style.webkitTransform = 'translate(0px,0px)';
-		tables[i].querySelector('thead').style.MozTransform = 'translate(0px,0px)';
-		tables[i].dataset.top = parseInt( $(tables[i]).children('thead').offset().top );
-		tables[i].dataset.bottom = parseInt( $(tables[i]).height() - $(tables[i]).children('thead').height() - $(tables[i]).children('tbody tr:last').height() );
+	function calculateHeaderCutoffs(table){
+		table.querySelector('thead').style.webkitTransform = 'translate(0px,0px)';
+		table.querySelector('thead').style.MozTransform = 'translate(0px,0px)';
+		table.dataset.top = parseInt( $(table).children('thead').offset().top, 10 );
+		table.dataset.bottom = parseInt( $(table).height() - $(tables[i]).children('thead').height() - $(tables[i]).children('tbody tr:last').height(), 10 );
 	}
-}
-calculateHeaderCutoffs();
 
-function positionHeaders(){
-	for (i = 0; i < tables.length; i++) {
-		var scroll = document.documentElement.scrollTop || document.body.scrollTop;
-		var difference_top = scroll + navbarHeight - tables[i].dataset.top;
-
+	function positionHeaders(table){
+		var difference_top = scroll + navbarHeight - table.dataset.top;
+		var thead = table.querySelector('thead');
 		if(difference_top <= 0){
-			tables[i].querySelector('thead').style.webkitTransform = 'translate(0px,0px)';
-			tables[i].querySelector('thead').style.MozTransform = 'translate(0px,0px)';
+			thead.style.webkitTransform = 'translate(0px,0px)';
+			thead.style.MozTransform = 'translate(0px,0px)';
 		}
 		if(difference_top > 0){
-			tables[i].querySelector('thead').style.webkitTransform = 'translate(0px,'+ difference_top +'px)';
-			tables[i].querySelector('thead').style.MozTransform = 'translate(0px,'+ difference_top +'px)';
+			thead.style.webkitTransform = 'translate(0px,'+ difference_top +'px)';
+			thead.style.MozTransform = 'translate(0px,'+ difference_top +'px)';
 		}
-		if(difference_top > tables[i].dataset.bottom){
-			tables[i].querySelector('thead').style.webkitTransform = 'translate(0px,'+ tables[i].dataset.bottom +'px)';
-			tables[i].querySelector('thead').style.MozTransform = 'translate(0px,'+ tables[i].dataset.bottom +'px)';
+		if(difference_top > table.dataset.bottom){
+			thead.style.webkitTransform = 'translate(0px,'+ table.dataset.bottom +'px)';
+			thead.style.MozTransform = 'translate(0px,'+ table.dataset.bottom +'px)';
 		}
 	}
-}
-positionHeaders();
 
-function calculateColumnCutoffs(){
-	for (i = 0; i < tables.length; i++) {
-		tables[i].dataset.left = $(tables[i]).find('tr td:first').offset().left;
+	function calculateColumnCutoffs(table){
+		table.dataset.left = $(table).find('tr td:first').offset().left;
 	}
-}
-calculateColumnCutoffs();
 
-function positionColumns(){
-	for (i = 0; i < tables.length; i++) {
-		var difference_left = $(tables[i]).parent().scrollLeft();// - tables[i].dataset.left;
+	function positionColumns(scrollContainer){
+		var difference_left = $(scrollContainer).scrollLeft();
+		var table = scrollContainer.querySelector('table');
 
 		if(difference_left <= 0){
-			$(tables[i]).find('tbody tr > :first-child').css('WebkitTransform', 'translate(0px,0px)');
-			$(tables[i]).find('tbody tr > :first-child').css('MozTransform', 'translate(0px,0px)');
+			$(table).find('tbody tr > :first-child').css('WebkitTransform', 'translate(0px,0px)');
+			$(table).find('tbody tr > :first-child').css('MozTransform', 'translate(0px,0px)');
 		}
 		if(difference_left > 0){
-			$(tables[i]).find('tbody tr > :first-child').css('WebkitTransform', 'translate('+ difference_left +'px, 0px)');
-			$(tables[i]).find('tbody tr > :first-child').css('MozTransform', 'translate('+ difference_left +'px, 0px)');
+			$(table).find('tbody tr > :first-child').css('WebkitTransform', 'translate('+ difference_left +'px, 0px)');
+			$(table).find('tbody tr > :first-child').css('MozTransform', 'translate('+ difference_left +'px, 0px)');
 		}
 	}
-}
-positionColumns();
 
-for (i = 0; i < tables.length; i++) {
-	$(tables[i]).parent('.scroll-x-axis').on('scroll', function(){ positionColumns(); });
-}
+	for (i = 0; i < tables.length; i++) {
+		// attach x scroll event to container
+		$(tables[i]).parent().on('scroll', function(){ positionColumns(this); });
+		// init positions
+		calculateColumnCutoffs(tables[i]);
+		calculateHeaderCutoffs(tables[i]);
+		positionHeaders(tables[i]);
+		positionColumns(tables[i]);
+	}
 
-window.onscroll = function(){ positionHeaders(); };
-window.onresize = function(){
-	calculateNavbar();
-	calculateColumnCutoffs();
-	calculateHeaderCutoffs();
-	positionHeaders();
+	window.onscroll = function(){
+		for (i = 0; i < tables.length; i++) {
+			scroll = document.documentElement.scrollTop || document.body.scrollTop;
+			positionHeaders(tables[i]);
+		}
+	};
+	window.onresize = function(){
+		calculateNavbar();
+		for (i = 0; i < tables.length; i++) {
+			calculateColumnCutoffs(tables[i]);
+			calculateHeaderCutoffs(tables[i]);
+			positionHeaders(tables[i]);
+		}
+	};
 };
+
+stickyHeader();
