@@ -20,12 +20,13 @@ class CreateEditBusinessForm(forms.ModelForm):
 
 
 class CreateEditProjectForm(forms.ModelForm):
-    business = selectable.AutoCompleteSelectField(BusinessLookup)
-    business.widget.attrs['placeholder'] = 'Search'
+    # business = selectable.AutoCompleteSelectField(BusinessLookup)
+    # business.widget.attrs['placeholder'] = 'Search'
 
     class Meta:
         model = Project
-        fields = ('name', 'business', 'tracker_url', 'point_person', 'type',
+        fields = ('name', 'business', 'tracker_url', 'finder', 
+                'point_person', 'binder', 'type', 
                 'status', 'activity_group', 'description')
 
 
