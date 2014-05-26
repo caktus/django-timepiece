@@ -33,15 +33,17 @@ $(function () {
     // Called when the user clicks on a tab link.
     $('.tab-link').click(function(event) {
         event.preventDefault();
-        self = $(this)
+        self = $(this);
         if (!self.parent().hasClass('active')) {
             var to = self.attr('to'),
                 search = window.location.search;
             history.pushState({}, '', basePath + to + '/' + search);
             changeActiveTab(to);
         }
-        calculateHeaderCutoffs();
-        calculateColumnCutoffs();
+        if( stickyHeader !== undefined){
+            calculateHeaderCutoffs();
+            calculateColumnCutoffs();
+        }
     });
 });
 
