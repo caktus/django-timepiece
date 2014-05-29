@@ -34,7 +34,7 @@
                 <div id="active-buttons">
                     <div class="pull-left">
                         <a class="btn btn-primary" href="{% url 'clock_in' %}">
-                            {% if active_entry %}Switch Entry{% else %}Clock In{% endif %}
+                            {% if active_entry %}Switch{% else %}Clock In{% endif %}
                         </a>
                         {% if active_entry %}
                             <a class="btn btn-primary" href="{% url 'clock_out' %}">Clock Out</a>
@@ -67,6 +67,7 @@
                             {% endif %}
                         {% endifnotequal %}
                         ({{ active_entry.get_total_seconds|humanize_seconds }} time clocked{% if active_entry.seconds_paused or active_entry.is_paused %} and {{ active_entry.get_paused_seconds|humanize_seconds }} paused{% endif %}).
+                        <blockquote>{{ active_entry.comments }}</blockquote>
                     {% else %}
                         You are not currently clocked into a project.
                     {% endif %}
