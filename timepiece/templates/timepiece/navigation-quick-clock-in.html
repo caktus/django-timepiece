@@ -11,6 +11,7 @@
                 {% endif %}
                 <li><a href="{% url 'clock_in' %}">Clock in...</a></li>
                 <li><a href="{% url 'create_entry' %}">Add Entry...</a></li>
+                <li><a href="{% url 'bulk_entry' %}">Bulk Entry</a></li>
                 {% if work_projects %}<li class="divider"></li>{% endif %}
                 {% for project in work_projects %}
                     <li><a href="{% url 'clock_in' %}?project={{ project.id }}">{{ project }}</a></li>

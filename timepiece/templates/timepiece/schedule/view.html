@@ -2,7 +2,7 @@
 {% load url from future %}
 {% load bootstrap_toolkit %}
 
-{% block title %}Schedule for the Week of {{ week|date:'M j, Y' }}{% endblock title %}
+{% block title %}Schedule for the Period starting {{ period|date:'M j, Y' }}{% endblock title %}
 
 {% block bodyid %}project-hours{% endblock bodyid %}
 
@@ -18,10 +18,10 @@
 {% block content %}
     <div class="row-fluid">
         <div class="span12">
-            <h2>Schedule for the Week of {{ week|date:'M j, Y'}}</h2>
+            <h2>Schedule for the Period starting {{ period|date:'M j, Y'}}</h2>
             <ul class="nav nav-pills">
-                <li><a href="{% url 'view_schedule' %}?week_start={{ prev_week|date:'Y-m-d' }}">&larr; Prev Week</a></li>
-                <li><a href="{% url 'view_schedule' %}?week_start={{ next_week|date:'Y-m-d' }}">Next Week &rarr;</a></li>
+                <li><a href="{% url 'view_schedule' %}?period_start={{ prev_period|date:'Y-m-d' }}">&larr; Prev Period</a></li>
+                <li><a href="{% url 'view_schedule' %}?period_start={{ next_period|date:'Y-m-d' }}">Next Period &rarr;</a></li>
             </ul>
         </div>
     </div>
@@ -35,7 +35,7 @@
         </div>
         {% if perms.entries.add_projecthours %}
             <div class="span2">
-                <a class="btn right" href="{% url 'edit_schedule' %}?week_start={{ week|date:'Y-m-d' }}">Edit Schedule</a>
+                <a class="btn right" href="{% url 'edit_schedule' %}?period_start={{ period|date:'Y-m-d' }}">Edit Schedule</a>
             </div>
         {% endif %}
     </div>
@@ -66,7 +66,7 @@
                     </tbody>
                 </table>
             {% else %}
-                <p>There are no entries this week.</p>
+                <p>There are no entries this period.</p>
             {% endif %}
         </div>
     </div>

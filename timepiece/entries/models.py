@@ -496,7 +496,7 @@ class Entry(models.Model):
 
 
 class ProjectHours(models.Model):
-    week_start = models.DateField(verbose_name='start of week')
+    week_start = models.DateField(verbose_name='start of period')
     project = models.ForeignKey('crm.Project')
     user = models.ForeignKey(User)
     hours = models.DecimalField(
@@ -506,13 +506,13 @@ class ProjectHours(models.Model):
     published = models.BooleanField(default=False)
 
     def __unicode__(self):
-        return "{0} on {1} for Week of {2}".format(
+        return "{0} on {1} for Period starting {2}".format(
                 self.user.get_name_or_username(),
                 self.project, self.week_start.strftime('%B %d, %Y'))
 
     def save(self, *args, **kwargs):
         # Ensure that week_start is the Monday of a given week.
-        self.week_start = utils.get_week_start(self.week_start)
+        self.week_start = utils.get_period_start(self.week_start)
         return super(ProjectHours, self).save(*args, **kwargs)
 
     class Meta:

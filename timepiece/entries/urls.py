@@ -32,6 +32,12 @@ urlpatterns = patterns('',
     url(r'^entry/(?P<entry_id>\d+)/delete/$',
         views.delete_entry,
         name='delete_entry'),
+    url(r'^entry/bulk/$',
+        views.BulkEntryView.as_view(),
+        name='bulk_entry'),
+    url(r'^entry/ajax/$',
+        views.BulkEntryAjaxView.as_view(),
+        name='ajax_bulk_entry'),
 
     # Schedule
     url(r'^schedule/$',

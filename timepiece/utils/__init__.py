@@ -88,6 +88,27 @@ def get_week_start(day=None):
         day = day - relativedelta(days=days_since_monday)
     return day
 
+def get_period_start(day=None):
+    """Returns the start date of the period (1st or 15th)."""
+    day = add_timezone(day or datetime.date.today())
+    if day.day <= 15:
+        day = day.replace(day=1)
+    else:
+        day = day.replace(day=15)
+    return datetime.datetime.combine(day, datetime.datetime.min.time())
+
+def get_period_end(period_start):
+    """Returns end date of the period
+    (14th, 28th, 29th, 30th, or 31st).
+    """
+    if period_start.day == 1:
+        period_end = period_start.date().replace(day=14)
+    else:
+        period_end = period_start.date().replace(
+            day=calendar.monthrange(
+                period_start.year, period_start.month)[1])
+    return datetime.datetime.combine(
+        period_end, datetime.datetime.max.time())
 
 def get_year_start(day=None):
     """Returns January 1 of the given year."""
