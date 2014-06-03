@@ -1,4 +1,4 @@
-import datetime
+import datetime, calendar
 from dateutil.relativedelta import relativedelta
 
 from django.conf import settings
@@ -91,7 +91,7 @@ def get_week_start(day=None):
 def get_period_start(day=None):
     """Returns the start date of the period (1st or 15th)."""
     day = add_timezone(day or datetime.date.today())
-    if day.day <= 15:
+    if day.day < 15:
         day = day.replace(day=1)
     else:
         day = day.replace(day=15)
@@ -102,13 +102,23 @@ def get_period_end(period_start):
     (14th, 28th, 29th, 30th, or 31st).
     """
     if period_start.day == 1:
-        period_end = period_start.date().replace(day=14)
+        period_end = period_start.replace(day=14)
     else:
-        period_end = period_start.date().replace(
+        period_end = period_start.replace(
             day=calendar.monthrange(
                 period_start.year, period_start.month)[1])
     return datetime.datetime.combine(
         period_end, datetime.datetime.max.time())
+
+def get_weekdays_count(period_start, period_end):
+    """Returns the count oc weekdays in period."""
+    weekdays = 0
+    cur_date = period_start
+    while cur_date < period_end:
+        if cur_date.weekday() <= 4:
+            weekdays += 1
+        cur_date += relativedelta(days=1)
+    return weekdays
 
 def get_year_start(day=None):
     """Returns January 1 of the given year."""

@@ -2,7 +2,7 @@ from itertools import groupby
 
 from django.db.models import Sum
 
-from timepiece.utils import add_timezone, get_hours_summary, get_week_start
+from timepiece.utils import add_timezone, get_hours_summary, get_period_start
 
 
 def daily_summary(day_entries):
@@ -38,7 +38,7 @@ def grouped_totals(entries):
     days = []
     last_week = None
     for day, day_entries in groupby(daily, lambda x: x['date']):
-        week = get_week_start(day)
+        week = get_period_start(day)
         if last_week and week > last_week:
             yield last_week, weeks.get(last_week, {}), days
             days = []

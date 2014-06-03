@@ -115,8 +115,8 @@ def view_user_timesheet(request, user_id, active_tab):
             'id', 'location__name', 'project__name', 'activity__name',
             'status')
     month_entries = month_qs.date_trunc('month', extra_values)
-    # For grouped entries, back date up to the start of the week.
-    first_week = utils.get_week_start(from_date)
+    # For grouped entries, back date up to the start of the period.
+    first_week = utils.get_period_start(from_date)
     month_week = first_week + relativedelta(weeks=1)
     grouped_qs = entries_qs.timespan(first_week, to_date=to_date)
     intersection = grouped_qs.filter(start_time__lt=month_week,

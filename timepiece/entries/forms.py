@@ -161,9 +161,9 @@ class ProjectHoursForm(forms.ModelForm):
 
 
 class ProjectHoursSearchForm(forms.Form):
-    week_start = forms.DateField(label='Week of', required=False,
+    week_start = forms.DateField(label='Period with', required=False,
             input_formats=INPUT_FORMATS, widget=TimepieceDateInput())
 
     def clean_week_start(self):
         week_start = self.cleaned_data.get('week_start', None)
-        return utils.get_week_start(week_start, False) if week_start else None
+        return utils.get_period_start(week_start, False) if week_start else None

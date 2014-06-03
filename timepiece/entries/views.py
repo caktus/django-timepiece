@@ -43,7 +43,7 @@ class Dashboard(TemplateView):
         today = datetime.date.today()
         day = today
         if 'period_start' in self.request.GET:
-            param = self.request.GET.get('period_start')
+            param = self.request.GET.get('week_start')
             try:
                 day = datetime.datetime.strptime(param, '%Y-%m-%d').date()
             except:
@@ -70,13 +70,8 @@ class Dashboard(TemplateView):
     def get_hours_per_period(self, user=None):
         """Retrieves the number of hours the user should work per period."""
         today, period_start, period_end = self.get_dates()
-        week_days = 0
-        cur_date = period_start
-        while cur_date < period_end:
-            if cur_date.weekday() <= 4:
-                week_days += 1
-            cur_date += relativedelta(days=1)
-        return Decimal(week_days * 8)
+        weekdays = util.get_weekdays_count(period_start, period_end)
+        return Decimal(weekdays * 8)
 
     def get_context_data(self, *args, **kwargs):
         today, period_start, period_end = self.get_dates()
@@ -336,14 +331,18 @@ class ScheduleMixin(object):
         default_period = utils.get_period_start(datetime.date.today()).date()
 
         if request.method == 'GET':
-            period_start_str = request.GET.get('period_start', '')
+            period_start_str = request.GET.get('week_start', '')
         else:
-            period_start_str = request.POST.get('period_start', '')
+            period_start_str = request.POST.get('week_start', '')
         self.user = request.user
         # Account for an empty string
         self.period_start = default_period if period_start_str == '' \
             else utils.get_period_start(datetime.datetime.strptime(
                 period_start_str, '%Y-%m-%d').date())
+        self.period_end = utils.get_period_end(self.period_start)
+        self.period_hours = utils.get_weekdays_count(
+            datetime.datetime.combine(self.period_start, 
+                datetime.datetime.min.time()), self.period_end) * 8
 
         return super(ScheduleMixin, self).dispatch(request, *args,
                 **kwargs)
@@ -354,10 +353,10 @@ class ScheduleMixin(object):
         period_start.
         """
         period_start = period_start if period_start else self.period_start
-        period_end = period_start + relativedelta(days=7)
+        period_end = utils.get_period_end(period_start)
 
         return ProjectHours.objects.filter(
-            period_start__gte=period_start, period_start__lt=period_end)
+            week_start__gte=period_start, week_start__lt=period_end)
 
     def get_charges_for_period(self, period_start=None):
         """
@@ -392,10 +391,10 @@ class ScheduleView(ScheduleMixin, TemplateView):
     def get_context_data(self, **kwargs):
         context = super(ScheduleView, self).get_context_data(**kwargs)
 
-        initial = {'week_start': self.week_start}
+        initial = {'period_start': self.period_start}
         form = ProjectHoursSearchForm(initial=initial)
 
-        project_hours = self.get_hours_for_week()
+        project_hours = self.get_hours_for_period()
         project_hours = project_hours.values('project__id', 'project__name',
                 'user__id', 'user__first_name', 'user__last_name', 'hours',
                 'published')
@@ -423,6 +422,7 @@ class ScheduleView(ScheduleMixin, TemplateView):
         context.update({
             'form': form,
             'period': self.period_start,
+            'period_hours': self.period_hours,
             'prev_period': self.period_start - relativedelta(days=15),
             'next_period': self.period_start + relativedelta(days=15),
             'users': users,
@@ -451,6 +451,7 @@ class EditScheduleView(ScheduleMixin, TemplateView):
 
         context.update({
             'form': form,
+            'period_hours': self.period_hours,
             'period': self.period_start,
             'ajax_url': reverse('ajax_schedule')
         })
@@ -494,7 +495,7 @@ class ScheduleAjaxView(ScheduleMixin, View):
                     DATE_FORM_FORMAT).date()
 
             ph = ProjectHours.objects.get(user=user, project=project,
-                    period_start=period)
+                    week_start=period)
             ph.hours = Decimal(hours)
         except (exceptions.ObjectDoesNotExist):
             ph = None
@@ -613,8 +614,8 @@ class ScheduleAjaxView(ScheduleMixin, View):
         will be duplicated from period_update to the current period
         """
         duplicate = request.POST.get('duplicate', None)
-        period_update = request.POST.get('period_update', None)
-        period_start = request.POST.get('period_start', None)
+        period_update = request.POST.get('week_update', None)
+        period_start = request.POST.get('week_start', None)
 
         if duplicate and period_update:
             return self.duplicate_entries(duplicate, period_update)
@@ -780,8 +781,8 @@ class BulkEntryAjaxView(ScheduleMixin, View):
         will be duplicated from period_update to the current period
         """
         duplicate = request.POST.get('duplicate', None)
-        period_update = request.POST.get('period_update', None)
-        period_start = request.POST.get('period_start', None)
+        period_update = request.POST.get('week_update', None)
+        period_start = request.POST.get('week_start', None)
 
         if duplicate and period_update:
             return self.duplicate_entries(duplicate, period_update)
