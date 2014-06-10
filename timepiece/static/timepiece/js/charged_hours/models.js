@@ -32,6 +32,27 @@ function Project(id, name) {
 Project.prototype = new Model();
 Project.prototype.constructor = Project;
 
+function Activity(id, name, code) {
+    Model.call(this, id);
+
+    this.name = name;
+    this.code = code;
+    this.row = 0;
+}
+
+Activity.prototype = new Model();
+Activity.prototype.constructor = Activity;
+
+function Location(id, name) {
+    Model.call(this, id);
+
+    this.name = name;
+    this.row = 0;
+}
+
+Location.prototype = new Model();
+Location.prototype.constructor = Location;
+
 function User(id, name, display_name) {
     Model.call(this, id);
 
@@ -43,19 +64,40 @@ function User(id, name, display_name) {
 User.prototype = new Model();
 User.prototype.constructor = User;
 
-function ProjectHours(id, hours, project, published) {
-    Model.call(this, id);
+function PeriodDate(date, display, weekday, col) {
+    Model.call(this, date);
 
-    this.hours = hours;
-    this.project = project;
-    this.user = null;
-    this.row = 0;
-    this.col = 0;
-    this.published = published;
+    this.date = date;
+    this.display_name = display;
+    this.weekday = weekday;
+    this.col = col;
 }
 
-ProjectHours.prototype = new Model();
-ProjectHours.prototype.constructor = ProjectHours;
+PeriodDate.prototype = new Model();
+PeriodDate.prototype.constructor = PeriodDate;
+
+function ChargedHours(id, project, user, start_time, end_time, activity, location) {
+    Model.call(this, id);
+    
+    this.project = project;
+    this.user = user;
+    this.start_time = new Date(start_time);
+    this.end_time = new Date(end_time);
+    this.activity = activity;
+    this.location =location;
+    this.duration = 0;
+    if (this.start_time && this.end_time) {
+        // get duration in hours from timestamps
+        this.duration = (this.end_time - this.start_time) / 3600000;
+        // round to nearest quarter hour
+        this.duration = Math.round(this.duration*4)/4;
+    }
+    this.row = 0;
+    this.col = 0;
+}
+
+ChargedHours.prototype = new Model();
+ChargedHours.prototype.constructor = ChargedHours;
 
 function Collection() {
     this.collection = [];
@@ -146,6 +188,40 @@ ProjectCollection.prototype.get_by_row = function(row) {
     return null;
 };
 
+function ActivityCollection() {
+    Collection.call(this);
+}
+
+ActivityCollection.prototype = new Collection();
+ActivityCollection.prototype.constructor = ActivityCollection;
+
+ActivityCollection.prototype.get_by_row = function(row) {
+    for(var i = 0; i < this.collection.length; i++) {
+        if(this.collection[i].row === row) {
+            return this.collection[i];
+        }
+    }
+
+    return null;
+};
+
+function LocationCollection() {
+    Collection.call(this);
+}
+
+LocationCollection.prototype = new Collection();
+LocationCollection.prototype.constructor = LocationCollection;
+
+LocationCollection.prototype.get_by_row = function(row) {
+    for(var i = 0; i < this.collection.length; i++) {
+        if(this.collection[i].row === row) {
+            return this.collection[i];
+        }
+    }
+
+    return null;
+};
+
 function UserCollection() {
     Collection.call(this);
 }
@@ -163,14 +239,33 @@ UserCollection.prototype.get_by_col = function(col) {
     return null;
 };
 
-function ProjectHoursCollection() {
+function PeriodDatesCollection() {
     Collection.call(this);
 }
 
-ProjectHoursCollection.prototype = new Collection();
-ProjectHoursCollection.prototype.constructor = ProjectHoursCollection;
+PeriodDatesCollection.prototype = new Collection();
+PeriodDatesCollection.prototype.constructor = PeriodDatesCollection;
 
-ProjectHoursCollection.prototype.get_by_row_col = function(row, col) {
+PeriodDatesCollection.prototype.get_by_col = function(col) {
+    for(var i = 0; i < this.collection.length; i++) {
+        if(this.collection[i].col === col) {
+            return this.collection[i];
+        }
+    }
+
+    return null;
+};
+
+
+
+function ChargedHoursCollection() {
+    Collection.call(this);
+}
+
+ChargedHoursCollection.prototype = new Collection();
+ChargedHoursCollection.prototype.constructor = ChargedHoursCollection;
+
+ChargedHoursCollection.prototype.get_by_row_col = function(row, col) {
     for(var i = 0; i < this.collection.length; i++) {
         if(this.collection[i].row === row && this.collection[i].col === col) {
             return this.collection[i];
@@ -186,10 +281,14 @@ if(typeof module !== 'undefined') {
         'Model': Model,
         'Project': Project,
         'User': User,
-        'ProjectHours': ProjectHours,
+        'Location': Location,
+        'Activity': Activity,
+        'ChargedHours': ChargedHours,
         'Collection': Collection,
         'ProjectCollection': ProjectCollection,
         'UserCollection': UserCollection,
-        'ProjectHoursCollection': ProjectHoursCollection
+        'ActivityCollection': ActivityCollection,
+        'LocationCollection': LocationCollection,
+        'ChargedHoursCollection': ChargedHoursCollection
     };
 }

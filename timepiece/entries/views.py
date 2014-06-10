@@ -27,8 +27,11 @@ from timepiece.utils.views import cbv_decorator
 from timepiece.crm.models import Project, UserProfile
 from timepiece.entries.forms import ClockInForm, ClockOutForm, \
         AddUpdateEntryForm, ProjectHoursForm, ProjectHoursSearchForm
-from timepiece.entries.models import Entry, ProjectHours
+from timepiece.entries.models import Entry, ProjectHours, Location, Activity
 
+import pprint
+pp = pprint.PrettyPrinter(indent=4)
+import sys, traceback
 
 class Dashboard(TemplateView):
     template_name = 'timepiece/dashboard.html'
@@ -49,14 +52,7 @@ class Dashboard(TemplateView):
             except:
                 pass
         period_start = utils.get_period_start(day)
-        if period_start.day == 1:
-            period_end = period_start.replace(day=14)
-        else:
-            period_end = period_start.replace(
-                day=calendar.monthrange(
-                    period_start.year, period_start.month)[1])
-        period_end = datetime.datetime.combine(
-            period_end.date(), datetime.datetime.max.time())
+        period_end = utils.get_period_end(period_start)
         return today, period_start, period_end
 
     def get_hours_per_week(self, user=None):
@@ -70,7 +66,7 @@ class Dashboard(TemplateView):
     def get_hours_per_period(self, user=None):
         """Retrieves the number of hours the user should work per period."""
         today, period_start, period_end = self.get_dates()
-        weekdays = util.get_weekdays_count(period_start, period_end)
+        weekdays = utils.get_weekdays_count(period_start, period_end)
         return Decimal(weekdays * 8)
 
     def get_context_data(self, *args, **kwargs):
@@ -335,6 +331,9 @@ class ScheduleMixin(object):
         else:
             period_start_str = request.POST.get('week_start', '')
         self.user = request.user
+        self.day = datetime.date.today() if period_start_str == '' \
+            else datetime.datetime.strptime(
+                period_start_str, '%Y-%m-%d').date()
         # Account for an empty string
         self.period_start = default_period if period_start_str == '' \
             else utils.get_period_start(datetime.datetime.strptime(
@@ -363,10 +362,28 @@ class ScheduleMixin(object):
         Gets all Entries in the 7-day period beginning on period_start.
         """
         period_start = period_start if period_start else self.period_start
-        period_end = period_start + relativedelta(days=7)
+        period_end = utils.get_period_end(period_start)
 
         return Entry.objects.filter(
-            start_time__gte=period_start, end_time__lt=period_end)
+            start_time__gte=period_start, end_time__lt=period_end,
+            user=self.user)
+
+    def get_charges_for_day(self, day=None):
+        """
+        Gets all Entries in the 7-day period beginning on period_start.
+        """
+        try:
+            day = day or self.day
+            period_start = datetime.datetime.combine(day, 
+                datetime.datetime.min.time())
+            period_end = datetime.datetime.combine(day, 
+                datetime.datetime.max.time())
+
+            return Entry.objects.filter(
+                start_time__gte=period_start, end_time__lte=period_end,
+                user=self.user)
+        except:
+            return []
 
 
 class ScheduleView(ScheduleMixin, TemplateView):
@@ -651,18 +668,20 @@ class BulkEntryView(ScheduleMixin, TemplateView):
         context = super(BulkEntryView, self).get_context_data(**kwargs)
 
         form = ProjectHoursSearchForm(initial={
-            'period_start': self.period_start
+            'period_start': self.day
         })
 
         context.update({
             'form': form,
-            'period': self.period_start,
+            'period': self.day,
+            'period_hours': self.period_hours,
             'ajax_url': reverse('ajax_bulk_entry')
         })
         return context
 
     def post(self, request, *args, **kwargs):
-        ph = self.get_charges_for_period(self.period_start).filter(published=False)
+        ph = self.get_charges_for_period(
+            self.period_start).filter(published=False)
 
         if ph.exists():
             msg = 'Unpublished project hours are now published'
@@ -682,29 +701,31 @@ class BulkEntryView(ScheduleMixin, TemplateView):
 class BulkEntryAjaxView(ScheduleMixin, View):
 
     def dispatch(self, request, *args, **kwargs):
-        print 'GOT TO dispatch'
         if not request.user.has_perm('entries.create_edit_entry'):
             return HttpResponseRedirect(reverse('auth_login'))
 
         return super(BulkEntryAjaxView, self).dispatch(request, *args,
                 **kwargs)
 
-    def get_instance(self, data, period_start):
+    def get_instance(self, data):
         try:
-            print 'GOT TO get_instance'
-            user = User.objects.get(pk=data.get('user', None))
-            project = Project.objects.get(pk=data.get('project', None))
-            hours = data.get('hours', None)
-            period = datetime.datetime.strptime(period_start,
-                    DATE_FORM_FORMAT).date()
+            entry = Entry.objects.get(id=data.get('entry_id'))
+            # check somethings about the entry
+            if entry.user.id != int(data.get('user')):
+                raise exceptions.ObjectDoesNotExist
+            if entry.project.id != int(data.get('project')):
+                raise exceptions.ObjectDoesNotExist
+            # TODO: add check on start_time being in correct period
+            # period = datetime.datetime.strptime(period_start,
+            #         DATE_FORM_FORMAT)
+            # period_end = utils.get_period_end(period)
+            # entries = Entry.objects.filter(user=user, project=project,
+            #     start_time__gte=period, start_time__lte=period_end)
 
-            ph = ProjectHours.objects.get(user=user, project=project,
-                    period_start=period)
-            ph.hours = Decimal(hours)
         except (exceptions.ObjectDoesNotExist):
-            ph = None
+            entry = None
 
-        return ph
+        return entry
 
     def get(self, request, *args, **kwargs):
         """
@@ -713,60 +734,95 @@ class BulkEntryAjaxView(ScheduleMixin, View):
             charged_hours: the current total number of hours charged per project
             projects: the projects that have charged hours for the period
             all_projects: all of the projects; used for autocomplete
-            all_users: all users that can clock in; used for completion
+            period_dates: all dates in the period
         """
+        
         perm = Permission.objects.filter(
             content_type=ContentType.objects.get_for_model(Entry),
             codename='can_clock_in'
         )
-        charged_hours = self.get_charges_for_period().values(
+        charged_hours = self.get_charges_for_day().values(
             'id', 'user', 'user__first_name', 'user__last_name',
-            'project', 'start_time', 'end_time'
+            'project', 'start_time', 'end_time', 'location', 'activity'
         ).order_by('-project__type__billable', 'project__name',
-            'user__first_name', 'user__last_name')
+            'user__first_name', 'user__last_name', '-start_time')
         inner_qs = charged_hours.values_list('project', flat=True)
         projects = Project.objects.filter(pk__in=inner_qs).values() \
             .order_by('name')
         all_projects = Project.objects.values('id', 'name')
+        all_activities = Activity.objects.values('id', 'name', 'code')
+        all_locations = Location.objects.values('id', 'name')
         user_q = Q(groups__permissions=perm) | Q(user_permissions=perm)
         user_q |= Q(is_superuser=True)
-
+        
         # further process charged_hours to get exactly what we want
-        import pprint
-        pp = pprint.PrettyPrinter(indent=4)
-        pp.pprint(charged_hours)
         for ch in charged_hours:
             ch['total_hours'] = Entry.objects.get(id=ch['id']).total_hours
             ch['start_time'] = ch['start_time'].isoformat()
             ch['end_time'] =  ch['end_time'].isoformat()
-        pp.pprint(charged_hours)
 
         data = {
             'charged_hours': list(charged_hours),
             'projects': list(projects),
             'all_projects': list(all_projects),
-            'period_dates': list(period_dates),
+            'all_activities': list(all_activities),
+            'all_locations': list(all_locations),
+            'period_dates': utils.get_period_dates(self.day),
             'ajax_url': reverse('ajax_bulk_entry'),
         }
+        
         return HttpResponse(json.dumps(data, cls=DecimalEncoder),
             mimetype='application/json')
 
-    def update_period(self, period_start):
+    def update_charges(self, period_start):
         try:
-            instance = self.get_instance(self.request.POST, period_start)
+            print 'update period'
+            entry = self.get_instance(self.request.POST)
+            print 'is entry?', entry, entry is not None
+            if entry is not None:
+                entries = Entry.objects.filter(
+                    start_time__startswith=entry.start_time.date(),
+                    user=entry.user).order_by('start_time')
+                for e in entries:
+                    if e.id != entry.id:
+                        'deleting other entry'
+                        e.delete()
+            else:
+                print 'date?', self.request.POST.get('date')
+                pp.pprint(self.request.POST)
+                date = datetime.datetime.strptime(
+                    self.request.POST.get('date'), DATE_FORM_FORMAT)
+                print 'date', date
+                print 'project', self.request.POST.get('project')
+                print 'projcet', int(self.request.POST.get('project'))
+                entry = Entry(user=self.request.user,
+                              activity=8, # change to settings
+                              location=1, # change to settings
+                              start_time=date)
+                print 'new entry', entry
+                entry.save()
+
         except TypeError:
+            print sys.exc_info(), traceback.format_exc()
             msg = 'Parameter period_start must be a date in the format ' \
                 'yyyy-mm-dd'
             return HttpResponse(msg, status=500)
+        except:
+            print sys.exc_info(), traceback.format_exc()
 
-        form = ProjectHoursForm(self.request.POST, instance=instance)
-
-        if form.is_valid():
-            ph = form.save()
-            return HttpResponse(str(ph.pk), mimetype='text/plain')
-
-        msg = 'The request must contain values for user, project, and hours'
-        return HttpResponse(msg, status=500)
+        try:
+            duration = round(float(self.request.POST.get('duration'))*4.) / 4.
+            entry.end_time = entry.start_time + relativedelta(hours=duration)
+            # if using bulk entry, we are going to drop the seconds paused
+            entry.seconds_paused = 0
+            entry.save()
+            data = {'id': entry.id,
+                    'start_time': entry.start_time.isoformat(),
+                    'end_time': entry.end_time.isoformat()}
+            return HttpResponse(json.dumps(data), status=200, mimetype='application/json')
+        except:
+            msg = 'The request must contain values for user, project, and hours'
+            return HttpResponse(msg, status=500)
 
     def post(self, request, *args, **kwargs):
         """
@@ -780,11 +836,13 @@ class BulkEntryAjaxView(ScheduleMixin, View):
         If the duplicate key is present along with period_update, then items
         will be duplicated from period_update to the current period
         """
+        print 'got to POST'
         duplicate = request.POST.get('duplicate', None)
         period_update = request.POST.get('week_update', None)
         period_start = request.POST.get('week_start', None)
+        print 'POST', request.POST
 
         if duplicate and period_update:
             return self.duplicate_entries(duplicate, period_update)
 
-        return self.update_period(period_start)
+        return self.update_charges(period_start)

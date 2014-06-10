@@ -18,7 +18,7 @@
 {% block content %}
     <div class="row-fluid">
         <div class="span12">
-            <h2 data-date="{{ week|date:'Y-m-d' }}">Bulk Entry for the Period starting {{ week|date:'M j, Y'}}</h2>
+            <h2 data-date="{{ period|date:'Y-m-d' }}">Bulk Entry for {{ period|date:'M j, Y'}}</h2>
         </div>
     </div>
 
@@ -26,21 +26,15 @@
         <div class="span4">
             <form class="form-inline" method="get">
                 {{ form|as_bootstrap:"inline" }}
-                <button type="submit" class="btn">Update</button>
+                <button type="submit" class="btn btn-primary">Go To</button>
             </form>
 
         </div>
         <div class="span5 offset3">
-            <form class="form-inline right" method="post" action="{% url 'ajax_schedule' %}">
-                {% csrf_token %}
-                <input type="hidden" name="duplicate" value="duplicate" />
-                <input type="hidden" name="week_update" value="{{ week|date:'Y-m-d' }}" />
-                <button id="copy" type="submit" class="btn">Copy previous week</button>
-            </form>
             <form class="form-inline right" method="post" action="{% url 'edit_schedule' %}">
                 {% csrf_token %}
-                <input type="hidden" name="period_start" value="{{ week|date:'Y-m-d' }}" />
-                <button type="submit" class="btn">Save</button>
+                <input type="hidden" name="period_start" value="{{ period|date:'Y-m-d' }}" />
+                <button type="submit" class="btn btn-primary">Save</button>
             </form>
         </div>
     </div>

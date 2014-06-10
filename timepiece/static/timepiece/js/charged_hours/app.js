@@ -1,10 +1,16 @@
 var projects = new ProjectCollection();
 var all_projects = new ProjectCollection();
 
-var users = new UserCollection();
-var all_users = new UserCollection();
+//var activities = new ActivityCollection();
+var all_activities = new ActivityCollection();
 
-var project_hours = new ProjectHoursCollection(); 
+//var locations = new LocationCollection();
+var all_locations = new LocationCollection();
+
+var users = new UserCollection();
+var period_dates = new PeriodDatesCollection();
+
+var charged_hours = new ChargedHoursCollection(); 
 
 function showError(msg) {
     var html = '<div class="alert alert-error">' + msg +
@@ -18,8 +24,10 @@ function processData(data) {
     var projects = data.projects,
         charged_hours = data.charged_hours,
         all_projects = data.all_projects,
+        all_activities = data.all_activities,
+        all_locations = data.all_locations,
         period_dates = data.period_dates,
-        dataTable = [['']];
+        dataTable = [['Project', 'Activity', 'Location']];
 
     if(typeof ajax_url === 'undefined') {
         ajax_url = data.ajax_url;
@@ -32,19 +40,32 @@ function processData(data) {
         this.all_projects.add(new Project(p.id, p.name));
     }
 
-    // Store all users for autocomplete
-    for(i = 0; i < period_dates.length; i++) {
-        var u = period_dates[i],
-            name = u.first_name + ' ' + u.last_name,
-            display_name = u.first_name + ' ' + u.last_name[0] + '.';
+    // Store all activities for autocomplete
+    for(var i = 0; i < all_activities.length; i++) {
+        var a = all_activities[i];
 
-        this.period_dates.add(new User(u.id, name, display_name));
+        this.all_activities.add(new Activity(a.id, a.name));
     }
 
-    // Process all project hours to add to the table
+    // Store all locations for autocomplete
+    for(var i = 0; i < all_locations.length; i++) {
+        var l = all_locations[i];
+
+        this.all_locations.add(new Location(l.id, l.name));
+    }
+
+    // Create mapping for dates and populate first row
+    for(var i = 0; i < period_dates.length; i++) {
+        var pd = period_dates[i];
+
+        this.period_dates.add(new PeriodDate(pd.date, pd.display, pd.weekday, i+3));
+        dataTable[0].push(pd.display);
+    }
+
+    // Process all charged hours to add to the table
     for(i = 0; i < charged_hours.length; i++) {
-        var ph = charged_hours[i],
-            project = this.all_projects.get_by_id(ph.project);
+        var ch = charged_hours[i],
+            project = this.all_projects.get_by_id(ch.project);
 
         project.row = project.row || dataTable.length;
 
@@ -52,37 +73,36 @@ function processData(data) {
         if(this.projects.add(project)) {
             dataTable.push([project.name]);
         }
-
-        var hours = new ProjectHours(ph.id, ph.hours, project, ph.published);
+        
+        var hours = new ChargedHours(ch.id, ch.project, ch.user, ch.start_time, ch.end_time, ch.activity, ch.location);
         hours.row = project.row;
 
-        // Get from global users and add to datatable and adjust column
-        // if the user isnt already in the table
-        var user = this.period_dates.get_by_id(ph.user);
-        if(users.add(user)) {
-            dataTable[0].push(user.display_name);
-            user.col = dataTable[0].length - 1;
-        } else {
-            user = users.get_by_id(user.id);
-        }
-
-        hours.user = user;
-        hours.col = user.col;
+        var date = this.period_dates.get_by_id(ch.start_time.slice(0,10));
+        hours.date = date;
+        hours.col = date.col;
 
         if(!dataTable[hours.row]) {
             dataTable[hours.row] = [];
         }
 
-        dataTable[hours.row][hours.col] = hours.hours;
+        if (dataTable[hours.row][hours.col]) {
+            dataTable[hours.row][hours.col] += hours.duration;
+        } else {
+            dataTable[hours.row][hours.col] = hours.duration;
+        }
 
+        var activity = this.all_activities.get_by_id(ch.activity);
+        dataTable[hours.row][1] = activity.name;
+        var location = this.all_locations.get_by_id(ch.location);
+        dataTable[hours.row][2] = location.name;
 
         this.charged_hours.add(hours);
     }
 
     // Populate the totals row after weve gone through all the data
-    var totals = ['Totals'], j;
+    var totals = ['Totals', '', ''], j;
 
-    for(i = 1; i < dataTable.length; i++) {
+    for(i = 3; i < dataTable.length; i++) {
         var row = dataTable[i];
 
         for(j = 1; j < row.length; j++) {
@@ -95,29 +115,30 @@ function processData(data) {
             }
         }
     }
-
     dataTable.push([], [], totals);
 
     $('.dataTable').handsontable('loadData', dataTable);
+    
+    for (var c=3; c<dataTable[0].length; c++) {
+        updateTotals(c);
+    }
 }
 
 // Helper for updating totals after any change
-function updateTotals(col, data) {
+// TODO: make more robust
+function updateTotals(col) {
     var dataTable = $('.dataTable').handsontable('getData'),
-        row = dataTable.length - 2,
-        totals = dataTable[row];
+        row = dataTable.length - 3,
+        total = 0;
 
-    if(data !== '') {
-        var current = parseInt(totals[col], 10);
-
-        if(current) {
-            current += data;
-        } else {
-            current = data;
+    for (var r=row; r>=1; r--){
+        temp = parseFloat( dataTable[r][col] )
+        if (!isNaN(temp)) {
+            total += temp;
         }
-
-        $('.dataTable').handsontable('setDataAtCell', row, col, current);
     }
+
+    $('.dataTable').handsontable('setDataAtCell', row+1, col, total);
 }
 
 // Entry point to load all data into the table
@@ -159,13 +180,14 @@ $.del = function(url, success, error) {
 $(function() {
     var table = $('.dataTable').handsontable({
         rows: 3,
+        cols: 4,
 
         fillHandle: false,
 
         minSpareRows: 1,
-        minSpareCols: 1,
+        minSpareCols: 0,
 
-        minWidth: $('div#content').width() - 20, // -20 is to account for padding
+        //minWidth: $('div#content').width() - 60, // -20 is to account for padding
 
         enterBeginsEditing: true,
 
@@ -180,9 +202,9 @@ $(function() {
             },
             {   // Match the cells with content
                 match: function(row, col, data) {
-                    var ph = project_hours.get_by_row_col(row, col);
+                    var ph = charged_hours.get_by_row_col(row, col);
 
-                    if(ph && ph.published) {
+                    if(ph) {
                         return (row > 0 && col > 0 && data()[row][col] !== '');
                     }
 
@@ -190,7 +212,16 @@ $(function() {
                 },
                 style: {
                     color: 'white',
-                    backgroundColor: 'green'
+                    backgroundColor: '#236b8e'
+                }
+            },
+            {   // Match the cells with content
+                match: function(row, col, data) {
+                    return 0 <= col && col <= 2;
+                },
+                style: {
+                    color: 'black',
+                    backgroundColor: 'white'
                 }
             }
         ],
@@ -206,12 +237,20 @@ $(function() {
             },
             {
                 match: function(row, col, data) {
-                    return (row === 0 && col !== 0);
+                    return (col === 1);
                 },
                 source: function() {
-                    return all_users.collection;
+                    return all_activities.collection;
                 }
-            }
+            },
+            {
+                match: function(row, col, data) {
+                    return (col === 2);
+                },
+                source: function() {
+                    return all_locations.collection;
+                }
+            },
         ],
 
         onBeforeChange: function(changes) {
@@ -221,19 +260,11 @@ $(function() {
                 col = changes[1],
                 before = changes[2],
                 after = changes[3],
-                project, user, hours;
+                project, user, duration, date;
 
             if(row === 0) {
-                if(!users.get_by_display_name(after)) {
-                    // Adding a user
-                    user = all_users.get_by_display_name(after);
+                return;
 
-                    user.col = col;
-                    users.add(user);
-                } else {
-                    showError('User already listed');
-                    return false;
-                }
             } else if(col === 0) {
                 if(!projects.get_by_name(after)) {
                     // Adding project
@@ -248,24 +279,27 @@ $(function() {
                     showError('Project already listed');
                     return false;
                 }
-            } else if(row >= 1 && col >= 1) {
-                var time = parseInt(after, 10);
-                hours = project_hours.get_by_row_col(row, col);
 
+            } else if(row >= 1 && col >= 3) {
+                var time = parseFloat(after);
+                time = Math.round(time*4)/4;
+                $('.dataTable').handsontable('setDataAtCell', row, col, time);
+                hours = charged_hours.get_by_row_col(row, col);
+                
                 if(time && hours && time > 0) {
                     // If we have times and hours in the row/col, then update the current hours
                     $.post(ajax_url, {
-                        'project': hours.project.id,
-                        'user': hours.user.id,
-                        'hours': time,
-                        'week_start': $('h2[data-date]').data('date')
+                        'entry_id': hours.id,
+                        'project': hours.project,
+                        'activity': hours.activity,
+                        'location': hours.location,
+                        'user': hours.user,
+                        'duration': time,
+                        'period_start': $('h2[data-date]').data('date')
                     }, function(data, status, xhr) {
-                        var diff = time - hours.hours;
-                        updateTotals(col, diff);
-
                         hours.hours = time;
-                        hours.published = false;
                         $('.dataTable').handsontable('setDataAtCell', row, col, time);
+                        updateTotals(col);
                     }, function(xhr, status, error) {
                         $('.dataTable').handsontable('setDataAtCell', row, col, before);
                         showError('Could not save the project hours. Please notify an administrator.');
@@ -274,28 +308,27 @@ $(function() {
                     // If the user entered a valid time, but the hours do not exist
                     // in a row/col, create them
                     project = projects.get_by_row(row);
-                    user = users.get_by_col(col);
+                    date = period_dates.get_by_col(col);
 
-                    if(project && user && before === '') {
+                    if(project && date && before === '') {
                         $.post(ajax_url, {
-                            'user': user.id,
                             'project': project.id,
-                            'hours': time,
-                            'week_start': $('h2[data-date]').data('date')
+                            'duration': time,
+                            'date': date.id,
+                            'period_start': $('h2[data-date]').data('date')
                         }, function(data, status, xhr) {
-                            hours = new ProjectHours(parseInt(data, 10), time, project, false);
-                            hours.user = user;
+                            hours = new ChargedHours(parseInt(data['id']), project, user, data['start_time'], data['end_time']);
                             hours.row = project.row;
                             hours.col = user.col;
-                            project_hours.add(hours);
+                            charged_hours.add(hours);
 
-                            updateTotals(col, time);
+                            updateTotals(col);
                         }, function(xhr, status, error) {
                             $('.dataTable').handsontable('setDataAtCell', row, col, '');
                             showError('Could not save the project hours. Please notify an administrator.');
                         });
                     } else {
-                        showError('Project hours must be associated with a project and user');
+                        showError('Project hours must be associated with a project and date');
                         return false;
                     }
                 } else {
@@ -325,10 +358,10 @@ $(function() {
                     if(user && after === '') {
                         users.remove(user);
 
-                        hours = project_hours.get_by_key('user', user);
+                        hours = charged_hours.get_by_key('user', user);
 
                         for(i = 0; i < hours.length; i++) {
-                            project_hours.remove(hours[i]);
+                            charged_hours.remove(hours[i]);
                         }
 
                         $('.dataTable').handsontable('alter', 'remove_col', user.col);
@@ -339,10 +372,10 @@ $(function() {
                     if(project && after === '') {
                         projects.remove(project);
 
-                        hours = project_hours.get_by_key('project', project);
+                        hours = charged_hours.get_by_key('project', project);
 
                         for(i = 0; i < hours.length; i++) {
-                            project_hours.remove(hours[i]);
+                            charged_hours.remove(hours[i]);
                         }
 
                         $('.dataTable').handsontable('alter', 'remove_row', project.row);
@@ -350,9 +383,9 @@ $(function() {
                 } else if(row >= 1 && col >= 1) {
                     function deleteHours() {
                         $.del(ajax_url + hours.id + '/', function(data, status, xhr) {
-                            updateTotals(col, -hours.hours);
+                            updateTotals(col);
 
-                            project_hours.remove(hours);
+                            charged_hours.remove(hours);
                             $('.dataTable').handsontable('setDataAtCell', row, col, '');
                         }, function(xhr, status, error) {
                             $('.dataTable').handsontable('setDataAtCell', row, col, before);
@@ -360,7 +393,7 @@ $(function() {
                         });
                     }
 
-                    hours = project_hours.get_by_row_col(row, col);
+                    hours = charged_hours.get_by_row_col(row, col);
 
                     if(hours && after === '') {
                         // If the hours have been removed from the table, delete from
@@ -384,14 +417,14 @@ $(function() {
     // Make sure the datepicker uses the correct format we expect
     $('.hasDatepicker').datepicker('setDate', $('h2[data-date]').data('date'));
 
-    // Make sure they really want to copy project hours
-    $('#copy').click(function(e) {
-        var copy = confirm('This will overwrite a user\'s project hours if they exist. Are you sure you want to do this?');
+    // // Make sure they really want to copy project hours
+    // $('#copy').click(function(e) {
+    //     var copy = confirm('This will overwrite a user\'s project hours if they exist. Are you sure you want to do this?');
 
-        if(copy) {
-            return true;
-        }
+    //     if(copy) {
+    //         return true;
+    //     }
 
-        return false;
-    });
+    //     return false;
+    // });
 });
