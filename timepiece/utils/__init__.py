@@ -91,18 +91,18 @@ def get_week_start(day=None):
 def get_period_start(day=None):
     """Returns the start date of the period (1st or 15th)."""
     day = add_timezone(day or datetime.date.today())
-    if day.day < 15:
+    if day.day < 16:
         day = day.replace(day=1)
     else:
-        day = day.replace(day=15)
+        day = day.replace(day=16)
     return datetime.datetime.combine(day, datetime.datetime.min.time())
 
 def get_period_end(period_start):
     """Returns end date of the period
-    (14th, 28th, 29th, 30th, or 31st).
+    (15th, 28th, 29th, 30th, or 31st).
     """
     if period_start.day == 1:
-        period_end = period_start.replace(day=14)
+        period_end = period_start.replace(day=15)
     else:
         period_end = period_start.replace(
             day=calendar.monthrange(
@@ -119,6 +119,18 @@ def get_weekdays_count(period_start, period_end):
             weekdays += 1
         cur_date += relativedelta(days=1)
     return weekdays
+
+def get_period_dates(period_start, period_end=None):
+    """Returns list of period_dates dictionary."""
+    period_dates = []
+    cur_date = period_start
+    period_end = period_end or (period_start + relativedelta(days=1))
+    while cur_date < period_end:
+        period_dates.append({'date': cur_date.strftime('%Y-%m-%d'),
+                             'display': cur_date.strftime('%a %b %d'),
+                             'weekday': cur_date.weekday()<=4})
+        cur_date += relativedelta(days=1)
+    return period_dates
 
 def get_year_start(day=None):
     """Returns January 1 of the given year."""
