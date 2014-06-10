@@ -146,7 +146,12 @@ def view_user_timesheet(request, user_id, active_tab):
     if can_approve:
         show_approve = verified_count + approved_count == total_statuses \
                 and verified_count > 0 and total_statuses != 0
-
+    
+    # TODO: for some reason I have to loop over this in order to
+    # remedy an error... does not make any sense
+    for gt in totals:
+        gt = gt
+    
     return render(request, 'timepiece/user/timesheet/view.html', {
         'active_tab': active_tab or 'overview',
         'year_month_form': form,
