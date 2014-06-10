@@ -1,16 +1,47 @@
 var projects = new ProjectCollection();
-var all_projects = new ProjectCollection();
-
-//var activities = new ActivityCollection();
-var all_activities = new ActivityCollection();
-
-//var locations = new LocationCollection();
-var all_locations = new LocationCollection();
-
+var activities = new ActivityCollection();
+var locations = new LocationCollection();
 var users = new UserCollection();
 var period_dates = new PeriodDatesCollection();
 
 var charged_hours = new ChargedHoursCollection(); 
+
+var BGCOLOR = '#236b8e',
+    COLOR = 'white';
+
+/* finds the intersection of 
+ * two arrays in a simple fashion.  
+ *
+ * PARAMS
+ *  a - first array, must already be sorted
+ *  b - second array, must already be sorted
+ *
+ * NOTES
+ *
+ *  Should have O(n) operations, where n is 
+ *    n = MIN(a.length(), b.length())
+ *
+ *  http://stackoverflow.com/questions/1885557/simplest-code-for-array-intersection-in-javascript
+ */
+function intersect_safe(a, b)
+{
+  var ai=0, bi=0;
+  var result = new Array();
+
+  while( ai < a.length && bi < b.length )
+  {
+     if      (a[ai] < b[bi] ){ ai++; }
+     else if (a[ai] > b[bi] ){ bi++; }
+     else /* they're equal */
+     {
+       result.push(a[ai]);
+       ai++;
+       bi++;
+     }
+  }
+
+  return result;
+}
 
 function showError(msg) {
     var html = '<div class="alert alert-error">' + msg +
@@ -23,9 +54,9 @@ function showError(msg) {
 function processData(data) {
     var projects = data.projects,
         charged_hours = data.charged_hours,
-        all_projects = data.all_projects,
-        all_activities = data.all_activities,
-        all_locations = data.all_locations,
+        projects = data.all_projects,
+        activities = data.all_activities,
+        locations = data.all_locations,
         period_dates = data.period_dates,
         dataTable = [['Project', 'Activity', 'Location']];
 
@@ -34,24 +65,24 @@ function processData(data) {
     }
 
     // Store all projects for autocomplete
-    for(var i = 0; i < all_projects.length; i++) {
-        var p = all_projects[i];
+    for(var i = 0; i < projects.length; i++) {
+        var p = projects[i];
 
-        this.all_projects.add(new Project(p.id, p.name));
+        this.projects.add(new Project(p.id, p.name));
     }
 
     // Store all activities for autocomplete
-    for(var i = 0; i < all_activities.length; i++) {
-        var a = all_activities[i];
+    for(var i = 0; i < activities.length; i++) {
+        var a = activities[i];
 
-        this.all_activities.add(new Activity(a.id, a.name));
+        this.activities.add(new Activity(a.id, a.name));
     }
 
     // Store all locations for autocomplete
-    for(var i = 0; i < all_locations.length; i++) {
-        var l = all_locations[i];
+    for(var i = 0; i < locations.length; i++) {
+        var l = locations[i];
 
-        this.all_locations.add(new Location(l.id, l.name));
+        this.locations.add(new Location(l.id, l.name));
     }
 
     // Create mapping for dates and populate first row
@@ -65,17 +96,26 @@ function processData(data) {
     // Process all charged hours to add to the table
     for(i = 0; i < charged_hours.length; i++) {
         var ch = charged_hours[i],
-            project = this.all_projects.get_by_id(ch.project);
+            project = this.projects.get_by_id(ch.project),
+            activity = this.activities.get_by_id(ch.activity),
+            location = this.locations.get_by_id(ch.location);
 
-        project.row = project.row || dataTable.length;
-
-        // Add project to table if it doesnt already exist
-        if(this.projects.add(project)) {
-            dataTable.push([project.name]);
-        }
-        
         var hours = new ChargedHours(ch.id, ch.project, ch.user, ch.start_time, ch.end_time, ch.activity, ch.location);
-        hours.row = project.row;
+
+        // determine the row to put this on
+        var intersection = intersect_safe(intersect_safe(project.row, activity.row), location.row);
+        var r;
+        if (intersection.length === 0) {
+            r = dataTable.length;
+            project.row.push(r);
+            activity.row.push(r);
+            location.row.push(r);
+        } else if (intersection.length === 1) {
+            r = intersection[0];
+        } else {
+            showError('Multiple rows with the same information!');
+        }
+        hours.row = r;
 
         var date = this.period_dates.get_by_id(ch.start_time.slice(0,10));
         hours.date = date;
@@ -91,9 +131,8 @@ function processData(data) {
             dataTable[hours.row][hours.col] = hours.duration;
         }
 
-        var activity = this.all_activities.get_by_id(ch.activity);
+        dataTable[hours.row][0] = project.name;
         dataTable[hours.row][1] = activity.name;
-        var location = this.all_locations.get_by_id(ch.location);
         dataTable[hours.row][2] = location.name;
 
         this.charged_hours.add(hours);
@@ -211,8 +250,8 @@ $(function() {
                     return false;
                 },
                 style: {
-                    color: 'white',
-                    backgroundColor: '#236b8e'
+                    color: COLOR,
+                    backgroundColor: BGCOLOR
                 }
             },
             {   // Match the cells with content
@@ -232,7 +271,7 @@ $(function() {
                     return (col === 0);
                 },
                 source: function() {
-                    return all_projects.collection;
+                    return projects.collection;
                 }
             },
             {
@@ -240,7 +279,7 @@ $(function() {
                     return (col === 1);
                 },
                 source: function() {
-                    return all_activities.collection;
+                    return activities.collection;
                 }
             },
             {
@@ -248,7 +287,7 @@ $(function() {
                     return (col === 2);
                 },
                 source: function() {
-                    return all_locations.collection;
+                    return locations.collection;
                 }
             },
         ],
@@ -260,25 +299,29 @@ $(function() {
                 col = changes[1],
                 before = changes[2],
                 after = changes[3],
-                project, user, duration, date;
+                project, user, duration, date, activity, location;
 
             if(row === 0) {
                 return;
 
             } else if(col === 0) {
-                if(!projects.get_by_name(after)) {
-                    // Adding project
-                    project = all_projects.get_by_name(after);
+                // Adding project
+                project = projects.get_by_name(after);
+                project.row.push(row);
 
-                    project.row = row;
-                    projects.add(project);
+                // Keep rows in between projects and totals
+                $('.dataTable').handsontable('alter', 'insert_row', row + 1);
 
-                    // Keep rows in between projects and totals
-                    $('.dataTable').handsontable('alter', 'insert_row', row + 1);
-                } else {
-                    showError('Project already listed');
-                    return false;
-                }
+            } else if(col === 1) {
+                // Adding activity
+                activity = activities.get_by_name(after);
+                activity.row.push(row);
+
+            } else if(col ===2) {
+                // Adding location
+                location = locations.get_by_name(after);
+                location.row.push(row);
+
 
             } else if(row >= 1 && col >= 3) {
                 var time = parseFloat(after);
@@ -304,31 +347,39 @@ $(function() {
                         $('.dataTable').handsontable('setDataAtCell', row, col, before);
                         showError('Could not save the project hours. Please notify an administrator.');
                     });
+
                 } else if(time && !hours && time > 0) {
                     // If the user entered a valid time, but the hours do not exist
                     // in a row/col, create them
                     project = projects.get_by_row(row);
                     date = period_dates.get_by_col(col);
+                    activity = activities.get_by_row(row);
+                    location = locations.get_by_row(row);
 
                     if(project && date && before === '') {
                         $.post(ajax_url, {
                             'project': project.id,
+                            'activity': activity.id,
+                            'location': location.id,
                             'duration': time,
                             'date': date.id,
                             'period_start': $('h2[data-date]').data('date')
                         }, function(data, status, xhr) {
-                            hours = new ChargedHours(parseInt(data['id']), project, user, data['start_time'], data['end_time']);
-                            hours.row = project.row;
-                            hours.col = user.col;
+                            hours = new ChargedHours(parseInt(data['id']), project, user, data['start_time'], data['end_time'], data['activity'], data['location']);
+                            hours.row = row;
+                            hours.col = col;
                             charged_hours.add(hours);
-
                             updateTotals(col);
+                            var cell = $('.dataTable').handsontable("getCell", row, col);
+                            cell.style.color = COLOR;
+                            cell.style.backgroundColor = BGCOLOR;
                         }, function(xhr, status, error) {
                             $('.dataTable').handsontable('setDataAtCell', row, col, '');
                             showError('Could not save the project hours. Please notify an administrator.');
                         });
                     } else {
-                        showError('Project hours must be associated with a project and date');
+                        showError('Project hours must be associated with a project, activity, location and date.');
+                        $('.dataTable').handsontable('setDataAtCell', row, col, before);
                         return false;
                     }
                 } else {

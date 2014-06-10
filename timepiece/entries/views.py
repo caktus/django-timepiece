@@ -791,15 +791,20 @@ class BulkEntryAjaxView(ScheduleMixin, View):
                 print 'date?', self.request.POST.get('date')
                 pp.pprint(self.request.POST)
                 date = datetime.datetime.strptime(
-                    self.request.POST.get('date'), DATE_FORM_FORMAT)
-                print 'date', date
-                print 'project', self.request.POST.get('project')
-                print 'projcet', int(self.request.POST.get('project'))
+                    self.request.POST.get('date'), DATE_FORM_FORMAT).date()
+                start = datetime.datetime.combine(date, 
+                    datetime.datetime.min.time())
+                p = Project.objects.get(
+                    id=int(self.request.POST.get('project')))
+                a = Activity.objects.get(
+                    id=int(self.request.POST.get('activity')))
+                l = Location.objects.get(
+                    id=int(self.request.POST.get('location')))
                 entry = Entry(user=self.request.user,
-                              activity=8, # change to settings
-                              location=1, # change to settings
-                              start_time=date)
-                print 'new entry', entry
+                              project=p,
+                              activity=a, # change to settings
+                              location=l, # change to settings
+                              start_time=start)
                 entry.save()
 
         except TypeError:

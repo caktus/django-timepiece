@@ -26,7 +26,7 @@ function Project(id, name) {
     Model.call(this, id);
 
     this.name = name;
-    this.row = 0;
+    this.row = [];
 }
 
 Project.prototype = new Model();
@@ -37,7 +37,7 @@ function Activity(id, name, code) {
 
     this.name = name;
     this.code = code;
-    this.row = 0;
+    this.row = [];
 }
 
 Activity.prototype = new Model();
@@ -47,7 +47,7 @@ function Location(id, name) {
     Model.call(this, id);
 
     this.name = name;
-    this.row = 0;
+    this.row = [];
 }
 
 Location.prototype = new Model();
@@ -92,8 +92,8 @@ function ChargedHours(id, project, user, start_time, end_time, activity, locatio
         // round to nearest quarter hour
         this.duration = Math.round(this.duration*4)/4;
     }
-    this.row = 0;
-    this.col = 0;
+    this.row = [];
+    this.col = [];
 }
 
 ChargedHours.prototype = new Model();
@@ -180,7 +180,7 @@ ProjectCollection.prototype.constructor = ProjectCollection;
 
 ProjectCollection.prototype.get_by_row = function(row) {
     for(var i = 0; i < this.collection.length; i++) {
-        if(this.collection[i].row === row) {
+        if(this.collection[i].row.indexOf(row) >= 0) {
             return this.collection[i];
         }
     }
@@ -197,7 +197,7 @@ ActivityCollection.prototype.constructor = ActivityCollection;
 
 ActivityCollection.prototype.get_by_row = function(row) {
     for(var i = 0; i < this.collection.length; i++) {
-        if(this.collection[i].row === row) {
+        if(this.collection[i].row.indexOf(row) >= 0) {
             return this.collection[i];
         }
     }
@@ -214,7 +214,7 @@ LocationCollection.prototype.constructor = LocationCollection;
 
 LocationCollection.prototype.get_by_row = function(row) {
     for(var i = 0; i < this.collection.length; i++) {
-        if(this.collection[i].row === row) {
+        if(this.collection[i].row.indexOf(row) >= 0) {
             return this.collection[i];
         }
     }
