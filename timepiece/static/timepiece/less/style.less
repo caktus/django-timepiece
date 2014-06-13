@@ -1,6 +1,6 @@
 // Includes
 @import "../../bootstrap/less/bootstrap.less";
-@import "../../bootstrap/less/responsive.less";
+@import "../../bootstrap/less/responsive-utilities.less";
 
 /*
 Change default sprite paths to point inside of static/bootstrap instead of
@@ -16,6 +16,8 @@ static/timepiece.
 @blue: #049CDB;
 @lightblue: lighten(@blue, 20%);
 @red: #DA4F49;
+@yellow: #e6df80;
+@green: #38e644;
 
 @tableBackgroundAccent: #EEEEEE;
 @tableBackgroundHover: #D0D0EC;
@@ -287,12 +289,12 @@ body {
         .navbar-search {
             input[type="text"]{
                 font-family: Helvetica, Arial, sans-serif;
-                color: @grayLight;
+                color: @lightgray;
                 font-weight: normal;
                 line-height: 1;
                 margin-bottom: 0;
                 width: 100px;
-                border: 1px solid @black;
+                border: 1px solid black;
                 &:focus {
                     width: 150px;
                 }
