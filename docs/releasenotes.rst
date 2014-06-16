@@ -26,6 +26,8 @@ Release Notes
 * Use Model.add_to_class to augment class.
 * Make use of @cbv_decorator to avoid creating new Mixin classes for every
   decorator.
+* Reorganized navbar templates to make extension easier when Timepiece is a
+  secondary app. Thanks @dannybrowne86!
 
 0.9.4 (Released 04-01-2014)
 ---------------------------
