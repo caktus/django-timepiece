@@ -164,18 +164,20 @@ class MiscTagTestCase(TestCase):
         self.assertEqual(49, retval)
 
     def test_project_report_url_for_contract(self):
-        with mock.patch('timepiece.templatetags.timepiece_tags.reverse')\
-        as reverse:
-            reverse.return_value = "Boo"
-            dt = datetime.date(2013, 1, 10)
-            contract = mock.Mock(start_date=dt, end_date=dt)
-            project = mock.Mock(id=54)
-            retval = tags.project_report_url_for_contract(contract, project)
-            url = 'Boo?billable=1&projects_1=54&from_date=' \
-                '2013-01-10&to_date=2013-01-10&non_billable=0' \
-                '&paid_leave=0&trunc=month'
-            self.assertEqual(url, retval)
-            self.assertEqual('report_hourly', reverse.call_args[0][0])
+        dt = datetime.date(2013, 1, 10)
+        contract = mock.Mock(start_date=dt, end_date=dt)
+        project = mock.Mock(id=54)
+        result = tags._project_report_url_params(contract, project)
+        expected_url = {
+            'from_date': '2013-01-10',
+            'to_date': '2013-01-10',
+            'billable': 1,
+            'non_billable': 0,
+            'paid_leave': 0,
+            'trunc': 'month',
+            'projects_1': project.id,
+        }
+        self.assertEqual(expected_url, result)
 
 
 class SumHoursTagTestCase(TestCase):

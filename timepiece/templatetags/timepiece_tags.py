@@ -179,9 +179,8 @@ def project_hours_for_contract(contract, project, billable=None):
     return hours
 
 
-@register.simple_tag
-def project_report_url_for_contract(contract, project):
-    data = {
+def _project_report_url_params(contract, project):
+    return {
         'from_date': contract.start_date.strftime(DATE_FORM_FORMAT),
         'to_date': contract.end_date.strftime(DATE_FORM_FORMAT),
         'billable': 1,
@@ -190,6 +189,11 @@ def project_report_url_for_contract(contract, project):
         'trunc': 'month',
         'projects_1': project.id,
     }
+
+
+@register.simple_tag
+def project_report_url_for_contract(contract, project):
+    data = _project_report_url_params(contract, project)
     return '{0}?{1}'.format(reverse('report_hourly'), urllib.urlencode(data))
 
 
