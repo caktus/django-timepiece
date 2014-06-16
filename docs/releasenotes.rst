@@ -15,6 +15,7 @@ Release Notes
 * Require `crm.change_business` permission rather than `crm.edit_business`
   permission for EditUser view.
 * Don't use transaction.commit_on_success on ViewUser or ViewProject views.
+* Fix bug preventing passage of custom default value to `utils.get_setting`.
 
 *Code Quality*
 
