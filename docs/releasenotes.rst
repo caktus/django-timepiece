@@ -8,6 +8,8 @@ Release Notes
 
 * Use Bootstrap 2.3.2
 * Estimation Accuracy report
+* Sticky headers on all tables!
+* Show active entry comment on dashboard page.
 
 *Bugfixes*
 
@@ -16,11 +18,14 @@ Release Notes
   permission for EditUser view.
 * Don't use transaction.commit_on_success on ViewUser or ViewProject views.
 * Fix bug preventing passage of custom default value to `utils.get_setting`.
+* Manually calculate height/width in hours (#147b95a).
 
 *Code Quality*
 
 * Additional tests and code cleanup in the CRM app.
-* Use Model.add_to_class to augment class
+* Use Model.add_to_class to augment class.
+* Make use of @cbv_decorator to avoid creating new Mixin classes for every
+  decorator.
 
 0.9.4 (Released 04-01-2014)
 ---------------------------
