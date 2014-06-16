@@ -67,7 +67,7 @@
                             {% endif %}
                         {% endifnotequal %}
                         ({{ active_entry.get_total_seconds|humanize_seconds }} time clocked{% if active_entry.seconds_paused or active_entry.is_paused %} and {{ active_entry.get_paused_seconds|humanize_seconds }} paused{% endif %}).
-                        <blockquote>{{ active_entry.comments }}</blockquote>
+                        {% if active_entry.comments %}<blockquote>{{ active_entry.comments }}</blockquote>{% endif %}
                     {% else %}
                         You are not currently clocked into a project.
                     {% endif %}
