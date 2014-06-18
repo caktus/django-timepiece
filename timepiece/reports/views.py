@@ -235,7 +235,7 @@ class HourlyReport(ReportMixin, CSVViewMixin, TemplateView):
 
         context.update({
             'date_headers': date_headers,
-            'summaries': summaries,
+            'summaries': dict(summaries),
             'range_headers': range_headers,
         })
         return context

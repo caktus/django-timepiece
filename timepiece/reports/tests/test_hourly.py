@@ -159,7 +159,7 @@ class TestHourlyReport(ViewTestMixin, LogTimeMixin, ReportsTestBase):
         defaults = {
             'from_date': start.strftime('%Y-%m-%d'),
             'to_date': end.strftime('%Y-%m-%d'),
-            'export': True,
+            'export_users': True,
             'billable': True,
             'non_billable': True,
             'paid_leave': True,
