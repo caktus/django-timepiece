@@ -157,9 +157,9 @@ class TestHourlyReport(ViewTestMixin, LogTimeMixin, ReportsTestBase):
         end = utils.add_timezone(
                 kwargs.pop('end', datetime.datetime(2011, 1, 4)))
         defaults = {
-            'from_date': start.strftime('%m/%d/%Y'),
-            'to_date': end.strftime('%m/%d/%Y'),
-            'export': True,
+            'from_date': start.strftime('%Y-%m-%d'),
+            'to_date': end.strftime('%Y-%m-%d'),
+            'export_users': True,
             'billable': True,
             'non_billable': True,
             'paid_leave': True,
