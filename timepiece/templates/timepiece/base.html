@@ -13,7 +13,6 @@
         jqueryui's, and bootstrap's is not currently used, so we'll load
         jqueryui last so that it has precedence.
         {% endcomment %}
-        <script charset="utf-8" src="{{ STATIC_URL }}bootstrap/js/bootstrap.min.js"></script>
         <script charset="utf-8" src="//ajax.googleapis.com/ajax/libs/jqueryui/1.8.18/jquery-ui.min.js"></script>
         <script charset="utf-8" src="{{ STATIC_URL }}selectable/js/jquery.dj.selectable.js"></script>
         {% if perms.crm.view_business %}  {# FIXME: Permission doesn't exist #}
