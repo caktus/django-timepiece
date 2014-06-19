@@ -5,114 +5,23 @@ from django.db import models
 
 
 class Migration(SchemaMigration):
-
     depends_on = (
-        ('entries', '0001_initial'),
+        ('contracts', '0001_initial'),
     )
 
     def forwards(self, orm):
-        # Adding model 'ProjectContract'
-        db.create_table('timepiece_projectcontract', (
-            ('id', self.gf('django.db.models.fields.AutoField')(primary_key=True)),
-            ('name', self.gf('django.db.models.fields.CharField')(max_length=255)),
-            ('start_date', self.gf('django.db.models.fields.DateField')()),
-            ('end_date', self.gf('django.db.models.fields.DateField')()),
-            ('status', self.gf('django.db.models.fields.CharField')(default='upcoming', max_length=32)),
-            ('type', self.gf('django.db.models.fields.IntegerField')()),
-        ))
-        db.send_create_signal('contracts', ['ProjectContract'])
+        # Originally part of the initial migration, but separated out because
+        # it depends on contracts.
 
-        # Adding M2M table for field projects on 'ProjectContract'
-        db.create_table('timepiece_projectcontract_projects', (
-            ('id', models.AutoField(verbose_name='ID', primary_key=True, auto_created=True)),
-            ('projectcontract', models.ForeignKey(orm['contracts.projectcontract'], null=False)),
-            ('project', models.ForeignKey(orm['crm.project'], null=False))
-        ))
-        db.create_unique('timepiece_projectcontract_projects', ['projectcontract_id', 'project_id'])
-
-        # Adding model 'ContractHour'
-        db.create_table('timepiece_contracthour', (
-            ('id', self.gf('django.db.models.fields.AutoField')(primary_key=True)),
-            ('hours', self.gf('django.db.models.fields.DecimalField')(default=0, max_digits=8, decimal_places=2)),
-            ('contract', self.gf('django.db.models.fields.related.ForeignKey')(related_name='contract_hours', to=orm['contracts.ProjectContract'])),
-            ('date_requested', self.gf('django.db.models.fields.DateField')()),
-            ('date_approved', self.gf('django.db.models.fields.DateField')(null=True, blank=True)),
-            ('status', self.gf('django.db.models.fields.IntegerField')(default=1)),
-            ('notes', self.gf('django.db.models.fields.TextField')(blank=True)),
-        ))
-        db.send_create_signal('contracts', ['ContractHour'])
-
-        # Adding model 'ContractAssignment'
-        db.create_table('timepiece_contractassignment', (
-            ('id', self.gf('django.db.models.fields.AutoField')(primary_key=True)),
-            ('contract', self.gf('django.db.models.fields.related.ForeignKey')(related_name='assignments', to=orm['contracts.ProjectContract'])),
-            ('user', self.gf('django.db.models.fields.related.ForeignKey')(related_name='assignments', to=orm['auth.User'])),
-            ('start_date', self.gf('django.db.models.fields.DateField')()),
-            ('end_date', self.gf('django.db.models.fields.DateField')()),
-            ('num_hours', self.gf('django.db.models.fields.DecimalField')(default=0, max_digits=8, decimal_places=2)),
-            ('min_hours_per_week', self.gf('django.db.models.fields.IntegerField')(default=0)),
-        ))
-        db.send_create_signal('contracts', ['ContractAssignment'])
-
-        # Adding unique constraint on 'ContractAssignment', fields ['contract', 'user']
-        db.create_unique('timepiece_contractassignment', ['contract_id', 'user_id'])
-
-        # Adding model 'HourGroup'
-        db.create_table('contracts_hourgroup', (
-            ('id', self.gf('django.db.models.fields.AutoField')(primary_key=True)),
-            ('name', self.gf('django.db.models.fields.CharField')(unique=True, max_length=255)),
-            ('order', self.gf('django.db.models.fields.PositiveIntegerField')(unique=True, null=True, blank=True)),
-        ))
-        db.send_create_signal('contracts', ['HourGroup'])
-
-        # Adding M2M table for field activities on 'HourGroup'
-        db.create_table('contracts_hourgroup_activities', (
-            ('id', models.AutoField(verbose_name='ID', primary_key=True, auto_created=True)),
-            ('hourgroup', models.ForeignKey(orm['contracts.hourgroup'], null=False)),
-            ('activity', models.ForeignKey(orm['entries.activity'], null=False))
-        ))
-        db.create_unique('contracts_hourgroup_activities', ['hourgroup_id', 'activity_id'])
-
-        # Adding model 'EntryGroup'
-        db.create_table('timepiece_entrygroup', (
-            ('id', self.gf('django.db.models.fields.AutoField')(primary_key=True)),
-            ('user', self.gf('django.db.models.fields.related.ForeignKey')(related_name='entry_group', to=orm['auth.User'])),
-            ('project', self.gf('django.db.models.fields.related.ForeignKey')(related_name='entry_group', to=orm['crm.Project'])),
-            ('status', self.gf('django.db.models.fields.CharField')(default='invoiced', max_length=24)),
-            ('number', self.gf('django.db.models.fields.CharField')(max_length=50, null=True, blank=True)),
-            ('comments', self.gf('django.db.models.fields.TextField')(null=True, blank=True)),
-            ('created', self.gf('django.db.models.fields.DateTimeField')(auto_now_add=True, blank=True)),
-            ('modified', self.gf('django.db.models.fields.DateTimeField')(auto_now=True, blank=True)),
-            ('start', self.gf('django.db.models.fields.DateField')(null=True, blank=True)),
-            ('end', self.gf('django.db.models.fields.DateField')()),
-        ))
-        db.send_create_signal('contracts', ['EntryGroup'])
+        # Adding field 'Entry.entry_group'
+        db.add_column('timepiece_entry', 'entry_group',
+                      self.gf('django.db.models.fields.related.ForeignKey')(blank=True, related_name='entries', null=True, on_delete=models.SET_NULL, to=orm['contracts.EntryGroup']),
+                      keep_default=False)
 
 
     def backwards(self, orm):
-        # Removing unique constraint on 'ContractAssignment', fields ['contract', 'user']
-        db.delete_unique('timepiece_contractassignment', ['contract_id', 'user_id'])
-
-        # Deleting model 'ProjectContract'
-        db.delete_table('timepiece_projectcontract')
-
-        # Removing M2M table for field projects on 'ProjectContract'
-        db.delete_table('timepiece_projectcontract_projects')
-
-        # Deleting model 'ContractHour'
-        db.delete_table('timepiece_contracthour')
-
-        # Deleting model 'ContractAssignment'
-        db.delete_table('timepiece_contractassignment')
-
-        # Deleting model 'HourGroup'
-        db.delete_table('contracts_hourgroup')
-
-        # Removing M2M table for field activities on 'HourGroup'
-        db.delete_table('contracts_hourgroup_activities')
-
-        # Deleting model 'EntryGroup'
-        db.delete_table('timepiece_entrygroup')
+        # Deleting field 'Entry.entry_group'
+        db.delete_column('timepiece_entry', 'entry_group_id')
 
 
     models = {
@@ -152,26 +61,6 @@ class Migration(SchemaMigration):
             'model': ('django.db.models.fields.CharField', [], {'max_length': '100'}),
             'name': ('django.db.models.fields.CharField', [], {'max_length': '100'})
         },
-        'contracts.contractassignment': {
-            'Meta': {'unique_together': "(('contract', 'user'),)", 'object_name': 'ContractAssignment', 'db_table': "'timepiece_contractassignment'"},
-            'contract': ('django.db.models.fields.related.ForeignKey', [], {'related_name': "'assignments'", 'to': "orm['contracts.ProjectContract']"}),
-            'end_date': ('django.db.models.fields.DateField', [], {}),
-            'id': ('django.db.models.fields.AutoField', [], {'primary_key': 'True'}),
-            'min_hours_per_week': ('django.db.models.fields.IntegerField', [], {'default': '0'}),
-            'num_hours': ('django.db.models.fields.DecimalField', [], {'default': '0', 'max_digits': '8', 'decimal_places': '2'}),
-            'start_date': ('django.db.models.fields.DateField', [], {}),
-            'user': ('django.db.models.fields.related.ForeignKey', [], {'related_name': "'assignments'", 'to': "orm['auth.User']"})
-        },
-        'contracts.contracthour': {
-            'Meta': {'object_name': 'ContractHour', 'db_table': "'timepiece_contracthour'"},
-            'contract': ('django.db.models.fields.related.ForeignKey', [], {'related_name': "'contract_hours'", 'to': "orm['contracts.ProjectContract']"}),
-            'date_approved': ('django.db.models.fields.DateField', [], {'null': 'True', 'blank': 'True'}),
-            'date_requested': ('django.db.models.fields.DateField', [], {}),
-            'hours': ('django.db.models.fields.DecimalField', [], {'default': '0', 'max_digits': '8', 'decimal_places': '2'}),
-            'id': ('django.db.models.fields.AutoField', [], {'primary_key': 'True'}),
-            'notes': ('django.db.models.fields.TextField', [], {'blank': 'True'}),
-            'status': ('django.db.models.fields.IntegerField', [], {'default': '1'})
-        },
         'contracts.entrygroup': {
             'Meta': {'object_name': 'EntryGroup', 'db_table': "'timepiece_entrygroup'"},
             'comments': ('django.db.models.fields.TextField', [], {'null': 'True', 'blank': 'True'}),
@@ -184,23 +73,6 @@ class Migration(SchemaMigration):
             'start': ('django.db.models.fields.DateField', [], {'null': 'True', 'blank': 'True'}),
             'status': ('django.db.models.fields.CharField', [], {'default': "'invoiced'", 'max_length': '24'}),
             'user': ('django.db.models.fields.related.ForeignKey', [], {'related_name': "'entry_group'", 'to': "orm['auth.User']"})
-        },
-        'contracts.hourgroup': {
-            'Meta': {'object_name': 'HourGroup'},
-            'activities': ('django.db.models.fields.related.ManyToManyField', [], {'related_name': "'activity_bundle'", 'symmetrical': 'False', 'to': "orm['entries.Activity']"}),
-            'id': ('django.db.models.fields.AutoField', [], {'primary_key': 'True'}),
-            'name': ('django.db.models.fields.CharField', [], {'unique': 'True', 'max_length': '255'}),
-            'order': ('django.db.models.fields.PositiveIntegerField', [], {'unique': 'True', 'null': 'True', 'blank': 'True'})
-        },
-        'contracts.projectcontract': {
-            'Meta': {'ordering': "('-end_date',)", 'object_name': 'ProjectContract', 'db_table': "'timepiece_projectcontract'"},
-            'end_date': ('django.db.models.fields.DateField', [], {}),
-            'id': ('django.db.models.fields.AutoField', [], {'primary_key': 'True'}),
-            'name': ('django.db.models.fields.CharField', [], {'max_length': '255'}),
-            'projects': ('django.db.models.fields.related.ManyToManyField', [], {'related_name': "'contracts'", 'symmetrical': 'False', 'to': "orm['crm.Project']"}),
-            'start_date': ('django.db.models.fields.DateField', [], {}),
-            'status': ('django.db.models.fields.CharField', [], {'default': "'upcoming'", 'max_length': '32'}),
-            'type': ('django.db.models.fields.IntegerField', [], {})
         },
         'crm.attribute': {
             'Meta': {'ordering': "('sort_order',)", 'unique_together': "(('type', 'label'),)", 'object_name': 'Attribute', 'db_table': "'timepiece_attribute'"},
@@ -259,7 +131,39 @@ class Migration(SchemaMigration):
             'activities': ('django.db.models.fields.related.ManyToManyField', [], {'related_name': "'activity_group'", 'symmetrical': 'False', 'to': "orm['entries.Activity']"}),
             'id': ('django.db.models.fields.AutoField', [], {'primary_key': 'True'}),
             'name': ('django.db.models.fields.CharField', [], {'unique': 'True', 'max_length': '255'})
+        },
+        'entries.entry': {
+            'Meta': {'ordering': "('-start_time',)", 'object_name': 'Entry', 'db_table': "'timepiece_entry'"},
+            'activity': ('django.db.models.fields.related.ForeignKey', [], {'related_name': "'entries'", 'to': "orm['entries.Activity']"}),
+            'comments': ('django.db.models.fields.TextField', [], {'blank': 'True'}),
+            'date_updated': ('django.db.models.fields.DateTimeField', [], {'auto_now': 'True', 'blank': 'True'}),
+            'end_time': ('django.db.models.fields.DateTimeField', [], {'db_index': 'True', 'null': 'True', 'blank': 'True'}),
+            'entry_group': ('django.db.models.fields.related.ForeignKey', [], {'blank': 'True', 'related_name': "'entries'", 'null': 'True', 'on_delete': 'models.SET_NULL', 'to': "orm['contracts.EntryGroup']"}),
+            'hours': ('django.db.models.fields.DecimalField', [], {'default': '0', 'max_digits': '8', 'decimal_places': '2'}),
+            'id': ('django.db.models.fields.AutoField', [], {'primary_key': 'True'}),
+            'location': ('django.db.models.fields.related.ForeignKey', [], {'related_name': "'entries'", 'to': "orm['entries.Location']"}),
+            'pause_time': ('django.db.models.fields.DateTimeField', [], {'null': 'True', 'blank': 'True'}),
+            'project': ('django.db.models.fields.related.ForeignKey', [], {'related_name': "'entries'", 'to': "orm['crm.Project']"}),
+            'seconds_paused': ('django.db.models.fields.PositiveIntegerField', [], {'default': '0'}),
+            'start_time': ('django.db.models.fields.DateTimeField', [], {}),
+            'status': ('django.db.models.fields.CharField', [], {'default': "'unverified'", 'max_length': '24'}),
+            'user': ('django.db.models.fields.related.ForeignKey', [], {'related_name': "'timepiece_entries'", 'to': "orm['auth.User']"})
+        },
+        'entries.location': {
+            'Meta': {'object_name': 'Location', 'db_table': "'timepiece_location'"},
+            'id': ('django.db.models.fields.AutoField', [], {'primary_key': 'True'}),
+            'name': ('django.db.models.fields.CharField', [], {'unique': 'True', 'max_length': '255'}),
+            'slug': ('django.db.models.fields.CharField', [], {'unique': 'True', 'max_length': '255'})
+        },
+        'entries.projecthours': {
+            'Meta': {'unique_together': "(('week_start', 'project', 'user'),)", 'object_name': 'ProjectHours', 'db_table': "'timepiece_projecthours'"},
+            'hours': ('django.db.models.fields.DecimalField', [], {'default': '0', 'max_digits': '8', 'decimal_places': '2'}),
+            'id': ('django.db.models.fields.AutoField', [], {'primary_key': 'True'}),
+            'project': ('django.db.models.fields.related.ForeignKey', [], {'to': "orm['crm.Project']"}),
+            'published': ('django.db.models.fields.BooleanField', [], {'default': 'False'}),
+            'user': ('django.db.models.fields.related.ForeignKey', [], {'to': "orm['auth.User']"}),
+            'week_start': ('django.db.models.fields.DateField', [], {})
         }
     }
 
-    complete_apps = ['contracts']
+    complete_apps = ['entries']
