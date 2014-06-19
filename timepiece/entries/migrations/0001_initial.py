@@ -7,6 +7,9 @@ from django.db import models
 class Migration(SchemaMigration):
 
     def forwards(self, orm):
+        # Also includes initial migrations for crm, to avoid circular
+        # dependencies. See #787.
+
         # Adding model 'UserProfile'
         db.create_table('timepiece_userprofile', (
             ('id', self.gf('django.db.models.fields.AutoField')(primary_key=True)),

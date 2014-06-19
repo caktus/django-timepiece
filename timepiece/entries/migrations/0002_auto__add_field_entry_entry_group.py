@@ -10,6 +10,9 @@ class Migration(SchemaMigration):
     )
 
     def forwards(self, orm):
+        # Originally part of the initial migration, but separated out because
+        # it depends on contracts.
+
         # Adding field 'Entry.entry_group'
         db.add_column('timepiece_entry', 'entry_group',
                       self.gf('django.db.models.fields.related.ForeignKey')(blank=True, related_name='entries', null=True, on_delete=models.SET_NULL, to=orm['contracts.EntryGroup']),

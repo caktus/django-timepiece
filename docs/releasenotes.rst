@@ -19,6 +19,9 @@ Release Notes
 * Don't use transaction.commit_on_success on ViewUser or ViewProject views.
 * Fix bug preventing passage of custom default value to `utils.get_setting`.
 * Manually calculate height/width in hours (#147b95a).
+* Fixed migrations so that they will run on a fresh database. If you have
+  an existing database, you will need to run ``django-admin.py migrate
+  entries 0002 --fake``.
 
 *Code Quality*
 
