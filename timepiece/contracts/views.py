@@ -190,6 +190,10 @@ class ListInvoices(SearchListView):
             'comments__icontains', 'number__icontains']
     template_name = 'timepiece/invoice/list.html'
 
+    def get_queryset(self):
+        qs = super(ListInvoices, self).get_queryset()
+        return qs.order_by('-end', '-id')
+
 
 @cbv_decorator(permission_required('contracts.change_entrygroup'))
 class InvoiceDetail(DetailView):
