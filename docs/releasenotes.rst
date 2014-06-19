@@ -10,6 +10,7 @@ Release Notes
 * Estimation Accuracy report
 * Sticky headers on all tables!
 * Show active entry comment on dashboard page.
+* Order previous invoices by end date descending.
 
 *Bugfixes*
 
