@@ -19,6 +19,8 @@ function processData(data) {
         project_hours = data.project_hours,
         all_projects = data.all_projects,
         all_users = data.all_users,
+        minder_for_projects = data.minder_for_projects,
+        user_other_hours = data.user_other_hours,
         dataTable = [['']];
 
     if(typeof ajax_url === 'undefined') {
@@ -79,6 +81,46 @@ function processData(data) {
         this.project_hours.add(hours);
     }
 
+    // add rows for projects the user is aminder for and 
+    // columns for people that are assigned to those projects
+    var that = this;
+    $.each(minder_for_projects,
+        function (p_id, p_users) {
+            console.log('p_id', p_id, 'p_users', p_users);
+            // Add project to table if it doesnt already exist
+            var project = that.all_projects.get_by_id(Number(p_id));
+            project.row = project.row || dataTable.length;
+            if(!!project && that.projects.add(project)) {
+                dataTable.push([project.name]);
+            }
+            console.log('project', project);
+
+            $.each(p_users, 
+                function (index, user_id) {
+                    console.log('index', index, 'user_id', user_id);
+                    // Get from global users and add to datatable and adjust column
+                    // if the user isnt already in the table
+                    var user = that.all_users.get_by_id(Number(user_id));
+                    if(!!user && that.users.add(user)) {
+                        dataTable[0].push(user.display_name);
+                        user.col = dataTable[0].length - 1;
+                    }
+                }
+            );
+        }
+    );
+
+    // Add a row for other projects
+    var other_projects = ['Other Projects'];
+    var row = dataTable[0];
+    var user;
+    console.log('user_other_hours', user_other_hours);
+    for(i=1; i<row.length; i++) {
+        user = that.all_users.get_by_col(i);
+        console.log('found user', user);
+        other_projects.push(user_other_hours[user.id]);
+    }
+
     // Populate the totals row after weve gone through all the data
     var totals = ['Totals'], j;
 
@@ -93,10 +135,12 @@ function processData(data) {
             if(row[j]) {
                 totals[j] += row[j];
             }
+
+            totals[j] += other_projects[j];
         }
     }
 
-    dataTable.push([], [], totals);
+    dataTable.push([], [], other_projects, totals);
 
     $('.dataTable').handsontable('loadData', dataTable);
 }
