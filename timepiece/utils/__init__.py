@@ -90,35 +90,38 @@ def get_week_start(day=None):
 
 def get_period_start(day=None):
     """Returns the start date of the period (1st or 15th)."""
-    day = add_timezone(day or datetime.date.today())
-    if day.day < 16:
-        day = day.replace(day=1)
-    else:
-        day = day.replace(day=16)
-    return datetime.datetime.combine(day, datetime.datetime.min.time())
+    # day = add_timezone(day or datetime.date.today())
+    # if day.day < 16:
+    #     day = day.replace(day=1)
+    # else:
+    #     day = day.replace(day=16)
+    # return datetime.datetime.combine(day, datetime.datetime.min.time())
+    return get_week_start(day)
 
 def get_period_end(period_start):
     """Returns end date of the period
     (15th, 28th, 29th, 30th, or 31st).
     """
-    if period_start.day == 1:
-        period_end = period_start.replace(day=15)
-    else:
-        period_end = period_start.replace(
-            day=calendar.monthrange(
-                period_start.year, period_start.month)[1])
-    return datetime.datetime.combine(
-        period_end, datetime.datetime.max.time())
+    # if period_start.day == 1:
+    #     period_end = period_start.replace(day=15)
+    # else:
+    #     period_end = period_start.replace(
+    #         day=calendar.monthrange(
+    #             period_start.year, period_start.month)[1])
+    # return datetime.datetime.combine(
+    #     period_end, datetime.datetime.max.time())
+    return period_start + relativedelta(days=7)
 
 def get_weekdays_count(period_start, period_end):
     """Returns the count oc weekdays in period."""
-    weekdays = 0
-    cur_date = period_start
-    while cur_date < period_end:
-        if cur_date.weekday() <= 4:
-            weekdays += 1
-        cur_date += relativedelta(days=1)
-    return weekdays
+    # weekdays = 0
+    # cur_date = period_start
+    # while cur_date < period_end:
+    #     if cur_date.weekday() <= 4:
+    #         weekdays += 1
+    #     cur_date += relativedelta(days=1)
+    # return weekdays
+    return 5
 
 def get_period_dates(period_start, period_end=None):
     """Returns list of period_dates dictionary."""
