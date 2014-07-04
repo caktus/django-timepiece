@@ -2,7 +2,7 @@
 {% load url from future %}
 {% load bootstrap_toolkit %}
 
-{% block title %}Schedule for the Period starting {{ period|date:'M j, Y'}}{% endblock title %}
+{% block title %}Schedule for the week starting {{ period|date:'M j, Y'}}{% endblock title %}
 
 {% block bodyid %}project-hours{% endblock bodyid %}
 
@@ -33,7 +33,7 @@
 {% block content %}
     <div class="row-fluid">
         <div class="span12">
-            <h2 data-date="{{ period|date:'Y-m-d' }}">Schedule for the Period starting {{ period|date:'M j, Y'}} ({{ period_hours }} hours)</h2>
+            <h2 data-date="{{ period|date:'Y-m-d' }}">Schedule for the week starting {{ period|date:'M j, Y'}} ({{ period_hours }} hours)</h2>
         </div>
     </div>
 
@@ -50,7 +50,7 @@
                 {% csrf_token %}
                 <input type="hidden" name="duplicate" value="duplicate" />
                 <input type="hidden" name="period_update" value="{{ period|date:'Y-m-d' }}" />
-                <button id="copy" type="submit" class="btn">Copy previous period</button>
+                <button id="copy" type="submit" class="btn">Copy previous week</button>
             </form>
             <form class="form-inline right" method="post" action="{% url 'edit_schedule' %}">
                 {% csrf_token %}

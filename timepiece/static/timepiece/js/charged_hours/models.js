@@ -76,7 +76,8 @@ function PeriodDate(date, display, weekday, col) {
 PeriodDate.prototype = new Model();
 PeriodDate.prototype.constructor = PeriodDate;
 
-function ChargedHours(id, project, user, start_time, end_time, activity, location) {
+function ChargedHours(id, project, user, start_time, end_time, activity, location, comment) {
+    console.log('new ch', id, project, user, start_time, end_time, activity, location, comment);
     Model.call(this, id);
     
     this.project = project;
@@ -86,6 +87,7 @@ function ChargedHours(id, project, user, start_time, end_time, activity, locatio
     this.activity = activity;
     this.location =location;
     this.duration = 0;
+    this.comment = comment;
     if (this.start_time && this.end_time) {
         // get duration in hours from timestamps
         this.duration = (this.end_time - this.start_time) / 3600000;

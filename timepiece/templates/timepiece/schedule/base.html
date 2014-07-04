@@ -5,6 +5,6 @@
     {{ block.super }}
     <li>
         <span class="divider">/</span>
-        <a href="{% url 'view_schedule' %}?week_start={{ period|date:'Y-m-d' }}">Period Schedule</a>
+        <a href="{% url 'view_schedule' %}?week_start={{ period|date:'Y-m-d' }}">Week Schedule</a>
     </li>
 {% endblock crumbs %}

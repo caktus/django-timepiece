@@ -2,7 +2,7 @@
 {% load url from future %}
 {% load bootstrap_toolkit %}
 
-{% block title %}Schedule for the Period starting {{ period|date:'M j, Y' }}{% endblock title %}
+{% block title %}Schedule for the week starting {{ period|date:'M j, Y' }}{% endblock title %}
 
 {% block bodyid %}project-hours{% endblock bodyid %}
 
@@ -18,10 +18,10 @@
 {% block content %}
     <div class="row-fluid">
         <div class="span12">
-            <h2>Schedule for the Period starting {{ period|date:'M j, Y'}} ({{ period_hours }} hours)</h2>
+            <h2>Schedule for the week starting {{ period|date:'M j, Y'}} ({{ period_hours }} hours)</h2>
             <ul class="nav nav-pills">
-                <li><a href="{% url 'view_schedule' %}?week_start={{ prev_period|date:'Y-m-d' }}">&larr; Prev Period</a></li>
-                <li><a href="{% url 'view_schedule' %}?week_start={{ next_period|date:'Y-m-d' }}">Next Period &rarr;</a></li>
+                <li><a href="{% url 'view_schedule' %}?week_start={{ prev_period|date:'Y-m-d' }}">&larr; Prev week</a></li>
+                <li><a href="{% url 'view_schedule' %}?week_start={{ next_period|date:'Y-m-d' }}">Next week &rarr;</a></li>
             </ul>
         </div>
     </div>
@@ -66,7 +66,7 @@
                     </tbody>
                 </table>
             {% else %}
-                <p>There are no entries this period.</p>
+                <p>There are no entries this week.</p>
             {% endif %}
         </div>
     </div>
