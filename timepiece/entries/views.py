@@ -546,10 +546,45 @@ class ScheduleAjaxView(ScheduleMixin, View):
         all_users = User.objects.filter(user_q) \
             .values('id', 'first_name', 'last_name')
 
+        minder_for_projects = {}
+        user_other_hours = {}
+        try:
+            # get projects the user is a minder for with all assigned users
+            minder_for_projects = {}
+            listed_users = []
+            listed_projects = []
+            for p in Project.objects.filter(point_person=request.user.id):
+                user_ids = [u['id'] for u in p.users.values()]
+                minder_for_projects[p.id] = user_ids
+                listed_projects.append(p.id)
+                listed_users.extend(user_ids)
+
+            for ph in project_hours:
+                listed_projects.append(ph['project'])
+                listed_users.append(ph['user'])
+
+            listed_users = list(set(listed_users))
+            listed_projects = list(set(listed_projects))
+
+            user_other_hours = {}
+            for u_id in listed_users:
+                user_other_hours[u_id] = 0
+                user = User.objects.get(id=u_id)
+                for ph in ProjectHours.objects.filter(
+                            user=user,
+                            week_start__gte=self.period_start,
+                            week_start__lt=utils.get_period_end(self.period_start)):
+                    if ph.project.id not in listed_projects:
+                        user_other_hours[u_id] += ph.hours
+        except:
+            print sys.exc_info(), traceback.format_exc()
+
         data = {
             'project_hours': list(project_hours),
             'projects': list(projects),
             'all_projects': list(all_projects),
+            'minder_for_projects': minder_for_projects,
+            'user_other_hours': user_other_hours,
             'all_users': list(all_users),
             'ajax_url': reverse('ajax_schedule'),
         }
@@ -742,7 +777,7 @@ class BulkEntryAjaxView(ScheduleMixin, View):
             codename='can_clock_in'
         )
         charged_hours = self.get_charges_for_day().values(
-            'id', 'user', 'user__first_name', 'user__last_name',
+            'id', 'user', 'user__first_name', 'user__last_name', 'comments',
             'project', 'start_time', 'end_time', 'location', 'activity'
         ).order_by('-project__type__billable', 'project__name',
             'user__first_name', 'user__last_name', '-start_time')
@@ -776,16 +811,28 @@ class BulkEntryAjaxView(ScheduleMixin, View):
 
     def update_charges(self, period_start):
         try:
-            print 'update period'
+            print 'update charges'
+            print 'data'
+            print 'project', self.request.POST.get('project')
+            print 'activity', self.request.POST.get('activity')
+            print 'location', self.request.POST.get('location')
             entry = self.get_instance(self.request.POST)
+            p = Project.objects.get(
+                    id=int(self.request.POST.get('project')))
+            a = Activity.objects.get(
+                    id=int(self.request.POST.get('activity')))
+            l = Location.objects.get(
+                    id=int(self.request.POST.get('location')))
             print 'is entry?', entry, entry is not None
             if entry is not None:
+                print 'entry times', entry.start_time, entry.end_time
                 entries = Entry.objects.filter(
                     start_time__startswith=entry.start_time.date(),
+                    project=entry.project,
                     user=entry.user).order_by('start_time')
                 for e in entries:
                     if e.id != entry.id:
-                        'deleting other entry'
+                        print 'deleting other entry'
                         e.delete()
             else:
                 print 'date?', self.request.POST.get('date')
@@ -794,12 +841,6 @@ class BulkEntryAjaxView(ScheduleMixin, View):
                     self.request.POST.get('date'), DATE_FORM_FORMAT).date()
                 start = datetime.datetime.combine(date, 
                     datetime.datetime.min.time())
-                p = Project.objects.get(
-                    id=int(self.request.POST.get('project')))
-                a = Activity.objects.get(
-                    id=int(self.request.POST.get('activity')))
-                l = Location.objects.get(
-                    id=int(self.request.POST.get('location')))
                 entry = Entry(user=self.request.user,
                               project=p,
                               activity=a, # change to settings
@@ -820,10 +861,19 @@ class BulkEntryAjaxView(ScheduleMixin, View):
             entry.end_time = entry.start_time + relativedelta(hours=duration)
             # if using bulk entry, we are going to drop the seconds paused
             entry.seconds_paused = 0
+            entry.comments = self.request.POST.get('comment', '')
+            entry.project = p
+            entry.location = l
+            entry.activity = a
             entry.save()
+            print 'entry times', entry.start_time, entry.end_time
             data = {'id': entry.id,
+                    'user': entry.user.id,
                     'start_time': entry.start_time.isoformat(),
-                    'end_time': entry.end_time.isoformat()}
+                    'end_time': entry.end_time.isoformat(),
+                    'activity': entry.activity.id,
+                    'location': entry.location.id,
+                    'comment': entry.comments}
             return HttpResponse(json.dumps(data), status=200, mimetype='application/json')
         except:
             msg = 'The request must contain values for user, project, and hours'

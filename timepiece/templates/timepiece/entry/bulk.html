@@ -12,7 +12,7 @@
 {% endblock crumbs %}
 
 {% block extracss %}
-    <link type="text/css" rel="stylesheet" href="{{ STATIC_URL }}timepiece/js/handsontable/jquery.handsontable.css" />
+    <link type="text/css" rel="stylesheet" href="{{ STATIC_URL }}timepiece/js/handsontable/jquery.handsontable.full.css" />
 {% endblock extracss %}
 
 {% block content %}
@@ -30,18 +30,19 @@
             </form>
 
         </div>
-        <div class="span5 offset3">
+        <!-- div class="span5 offset3">
             <form class="form-inline right" method="post" action="{% url 'edit_schedule' %}">
                 {% csrf_token %}
                 <input type="hidden" name="period_start" value="{{ period|date:'Y-m-d' }}" />
                 <button type="submit" class="btn btn-primary">Save</button>
             </form>
-        </div>
+        </div> -->
     </div>
 
     <div class="row-fluid">
         <div class="span12">
             <div class="dataTable"></div>
+            <div class="example"></div>
         </div>
     </div>
 {% endblock content %}
@@ -52,7 +53,7 @@
     </script>
 
     <script charset="utf-8" src="{{ STATIC_URL }}bootstrap/js/bootstrap-typeahead.js"></script>
-    <script charset="utf-8" src="{{ STATIC_URL }}timepiece/js/handsontable/jquery.handsontable.js"></script>
+    <script charset="utf-8" src="{{ STATIC_URL }}timepiece/js/handsontable/jquery.handsontable.full.js"></script>
     <script charset="utf-8" src="{{ STATIC_URL }}timepiece/js/ajax.js"></script>
     <script charset="utf-8" src="{{ STATIC_URL }}timepiece/js/charged_hours/models.js"></script>
     <script charset="utf-8" src="{{ STATIC_URL }}timepiece/js/charged_hours/app.js"></script>
