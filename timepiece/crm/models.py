@@ -120,8 +120,12 @@ class TrackableProjectManager(models.Manager):
 
 class Project(models.Model):
     name = models.CharField(max_length=255)
+    code = models.CharField(max_length=12,
+        verbose_name="Project Code",
+        unique=False,
+        help_text="Auto-generated project code for tracking.")
     tracker_url = models.CharField(max_length=255, blank=True, null=False,
-            default="")
+            default="", verbose_name="Wiki Url")
     business = models.ForeignKey(Business,
             verbose_name="Company",
             related_name='new_business_projects')
@@ -166,7 +170,7 @@ class Project(models.Model):
         )
 
     def __unicode__(self):
-        return '{0} ({1})'.format(self.name, self.business.get_display_name())
+        return '{0} {1}'.format(self.code, self.name)
 
     @property
     def billable(self):
