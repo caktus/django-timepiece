@@ -307,7 +307,7 @@ class Entry(models.Model):
         except (Project.DoesNotExist, Activity.DoesNotExist):
             # Will be caught by field requirements
             pass
-        if end <= start:
+        if end < start:
             raise ValidationError('Ending time must exceed the starting time')
         delta = (end - start)
         delta_secs = (delta.seconds + delta.days * 24 * 60 * 60)
