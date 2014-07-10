@@ -9,7 +9,7 @@ from timepiece.utils.search import SearchForm
 from timepiece.crm.lookups import (BusinessLookup, ProjectLookup, UserLookup,
         QuickLookup)
 from timepiece.crm.models import (Attribute, Business, Project,
-        ProjectRelationship)
+        ProjectRelationship, UserProfile)
 
 
 class CreateEditBusinessForm(forms.ModelForm):
@@ -31,6 +31,7 @@ class CreateEditProjectForm(forms.ModelForm):
 
 
 class CreateUserForm(UserCreationForm):
+    business = forms.ModelChoiceField(Business.objects.all())
 
     class Meta:
         model = User
@@ -44,8 +45,10 @@ class CreateUserForm(UserCreationForm):
 
     def save(self, commit=True):
         user = super(CreateUserForm, self).save(commit)
+        up = UserProfile(user=user, business=self.cleaned_data['business'])
         if commit:
             self.save_m2m()
+            up.save()
         return user
 
 
@@ -67,6 +70,7 @@ class EditUserForm(UserChangeForm):
     password2 = forms.CharField(required=False, max_length=36,
             label='Repeat Password',
             widget=forms.PasswordInput(render_value=False))
+    business = forms.ModelChoiceField(Business.objects.all())
 
     class Meta:
         model = User
@@ -77,7 +81,7 @@ class EditUserForm(UserChangeForm):
         super(EditUserForm, self).__init__(*args, **kwargs)
         self.fields['groups'].widget = forms.CheckboxSelectMultiple()
         self.fields['groups'].help_text = None
-
+        self.fields['business'].initial = UserProfile.objects.get(user=kwargs['instance']).business
         # In 1.4 this field is created even if it is excluded in Meta.
         if 'password' in self.fields:
             del(self.fields['password'])
@@ -93,10 +97,14 @@ class EditUserForm(UserChangeForm):
     def save(self, commit=True):
         instance = super(EditUserForm, self).save(commit=False)
         password1 = self.cleaned_data.get('password1', None)
+        # set the user's business in UserProfile
+        up = UserProfile.objects.get(user=instance)
+        up.business = self.cleaned_data.get('business')
         if password1:
             instance.set_password(password1)
         if commit:
             instance.save()
+            up.save()
             self.save_m2m()
         return instance
 

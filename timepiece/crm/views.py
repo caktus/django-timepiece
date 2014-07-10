@@ -25,7 +25,7 @@ from timepiece.crm.forms import (CreateEditBusinessForm, CreateEditProjectForm,
         EditUserSettingsForm, EditProjectRelationshipForm, SelectProjectForm,
         EditUserForm, CreateUserForm, SelectUserForm, ProjectSearchForm,
         QuickSearchForm)
-from timepiece.crm.models import Business, Project, ProjectRelationship
+from timepiece.crm.models import Business, Project, ProjectRelationship, UserProfile
 from timepiece.crm.utils import grouped_totals
 from timepiece.entries.models import Entry
 
@@ -428,6 +428,11 @@ class DeleteUser(DeleteView):
     success_url = reverse_lazy('list_users')
     pk_url_kwarg = 'user_id'
     template_name = 'timepiece/delete_object.html'
+
+    def delete(self, request, *args, **kwargs):
+        up = UserProfile.objects.get(user__id=int(kwargs['user_id']))
+        up.delete()
+        return super(DeleteUser, self).delete(request, *args, **kwargs)
 
 
 @cbv_decorator(permission_required('auth.change_user'))

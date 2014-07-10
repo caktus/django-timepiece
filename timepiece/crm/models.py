@@ -25,6 +25,7 @@ class UserProfile(models.Model):
     user = models.OneToOneField(User, unique=True, related_name='profile')
     hours_per_week = models.DecimalField(max_digits=8, decimal_places=2,
             default=40)
+    business = models.ForeignKey('Business')
 
     class Meta:
         db_table = 'timepiece_userprofile'  # Using legacy table name.
