@@ -82,6 +82,10 @@ urlpatterns = patterns('',
     url(r'^business/(?P<business_id>\d+)/delete/$',
         views.DeleteBusiness.as_view(),
         name='delete_business'),
+    url(r'^business/(?P<business_id>\d+)/get_users/$',
+        views.get_users_for_business,
+        name='get_users_for_business'),
+    
 
     # User-project relationships
     url(r'^relationship/create/$',

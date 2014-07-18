@@ -1,6 +1,7 @@
 import datetime
 from dateutil.relativedelta import relativedelta
 import urllib
+import json
 
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required, permission_required
@@ -8,7 +9,7 @@ from django.contrib.auth.models import User
 from django.core.urlresolvers import reverse, reverse_lazy
 from django.db import transaction
 from django.db.models import Sum
-from django.http import HttpResponseRedirect, HttpResponseForbidden, Http404
+from django.http import HttpResponseRedirect, HttpResponseForbidden, Http404, HttpResponse
 from django.shortcuts import get_object_or_404, render, redirect
 from django.views.decorators.csrf import csrf_exempt
 from django.views.generic import (CreateView, DeleteView, DetailView,
@@ -554,3 +555,15 @@ class EditRelationship(RelationshipObjectMixin, UpdateView):
 class DeleteRelationship(RelationshipObjectMixin, DeleteView):
     model = ProjectRelationship
     template_name = 'timepiece/relationship/delete.html'
+
+@login_required
+def get_users_for_business(request, business_id):
+    data = {}
+    if request.user.groups.filter(id=1).count() or request.user.is_superuser:
+        business = Business.objects.get(id=int(business_id))
+        for up in UserProfile.objects.filter(business=business):
+            data[up.user.id] = {'email': up.user.email,
+                                'username': up.user.username,
+                                'name': '%s %s' % (up.user.first_name, up.user.last_name)}
+    return HttpResponse(json.dumps(data),
+                        content_type='application/json')
