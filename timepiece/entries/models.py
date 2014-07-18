@@ -17,7 +17,7 @@ class Activity(models.Model):
     Represents different types of activity: debugging, developing,
     brainstorming, QA, etc...
     """
-    code = models.CharField(max_length=5, unique=True, help_text='Enter a '
+    code = models.CharField(max_length=5, unique=False, help_text='Enter a '
             'short code to describe the type of activity that took place.')
     name = models.CharField(max_length=50, help_text='Now enter a more '
             'meaningful name for the activity.')
