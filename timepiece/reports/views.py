@@ -2,6 +2,8 @@ import csv
 from dateutil.relativedelta import relativedelta
 from itertools import groupby
 import json
+import pprint
+pp = pprint.PrettyPrinter(indent=4)
 
 from django.contrib.auth.decorators import permission_required
 from django.db.models import Sum, Q, Min, Max
@@ -41,8 +43,9 @@ class ReportMixin(object):
             entryQ = self.get_entry_query(start, end, data)
             trunc = data['trunc']
             if entryQ:
-                vals = ('pk', 'activity', 'project', 'project__name',
-                        'project__status', 'project__type__label')
+                vals = ('pk', 'activity', 'activity__name', 'project', 'project__name',
+                        'project__status', 'project__type__label', 'user__email',
+                        'project__business__id', 'project__business__name', 'comments')
                 entries = Entry.objects.date_trunc(trunc,
                         extra_values=vals).filter(entryQ)
             else:
@@ -154,20 +157,42 @@ class HourlyReport(ReportMixin, CSVViewMixin, TemplateView):
     def convert_context_to_csv(self, context):
         """Convert the context dictionary into a CSV file."""
         content = []
+        if self.export_users_details:
+            # this is a special csv export, different than stock Timepiece,
+            # requested by AAC Engineering for their detailed reporting reqs
+            headers = ['Entry ID', 'Date', 'Employee ID', 'Employee Email',
+                       'Employee Last Name', 'Employee First Name', 'Project ID',
+                       'Project Name', 'Project Type', 'Business ID', 'Business Name',
+                       'Duration', 'Activity ID', 'Activity Name', 'Comment']
+            content.append(headers)
+            for entry in context['entries']:
+                row = [entry['pk']]
+                row.append(entry['date'].strftime('%m/%d/%Y'))
+                for key in ['user', 'user__email', 'user__last_name', 'user__first_name',
+                          'project', 'project__name', 'project__type__label',
+                          'project__business__id', 'project__business__name',
+                          'hours', 'activity', 'activity__name', 'comments']:
+                    row.append(entry[key])
+                content.append(row)
+            return content
+
         date_headers = context['date_headers']
 
         headers = ['Name']
         headers.extend([date.strftime('%m/%d/%Y') for date in date_headers])
         headers.append('Total')
         content.append(headers)
-
+        
         if self.export_projects:
-            key = 'By Project'
-        else:
+            key = 'By Project (All Projects)'
+        elif self.export_users:
             key = 'By User'
 
         summaries = context['summaries']
-        summary = summaries[key] if key in summaries else []
+        try:
+            summary = filter(lambda x:x[0]==key, summaries)[0][1]
+        except:
+            summary = []
         for rows, totals in summary:
             for name, user_id, hours in rows:
                 data = [name]
@@ -196,8 +221,10 @@ class HourlyReport(ReportMixin, CSVViewMixin, TemplateView):
     def get(self, request, *args, **kwargs):
         self.export_users = request.GET.get('export_users', False)
         self.export_projects = request.GET.get('export_projects', False)
+        self.export_users_details = request.GET.get('export_users_details', False)
+        
         context = self.get_context_data()
-        if self.export_users or self.export_projects:
+        if self.export_users or self.export_projects or self.export_users_details:
             kls = CSVViewMixin
         else:
             kls = TemplateView
@@ -218,11 +245,14 @@ class HourlyReport(ReportMixin, CSVViewMixin, TemplateView):
 
             entries = entries.order_by('project__type__label', 'project__name',
                     'project__id', 'date')
+            summaries.append(('By Project (All Projects)', get_project_totals(
+                entries, date_headers, 'total', total_column=True, by='project')))
             func = lambda x: x['project__type__label']
             for label, group in groupby(entries, func):
-                title = label + ' Projects'
+                title = 'By Project (' + label + ' Projects)'
                 summaries.append((title, get_project_totals(list(group),
                         date_headers, 'total', total_column=True, by='project')))
+            
 
         # Adjust date headers & create range headers.
         from_date = context['from_date']

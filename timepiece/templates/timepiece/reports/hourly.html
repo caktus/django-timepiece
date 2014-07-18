@@ -35,6 +35,7 @@
                 <button type="submit" class="btn btn-primary" name="ok" id="billable">Update Filters</button>
                 {% if perms.crm.export_project_time_sheet %}
                     <button type="submit" class="btn" name="export_users" value="True">Export User Summary</button>
+                    <button type="submit" class="btn btn-success" name="export_users_details" value="True">Export User Details</button>
                     <button type="submit" class="btn" name="export_projects" value="True">Export Project Summary</button>
                 {% endif %}
             </form>
