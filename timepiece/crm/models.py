@@ -133,14 +133,14 @@ class Project(models.Model):
     point_person = models.ForeignKey(User,
         verbose_name="Minder",
         related_name="minder",
-        limit_choices_to={'is_staff': True},
+        limit_choices_to={'groups__id': 1},
         help_text="Who is the Project Manager?")
     finder = models.ForeignKey(User,
-        limit_choices_to={'is_staff': True},
+        limit_choices_to={'groups__id': 1},
         related_name="finder",
         help_text="Who brought in this project?")
     binder =models.ForeignKey(User,
-        limit_choices_to={'is_staff': True},
+        limit_choices_to={'groups__id': 1},
         related_name="binder",
         help_text="Who is responsible for project/customer follow-up?")
     users = models.ManyToManyField(User, related_name='user_projects',
