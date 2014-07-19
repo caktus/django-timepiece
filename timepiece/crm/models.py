@@ -5,6 +5,11 @@ from django.db.models import get_model
 
 from timepiece.utils import get_active_entry
 
+try:
+    from project_toolbox_main import settings
+except:
+    pass
+
 
 # Add a utility method to the User class that will tell whether or not a
 # particular user has any unclosed entries
@@ -133,14 +138,14 @@ class Project(models.Model):
     point_person = models.ForeignKey(User,
         verbose_name="Minder",
         related_name="minder",
-        limit_choices_to={'groups__id': 1},
+        limit_choices_to={'groups__id__in': settings.TIMEPIECE_BUSINESS_GROUPS},
         help_text="Who is the Project Manager?")
     finder = models.ForeignKey(User,
-        limit_choices_to={'groups__id': 1},
+        limit_choices_to={'groups__id__in': settings.TIMEPIECE_BUSINESS_GROUPS},
         related_name="finder",
         help_text="Who brought in this project?")
     binder =models.ForeignKey(User,
-        limit_choices_to={'groups__id': 1},
+        limit_choices_to={'groups__id__in': settings.TIMEPIECE_BUSINESS_GROUPS},
         related_name="binder",
         help_text="Who is responsible for project/customer follow-up?")
     users = models.ManyToManyField(User, related_name='user_projects',
