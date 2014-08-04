@@ -1,0 +1,56 @@
+{% extends "timepiece/pto/base.html" %}
+{% load url from future %}
+{% load bootstrap_toolkit %}
+
+{% block crumbs %}
+    {{ block.super }}
+    <li>
+        <span class="divider">/</span>
+        <a href="">View PTO Request Details</a>
+    </li>
+{% endblock crumbs %}
+
+{% block title %}PTO Request Details{% endblock title %}
+
+{% block content %}
+    <div class="row-fluid">
+        <div class="span12">
+            <h2>PTO Request Details</h2>
+
+            <br style="clear: both;" />
+            <dl class="dl-horizontal">
+                <dt>Status</dt>
+                <dd>{{ pto_request.status|capfirst }}</dd>
+
+                <dt>Request Date</dt>
+                <dd>{{ pto_request.request_date }}</dd>
+
+                <dt>Start Date</dt>
+                <dd>{{ pto_request.pto_start_date }}</dd>
+
+                <dt>End Date</dt>
+                <dd>{{ pto_request.pto_end_date }}</dd>
+
+                <dt>Hours</dt>
+                <dd>{{ pto_request.amount }}</dd>
+
+                <dt>PTO Reason/Comment</dt>
+                <dd>{{ pto_request.comment }}</dt>
+
+                {% if pto_request.status == 'approved' %}
+                <dt>Approval</dt>
+                {% else %}
+                <dt>Denial</dt>
+                {% endif %}
+                {% if pto_request.status != 'pending' %}
+                <dd>{{ pto_request.approver }} on {{ pto_request.approval_date|date:"F d" }}</dd>
+
+                <dt>Reviewer Comment</dt>
+                <dd>{{ pto_request.approver_comment }}<dt/>
+                {% endif %}
+            </dl>
+            
+            <input class="btn" type='button' value='Go Back' onclick='history.go(-1)' />
+        </div>
+    </div>
+{% endblock content %}

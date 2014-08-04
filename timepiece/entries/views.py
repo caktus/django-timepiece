@@ -74,7 +74,7 @@ class Dashboard(TemplateView):
 
         # Query for the user's active entry if it exists.
         active_entry = utils.get_active_entry(self.user)
-
+        print 'period', period_start, period_end
         # Process this period's entries to determine assignment progress.
         period_entries = Entry.objects.filter(
             user=self.user,
@@ -133,8 +133,8 @@ class Dashboard(TemplateView):
 
         for entry in entries:
             pk = entry.project_id
-            hours = Decimal('%.2f' % (entry.get_total_seconds() / 3600.0))
-            project_data[pk]['worked'] += hours
+            #hours = Decimal('%.2f' % (entry.get_total_seconds() / 3600.0))
+            project_data[pk]['worked'] += entry.hours
 
         # Sort by maximum of worked or assigned hours (highest first).
         key = lambda x: x['project'].name.lower()
@@ -157,6 +157,10 @@ def clock_in(request):
     form = ClockInForm(data, initial=initial, user=user, active=active_entry)
     if form.is_valid():
         entry = form.save()
+        # added to check if entry is MANUAL or TIMECLOCK
+        if abs(datetime.datetime.now()-entry.start_time).total_seconds() < 300.0:
+            entry.mechanism = Entry.TIMECLOCK
+            entry.save()
         message = 'You have clocked into {0} on {1}.'.format(
                 entry.activity.name, entry.project)
         messages.info(request, message)
@@ -179,6 +183,11 @@ def clock_out(request):
         form = ClockOutForm(request.POST, instance=entry)
         if form.is_valid():
             entry = form.save()
+            # added to check if entry is MANUAL or TIMECLOCK
+            if not(abs(datetime.datetime.now()-entry.end_time).total_seconds() < 300.0
+                and entry.mechanism==Entry.TIMECLOCK):
+                entry.mechanism = Entry.MANUAL
+                entry.save()
             message = 'You have clocked out of {0} on {1}.'.format(
                     entry.activity.name, entry.project)
             messages.info(request, message)
@@ -234,6 +243,9 @@ def create_edit_entry(request, entry_id=None):
                 user=entry_user)
         if form.is_valid():
             entry = form.save()
+            # make sure that the mechanism is MANUAL rather than TIMECLOCK
+            entry.mechanism = Entry.MANUAL
+            entry.save()
             if entry_id:
                 message = 'The entry has been updated successfully.'
             else:
@@ -440,8 +452,8 @@ class ScheduleView(ScheduleMixin, TemplateView):
             'form': form,
             'period': self.period_start,
             'period_hours': self.period_hours,
-            'prev_period': self.period_start - relativedelta(days=15),
-            'next_period': self.period_start + relativedelta(days=15),
+            'prev_period': self.period_start - relativedelta(days=7),
+            'next_period': self.period_start + relativedelta(days=7),
             'users': users,
             'project_hours': project_hours,
             'projects': projects
@@ -597,7 +609,7 @@ class ScheduleAjaxView(ScheduleMixin, View):
                 duplicate = deepcopy(instance)
                 duplicate.id = None
                 duplicate.published = False
-                duplicate.period_start = new_date
+                duplicate.week_start = new_date
                 yield duplicate
 
         def duplicate_helper(queryset, new_date):
@@ -613,17 +625,13 @@ class ScheduleAjaxView(ScheduleMixin, View):
 
         this_period = datetime.datetime.strptime(period_update,
                 DATE_FORM_FORMAT).date()
-        if this_period.day == 1:
-            prev_period = this_period - relativedelta(months=1)
-            prev_period = prev_period.replace(day=15)
-        else:
-            prev_period = this_period.replace(day=1)
+        prev_period = utils.get_period_start(this_period - relativedelta(days=1)).date()
 
         prev_period_qs = self.get_hours_for_period(prev_period)
         this_period_qs = self.get_hours_for_period(this_period)
 
         param = {
-            'period_start': period_update
+            'week_start': period_update
         }
         url = '?'.join((reverse('edit_schedule'),
             urllib.urlencode(param),))
@@ -666,7 +674,7 @@ class ScheduleAjaxView(ScheduleMixin, View):
         will be duplicated from period_update to the current period
         """
         duplicate = request.POST.get('duplicate', None)
-        period_update = request.POST.get('week_update', None)
+        period_update = request.POST.get('period_update', None)
         period_start = request.POST.get('week_start', None)
 
         if duplicate and period_update:
@@ -783,8 +791,8 @@ class BulkEntryAjaxView(ScheduleMixin, View):
             'user__first_name', 'user__last_name', '-start_time')
         inner_qs = charged_hours.values_list('project', flat=True)
         projects = Project.objects.filter(pk__in=inner_qs).values() \
-            .order_by('name')
-        all_projects = Project.objects.values('id', 'name')
+            .order_by('code')
+        all_projects = Project.trackable.filter(users=request.user).values('id', 'code', 'name', 'activity_group__activities')
         all_activities = Activity.objects.values('id', 'name', 'code')
         all_locations = Location.objects.values('id', 'name')
         user_q = Q(groups__permissions=perm) | Q(user_permissions=perm)
@@ -811,11 +819,6 @@ class BulkEntryAjaxView(ScheduleMixin, View):
 
     def update_charges(self, period_start):
         try:
-            print 'update charges'
-            print 'data'
-            print 'project', self.request.POST.get('project')
-            print 'activity', self.request.POST.get('activity')
-            print 'location', self.request.POST.get('location')
             entry = self.get_instance(self.request.POST)
             p = Project.objects.get(
                     id=int(self.request.POST.get('project')))
@@ -823,20 +826,24 @@ class BulkEntryAjaxView(ScheduleMixin, View):
                     id=int(self.request.POST.get('activity')))
             l = Location.objects.get(
                     id=int(self.request.POST.get('location')))
-            print 'is entry?', entry, entry is not None
+            extra_duration = 0
+            extra_comments = ''
             if entry is not None:
-                print 'entry times', entry.start_time, entry.end_time
-                entries = Entry.objects.filter(
-                    start_time__startswith=entry.start_time.date(),
-                    project=entry.project,
-                    user=entry.user).order_by('start_time')
-                for e in entries:
-                    if e.id != entry.id:
-                        print 'deleting other entry'
-                        e.delete()
+                pass
+                # entries = Entry.objects.filter(
+                #     start_time__startswith=entry.start_time.date(),
+                #     project=entry.project,
+                #     activity=entry.activity,
+                #     location=entry.location,
+                #     user=entry.user).order_by('start_time')
+                # for e in entries:
+                #     if e.id != entry.id:
+                #         print 'deleting other entry'
+                #         extra_duration += e.hours
+                #         if e.comments.strip():
+                #             extra_comments += ' -- ' + e.comments
+                #         e.delete()
             else:
-                print 'date?', self.request.POST.get('date')
-                pp.pprint(self.request.POST)
                 date = datetime.datetime.strptime(
                     self.request.POST.get('date'), DATE_FORM_FORMAT).date()
                 start = datetime.datetime.combine(date, 
@@ -845,7 +852,8 @@ class BulkEntryAjaxView(ScheduleMixin, View):
                               project=p,
                               activity=a, # change to settings
                               location=l, # change to settings
-                              start_time=start)
+                              start_time=start,
+                              mechanism=Entry.BULK)
                 entry.save()
 
         except TypeError:
@@ -857,16 +865,18 @@ class BulkEntryAjaxView(ScheduleMixin, View):
             print sys.exc_info(), traceback.format_exc()
 
         try:
-            duration = round(float(self.request.POST.get('duration'))*4.) / 4.
+            duration = round(float(self.request.POST.get('duration'))*4.) / 4. + float(extra_duration)
+            print 'start time', entry.start_time, 'duration', duration
             entry.end_time = entry.start_time + relativedelta(hours=duration)
+            print 'end_time', entry.end_time
             # if using bulk entry, we are going to drop the seconds paused
             entry.seconds_paused = 0
-            entry.comments = self.request.POST.get('comment', '')
+            entry.comments = self.request.POST.get('comment', '') + extra_comments
             entry.project = p
             entry.location = l
             entry.activity = a
+            entry.mechanism = Entry.BULK
             entry.save()
-            print 'entry times', entry.start_time, entry.end_time
             data = {'id': entry.id,
                     'user': entry.user.id,
                     'start_time': entry.start_time.isoformat(),
@@ -876,7 +886,8 @@ class BulkEntryAjaxView(ScheduleMixin, View):
                     'comment': entry.comments}
             return HttpResponse(json.dumps(data), status=200, mimetype='application/json')
         except:
-            msg = 'The request must contain values for user, project, and hours'
+            print sys.exc_info(), traceback.format_exc()
+            msg = 'The request must contain values for user, project, activity, location and hours'
             return HttpResponse(msg, status=500)
 
     def post(self, request, *args, **kwargs):
@@ -891,13 +902,12 @@ class BulkEntryAjaxView(ScheduleMixin, View):
         If the duplicate key is present along with period_update, then items
         will be duplicated from period_update to the current period
         """
-        print 'got to POST'
         duplicate = request.POST.get('duplicate', None)
         period_update = request.POST.get('week_update', None)
         period_start = request.POST.get('week_start', None)
-        print 'POST', request.POST
 
         if duplicate and period_update:
+            print 'ERROR: WE SHOULD NEVER GET HERE!!!'
             return self.duplicate_entries(duplicate, period_update)
 
         return self.update_charges(period_start)

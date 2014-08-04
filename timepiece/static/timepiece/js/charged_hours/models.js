@@ -22,10 +22,14 @@ Model.prototype.toString = function() {
     return this.name;
 };
 
-function Project(id, name) {
+function Project(id, code, name, activity) {
     Model.call(this, id);
 
-    this.name = name;
+    this.name = code + ': ' + name;
+    this.activities = [];
+    if (activity) {
+        this.activities.push(activity);
+    }
     this.row = [];
 }
 
@@ -183,6 +187,16 @@ ProjectCollection.prototype.constructor = ProjectCollection;
 ProjectCollection.prototype.get_by_row = function(row) {
     for(var i = 0; i < this.collection.length; i++) {
         if(this.collection[i].row.indexOf(row) >= 0) {
+            return this.collection[i];
+        }
+    }
+
+    return null;
+};
+
+ProjectCollection.prototype.get_by_id = function(id) {
+    for(var i = 0; i < this.collection.length; i++) {
+        if(this.collection[i].id === id) {
             return this.collection[i];
         }
     }

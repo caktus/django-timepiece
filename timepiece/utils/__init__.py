@@ -83,9 +83,9 @@ def get_setting(name, **kwargs):
 def get_week_start(day=None):
     """Returns the Monday of the given week."""
     day = add_timezone(day or datetime.date.today())
-    days_since_monday = day.weekday()
-    if days_since_monday != 0:
-        day = day - relativedelta(days=days_since_monday)
+    days_since_sunday = day.weekday()
+    if days_since_sunday != 6:
+        day = day - relativedelta(days=days_since_sunday+1)
     return day
 
 def get_period_start(day=None):
@@ -110,7 +110,7 @@ def get_period_end(period_start):
     #             period_start.year, period_start.month)[1])
     # return datetime.datetime.combine(
     #     period_end, datetime.datetime.max.time())
-    return period_start + relativedelta(days=7)
+    return period_start + relativedelta(days=6) # double check this
 
 def get_weekdays_count(period_start, period_end):
     """Returns the count oc weekdays in period."""
@@ -144,3 +144,12 @@ def get_year_start(day=None):
 def to_datetime(date):
     """Transforms a date or datetime object into a date object."""
     return datetime.datetime(date.year, date.month, date.day)
+
+def get_bimonthly_dates(start_date):
+    if start_date.day <= 15:
+        start = datetime.datetime(start_date.year, start_date.month, 1)
+        end = datetime.datetime(start_date.year, start_date.month, 16)
+    else:
+        start = datetime.datetime(start_date.year, start_date.month, 16)
+        end = datetime.datetime(start_date.year, start_date.month+1, 1)
+    return (start,end)

@@ -67,8 +67,14 @@ function processData(data) {
     // Store all projects for autocomplete
     for(var i = 0; i < projects.length; i++) {
         var p = projects[i];
-
-        this.projects.add(new Project(p.id, p.name));
+        var project = this.projects.get_by_id(p.id);
+        if ( project ){
+            // if project already exists, then just add activity
+            project.activities.push(p.activity_group__activities)
+        } else {
+            // otherwise, create new project
+            this.projects.add(new Project(p.id, p.code, p.name, p.activity_group__activities));
+        }
     }
 
     // Store all activities for autocomplete
@@ -103,18 +109,22 @@ function processData(data) {
         var hours = new ChargedHours(ch.id, ch.project, ch.user, ch.start_time, ch.end_time, ch.activity, ch.location, ch.comments);
 
         // determine the row to put this on
-        var intersection = intersect_safe(intersect_safe(project.row, activity.row), location.row);
+        // var intersection = intersect_safe(intersect_safe(project.row, activity.row), location.row);
         var r;
-        if (intersection.length === 0) {
-            r = dataTable.length;
-            project.row.push(r);
-            activity.row.push(r);
-            location.row.push(r);
-        } else if (intersection.length === 1) {
-            r = intersection[0];
-        } else {
-            showError('Multiple rows with the same information!');
-        }
+        // if (intersection.length === 0) {
+        //     r = dataTable.length;
+        //     project.row.push(r);
+        //     activity.row.push(r);
+        //     location.row.push(r);
+        // } else if (intersection.length === 1) {
+        //     r = intersection[0];
+        // } else {
+        //     showError('Multiple rows with the same information!');
+        // }
+        r = dataTable.length;
+        project.row.push(r);
+        activity.row.push(r);
+        location.row.push(r);
         hours.row = r;
 
         var date = this.period_dates.get_by_id(ch.start_time.slice(0,10));
@@ -220,8 +230,8 @@ $.del = function(url, success, error) {
 };
 
 $(function() {
-    console.log('START', $('h2[data-date]').data('date'));
     var table = $('.dataTable').handsontable({
+        colWidths: [250, 250, 150, 100, 350],
         colHeaders: ["Project", "Activity", "Location", "Hours", "Comment"],
         columns: [
             {
@@ -230,7 +240,10 @@ $(function() {
             },
             {
                 type: 'dropdown',
-                source: activities.collection
+                source: activities.collection//function (query, process) {
+                    //console.log('query', query, 'process', process);
+                    //return activities.collection;
+                //}
             },
             {
                 type: 'dropdown',
@@ -457,11 +470,11 @@ $(function() {
                     if(hours && after === '') {
                         // If the hours have been removed from the table, delete from
                         // the database
-                        deleteHours();
+                        // deleteHours();
                     } else if(hours && after == '0') {
                         // If the hours have been zeroed out in the table, delete from
                         // the database
-                        deleteHours();
+                        // deleteHours();
                     }
                 } else {
                     return;

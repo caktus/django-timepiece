@@ -25,10 +25,12 @@ from timepiece.utils.views import cbv_decorator
 from timepiece.crm.forms import (CreateEditBusinessForm, CreateEditProjectForm,
         EditUserSettingsForm, EditProjectRelationshipForm, SelectProjectForm,
         EditUserForm, CreateUserForm, SelectUserForm, ProjectSearchForm,
-        QuickSearchForm)
-from timepiece.crm.models import Business, Project, ProjectRelationship, UserProfile
+        QuickSearchForm, CreateEditPTORequestForm, CreateEditMilestoneForm,
+        CreateEditActivityGoalForm, ApproveDenyPTORequestForm)
+from timepiece.crm.models import (Business, Project, ProjectRelationship, UserProfile,
+    PaidTimeOffLog, PaidTimeOffRequest, Milestone, ActivityGoal)
 from timepiece.crm.utils import grouped_totals
-from timepiece.entries.models import Entry
+from timepiece.entries.models import Entry, Activity
 
 
 @cbv_decorator(login_required)
@@ -106,15 +108,15 @@ def view_user_timesheet(request, user_id, active_tab):
         from_date = utils.add_timezone(from_date)
         to_date = utils.add_timezone(to_date)
     else:
-        # Default to showing this month.
-        from_date = utils.get_month_start()
-        to_date = from_date + relativedelta(months=1)
-
+        # Default to showing current bi-monthly period.
+        from_date, to_date = utils.get_bimonthly_dates(datetime.date.today())
     entries_qs = Entry.objects.filter(user=user)
-    month_qs = entries_qs.timespan(from_date, span='month')
+    # DBROWNE - CHANGED THIS TO MATCH THE DESIRED RESULT FOR AAC ENGINEERING
+    #month_qs = entries_qs.timespan(from_date, span='month')
+    month_qs = entries_qs.timespan(from_date, to_date=to_date)
     extra_values = ('start_time', 'end_time', 'comments', 'seconds_paused',
             'id', 'location__name', 'project__name', 'activity__name',
-            'status')
+            'status', 'mechanism')
     month_entries = month_qs.date_trunc('month', extra_values)
     # For grouped entries, back date up to the start of the period.
     first_week = utils.get_period_start(from_date)
@@ -148,11 +150,11 @@ def view_user_timesheet(request, user_id, active_tab):
         show_approve = verified_count + approved_count == total_statuses \
                 and verified_count > 0 and total_statuses != 0
     
-    # TODO: for some reason I have to loop over this in order to
-    # remedy an error... does not make any sense
-    for gt in totals:
-        gt = gt
-    
+    # # TODO: for some reason I have to loop over this in order to
+    # # remedy an error... does not make any sense
+    # for gt in totals:
+    #     gt = gt
+    print 'to_date', to_date
     return render(request, 'timepiece/user/timesheet/view.html', {
         'active_tab': active_tab or 'overview',
         'year_month_form': form,
@@ -189,7 +191,8 @@ def change_user_timesheet(request, user_id, action):
             datetime.datetime.strptime(from_date, '%Y-%m-%d'))
     except (ValueError, OverflowError, KeyError):
         raise Http404
-    to_date = from_date + relativedelta(months=1)
+    #to_date = from_date + relativedelta(months=1)
+    from_date, to_date = utils.get_bimonthly_dates(from_date)
     entries = Entry.no_join.filter(user=user_id,
                                    end_time__gte=from_date,
                                    end_time__lt=to_date)
@@ -567,3 +570,189 @@ def get_users_for_business(request, business_id):
                                 'name': '%s %s' % (up.user.first_name, up.user.last_name)}
     return HttpResponse(json.dumps(data),
                         content_type='application/json')
+
+@login_required
+def get_project_activities(request, project_id):
+    data = []
+    try:
+        project = Project.objects.get(id=int(project_id))
+        if project.activity_group:
+            for activity in project.activity_group.activities.values():
+                data.append(activity)
+        else:
+            for activity in Activity.objects.all().order_by('name'):
+                data.append(activity.get_json())
+    except:
+        for activity in Activity.objects.all().order_by('name'):
+            data.append(activity.get_json())
+    return HttpResponse(json.dumps(data),
+                        content_type='application/json')
+
+
+#@cbv_decorator(permission_required('crm.view_business'))
+@login_required
+def pto_home(request, active_tab='summary'):
+    data = {}
+    data['user_profile'] = UserProfile.objects.get(user=request.user)
+    data['pto_requests'] = PaidTimeOffRequest.objects.filter(user_profile=data['user_profile'], approver=None)
+    data['pto_log'] = PaidTimeOffLog.objects.filter(user_profile=data['user_profile'])
+    if request.user.has_perm('crm.can_approve_pto_requests'):
+        data['pto_approvals'] = PaidTimeOffRequest.objects.filter(approver=None)
+    if active_tab:
+        data['active_tab'] = active_tab
+    else:
+        data['active_tab'] = 'summary'
+    return render(request, 'timepiece/pto/home.html', data)
+
+
+@cbv_decorator(permission_required('crm.add_paidtimeoffrequest'))
+class CreatePTORequest(CreateView):
+    model = PaidTimeOffRequest
+    form_class = CreateEditPTORequestForm
+    template_name = 'timepiece/pto/create_edit.html'
+
+    def form_valid(self, form):
+        user_profile = UserProfile.objects.get(user=self.request.user)
+        form.instance.user_profile = user_profile
+        return super(CreatePTORequest, self).form_valid(form)
+
+
+@cbv_decorator(permission_required('crm.edit_paidtimeoffrequest'))
+class EditPTORequest(UpdateView):
+    model = PaidTimeOffRequest
+    form_class = CreateEditPTORequestForm
+    template_name = 'timepiece/pto/create_edit.html'
+    pk_url_kwarg = 'pto_request_id'
+
+    def form_valid(self, form):
+        form.instance.approver = None
+        form.instance.approval_date = None
+        return super(EditPTORequest, self).form_valid(form)
+
+
+@cbv_decorator(permission_required('crm.delete_paidtimeoffrequest'))
+class DeletePTORequest(DeleteView):
+    model = PaidTimeOffRequest
+    success_url = reverse_lazy('pto')
+    pk_url_kwarg = 'pto_request_id'
+    template_name = 'timepiece/delete_object.html'
+
+
+@cbv_decorator(permission_required('crm.can_approve_pto_requests'))
+class ApprovePTORequest(UpdateView):
+    model = PaidTimeOffRequest
+    form_class = ApproveDenyPTORequestForm
+    pk_url_kwarg = 'pto_request_id'
+    template_name = 'timepiece/pto/approve.html'
+
+    def form_valid(self, form):
+        form.instance.approver = self.request.user
+        form.instance.approval_date = datetime.datetime.now()
+        form.instance.status = PaidTimeOffRequest.APPROVED
+        up = form.instance.user_profile
+        up.pto -= form.instance.amount
+        up.save()
+        pto_log = PaidTimeOffLog(user_profile=up, date=datetime.date.today(),
+            amount=form.instance.amount, comment=form.instance.comment,
+            pto_request=form.instance)
+        pto_log.save()
+        return super(ApprovePTORequest, self).form_valid(form)
+
+
+@cbv_decorator(permission_required('crm.can_approve_pto_requests'))
+class DenyPTORequest(UpdateView):
+    model = PaidTimeOffRequest
+    form_class = ApproveDenyPTORequestForm
+    pk_url_kwarg = 'pto_request_id'
+    template_name = 'timepiece/pto/deny.html'
+
+    def form_valid(self, form):
+        form.instance.approver = self.request.user
+        form.instance.approval_date = datetime.datetime.now()
+        form.instance.status = PaidTimeOffRequest.DENIED
+        return super(DenyPTORequest, self).form_valid(form)
+
+@login_required
+def pto_request_details(request, pto_request_id):
+    try:
+        data = {'pto_request': PaidTimeOffRequest.objects.get(id=int(pto_request_id))}
+        return render(request, 'timepiece/pto/details.html', data)
+    except:
+        return render(request, 'timepiece/pto/details.html', {})
+
+## MILESTONES
+@cbv_decorator(permission_required('crm.add_milestone'))
+class ViewMilestone(DetailView):
+    model = Milestone
+    pk_url_kwarg = 'milestone_id'
+    template_name = 'timepiece/project/milestone/view.html'
+
+@cbv_decorator(permission_required('crm.add_milestone'))
+class CreateMilestone(CreateView):
+    model = Milestone
+    form_class = CreateEditMilestoneForm
+    template_name = 'timepiece/project/milestone/create_edit.html'
+
+    def form_valid(self, form):
+        form.instance.project = Project.objects.get(id=int(self.kwargs['project_id']))
+        return super(CreateMilestone, self).form_valid(form)
+
+    def get_success_url(self):
+        return '/timepiece/project/%d' % int(self.kwargs['project_id'])
+
+
+@cbv_decorator(permission_required('crm.edit_milestone'))
+class EditMilestone(UpdateView):
+    model = Milestone
+    form_class = CreateEditMilestoneForm
+    template_name = 'timepiece/project/milestone/create_edit.html'
+    pk_url_kwarg = 'milestone_id'
+
+    def get_success_url(self):
+        return '/timepiece/project/%d' % int(self.kwargs['project_id'])
+
+
+@cbv_decorator(permission_required('crm.delete_milestone'))
+class DeleteMilestone(DeleteView):
+    model = Milestone
+    pk_url_kwarg = 'milestone_id'
+    template_name = 'timepiece/delete_object.html'
+
+    def get_success_url(self):
+        return '/timepiece/project/%d' % int(self.kwargs['project_id'])
+
+
+## ACTIVITY GOALS
+@cbv_decorator(permission_required('crm.add_paidtimeoffrequest'))
+class CreateActivityGoal(CreateView):
+    model = ActivityGoal
+    form_class = CreateEditActivityGoalForm
+    template_name = 'timepiece/project/milestone/activity_goal/create_edit.html'
+
+    def form_valid(self, form):
+        form.instance.milestone = Milestone.objects.get(id=int(self.kwargs['milestone_id']))
+        return super(CreateActivityGoal, self).form_valid(form)
+
+    def get_success_url(self):
+        return '/timepiece/project/%d/milestone/%d' % (int(self.kwargs['project_id']), int(self.kwargs['milestone_id']))
+
+
+@cbv_decorator(permission_required('crm.edit_paidtimeoffrequest'))
+class EditActivityGoal(UpdateView):
+    model = ActivityGoal
+    form_class = CreateEditActivityGoalForm
+    template_name = 'timepiece/project/milestone/activity_goal/create_edit.html'
+    pk_url_kwarg = 'activity_goal_id'
+
+    def get_success_url(self):
+        return '/timepiece/project/%d/milestone/%d' % (int(self.kwargs['project_id']), int(self.kwargs['milestone_id']))
+
+
+@cbv_decorator(permission_required('crm.delete_paidtimeoffrequest'))
+class DeleteActivityGoal(DeleteView):
+    model = ActivityGoal
+    pk_url_kwarg = 'activity_goal_id'
+    template_name = 'timepiece/delete_object.html'
+
+    def get_success_url(self):
+        return '/timepiece/project/%d/milestone/%d' % (int(self.kwargs['project_id']), int(self.kwargs['milestone_id']))

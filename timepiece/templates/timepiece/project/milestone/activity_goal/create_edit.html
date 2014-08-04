@@ -1,0 +1,36 @@
+{% extends "timepiece/project/milestone/activity_goal/base.html" %}
+{% load url from future %}
+{% load bootstrap_toolkit %}
+
+{% block crumbs %}
+    {{ block.super }}
+    <li>
+        <span class="divider">/</span>
+        {% if not object %}
+            <a href="">Create Activity Goal</a>
+        {% else %}
+            <a href="{% url 'edit_activity_goal' object.milestone.project.id object.milestone.id object.pk %}">Edit Activity Goal</a>
+        {% endif %}
+    </li>
+{% endblock crumbs %}
+
+{% block title %}{% if not object %}Create {% else %}Edit {% endif %}Activity Goal{% endblock title %}
+
+{% block content %}
+    <div class="row-fluid">
+        <div class="span12">
+            <h2>{% if not object %}Create {% else %}Edit {% endif %}Activity Goal</h2>
+
+            <br style="clear: both;" />
+
+            <form id="create-edit-project" class="form-horizontal" action="" method="post" accept-charset="utf-8">
+                {% csrf_token %}
+                {{ form|as_bootstrap:"horizontal" }}
+                <div class="form-actions">
+                    <input class="btn btn-primary" type='submit' name='submit' value='Save' />
+                    <input class="btn" type='button' value='Cancel' onclick='history.go(-1)' />
+                </div>
+            </form>
+        </div>
+    </div>
+{% endblock content %}

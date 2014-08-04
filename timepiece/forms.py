@@ -1,6 +1,7 @@
 import datetime
 from dateutil.relativedelta import relativedelta
 import time
+import calendar
 
 from django import forms
 from django.contrib.auth.models import User
@@ -52,7 +53,9 @@ class DateForm(forms.Form):
 class YearMonthForm(forms.Form):
     MONTH_CHOICES = [(i, time.strftime('%b', time.strptime(str(i), '%m')))
                      for i in xrange(1, 13)]
+    #MONTH_CHOICES = sum([[(2*i-1, time.strftime('%b', time.strptime(str(i), '%m'))+' 1-15'), (2*i, time.strftime('%b', time.strptime(str(i), '%m'))+' 16-'+str(calendar.monthrange(datetime.datetime.now().year,i)[1]))] for i in xrange(1, 13)], [])
     month = forms.ChoiceField(choices=MONTH_CHOICES, label='')
+    half = forms.ChoiceField(choices=[(1, '1st - 15th'), (2, '16th - end')], label='')
     year = forms.ChoiceField(label='')
 
     def __init__(self, *args, **kwargs):
@@ -60,6 +63,7 @@ class YearMonthForm(forms.Form):
         now = datetime.datetime.now()
         this_year = now.year
         this_month = now.month
+        this_half = 1 if datetime.datetime.now().day <= 15 else 2
         try:
             first_entry = Entry.no_join.values('end_time')\
                                        .order_by('end_time')[0]
@@ -70,20 +74,31 @@ class YearMonthForm(forms.Form):
         years = [(year, year) for year in xrange(first_year, this_year + 1)]
         self.fields['year'].choices = years
         initial = kwargs.get('initial')
+        print 'initial', initial
         if initial:
             this_year = initial.get('year', this_year)
             this_month = initial.get('month', this_month)
+            this_half = initial.get('half', this_half)
+            print 'this_month', this_month
         self.fields['year'].initial = this_year
         self.fields['month'].initial = this_month
+        self.fields['half'].initial = this_half
 
     def save(self):
         now = datetime.datetime.now()
         this_year = now.year
         this_month = now.month
+        this_half = 1 if datetime.datetime.now().day <= 15 else 2
+        print 'self.cleaned_data', self.cleaned_data
         month = int(self.cleaned_data.get('month', this_month))
         year = int(self.cleaned_data.get('year', this_year))
-        from_date = datetime.datetime(year, month, 1)
-        to_date = from_date + relativedelta(months=1)
+        half = int(self.cleaned_data.get('half', this_half))
+        if half == 1:
+            from_date = datetime.datetime(year, month, 1)
+            to_date = datetime.datetime(year, month, 16)
+        elif half == 2:
+            from_date = datetime.datetime(year, month, 16)
+            to_date = datetime.datetime(year, month+1,1)
 
         return (from_date, to_date)
 

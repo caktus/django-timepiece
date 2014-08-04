@@ -1,0 +1,44 @@
+{% extends "timepiece/pto/base.html" %}
+{% load url from future %}
+{% load bootstrap_toolkit %}
+
+{% block crumbs %}
+    {{ block.super }}
+    <li>
+        <span class="divider">/</span>
+        <a href="{% url 'pto' 'approvals' %}">Review PTO Request</a>
+    </li>
+{% endblock crumbs %}
+
+{% block title %}Confirm Approve PTO Request{% endblock title %}
+
+{% block content %}
+    <div class="row-fluid">
+        <div class="span12">
+            <h2>Confirm Approve PTO Request</h2>
+
+            <br style="clear: both;" />
+            
+            {% if object.user_profile.pto < object.amount %}
+            <div class="alert alert-error">
+              <button type="button" class="close" data-dismiss="alert">&times;</button>
+              <strong>NOTE:</strong> {{ object.user_profile }} only has {{ object.user_profile.pto }} hours of PTO available.  Approving this request will result in a negative PTO balance for {{ object.user_profile }}.
+            </div>
+            {% else %}
+            <div class="alert alert-success">
+              <button type="button" class="close" data-dismiss="alert">&times;</button>
+              <strong>NOTE:</strong> {{ object.user_profile }} has {{ object.user_profile.pto }} hours of PTO available.
+            </div>
+            {% endif %}
+
+            <form id="approve-pto-request" class="form-horizontal" action="" method="post" accept-charset="utf-8">
+                {% csrf_token %}
+                {{ form|as_bootstrap:"horizontal" }}
+                <div class="form-actions">
+                    <input class="btn btn-success" type='submit' name='submit' value='Approve' />
+                    <input class="btn" type='button' value='Cancel' onclick='history.go(-1)' />
+                </div>
+            </form>
+        </div>
+    </div>
+{% endblock content %}

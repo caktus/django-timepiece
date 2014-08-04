@@ -43,9 +43,10 @@ class ReportMixin(object):
             entryQ = self.get_entry_query(start, end, data)
             trunc = data['trunc']
             if entryQ:
-                vals = ('pk', 'activity', 'activity__name', 'project', 'project__name',
-                        'project__status', 'project__type__label', 'user__email',
-                        'project__business__id', 'project__business__name', 'comments')
+                vals = ('pk', 'activity', 'activity__name', 'project', 'project__code',
+                        'project__name', 'project__status', 'project__type__label', 
+                        'user__email', 'project__business__id', 'project__business__name',
+                        'comments')
                 entries = Entry.objects.date_trunc(trunc,
                         extra_values=vals).filter(entryQ)
             else:
@@ -161,7 +162,7 @@ class HourlyReport(ReportMixin, CSVViewMixin, TemplateView):
             # this is a special csv export, different than stock Timepiece,
             # requested by AAC Engineering for their detailed reporting reqs
             headers = ['Entry ID', 'Date', 'Employee ID', 'Employee Email',
-                       'Employee Last Name', 'Employee First Name', 'Project ID',
+                       'Employee Last Name', 'Employee First Name', 'Project ID', 'Project Code',
                        'Project Name', 'Project Type', 'Business ID', 'Business Name',
                        'Duration', 'Activity ID', 'Activity Name', 'Comment']
             content.append(headers)
@@ -169,7 +170,7 @@ class HourlyReport(ReportMixin, CSVViewMixin, TemplateView):
                 row = [entry['pk']]
                 row.append(entry['date'].strftime('%m/%d/%Y'))
                 for key in ['user', 'user__email', 'user__last_name', 'user__first_name',
-                          'project', 'project__name', 'project__type__label',
+                          'project', 'project__code', 'project__name', 'project__type__label',
                           'project__business__id', 'project__business__name',
                           'hours', 'activity', 'activity__name', 'comments']:
                     row.append(entry[key])

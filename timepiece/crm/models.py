@@ -1,9 +1,17 @@
-from django.contrib.auth.models import User
+from django.contrib.auth.models import User, Group
+from django.contrib.sites.models import Site
 from django.core.urlresolvers import reverse
 from django.db import models
 from django.db.models import get_model
+import datetime
+import sys, traceback
 
 from timepiece.utils import get_active_entry
+
+try:
+    from wiki.models.urlpath import URLPath
+except:
+    pass
 
 try:
     from project_toolbox_main import settings
@@ -27,16 +35,73 @@ User.add_to_class('get_absolute_url', _get_absolute_url)
 
 
 class UserProfile(models.Model):
+    SALARY = 'salary'
+    HOURLY = 'hourly'
+    INACTIVE = 'inactive'
+    EMPLOYEE_TYPES = {
+        SALARY: 'Salary',
+        HOURLY: 'Hourly',
+        INACTIVE: 'Inactive',
+    }
+
     user = models.OneToOneField(User, unique=True, related_name='profile')
     hours_per_week = models.DecimalField(max_digits=8, decimal_places=2,
             default=40)
     business = models.ForeignKey('Business')
+    employee_type = models.CharField(max_length=24, choices=EMPLOYEE_TYPES.items(), default=INACTIVE)
+    hire_date = models.DateField(blank=True, null=True)
+    pto = models.DecimalField(max_digits=7, decimal_places=2, default=0, verbose_name='Paid Time Off')
 
     class Meta:
         db_table = 'timepiece_userprofile'  # Using legacy table name.
 
     def __unicode__(self):
         return unicode(self.user)
+
+
+class PaidTimeOffRequest(models.Model):
+    PENDING = 'pending'
+    APPROVED = 'approved'
+    DENIED = 'denied'
+    STATUSES = {
+        PENDING: 'Pending',
+        APPROVED: 'Approved',
+        DENIED: 'Denied',
+    }
+    user_profile = models.ForeignKey(UserProfile)
+    request_date = models.DateTimeField(auto_now_add=True)
+    pto_start_date = models.DateField(verbose_name='Paid Time Off Start Date', blank=True, null=True)
+    pto_end_date = models.DateField(verbose_name='Paid Time Off End Date', blank=True, null=True)
+    amount = models.DecimalField(max_digits=7, decimal_places=2)
+    comment = models.TextField(blank=True)
+    approval_date = models.DateTimeField(blank=True, null=True)
+    approver = models.ForeignKey(User, blank=True, null=True)
+    status = models.CharField(max_length=24, choices=STATUSES.items(), default=PENDING)
+    approver_comment = models.TextField(blank=True)
+
+    class Meta:
+        ordering = ('user_profile', '-pto_start_date',)
+        permissions = (("can_approve_pto_requests", "Can approve PTO requests"),)
+
+    def __unicode__(self):
+        return '%s %s to %s %s (%s)' % (self.user_profile, str(self.pto_start_date), str(self.pto_end_date), str(self.amount), str(self.approver) if self.approver else 'not approved')
+
+    def get_absolute_url(self):
+        return '/timepiece/pto'#reverse('view_project', args=(self.pk,))
+
+
+class PaidTimeOffLog(models.Model):
+    user_profile = models.ForeignKey(UserProfile)
+    date = models.DateField()
+    amount = models.DecimalField(max_digits=7, decimal_places=2)
+    comment = models.TextField(blank=True)
+    pto_request = models.ForeignKey(PaidTimeOffRequest, blank=True, null=True)
+
+    class Meta:
+        ordering = ('user_profile', '-date',)
+
+    def __unicode__(self):
+        return '%s %s %f' % (self.user_profile, str(self.date), float(self.amount))
 
 
 class TypeAttributeManager(models.Manager):
@@ -125,10 +190,13 @@ class TrackableProjectManager(models.Manager):
 
 
 class Project(models.Model):
+    MINDERS_GROUP_NAME = 'Minders'
+
     name = models.CharField(max_length=255)
     code = models.CharField(max_length=12,
         verbose_name="Project Code",
         unique=False,
+        blank=True, # this field is required but is manually enforced in the code
         help_text="Auto-generated project code for tracking.")
     tracker_url = models.CharField(max_length=255, blank=True, null=False,
             default="", verbose_name="Wiki Url")
@@ -160,13 +228,14 @@ class Project(models.Model):
             limit_choices_to={'type': 'project-status'},
             related_name='projects_with_status')
     description = models.TextField()
+    year = models.SmallIntegerField(blank=True, null=True) # this field is required, but is taken care of in code
 
     objects = models.Manager()
     trackable = TrackableProjectManager()
 
     class Meta:
         db_table = 'timepiece_project'  # Using legacy table name.
-        ordering = ('name', 'status', 'type',)
+        ordering = ('code', 'name', 'status', 'type',)
         permissions = (
             ('view_project', 'Can view project'),
             ('email_project_report', 'Can email project report'),
@@ -176,7 +245,39 @@ class Project(models.Model):
         )
 
     def __unicode__(self):
-        return '{0} {1}'.format(self.code, self.name)
+        return '{0}: {1}'.format(self.code, self.name)
+
+    def save(self, *args, **kwargs):
+        # if this is a CREATE, create Project Code
+        if self.id is None:
+            # get the current year, if year not provided
+            if not self.year:
+                self.year = datetime.datetime.now().year
+
+            # determine the project counter incrementer and create unique code
+            proj_count = Project.objects.filter(business=self.business, year=self.year).count() + 1
+            self.code = '%s-%s-%03d' % (self.business.short_name, str(self.year)[2:], proj_count)
+
+            # create new wiki
+            try:
+                project_parent = URLPath.objects.get(id=settings.WIKI_PROJECT_ID)
+                wiki_path = URLPath.create_article(project_parent,
+                                self.code,
+                                site=Site.objects.get(id=settings.SITE_ID),
+                                title=self.name,
+                                article_kwargs={'owner': self.point_person},
+                                content='This is base article for the project %s: %s.' % (self.code, self.name),
+                            )
+                self.tracker_url = '/wiki/' + str(wiki_path)
+            except:
+                print sys.exc_info(), traceback.format_exc()
+                pass
+            
+        super(Project, self).save(*args, **kwargs)
+        minders = Group.objects.get(name=self.MINDERS_GROUP_NAME)
+        for u in User.objects.filter(id__in=Project.objects.all().values('point_person')):
+            # add user to Minders group
+            u.groups.add(minders)
 
     @property
     def billable(self):
@@ -189,6 +290,10 @@ class Project(models.Model):
         """Returns all associated contracts which are not marked complete."""
         ProjectContract = get_model('contracts', 'ProjectContract')
         return self.contracts.exclude(status=ProjectContract.STATUS_COMPLETE)
+
+    @property
+    def milestones(self):
+        return Milestone.objects.filter(project=self)
 
 
 class RelationshipType(models.Model):
@@ -217,3 +322,33 @@ class ProjectRelationship(models.Model):
             project=self.project.name,
             user=self.user.get_name_or_username(),
         )
+
+
+class Milestone(models.Model):
+    project = models.ForeignKey(Project)
+    name = models.CharField(max_length=255)
+    description = models.TextField(blank=True)
+    due_date = models.DateField()
+
+    def __unicode__(self):
+        return '%s: %s' % (self.project.code, self.name)
+
+    @property
+    def activity_goals(self):
+        return ActivityGoal.objects.filter(milestone=self)
+
+    class Meta:
+        ordering = ('due_date',)
+
+
+from timepiece.entries.models import Activity
+class ActivityGoal(models.Model):
+    milestone = models.ForeignKey(Milestone)
+    activity = models.ForeignKey(Activity, null=True)
+    goal_hours = models.DecimalField(max_digits=7, decimal_places=2)
+
+    def __unicode__(self):
+        return '%s: %s (%s)' % (self.milestone, self.activity, self.goal_hours)
+
+    class Meta:
+        ordering = ('milestone', 'goal_hours',)

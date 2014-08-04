@@ -127,8 +127,12 @@ def get_uninvoiced_hours(entries, billable=None):
 def humanize_hours(total_hours, frmt='{hours:02d}:{minutes:02d}:{seconds:02d}',
         negative_frmt=None):
     """Given time in hours, return a string representing the time."""
-    seconds = int(float(total_hours) * 3600)
-    return humanize_seconds(seconds, frmt, negative_frmt)
+    if total_hours == '':
+        return humanize_seconds(0, frmt, negative_frmt)
+    else:
+        seconds = int(float(total_hours) * 3600)
+        return humanize_seconds(seconds, frmt, negative_frmt)
+        
 
 
 @register.filter
@@ -209,6 +213,12 @@ def seconds_to_hours(seconds):
 def sum_hours(entries):
     """Return the sum total of get_total_seconds() for each entry."""
     return sum([e.get_total_seconds() for e in entries])
+
+
+@register.assignment_tag
+def sum_charged_hours(entries):
+    """Return the sum total of get_total_seconds() for each entry."""
+    return sum([e.hours for e in entries])
 
 
 def _timesheet_url(url_name, pk, date=None):

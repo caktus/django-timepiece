@@ -138,9 +138,9 @@
             </div>
 
             <div class="tab-pane{% if active_tab == 'all-entries' %} active{% endif %}" id="all-entries">
-                {% if week_entries %}
+                {% if period_entries %}
                     {% url 'dashboard' active_tab='all-entries' as next_url %}
-                    {% regroup week_entries by start_time|date:'l, F j' as daily_entries %}
+                    {% regroup period_entries by start_time|date:'l, F j' as daily_entries %}
                     <table class="table table-hover table-bordered">
                         <thead>
                             <tr>
@@ -150,16 +150,19 @@
                                 <th>To</th>
                                 <th class="hidden-phone">Pause Time</th>
                                 <th>Total Time</th>
+                                <th>Charged Hours</th>
                                 <th class="hidden-phone">Comment</th>
                             </tr>
                         </thead>
                         <tbody>
                             {% for day in daily_entries %}
                                 {% sum_hours day.list as daily_total %}
+                                {% sum_charged_hours day.list as daily_charged_total %}
                                 <tr class="emphasized-row">
                                     <th colspan="3" style="border-right: 0px;">{{ day.grouper }}</th>
                                     <th class="hidden-phone" colspan="2" style="border-left: 0px;"></th>
                                     <th>{{ daily_total|humanize_seconds:"{hours:02d}:{minutes:02d}" }}</th>
+                                    <th>{{ daily_charged_total }}</th>
                                     <th class="hidden-phone"></th>
                                 </tr>
                                 {% for entry in day.list %}
@@ -174,12 +177,20 @@
                                             {{ entry.project }}
                                         </td>
                                         <td class="hidden-phone">{{ entry.activity.name }}</td>
-                                        <td class="nowrap">{{ entry.start_time|time }}</td>
                                         <td class="nowrap">
-                                            {% if entry.end_time %}
-                                                {{ entry.end_time|time }}
+                                            {% if entry.show_times %}
+                                                {{ entry.start_time|time }}
                                             {% else %}
+                                                <label>---</label>
+                                            {% endif %}
+                                        </td>
+                                        <td class="nowrap">
+                                            {% if entry.show_times and entry.end_time %}
+                                                {{ entry.end_time|time }}
+                                            {% elif entry.show_times %}
                                                 current
+                                            {% else %}
+                                                <label>---</label>
                                             {% endif %}
                                         </td>
                                         <td class="hidden-phone nowrap">
@@ -190,6 +201,7 @@
                                             {% endwith %}
                                         </td>
                                         <td class="nowrap">{{ entry.get_total_seconds|humanize_seconds:"{hours:02d}:{minutes:02d}" }}</td>
+                                        <td class="nowrap">{{ entry.hours }}</td>
                                         <td class="hidden-phone">
                                             {% if entry.comments|length > 50 %}
                                                 {{entry.comments|slice:':50'}}&hellip;

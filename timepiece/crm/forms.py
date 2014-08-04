@@ -9,7 +9,8 @@ from timepiece.utils.search import SearchForm
 from timepiece.crm.lookups import (BusinessLookup, ProjectLookup, UserLookup,
         QuickLookup)
 from timepiece.crm.models import (Attribute, Business, Project,
-        ProjectRelationship, UserProfile)
+        ProjectRelationship, UserProfile, PaidTimeOffRequest, 
+        PaidTimeOffLog, Milestone, ActivityGoal)
 
 
 class CreateEditBusinessForm(forms.ModelForm):
@@ -160,3 +161,45 @@ class SelectUserForm(forms.Form):
 
     def get_user(self):
         return self.cleaned_data['user'] if self.is_valid() else None
+
+class ApproveDenyPTORequestForm(forms.ModelForm):
+
+    def __init__(self, *args, **kwargs):
+        super(ApproveDenyPTORequestForm, self).__init__(*args, **kwargs)
+        self.fields['user_profile'].widget.attrs['readonly'] = True
+        self.fields['user_profile'].label = 'Employee'
+        self.fields['pto_start_date'].widget.attrs['readonly'] = True
+        self.fields['pto_end_date'].widget.attrs['readonly'] = True
+        self.fields['amount'].widget.attrs['readonly'] = True
+        self.fields['amount'].label = "Number of Hours"
+        self.fields['comment'].widget.attrs['readonly'] = True
+        self.fields['comment'].label = 'Reason / Description'
+        self.fields['approver_comment'].label = 'Reason / Comment'
+    
+    class Meta:
+        model = PaidTimeOffRequest
+        fields = ('user_profile', 'pto_start_date', 'pto_end_date', 'amount',
+            'comment', 'approver_comment', )
+
+class CreateEditPTORequestForm(forms.ModelForm):
+
+    def __init__(self, *args, **kwargs):
+        super(CreateEditPTORequestForm, self).__init__(*args, **kwargs)
+        self.fields['amount'].label = "Number of Hours"
+        self.fields['comment'].label = 'Reason/Description'
+    
+    class Meta:
+        model = PaidTimeOffRequest
+        fields = ('pto_start_date', 'pto_end_date', 'amount', 'comment')
+
+class CreateEditMilestoneForm(forms.ModelForm):
+    
+    class Meta:
+        model = Milestone
+        fields = ('name', 'due_date', 'description')
+
+class CreateEditActivityGoalForm(forms.ModelForm):
+    
+    class Meta:
+        model = ActivityGoal
+        fields = ('goal_hours', 'activity')

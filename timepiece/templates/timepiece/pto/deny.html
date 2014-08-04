@@ -1,0 +1,37 @@
+{% extends "timepiece/pto/base.html" %}
+{% load url from future %}
+{% load bootstrap_toolkit %}
+
+{% block crumbs %}
+    {{ block.super }}
+    <li>
+        <span class="divider">/</span>
+        <a href="{% url 'pto' 'approvals' %}">Review PTO Request</a>
+    </li>
+{% endblock crumbs %}
+
+{% block title %}Confirm Deny PTO Request{% endblock title %}
+
+{% block content %}
+    <div class="row-fluid">
+        <div class="span12">
+            <h2>Confirm Deny PTO Request</h2>
+
+            <br style="clear: both;" />
+            
+            <div class="alert alert-info">
+              <button type="button" class="close" data-dismiss="alert">&times;</button>
+              <strong>NOTE:</strong> {{ object.user_profile }} has {{ object.user_profile.pto }} hours of PTO available.
+            </div>
+
+            <form id="deny-pto-request" class="form-horizontal" action="" method="post" accept-charset="utf-8">
+                {% csrf_token %}
+                {{ form|as_bootstrap:"horizontal" }}
+                <div class="form-actions">
+                    <input class="btn btn-danger" type='submit' name='submit' value='Deny' />
+                    <input class="btn" type='button' value='Cancel' onclick='history.go(-1)' />
+                </div>
+            </form>
+        </div>
+    </div>
+{% endblock content %}

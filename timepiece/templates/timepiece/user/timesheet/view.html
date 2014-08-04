@@ -21,7 +21,7 @@
 {% endblock extrajs %}
 
 {% block content %}
-    <h2>{{ timesheet_user.get_name_or_username }} - Time Sheet for {{ from_date|date:'M Y' }}</h2>
+    <h2>{{ timesheet_user.get_name_or_username }} - Time Sheet for {{ from_date|date:'M j' }} - {{ to_date|date:'j, Y' }}</h2>
 
     <div class="row-fluid">
         <div class="span12" id="header">
@@ -171,8 +171,20 @@
                                         <td class="activity">{{ entry.activity__name }}</td>
                                         <td>{{ entry.location__name }}</td>
                                         <td>{{ entry.status|title }}</td>
-                                        <td class="time break">{{ entry.start_time|time }}</td>
-                                        <td class="time break">{{ entry.end_time|time }}</td>
+                                        <td class="time break">
+                                            {% if entry.mechanism == 'bulk'  %}
+                                                <label>---</label>
+                                            {% else %}
+                                                {{ entry.start_time|time }}
+                                            {% endif %}
+                                        </td>
+                                        <td class="time break">
+                                            {% if entry.mechanism == 'bulk' %}
+                                                <label>---</label>
+                                            {% else %}
+                                                {{ entry.end_time|time }}
+                                            {% endif %}
+                                        </td>
                                         <td class="hours time">{{ entry.seconds_paused|seconds_to_hours|humanize_hours:"{hours:02d}:{minutes:02d}" }}</td>
                                         <td class="hours time">{{ entry.hours|humanize_hours:"{hours:02d}:{minutes:02d}" }}</td>
                                         <td class="comments" title="{{entry.comments}}">{{ entry.comments|truncatewords:12|urlizetrunc:25|safe }}</td>

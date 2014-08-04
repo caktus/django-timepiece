@@ -11,6 +11,32 @@
 
 {% block extrajs %}
     <script charset="utf-8" src="{{ STATIC_URL }}timepiece/js/prevent_double_click.js"></script>
+    
+    <script>
+        $('#id_project').change(
+            function () {
+                var project_id;
+                if( $(this).val().trim() ) {
+                    project_id = $(this).val();
+                } else {
+                    project_id = 0;
+                }
+                $.getJSON('/timepiece/project/' +  project_id + '/activities/',
+                    function (data) {
+                        if (Object.keys(data).length) {
+                            $act_list = $('#id_activity');
+                            var first = $act_list.children()[0];
+                            $act_list.empty();
+                            $act_list.append(first);
+                            $.each(data, function(key, activity) {
+                                $act_list.append('<option value="' + activity.id + '">' + activity.name + '</option>');
+                            })
+                        }
+                    }
+                );
+            }
+        );
+    </script>
 {% endblock extrajs %}
 
 {% block content %}

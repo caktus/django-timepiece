@@ -44,6 +44,7 @@ class ClockInForm(forms.ModelForm):
         super(ClockInForm, self).__init__(*args, **kwargs)
 
         self.fields['start_time'].required = False
+        self.fields['start_time'].read_only = True
         self.fields['start_time'].initial = datetime.datetime.now()
         self.fields['start_time'].widget = TimepieceSplitDateTimeWidget()
         self.fields['project'].queryset = Project.trackable.filter(
@@ -61,13 +62,16 @@ class ClockInForm(forms.ModelForm):
         start = self.cleaned_data.get('start_time')
         if not start:
             return start
-        active_entries = self.user.timepiece_entries.filter(
-            start_time__gte=start, end_time__isnull=True)
-        for entry in active_entries:
-            output = 'The start time is on or before the current entry: ' + \
-            '%s - %s starting at %s' % (entry.project, entry.activity,
-                entry.start_time.strftime('%H:%M:%S'))
-            raise forms.ValidationError(output)
+        # DISABLED FOR NOW SINCE WE DO NOT CARE ABOUT OVERLAPPING
+        # active_entries = self.user.timepiece_entries.filter(
+        #     start_time__gte=start, end_time__isnull=True)
+        # for entry in active_entries:
+        #     output = 'The start time is on or before the current entry: ' + \
+        #     '%s - %s starting at %s' % (entry.project, entry.activity,
+        #         entry.start_time.strftime('%H:%M:%S'))
+        #     raise forms.ValidationError(output)
+        if start > datetime.datetime.now():
+            raise forms.ValidationError('The start time cannot be in the future.')
         return start
 
     def clean(self):
@@ -154,7 +158,11 @@ class AddUpdateEntryForm(forms.ModelForm):
                             'activity': active.activity,
                             'start_time': active.start_time.strftime('%H:%M:%S'),
                         }))
-        if self.cleaned_data.get('hours_paused', 0) < 0:
+        hours_paused = self.cleaned_data.get('hours_paused', 0)
+        if type(hours_paused) != float and type(hours_paused) != int:
+            self.cleaned_data['hours_paused'] = 0
+            hours_paused = 0
+        if hours_paused < 0:
             raise forms.ValidationError('The hours paused must be >= 0.')
         return self.cleaned_data
 

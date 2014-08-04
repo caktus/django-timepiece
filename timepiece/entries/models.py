@@ -31,6 +31,11 @@ class Activity(models.Model):
         ordering = ('name',)
         verbose_name_plural = 'activities'
 
+    def get_json(self):
+        return {'code': self.code,
+                'name': self.name,
+                'billable': self.billable}
+
 
 class ActivityGroup(models.Model):
     """Activities that are allowed for a project"""
@@ -144,6 +149,17 @@ class Entry(models.Model):
         NOT_INVOICED: 'Not Invoiced',
     }
 
+    TIMECLOCK = 'timeclock'
+    BULK = 'bulk'
+    MANUAL = 'manual'
+
+    MECHANISMS = {
+        TIMECLOCK: 'Timeclock',
+        BULK: 'Bulk Entry',
+        MANUAL: 'Manual Entry',
+    }
+
+
     user = models.ForeignKey(User, related_name='timepiece_entries')
     project = models.ForeignKey('crm.Project', related_name='entries')
     activity = models.ForeignKey(Activity, related_name='entries')
@@ -161,6 +177,9 @@ class Entry(models.Model):
     date_updated = models.DateTimeField(auto_now=True)
 
     hours = models.DecimalField(max_digits=8, decimal_places=2, default=0)
+
+    mechanism = models.CharField(max_length=24, choices=MECHANISMS.items(),
+            default=MANUAL)
 
     objects = EntryManager()
     worked = EntryWorkedManager()
@@ -183,6 +202,8 @@ class Entry(models.Model):
         return '%s on %s' % (self.user, self.project)
 
     def check_overlap(self, entry_b, **kwargs):
+        """We don't want to check for this right now."""
+        return False
         """Return True if the two entries overlap."""
         consider_pause = kwargs.get('pause', True)
         entry_a = self
@@ -214,6 +235,8 @@ class Entry(models.Model):
             return False
 
     def is_overlapping(self):
+        """We don't want to check this right now."""
+        return False
         if self.start_time and self.end_time:
             entries = self.user.timepiece_entries.filter(
             Q(end_time__range=(self.start_time, self.end_time)) |
@@ -256,32 +279,33 @@ class Entry(models.Model):
         #An entry can not conflict with itself so remove it from the list
         if self.id:
             entries = entries.exclude(pk=self.id)
-        for entry in entries:
-            entry_data = {
-                'project': entry.project,
-                'activity': entry.activity,
-                'start_time': entry.start_time,
-                'end_time': entry.end_time
-            }
-            #Conflicting saved entries
-            if entry.end_time:
-                if entry.start_time.date() == start.date() \
-                and entry.end_time.date() == end.date():
-                    entry_data['start_time'] = entry.start_time.strftime(
-                        '%H:%M:%S')
-                    entry_data['end_time'] = entry.end_time.strftime(
-                        '%H:%M:%S')
-                    raise ValidationError('Start time overlaps with '
-                            '{activity} on {project} from {start_time} to '
-                            '{end_time}.'.format(**entry_data))
-                else:
-                    entry_data['start_time'] = entry.start_time.strftime(
-                        '%H:%M:%S on %m\%d\%Y')
-                    entry_data['end_time'] = entry.end_time.strftime(
-                        '%H:%M:%S on %m\%d\%Y')
-                    raise ValidationError('Start time overlaps with '
-                            '{activity} on {project} from {start_time} to '
-                            '{end_time}.'.format(**entry_data))
+        """We don't care about overlap right now. """
+        # for entry in entries:
+        #     entry_data = {
+        #         'project': entry.project,
+        #         'activity': entry.activity,
+        #         'start_time': entry.start_time,
+        #         'end_time': entry.end_time
+        #     }
+        #     #Conflicting saved entries
+        #     if entry.end_time:
+        #         if entry.start_time.date() == start.date() \
+        #         and entry.end_time.date() == end.date():
+        #             entry_data['start_time'] = entry.start_time.strftime(
+        #                 '%H:%M:%S')
+        #             entry_data['end_time'] = entry.end_time.strftime(
+        #                 '%H:%M:%S')
+        #             raise ValidationError('Start time overlaps with '
+        #                     '{activity} on {project} from {start_time} to '
+        #                     '{end_time}.'.format(**entry_data))
+        #         else:
+        #             entry_data['start_time'] = entry.start_time.strftime(
+        #                 '%H:%M:%S on %m\%d\%Y')
+        #             entry_data['end_time'] = entry.end_time.strftime(
+        #                 '%H:%M:%S on %m\%d\%Y')
+        #             raise ValidationError('Start time overlaps with '
+        #                     '{activity} on {project} from {start_time} to '
+        #                     '{end_time}.'.format(**entry_data))
         try:
             act_group = self.project.activity_group
             if act_group:
@@ -337,7 +361,9 @@ class Entry(models.Model):
         return True
 
     def save(self, *args, **kwargs):
-        self.hours = Decimal('%.2f' % round(self.total_hours, 2))
+        print 'total_hours', self.total_hours
+        self.hours = Decimal('%.2f' % round(round(float(self.total_hours)*4.) / 4., 2))
+        print 'hours', self.hours
         super(Entry, self).save(*args, **kwargs)
 
     def get_total_seconds(self):
@@ -493,6 +519,13 @@ class Entry(models.Model):
             qs = entries.filter(project=projects[name])
             data['paid_leave'][name] = qs.aggregate(s=Sum('hours'))['s']
         return data
+
+    @property
+    def show_times(self):
+        """
+        Determines whether times should be shown on the dashboard.
+        """
+        return self.mechanism in [self.TIMECLOCK, self.MANUAL]
 
 
 class ProjectHours(models.Model):
