@@ -166,10 +166,16 @@ def clock_in(request):
         messages.info(request, message)
         return HttpResponseRedirect(reverse('dashboard'))
 
-    return render(request, 'timepiece/entry/clock_in.html', {
+    ret_data = {
         'form': form,
         'active': active_entry,
-    })
+    }
+    try:
+        ret_data['project'] = int(data.get('project', [0])[0])
+    except:
+        pass
+    
+    return render(request, 'timepiece/entry/clock_in.html', ret_data)
 
 
 @permission_required('entries.can_clock_out')

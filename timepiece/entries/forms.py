@@ -5,7 +5,7 @@ from django import forms
 
 from timepiece import utils
 from timepiece.crm.models import Project
-from timepiece.entries.models import Entry, Location, ProjectHours
+from timepiece.entries.models import Entry, Location, ProjectHours, Activity
 from timepiece.forms import INPUT_FORMATS, TimepieceSplitDateTimeWidget,\
         TimepieceDateInput
 
@@ -49,6 +49,13 @@ class ClockInForm(forms.ModelForm):
         self.fields['start_time'].widget = TimepieceSplitDateTimeWidget()
         self.fields['project'].queryset = Project.trackable.filter(
                 users=self.user)
+        
+        # TODO: seems there must be a better way to do this
+        if args[0] and args[0].get('project', 0):
+            p = Project.objects.get(id=int(args[0].get('project', 0)))
+            self.fields['activity'].queryset = Activity.objects.filter(
+                id__in=[v['id'] for v in p.activity_group.activities.values()])
+        
         if not self.active:
             self.fields.pop('active_comment')
         else:
