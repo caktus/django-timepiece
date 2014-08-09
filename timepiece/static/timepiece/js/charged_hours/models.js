@@ -28,7 +28,7 @@ function Project(id, code, name, activity) {
     this.name = code + ': ' + name;
     this.activities = [];
     if (activity) {
-        this.activities.push(activity);
+        this.activities.push( activities.get_by_id( activity ) );
     }
     this.row = [];
 }

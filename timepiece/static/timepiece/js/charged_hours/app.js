@@ -239,11 +239,27 @@ $(function() {
                 source: projects.collection
             },
             {
-                type: 'dropdown',
-                source: activities.collection//function (query, process) {
-                    //console.log('query', query, 'process', process);
-                    //return activities.collection;
-                //}
+                type: 'autocomplete',
+                source: function (query, process) {
+                    var array = $(".dataTable").handsontable('getSelected').toString().split(',');
+                    var row, col = 0;
+                    if (array.length > 0) {
+                        row = parseInt(array[2]);
+                        col = parseInt(array[3]);
+                    }
+                    var proj_name = $('.dataTable').handsontable('getDataAtCell', parseInt(row), parseInt(col) - 1);
+                    var proj = projects.get_by_name(proj_name);
+                    $.getJSON('/timepiece/project/' +  proj.id + '/activities/',
+                        function (data) {
+                            var acts = [];
+                            $.each(data, function(key, activity) {
+                                acts.push(activities.get_by_id(activity.id));
+                            });
+                            process(acts);
+                        }
+                    );
+                },
+                strict: true
             },
             {
                 type: 'dropdown',

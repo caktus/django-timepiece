@@ -7,7 +7,7 @@
         <a href="#" class="dropdown-toggle" data-toggle="dropdown">CRM <b class="caret"></b></a>
         <ul class="dropdown-menu">
             {% if perms.crm.view_project %}
-                <li><a href="{% url 'list_projects' %}">Projects</a></li>
+                <li><a href="{% url 'list_projects' %}?search=&status={{ TIMEPIECE_DEFAULT_PROJECT_STATUS }}&submit=">Projects</a></li>
             {% endif %}
             {% if perms.auth.view_user %}  {# FIXME: Permission doesn't exist #}
                 <li><a href="{% url 'list_users' %}">Users</a></li>

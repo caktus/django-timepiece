@@ -156,7 +156,7 @@
                             </thead>
                             <tbody>
                                 {% for entry in entries %}
-                                    {% ifchanged entry.start_time|date:"W" %}
+                                    {% ifchanged entry.start_time|week %}
                                         <tr class="emphasized-row">
                                             <th colspan="11">Week of {{ entry.start_time|week_start|date:'M j, Y' }} </th>
                                         </tr>
@@ -191,6 +191,7 @@
                                         <td class="aux">
                                             {% if entry.status == "unverified" or entry.status != 'invoiced' and perms.entries.view_payroll_summary %}
                                                 <a href="{% url 'edit_entry' entry.id %}?next={{ next_url|add_parameters:request.GET|urlencode }}">Edit</a>
+                                                <a href="{% url 'delete_entry' entry.id %}?next={{ next_url|add_parameters:request.GET|urlencode }}">Delete</a>
                                             {% endif %}
                                             {% if perms.entries.view_payroll_summary and entry.status != "unverified" and entry.status != "invoiced" %}
                                                 | <a href="{% url 'reject_entry' entry.id %}?next={{ next_url|add_parameters:request.GET|urlencode }}">Reject</a>

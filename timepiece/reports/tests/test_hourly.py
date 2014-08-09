@@ -162,7 +162,7 @@ class TestHourlyReport(ViewTestMixin, LogTimeMixin, ReportsTestBase):
             'export': True,
             'billable': True,
             'non_billable': True,
-            'paid_leave': True,
+            'paid_time_off': True,
             'trunc': 'week',
         }
         defaults.update(kwargs)
@@ -184,7 +184,7 @@ class TestHourlyReport(ViewTestMixin, LogTimeMixin, ReportsTestBase):
     def test_form_type__none(self):
         """When no types are checked, no results should be returned."""
         self.bulk_entries()
-        args = {'billable': False, 'non_billable': False, 'paid_leave': False}
+        args = {'billable': False, 'non_billable': False, 'paid_time_off': False}
         args = self.args_helper(**args)
         data = []
         self.check_totals(args, data)
@@ -192,7 +192,7 @@ class TestHourlyReport(ViewTestMixin, LogTimeMixin, ReportsTestBase):
     def test_form_type__all(self):
         """When all types are checked, no filtering should occur."""
         self.bulk_entries()
-        args = {'billable': True, 'non_billable': True, 'paid_leave': True}
+        args = {'billable': True, 'non_billable': True, 'paid_time_off': True}
         args = self.args_helper(**args)
         data = [
             ['01/02/2011', '01/03/2011', 'Total'],
@@ -204,7 +204,7 @@ class TestHourlyReport(ViewTestMixin, LogTimeMixin, ReportsTestBase):
     def test_form_type__exclude_billable(self):
         """Non-billable or leave entries should be included."""
         self.bulk_entries()
-        args = {'billable': False, 'non_billable': True, 'paid_leave': True}
+        args = {'billable': False, 'non_billable': True, 'paid_time_off': True}
         args = self.args_helper(**args)
         data = [
             ['01/02/2011', '01/03/2011', 'Total'],
@@ -216,7 +216,7 @@ class TestHourlyReport(ViewTestMixin, LogTimeMixin, ReportsTestBase):
     def test_form_type__exclude_nonbillable(self):
         """Billable or leave entries should be included."""
         self.bulk_entries()
-        args = {'billable': True, 'non_billable': False, 'paid_leave': True}
+        args = {'billable': True, 'non_billable': False, 'paid_time_off': True}
         args = self.args_helper(**args)
         data = [
             ['01/02/2011', '01/03/2011', 'Total'],
@@ -228,7 +228,7 @@ class TestHourlyReport(ViewTestMixin, LogTimeMixin, ReportsTestBase):
     def test_form_type__exclude_leave(self):
         """No leave entries should be included."""
         self.bulk_entries()
-        args = {'billable': True, 'non_billable': True, 'paid_leave': False}
+        args = {'billable': True, 'non_billable': True, 'paid_time_off': False}
         args = self.args_helper(**args)
         data = [
             ['01/02/2011', '01/03/2011', 'Total'],
@@ -241,7 +241,7 @@ class TestHourlyReport(ViewTestMixin, LogTimeMixin, ReportsTestBase):
     def test_form_type__only_billable(self):
         """Billable, non-leave entries should be included."""
         self.bulk_entries()
-        args = {'billable': True, 'non_billable': False, 'paid_leave': False}
+        args = {'billable': True, 'non_billable': False, 'paid_time_off': False}
         args = self.args_helper(**args)
         data = [
             ['01/02/2011', '01/03/2011', 'Total'],
@@ -254,7 +254,7 @@ class TestHourlyReport(ViewTestMixin, LogTimeMixin, ReportsTestBase):
     def test_form_type__only_nonbillable(self):
         """Non-billable, non-leave entries should be included."""
         self.bulk_entries()
-        args = {'billable': False, 'non_billable': True, 'paid_leave': False}
+        args = {'billable': False, 'non_billable': True, 'paid_time_off': False}
         args = self.args_helper(**args)
         data = [
             ['01/02/2011', '01/03/2011', 'Total'],
@@ -267,7 +267,7 @@ class TestHourlyReport(ViewTestMixin, LogTimeMixin, ReportsTestBase):
     def test_form_type__only_leave(self):
         """Only leave entries should be included."""
         self.bulk_entries()
-        args = {'billable': False, 'non_billable': False, 'paid_leave': True}
+        args = {'billable': False, 'non_billable': False, 'paid_time_off': True}
         args = self.args_helper(**args)
         data = [
             ['01/02/2011', '01/03/2011', 'Total'],
@@ -281,7 +281,7 @@ class TestHourlyReport(ViewTestMixin, LogTimeMixin, ReportsTestBase):
         args = {
             'billable': True,
             'non_billable': False,
-            'paid_leave': False,
+            'paid_time_off': False,
             'trunc': 'day',
         }
         args = self.args_helper(**args)
@@ -299,7 +299,7 @@ class TestHourlyReport(ViewTestMixin, LogTimeMixin, ReportsTestBase):
         args = {
             'billable': True,
             'non_billable': True,
-            'paid_leave': True,
+            'paid_time_off': True,
             'trunc': 'week',
         }
         args = self.args_helper(**args)
@@ -320,7 +320,7 @@ class TestHourlyReport(ViewTestMixin, LogTimeMixin, ReportsTestBase):
         args = {
             'billable': True,
             'non_billable': False,
-            'paid_leave': False,
+            'paid_time_off': False,
             'trunc': 'month',
         }
         args = self.args_helper(start=start, end=end, **args)
@@ -340,7 +340,7 @@ class TestHourlyReport(ViewTestMixin, LogTimeMixin, ReportsTestBase):
         args = {
             'billable': True,
             'non_billable': True,
-            'paid_leave': False,
+            'paid_time_off': False,
             'trunc': 'day',
             'projects_1': self.p1.id,
         }
@@ -357,7 +357,7 @@ class TestHourlyReport(ViewTestMixin, LogTimeMixin, ReportsTestBase):
         args = {
             'billable': True,
             'non_billable': True,
-            'paid_leave': False,
+            'paid_time_off': False,
             'trunc': 'day',
             'projects_1': self.p2.id,
         }
@@ -374,7 +374,7 @@ class TestHourlyReport(ViewTestMixin, LogTimeMixin, ReportsTestBase):
         args = {
             'billable': True,
             'non_billable': True,
-            'paid_leave': False,
+            'paid_time_off': False,
             'trunc': 'day',
             'projects_1': [self.p2.id, self.p4.id],
         }

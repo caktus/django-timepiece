@@ -79,7 +79,7 @@ class ReportMixin(object):
         # Entry types.
         incl_billable = data.get('billable', True)
         incl_nonbillable = data.get('non_billable', True)
-        incl_leave = data.get('paid_leave', True)
+        incl_leave = data.get('paid_time_off', True)
 
         # If no types are selected, shortcut & return nothing.
         if not any((incl_billable, incl_nonbillable, incl_leave)):
@@ -214,7 +214,7 @@ class HourlyReport(ReportMixin, CSVViewMixin, TemplateView):
             'to_date': end,
             'billable': True,
             'non_billable': False,
-            'paid_leave': False,
+            'paid_time_off': False,
             'trunc': 'day',
             'projects': [],
         }
@@ -282,7 +282,7 @@ class HourlyReport(ReportMixin, CSVViewMixin, TemplateView):
         data = self.request.GET or self.defaults
         data = data.copy()  # make mutable
         # Fix booleans - the strings "0" and "false" are True in Python
-        for key in ['billable', 'non_billable', 'paid_leave']:
+        for key in ['billable', 'non_billable', 'paid_time_off']:
             data[key] = key in data and \
                         str(data[key]).lower() in ('on', 'true', '1')
 

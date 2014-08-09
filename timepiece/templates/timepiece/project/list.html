@@ -36,6 +36,7 @@
                     <tr>
                         <th>Code</th>
                         <th>Name</th>
+                        <th>Minder</th>
                         <th>Business</th>
                         <th>Description</th>
                         <th>Time Sheet</th>
@@ -44,11 +45,12 @@
                 <tbody>
                     {% for project in object_list %}
                         <tr>
-                            <td><a href="{% url 'view_project' project.id %}">{{ project.code }}</a></td>
+                            <td style="white-space: nowrap;"><a href="{% url 'view_project' project.id %}">{{ project.code }}</a></td>
                             <td>{{ project.name }}</td>
-                            <td>{{ project.business }}</td>
-                            <td>{{ project.description|truncatewords:8 }}</td>
-                            <td><a href="{% url 'view_project_timesheet' project.id %}">Time Sheet</a></td>
+                            <td style="white-space: nowrap;"><a href="mailto:{{project.point_person.email}}">{{ project.point_person }}</a></td>
+                            <td style="white-space: nowrap;">{{ project.business }}</td>
+                            <td>{{ project.description }}</td> <!-- |truncatewords:8 -->
+                            <td style="white-space: nowrap;"><a href="{% url 'view_project_timesheet' project.id %}">Time Sheet</a></td>
                         </tr>
                     {% endfor %}
                 </tbody>

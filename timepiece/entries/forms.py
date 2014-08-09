@@ -53,8 +53,11 @@ class ClockInForm(forms.ModelForm):
         # TODO: seems there must be a better way to do this
         if args[0] and args[0].get('project', 0):
             p = Project.objects.get(id=int(args[0].get('project', 0)))
-            self.fields['activity'].queryset = Activity.objects.filter(
-                id__in=[v['id'] for v in p.activity_group.activities.values()])
+            if p.activity_group:
+                self.fields['activity'].queryset = Activity.objects.filter(
+                    id__in=[v['id'] for v in p.activity_group.activities.values()])
+            else:
+                self.fields['activity'].queryset = Activity.objects.filter()
         
         if not self.active:
             self.fields.pop('active_comment')
@@ -143,9 +146,19 @@ class AddUpdateEntryForm(forms.ModelForm):
 
         self.fields['project'].queryset = Project.trackable.filter(
                 users=self.user)
+        proj = self.instance.project
+        if proj and proj.activity_group:
+            self.fields['activity'].queryset = Activity.objects.filter(
+                id__in=[v['id'] for v in proj.activity_group.activities.values()])
+        else:
+            self.fields['activity'].queryset = Activity.objects.filter()
+
         # If editing the active entry, remove the end_time field.
         if self.instance.start_time and not self.instance.end_time:
             self.fields.pop('end_time')
+
+        if self.instance:
+            self.fields['hours_paused'].initial = self.instance.seconds_paused / 3600.
 
     def clean(self):
         """

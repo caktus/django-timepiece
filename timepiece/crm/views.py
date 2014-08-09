@@ -154,7 +154,8 @@ def view_user_timesheet(request, user_id, active_tab):
     # # remedy an error... does not make any sense
     # for gt in totals:
     #     gt = gt
-    print 'to_date', to_date
+    # for week, week_totals, days in totals:
+    #         print 'week', week, 'week_totals', week_totals, 'days', days
     return render(request, 'timepiece/user/timesheet/view.html', {
         'active_tab': active_tab or 'overview',
         'year_month_form': form,
@@ -455,7 +456,8 @@ class ListProjects(SearchListView):
     model = Project
     form_class = ProjectSearchForm
     redirect_if_one_result = True
-    search_fields = ['name__icontains', 'description__icontains']
+    search_fields = ['name__icontains', 'description__icontains', 'code__icontains',
+    'point_person__first_name__icontains', 'point_person__last_name__icontains']
     template_name = 'timepiece/project/list.html'
 
     def filter_form_valid(self, form, queryset):

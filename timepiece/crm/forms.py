@@ -5,6 +5,7 @@ from django.contrib.auth.models import User
 from selectable import forms as selectable
 
 from timepiece.utils.search import SearchForm
+from timepiece.utils import get_setting
 
 from timepiece.crm.lookups import (BusinessLookup, ProjectLookup, UserLookup,
         QuickLookup)
@@ -126,10 +127,15 @@ class ProjectSearchForm(SearchForm):
     status = forms.ChoiceField(required=False, choices=[], label='')
 
     def __init__(self, *args, **kwargs):
+        print 'kwargs', kwargs.get('data', None)
+        if get_setting('TIMEPIECE_DEFAULT_PROJECT_STATUS') and kwargs.get('data', None) is None:
+            kwargs['data'] = {'status': get_setting('TIMEPIECE_DEFAULT_PROJECT_STATUS')}
         super(ProjectSearchForm, self).__init__(*args, **kwargs)
         statuses = Attribute.statuses.all()
         choices = [('', 'Any Status')] + [(a.pk, a.label) for a in statuses]
         self.fields['status'].choices = choices
+        if get_setting('TIMEPIECE_DEFAULT_PROJECT_STATUS') and kwargs.get('data', None) is None:
+            self.fields['status'].initial = get_setting('TIMEPIECE_DEFAULT_PROJECT_STATUS')
 
 
 class QuickSearchForm(forms.Form):

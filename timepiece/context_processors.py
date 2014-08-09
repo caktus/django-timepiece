@@ -52,4 +52,5 @@ def quick_clock_in(request):
 def extra_settings(request):
     return {
         'COMPRESS_ENABLED': settings.COMPRESS_ENABLED,
+        'TIMEPIECE_DEFAULT_PROJECT_STATUS': settings.TIMEPIECE_DEFAULT_PROJECT_STATUS,
     }

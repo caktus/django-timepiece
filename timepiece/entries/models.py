@@ -32,7 +32,8 @@ class Activity(models.Model):
         verbose_name_plural = 'activities'
 
     def get_json(self):
-        return {'code': self.code,
+        return {'id': self.id,
+                'code': self.code,
                 'name': self.name,
                 'billable': self.billable}
 
@@ -514,10 +515,10 @@ class Entry(models.Model):
             else:
                 data['non_billable'] += row['s']
         data['total_worked'] = data['billable'] + data['non_billable']
-        data['paid_leave'] = {}
+        data['paid_time_off'] = {}
         for name, pk in projects.iteritems():
             qs = entries.filter(project=projects[name])
-            data['paid_leave'][name] = qs.aggregate(s=Sum('hours'))['s']
+            data['paid_time_off'][name] = qs.aggregate(s=Sum('hours'))['s']
         return data
 
     @property

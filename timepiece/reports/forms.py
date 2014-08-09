@@ -76,7 +76,7 @@ class HourlyReportForm(DateForm):
 
     billable = forms.BooleanField(required=False)
     non_billable = forms.BooleanField(label='Non-billable', required=False)
-    paid_leave = forms.BooleanField(required=False)
+    paid_time_off = forms.BooleanField(required=False)
     trunc = forms.ChoiceField(label='Group Totals By', choices=TRUNC_CHOICES,
             widget=forms.RadioSelect())
     projects = selectable.AutoCompleteSelectMultipleField(ProjectLookup,

@@ -173,7 +173,7 @@ class MiscTagTestCase(TestCase):
             retval = tags.project_report_url_for_contract(contract, project)
             url = 'Boo?billable=1&projects_1=54&from_date=' \
                 '2013-01-10&to_date=2013-01-10&non_billable=0' \
-                '&paid_leave=0&trunc=month'
+                '&paid_time_off=0&trunc=month'
             self.assertEqual(url, retval)
             self.assertEqual('report_hourly', reverse.call_args[0][0])
 

@@ -44,6 +44,21 @@ def add_timezone(date, tz=None):
     return utils.add_timezone(date, tz)
 
 
+@register.filter
+def week(date):
+    """Return the week number, assuming weeks start on Sunday
+    instead of Monday.
+    """
+    week_start = utils.get_setting('TIMEPIECE_WEEK_START')
+    if week_start == 7:
+        (year, week, dow) = date.isocalendar()
+        if dow == 7:
+            return week + 1
+        else:
+            return week
+    else: return week
+
+
 @register.assignment_tag
 def create_dict(**kwargs):
     """Utility to create a dictionary from keyword arguments."""
@@ -190,7 +205,7 @@ def project_report_url_for_contract(contract, project):
         'to_date': contract.end_date.strftime(DATE_FORM_FORMAT),
         'billable': 1,
         'non_billable': 0,
-        'paid_leave': 0,
+        'paid_time_off': 0,
         'trunc': 'month',
         'projects_1': project.id,
     }
