@@ -9,7 +9,7 @@ from django.db.models import Q, Sum, Max, Min
 from django.utils import timezone
 
 from timepiece import utils
-from timepiece.crm.models import Project
+from timepiece.crm.models import Project, PaidTimeOffLog
 
 
 class Activity(models.Model):
@@ -153,11 +153,13 @@ class Entry(models.Model):
     TIMECLOCK = 'timeclock'
     BULK = 'bulk'
     MANUAL = 'manual'
+    PTO = 'pto-approval'
 
     MECHANISMS = {
         TIMECLOCK: 'Timeclock',
         BULK: 'Bulk Entry',
         MANUAL: 'Manual Entry',
+        PTO: 'PTO Approval',
     }
 
 
@@ -178,6 +180,8 @@ class Entry(models.Model):
     date_updated = models.DateTimeField(auto_now=True)
 
     hours = models.DecimalField(max_digits=8, decimal_places=2, default=0)
+
+    pto_log = models.ForeignKey(PaidTimeOffLog, blank=True, null=True)
 
     mechanism = models.CharField(max_length=24, choices=MECHANISMS.items(),
             default=MANUAL)

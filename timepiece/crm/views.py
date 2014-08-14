@@ -30,7 +30,7 @@ from timepiece.crm.forms import (CreateEditBusinessForm, CreateEditProjectForm,
 from timepiece.crm.models import (Business, Project, ProjectRelationship, UserProfile,
     PaidTimeOffLog, PaidTimeOffRequest, Milestone, ActivityGoal)
 from timepiece.crm.utils import grouped_totals
-from timepiece.entries.models import Entry, Activity
+from timepiece.entries.models import Entry, Activity, Location
 
 
 @cbv_decorator(login_required)
@@ -600,6 +600,7 @@ def pto_home(request, active_tab='summary'):
     data['pto_log'] = PaidTimeOffLog.objects.filter(user_profile=data['user_profile'])
     if request.user.has_perm('crm.can_approve_pto_requests'):
         data['pto_approvals'] = PaidTimeOffRequest.objects.filter(approver=None)
+        data['pto_all_history'] = PaidTimeOffLog.objects.filter().order_by('user_profile', '-date')
     if active_tab:
         data['active_tab'] = active_tab
     else:
@@ -654,10 +655,34 @@ class ApprovePTORequest(UpdateView):
         up = form.instance.user_profile
         up.pto -= form.instance.amount
         up.save()
+
+        # add to PTO log
         pto_log = PaidTimeOffLog(user_profile=up, date=datetime.date.today(),
             amount=form.instance.amount, comment=form.instance.comment,
             pto_request=form.instance)
         pto_log.save()
+
+        # add entries automatically to timesheet
+        delta = form.instance.pto_end_date - form.instance.pto_start_date
+        days_delta = delta.days + 1
+        for i in range(days_delta):
+            date = form.instance.pto_end_date + +datetime.timedelta(days=i)
+            start_time = datetime.datetime.combine(date, datetime.time(8))
+            hours = float(form.instance.amount)/float(days_delta)
+            end_time = start_time + datetime.timedelta(hours=hours)
+            entry = Entry(user=form.instance.user_profile.user,
+                          project=Project.objects.get(id=utils.get_setting('TIMEPIECE_PTO_PROJECT')[date.year]),
+                          activity=Activity.objects.get(code='PTO', name='Paid Time Off'),
+                          location=Location.objects.get(id=3),
+                          start_time=start_time,
+                          end_time=end_time,
+                          comments='Approved PTO %s.' % form.instance.pk,
+                          hours=hours,
+                          pto_log=pto_log,
+                          mechanism=Entry.PTO
+                    )
+            entry.save()
+
         return super(ApprovePTORequest, self).form_valid(form)
 
 
