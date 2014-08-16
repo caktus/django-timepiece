@@ -51,7 +51,7 @@
     <div class="tab-pane{% if active_tab == 'summary' %} active{% endif %}" id="summary">
         <dl class="dl-horizontal">
             <dt>Available PTO</dt>
-            <dd>{{ user_profile.pto }} hours</dd>
+            <dd>{{ user_profile.get_pto }} hours</dd>
 
             <dt>Anniversary Date</dt>
             <dd>{{ user_profile.hire_date|date:"F d" }}</dd>

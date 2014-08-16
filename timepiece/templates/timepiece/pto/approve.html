@@ -19,15 +19,15 @@
 
             <br style="clear: both;" />
             
-            {% if object.user_profile.pto < object.amount %}
+            {% if object.user_profile.get_pto < object.amount %}
             <div class="alert alert-error">
               <button type="button" class="close" data-dismiss="alert">&times;</button>
-              <strong>NOTE:</strong> {{ object.user_profile }} only has {{ object.user_profile.pto }} hours of PTO available.  Approving this request will result in a negative PTO balance for {{ object.user_profile }}.
+              <strong>NOTE:</strong> {{ object.user_profile }} only has {{ object.user_profile.get_pto }} hours of PTO available.  Approving this request will result in a negative PTO balance for {{ object.user_profile }}.
             </div>
             {% else %}
             <div class="alert alert-success">
               <button type="button" class="close" data-dismiss="alert">&times;</button>
-              <strong>NOTE:</strong> {{ object.user_profile }} has {{ object.user_profile.pto }} hours of PTO available.
+              <strong>NOTE:</strong> {{ object.user_profile }} has {{ object.user_profile.get_pto }} hours of PTO available.
             </div>
             {% endif %}
 

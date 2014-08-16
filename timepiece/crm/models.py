@@ -2,9 +2,10 @@ from django.contrib.auth.models import User, Group
 from django.contrib.sites.models import Site
 from django.core.urlresolvers import reverse
 from django.db import models
-from django.db.models import get_model
+from django.db.models import get_model, Sum
 import datetime
 import sys, traceback
+from decimal import Decimal
 
 from timepiece.utils import get_active_entry
 
@@ -50,13 +51,21 @@ class UserProfile(models.Model):
     business = models.ForeignKey('Business')
     employee_type = models.CharField(max_length=24, choices=EMPLOYEE_TYPES.items(), default=INACTIVE)
     hire_date = models.DateField(blank=True, null=True)
-    pto = models.DecimalField(max_digits=7, decimal_places=2, default=0, verbose_name='Paid Time Off')
 
     class Meta:
         db_table = 'timepiece_userprofile'  # Using legacy table name.
 
     def __unicode__(self):
         return unicode(self.user)
+
+    @property
+    def get_pto(self):
+        pto = PaidTimeOffLog.objects.filter(
+            user_profile=self).aggregate(Sum('amount'))['amount__sum']
+        if pto:
+            return pto
+        else:
+            return Decimal('0.0')
 
 
 class PaidTimeOffRequest(models.Model):

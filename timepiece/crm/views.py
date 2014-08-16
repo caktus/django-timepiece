@@ -653,23 +653,26 @@ class ApprovePTORequest(UpdateView):
         form.instance.approval_date = datetime.datetime.now()
         form.instance.status = PaidTimeOffRequest.APPROVED
         up = form.instance.user_profile
-        up.pto -= form.instance.amount
-        up.save()
 
-        # add to PTO log
-        pto_log = PaidTimeOffLog(user_profile=up, date=datetime.date.today(),
-            amount=form.instance.amount, comment=form.instance.comment,
-            pto_request=form.instance)
-        pto_log.save()
-
-        # add entries automatically to timesheet
+        # add PTO log enntries
+        # add timesheet entries
         delta = form.instance.pto_end_date - form.instance.pto_start_date
         days_delta = delta.days + 1
         for i in range(days_delta):
-            date = form.instance.pto_end_date + +datetime.timedelta(days=i)
+            date = form.instance.pto_start_date + datetime.timedelta(days=i)
             start_time = datetime.datetime.combine(date, datetime.time(8))
             hours = float(form.instance.amount)/float(days_delta)
             end_time = start_time + datetime.timedelta(hours=hours)
+            
+            # add pto log entry
+            pto_log = PaidTimeOffLog(user_profile=up, 
+                                     date=date,
+                                     amount=-1*(float(form.instance.amount) / float(days_delta)), 
+                                     comment=form.instance.comment,
+                                     pto_request=form.instance)
+            pto_log.save()
+
+            # add timesheet entry
             entry = Entry(user=form.instance.user_profile.user,
                           project=Project.objects.get(id=utils.get_setting('TIMEPIECE_PTO_PROJECT')[date.year]),
                           activity=Activity.objects.get(code='PTO', name='Paid Time Off'),
@@ -679,8 +682,7 @@ class ApprovePTORequest(UpdateView):
                           comments='Approved PTO %s.' % form.instance.pk,
                           hours=hours,
                           pto_log=pto_log,
-                          mechanism=Entry.PTO
-                    )
+                          mechanism=Entry.PTO)
             entry.save()
 
         return super(ApprovePTORequest, self).form_valid(form)
