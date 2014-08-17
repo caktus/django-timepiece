@@ -49,6 +49,8 @@
 <div class="tab-content">
 
     <div class="tab-pane{% if active_tab == 'summary' %} active{% endif %}" id="summary">
+        <div class="span4">
+        <h3>My Available PTO</h3>
         <dl class="dl-horizontal">
             <dt>Available PTO</dt>
             <dd>{{ user_profile.get_pto }} hours</dd>
@@ -56,6 +58,18 @@
             <dt>Anniversary Date</dt>
             <dd>{{ user_profile.hire_date|date:"F d" }}</dd>
         </dl>
+        </div>
+        {% for holiday_year in holiday_years %}
+            <div class="span4">
+            <h3>{{ holiday_year.year }} Paid Holidays</h3>
+            <dl class="dl-horizontal">
+                {% for holiday in holiday_year.holidays %}
+                <dt {% if holiday.date < today %}style="text-decoration: line-through;"{% endif %}>{{ holiday.name }}</dt>
+                <dd {% if holiday.date < today %}style="text-decoration: line-through;"{% endif %}>{{ holiday.date }}</dd>
+                {% endfor %}
+            </dl>
+        </div>
+        {% endfor %}
     </div>
 
     <div class="tab-pane{% if active_tab == 'requests' %} active{% endif %}" id="requests">

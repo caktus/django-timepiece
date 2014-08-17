@@ -32,6 +32,8 @@ from timepiece.crm.models import (Business, Project, ProjectRelationship, UserPr
 from timepiece.crm.utils import grouped_totals
 from timepiece.entries.models import Entry, Activity, Location
 
+from holidays.models import Holiday
+
 
 @cbv_decorator(login_required)
 class QuickSearch(FormView):
@@ -605,6 +607,15 @@ def pto_home(request, active_tab='summary'):
         data['active_tab'] = active_tab
     else:
         data['active_tab'] = 'summary'
+
+    this_year = datetime.date.today().year
+    data['holiday_years'] = []
+    for year in [this_year, this_year+1]:
+        data['holiday_years'].append(
+            {'year': year,
+             'holidays': Holiday.get_holidays_for_year(year=year, kwargs={'paid_holiday': True})}
+        )
+    data['today'] = datetime.date.today()
     return render(request, 'timepiece/pto/home.html', data)
 
 
