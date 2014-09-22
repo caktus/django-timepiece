@@ -1,0 +1,26 @@
+{% extends "metabase.html" %}
+{% load url from future %}
+
+{% block title %}Project-Toolbox{% endblock title %}
+
+{% block basecontent %}
+<h1>Examples of Activities</h1>
+<div id="content" class="container-fluid">
+    {% block content %}
+    <table class="table table-striped">
+        <tr>
+            <th>Name</th>
+            <th>Code</th>
+            <th>Examples</th>
+        </tr>
+        {% for a in activities %}
+        <tr>
+            <td>{{ a.name }}</td>
+            <td>{{ a.code }}</td>
+            <td>{{ a.examples }}</td>
+        </tr>
+        {% endfor %}
+    </table>
+    {% endblock content %}
+</div>
+{% endblock basecontent %}

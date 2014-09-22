@@ -366,12 +366,14 @@ def report_payroll_summary(request):
     date = timezone.now() - relativedelta(months=1)
     from_date = utils.get_month_start(date).date()
     to_date = from_date + relativedelta(months=1)
+    print 'report', from_date, to_date
 
     year_month_form = PayrollSummaryReportForm(request.GET or None,
         initial={'month': from_date.month, 'year': from_date.year})
 
     if year_month_form.is_valid():
         from_date, to_date = year_month_form.save()
+        print 'form valid', from_date, to_date
     last_billable = utils.get_last_billable_day(from_date)
     projects = utils.get_setting('TIMEPIECE_PAID_LEAVE_PROJECTS')
     weekQ = Q(end_time__gt=utils.get_week_start(from_date),
@@ -380,10 +382,25 @@ def report_payroll_summary(request):
     workQ = ~Q(project__in=projects.values())
     statusQ = Q(status=Entry.INVOICED) | Q(status=Entry.APPROVED)
     # Weekly totals
-    week_entries = Entry.objects.date_trunc('week').filter(
-        weekQ, statusQ, workQ
-    )
-    date_headers = generate_dates(from_date, last_billable, by='week')
+    if utils.get_setting('TIMEPIECE_WEEK_START', default=0) == 0:
+        week_entries = Entry.objects.date_trunc('week').filter(
+            weekQ, statusQ, workQ
+        ).order_by('user')
+    else:
+        week_entries = []
+        for we in Entry.objects.filter(weekQ, statusQ, workQ).order_by('user'):
+            week_entries.append(
+                {'billable': we.billable,
+                 'date': utils.get_week_start(we.end_time).date(),
+                 'hours': we.hours,
+                 'user': we.user.id,
+                 'user__first_name': we.user.first_name,
+                 'user__last_name': we.user.last_name}
+            )
+        week_entries = sorted(week_entries, key=lambda x:x['user__last_name'])
+
+    #date_headers = generate_dates(from_date, last_billable, by='week')
+    date_headers = generate_dates(from_date, to_date, by='week')
     weekly_totals = list(get_project_totals(week_entries, date_headers,
                                               'total', overtime=True))
     # Monthly totals

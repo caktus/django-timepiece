@@ -146,18 +146,21 @@ class AddUpdateEntryForm(forms.ModelForm):
 
         self.fields['project'].queryset = Project.trackable.filter(
                 users=self.user)
-        proj = self.instance.project
-        if proj and proj.activity_group:
-            self.fields['activity'].queryset = Activity.objects.filter(
-                id__in=[v['id'] for v in proj.activity_group.activities.values()])
-        else:
-            self.fields['activity'].queryset = Activity.objects.filter()
-
-        # If editing the active entry, remove the end_time field.
-        if self.instance.start_time and not self.instance.end_time:
-            self.fields.pop('end_time')
-
+        
+        self.fields['activity'].queryset = Activity.objects.filter()
         if self.instance:
+            try:
+                proj = self.instance.project
+                if proj and proj.activity_group:
+                    self.fields['activity'].queryset = Activity.objects.filter(
+                        id__in=[v['id'] for v in proj.activity_group.activities.values()])
+            except:
+                pass
+            
+            # If editing the active entry, remove the end_time field.
+            if self.instance.start_time and not self.instance.end_time:
+                self.fields.pop('end_time')
+
             self.fields['hours_paused'].initial = self.instance.seconds_paused / 3600.
 
     def clean(self):

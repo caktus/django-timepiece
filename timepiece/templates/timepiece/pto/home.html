@@ -11,7 +11,7 @@
     <div class="span12" id="active-entry">
         <div>
             <span>Here you can view your <a href="javascript:changeActiveTab('summary');">available</a> PTO, PTO <a href="javascript:changeActiveTab('history');">history</a>, and <a href="{% url 'create_pto_request' %}">submit</a> and <a to="requests" href="javascript:changeActiveTab('requests');">track</a> requests for future PTO.</span>
-            {% if perms.crm.can_approve_requests %}
+            {% if perms.crm.can_approve_pto_requests %}
             <span>Additionally, admins can <a to="requests" href="javascript:changeActiveTab('approvals');">approve<a/> open PTO requests and view PTO <a to="requests" href="javascript:changeActiveTab('all_history');">history</a>.
             {% endif %}
         </div>
@@ -34,10 +34,14 @@
         {% url "pto" "history" as link %}
         <a class="tab-link" to="history" href="{{ link|add_parameters:request.GET }}">My PTO History</a>
     </li>
-    {% if perms.crm.can_approve_requests %}
+    {% if perms.crm.can_approve_pto_requests %}
     <li{% if active_tab == 'approvals' %} class="active"{% endif %}>
         {% url "pto" "approvals" as link %}
         <a class="tab-link" to="approvals" href="{{ link|add_parameters:request.GET }}">Open Requests</a>
+    </li>
+    <li{% if active_tab == 'all_request_history' %} class="active"{% endif %}>
+        {% url "pto" "all_request_history" as link %}
+        <a class="tab-link" to="all_request_history" href="{{ link|add_parameters:request.GET }}">All PTO Request History</a>
     </li>
     <li{% if active_tab == 'all_history' %} class="active"{% endif %}>
         {% url "pto" "all_history" as link %}
@@ -76,29 +80,48 @@
       {% if pto_requests|length %}
         <table id="pto_requests" class="table table-striped table-bordered table-hover table-condensed">
             <thead><tr>
+                <th>Request Date</th>
+                <th>Employee</th>
                 <th>Start Date</th>
                 <th>End Date</th>
                 <th>Hours</th>
                 <th>Comment</th>
-                <th>Actions</th>
+                <th>Status</th>
+                <th>Actions / Approver Comment</th>
             </tr></thead>
             <tbody>
               {% for ptor in pto_requests %}
                 <tr id="{{ ptor.id }}">
+                    <td>{{ ptor.request_date }}</td>
+                    <td><a href="mailto:{{ ptor.user_profile.user.email }}">{{ ptor.user_profile.user }}</a></td>
                     <td>{{ ptor.pto_start_date }}</td>
                     <td>{{ ptor.pto_end_date }}</td>
                     <td>{{ ptor.amount }}</td>
                     <td>{{ ptor.comment }}</td>
                     <td>
-                        <a type="button" class="btn btn-primary" href="{% url 'edit_pto_request' ptor.id %}">Edit</a>
-                        <a type="button" class="btn btn-danger" href="{% url 'delete_pto_request' ptor.id %}">Delete</a>
+                        {% if ptor.status == 'pending' %}
+                        <span class="label">Pending</span>
+                        {% elif ptor.status == 'approved' %}
+                        <span class="label label-success">Approved</span>
+                        {% elif ptor.status == 'denied' %}
+                        <span class="label label-important">Denied</span>
+                        {% endif %}
+                    </td>
+                    <td>
+                        {% if ptor.status == 'pending' %}
+                        <a type="button" class="btn btn-primary btn-small" href="{% url 'edit_pto_request' ptor.id %}">Edit</a>
+                        <a type="button" class="btn btn-danger btn-small" href="{% url 'delete_pto_request' ptor.id %}">Delete</a>
+                        {% else %}
+                        {{ ptor.approver }} @ {{ ptor.approval_date }}<br/>
+                        <em>{{ ptor.approver_comment }}</em>
+                        {% endif %}
                     </td>
                 </tr>
               {% endfor %}
             </tbody>
         </table>
       {% else %}
-        <div style="margin-bottom: 18px;"><h5>You have no open PTO requests.</h5></div>
+        <div style="margin-bottom: 18px;"><h5>You have no PTO requests.</h5></div>
       {% endif %}
     </div>
 
@@ -133,7 +156,7 @@
       {% endif %}
     </div>
 
-    {% if perms.crm.can_approve_requests %}
+    {% if perms.crm.can_approve_pto_requests %}
     <div class="tab-pane{% if active_tab == 'approvals' %} active{% endif %}" id="approvals">
       {% if pto_approvals|length %}
         <table id="pto_approvals" class="table table-striped table-bordered table-hover table-condensed">
@@ -154,8 +177,10 @@
                     <td>{{ ptor.amount }}</td>
                     <td>{{ ptor.comment }}</td>
                     <td>
-                        <a type="button" class="btn btn-success" href="{% url 'approve_pto_request' ptor.id %}">Approve</a>
-                        <a type="button" class="btn btn-danger" href="{% url 'deny_pto_request' ptor.id %}">Deny</a>
+                        {% if ptor.user_profile.user != request.user %}
+                        <a type="button" class="btn btn-success btn-small" href="{% url 'approve_pto_request' ptor.id %}">Approve</a>
+                        <a type="button" class="btn btn-danger btn-small" href="{% url 'deny_pto_request' ptor.id %}">Deny</a>
+                        {% endif %}
                     </td>
                 </tr>
               {% endfor %}
@@ -163,6 +188,56 @@
         </table>
       {% else %}
         <div style="margin-bottom: 18px;"><h5>There are no open PTO requests needing approval.</h5></div>
+      {% endif %}
+    </div>
+
+    <div class="tab-pane{% if active_tab == 'all_request_history' %} active{% endif %}" id="all_request_history">
+      {% if pto_requests|length %}
+        <table id="all_pto_requests" class="table table-striped table-bordered table-hover table-condensed">
+            <thead><tr>
+                <th>Employee</th>
+                <th>Request Date</th>
+                <th>Start Date</th>
+                <th>End Date</th>
+                <th>Hours</th>
+                <th>Comment</th>
+                <th>Status</th>
+                <th>Approval</th>
+            </tr></thead>
+            <tbody>
+              {% for ptor in all_pto_requests %}
+                <tr id="{{ ptor.id }}">
+                    <td style="white-space: nowrap;">{{ ptor.user_profile.user }}</td>
+                    <td style="white-space: nowrap;">{{ ptor.request_date }}</td>
+                    <td style="white-space: nowrap;">{{ ptor.pto_start_date }}</td>
+                    <td style="white-space: nowrap;">{{ ptor.pto_end_date }}</td>
+                    <td style="white-space: nowrap;">{{ ptor.amount }}</td>
+                    <td>{{ ptor.comment }}</td>
+                    <td style="white-space: nowrap;">
+                        {% if ptor.status == 'pending' %}
+                        <span class="label">Pending</span>
+                        {% elif ptor.status == 'approved' %}
+                        <span class="label label-success">Approved</span>
+                        {% elif ptor.status == 'denied' %}
+                        <span class="label label-important">Denied</span>
+                        {% endif %}
+                    </td>
+                    <td>
+                        {% if ptor.approver %}
+                        {{ ptor.approver }} @ {{ ptor.approval_date }}<br/>
+                        <em>{{ ptor.approver_comment }}</em>
+                        {% elif ptor.user_profile.user != request.user %}
+                        <a type="button" class="btn btn-success btn-small" href="{% url 'approve_pto_request' ptor.id %}">Approve</a>
+                        <a type="button" class="btn btn-danger btn-small" href="{% url 'deny_pto_request' ptor.id %}">Deny</a>
+                        {% endif %}
+                        
+                    </td>
+                </tr>
+              {% endfor %}
+            </tbody>
+        </table>
+      {% else %}
+        <div style="margin-bottom: 18px;"><h5>There are no PTO requests.</h5></div>
       {% endif %}
     </div>
 

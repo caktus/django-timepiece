@@ -5,7 +5,7 @@ from decimal import Decimal
 from itertools import groupby
 
 from timepiece.utils import get_hours_summary, add_timezone, get_week_start,\
-        get_month_start, get_year_start
+        get_month_start, get_year_start, get_setting
 
 
 def date_totals(entries, by):
@@ -15,6 +15,7 @@ def date_totals(entries, by):
         if isinstance(date, datetime.datetime):
             date = date.date()
         d_entries = list(date_entries)
+        print 'd_entries', d_entries
 
         if by == 'user':
             name = ' '.join((d_entries[0]['user__first_name'],
@@ -26,7 +27,11 @@ def date_totals(entries, by):
 
         pk = d_entries[0][by]
         hours = get_hours_summary(d_entries)
-        date_dict[date] = hours
+        if date in date_dict:
+            for entry_type in ['total', 'billable', 'non_billable']:
+                date_dict[date][entry_type] += hours[entry_type]
+        else:
+            date_dict[date] = hours
     return name, pk, date_dict
 
 
@@ -40,6 +45,7 @@ def generate_dates(start=None, end=None, by='week'):
         start = add_timezone(start)
     if end:
         end = add_timezone(end)
+    week_start = get_setting('TIMEPIECE_WEEK_START', default=0)
     if by == 'year':
         start = get_year_start(start)
         return rrule.rrule(rrule.YEARLY, dtstart=start, until=end)
@@ -48,7 +54,7 @@ def generate_dates(start=None, end=None, by='week'):
         return rrule.rrule(rrule.MONTHLY, dtstart=start, until=end)
     if by == 'week':
         start = get_week_start(start)
-        return rrule.rrule(rrule.WEEKLY, dtstart=start, until=end, byweekday=0)
+        return rrule.rrule(rrule.WEEKLY, dtstart=start, until=end, byweekday=week_start)
     if by == 'day':
         return rrule.rrule(rrule.DAILY, dtstart=start, until=end)
 

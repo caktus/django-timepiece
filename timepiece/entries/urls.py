@@ -52,4 +52,8 @@ urlpatterns = patterns('',
     url(r'^schedule/ajax/(?P<assignment_id>\d+)/$',
         views.ScheduleDetailView.as_view(),
         name='ajax_schedule_detail'),
+
+    url(r'^activity/cheat-sheet$',
+        views.activity_cheat_sheet,
+        name='activity_cheat_sheet'),
 )

@@ -103,7 +103,7 @@ urlpatterns = patterns('',
     
 
     # Paid Time Off
-    url(r'^pto/(?:(?P<active_tab>summary|requests|history|approvals|all_history)/)?$',
+    url(r'^pto/(?:(?P<active_tab>summary|requests|history|approvals|all_history|all_request_history)/)?$',
         views.pto_home,
         name='pto'),
     url(r'^pto/request/(?P<pto_request_id>\d+)$',

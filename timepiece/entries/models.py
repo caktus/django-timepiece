@@ -17,11 +17,13 @@ class Activity(models.Model):
     Represents different types of activity: debugging, developing,
     brainstorming, QA, etc...
     """
-    code = models.CharField(max_length=5, unique=False, help_text='Enter a '
+    code = models.CharField(max_length=16, unique=False, help_text='Enter a '
             'short code to describe the type of activity that took place.')
     name = models.CharField(max_length=50, help_text='Now enter a more '
             'meaningful name for the activity.')
     billable = models.BooleanField(default=True)
+    examples = models.TextField(blank=True, null=True,
+        help_text='Examples of specific activities or tasks which fall within this Activity.')
 
     def __unicode__(self):
         return self.name
@@ -154,18 +156,20 @@ class Entry(models.Model):
     BULK = 'bulk'
     MANUAL = 'manual'
     PTO = 'pto-approval'
+    IMPORT = 'import'
 
     MECHANISMS = {
         TIMECLOCK: 'Timeclock',
         BULK: 'Bulk Entry',
         MANUAL: 'Manual Entry',
         PTO: 'PTO Approval',
+        IMPORT: 'Import'
     }
 
 
     user = models.ForeignKey(User, related_name='timepiece_entries')
     project = models.ForeignKey('crm.Project', related_name='entries')
-    activity = models.ForeignKey(Activity, related_name='entries')
+    activity = models.ForeignKey(Activity, related_name='entries', help_text='Review <a href="/timepiece/activity/cheat-sheet" target="_blank">this sheet</a> for guidance on activities.')
     location = models.ForeignKey(Location, related_name='entries')
     entry_group = models.ForeignKey('contracts.EntryGroup', blank=True,
             null=True, related_name='entries', on_delete=models.SET_NULL)
@@ -351,15 +355,16 @@ class Entry(models.Model):
                     end.strftime('%H:%M:%S')
                 )
             raise ValidationError(err_msg)
-        month_start = utils.get_month_start(start)
-        next_month = month_start + relativedelta(months=1)
+        #month_start = utils.get_month_start(start)
+        #next_month = month_start + relativedelta(months=1)
+        (period_start, period_end) = utils.get_bimonthly_dates(start)
         entries = self.user.timepiece_entries.filter(
             Q(status=Entry.APPROVED) | Q(status=Entry.INVOICED),
-            start_time__gte=month_start,
-            end_time__lt=next_month
+            start_time__gte=period_start,
+            end_time__lt=period_end
         )
-        if (entries.exists() and not self.id
-                or self.id and self.status == Entry.INVOICED):
+        if ( (entries.exists() and not self.id)
+                or (self.id and (self.status == Entry.INVOICED or self.status == Entry.APPROVED)) ):
             msg = 'You cannot add/edit entries after a timesheet has been ' \
                 'approved or invoiced. Please correct the start and end times.'
             raise ValidationError(msg)

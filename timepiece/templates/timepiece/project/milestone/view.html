@@ -6,6 +6,7 @@
 
 {% block crumbs %}
     {{ block.super }}
+    <li><span class="divider">/</span> <a href="{% url 'view_project' object.project.id %}">{{ object.project }}</a></li>
     <li><span class="divider">/</span> <a href="">{{ object }}</a></li>
 {% endblock crumbs %}
 

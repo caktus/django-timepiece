@@ -40,7 +40,7 @@
 
                 {% if perms.entries.view_payroll_summary %}
                     {% url 'reject_user_timesheet' timesheet_user.pk as base_url %}
-                    {% create_dict month=from_date|date:'n' year=from_date|date:'Y' as params %}
+                    {% create_dict from_date=from_date|date:'Y-m-d' as params %}
                     <a class="btn btn-primary" href="{{ base_url|add_parameters:params }}">Reject All Entries</a>
                 {% endif %}
 

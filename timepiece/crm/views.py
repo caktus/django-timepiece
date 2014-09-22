@@ -33,6 +33,7 @@ from timepiece.crm.utils import grouped_totals
 from timepiece.entries.models import Entry, Activity, Location
 
 from holidays.models import Holiday
+from . import emails
 
 
 @cbv_decorator(login_required)
@@ -52,7 +53,14 @@ def reject_user_timesheet(request, user_id):
     """
     This allows admins to reject all entries, instead of just one
     """
-    form = YearMonthForm(request.GET or request.POST)
+    from_date = request.GET.get('from_date', None) or request.POST.get('from_date', None)
+    (year, month, day) = from_date.split('-')
+    if int(day) <= 15:
+        half =1
+    else:
+        half = 2
+    print 'year', int(year), 'month', int(month), 'half', int(half)
+    form = YearMonthForm({'year':int(year), 'month':int(month), 'half':half})
     user = User.objects.get(pk=user_id)
     if form.is_valid():
         from_date, to_date = form.save()
@@ -69,7 +77,9 @@ def reject_user_timesheet(request, user_id):
             messages.info(request, msg)
         else:
             return render(request, 'timepiece/user/timesheet/reject.html', {
-                'date': from_date,
+                'from_date': from_date,
+                'to_date': to_date,
+                'to_date_label': to_date + datetime.timedelta(days=-1),
                 'timesheet_user': user
             })
     else:
@@ -99,6 +109,7 @@ def view_user_timesheet(request, user_id, active_tab):
                 # loop caused by yearmonth parameter.
                 url = reverse('view_user_timesheet', args=(form_user.pk,))
                 request_data = {
+                    'half': 1 if from_date.day <= 15 else 2,
                     'month': from_date.month,
                     'year': from_date.year,
                     'user': form_user.pk,  # Keep so that user appears in form.
@@ -215,6 +226,7 @@ def change_user_timesheet(request, user_id, action):
     return_url += '?%s' % urllib.urlencode({
         'year': from_date.year,
         'month': from_date.month,
+        'half': 1 if from_date.day <= 15 else 2,
     })
     if active_entries:
         msg = 'You cannot verify/approve this timesheet while the user {0} ' \
@@ -276,10 +288,16 @@ class ProjectTimesheet(DetailView):
             date = utils.add_timezone(datetime.datetime.today())
             from_date = utils.get_month_start(date).date()
             to_date = from_date + relativedelta(months=1)
-        entries_qs = Entry.objects
-        entries_qs = entries_qs.timespan(from_date, span='month').filter(
-            project=project
-        )
+        from_datetime = datetime.datetime.combine(from_date, 
+            datetime.datetime.min.time())
+        to_datetime = datetime.datetime.combine(to_date,
+            datetime.datetime.max.time())
+        entries_qs = Entry.objects.filter(start_time__gte=from_datetime,
+                                          end_time__lt=to_datetime,
+                                          project=project)
+        # entries_qs = entries_qs.timespan(from_date, span='month').filter(
+        #     project=project
+        # )
         extra_values = ('start_time', 'end_time', 'comments', 'seconds_paused',
                 'id', 'location__name', 'project__name', 'activity__name',
                 'status')
@@ -598,11 +616,12 @@ def get_project_activities(request, project_id):
 def pto_home(request, active_tab='summary'):
     data = {}
     data['user_profile'] = UserProfile.objects.get(user=request.user)
-    data['pto_requests'] = PaidTimeOffRequest.objects.filter(user_profile=data['user_profile'], approver=None)
+    data['pto_requests'] = PaidTimeOffRequest.objects.filter(user_profile=data['user_profile']).order_by('-pto_start_date')
     data['pto_log'] = PaidTimeOffLog.objects.filter(user_profile=data['user_profile'])
     if request.user.has_perm('crm.can_approve_pto_requests'):
         data['pto_approvals'] = PaidTimeOffRequest.objects.filter(approver=None)
         data['pto_all_history'] = PaidTimeOffLog.objects.filter().order_by('user_profile', '-date')
+        data['all_pto_requests'] = PaidTimeOffRequest.objects.all().order_by('-request_date')
     if active_tab:
         data['active_tab'] = active_tab
     else:
@@ -628,10 +647,12 @@ class CreatePTORequest(CreateView):
     def form_valid(self, form):
         user_profile = UserProfile.objects.get(user=self.request.user)
         form.instance.user_profile = user_profile
+        instance = form.save()
+        emails.new_pto(instance, reverse('pto_request_details', args=(instance.id,)))
         return super(CreatePTORequest, self).form_valid(form)
 
 
-@cbv_decorator(permission_required('crm.edit_paidtimeoffrequest'))
+@cbv_decorator(permission_required('crm.change_paidtimeoffrequest'))
 class EditPTORequest(UpdateView):
     model = PaidTimeOffRequest
     form_class = CreateEditPTORequestForm
@@ -741,7 +762,7 @@ class CreateMilestone(CreateView):
         return '/timepiece/project/%d' % int(self.kwargs['project_id'])
 
 
-@cbv_decorator(permission_required('crm.edit_milestone'))
+@cbv_decorator(permission_required('crm.change_milestone'))
 class EditMilestone(UpdateView):
     model = Milestone
     form_class = CreateEditMilestoneForm
@@ -763,7 +784,7 @@ class DeleteMilestone(DeleteView):
 
 
 ## ACTIVITY GOALS
-@cbv_decorator(permission_required('crm.add_paidtimeoffrequest'))
+@cbv_decorator(permission_required('crm.add_activitygoal'))
 class CreateActivityGoal(CreateView):
     model = ActivityGoal
     form_class = CreateEditActivityGoalForm
@@ -777,7 +798,7 @@ class CreateActivityGoal(CreateView):
         return '/timepiece/project/%d/milestone/%d' % (int(self.kwargs['project_id']), int(self.kwargs['milestone_id']))
 
 
-@cbv_decorator(permission_required('crm.edit_paidtimeoffrequest'))
+@cbv_decorator(permission_required('crm.change_activitygoal'))
 class EditActivityGoal(UpdateView):
     model = ActivityGoal
     form_class = CreateEditActivityGoalForm
@@ -788,7 +809,7 @@ class EditActivityGoal(UpdateView):
         return '/timepiece/project/%d/milestone/%d' % (int(self.kwargs['project_id']), int(self.kwargs['milestone_id']))
 
 
-@cbv_decorator(permission_required('crm.delete_paidtimeoffrequest'))
+@cbv_decorator(permission_required('crm.delete_activitygoal'))
 class DeleteActivityGoal(DeleteView):
     model = ActivityGoal
     pk_url_kwarg = 'activity_goal_id'

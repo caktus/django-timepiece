@@ -50,13 +50,14 @@ def week(date):
     instead of Monday.
     """
     week_start = utils.get_setting('TIMEPIECE_WEEK_START')
-    if week_start == 7:
+    if week_start == 6:
         (year, week, dow) = date.isocalendar()
-        if dow == 7:
+        if dow == 6:
             return week + 1
         else:
             return week
-    else: return week
+    else:
+        return week
 
 
 @register.assignment_tag

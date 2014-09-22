@@ -273,7 +273,7 @@ class Project(models.Model):
                 wiki_path = URLPath.create_article(project_parent,
                                 self.code,
                                 site=Site.objects.get(id=settings.SITE_ID),
-                                title=self.name,
+                                title='%s: %s' % (self.code, self.name),
                                 article_kwargs={'owner': self.point_person},
                                 content='This is base article for the project %s: %s.' % (self.code, self.name),
                             )

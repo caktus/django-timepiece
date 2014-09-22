@@ -38,9 +38,12 @@ class Dashboard(TemplateView):
 
     @method_decorator(login_required)
     def dispatch(self, request, active_tab, *args, **kwargs):
-        self.active_tab = active_tab or 'progress'
-        self.user = request.user
-        return super(Dashboard, self).dispatch(request, *args, **kwargs)
+        if request.user.profile.business.id == 6:
+            self.active_tab = active_tab or 'progress'
+            self.user = request.user
+            return super(Dashboard, self).dispatch(request, *args, **kwargs)
+        else:
+            return HttpResponseRedirect('/')
 
     def get_dates(self):
         today = datetime.date.today()
@@ -917,3 +920,8 @@ class BulkEntryAjaxView(ScheduleMixin, View):
             return self.duplicate_entries(duplicate, period_update)
 
         return self.update_charges(period_start)
+
+def activity_cheat_sheet(request):
+    return render(request, 'timepiece/entry/activity_cheat_sheet.html', {
+        'activities': Activity.objects.all().order_by('name'),
+    })

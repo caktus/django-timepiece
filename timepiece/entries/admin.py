@@ -6,7 +6,7 @@ from timepiece.entries.models import Activity, ActivityGroup, Entry, Location,\
 
 class ActivityAdmin(admin.ModelAdmin):
     model = Activity
-    list_display = ('code', 'name', 'billable')
+    list_display = ('code', 'name', 'billable', 'examples')
     list_filter = ('billable',)
 
 

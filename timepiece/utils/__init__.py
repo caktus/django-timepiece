@@ -81,12 +81,13 @@ def get_setting(name, **kwargs):
 
 
 def get_week_start(day=None):
-    """Returns the Monday of the given week."""
+    """Returns the start of week, based on setting of the given week."""
+    dow_start = get_setting('TIMEPIECE_WEEK_START', default=0)
     day = add_timezone(day or datetime.date.today())
-    days_since_sunday = day.weekday()
-    if days_since_sunday != 6:
-        day = day - relativedelta(days=days_since_sunday+1)
+    while day.weekday() != dow_start:
+        day = day - relativedelta(days=1)
     return day
+
 
 def get_period_start(day=None):
     """Returns the start date of the period (1st or 15th)."""

@@ -7,6 +7,8 @@ from timepiece.crm.forms import QuickSearchForm
 from timepiece.crm.models import Project
 from timepiece.entries.models import Entry
 
+import datetime
+
 
 def quick_search(request):
     return {
@@ -53,4 +55,5 @@ def extra_settings(request):
     return {
         'COMPRESS_ENABLED': settings.COMPRESS_ENABLED,
         'TIMEPIECE_DEFAULT_PROJECT_STATUS': settings.TIMEPIECE_DEFAULT_PROJECT_STATUS,
+        'now': datetime.datetime.now(),
     }
