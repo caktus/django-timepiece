@@ -150,7 +150,7 @@ class Project(models.Model):
         )
 
     def __unicode__(self):
-        return '{0} ({1})'.format(self.name, self.business.get_display_name())
+        return u'{0} ({1})'.format(self.name, self.business.get_display_name())
 
     @property
     def billable(self):
@@ -187,7 +187,7 @@ class ProjectRelationship(models.Model):
         unique_together = ('user', 'project')
 
     def __unicode__(self):
-        return "{project}'s relationship to {user}".format(
+        return u"{project}'s relationship to {user}".format(
             project=self.project.name,
             user=self.user.get_name_or_username(),
         )

@@ -146,7 +146,7 @@ def clock_in(request):
     form = ClockInForm(data, initial=initial, user=user, active=active_entry)
     if form.is_valid():
         entry = form.save()
-        message = 'You have clocked into {0} on {1}.'.format(
+        message = u'You have clocked into {0} on {1}.'.format(
                 entry.activity.name, entry.project)
         messages.info(request, message)
         return HttpResponseRedirect(reverse('dashboard'))
@@ -168,7 +168,7 @@ def clock_out(request):
         form = ClockOutForm(request.POST, instance=entry)
         if form.is_valid():
             entry = form.save()
-            message = 'You have clocked out of {0} on {1}.'.format(
+            message = u'You have clocked out of {0} on {1}.'.format(
                     entry.activity.name, entry.project)
             messages.info(request, message)
             return HttpResponseRedirect(reverse('dashboard'))
@@ -196,7 +196,7 @@ def toggle_pause(request):
 
     # create a message that can be displayed to the user
     action = 'paused' if entry.is_paused else 'resumed'
-    message = 'Your entry, {0} on {1}, has been {2}.'.format(
+    message = u'Your entry, {0} on {1}, has been {2}.'.format(
             entry.activity.name, entry.project, action)
     messages.info(request, message)
 
@@ -295,7 +295,7 @@ def delete_entry(request, entry_id):
         key = request.POST.get('key', None)
         if key and key == entry.delete_key:
             entry.delete()
-            message = 'Deleted {0} for {1}.'.format(entry.activity.name,
+            message = u'Deleted {0} for {1}.'.format(entry.activity.name,
                     entry.project)
             messages.info(request, message)
             url = request.REQUEST.get('next', reverse('dashboard'))

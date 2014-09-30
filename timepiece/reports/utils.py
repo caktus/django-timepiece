@@ -114,7 +114,7 @@ def get_payroll_totals(month_work_entries, month_leave_entries):
         """Helper for getting the associated user's first and last name."""
         fname = entries[0].get('user__first_name', '') if entries else ''
         lname = entries[0].get('user__last_name', '') if entries else ''
-        name = '{0} {1}'.format(fname, lname).strip()
+        name = u'{0} {1}'.format(fname, lname).strip()
         user_id = entries[0].get('user', None) if entries else None
         return {'name': name, 'user_id': user_id}
 

@@ -18,10 +18,10 @@ class User(factory.DjangoModelFactory):
     FACTORY_FOR = auth.User
 
     # FIXME: Some tests depend on first_name/last_name being unique.
-    first_name = factory.Sequence(lambda n: 'Sam{0}'.format(n))
-    last_name = factory.Sequence(lambda n: 'Blue{0}'.format(n))
-    username = factory.Sequence(lambda n: 'user{0}'.format(n))
-    email = factory.Sequence(lambda n: 'user{0}@example.com'.format(n))
+    first_name = factory.Sequence(lambda n: u'Sam{0}'.format(n))
+    last_name = factory.Sequence(lambda n: u'Blue{0}'.format(n))
+    username = factory.Sequence(lambda n: u'user{0}'.format(n))
+    email = factory.Sequence(lambda n: u'user{0}@example.com'.format(n))
     password = factory.LazyAttribute(lambda n: make_password('password'))
 
     @factory.post_generation
@@ -45,13 +45,13 @@ class Superuser(User):
 class Group(factory.DjangoModelFactory):
     FACTORY_FOR = auth.Group
 
-    name = factory.Sequence(lambda n: 'group{0}'.format(n))
+    name = factory.Sequence(lambda n: u'group{0}'.format(n))
 
 
 class ProjectContract(factory.DjangoModelFactory):
     FACTORY_FOR = contracts.ProjectContract
 
-    name = factory.Sequence(lambda n: 'contract{0}'.format(n))
+    name = factory.Sequence(lambda n: u'contract{0}'.format(n))
     start_date = datetime.date.today()
     end_date = datetime.date.today() + relativedelta(weeks=2)
     status = contracts.ProjectContract.STATUS_CURRENT,
@@ -91,7 +91,7 @@ class ContractAssignment(factory.DjangoModelFactory):
 class HourGroup(factory.DjangoModelFactory):
     FACTORY_FOR = contracts.HourGroup
 
-    name = factory.Sequence(lambda n: 'hourgroup{0}'.format(n))
+    name = factory.Sequence(lambda n: u'hourgroup{0}'.format(n))
 
 
 class EntryGroup(factory.DjangoModelFactory):
@@ -104,27 +104,27 @@ class EntryGroup(factory.DjangoModelFactory):
 class TypeAttribute(factory.DjangoModelFactory):
     FACTORY_FOR = crm.Attribute
 
-    label = factory.Sequence(lambda n: 'type{0}'.format(n))
+    label = factory.Sequence(lambda n: u'type{0}'.format(n))
     type = crm.Attribute.PROJECT_TYPE
 
 
 class StatusAttribute(factory.DjangoModelFactory):
     FACTORY_FOR = crm.Attribute
 
-    label = factory.Sequence(lambda n: 'status{0}'.format(n))
+    label = factory.Sequence(lambda n: u'status{0}'.format(n))
     type = crm.Attribute.PROJECT_STATUS
 
 
 class Business(factory.DjangoModelFactory):
     FACTORY_FOR = crm.Business
 
-    name = factory.Sequence(lambda n: 'business{0}'.format(n))
+    name = factory.Sequence(lambda n: u'business{0}'.format(n))
 
 
 class Project(factory.DjangoModelFactory):
     FACTORY_FOR = crm.Project
 
-    name = factory.Sequence(lambda n: 'project{0}'.format(n))
+    name = factory.Sequence(lambda n: u'project{0}'.format(n))
     business = factory.SubFactory('timepiece.tests.factories.Business')
     point_person = factory.SubFactory('timepiece.tests.factories.User')
     type = factory.SubFactory('timepiece.tests.factories.TypeAttribute')
@@ -144,7 +144,7 @@ class NonbillableProject(Project):
 class RelationshipType(factory.DjangoModelFactory):
     FACTORY_FOR = crm.RelationshipType
 
-    name = factory.Sequence(lambda n: 'reltype{0}'.format(n))
+    name = factory.Sequence(lambda n: u'reltype{0}'.format(n))
 
 
 class ProjectRelationship(factory.DjangoModelFactory):
@@ -163,8 +163,8 @@ class UserProfile(factory.DjangoModelFactory):
 class Activity(factory.DjangoModelFactory):
     FACTORY_FOR = entries.Activity
 
-    code = factory.Sequence(lambda n: 'a{0}'.format(n))
-    name = factory.Sequence(lambda n: 'activity{0}'.format(n))
+    code = factory.Sequence(lambda n: u'a{0}'.format(n))
+    name = factory.Sequence(lambda n: u'activity{0}'.format(n))
 
 
 class BillableActivityFactory(Activity):
@@ -178,14 +178,14 @@ class NonbillableActivityFactory(Activity):
 class ActivityGroup(factory.DjangoModelFactory):
     FACTORY_FOR = entries.ActivityGroup
 
-    name = factory.Sequence(lambda n: 'activitygroup{0}'.format(n))
+    name = factory.Sequence(lambda n: u'activitygroup{0}'.format(n))
 
 
 class Location(factory.DjangoModelFactory):
     FACTORY_FOR = entries.Location
 
-    name = factory.Sequence(lambda n: 'location{0}'.format(n))
-    slug = factory.Sequence(lambda n: 'location{0}'.format(n))
+    name = factory.Sequence(lambda n: u'location{0}'.format(n))
+    slug = factory.Sequence(lambda n: u'location{0}'.format(n))
 
 
 class Entry(factory.DjangoModelFactory):

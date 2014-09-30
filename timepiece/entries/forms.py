@@ -144,9 +144,9 @@ class AddUpdateEntryForm(forms.ModelForm):
             end_time = self.cleaned_data.get('end_time', None)
             if (start_time and start_time > active.start_time) or \
                     (end_time and end_time > active.start_time):
-                raise forms.ValidationError('The start time or end time '
-                        'conflict with the active entry: {activity} on '
-                        '{project} starting at {start_time}.'.format(**{
+                raise forms.ValidationError(u'The start time or end time '
+                        u'conflict with the active entry: {activity} on '
+                        u'{project} starting at {start_time}.'.format(**{
                             'project': active.project,
                             'activity': active.activity,
                             'start_time': active.start_time.strftime('%H:%M:%S'),

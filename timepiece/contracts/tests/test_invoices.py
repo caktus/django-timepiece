@@ -137,7 +137,7 @@ class InvoiceViewPreviousTestCase(ViewTestMixin, LogTimeMixin, TestCase):
     def get_create_url(self, **kwargs):
         base_url = reverse('create_invoice')
         params = urllib.urlencode(kwargs)
-        return '{0}?{1}'.format(base_url, params)
+        return u'{0}?{1}'.format(base_url, params)
 
     def log_many(self, projects, num_entries=20, start=None, billable=True):
         start = utils.add_timezone(datetime.datetime(2011, 1, 1, 0, 0, 0))
@@ -375,7 +375,7 @@ class InvoiceCreateTestCase(ViewTestMixin, TestCase):
     def get_create_url(self, **kwargs):
         base_url = reverse('create_invoice')
         params = urllib.urlencode(kwargs)
-        return '{0}?{1}'.format(base_url, params)
+        return u'{0}?{1}'.format(base_url, params)
 
     def make_hourgroups(self):
         """

@@ -437,8 +437,10 @@ class ClockInTest(ViewTestMixin, TestCase):
             'start_time_1': self.now.strftime('%H:%M:%S'),
         })
         response = self.client.post(self.url, data)
-        err_msg = 'Ending time exceeds starting time by 12 hours ' \
-            'or more for {0} on {1} at {2} to {3} at {4}.'.format(
+        delta_limit = utils.get_setting('TIMEPIECE_CLOCK_IN_OUT_DELTA_LIMIT')
+        err_msg = u'Ending time exceeds starting time by {0} hours ' \
+            u'or more for {1} on {2} at {3} to {4} at {5}.'.format(
+                delta_limit,
                 entry1.project,
                 entry1.start_time.strftime('%m/%d/%Y'),
                 entry1.start_time.strftime('%H:%M:%S'),
@@ -793,8 +795,10 @@ class ClockOutTest(ViewTestMixin, TestCase):
             'location': self.location.pk,
         }
         response = self.client.post(self.url, data)
-        err_msg = 'Ending time exceeds starting time by 12 hours ' \
-            'or more for {0} on {1} at {2} to {3} at {4}.'.format(
+        delta_limit = utils.get_setting('TIMEPIECE_CLOCK_IN_OUT_DELTA_LIMIT')
+        err_msg = u'Ending time exceeds starting time by {0} hours ' \
+            u'or more for {1} on {2} at {3} to {4} at {5}.'.format(
+                delta_limit,
                 self.entry.project,
                 self.entry.start_time.strftime('%m/%d/%Y'),
                 self.entry.start_time.strftime('%H:%M:%S'),
@@ -815,8 +819,10 @@ class ClockOutTest(ViewTestMixin, TestCase):
             'location': self.location.pk,
         }
         response = self.client.post(reverse('clock_out'), data)
-        err_msg = 'Ending time exceeds starting time by 12 hours ' \
-            'or more for {0} on {1} at {2} to {3} at {4}.'.format(
+        delta_limit = utils.get_setting('TIMEPIECE_CLOCK_IN_OUT_DELTA_LIMIT')
+        err_msg = u'Ending time exceeds starting time by {0} hours ' \
+            u'or more for {1} on {2} at {3} to {4} at {5}.'.format(
+                delta_limit,
                 self.entry.project,
                 paused_entry.start_time.strftime('%m/%d/%Y'),
                 paused_entry.start_time.strftime('%H:%M:%S'),
@@ -1217,8 +1223,10 @@ class CreateEditEntry(ViewTestMixin, TestCase):
             'end_time_1': end_time.strftime('%H:%M:%S'),
         })
         response = self.client.post(self.create_url, long_entry, follow=True)
-        err_msg = 'Ending time exceeds starting time by 12 hours ' \
-            'or more for {0} on {1} at {2} to {3} at {4}.'.format(
+        delta_limit = utils.get_setting('TIMEPIECE_CLOCK_IN_OUT_DELTA_LIMIT')
+        err_msg = u'Ending time exceeds starting time by {0} hours ' \
+            u'or more for {1} on {2} at {3} to {4} at {5}.'.format(
+                delta_limit,
                 self.project,
                 self.now.strftime('%m/%d/%Y'),
                 self.now.strftime('%H:%M:%S'),
@@ -1428,7 +1436,7 @@ class StatusTest(ViewTestMixin, TestCase):
         base_url = reverse('change_user_timesheet', args=(user.pk, 'verify'))
         params = {'from_date': from_date.strftime('%Y-%m-%d')}
         params = urllib.urlencode(params)
-        return '{0}?{1}'.format(base_url, params)
+        return u'{0}?{1}'.format(base_url, params)
 
     def approve_url(self, user=None, from_date=None):
         user = user or self.user
@@ -1436,7 +1444,7 @@ class StatusTest(ViewTestMixin, TestCase):
         base_url = reverse('change_user_timesheet', args=(user.pk, 'approve'))
         params = {'from_date': from_date.strftime('%Y-%m-%d')}
         params = urllib.urlencode(params)
-        return '{0}?{1}'.format(base_url, params)
+        return u'{0}?{1}'.format(base_url, params)
 
     def get_reject_url(self, entry_id):
         "Helper for the reject entry view"
@@ -1594,9 +1602,9 @@ class StatusTest(ViewTestMixin, TestCase):
         self.assertEquals(response.status_code, 200)
 
         messages = response.context['messages']
-        msg = 'You cannot verify/approve this timesheet while the user {0} ' \
-            'has an active entry. Please have them close any active ' \
-            'entries.'.format(self.user.get_name_or_username())
+        msg = u'You cannot verify/approve this timesheet while the user {0} '\
+            u'has an active entry. Please have them close any active ' \
+            u'entries.'.format(self.user.get_name_or_username())
 
         self.assertEquals(messages._loaded_messages[0].message, msg)
         self.assertEquals(entry1.status, Entry.UNVERIFIED)
@@ -1954,7 +1962,7 @@ class HourlySummaryTest(ViewTestMixin, TestCase):
 
         start_date = utils.get_week_start(self.month)
         # Week of {{ week|date:'M j, Y'}}
-        msg = 'Week of {0}'.format(start_date.strftime('%b %d, %Y')).replace(" 0", " ")
+        msg = u'Week of {0}'.format(start_date.strftime('%b %d, %Y')).replace(" 0", " ")
         self.assertContains(response, msg)
 
     def test_contains_only_current_entries(self):
@@ -2004,7 +2012,7 @@ class HourlySummaryTest(ViewTestMixin, TestCase):
             'end_time': march + relativedelta(hours=1)
         })
 
-        response = self.client.get(self.url + '?{0}'.format(
+        response = self.client.get(self.url + u'?{0}'.format(
             urllib.urlencode({'year': 2012, 'month': 4})
         ))
         self.assertEquals(response.status_code, 200)

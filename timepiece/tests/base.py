@@ -36,7 +36,7 @@ class ViewTestMixin(object):
 
         url = reverse(url_name, args=url_args, kwargs=url_kwargs)
         if get_kwargs:
-            url = '{0}?{1}'.format(url, urlencode(get_kwargs, doseq=True))
+            url = u'{0}?{1}'.format(url, urlencode(get_kwargs, doseq=True))
         return url
 
     def _get(self, url_name=None, url_args=None, url_kwargs=None,
@@ -84,8 +84,8 @@ class ViewTestMixin(object):
         """
         # Assert that the response has the correct redirect code.
         self.assertEqual(response.status_code, status_code,
-                "Response didn't redirect as expected: Response code was {0} "
-                "(expected {1})".format(response.status_code, status_code))
+                u"Response didn't redirect as expected: Response code was {0} "
+                u"(expected {1})".format(response.status_code, status_code))
 
         # Assert that the response redirects to the correct base URL.
         # Use force_unicode to force evaluation of anything created by
@@ -95,17 +95,17 @@ class ViewTestMixin(object):
         parsed1 = urlparse(response_url)
         parsed2 = urlparse(expected_url)
         self.assertEquals(parsed1.path, parsed2.path,
-                "Response did not redirect to the expected URL: Redirect "
-                "location was {0} (expected {1})".format(parsed1.path,
+                u"Response did not redirect to the expected URL: Redirect "
+                u"location was {0} (expected {1})".format(parsed1.path,
                 parsed2.path))
 
         # Optionally assert that the response redirect URL has the correct
         # GET parameters.
         if use_params:
             self.assertDictEqual(parse_qs(parsed1.query),
-                    parse_qs(parsed2.query), "Response did not have the GET "
-                    "parameters expected: GET parameters were {0} (expected "
-                    "{1})".format(parsed1.query or {}, parsed2.query or {}))
+                    parse_qs(parsed2.query), u"Response did not have the GET "
+                    u"parameters expected: GET parameters were {0} (expected "
+                    u"{1})".format(parsed1.query or {}, parsed2.query or {}))
 
     def assertRedirectsToLogin(self, response, login_url=None,
             use_params=False, status_code=302):
