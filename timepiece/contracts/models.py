@@ -35,7 +35,7 @@ class ProjectContract(models.Model):
         PROJECT_POST_PAID_HOURLY: 'Post-paid Hourly',
     }
 
-    name = models.CharField(max_length=255)
+    name = models.CharField(max_length=255, unique=True)
     projects = models.ManyToManyField('crm.Project', related_name='contracts')
     start_date = models.DateField()
     end_date = models.DateField()
