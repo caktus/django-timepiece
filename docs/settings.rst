@@ -53,3 +53,11 @@ TIMEPIECE_EMAILS_USE_HTTPS
 
 Whether links in emails that timepiece sends should use https://.  The
 default is True, but if set to False, links will use http://.
+
+TIMEPIECE_CLOCK_IN_OUT_DELTA_LIMIT
+----------------------------------
+
+:Default: ``12``
+
+The maximum time difference between clocking in and out on a given entry, in
+hours.

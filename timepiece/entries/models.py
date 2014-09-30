@@ -311,7 +311,8 @@ class Entry(models.Model):
             raise ValidationError('Ending time must exceed the starting time')
         delta = (end - start)
         delta_secs = (delta.seconds + delta.days * 24 * 60 * 60)
-        limit_secs = 60 * 60 * 12
+        limit_secs = 60 * 60 * utils.get_setting(
+            'TIMEPIECE_CLOCK_IN_OUT_DELTA_LIMIT')
         if delta_secs > limit_secs or self.seconds_paused > limit_secs:
             err_msg = 'Ending time exceeds starting time by 12 hours or more '\
                 'for {0} on {1} at {2} to {3} at {4}.'.format(
