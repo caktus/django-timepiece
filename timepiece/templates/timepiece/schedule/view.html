@@ -22,7 +22,7 @@
                 $("#modal h3").html(schedule.user);
                 for (var i=0; i < schedule.projects.length; i++) {
                     var obj = schedule.projects[i];
-                    var row = '<tr><th>' + obj.pname + '</th><td>' + obj.hours + '</td></tr>'
+                    var row = '<tr><th>' + obj.pname + '</th><td style="text-align: center">' + obj.hours + '</td></tr>';
                     $("#modal #user-schedule tbody").append(row);
                 }
                 $("#modal").modal('show');
