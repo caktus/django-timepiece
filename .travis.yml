@@ -6,8 +6,12 @@ env:
   - TOXENV=py27-1.4
   - TOXENV=py26-1.5
   - TOXENV=py27-1.5
+  - TOXENV=py26-1.6
+  - TOXENV=py27-1.6
+  - TOXENV=py26-1.7
+  - TOXENV=py27-1.7
 install:
-  - pip install -q --use-mirrors tox==1.4.2
+  - pip install -q --use-mirrors tox
 before_script:
   - psql -c 'create database django_timepiece;' -U postgres
 script:

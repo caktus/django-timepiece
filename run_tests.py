@@ -2,8 +2,10 @@
 import os
 import sys
 import optparse
+import django
 
 from django.conf import settings
+from django import VERSION as DJANGO_VERSION
 
 
 parser = optparse.OptionParser()
@@ -30,7 +32,6 @@ if not settings.configured:
             'django.contrib.contenttypes',
             'django.contrib.sessions',
             'django.contrib.messages',
-            'django.contrib.markup',
             'django.contrib.sites',
             'bootstrap_toolkit',
             'compressor',
@@ -71,6 +72,7 @@ if not settings.configured:
 
         # In tests, compressor has a habit of choking on failing tests & masking the real error.
         COMPRESS_ENABLED=False,
+        STATIC_ROOT='static/',
 
         # jenkins settings.
         PROJECT_APPS=('timepiece',),
@@ -90,6 +92,11 @@ def run_django_tests():
     TestRunner = get_runner(settings)
     test_runner = TestRunner(verbosity=1, interactive=True, failfast=False)
     apps = ['timepiece', 'contracts', 'crm', 'entries', 'reports']
+    if DJANGO_VERSION[0] == 1 and DJANGO_VERSION[1] >= 6:
+        apps = ['timepiece', 'timepiece.contracts', 'timepiece.crm',
+                'timepiece.entries', 'timepiece.reports']
+    if DJANGO_VERSION[0] == 1 and DJANGO_VERSION[1] >= 7:
+        django.setup()
     failures = test_runner.run_tests(args or apps)
     sys.exit(failures)
 
