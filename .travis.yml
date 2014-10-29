@@ -10,9 +10,7 @@ matrix:
     - python: "2.6"
       env:
         - TOXENV=py26-1.6
-    - python: "2.6"
-      env:
-        - TOXENV=py26-1.7
+    # django-1.7 drops python2.6 support
     - python: "2.7"
       env:
         - TOXENV=py27-1.4
