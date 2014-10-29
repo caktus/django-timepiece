@@ -34,7 +34,7 @@ def add_parameters(url, parameters):
     """
     if parameters:
         sep = '&' if '?' in url else '?'
-        return '{0}{1}{2}'.format(url, sep, urllib.urlencode(parameters))
+        return u'{0}{1}{2}'.format(url, sep, urllib.urlencode(parameters))
     return url
 
 
@@ -140,7 +140,7 @@ def humanize_seconds(total_seconds,
     and the result is wrapped in a <span> with the "negative-time" class.
     """
     if negative_frmt is None:
-        negative_frmt = '<span class="negative-time">-{0}</span>'.format(frmt)
+        negative_frmt = u'<span class="negative-time">-{0}</span>'.format(frmt)
     seconds = abs(int(total_seconds))
     mapping = {
         'hours': seconds // 3600,
@@ -194,7 +194,7 @@ def _project_report_url_params(contract, project):
 @register.simple_tag
 def project_report_url_for_contract(contract, project):
     data = _project_report_url_params(contract, project)
-    return '{0}?{1}'.format(reverse('report_hourly'), urllib.urlencode(data))
+    return u'{0}?{1}'.format(reverse('report_hourly'), urllib.urlencode(data))
 
 
 @register.simple_tag

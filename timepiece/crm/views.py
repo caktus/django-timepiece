@@ -98,7 +98,7 @@ def view_user_timesheet(request, user_id, active_tab):
                     'year': from_date.year,
                     'user': form_user.pk,  # Keep so that user appears in form.
                 }
-                url += '?{0}'.format(urllib.urlencode(request_data))
+                url += u'?{0}'.format(urllib.urlencode(request_data))
                 return HttpResponseRedirect(url)
         else:  # User must be viewing their own time sheet; no redirect needed.
             from_date, to_date = form.save()
@@ -174,7 +174,7 @@ def change_user_timesheet(request, user_id, action):
         perm = False
 
     if not perm:
-        return HttpResponseForbidden('Forbidden: You cannot {0} this '
+        return HttpResponseForbidden(u'Forbidden: You cannot {0} this '
                 'timesheet.'.format(action))
 
     try:
@@ -205,7 +205,7 @@ def change_user_timesheet(request, user_id, action):
         'month': from_date.month,
     })
     if active_entries:
-        msg = 'You cannot verify/approve this timesheet while the user {0} ' \
+        msg = u'You cannot verify/approve this timesheet while the user {0} ' \
             'has an active entry. Please have them close any active ' \
             'entries.'.format(user.get_name_or_username())
         messages.error(request, msg)
@@ -299,7 +299,7 @@ class ProjectTimesheetCSV(CSVViewMixin, ProjectTimesheet):
     def get_filename(self, context):
         project = self.object.name
         to_date_str = context['to_date'].strftime('%m-%d-%Y')
-        return 'Project_timesheet {0} {1}'.format(project, to_date_str)
+        return u'Project_timesheet {0} {1}'.format(project, to_date_str)
 
     def convert_context_to_csv(self, context):
         rows = []

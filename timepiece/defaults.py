@@ -8,3 +8,5 @@ class TimepieceDefaults(object):
     TIMEPIECE_ACCOUNTING_EMAILS = []
 
     TIMEPIECE_EMAILS_USE_HTTPS = True
+
+    TIMEPIECE_CLOCK_IN_OUT_DELTA_LIMIT = 12

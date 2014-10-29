@@ -76,7 +76,7 @@ def get_setting(name, **kwargs):
         return kwargs['default']
     if hasattr(defaults, name):  # If that's not given, look in defaults file.
         return getattr(defaults, name)
-    msg = '{0} must be specified in your project settings.'.format(name)
+    msg = u'{0} must be specified in your project settings.'.format(name)
     raise AttributeError(msg)
 
 

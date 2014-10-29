@@ -244,7 +244,7 @@ class HourlyReport(ReportMixin, CSVViewMixin, TemplateView):
         request = self.request.GET.copy()
         from_date = request.get('from_date')
         to_date = request.get('to_date')
-        return 'hours_{0}_to_{1}_by_{2}.csv'.format(from_date, to_date,
+        return u'hours_{0}_to_{1}_by_{2}.csv'.format(from_date, to_date,
             context.get('trunc', ''))
 
     def get_form(self):
@@ -435,7 +435,7 @@ def report_productivity(request):
 
             # Report for each user.
             for user in users:
-                name = '{0} {1}'.format(user[1], user[2])
+                name = u'{0} {1}'.format(user[1], user[2])
                 actual_hours = actuals.filter(user=user[0]) \
                         .aggregate(Sum('hours')).values()[0]
                 projected_hours = projections.filter(user=user[0]) \
@@ -447,8 +447,8 @@ def report_productivity(request):
 
         if export:
             response = HttpResponse(content_type='text/csv')
-            filename = '{0}_productivity'.format(project.name)
-            content_disp = 'attachment; filename={0}.csv'.format(filename)
+            filename = u'{0}_productivity'.format(project.name)
+            content_disp = u'attachment; filename={0}.csv'.format(filename)
             response['Content-Disposition'] = content_disp
             writer = csv.writer(response)
             for row in report:
@@ -476,7 +476,7 @@ def report_estimation_accuracy(request):
     for c in contracts:
         if c.contracted_hours() == 0:
             continue
-        pt_label = "%s (%.2f%%)" % (c.name, 
+        pt_label = "%s (%.2f%%)" % (c.name,
                                     c.hours_worked / c.contracted_hours() * 100)
         data.append((c.contracted_hours(), c.hours_worked, pt_label))
         chart_max = max([max(x[0], x[1]) for x in data[1:]]) #max of all targets & actuals

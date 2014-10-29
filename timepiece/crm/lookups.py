@@ -78,7 +78,7 @@ class QuickLookup(LookupBase):
         return item.label
 
     def get_item_id(self, item):
-        return '{0}-{1}'.format(item.result_type, item.item.pk)
+        return u'{0}-{1}'.format(item.result_type, item.item.pk)
 
     def get_item(self, value):
         try:

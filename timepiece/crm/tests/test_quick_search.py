@@ -16,7 +16,7 @@ class TestQuickSearchView(ViewTestMixin, TestCase):
     def test_search_user(self):
         user = factories.User()
         response = self._post(data={
-            'quick_search_1': 'user-{0}'.format(user.pk),
+            'quick_search_1': u'user-{0}'.format(user.pk),
         })
         self.assertRedirectsNoFollow(response, user.get_absolute_url())
 
@@ -31,7 +31,7 @@ class TestQuickSearchView(ViewTestMixin, TestCase):
     def test_search_business(self):
         business = factories.Business()
         response = self._post(data={
-            'quick_search_1': 'business-{0}'.format(business.pk),
+            'quick_search_1': u'business-{0}'.format(business.pk),
         })
         self.assertRedirectsNoFollow(response, business.get_absolute_url())
 
@@ -46,7 +46,7 @@ class TestQuickSearchView(ViewTestMixin, TestCase):
     def test_search_project(self):
         project = factories.Project()
         response = self._post(data={
-            'quick_search_1': 'project-{0}'.format(project.pk),
+            'quick_search_1': u'project-{0}'.format(project.pk),
         })
         self.assertRedirectsNoFollow(response, project.get_absolute_url())
 

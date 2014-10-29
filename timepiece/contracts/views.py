@@ -247,7 +247,7 @@ class InvoiceDetailCSV(CSVViewMixin, InvoiceDetail):
         invoice = context['invoice']
         project = str(invoice.project).replace(' ', '_')
         end_day = invoice.end.strftime('%m-%d-%Y')
-        return 'Invoice-{0}-{1}'.format(project, end_day)
+        return u'Invoice-{0}-{1}'.format(project, end_day)
 
     def convert_context_to_csv(self, context):
         rows = []

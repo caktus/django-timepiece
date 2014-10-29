@@ -3,9 +3,9 @@ import datetime
 from dateutil.relativedelta import relativedelta
 from decimal import Decimal
 from itertools import groupby
-import json
 import urllib
 
+from django import VERSION as DJANGO_VERSION
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required, permission_required
 from django.contrib.auth.models import User, Permission
@@ -28,7 +28,7 @@ from timepiece.crm.models import Project, UserProfile
 from timepiece.entries.forms import ClockInForm, ClockOutForm, \
         AddUpdateEntryForm, ProjectHoursForm, ProjectHoursSearchForm
 from timepiece.entries.models import Entry, ProjectHours
-
+from timepiece.utils.http import JsonResponse
 
 class Dashboard(TemplateView):
     template_name = 'timepiece/dashboard.html'
@@ -146,7 +146,7 @@ def clock_in(request):
     form = ClockInForm(data, initial=initial, user=user, active=active_entry)
     if form.is_valid():
         entry = form.save()
-        message = 'You have clocked into {0} on {1}.'.format(
+        message = u'You have clocked into {0} on {1}.'.format(
                 entry.activity.name, entry.project)
         messages.info(request, message)
         return HttpResponseRedirect(reverse('dashboard'))
@@ -168,7 +168,7 @@ def clock_out(request):
         form = ClockOutForm(request.POST, instance=entry)
         if form.is_valid():
             entry = form.save()
-            message = 'You have clocked out of {0} on {1}.'.format(
+            message = u'You have clocked out of {0} on {1}.'.format(
                     entry.activity.name, entry.project)
             messages.info(request, message)
             return HttpResponseRedirect(reverse('dashboard'))
@@ -196,7 +196,7 @@ def toggle_pause(request):
 
     # create a message that can be displayed to the user
     action = 'paused' if entry.is_paused else 'resumed'
-    message = 'Your entry, {0} on {1}, has been {2}.'.format(
+    message = u'Your entry, {0} on {1}, has been {2}.'.format(
             entry.activity.name, entry.project, action)
     messages.info(request, message)
 
@@ -295,7 +295,7 @@ def delete_entry(request, entry_id):
         key = request.POST.get('key', None)
         if key and key == entry.delete_key:
             entry.delete()
-            message = 'Deleted {0} for {1}.'.format(entry.activity.name,
+            message = u'Deleted {0} for {1}.'.format(entry.activity.name,
                     entry.project)
             messages.info(request, message)
             url = request.REQUEST.get('next', reverse('dashboard'))
@@ -505,8 +505,7 @@ class ScheduleAjaxView(ScheduleMixin, View):
             'all_users': list(all_users),
             'ajax_url': reverse('ajax_schedule'),
         }
-        return HttpResponse(json.dumps(data, cls=DecimalEncoder),
-            mimetype='application/json')
+        return JsonResponse(data, encoder=DecimalEncoder)
 
     def duplicate_entries(self, duplicate, week_update):
         def duplicate_builder(queryset, new_date):
@@ -560,7 +559,7 @@ class ScheduleAjaxView(ScheduleMixin, View):
 
         if form.is_valid():
             ph = form.save()
-            return HttpResponse(str(ph.pk), mimetype='text/plain')
+            return HttpResponse(str(ph.pk), content_type='text/plain')
 
         msg = 'The request must contain values for user, project, and hours'
         return HttpResponse(msg, status=500)
@@ -596,6 +595,6 @@ class ScheduleDetailView(ScheduleMixin, View):
 
         if assignment_id:
             ProjectHours.objects.filter(pk=assignment_id).delete()
-            return HttpResponse('ok', mimetype='text/plain')
+            return HttpResponse('ok', content_type='text/plain')
 
         return HttpResponse('', status=500)
