@@ -226,7 +226,10 @@
                             <tr>
                                 <th>Name</th>
                                 <th>Project</th>
-                                <th class="hidden-phone">Since</th>
+                                <th class="hidden-phone">
+                                    Since&nbsp;&nbsp;&nbsp;
+                                    <div class="label label-info"><a href="{{ request.full_path }}"><i class="icon-refresh icon-white"> </i></a> As of {% now "D, M j, h:i:s A" %}</div>
+                                </th>
                             </tr>
                         </thead>
                         <tbody>

@@ -1,0 +1,80 @@
+/* Project Management */
+.c3-line-proj_mgmt_target {
+	stroke: blue;
+	stroke-width: 4px;
+}
+.c3-line-proj_mgmt_actual {
+	stroke: blue;
+  	stroke-dasharray: '2, 5';
+  	stroke-width: 3px;
+}
+.c3-xgrid-line.proj_mgmt_due line {
+    stroke: blue;
+    stroke-width: 2px;
+}
+.c3-xgrid-line.proj_mgmt_due text {
+    fill: blue;
+}
+
+/* Project Development */
+.c3-line-proj_dev_target {
+	stroke: red;
+	stroke-width: 4px;
+}
+.c3-line-proj_dev_actual {
+	stroke: red;
+  	stroke-dasharray: '2, 5';
+  	stroke-width: 3px;
+}
+.c3-xgrid-line.proj_dev_due line {
+    stroke: red;
+    stroke-width: 2px;
+}
+.c3-xgrid-line.proj_dev_due text {
+    fill: red;
+}
+
+/* Tech Writing */
+.c3-line-tech_writing_target {
+	stroke: gray;
+	stroke-width: 4px;
+}
+.c3-line-tech_writing_actual {
+	stroke: gray;
+  	stroke-dasharray: '2, 5';
+  	stroke-width: 3px;
+}
+.c3-xgrid-line.tech_writing_due line {
+    stroke: gray;
+    stroke-width: 2px;
+}
+.c3-xgrid-line.tech_writing_due text {
+    fill: gray;
+}
+
+/* Other */
+.c3-line-other_target {
+  	stroke: black;
+  	stroke-width: 4px;
+}
+.c3-line-other_actual {
+  	stroke: black;
+  	stroke-dasharray: '2, 5';
+  	stroke-width: 3px;
+}
+.c3-xgrid-line.other_due line {
+    stroke: black;
+    stroke-width: 2px;
+}
+.c3-xgrid-line.other_due text {
+    fill: black;
+}
+
+/* Today */
+.c3-xgrid-line.today line {
+    stroke: orange;
+    stroke-width: 3px;
+}
+.c3-xgrid-line.today text {
+    fill: orange;
+}

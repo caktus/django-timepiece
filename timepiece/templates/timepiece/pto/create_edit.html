@@ -7,19 +7,19 @@
     <li>
         <span class="divider">/</span>
         {% if not object %}
-            <a href="{% url 'create_pto_request' %}">Create PTO Request</a>
+            <a href="{% url 'create_pto_request' %}">Create Time Off Request</a>
         {% else %}
-            <a href="{% url 'edit_pto_request' object.pk %}">Edit PTO Request</a>
+            <a href="{% url 'edit_pto_request' object.pk %}">Edit Time Off Request</a>
         {% endif %}
     </li>
 {% endblock crumbs %}
 
-{% block title %}{% if not object %}Create {% else %}Edit {% endif %}PTO Request{% endblock title %}
+{% block title %}{% if not object %}Create {% else %}Edit {% endif %}Time Request{% endblock title %}
 
 {% block content %}
     <div class="row-fluid">
         <div class="span12">
-            <h2>{% if not object %}Create {% else %}Edit {% endif %}PTO Request</h2>
+            <h2>{% if not object %}Create {% else %}Edit {% endif %}Time Off Request</h2>
 
             <br style="clear: both;" />
 
@@ -27,6 +27,12 @@
             <div class="alert">
               <button type="button" class="close" data-dismiss="alert">&times;</button>
               <strong>NOTE:</strong> Clicking <strong>Save</strong> to change this request will remove the existing approval.
+            </div>
+            {% endif %}
+            {% if user.profile.earns_pto %}
+            <div class="alert {% if user.profile.get_pto <= 0 %}alert-danger{% else %}alert-info{% endif %}">
+              <button type="button" class="close" data-dismiss="alert">&times;</button>
+              You currently have {{ user.profile.get_pto }} hours of PTO available.
             </div>
             {% endif %}
             <form id="create-edit-pto-request" class="form-horizontal" action="" method="post" accept-charset="utf-8">

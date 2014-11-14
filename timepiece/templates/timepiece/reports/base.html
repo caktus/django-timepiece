@@ -28,6 +28,16 @@
                             <a href="{% ifequal active 'estimation_accuracy' %}#{% else %}{% url 'report_estimation_accuracy' %}{% endifequal %}">Estimation Accuracy</a>
                         </li-->
                     {% endif %}
+                    {% if perms.crm.view_employee_backlog %}
+                        <li{% ifequal active 'backlog' %} class="active"{% endifequal %}>
+                            <a href="{% ifequal active 'backlog' %}#{% else %}{% url 'report_backlog' %}{% endifequal %}">Backlog</a>
+                        </li>
+                    {% endif %}
+                    {% if perms.crm.view_backlog %}
+                        <li{% ifequal active 'active_projects_burnup_charts' %} class="active"{% endifequal %}>
+                            <a href="{% ifequal active 'active_projects_burnup_charts' %}#{% else %}{% url 'report_active_projects_burnup_charts' %}{% endifequal %}">Active Project Burnup Charts</a>
+                        </li>
+                    {% endif %}
                 </ul>
             </div>
         </div>

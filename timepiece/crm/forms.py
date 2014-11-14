@@ -1,6 +1,6 @@
 from django import forms
 from django.contrib.auth.forms import UserCreationForm, UserChangeForm
-from django.contrib.auth.models import User
+from django.contrib.auth.models import User, Group
 
 from selectable import forms as selectable
 
@@ -24,12 +24,22 @@ class CreateEditBusinessForm(forms.ModelForm):
 class CreateEditProjectForm(forms.ModelForm):
     # business = selectable.AutoCompleteSelectField(BusinessLookup)
     # business.widget.attrs['placeholder'] = 'Search'
+    EMPLOYEE_CHOICES = [(u.pk, '%s, %s'%(u.last_name, u.first_name)) \
+        for u in Group.objects.get(id=1).user_set.filter(
+            is_active=True).order_by('last_name')]
 
     class Meta:
         model = Project
-        fields = ('name', 'business', 'tracker_url', 'finder', 
+        fields = ('name', 'business', 'finder', 
                 'point_person', 'binder', 'type', 
                 'status', 'activity_group', 'description')
+
+    def __init__(self, *args, **kwargs):
+        super(CreateEditProjectForm, self).__init__(*args, **kwargs)
+        self.fields['point_person'].label = 'Minder'
+        self.EMPLOYEE_CHOICES.insert(0, ('', '-'))
+        for f in ['point_person', 'finder', 'binder']:
+            self.fields[f].choices = self.EMPLOYEE_CHOICES
 
 
 class CreateUserForm(UserCreationForm):
@@ -170,33 +180,29 @@ class SelectUserForm(forms.Form):
 
 class ApproveDenyPTORequestForm(forms.ModelForm):
 
-    def __init__(self, *args, **kwargs):
-        super(ApproveDenyPTORequestForm, self).__init__(*args, **kwargs)
-        self.fields['user_profile'].widget.attrs['readonly'] = True
-        self.fields['user_profile'].label = 'Employee'
-        self.fields['pto_start_date'].widget.attrs['readonly'] = True
-        self.fields['pto_end_date'].widget.attrs['readonly'] = True
-        self.fields['amount'].widget.attrs['readonly'] = True
-        self.fields['amount'].label = "Number of Hours"
-        self.fields['comment'].widget.attrs['readonly'] = True
-        self.fields['comment'].label = 'Reason / Description'
-        self.fields['approver_comment'].label = 'Reason / Comment'
-    
     class Meta:
         model = PaidTimeOffRequest
-        fields = ('user_profile', 'pto_start_date', 'pto_end_date', 'amount',
-            'comment', 'approver_comment', )
+        fields = ('approver_comment', )
 
 class CreateEditPTORequestForm(forms.ModelForm):
-
-    def __init__(self, *args, **kwargs):
-        super(CreateEditPTORequestForm, self).__init__(*args, **kwargs)
-        self.fields['amount'].label = "Number of Hours"
-        self.fields['comment'].label = 'Reason/Description'
     
     class Meta:
         model = PaidTimeOffRequest
-        fields = ('pto_start_date', 'pto_end_date', 'amount', 'comment')
+        fields = ('pto', 'pto_start_date', 'pto_end_date', 'amount', 'comment')
+
+class CreateEditPaidTimeOffLog(forms.ModelForm):
+
+    class Meta:
+        model = PaidTimeOffLog
+        fields = ('user_profile', 'date', 'amount', 'comment', )
+
+    def __init__(self, *args, **kwargs):
+        super(CreateEditPaidTimeOffLog, self).__init__(*args, **kwargs)
+        self.fields['user_profile'].label = 'Employee'
+        up_choices = [(u.id, '%s, %s'%(u.last_name, u.first_name)) for u in Group.objects.get(id=1
+            ).user_set.filter(is_active=True).order_by('last_name', 'first_name')]
+        # up_choices.insert(0, ('', '-'))
+        self.fields['user_profile'].choices = up_choices
 
 class CreateEditMilestoneForm(forms.ModelForm):
     
@@ -205,7 +211,15 @@ class CreateEditMilestoneForm(forms.ModelForm):
         fields = ('name', 'due_date', 'description')
 
 class CreateEditActivityGoalForm(forms.ModelForm):
-    
+    EMPLOYEE_CHOICES = [(u.pk, '%s, %s'%(u.last_name, u.first_name)) \
+        for u in Group.objects.get(id=1).user_set.filter(
+            is_active=True).order_by('last_name')]
+
     class Meta:
         model = ActivityGoal
-        fields = ('goal_hours', 'activity')
+        fields = ('goal_hours', 'employee', 'activity', 'date')
+
+    def __init__(self, *args, **kwargs):
+        super(CreateEditActivityGoalForm, self).__init__(*args, **kwargs)
+        self.EMPLOYEE_CHOICES.insert(0, ('', '-'))
+        self.fields['employee'].choices = self.EMPLOYEE_CHOICES

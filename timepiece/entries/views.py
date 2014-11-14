@@ -11,6 +11,7 @@ from django.contrib.auth.decorators import login_required, permission_required
 from django.contrib.auth.models import User, Permission
 from django.contrib.contenttypes.models import ContentType
 from django.core import exceptions
+from django.core.exceptions import ValidationError
 from django.core.urlresolvers import reverse
 from django.db import transaction
 from django.db.models import Q
@@ -157,6 +158,7 @@ def clock_in(request):
 
     initial = dict([(k, v) for k, v in request.GET.items()])
     data = request.POST or None
+    print 'clock_in POST', data
     form = ClockInForm(data, initial=initial, user=user, active=active_entry)
     if form.is_valid():
         entry = form.save()
@@ -250,6 +252,12 @@ def create_edit_entry(request, entry_id=None):
     if request.method == 'POST':
         form = AddUpdateEntryForm(data=request.POST, instance=entry,
                 user=entry_user)
+        proj_id = request.POST.get('project', None)
+        if proj_id:
+            proj = Project.objects.get(id=int(proj_id))
+            if proj.activity_group:
+                form.fields['activity'].queryset = Activity.objects.filter(
+                    id__in=[v['id'] for v in proj.activity_group.activities.values()])
         if form.is_valid():
             entry = form.save()
             # make sure that the mechanism is MANUAL rather than TIMECLOCK
@@ -863,6 +871,7 @@ class BulkEntryAjaxView(ScheduleMixin, View):
                               location=l, # change to settings
                               start_time=start,
                               mechanism=Entry.BULK)
+                entry.clean()
                 entry.save()
 
         except TypeError:
@@ -870,14 +879,16 @@ class BulkEntryAjaxView(ScheduleMixin, View):
             msg = 'Parameter period_start must be a date in the format ' \
                 'yyyy-mm-dd'
             return HttpResponse(msg, status=500)
-        except:
+        except ValidationError:
             print sys.exc_info(), traceback.format_exc()
+            return HttpResponse('Could not save entry: Validation Error.  You cannot add/edit hours after a timesheet has been approved.', status=500)
+        except:
+            return HttpResponse(msg, status=500)
 
         try:
-            duration = round(float(self.request.POST.get('duration'))*4.) / 4. + float(extra_duration)
-            print 'start time', entry.start_time, 'duration', duration
+            #duration = round(float(self.request.POST.get('duration'))*4.) / 4. + float(extra_duration) # round to quarter-hour
+            duration = float(self.request.POST.get('duration')) + float(extra_duration)
             entry.end_time = entry.start_time + relativedelta(hours=duration)
-            print 'end_time', entry.end_time
             # if using bulk entry, we are going to drop the seconds paused
             entry.seconds_paused = 0
             entry.comments = self.request.POST.get('comment', '') + extra_comments

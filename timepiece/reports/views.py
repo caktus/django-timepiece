@@ -6,8 +6,10 @@ import pprint
 pp = pprint.PrettyPrinter(indent=4)
 
 from django.contrib.auth.decorators import permission_required
+from django.contrib.auth.models import User
+from django.core.urlresolvers import reverse
 from django.db.models import Sum, Q, Min, Max
-from django.http import HttpResponse
+from django.http import HttpResponse, HttpResponseRedirect
 from django.shortcuts import render
 from django.template.defaultfilters import date as date_format_filter
 from django.utils import timezone
@@ -19,10 +21,13 @@ from timepiece.utils.csv import CSVViewMixin, DecimalEncoder
 
 from timepiece.contracts.models import ProjectContract
 from timepiece.entries.models import Entry, ProjectHours
+from timepiece.crm.models import Project
 from timepiece.reports.forms import BillableHoursReportForm, HourlyReportForm,\
         ProductivityReportForm, PayrollSummaryReportForm
 from timepiece.reports.utils import get_project_totals, get_payroll_totals,\
         generate_dates, get_week_window
+
+from timepiece.reports.utils import get_week_trunc_sunday, multikeysort
 
 
 class ReportMixin(object):
@@ -47,8 +52,16 @@ class ReportMixin(object):
                         'project__name', 'project__status', 'project__type__label', 
                         'user__email', 'project__business__id', 'project__business__name',
                         'comments')
-                entries = Entry.objects.date_trunc(trunc,
-                        extra_values=vals).filter(entryQ)
+                # EXTRA LOGIC FOR SUN-SAT WEEK
+                if trunc == 'week':
+                    entries = Entry.objects.date_trunc('day',
+                            extra_values=vals).filter(entryQ)
+                    entries = list(entries)
+                    for i in range(len(entries)):
+                        entries[i]['date'] = get_week_trunc_sunday(entries[i]['date'])
+                else:
+                    entries = Entry.objects.date_trunc(trunc,
+                            extra_values=vals).filter(entryQ)
             else:
                 entries = Entry.objects.none()
 
@@ -90,7 +103,9 @@ class ReportMixin(object):
 
         # Filter by project for HourlyReport.
         projects = data.get('projects', None)
+        businesses = data.get('businesses', None)
         basicQ &= Q(project__in=projects) if projects else Q()
+        basicQ &= Q(project__business__in=businesses) if businesses else Q()
 
         # Filter by user, activity, and project type for BillableReport.
         if 'users' in data:
@@ -217,6 +232,7 @@ class HourlyReport(ReportMixin, CSVViewMixin, TemplateView):
             'paid_time_off': False,
             'trunc': 'day',
             'projects': [],
+            'businesses': [],
         }
 
     def get(self, request, *args, **kwargs):
@@ -240,16 +256,26 @@ class HourlyReport(ReportMixin, CSVViewMixin, TemplateView):
 
         summaries = []
         if context['entries']:
-            summaries.append(('By User', get_project_totals(
-                    entries.order_by('user__last_name', 'user__id', 'date'),
+            entries_is_list = type(entries) is list
+            # print 'ENTRIES', entries
+            if entries_is_list:
+                ordered_entries = multikeysort(entries, ['user__last_name', 'user', 'date'])
+            else:
+                ordered_entries = entries.order_by('user__last_name', 'user__id', 'date')
+            summaries.append(('By User', get_project_totals(ordered_entries,
                     date_headers, 'total', total_column=True, by='user')))
 
-            entries = entries.order_by('project__type__label', 'project__name',
-                    'project__id', 'date')
+            if entries_is_list:
+                ordered_entries = multikeysort(entries, ['project__type__label', 'project__name',
+                    'project__code', 'date'])
+            else:
+                ordered_entries = entries.order_by('project__type__label', 'project__name',
+                    'project__code', 'date')
+            # print 'ordered_entries', ordered_entries
             summaries.append(('By Project (All Projects)', get_project_totals(
-                entries, date_headers, 'total', total_column=True, by='project')))
+                ordered_entries, date_headers, 'total', total_column=True, by='project')))
             func = lambda x: x['project__type__label']
-            for label, group in groupby(entries, func):
+            for label, group in groupby(ordered_entries, func):
                 title = 'By Project (' + label + ' Projects)'
                 summaries.append((title, get_project_totals(list(group),
                         date_headers, 'total', total_column=True, by='project')))
@@ -532,3 +558,130 @@ def report_estimation_accuracy(request):
         'data': json.dumps(data, cls=DecimalEncoder),
         'chart_max': chart_max,
     })
+
+
+from django.contrib.auth.models import Group
+from timepiece.crm.models import ActivityGoal, Project
+from django.db.models import Sum, Q
+@permission_required('crm.view_employee_backlog')
+def report_backlog(request):
+    """
+    Determines company-wide backlog and displays
+    """
+    if request.user.has_perm('crm.view_backlog'):
+        backlog = {}
+        for employee in Group.objects.get(id=1).user_set.filter(is_active=True).order_by('last_name', 'first_name'):
+            backlog[employee.id] =[]
+            print 'employee 1', employee
+            for employee, activity_goals in groupby(ActivityGoal.objects.filter(employee=employee, milestone__project__status=4).order_by('activity'), lambda x: x.employee):
+                print 'employee 2', employee
+                for activity, activity_goals in groupby(activity_goals, lambda x: x.activity):
+                    activity_hours = 0.0
+                    charged_hours = 0.0
+                    #print 'employee', employee.first_name, employee.last_name, 'activity', activity
+                    if activity is None:
+                        activity_name = 'Other'
+                        for activity_goal in activity_goals:
+                            if ActivityGoal.objects.filter(employee=employee, milestone=activity_goal.milestone, date__gt=activity_goal.date, activity=activity).count():
+                                # only get the latest date for this combo
+                                continue
+                            activity_hours += float(activity_goal.goal_hours)
+                            charged_hours += float(Entry.objects.filter(project=activity_goal.milestone.project, user=employee
+                                ).exclude(Q(activity__id=12)|Q(activity__id=17)|Q(activity__id=11)
+                                ).aggregate(Sum('hours'))['hours__sum'] or 0.0)
+                    else:
+                        activity_name = activity.name
+                        for activity_goal in activity_goals:
+                            if ActivityGoal.objects.filter(employee=employee, milestone=activity_goal.milestone, date__gt=activity_goal.date, activity=activity).count():
+                                # only get the latest date for this combo
+                                continue
+                            activity_hours += float(activity_goal.goal_hours)
+                            charged_hours += float(Entry.objects.filter(project=activity_goal.milestone.project,
+                                                                        activity=activity,
+                                                                        user=employee
+                                                                        ).aggregate(Sum('hours'))['hours__sum'] or 0.0)
+                    percentage = 100.*(float(charged_hours)/float(activity_hours)) if float(activity_hours) > 0 else 0
+                    percentage = 100 if float(activity_hours)==0.0 else percentage
+                    backlog[employee.id].append({'activity': activity,
+                                                 'activity_name': activity_name,
+                                                 'employee': employee,
+                                                 'hours': activity_hours,
+                                                 'charged_hours': charged_hours,
+                                                 'remaining_hours': activity_hours - charged_hours,
+                                                 'percentage': percentage})
+        return render(request, 'timepiece/reports/backlog.html', {'backlog': backlog})
+    else:
+        return HttpResponseRedirect( reverse('report_employee_backlog', args=(request.user.id,)) )
+
+@permission_required('crm.view_employee_backlog')
+def report_employee_backlog(request, user_id):
+    """
+    Determines company-wide backlog and displays
+    """
+    employee = User.objects.get(id=int(user_id))
+    if request.user.has_perm('crm.view_backlog') or request.user==employee:
+        backlog = []
+        counter = -1
+        for project, activity_goals in groupby(ActivityGoal.objects.filter(employee=employee, milestone__project__status=4).order_by('milestone__project__code'), lambda x: x.milestone.project):
+            counter += 1
+            backlog.append([])
+            for activity, activity_goals in groupby(activity_goals, lambda x: x.activity):
+                activity_hours = 0.0
+                charged_hours = 0.0
+                if activity is None:
+                    activity_name = 'Other'
+                    for activity_goal in activity_goals:
+                        if ActivityGoal.objects.filter(employee=employee, milestone=activity_goal.milestone, date__gt=activity_goal.date, activity=activity).count():
+                            # only get the latest date for this combo
+                            continue
+                        activity_hours += float(activity_goal.goal_hours)
+                        charged_hours += float(Entry.objects.filter(project=activity_goal.milestone.project, user=employee
+                            ).exclude(Q(activity__id=12)|Q(activity__id=17)|Q(activity__id=11)
+                            ).aggregate(Sum('hours'))['hours__sum'] or 0.0)
+                else:
+                    activity_name = activity.name
+                    for activity_goal in activity_goals:
+                        if ActivityGoal.objects.filter(employee=employee, milestone=activity_goal.milestone, date__gt=activity_goal.date, activity=activity).count():
+                            # only get the latest date for this combo
+                            continue
+                        activity_hours += float(activity_goal.goal_hours)
+                        charged_hours += float(Entry.objects.filter(project=activity_goal.milestone.project,
+                                                                    activity=activity,
+                                                                    user=employee
+                                                                    ).aggregate(Sum('hours'))['hours__sum'] or 0.0)
+                percentage = 100.*(float(charged_hours)/float(activity_hours)) if float(activity_hours) > 0 else 0
+                percentage = 100 if float(activity_hours)==0.0 else percentage
+                backlog[counter].append({'activity': activity,
+                                         'activity_name': activity_name,
+                                         'project': project,
+                                         'hours': activity_hours,
+                                         'charged_hours': charged_hours,
+                                         'remaining_hours': activity_hours - charged_hours,
+                                         'percentage': percentage})
+        context = {'backlog': backlog,
+                   'employee': employee}
+        return render(request, 'timepiece/reports/backlog_employee.html', context)
+    else:
+        return HttpResponseRedirect( reverse('report_employee_backlog', args=(request.user.id,)) )
+
+@permission_required('crm.view_backlog')
+def active_projects_burnup_charts(request, minder_id=-1):
+    active_projects = Project.objects.filter(status__id=4
+        ).order_by('point_person__last_name', 'point_person__first_name',
+        'point_person__id', 'code')
+    
+    minders = []
+    project_ids = []
+    for minder, projects in groupby(active_projects, lambda x: x.point_person.id):
+        minders.append({'minder': User.objects.get(id=minder),
+                        'projects': list(projects),
+                        'active_tab': True if minder==int(minder_id) else False})
+    if minder_id == -1:
+        minders[0]['active_tab'] = True
+        project_ids = [p.id for p in minders[0]['projects']]
+    else:
+        project_ids = [p.id for p in active_projects.filter(point_person__id=int(minder_id))]
+    
+    context = {'minders': minders,
+               'project_ids': project_ids}
+    return render(request, 'timepiece/reports/active_projects_burnup_charts.html', context)

@@ -4,6 +4,11 @@
 
 {% block title %}{{ object }}{% endblock title %}
 
+{% block extracss %}
+<link rel="stylesheet" type="text/css" href="{{ STATIC_URL }}timepiece/js/burnup_charts/c3.min.css" />
+<link rel="stylesheet" type="text/css" href="{{ STATIC_URL }}timepiece/js/burnup_charts/burnup_charts.css" />
+{% endblock extracss %}
+
 {% block crumbs %}
     {{ block.super }}
     <li><span class="divider">/</span> <a href="">{{ object }}</a></li>
@@ -44,12 +49,32 @@
                 <tr><th>Status</th><td>{{ object.status }}</td></tr>
                 <tr><th>Billable</th><td>{{ object.billable }}</td></tr>
                 <tr>
-                    <th>Point Person</th>
+                    <th>Finder</th>
+                    <td>
+                        {% if perms.auth.view_user %}
+                            <a href="{% url 'view_user' object.finder.pk %}">{{ object.finder.get_name_or_username }}</a>
+                        {% else %}
+                            {{ object.finder.get_name_or_username }}
+                        {% endif %}
+                    </td>
+                </tr>
+                <tr>
+                    <th>Minder</th>
                     <td>
                         {% if perms.auth.view_user %}
                             <a href="{% url 'view_user' object.point_person.pk %}">{{ object.point_person.get_name_or_username }}</a>
                         {% else %}
                             {{ object.point_person.get_name_or_username }}
+                        {% endif %}
+                    </td>
+                </tr>
+                <tr>
+                    <th>Binder</th>
+                    <td>
+                        {% if perms.auth.view_user %}
+                            <a href="{% url 'view_user' object.binder.pk %}">{{ object.binder.get_name_or_username }}</a>
+                        {% else %}
+                            {{ object.binder.get_name_or_username }}
                         {% endif %}
                     </td>
                 </tr>
@@ -135,4 +160,66 @@
             {% endif %}
         </div>
     </div>
+
+    <div class="row-fluid">
+        <div class="span12" name="activity-goal-container">
+            <h3>Activity Goals Progress Summary</h3>
+            <table class="table">
+                <tr>
+                    <th>Employee</th>
+                    <th>Activity</th>
+                    <th style="width: 40%">Progress</th>
+                    <th colspan="2">Hours</th>
+                </tr>
+                {% for employee, ags in activity_goals.items %}
+                    {% for ag in ags %}
+                    <tr>
+                        {% if forloop.first %}
+                        <td rowspan="{{ ags|length }}">
+                          {% if ag.employee %}
+                            {{ ag.employee.first_name }} {{ ag.employee.last_name }}
+                          {% else %}
+                            No employee assigned
+                          {% endif %}
+                        </td>
+                        {% endif %}
+                        <td>{{ ag.activity_name }}</td>
+                        <td>
+                            <div class="progress{% if ag.hours == 0.0 %} progress-danger progress-striped{% endif %}{% if ag.remaining_hours < 0 %} progress-danger{% endif %}">
+                                <div class="bar" style="width: {{ ag.percentage }}%;"></div>
+                            </div>
+                        </td>
+                        <td>{{ ag.charged_hours }} / {{ ag.hours }}</td>
+                        <td><span class="label{% if ag.remaining_hours < 0 %} label-important{% endif %}">{{ ag.remaining_hours }} remaining</span></td>
+                    </tr>
+                    {% endfor %}
+                {% endfor %}
+            </table>
+        </div>
+    </div>
+
+    <div class="row-fluid">
+        <div class="span12" name="burnup-chart-container">
+            <h3>Burnup Chart</h3>
+            <a id='burnup_chart_button' type="button" class="btn btn-primary">Update Burnup Chart</a>
+            <a type="button" class="btn btn-primary" target="_blank" href="{% url 'project_burnup_chart' object.id %}">View Chart Alone (zoom)</a>
+            <p/>
+            <div id="burnup-chart-{{ object.id }}">
+            </div>
+        </div>
+    </div>
 {% endblock content %}
+
+{% block extrajs %}
+<script charset="utf-8" src="{{ STATIC_URL }}timepiece/js/burnup_charts/c3.min.js"></script>
+<script charset="utf-8" src="{{ STATIC_URL }}timepiece/js/burnup_charts/d3.min.js"></script>
+<script charset="utf-8" src="{{ STATIC_URL }}timepiece/js/burnup_charts/burnup_charts.js"></script>
+<script>
+$('#burnup_chart_button').click(function() {
+    create_burnup_chart({{ object.id }});
+})
+$(document).ready( function () {
+    create_burnup_chart({{ object.id }});
+})
+</script>
+{% endblock extrajs %}

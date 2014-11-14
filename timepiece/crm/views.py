@@ -2,18 +2,21 @@ import datetime
 from dateutil.relativedelta import relativedelta
 import urllib
 import json
+import os
 
+from django.conf import settings
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required, permission_required
 from django.contrib.auth.models import User
 from django.core.urlresolvers import reverse, reverse_lazy
 from django.db import transaction
-from django.db.models import Sum
+from django.db.models import Sum, Q
 from django.http import HttpResponseRedirect, HttpResponseForbidden, Http404, HttpResponse
 from django.shortcuts import get_object_or_404, render, redirect
 from django.views.decorators.csrf import csrf_exempt
 from django.views.generic import (CreateView, DeleteView, DetailView,
         UpdateView, FormView, View)
+from django.forms import widgets
 
 from timepiece import utils
 from timepiece.forms import YearMonthForm, UserYearMonthForm
@@ -26,14 +29,18 @@ from timepiece.crm.forms import (CreateEditBusinessForm, CreateEditProjectForm,
         EditUserSettingsForm, EditProjectRelationshipForm, SelectProjectForm,
         EditUserForm, CreateUserForm, SelectUserForm, ProjectSearchForm,
         QuickSearchForm, CreateEditPTORequestForm, CreateEditMilestoneForm,
-        CreateEditActivityGoalForm, ApproveDenyPTORequestForm)
+        CreateEditActivityGoalForm, ApproveDenyPTORequestForm,
+        CreateEditPaidTimeOffLog)
 from timepiece.crm.models import (Business, Project, ProjectRelationship, UserProfile,
     PaidTimeOffLog, PaidTimeOffRequest, Milestone, ActivityGoal)
-from timepiece.crm.utils import grouped_totals
+from timepiece.crm.utils import grouped_totals, project_activity_goals_with_progress
 from timepiece.entries.models import Entry, Activity, Location
+from timepiece.reports.forms import HourlyReportForm
 
 from holidays.models import Holiday
 from . import emails
+
+import workdays
 
 
 @cbv_decorator(login_required)
@@ -280,21 +287,39 @@ class ProjectTimesheet(DetailView):
 
     def get_context_data(self, **kwargs):
         context = super(ProjectTimesheet, self).get_context_data(**kwargs)
+        print 'GET', self.request.GET
         project = self.object
-        year_month_form = YearMonthForm(self.request.GET or None)
-        if self.request.GET and year_month_form.is_valid():
-            from_date, to_date = year_month_form.save()
+        #year_month_form = YearMonthForm(self.request.GET or None)
+        filter_form = HourlyReportForm(self.request.GET or None)
+        
+        if self.request.GET and filter_form.is_valid():
+            from_date, to_date = filter_form.save()
+            incl_billable = filter_form.cleaned_data['billable']
+            incl_non_billable = filter_form.cleaned_data['non_billable']
         else:
-            date = utils.add_timezone(datetime.datetime.today())
-            from_date = utils.get_month_start(date).date()
+            # date = utils.add_timezone(datetime.datetime.today())
+            # from_date = utils.get_month_start(date).date()
+            from_date, to_date = utils.get_bimonthly_dates(datetime.date.today())
             to_date = from_date + relativedelta(months=1)
+            incl_billable = True
+            incl_non_billable = True
+        
         from_datetime = datetime.datetime.combine(from_date, 
             datetime.datetime.min.time())
         to_datetime = datetime.datetime.combine(to_date,
             datetime.datetime.max.time())
+
         entries_qs = Entry.objects.filter(start_time__gte=from_datetime,
                                           end_time__lt=to_datetime,
                                           project=project)
+        if incl_billable and not incl_non_billable:
+            entries_qs = entries_qs.filter(activity__billable=True)
+        elif not incl_billable and incl_non_billable:
+            entries_qs = entries_qs.filter(activity__billable=False)
+        elif incl_billable and incl_non_billable:
+            pass
+        else:
+            entries_qs = entries_qs.filter(activity__billable=False).filter(activity__billable=True) # should return nothing
         # entries_qs = entries_qs.timespan(from_date, span='month').filter(
         #     project=project
         # )
@@ -313,7 +338,8 @@ class ProjectTimesheet(DetailView):
         )
         context.update({
             'project': project,
-            'year_month_form': year_month_form,
+            #'year_month_form': year_month_form,
+            'filter_form': self.get_form(),
             'from_date': from_date,
             'to_date': to_date - relativedelta(days=1),
             'entries': month_entries,
@@ -322,6 +348,35 @@ class ProjectTimesheet(DetailView):
             'activity_entries': activity_entries,
         })
         return context
+
+    @property
+    def defaults(self):
+        """Default filter form data when no GET data is provided."""
+        # Set default date span to current pay period
+        start, end = utils.get_bimonthly_dates(datetime.date.today())
+        end -= relativedelta(days=1)
+        return {
+            'from_date': start,
+            'to_date': end,
+            'billable': True,
+            'non_billable': True,
+            'paid_time_off': False,
+            'trunc': 'day',
+            'projects': [],
+        }
+
+    def get_form(self):
+        data = self.request.GET or self.defaults
+        data = data.copy()  # make mutable
+        # Fix booleans - the strings "0" and "false" are True in Python
+        for key in ['billable', 'non_billable', 'paid_time_off']:
+            data[key] = key in data and \
+                        str(data[key]).lower() in ('on', 'true', '1')
+
+        form = HourlyReportForm(data)
+        for field in ['projects', 'paid_time_off', 'trunc']:
+            form.fields[field].widget = widgets.HiddenInput()
+        return form
 
 
 class ProjectTimesheetCSV(CSVViewMixin, ProjectTimesheet):
@@ -370,6 +425,10 @@ class ListBusinesses(SearchListView):
     search_fields = ['name__icontains', 'description__icontains']
     template_name = 'timepiece/business/list.html'
 
+@permission_required('crm.view_business')
+def business(request):
+    data = [{'short_name':b.short_name, 'name':b.name} for b in Business.objects.all().order_by('short_name')]
+    return HttpResponse(json.dumps(data), content_type="application/json")
 
 @cbv_decorator(permission_required('crm.view_business'))
 class ViewBusiness(DetailView):
@@ -472,7 +531,7 @@ class EditUser(UpdateView):
 
 
 @cbv_decorator(permission_required('crm.view_project'))
-class ListProjects(SearchListView):
+class ListProjects(SearchListView, CSVViewMixin):
     model = Project
     form_class = ProjectSearchForm
     redirect_if_one_result = True
@@ -480,12 +539,69 @@ class ListProjects(SearchListView):
     'point_person__first_name__icontains', 'point_person__last_name__icontains']
     template_name = 'timepiece/project/list.html'
 
+    def get(self, request, *args, **kwargs):
+        self.export_project_list = request.GET.get('export_project_list', False)
+        if self.export_project_list:
+            kls = CSVViewMixin
+
+            form_class = self.get_form_class()
+            self.form = self.get_form(form_class)
+            self.object_list = self.get_queryset()
+            self.object_list = self.filter_results(self.form, self.object_list)
+
+            allow_empty = self.get_allow_empty()
+            if not allow_empty and len(self.object_list) == 0:
+                raise Http404("No results found.")
+
+            context = self.get_context_data(form=self.form,
+                object_list=self.object_list)
+
+
+            # qs = self.get_queryset()
+            # self.object_list = qs
+            # self.get_context_object_name(qs)
+            # kwargs['object_list'] = qs
+            # print 'count', qs.count()
+            # context = self.get_context_data(**kwargs)
+            return kls.render_to_response(self, context)
+        else:
+            return super(ListProjects, self).get(request, *args, **kwargs)
+    
     def filter_form_valid(self, form, queryset):
+        print 'form', form, 'queryset', queryset
         queryset = super(ListProjects, self).filter_form_valid(form, queryset)
         status = form.cleaned_data['status']
         if status:
             queryset = queryset.filter(status=status)
         return queryset
+
+    def get_filename(self, context):
+        request = self.request.GET.copy()
+        status = request.get('status')
+        search = request.get('search', '(empty)')
+        return 'project_search_{0}_{1}.csv'.format(status, search)
+
+    def convert_context_to_csv(self, context):
+        """Convert the context dictionary into a CSV file."""
+        content = []
+        project_list = context['project_list']
+        if self.export_project_list:
+            # this is a special csv export, different than stock Timepiece,
+            # requested by AAC Engineering for their detailed reporting reqs
+            headers = ['Project Code', 'Project Name', 'Type', 'Business', 'Status',
+                       'Billable', 'Finder', 'Minder', 'Binder', 'Description',
+                       'Contracts -->']
+            content.append(headers)
+            for project in project_list:
+                row = [project.code, project.name, str(project.type),
+                       '%s:%s'%(project.business.short_name, project.business.name),
+                       project.status, project.billable, str(project.finder),
+                       str(project.point_person), str(project.binder), 
+                       project.description]
+                for contract in project.contracts.all():
+                    row.append(str(contract))
+                content.append(row)
+        return content
 
 
 @cbv_decorator(permission_required('crm.view_project'))
@@ -495,7 +611,8 @@ class ViewProject(DetailView):
     template_name = 'timepiece/project/view.html'
 
     def get_context_data(self, **kwargs):
-        kwargs.update({'add_user_form': SelectUserForm()})
+        kwargs.update({'add_user_form': SelectUserForm(),
+                       'activity_goals': project_activity_goals_with_progress(self.object)})
         return super(ViewProject, self).get_context_data(**kwargs)
 
 
@@ -618,8 +735,8 @@ def pto_home(request, active_tab='summary'):
     data['user_profile'] = UserProfile.objects.get(user=request.user)
     data['pto_requests'] = PaidTimeOffRequest.objects.filter(user_profile=data['user_profile']).order_by('-pto_start_date')
     data['pto_log'] = PaidTimeOffLog.objects.filter(user_profile=data['user_profile'])
-    if request.user.has_perm('crm.can_approve_pto_requests'):
-        data['pto_approvals'] = PaidTimeOffRequest.objects.filter(approver=None)
+    if request.user.has_perm('crm.can_approve_pto_requests') or request.user.has_perm('crm.can_process_pto_requests'):
+        data['pto_approvals'] = PaidTimeOffRequest.objects.filter(Q(status=PaidTimeOffRequest.PENDING) | Q(status=PaidTimeOffRequest.APPROVED))
         data['pto_all_history'] = PaidTimeOffLog.objects.filter().order_by('user_profile', '-date')
         data['all_pto_requests'] = PaidTimeOffRequest.objects.all().order_by('-request_date')
     if active_tab:
@@ -644,11 +761,24 @@ class CreatePTORequest(CreateView):
     form_class = CreateEditPTORequestForm
     template_name = 'timepiece/pto/create_edit.html'
 
+    def get_form(self, *args, **kwargs):
+        form = super(CreatePTORequest, self).get_form(*args, **kwargs)
+        if not self.request.user.profile.earns_pto:
+            form.fields['pto'].widget.attrs['disabled'] = 'disabled'
+            form.fields['pto'].initial = False
+        return form
+
     def form_valid(self, form):
         user_profile = UserProfile.objects.get(user=self.request.user)
         form.instance.user_profile = user_profile
+        if not user_profile.earns_pto:
+            form.instance.pto = False
         instance = form.save()
-        emails.new_pto(instance, reverse('pto_request_details', args=(instance.id,)))
+        emails.new_pto(instance,
+                       reverse('pto_request_details', args=(instance.id,)),
+                       reverse('approve_pto_request', args=(instance.id,)),
+                       reverse('deny_pto_request', args=(instance.id,)),
+                      )
         return super(CreatePTORequest, self).form_valid(form)
 
 
@@ -659,9 +789,18 @@ class EditPTORequest(UpdateView):
     template_name = 'timepiece/pto/create_edit.html'
     pk_url_kwarg = 'pto_request_id'
 
+    def get_form(self, *args, **kwargs):
+        form = super(EditPTORequest, self).get_form(*args, **kwargs)
+        if not self.request.user.profile.earns_pto:
+            form.fields['pto'].widget.attrs['disabled'] = 'disabled'
+            form.fields['pto'].initial = False
+        return form
+
     def form_valid(self, form):
         form.instance.approver = None
         form.instance.approval_date = None
+        if not form.instance.user_profile.earns_pto:
+            form.instance.pto = False
         return super(EditPTORequest, self).form_valid(form)
 
 
@@ -686,36 +825,53 @@ class ApprovePTORequest(UpdateView):
         form.instance.status = PaidTimeOffRequest.APPROVED
         up = form.instance.user_profile
 
-        # add PTO log enntries
-        # add timesheet entries
-        delta = form.instance.pto_end_date - form.instance.pto_start_date
-        days_delta = delta.days + 1
-        for i in range(days_delta):
-            date = form.instance.pto_start_date + datetime.timedelta(days=i)
-            start_time = datetime.datetime.combine(date, datetime.time(8))
-            hours = float(form.instance.amount)/float(days_delta)
-            end_time = start_time + datetime.timedelta(hours=hours)
-            
-            # add pto log entry
-            pto_log = PaidTimeOffLog(user_profile=up, 
-                                     date=date,
-                                     amount=-1*(float(form.instance.amount) / float(days_delta)), 
-                                     comment=form.instance.comment,
-                                     pto_request=form.instance)
-            pto_log.save()
+        # get holidays in years covered by PTO to make sure that they are not
+        # included as days to use PTO hours
+        holidays = []
+        for year in range(form.instance.pto_start_date.year, form.instance.pto_end_date.year+1):
+            holiday_dates = [h['date'] for h in Holiday.get_holidays_for_year(year, {'paid_holiday':True})]
+            holidays.extend(holiday_dates)
+        # get number of workdays found in between the start and stop dates
+        num_workdays = workdays.networkdays(form.instance.pto_start_date,
+                                            form.instance.pto_end_date,
+                                            holidays)
+        
+        # add PTO log entries
+        if form.instance.pto:
+            delta = form.instance.pto_end_date - form.instance.pto_start_date
+            hours = float(form.instance.amount)/float(num_workdays)
+            days_delta = delta.days + 1
+            for i in range(days_delta):
+                date = form.instance.pto_start_date + datetime.timedelta(days=i)
+                
+                # if the date is weekend or holiday, skip it
+                if (date.weekday() >= 5) or (date in holidays):
+                    continue
 
-            # add timesheet entry
-            entry = Entry(user=form.instance.user_profile.user,
-                          project=Project.objects.get(id=utils.get_setting('TIMEPIECE_PTO_PROJECT')[date.year]),
-                          activity=Activity.objects.get(code='PTO', name='Paid Time Off'),
-                          location=Location.objects.get(id=3),
-                          start_time=start_time,
-                          end_time=end_time,
-                          comments='Approved PTO %s.' % form.instance.pk,
-                          hours=hours,
-                          pto_log=pto_log,
-                          mechanism=Entry.PTO)
-            entry.save()
+                start_time = datetime.datetime.combine(date, datetime.time(8))
+                end_time = start_time + datetime.timedelta(hours=hours)
+                
+                # add pto log entry
+                pto_log = PaidTimeOffLog(user_profile=up, 
+                                         date=date,
+                                         amount=-1*(float(form.instance.amount) / float(num_workdays)), 
+                                         comment=form.instance.comment,
+                                         pto_request=form.instance)
+                pto_log.save()
+
+                # if pto entry, add timesheet entry
+                if form.instance.pto and form.instance.amount > 0:
+                    entry = Entry(user=form.instance.user_profile.user,
+                                  project=Project.objects.get(id=utils.get_setting('TIMEPIECE_PTO_PROJECT')[date.year]),
+                                  activity=Activity.objects.get(code='PTO', name='Paid Time Off'),
+                                  location=Location.objects.get(id=3),
+                                  start_time=start_time,
+                                  end_time=end_time,
+                                  comments='Approved PTO %s.' % form.instance.pk,
+                                  hours=hours,
+                                  pto_log=pto_log,
+                                  mechanism=Entry.PTO)
+                    entry.save()
 
         return super(ApprovePTORequest, self).form_valid(form)
 
@@ -732,6 +888,29 @@ class DenyPTORequest(UpdateView):
         form.instance.approval_date = datetime.datetime.now()
         form.instance.status = PaidTimeOffRequest.DENIED
         return super(DenyPTORequest, self).form_valid(form)
+
+
+@cbv_decorator(permission_required('crm.can_process_pto_requests'))
+class ProcessPTORequest(UpdateView):
+    model = PaidTimeOffRequest
+    form_class = ApproveDenyPTORequestForm
+    pk_url_kwarg = 'pto_request_id'
+    template_name = 'timepiece/pto/process.html'
+
+    def form_valid(self, form):
+        form.instance.processor = self.request.user
+        form.instance.process_date = datetime.datetime.now()
+        form.instance.status = PaidTimeOffRequest.PROCESSED
+        return super(ProcessPTORequest, self).form_valid(form)
+
+@cbv_decorator(permission_required('crm.add_paidtimeofflog'))
+class CreatePTOLogEntry(CreateView):
+    model = PaidTimeOffLog
+    form_class = CreateEditPaidTimeOffLog
+    template_name = 'timepiece/pto/create-edit-log.html'
+
+    def get_success_url(self):
+        return '/timepiece/pto/all_history/'
 
 @login_required
 def pto_request_details(request, pto_request_id):
@@ -790,6 +969,15 @@ class CreateActivityGoal(CreateView):
     form_class = CreateEditActivityGoalForm
     template_name = 'timepiece/project/milestone/activity_goal/create_edit.html'
 
+    def get_form(self, *args, **kwargs):
+        form = super(CreateActivityGoal, self).get_form(*args, **kwargs)
+        project = Project.objects.get(id=int(self.kwargs['project_id']))
+        if project.activity_group:
+            activities = [(a.id, a.name) for a in project.activity_group.activities.all()]
+            activities.insert(0, ('', '---------'))
+            form.fields['activity'].choices = activities
+        return form
+
     def form_valid(self, form):
         form.instance.milestone = Milestone.objects.get(id=int(self.kwargs['milestone_id']))
         return super(CreateActivityGoal, self).form_valid(form)
@@ -805,6 +993,15 @@ class EditActivityGoal(UpdateView):
     template_name = 'timepiece/project/milestone/activity_goal/create_edit.html'
     pk_url_kwarg = 'activity_goal_id'
 
+    def get_form(self, *args, **kwargs):
+        form = super(EditActivityGoal, self).get_form(*args, **kwargs)
+        project = Project.objects.get(id=int(self.kwargs['project_id']))
+        if project.activity_group is not None:
+            activities = [(a.id, a.name) for a in project.activity_group.activities.all()]
+            activities.insert(0, ('', '---------'))
+            form.fields['activity'].choices = activities
+        return form
+
     def get_success_url(self):
         return '/timepiece/project/%d/milestone/%d' % (int(self.kwargs['project_id']), int(self.kwargs['milestone_id']))
 
@@ -817,3 +1014,191 @@ class DeleteActivityGoal(DeleteView):
 
     def get_success_url(self):
         return '/timepiece/project/%d/milestone/%d' % (int(self.kwargs['project_id']), int(self.kwargs['milestone_id']))
+
+from itertools import groupby
+import numpy
+import sys
+import traceback
+import pprint
+pp = pprint.PrettyPrinter(indent=4)
+PROJECT_MANAGEMENT_ACTIVITY_ID = 12
+PROJECT_DEVELOPMENT_ACTIVITY_ID = 11
+TECH_WRITING_ACTIVITY_ID = 17
+@login_required
+def burnup_chart_data(request, project_id):
+    # try:
+    #     data = settings.MONGO_CLIENT.timepiece.burnup_chart.find_one(
+    #         {'project': project.id,
+    #          'date': str(datetime.date.today())})
+    #     if data:
+    #         return HttpResponse(json.dumps(data), status=200, mimetype='application/json')
+    # except:
+    #     pass
+    try:
+        project = Project.objects.get(id=int(project_id))
+        try:
+            start_date = Entry.objects.filter(project=project).order_by('start_time')[0].start_time.date()
+        except:
+            start_date = datetime.date.today() - datetime.timedelta(days=7)
+        try:
+            end_date = max(Entry.objects.filter(project=project).order_by('-start_time')[0].start_time.date(),
+                           Milestone.objects.filter(project=project).order_by('-due_date')[0].due_date,
+                           datetime.date.today() + datetime.timedelta(days=7))
+        except:
+            try:
+                end_date = max(Entry.objects.filter(project=project).order_by('-start_time')[0].start_time.date(),
+                               datetime.date.today() + datetime.timedelta(days=7))
+            except:
+                end_date = datetime.date.today() + datetime.timedelta(days=7)
+        end_date += datetime.timedelta(days=1)
+        mgmt_entries_raw = Entry.objects.filter(project=project).values('start_time', 'activity', 'hours').order_by('start_time')
+        mgmt_entries = []
+        for me in mgmt_entries_raw:
+            mgmt_entries.append({'hours': float(me['hours']), 'activity': me['activity'], 'date': me['start_time'].date()})
+        entries = {}
+        for date, date_entries in groupby(mgmt_entries, lambda x: x['date']):
+            if isinstance(date, datetime.datetime):
+                date = date.date()
+            current_entries = {'project_management': 0,
+                               'project_development': 0,
+                               'tech_writing': 0,
+                               'other': 0}
+            for de in list(date_entries):
+                if de['activity'] == PROJECT_MANAGEMENT_ACTIVITY_ID:
+                    current_entries['project_management'] += de['hours']
+                elif de['activity'] == PROJECT_DEVELOPMENT_ACTIVITY_ID:
+                    current_entries['project_development'] += de['hours']
+                elif de['activity'] == TECH_WRITING_ACTIVITY_ID:
+                    current_entries['tech_writing'] += de['hours']
+                else:
+                    current_entries['other'] += de['hours']
+            entries[str(date)] = current_entries
+
+        if start_date.day < 15:
+            start_date = datetime.date(start_date.year, start_date.month, 1)
+        else:
+            start_date = datetime.date(start_date.year, start_date.month, 15)
+        current_date = start_date
+        project_management = []
+        project_development = []
+        tech_writing = []
+        other = []
+        plot_dates = []
+        for i in range((end_date - start_date).days):
+            if str(current_date) in entries.keys():
+                project_management.append(entries[str(current_date)]['project_management'])
+                project_development.append(entries[str(current_date)]['project_development'])
+                tech_writing.append(entries[str(current_date)]['tech_writing'])
+                other.append(entries[str(current_date)]['other'])
+            else:
+                project_management.append(0)
+                project_development.append(0)
+                tech_writing.append(0)
+                other.append(0)
+            plot_dates.append(str(current_date))
+            current_date += datetime.timedelta(days=1)
+        plot_dates.insert(0, 'plot_dates')
+        project_management = numpy.cumsum(project_management).tolist()
+        project_management.insert(0, 'proj_mgmt_actual')
+        project_development = numpy.cumsum(project_development).tolist()
+        project_development.insert(0, 'proj_dev_actual')
+        tech_writing = numpy.cumsum(tech_writing).tolist()
+        tech_writing.insert(0, 'tech_writing_actual')
+        other = numpy.cumsum(other).tolist()
+        other.insert(0, 'other_actual')
+
+        # get milestones and activity goals
+        milestones = [{'value': str(datetime.date.today()), 'class':'today', 'text':'TODAY'}]
+        activity_goals = [['proj_mgmt_target'],
+                          ['proj_dev_target'],
+                          ['tech_writing_target'],
+                          ['other_target']]
+        for ms in Milestone.objects.filter(project=project).order_by('due_date'):
+            milestones.append({'value': str(ms.due_date), 'text': ms.name})
+            # for ag in ms.activity_goals:
+            #     gh = float(ag.goal_hours)
+            #     if ag.activity is None:
+            #         for i in range((ms.due_date - start_date).days + 1):
+            #             activity_goals[3].append(gh)
+            #     elif ag.activity.id == PROJECT_MANAGEMENT_ACTIVITY_ID:
+            #         for i in range((ms.due_date - start_date).days + 1):
+            #             activity_goals[0].append(gh)
+            #     elif ag.activity.id == PROJECT_DEVELOPMENT_ACTIVITY_ID:
+            #         for i in range((ms.due_date - start_date).days + 1):
+            #             activity_goals[1].append(gh)
+            #     elif ag.activity.id == TECH_WRITING_ACTIVITY_ID:
+            #         for i in range((ms.due_date - start_date).days + 1):
+            #             activity_goals[2].append(gh)
+        
+        # get ActivityGoals and group by Activity
+        ag_temp = [[], [], [], []]
+        for ag in ActivityGoal.objects.filter(milestone__project=project):
+            if ag.activity is None:
+                ag_temp[3].append(ag)
+            elif ag.activity.id == PROJECT_MANAGEMENT_ACTIVITY_ID:
+                ag_temp[0].append(ag)
+            elif ag.activity.id == PROJECT_DEVELOPMENT_ACTIVITY_ID:
+                ag_temp[1].append(ag)
+            elif ag.activity.id == TECH_WRITING_ACTIVITY_ID:
+                ag_temp[2].append(ag)
+            else:
+                ag_temp[3].append(ag)
+
+        # sort ActivityGoals by date within categories
+        for i in range(len(ag_temp)):
+            ag_temp[i] = sorted(ag_temp[i], key=lambda x: x.date or datetime.date.today())
+        
+        for i in range(len(ag_temp)):
+            if len(ag_temp[i]) == 0:
+                continue
+            ag_hours = []
+            for employee, ags in groupby(ag_temp[i], lambda x: x.employee):
+                last_date = start_date
+                vals = []
+                for ag in ags:
+                    gh = float(ag.goal_hours)
+                    for j in range((ag.milestone.due_date - last_date).days + 1):
+                        vals.append(gh)
+                    last_date = ag.milestone.due_date
+                ag_hours.append(vals)
+            
+            max_len = len(ag_hours[0])
+            for ag_hours_employee in ag_hours:
+                max_len = max(max_len, len(ag_hours_employee))
+            for ag_hours_employee in ag_hours:
+                val = ag_hours_employee[-1]
+                while len(ag_hours_employee) < max_len:
+                    ag_hours_employee.append(val)
+            activity_goals[i].extend(list(numpy.sum(ag_hours, axis=0)))
+
+        data = {'entries': entries,
+                'start_date': str(start_date),
+                'end_date': str(end_date),
+                'plot_dates': plot_dates,
+                'project_management': project_management,
+                'project_development': project_development,
+                'tech_writing': tech_writing,
+                'other': other,
+                'milestones': milestones,
+                'activity_goals': activity_goals}
+        try:
+            # settings.MONGO_CLIENT.timepiece.burnup_chart.save(
+            #     {'project': project.id,
+            #      'date': str(datetime.date.today()),
+            #      'data': data})
+            f = open(os.path.join(settings.BURNUP_CACHE, '%s-%d.json'%(str(datetime.date.today()), project.id)), 'w')
+            f.write('var data = ' + json.dumps(data) + ';')
+            f.close()
+        except:
+            print sys.exc_info(), traceback.format_exc()
+            pass
+        return HttpResponse(json.dumps(data), status=200, mimetype='application/json')
+    except:
+        print sys.exc_info(), traceback.format_exc()
+        return HttpResponse(json.dumps({}), status=200, mimetype='application/json')
+
+@login_required
+def burnup_chart(request, project_id):
+    context = {'project': Project.objects.get(id=int(project_id))}
+    return render(request, 'timepiece/project/burnup_charts/burnup_chart.html', context)
+    # render_to_pdf(request, 'project-test')

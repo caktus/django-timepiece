@@ -344,9 +344,9 @@ class Entry(models.Model):
             raise ValidationError('Ending time must exceed the starting time')
         delta = (end - start)
         delta_secs = (delta.seconds + delta.days * 24 * 60 * 60)
-        limit_secs = 60 * 60 * 12
+        limit_secs = 60 * 60 * 20
         if delta_secs > limit_secs or self.seconds_paused > limit_secs:
-            err_msg = 'Ending time exceeds starting time by 12 hours or more '\
+            err_msg = 'Ending time exceeds starting time by 20 hours or more '\
                 'for {0} on {1} at {2} to {3} at {4}.'.format(
                     self.project,
                     start.strftime('%m/%d/%Y'),
@@ -371,9 +371,8 @@ class Entry(models.Model):
         return True
 
     def save(self, *args, **kwargs):
-        print 'total_hours', self.total_hours
-        self.hours = Decimal('%.2f' % round(round(float(self.total_hours)*4.) / 4., 2))
-        print 'hours', self.hours
+        #self.hours = Decimal('%.2f' % round(round(float(self.total_hours)*4.) / 4., 2))
+        self.hours = Decimal('%.2f' % round(self.total_hours, 2))
         super(Entry, self).save(*args, **kwargs)
 
     def get_total_seconds(self):

@@ -13,6 +13,10 @@
             {% if perms.entries.view_payroll_summary %}
                 <li><a href="{% url 'report_payroll_summary' %}">Payroll Summary</a></li>
                 <li><a href="{% url 'report_productivity' %}">Productivity</a></li>
+                {% if perms.crm.view_backlog %}
+                <li><a href="{% url 'report_backlog' %}">Backlog</a></li>
+                <li><a href="{% url 'report_active_projects_burnup_charts' %}">Active Projects Burnup Charts</a></li>
+                {% endif %}
                 {% if user.is_staff or perms.contracts.change_entrygroup or perms.entries.can_clock_in %}
                     <li class="divider"></li>
                 {% endif %}

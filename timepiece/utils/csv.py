@@ -24,7 +24,11 @@ class CSVViewMixin(object):
         rows = self.convert_context_to_csv(context)
         writer = csv.writer(response)
         for row in rows:
-            writer.writerow(row)
+            try:
+                writer.writerow(row)
+            except:
+                print 'ERROR making row', row
+                pass
         return response
 
     def get_filename(self, context):

@@ -1,0 +1,33 @@
+{% extends "timepiece/pto/base.html" %}
+{% load url from future %}
+{% load bootstrap_toolkit %}
+
+{% block content %}
+    <div class="row-fluid">
+        {% block extra_content %}
+        {% endblock %}
+        <div class="span4">
+            <table class="table table-bordered table-hover">
+                <tr><th>Employee</th><td>{{ object.user_profile.user }}</td></tr>
+                <tr><th>Request Date</th><td>{{ object.request_date }}</td></tr>
+                <tr><th>Type</th><td>{% if object.pto %}Paid Time Off{% else %}Unpaid Time Off{% endif %}</td></tr>
+                <tr><th>Time Off Start Date</th><td>{{ object.pto_start_date }}</td></tr>
+                <tr><th>Time Off End Date</th><td>{{ object.pto_end_date }}</td></tr>
+                {% if object.pto %}
+                <tr class="{% if object.user_profile.get_pto < object.amount %}error{% else %}success{% endif %}"><th>Available PTO{% block extra_label %}{% endblock %}</th><td>{{ object.user_profile.get_pto}}</td></tr>
+                {% endif %}
+                <tr><th>Hours Requested</th><td>{{ object.amount }}</td></tr>
+            </table>
+        </div>
+        <div class="span6">
+            <form id="approve-pto-request" class="form-horizontal" action="" method="post" accept-charset="utf-8">
+                {% csrf_token %}
+                {{ form|as_bootstrap:"horizontal" }}
+                <div class="form-actions">
+                    <input class="btn {% block submit_buton_style %}{% endblock %}" type='submit' name='submit' value='{% block submit_button_label %}{% endblock %}' />
+                    <input class="btn" type='button' value='Cancel' onclick='history.go(-1)' />
+                </div>
+            </form>
+        </div>
+    </div>
+{% endblock content %}

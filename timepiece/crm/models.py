@@ -2,11 +2,11 @@ from django.contrib.auth.models import User, Group
 from django.contrib.sites.models import Site
 from django.core.urlresolvers import reverse
 from django.db import models
-from django.db.models import get_model, Sum
+from django.db.models import get_model, Sum, Q
 import datetime
 import sys, traceback
 from decimal import Decimal
-
+from itertools import groupby
 from timepiece.utils import get_active_entry
 
 try:
@@ -50,6 +50,7 @@ class UserProfile(models.Model):
             default=40)
     business = models.ForeignKey('Business')
     employee_type = models.CharField(max_length=24, choices=EMPLOYEE_TYPES.items(), default=INACTIVE)
+    earns_pto = models.BooleanField(default=True, help_text='Does the employee earn Paid Time Off?')
     hire_date = models.DateField(blank=True, null=True)
 
     class Meta:
@@ -72,25 +73,31 @@ class PaidTimeOffRequest(models.Model):
     PENDING = 'pending'
     APPROVED = 'approved'
     DENIED = 'denied'
+    PROCESSED = 'processed'
     STATUSES = {
         PENDING: 'Pending',
         APPROVED: 'Approved',
         DENIED: 'Denied',
+        PROCESSED: 'Processed',
     }
-    user_profile = models.ForeignKey(UserProfile)
+    user_profile = models.ForeignKey(UserProfile, verbose_name='Employee')
     request_date = models.DateTimeField(auto_now_add=True)
-    pto_start_date = models.DateField(verbose_name='Paid Time Off Start Date', blank=True, null=True)
-    pto_end_date = models.DateField(verbose_name='Paid Time Off End Date', blank=True, null=True)
-    amount = models.DecimalField(max_digits=7, decimal_places=2)
-    comment = models.TextField(blank=True)
+    pto = models.BooleanField(verbose_name='Select for Paid Time Off (Unselect for Unpaid Time Off)', default=True, help_text='Is the request for Paid Time Off (checked) or Unpaid Time Off (unchecked)?')
+    pto_start_date = models.DateField(verbose_name='Time Off Start Date', blank=True, null=True)
+    pto_end_date = models.DateField(verbose_name='Time Off End Date', blank=True, null=True)
+    amount = models.DecimalField(verbose_name='Number of Hours', max_digits=7, decimal_places=2)
+    comment = models.TextField(verbose_name='Reason / Description', blank=True)
     approval_date = models.DateTimeField(blank=True, null=True)
-    approver = models.ForeignKey(User, blank=True, null=True)
+    approver = models.ForeignKey(User, related_name='pto_approver', blank=True, null=True)
+    process_date = models.DateTimeField(blank=True, null=True)
+    processor = models.ForeignKey(User, related_name='pto_processor', blank=True, null=True)
     status = models.CharField(max_length=24, choices=STATUSES.items(), default=PENDING)
-    approver_comment = models.TextField(blank=True)
+    approver_comment = models.TextField(verbose_name='Reason / Note', blank=True)
 
     class Meta:
         ordering = ('user_profile', '-pto_start_date',)
-        permissions = (("can_approve_pto_requests", "Can approve PTO requests"),)
+        permissions = (("can_approve_pto_requests", "Can approve PTO requests"),
+                       ("can_process_pto_requests", "Can payroll process PTO requests"), )
 
     def __unicode__(self):
         return '%s %s to %s %s (%s)' % (self.user_profile, str(self.pto_start_date), str(self.pto_end_date), str(self.amount), str(self.approver) if self.approver else 'not approved')
@@ -199,7 +206,7 @@ class TrackableProjectManager(models.Manager):
 
 
 class Project(models.Model):
-    MINDERS_GROUP_NAME = 'Minders'
+    MINDERS_GROUP_ID = 3
 
     name = models.CharField(max_length=255)
     code = models.CharField(max_length=12,
@@ -259,6 +266,7 @@ class Project(models.Model):
     def save(self, *args, **kwargs):
         # if this is a CREATE, create Project Code
         if self.id is None:
+            print 'got to there'
             # get the current year, if year not provided
             if not self.year:
                 self.year = datetime.datetime.now().year
@@ -283,7 +291,7 @@ class Project(models.Model):
                 pass
             
         super(Project, self).save(*args, **kwargs)
-        minders = Group.objects.get(name=self.MINDERS_GROUP_NAME)
+        minders = Group.objects.get(id=self.MINDERS_GROUP_ID)
         for u in User.objects.filter(id__in=Project.objects.all().values('point_person')):
             # add user to Minders group
             u.groups.add(minders)
@@ -353,11 +361,18 @@ class Milestone(models.Model):
 from timepiece.entries.models import Activity
 class ActivityGoal(models.Model):
     milestone = models.ForeignKey(Milestone)
-    activity = models.ForeignKey(Activity, null=True)
+    activity = models.ForeignKey(Activity, null=True, blank=True, help_text='Review <a href="/timepiece/activity/cheat-sheet" target="_blank">this reference</a> for guidance on activities.')
     goal_hours = models.DecimalField(max_digits=7, decimal_places=2)
+    employee = models.ForeignKey(User, related_name='activity_goals', null=True, blank=True)
+    date = models.DateField(null=True, blank=True)
 
     def __unicode__(self):
-        return '%s: %s (%s)' % (self.milestone, self.activity, self.goal_hours)
+        if self.employee:
+            return '%s: %s - %s (%s)' % (self.milestone, 
+                self.activity, self.employee, self.goal_hours)
+        else:
+            return '%s: %s - %s (%s)' % (self.milestone, 
+                self.activity, 'n/a', self.goal_hours)
 
     class Meta:
-        ordering = ('milestone', 'goal_hours',)
+        ordering = ('milestone', 'employee__last_name', 'goal_hours',)

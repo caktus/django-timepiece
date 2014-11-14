@@ -1,4 +1,4 @@
-{% extends "timepiece/pto/base.html" %}
+{% extends "timepiece/pto/approvedeny.html" %}
 {% load url from future %}
 {% load bootstrap_toolkit %}
 
@@ -12,26 +12,19 @@
 
 {% block title %}Confirm Deny PTO Request{% endblock title %}
 
-{% block content %}
-    <div class="row-fluid">
-        <div class="span12">
-            <h2>Confirm Deny PTO Request</h2>
-
-            <br style="clear: both;" />
-            
-            <div class="alert alert-info">
-              <button type="button" class="close" data-dismiss="alert">&times;</button>
-              <strong>NOTE:</strong> {{ object.user_profile }} has {{ object.user_profile.get_pto }} hours of PTO available.
-            </div>
-
-            <form id="deny-pto-request" class="form-horizontal" action="" method="post" accept-charset="utf-8">
-                {% csrf_token %}
-                {{ form|as_bootstrap:"horizontal" }}
-                <div class="form-actions">
-                    <input class="btn btn-danger" type='submit' name='submit' value='Deny' />
-                    <input class="btn" type='button' value='Cancel' onclick='history.go(-1)' />
-                </div>
-            </form>
-        </div>
+{% block extra_content %}
+<div class="span12">
+    <h2>Confirm Deny PTO Request</h2>
+</div>
+<div class="span10">
+    {% if object.pto %}
+    <div class="alert alert-info">
+        <button type="button" class="close" data-dismiss="alert">&times;</button>
+        <strong>NOTE:</strong> {{ object.user_profile }} has {{ object.user_profile.get_pto }} hours of PTO available.
     </div>
-{% endblock content %}
+    {% endif %}
+</div>
+{% endblock extra_content %}
+
+{% block submit_buton_style %}btn-danger{% endblock %}
+{% block submit_button_label %}Deny{% endblock %}

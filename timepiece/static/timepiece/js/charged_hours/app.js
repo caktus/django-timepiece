@@ -305,7 +305,7 @@ $(function() {
                 after = changes[3],
                 project, user, time, date, activity, location;
 
-            if ( (before == after) || (Math.round(before*4)/4 == after) ){
+            if ( (before == after) ) { //|| (Math.round(before*4)/4 == after) ){
                 return;
             }
 
@@ -357,9 +357,8 @@ $(function() {
             }
 
             // fix the time up
-            time = Math.round(time*4)/4;
+            // time = Math.round(time*4)/4; // round to nearest quarter hour
             hours = charged_hours.get_by_row_col(row, 3);
-            console.log('found hours?', hours);
             
             if(!isNaN(time) && hours && time >= 0) {
                 // If we have times and hours in the row/col, then update the current hours
@@ -384,6 +383,7 @@ $(function() {
                     //updateTotals(col);
                 }, function(xhr, status, error) {
                     //$('.dataTable').handsontable('setDataAtCell', row, col, before);
+                    console.log('ERROR', xhr, status, error);
                     showError('Could not save the project hours. Please notify an administrator.');
                 });
 
@@ -415,7 +415,7 @@ $(function() {
                         cell.style.backgroundColor = BGCOLOR;
                     }, function(xhr, status, error) {
                         //$('.dataTable').handsontable('setDataAtCell', row, col, '');
-                        showError('Could not save the project hours. Please notify an administrator.');
+                        showError(xhr.responseText);
                     });
                 } else {
                     showError('Project hours must be associated with a project, activity, location and date.');
@@ -477,7 +477,7 @@ $(function() {
                             $('.dataTable').handsontable('setDataAtCell', row, col, '');
                         }, function(xhr, status, error) {
                             $('.dataTable').handsontable('setDataAtCell', row, col, before);
-                            showError('Could not delete the project hours. Please notify an administrator.');
+                            showError(xhr.responseText);
                         });
                     }
 

@@ -1,0 +1,78 @@
+{% extends "timepiece/reports/base.html" %}
+{% load timepiece_tags bootstrap_toolkit %}
+{% load url from future %}
+
+{% block title %}Active Projects Burnup Charts{% endblock title %}
+
+{% block extracss %}
+    <link rel="stylesheet" type="text/css" href="{{ STATIC_URL }}timepiece/js/burnup_charts/c3.min.css" />
+    <link rel="stylesheet" type="text/css" href="{{ STATIC_URL }}timepiece/js/burnup_charts/burnup_charts.css" />
+{% endblock extracss %}
+
+{% block bodyid %}active-projects-burnup-charts{% endblock bodyid %}
+
+{% block crumbs %}
+    {{ block.super }}
+    <li>
+        <span class="divider">/</span>
+        <a href="{% url 'report_active_projects_burnup_charts' %}">Active Project Burnup Charts</a>
+    </li>
+{% endblock crumbs %}
+
+{% block report_nav %}
+    {% with 'active_projects_burnup_charts' as active %}
+        {{ block.super }}
+    {% endwith %}
+{% endblock report_nav %}
+
+
+{% block report_content %}
+<div class="row-fluid">
+    <div class="span12" name="burnup-charts-container">
+        <div class="alert" id="loading">
+            <button type="button" class="close" data-dismiss="alert">&times;</button>
+            <strong>NOTE:</strong> If the page is being non-responsive, wait a moment for all charts to complete rendering.
+        </div>
+        <div>
+            <ul class="nav nav-tabs">
+                {% for minder in minders %}
+                <li{% if minder.active_tab %} class="active"{% endif %}>
+                    {% url "report_active_projects_burnup_charts_minder" minder.minder.id as link %}
+                    <a class="tab-link" to="burnup_charts_{{ minder.minder.id }}" href="{{ link|add_parameters:request.GET }}">{{ minder.minder.last_name }}, {{ minder.minder.first_name }}</a>
+                </li>
+                {% endfor %}
+            </ul>
+        </div>
+        <div class="tab-content">
+            {% for minder in minders %}
+            <div class="tab-pane{% if minder.active_tab %} active{% endif %}" id="burnup_charts_{{ minder.minder.id }}">
+                {% for project in minder.projects %}
+                    <h3>{{ project.code }}: {{ project.name }}</h3>
+                    <div id="burnup-chart-{{ project.id }}">
+                    </div>
+                    <hr>
+                {% endfor %}
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+</div>
+{% endblock report_content %}
+
+{% block extrajs %}
+<script charset="utf-8" src="{{ STATIC_URL }}timepiece/js/burnup_charts/c3.min.js"></script>
+<script charset="utf-8" src="{{ STATIC_URL }}timepiece/js/burnup_charts/d3.min.js"></script>
+<script charset="utf-8" src="{{ STATIC_URL }}timepiece/js/burnup_charts/burnup_charts.js"></script>
+<script>
+    $(document).ready( function () {
+        setTimeout(function(){$('#loading').remove();}, 30000);
+        var project_ids = {{ project_ids }};
+        $.each(project_ids,
+            function (index, project_id) {
+                create_burnup_chart(project_id);
+                //$('#loading-' + project_id).remove()
+            }
+        );
+    });
+</script>
+{% endblock extrajs %}

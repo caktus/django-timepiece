@@ -12,7 +12,12 @@
                 <li><a href="{% url 'clock_in' %}">Clock in...</a></li>
                 <li><a href="{% url 'create_entry' %}">Add Entry...</a></li>
                 <li><a href="{% url 'bulk_entry' %}">Bulk Entry</a></li>
-                <li><a href="{% url 'pto' %}">Paid Time Off</a></li>
+                {% if perms.crm.view_employee_backlog %}
+                <li><a href="{% url 'report_employee_backlog' request.user.id %}">My Backlog</a></li>
+                {% endif %}
+                {% if perms.crm.add_paidtimeoffrequest %}
+                <li><a href="{% url 'pto' %}">Time Off</a></li>
+                {% endif %}
                 {% if work_projects %}<li class="divider"></li>{% endif %}
                 {% for project in work_projects %}
                     <li><a href="{% url 'clock_in' %}?project={{ project.id }}">{{ project }}</a></li>

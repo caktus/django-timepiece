@@ -1,7 +1,7 @@
 from django.contrib.auth.models import Group
 from django.core.mail import send_mail, EmailMultiAlternatives
 
-def new_pto(pto, url):
+def new_pto(pto, url, approve_url, deny_url):
     to_addys = ['browne.danielc@gmail.com',
                 pto.user_profile.user.email]
     for gid in [4, 5]:
@@ -13,12 +13,18 @@ def new_pto(pto, url):
     print 'email', str(pto.user_profile.user)
     html_content = '<dl>' + \
                       '<dt>Requester</dt><dd>' + str(pto.user_profile.user) + '</dd>' + \
+                      '<dt>Type</dt><dd>' + ('Paid Time Off' if pto.pto else 'Unpaid Time Off') + '</dd>' + \
                       '<dt>Date Submitted</dt><dd>' + pto.request_date.strftime('%F') + '</dd>' + \
-                      '<dt>PTO Start Date</dt><dd>' + pto.pto_start_date.strftime('%F') + '</dd>' + \
-                      '<dt>PTO End Date</dt><dd>' + pto.pto_end_date.strftime('%F') + '</dd>' + \
-                      '<dt>Hours</dt><dd>' + str(pto.amount) + '</dd>' + \
+                      '<dt>Time Off Start Date</dt><dd>' + pto.pto_start_date.strftime('%F') + '</dd>' + \
+                      '<dt>Time Off End Date</dt><dd>' + pto.pto_end_date.strftime('%F') + '</dd>' + \
+                      '<dt>PTO Hours</dt><dd>' + str(pto.amount) + '</dd>' + \
                       '<dt>Reasons</dt><dd>' + pto.comment + '</dd>' + \
-                      '<dt>Link</dt><dd><a href="https://project-toolbox.com' + url + '">PTO Request</a></dd>' + \
+                      '<dt>Links</dt>' + \
+                        '<dd>' + \
+                          '<a href="https://firmbase.aacengineering.com' + url + '">PTO Request</a>' + \
+                          ' | <a href="https://firmbase.aacengineering.com' + approve_url + '">Approve</a>' + \
+                          ' | <a href="https://firmbase.aacengineering.com' + deny_url + '">Deny</a>' + \
+                        '</dd>' + \
                     '</dl>' # % (str(pto.user_profile.user))
         # pto.request_date.strftime('%F'),
         # pto.pto_start_date.strftime('%F'),
@@ -44,9 +50,9 @@ def transition_ticket(transition, it_ticket, url):
         assignee_email = it_ticket.assignee.email
 
     subject = '[FirmBase] Update to Ticket %s' % (it_ticket.form_id)
-    text_content = '%s moved ticket %s from %s to %s. It is now assigned to %s. You can view the ticket at https://project-toolbox.com%s' % (
+    text_content = '%s moved ticket %s from %s to %s. It is now assigned to %s. You can view the ticket at https://firmbase.aacengineering.com%s' % (
         it_ticket.last_user, it_ticket.form_id, transition.start_state.name, transition.end_state.name, assignee_email, url)
-    html_content = '%s moved ticket <a href="https://project-toolbox.com%s">%s</a> from <strong>%s</strong> to <strong>%s</strong>.<br/>It is now assigned to <a href="mailto:%s">%s</a>.' % (
+    html_content = '%s moved ticket <a href="https://firmbase.aacengineering.com%s">%s</a> from <strong>%s</strong> to <strong>%s</strong>.<br/>It is now assigned to <a href="mailto:%s">%s</a>.' % (
         it_ticket.last_user, url, it_ticket.form_id, transition.start_state.name, transition.end_state.name, assignee_email, assignee_email)
     msg = EmailMultiAlternatives(subject, text_content, 'firmbase@project-toolbox.com', to_addys)
     msg.attach_alternative(html_content, "text/html")

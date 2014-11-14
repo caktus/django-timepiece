@@ -1,0 +1,54 @@
+{% extends "timepiece/reports/base.html" %}
+{% load timepiece_tags bootstrap_toolkit %}
+{% load url from future %}
+
+{% block title %}Backlog Report{% endblock title %}
+
+{% block bodyid %}backlog-report{% endblock bodyid %}
+
+{% block crumbs %}
+    {{ block.super }}
+    <li>
+        <span class="divider">/</span>
+        <a href="{% url 'report_backlog' %}">Backlog Report</a>
+    </li>
+{% endblock crumbs %}
+
+{% block report_nav %}
+    {% with 'backlog' as active %}
+        {{ block.super }}
+    {% endwith %}
+{% endblock report_nav %}
+
+
+{% block report_content %}
+<div class="row-fluid">
+    <div class="span12" name="backlog-container">
+        <table class="table">
+            <tr>
+                <th>Employee</th>
+                <th>Activity</th>
+                <th style="width: 40%">Progress</th>
+                <th colspan="2">Hours</th>
+            </tr>
+            {% for employee, ags in backlog.items %}
+                {% for ag in ags %}
+                <tr>
+                    {% if forloop.first %}
+                    <td rowspan="{{ ags|length }}"><a href="{% url 'report_employee_backlog' ag.employee.id %}">{{ ag.employee.first_name }} {{ ag.employee.last_name }}</a></td>
+                    {% endif %}
+                    <td>{{ ag.activity_name }}</td>
+                    <td>
+                        <div class="progress{% if ag.hours == 0.0 %} progress-danger progress-striped{% endif %}">
+                            <div class="bar" style="width: {{ ag.percentage }}%;"></div>
+                        </div>
+                    </td>
+                    <td>{{ ag.charged_hours }} / {{ ag.hours }}</td>
+                    <td><span class="label">{{ ag.remaining_hours }} remaining</span></td>
+                </tr>
+                {% endfor %}
+            {% endfor %}
+        </table>
+    </div>
+</div>
+{% endblock report_content %}

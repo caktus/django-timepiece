@@ -22,4 +22,20 @@ urlpatterns = patterns('',
     url(r'^reports/estimation_accuracy/$',
         views.report_estimation_accuracy,
         name='report_estimation_accuracy'),
+
+    url(r'^reports/backlog/$',
+        views.report_backlog,
+        name='report_backlog'),
+
+    url(r'^reports/backlog/(?P<user_id>\d+)/$',
+        views.report_employee_backlog,
+        name='report_employee_backlog'),
+
+    url(r'^reports/active_project_burnup_charts/$',
+        views.active_projects_burnup_charts,
+        name='report_active_projects_burnup_charts'),
+
+    url(r'^reports/active_project_burnup_charts/(?P<minder_id>\d+)/$',
+        views.active_projects_burnup_charts,
+        name='report_active_projects_burnup_charts_minder'),
 )

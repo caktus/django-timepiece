@@ -15,13 +15,12 @@ def date_totals(entries, by):
         if isinstance(date, datetime.datetime):
             date = date.date()
         d_entries = list(date_entries)
-        print 'd_entries', d_entries
 
         if by == 'user':
             name = ' '.join((d_entries[0]['user__first_name'],
                     d_entries[0]['user__last_name']))
         elif by == 'project':
-            name = d_entries[0]['project__name']
+            name = '%s: %s' % (d_entries[0]['project__code'], d_entries[0]['project__name'])
         else:
             name = d_entries[0][by]
 
@@ -68,6 +67,7 @@ def get_project_totals(entries, date_headers, hour_type=None, overtime=False,
     rows = []
     for thing, thing_entries in groupby(entries, lambda x: x[by]):
         name, thing_id, date_dict = date_totals(thing_entries, by)
+        # print 'LOOP', name, thing_id, date_dict
         dates = []
         for index, day in enumerate(date_headers):
             if isinstance(day, datetime.datetime):
@@ -219,3 +219,24 @@ def get_week_window(day=None):
     """Returns (Monday, Sunday) of the requested week."""
     start = get_week_start(day)
     return (start, start + relativedelta(days=6))
+
+def get_week_trunc_sunday(date):
+    if date.weekday() < 6:
+        return date - datetime.timedelta(date.weekday()+1)
+    else:
+        return date
+
+# accepted answer from
+# http://stackoverflow.com/questions/1143671/python-sorting-list-of-dictionaries-by-multiple-keys
+# a = multikeysort(b, ['-Total_Points', 'TOT_PTS_Misc'])
+def multikeysort(items, columns):
+    from operator import itemgetter
+    comparers = [ ((itemgetter(col[1:].strip()), -1) if col.startswith('-') else (itemgetter(col.strip()), 1)) for col in columns]  
+    def comparer(left, right):
+        for fn, mult in comparers:
+            result = cmp(fn(left), fn(right))
+            if result:
+                return mult * result
+        else:
+            return 0
+    return sorted(items, cmp=comparer)

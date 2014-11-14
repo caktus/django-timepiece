@@ -96,7 +96,7 @@ function ChargedHours(id, project, user, start_time, end_time, activity, locatio
         // get duration in hours from timestamps
         this.duration = (this.end_time - this.start_time) / 3600000;
         // round to nearest quarter hour
-        this.duration = Math.round(this.duration*4)/4;
+        // this.duration = Math.round(this.duration*4)/4;
     }
     this.row = [];
     this.col = [];

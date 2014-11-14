@@ -6,7 +6,7 @@ from selectable import forms as selectable
 from timepiece.fields import UserModelMultipleChoiceField
 from timepiece.forms import DateForm, YearMonthForm
 
-from timepiece.crm.lookups import ProjectLookup
+from timepiece.crm.lookups import ProjectLookup, BusinessLookup
 from timepiece.crm.models import Attribute
 from timepiece.entries.models import Entry, Activity
 
@@ -81,6 +81,8 @@ class HourlyReportForm(DateForm):
             widget=forms.RadioSelect())
     projects = selectable.AutoCompleteSelectMultipleField(ProjectLookup,
             label='Project Name', required=False)
+    businesses = selectable.AutoCompleteSelectMultipleField(BusinessLookup,
+            label='Client Name', required=False)
 
     def __init__(self, *args, **kwargs):
         super(HourlyReportForm, self).__init__(*args, **kwargs)

@@ -1,8 +1,14 @@
 {% extends 'timepiece/project/base.html' %}
 {% load url from future %}
 {% load timepiece_tags %}
+{% load bootstrap_toolkit %}
+
 
 {% block title %}{{ project }} - Time Sheet for {{ from_date|date:'M Y' }}{% endblock title %}
+
+{% block extrajs %}
+    {{ pj_filters.media }}
+{% endblock extrajs %}
 
 {% block crumbs %}
     {{ block.super }}
@@ -22,11 +28,17 @@
 
     <div class="row-fluid">
         <div class="span12">
-            <form class="form-inline" method="get" action="" id="date-filter" accept-charset="utf-8">
-                {{ year_month_form }}
+            {% date_filters "project-timesheet-filters" %}
+        </div>
+    </div>
+
+    <div class="row-fluid">
+        <div class="span12">
+            <form class="form-horizontal" method="get" action="" id="project-timesheet-filters" accept-charset="utf-8">
+                {{ filter_form|as_bootstrap:"horizontal" }}
                 <input class="btn" type='submit' name='yearmonth' value="Update" id='yearmonth'/>
                 {% if perms.crm.export_project_time_sheet %}
-                    <button class="btn" type='submit' name='csv' value="csv" id='csv'>Download CSV</button>
+                    <button class="btn" type='submit' name='csv' value="csv" id='csv' disabled='disabled'>Download XLS</button><span class="label">in progress</span>
                 {% endif %}
             </form>
         </div>

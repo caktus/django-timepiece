@@ -1,0 +1,24 @@
+{% extends "timepiece/pto/approvedeny.html" %}
+{% load url from future %}
+{% load bootstrap_toolkit %}
+
+{% block crumbs %}
+    {{ block.super }}
+    <li>
+        <span class="divider">/</span>
+        <a href="{% url 'pto' 'approvals' %}">Process PTO Request</a>
+    </li>
+{% endblock crumbs %}
+
+{% block title %}Confirm Process PTO Request{% endblock title %}
+
+{% block extra_content %}
+<div class="span12">
+    <h2>Confirm Process PTO Request</h2>
+</div>
+{% endblock extra_content %}
+
+{% block extra_label %} (after approval and deduction){% endblock %}
+
+{% block submit_buton_style %}btn-primary{% endblock %}
+{% block submit_button_label %}Process{% endblock %}

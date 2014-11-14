@@ -1,0 +1,21 @@
+<html>
+<link rel="stylesheet" type="text/css" href="{{ STATIC_URL }}timepiece/js/burnup_charts/c3.min.css" />
+<link rel="stylesheet" type="text/css" href="{{ STATIC_URL }}timepiece/js/burnup_charts/burnup_charts.css" />
+
+<script charset="utf-8" src="//ajax.googleapis.com/ajax/libs/jquery/1.7.2/jquery.min.js"></script>
+<script charset="utf-8" src="{{ STATIC_URL }}timepiece/js/burnup_charts/c3.min.js"></script>
+<script charset="utf-8" src="{{ STATIC_URL }}timepiece/js/burnup_charts/d3.min.js"></script>
+<script charset="utf-8" src="{{ STATIC_URL }}timepiece/js/burnup_charts/burnup_charts.js"></script>
+<script>
+    $(document).ready( function () {
+        create_burnup_chart({{ project.id }});
+    });
+</script>
+
+  <body>
+  	<div><h3>To zoom, you can press CTRL and scroll. Press CTRL+0 to restore zoom level.</h3></div>
+    <div id="burnup-chart-{{ project.id }}">
+    </div>
+  </body>
+
+</html>
