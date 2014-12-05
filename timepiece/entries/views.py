@@ -158,7 +158,6 @@ def clock_in(request):
 
     initial = dict([(k, v) for k, v in request.GET.items()])
     data = request.POST or None
-    print 'clock_in POST', data
     form = ClockInForm(data, initial=initial, user=user, active=active_entry)
     if form.is_valid():
         entry = form.save()

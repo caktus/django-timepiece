@@ -2,6 +2,7 @@ import datetime
 from dateutil.relativedelta import relativedelta
 
 from django import forms
+from django.core.urlresolvers import reverse, reverse_lazy
 
 from timepiece import utils
 from timepiece.crm.models import Project
@@ -102,6 +103,19 @@ class ClockInForm(forms.ModelForm):
         entry = super(ClockInForm, self).save(commit=commit)
         if self.active and commit:
             self.active.save()
+
+            # TODO: think of a better, cleaner integration
+            try:
+                if hasattr(self.active,'generaltask_set'):
+                    from workflow.general_task import emails
+                    gt = self.active.generaltask_set.all()[0]
+                    if gt.hours_spent >= gt.effort:
+                        emails.overspent(gt,
+                            reverse('view_general_task', args=(gt.id,)),
+                            reverse('edit_general_task', args=(gt.id,)))
+            except:
+                pass
+
         return entry
 
 
