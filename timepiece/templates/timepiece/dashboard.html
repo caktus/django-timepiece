@@ -225,6 +225,7 @@
                         <thead>
                             <tr>
                                 <th>Name</th>
+                                <th>Status</th>
                                 <th>Project</th>
                                 <th class="hidden-phone">
                                     Since&nbsp;&nbsp;&nbsp;
@@ -236,6 +237,21 @@
                             {% for entry in others_active_entries %}
                                 <tr>
                                     <td><i class="icon-user"></i> {{ entry.user.first_name }} {{ entry.user.last_name }}</td>
+                                    <td>
+                                        {% if entry.is_paused %}
+                                        <span class="label label-warning">paused</span>
+                                        since {{ entry.pause_time|time }}
+                                        {% ifnotequal entry.pause_time.date today %}
+                                            {% if entry.pause_time.date < week_start or entry.pause_time.date > week_end %}
+                                                on {{ entry.pause_time|date:'M j' }}
+                                            {% else %}
+                                                on {{ entry.pause_time|date:"l" }}
+                                            {% endif %}
+                                        {% endifnotequal %}
+                                        {% else %}
+                                        <span class="label label-success">active</span>
+                                        {% endif %}
+                                    </td>
                                     <td><span class="hidden-phone">{{ entry.activity.name }} for </span>{{ entry.project }}</td>
                                     <td class="hidden-phone nowrap">
                                         {{ entry.start_time|time }}

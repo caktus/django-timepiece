@@ -39,10 +39,12 @@ class UserProfile(models.Model):
     SALARY = 'salary'
     HOURLY = 'hourly'
     INACTIVE = 'inactive'
+    EXTERNAL = 'external'
     EMPLOYEE_TYPES = {
         SALARY: 'Salary',
         HOURLY: 'Hourly',
         INACTIVE: 'Inactive',
+        EXTERNAL: 'External',
     }
 
     user = models.OneToOneField(User, unique=True, related_name='profile')

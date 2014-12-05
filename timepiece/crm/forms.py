@@ -44,6 +44,9 @@ class CreateEditProjectForm(forms.ModelForm):
 
 class CreateUserForm(UserCreationForm):
     business = forms.ModelChoiceField(Business.objects.all())
+    hire_date = forms.DateField()
+    earns_pto = forms.BooleanField(required=False, label='Earns PTO')
+    employee_type = forms.ChoiceField(choices=UserProfile.EMPLOYEE_TYPES.items())
 
     class Meta:
         model = User
@@ -57,7 +60,11 @@ class CreateUserForm(UserCreationForm):
 
     def save(self, commit=True):
         user = super(CreateUserForm, self).save(commit)
-        up = UserProfile(user=user, business=self.cleaned_data['business'])
+        up = UserProfile(user=user,
+                         business=self.cleaned_data['business'],
+                         hire_date=self.cleaned_data['hire_date'],
+                         earns_pto=self.cleaned_data['hire_date'],
+                         employee_type=self.cleaned_data['employee_type'])
         if commit:
             self.save_m2m()
             up.save()
@@ -221,5 +228,6 @@ class CreateEditActivityGoalForm(forms.ModelForm):
 
     def __init__(self, *args, **kwargs):
         super(CreateEditActivityGoalForm, self).__init__(*args, **kwargs)
-        self.EMPLOYEE_CHOICES.insert(0, ('', '-'))
+        if self.EMPLOYEE_CHOICES[0][1] != '-':
+            self.EMPLOYEE_CHOICES.insert(0, ('', '-'))
         self.fields['employee'].choices = self.EMPLOYEE_CHOICES

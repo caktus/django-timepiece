@@ -582,7 +582,7 @@ def report_backlog(request):
                     if activity is None:
                         activity_name = 'Other'
                         for activity_goal in activity_goals:
-                            if ActivityGoal.objects.filter(employee=employee, milestone=activity_goal.milestone, date__gt=activity_goal.date, activity=activity).count():
+                            if activity_goal.date and ActivityGoal.objects.filter(employee=employee, milestone=activity_goal.milestone, date__gt=activity_goal.date, activity=activity).count():
                                 # only get the latest date for this combo
                                 continue
                             activity_hours += float(activity_goal.goal_hours)
@@ -592,7 +592,10 @@ def report_backlog(request):
                     else:
                         activity_name = activity.name
                         for activity_goal in activity_goals:
-                            if ActivityGoal.objects.filter(employee=employee, milestone=activity_goal.milestone, date__gt=activity_goal.date, activity=activity).count():
+                            if activity_goal.date and ActivityGoal.objects.filter(employee=employee, 
+                                milestone=activity_goal.milestone, 
+                                date__gt=activity_goal.date, 
+                                activity=activity).count():
                                 # only get the latest date for this combo
                                 continue
                             activity_hours += float(activity_goal.goal_hours)
@@ -631,7 +634,7 @@ def report_employee_backlog(request, user_id):
                 if activity is None:
                     activity_name = 'Other'
                     for activity_goal in activity_goals:
-                        if ActivityGoal.objects.filter(employee=employee, milestone=activity_goal.milestone, date__gt=activity_goal.date, activity=activity).count():
+                        if activity_goal.date and ActivityGoal.objects.filter(employee=employee, milestone=activity_goal.milestone, date__gt=activity_goal.date, activity=activity).count():
                             # only get the latest date for this combo
                             continue
                         activity_hours += float(activity_goal.goal_hours)
@@ -641,7 +644,7 @@ def report_employee_backlog(request, user_id):
                 else:
                     activity_name = activity.name
                     for activity_goal in activity_goals:
-                        if ActivityGoal.objects.filter(employee=employee, milestone=activity_goal.milestone, date__gt=activity_goal.date, activity=activity).count():
+                        if activity_goal.date and ActivityGoal.objects.filter(employee=employee, milestone=activity_goal.milestone, date__gt=activity_goal.date, activity=activity).count():
                             # only get the latest date for this combo
                             continue
                         activity_hours += float(activity_goal.goal_hours)
