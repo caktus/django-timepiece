@@ -17,9 +17,9 @@
         <div class="span12">
             <h2>{{ object.name }}</h2>
             <ul class="nav nav-pills">
-                {% if perms.crm.change_business %}
-                    <li><a href='{% url "edit_business" object.pk %}'>Edit</a></li>
-                    <li><a href="{% url "delete_business" object.pk %}">Delete</a></li>
+                {% if perms.crm.change_businessdepartment %}
+                    <li><a href='{% url "edit_business_department" object.pk %}'>Edit</a></li>
+                    <li><a href='{% url "delete_business_department" object.pk %}'>Delete</a></li>
                 {% endif %}
             </ul>
         </div>
@@ -74,24 +74,14 @@
             <h3>Departments</h3>
             <ul class="nav nav-pills">
                 {% if perms.crm.change_business %}
-                    <li><a href='{% url "create_business_department" object.pk %}'>Add Department</a></li>
+                    <li><a href='{% url "add_business_department" object.pk %}'>Add Department</a></li>
                 {% endif %}
             </ul>
             <table class="table table-bordered">
                 {% for bd in object.get_departments %}
-                <tr>
-                    <th><a href='{% url "edit_business_department" bd.business.id bd.id %}'>{{ bd.short_name }}</a></th>
-                    <td>{{ bd.name }}</td>
-                    <td>
-                        {% if object.active %}
-                            <span class="label label-success"><i class="icon-white icon-ok"></i></span>
-                        {% else %}
-                            <span class="label label-important"><i class="icon-white icon-remove"></i></span>
-                        {% endif %}
-                    </td>
-                </tr>
+
                 {% empty %}
-                <tr><td>There are no departments for this business</td></tr>
+                There are no departments for this business
                 {% endfor %}
             </table>
         </div>

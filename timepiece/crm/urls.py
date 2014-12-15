@@ -90,7 +90,14 @@ urlpatterns = patterns('',
         name='delete_business'),
     url(r'^business/(?P<business_id>\d+)/get_users/$',
         views.get_users_for_business,
-        name='get_users_for_business'),# Add Note
+        name='get_users_for_business'),
+    url(r'^business/(?P<business_id>\d+)/department/create/$',
+        views.CreateBusinessDepartment.as_view(),
+        name='create_business_department'),
+    url(r'^business/(?P<business_id>\d+)/department/(?P<business_department_id>\d+)/edit/$',
+        views.EditBusinessDepartment.as_view(),
+        name='edit_business_department'),
+    # Add Business Note
     url(r'^business/(?P<business_id>\d+)/add_note$', # expects querystring of transition_id=<int>
         views.AddBusinessNote.as_view(),
         name='add_business_note'),

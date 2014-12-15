@@ -30,9 +30,11 @@ from timepiece.crm.forms import (CreateEditBusinessForm, CreateEditProjectForm,
         EditUserForm, CreateUserForm, SelectUserForm, ProjectSearchForm,
         QuickSearchForm, CreateEditPTORequestForm, CreateEditMilestoneForm,
         CreateEditActivityGoalForm, ApproveDenyPTORequestForm,
-        CreateEditPaidTimeOffLog, AddBusinessNoteForm)
+        CreateEditPaidTimeOffLog, AddBusinessNoteForm, 
+        CreateEditBusinessDepartmentForm)
 from timepiece.crm.models import (Business, Project, ProjectRelationship, UserProfile,
-    PaidTimeOffLog, PaidTimeOffRequest, Milestone, ActivityGoal)
+    PaidTimeOffLog, PaidTimeOffRequest, Milestone, ActivityGoal, BusinessNote,
+    BusinessDepartment)
 from timepiece.crm.utils import grouped_totals, project_activity_goals_with_progress
 from timepiece.entries.models import Entry, Activity, Location
 from timepiece.reports.forms import HourlyReportForm
@@ -483,6 +485,54 @@ class EditBusiness(UpdateView):
     template_name = 'timepiece/business/create_edit.html'
     pk_url_kwarg = 'business_id'
 
+@cbv_decorator(permission_required('crm.add_business_department'))
+class CreateBusinessDepartment(CreateView):
+    model = BusinessDepartment
+    form_class = CreateEditBusinessDepartmentForm
+    template_name = 'timepiece/business/department/create_edit.html'
+
+    def get_context_data(self, **kwargs):
+        kwargs.update({'business': Business.objects.get(id=int(self.kwargs['business_id']))})
+        return super(CreateBusinessDepartment, self).get_context_data(**kwargs)
+
+    def get_form(self, *args, **kwargs):
+        form = super(CreateBusinessDepartment, self).get_form(*args, **kwargs)
+        form.fields['business'].widget = widgets.HiddenInput()
+        form.fields['business'].initial = Business.objects.get(id=int(self.kwargs['business_id']))
+        return form
+
+    def form_valid(self, form):
+        form.instance.business = Business.objects.get(id=int(self.kwargs['business_id']))
+        return super(CreateBusinessDepartment, self).form_valid(form)
+
+    def get_success_url(self):
+        # messages.info(self.request, 'Your settings have been updated.')
+        return reverse('view_business', args=(int(self.kwargs['business_id']), ))
+
+@cbv_decorator(permission_required('crm.add_business_department'))
+class EditBusinessDepartment(UpdateView):
+    model = BusinessDepartment
+    form_class = CreateEditBusinessDepartmentForm
+    template_name = 'timepiece/business/department/create_edit.html'
+    pk_url_kwarg = 'business_department_id'
+
+    def get_context_data(self, **kwargs):
+        kwargs.update({'business': Business.objects.get(id=int(self.kwargs['business_id']))})
+        return super(EditBusinessDepartment, self).get_context_data(**kwargs)
+
+    def get_form(self, *args, **kwargs):
+        form = super(EditBusinessDepartment, self).get_form(*args, **kwargs)
+        form.fields['business'].widget = widgets.HiddenInput()
+        form.fields['business'].initial = Business.objects.get(id=int(self.kwargs['business_id']))
+        return form
+
+    def form_valid(self, form):
+        form.instance.business = Business.objects.get(id=int(self.kwargs['business_id']))
+        return super(EditBusinessDepartment, self).form_valid(form)
+
+    def get_success_url(self):
+        # messages.info(self.request, 'Your settings have been updated.')
+        return reverse('view_business', args=(int(self.kwargs['business_id']), ))
 
 # Users
 

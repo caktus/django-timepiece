@@ -318,6 +318,13 @@ class Business(models.Model):
         else:
             return 0.0
 
+    @property
+    def get_notes(self):
+        return BusinessNote.objects.filter(business=self).order_by('-created_at')
+
+    @property
+    def get_departments(self):
+        return BusinessDepartment.objects.filter(business=self).order_by('short_name')
 
     def save(self):
         try:
@@ -329,11 +336,11 @@ class Business(models.Model):
             try:
                 # geocode billing address
                 if (self.billing_street and self.billing_city and 
-                    self.billing_state and self.billing_zip and 
+                    self.billing_state and self.billing_postalcode and 
                     self.billing_country):
                     gc = gmaps.geocode('%s, %s, %s %s-%s, %s' % (
                         self.billing_street, self.billing_city, 
-                        self.billing_state, self.billing_zip, 
+                        self.billing_state, self.billing_postalcode, 
                         self.billing_postalcode, self.billing_country))
                     if len(gc) == 1:
                         self.billing_lat = float(
@@ -347,11 +354,11 @@ class Business(models.Model):
             try:
                 # geocode shipping address
                 if (self.shipping_street and self.shipping_city and 
-                    self.shipping_state and self.shipping_zip and 
+                    self.shipping_state and self.shipping_postalcode and 
                     self.shipping_country):
                     gc = gmaps.geocode('%s, %s, %s %s-%s, %s' % (
                         self.shipping_street, self.shipping_city, 
-                        self.shipping_state, self.shipping_zip, 
+                        self.shipping_state, self.shipping_postalcode, 
                         self.shipping_postalcode, self.shipping_country))
                     if len(gc) == 1:
                         self.shipping_lat = float(
@@ -374,6 +381,7 @@ class BusinessDepartment(models.Model):
     business = models.ForeignKey(Business)
     name = models.CharField(max_length=255)
     short_name = models.CharField(max_length=255, blank=True)
+    active = models.BooleanField(default=False)
 
     def __unicode__(self):
         return self.name

@@ -12,7 +12,8 @@ from timepiece.crm.lookups import (BusinessLookup, ProjectLookup, UserLookup,
         QuickLookup)
 from timepiece.crm.models import (Attribute, Business, Project,
         ProjectRelationship, UserProfile, PaidTimeOffRequest, 
-        PaidTimeOffLog, Milestone, ActivityGoal, BusinessNote)
+        PaidTimeOffLog, Milestone, ActivityGoal, BusinessNote,
+        BusinessDepartment)
 
 
 class CreateEditBusinessForm(forms.ModelForm):
@@ -36,6 +37,18 @@ class CreateEditBusinessForm(forms.ModelForm):
         super(CreateEditBusinessForm, self).__init__(*args, **kwargs)
         self.fields['account_owner'].choices = self.EMPLOYEE_CHOICES
 
+class CreateEditBusinessDepartmentForm(forms.ModelForm):
+
+    class Meta:
+        model = BusinessDepartment
+        fields = ('name', 'short_name', 'active', 'business')
+
+    def __init__(self, *args, **kwargs):
+        super(CreateEditBusinessDepartmentForm, self).__init__(*args, **kwargs)
+        print kwargs
+        self.fields['business'].widget = widgets.HiddenInput()
+        self.fields['business'].initial = kwargs.get('business', None)
+
 class AddBusinessNoteForm(forms.ModelForm):
 
     class Meta:
@@ -45,7 +58,7 @@ class AddBusinessNoteForm(forms.ModelForm):
     def __init__(self, *args, **kwargs):
         super(AddBusinessNoteForm, self).__init__(*args, **kwargs)
         self.fields['text'].label = ''
-        self.fields['text'].widget.attrs['rows'] = 6
+        self.fields['text'].widget.attrs['rows'] = 4
         self.fields['author'].widget = widgets.HiddenInput()
         self.fields['business'].widget = widgets.HiddenInput()
 

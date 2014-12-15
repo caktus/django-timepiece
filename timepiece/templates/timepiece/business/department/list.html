@@ -1,0 +1,53 @@
+{% extends "timepiece/business/base.html" %}
+{% load bootstrap_toolkit %}
+{% load url from future %}
+
+{% block title %}Businesses{% endblock title %}
+
+{% block content %}
+    <div class="row-fluid">
+        <div class="span12">
+            <h2>Business Departments</h2>
+            <ul class="nav nav-pills">
+                {% if perms.crm.add_businessdepartment %}
+                    <li><a href='{% url "create_business_department" %}'>Create Business Department</a></li>
+                {% endif %}
+            </ul>
+        </div>
+    </div>
+
+    <div class="row-fluid">
+        <div class="span12">
+            <form class='form-inline' accept-charset='UTF-8' method='get' action=''>
+                {{ form|as_bootstrap:"inline" }}
+                <button type='submit' class='btn' name='submit'>Search</button>
+            </form>
+        </div>
+    </div>
+
+    <div class="row-fluid">
+        <div class="span12">
+            {% load pagination_tags %}
+            {% autopaginate object_list %}
+
+            {% paginate %}
+            <table class='table table-bordered table-striped table-condensed'>
+                <thead>
+                    <tr>
+                        <th>Name</th>
+                        <th>Short Name</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for bd in object_list %}
+                        <tr>
+                            <td><a href='{% url "view_business" bd.pk %}'>{{ bd.name }}</a></td>
+                            <td>{{ bd.short_name|truncatewords:8 }}</td>
+                        </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+            {% paginate %}
+        </div>
+    </div>
+{% endblock content %}
