@@ -30,7 +30,7 @@ from timepiece.crm.forms import (CreateEditBusinessForm, CreateEditProjectForm,
         EditUserForm, CreateUserForm, SelectUserForm, ProjectSearchForm,
         QuickSearchForm, CreateEditPTORequestForm, CreateEditMilestoneForm,
         CreateEditActivityGoalForm, ApproveDenyPTORequestForm,
-        CreateEditPaidTimeOffLog)
+        CreateEditPaidTimeOffLog, AddBusinessNoteForm)
 from timepiece.crm.models import (Business, Project, ProjectRelationship, UserProfile,
     PaidTimeOffLog, PaidTimeOffRequest, Milestone, ActivityGoal)
 from timepiece.crm.utils import grouped_totals, project_activity_goals_with_progress
@@ -435,6 +435,30 @@ class ViewBusiness(DetailView):
     model = Business
     pk_url_kwarg = 'business_id'
     template_name = 'timepiece/business/view.html'
+
+    def get_context_data(self, **kwargs):
+        context = super(ViewBusiness, self).get_context_data(**kwargs)
+        context['add_business_note_form'] = AddBusinessNoteForm()
+        # context['ticket_history'] = GeneralTaskHistory.objects.filter(
+        #     general_task=self.object).order_by('-last_activity')
+        # context['is_it_admin'] = bool(len(self.request.user.groups.filter(id=8)))
+        # context['is_aac_mgmt'] = bool(len(self.request.user.groups.filter(id=5)))
+        # context['add_user_form'] = SelectUserForm()
+        return context
+
+@cbv_decorator(permission_required('workflow.add_businessnote'))
+class AddBusinessNote(View):
+
+    def post(self, request, *args, **kwargs):
+        user = self.request.user
+        business = Business.objects.get(id=int(kwargs['business_id']))
+        note = BusinessNote(business=business,
+                            author=user,
+                            text=request.POST.get('text', ''))
+        if len(note.text):
+            note.save()
+        return HttpResponseRedirect(request.GET.get('next', None) or reverse('view_business', args=(business.id,)))
+
 
 
 @cbv_decorator(permission_required('crm.add_business'))

@@ -392,14 +392,12 @@ def report_payroll_summary(request):
     date = timezone.now() - relativedelta(months=1)
     from_date = utils.get_month_start(date).date()
     to_date = from_date + relativedelta(months=1)
-    print 'report', from_date, to_date
 
     year_month_form = PayrollSummaryReportForm(request.GET or None,
         initial={'month': from_date.month, 'year': from_date.year})
 
     if year_month_form.is_valid():
         from_date, to_date = year_month_form.save()
-        print 'form valid', from_date, to_date
     last_billable = utils.get_last_billable_day(from_date)
     projects = utils.get_setting('TIMEPIECE_PAID_LEAVE_PROJECTS')
     weekQ = Q(end_time__gt=utils.get_week_start(from_date),

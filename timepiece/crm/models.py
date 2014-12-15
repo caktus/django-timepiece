@@ -16,9 +16,15 @@ except:
 
 try:
     from project_toolbox_main import settings
+    from timepiece import emails as timepiece_emails
 except:
     pass
 
+try:
+    import googlemaps # for geocoding locations
+    import ystockquote # for getting stock prices
+except:
+    pass
 
 # Add a utility method to the User class that will tell whether or not a
 # particular user has any unclosed entries
@@ -170,12 +176,117 @@ class Attribute(models.Model):
 
 
 class Business(models.Model):
+    BIZ_CLASS = (('client', 'Client'),
+                 ('vendor', 'Vendor'),
+                 ('org', 'Organization'),
+                 ('other', 'Other'))
+
+    BIZ_STATUS = (('evaluation', 'Evaluation'),
+                  ('prospective', 'Prospective'),
+                  ('approved', 'Approved'),
+                  ('not-approved', 'Not Approved'),
+                  ('other', 'Other'))
+
+    BIZ_INDUSTRIES = (('aerospace', 'Aerospace'),
+                      ('airlines', 'Airlines'),
+                      ('avionics', 'Avionics'),
+                      ('engineering', 'Engineering'),
+                      ('shippping', 'Shipping'),
+                      ('transportation', 'Transportation'),
+                      ('other', 'Other'))
+
+    STATES = (('AL', 'Alabama'),
+              ('AK', 'Alaska'),
+              ('AZ', 'Arizona'),
+              ('AR', 'Arkansas'),
+              ('CA', 'California'),
+              ('CO', 'Colorado'),
+              ('CT', 'Connecticut'),
+              ('DE', 'Delaware'),
+              ('FL', 'Florida'),
+              ('GA', 'Georgia'),
+              ('HI', 'Hawaii'),
+              ('ID', 'Idaho'),
+              ('IL', 'Illinoi'),
+              ('IN', 'Indiana'),
+              ('IA', 'Iowa'),
+              ('KS', 'Kansas'),
+              ('KY', 'Kentucky'),
+              ('LA', 'Louisiana'),
+              ('ME', 'Maine'),
+              ('MD', 'Maryland'),
+              ('MA', 'Massachusetts'),
+              ('MI', 'Michigan'),
+              ('MN', 'Minnesota'),
+              ('MS', 'Mississippi'),
+              ('MO', 'Missouri'),
+              ('MT', 'Montana'),
+              ('NE', 'Nebraska'),
+              ('NV', 'Nevada'),
+              ('NH', 'New Hampshire'),
+              ('NJ', 'New Jersey'),
+              ('NM', 'New Mexico'),
+              ('NY', 'New York'),
+              ('NC', 'North Carolina'),
+              ('ND', 'North Dakota'),
+              ('OH', 'Ohio'),
+              ('OK', 'Oklahoma'),
+              ('OR', 'Oregon'),
+              ('PA', 'Pennsylvania'),
+              ('RI', 'Rhode Island'),
+              ('SC', 'South Carolina'),
+              ('SD', 'South Dakota'),
+              ('TN', 'Tennessee'),
+              ('TX', 'Texas'),
+              ('UT', 'Utah'),
+              ('VT', 'Vermont'),
+              ('VA', 'Virginia'),
+              ('WA', 'Washington'),
+              ('WV', 'West Virginia'),
+              ('WI', 'Wisconsin'),
+              ('WY', 'Wyoming'))
+
     name = models.CharField(max_length=255)
     short_name = models.CharField(max_length=255, blank=True)
-    email = models.EmailField(blank=True)
+    #email = models.EmailField(blank=True)
+    poc = models.ForeignKey(User, related_name='business_poc', verbose_name='Primary Contact')
     description = models.TextField(blank=True)
     notes = models.TextField(blank=True)
     external_id = models.CharField(max_length=32, blank=True)
+
+    classification = models.CharField(max_length=8, blank=True, choices=BIZ_CLASS)
+    active = models.BooleanField(default=False)
+    status = models.CharField(max_length=16, null=True, blank=True, choices=BIZ_STATUS)
+    account_owner = models.ForeignKey(User, blank=True, null=True, related_name='biz_account_holder')
+    
+    billing_street = models.CharField(max_length=255, blank=True)
+    billing_city = models.CharField(max_length=255, blank=True)
+    billing_state = models.CharField(max_length=2, blank=True, choices=STATES)
+    billing_postalcode = models.CharField(max_length=32, blank=True)
+    billing_mailstop = models.CharField(max_length=16, blank=True)
+    billing_country = models.CharField(max_length=128, blank=True)
+    billing_lat = models.FloatField(blank=True, null=True, verbose_name='Billing Latitude', help_text='This is automatically set using the Google Maps Geocode API on save.')
+    billing_lon = models.FloatField(blank=True, null=True, verbose_name='Billing Longitude', help_text='This is automatically set using the Google Maps Geocode API on save.')
+
+    shipping_street = models.CharField(max_length=255, blank=True)
+    shipping_city = models.CharField(max_length=255, blank=True)
+    shipping_state = models.CharField(max_length=2, blank=True, choices=STATES)
+    shipping_postalcode = models.CharField(max_length=32, blank=True)
+    shipping_mailstop = models.CharField(max_length=16, blank=True)
+    shipping_country = models.CharField(max_length=128, blank=True)
+    shipping_lat = models.FloatField(blank=True, null=True, verbose_name='Shipping Latitude', help_text='This is automatically set using the Google Maps Geocode API on save.')
+    shipping_lon = models.FloatField(blank=True, null=True, verbose_name='Shipping Longitude', help_text='This is automatically set using the Google Maps Geocode API on save.')
+
+    phone = models.CharField(max_length=16, blank=True)
+    fax = models.CharField(max_length=16, blank=True)
+    website = models.CharField(max_length=255, blank=True)
+
+    account_number = models.CharField(max_length=255, blank=True)
+    industry = models.CharField(max_length=64, blank=True, choices=BIZ_INDUSTRIES)
+    ownership = models.CharField(max_length=255, blank=True)
+    annual_revenue = models.FloatField(null=True, blank=True)
+    num_of_employees = models.FloatField(null=True, blank=True, verbose_name='Number of Employees')
+    ticker_symbol = models.CharField(max_length=32, blank=True)
 
     class Meta:
         db_table = 'timepiece_business'  # Using legacy table name.
@@ -197,6 +308,95 @@ class Business(models.Model):
         else:
             return self.name
 
+    @property
+    def current_stock_value(self):
+        if self.ticker_symbol:
+            try:
+                return float(ystockquote.get_price(self.ticker_symbol))
+            except:
+                return 0.0
+        else:
+            return 0.0
+
+
+    def save(self):
+        try:
+            gmaps = googlemaps.Client(
+                key=settings.GOOGLE_SERVER_API_KEY,
+                client_id=settings.GOOGLE_CLIENT_ID,
+                client_secret=settings.GOOGLE_CLIENT_SECRET)
+            
+            try:
+                # geocode billing address
+                if (self.billing_street and self.billing_city and 
+                    self.billing_state and self.billing_zip and 
+                    self.billing_country):
+                    gc = gmaps.geocode('%s, %s, %s %s-%s, %s' % (
+                        self.billing_street, self.billing_city, 
+                        self.billing_state, self.billing_zip, 
+                        self.billing_postalcode, self.billing_country))
+                    if len(gc) == 1:
+                        self.billing_lat = float(
+                            gc[0]['geometry']['location']['lat'])
+                        self.billing_lon = float(
+                            gc[0]['geometry']['location']['lng'])
+            except:
+                self.billing_lat = None
+                self.billing_lon = None
+
+            try:
+                # geocode shipping address
+                if (self.shipping_street and self.shipping_city and 
+                    self.shipping_state and self.shipping_zip and 
+                    self.shipping_country):
+                    gc = gmaps.geocode('%s, %s, %s %s-%s, %s' % (
+                        self.shipping_street, self.shipping_city, 
+                        self.shipping_state, self.shipping_zip, 
+                        self.shipping_postalcode, self.shipping_country))
+                    if len(gc) == 1:
+                        self.shipping_lat = float(
+                            gc[0]['geometry']['location']['lat'])
+                        self.shipping_lon = float(
+                            gc[0]['geometry']['location']['lng'])
+            except:
+                self.shipping_lat = None
+                self.shipping_lon = None
+
+        except:
+            self.billing_lat = None
+            self.billing_lon = None
+            self.shipping_lat = None
+            self.shipping_lon = None
+
+        super(Business, self).save()
+
+class BusinessDepartment(models.Model):
+    business = models.ForeignKey(Business)
+    name = models.CharField(max_length=255)
+    short_name = models.CharField(max_length=255, blank=True)
+
+    def __unicode__(self):
+        return self.name
+
+class BusinessNote(models.Model):
+    business = models.ForeignKey(Business)
+    author = models.ForeignKey(User)
+    created_at = models.DateTimeField(auto_now_add=True)
+    edited = models.BooleanField(default=False)
+    last_edited = models.DateTimeField(auto_now=True)
+    parent = models.ForeignKey("self", null=True, blank=True)
+    text = models.TextField()
+
+    def get_thread(self, thread):
+        thread.append(self)
+        for n in BusinessNote.objects.filter(parent=self).order_by('-created_at'):
+            thread.append(n.get_thread(), thread)
+
+    def save(self, *args, **kwargs):
+        super(BusinessNote, self).save(*args, **kwargs)
+        url = '%s%s' % (settings.DOMAIN, reverse('view_business', args=(self.business.id,)))
+        # send email to note author and business account owner
+        timepiece_emails.business_new_note(self, url)
 
 class TrackableProjectManager(models.Manager):
 

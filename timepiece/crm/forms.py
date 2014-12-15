@@ -1,4 +1,5 @@
 from django import forms
+from django.forms import widgets
 from django.contrib.auth.forms import UserCreationForm, UserChangeForm
 from django.contrib.auth.models import User, Group
 
@@ -11,15 +12,42 @@ from timepiece.crm.lookups import (BusinessLookup, ProjectLookup, UserLookup,
         QuickLookup)
 from timepiece.crm.models import (Attribute, Business, Project,
         ProjectRelationship, UserProfile, PaidTimeOffRequest, 
-        PaidTimeOffLog, Milestone, ActivityGoal)
+        PaidTimeOffLog, Milestone, ActivityGoal, BusinessNote)
 
 
 class CreateEditBusinessForm(forms.ModelForm):
+    EMPLOYEE_CHOICES = [(None, '-')] + [(u.pk, '%s, %s'%(u.last_name, u.first_name)) \
+        for u in Group.objects.get(id=1).user_set.filter(
+            is_active=True).order_by('last_name', 'first_name')]
 
     class Meta:
         model = Business
-        fields = ('name', 'short_name', 'email', 'description', 'notes')
+        fields = ('name', 'short_name', 'active', 'description', 'poc',
+            'phone', 'fax', 'website', 'industry', 
+            'classification', 'status', 'account_owner',
+            'billing_street',  'billing_city', 'billing_state',  
+            'billing_postalcode',  'billing_mailstop',  'billing_country', 
+            'shipping_street',  'shipping_city', 'shipping_state',  
+            'shipping_postalcode',  'shipping_mailstop',  'shipping_country',
+            'account_number', 'ownership', 'annual_revenue',
+            'num_of_employees', 'ticker_symbol')
 
+    def __init__(self, *args, **kwargs):        
+        super(CreateEditBusinessForm, self).__init__(*args, **kwargs)
+        self.fields['account_owner'].choices = self.EMPLOYEE_CHOICES
+
+class AddBusinessNoteForm(forms.ModelForm):
+
+    class Meta:
+        model = BusinessNote
+        fields = ('text', 'business', 'author')
+
+    def __init__(self, *args, **kwargs):
+        super(AddBusinessNoteForm, self).__init__(*args, **kwargs)
+        self.fields['text'].label = ''
+        self.fields['text'].widget.attrs['rows'] = 6
+        self.fields['author'].widget = widgets.HiddenInput()
+        self.fields['business'].widget = widgets.HiddenInput()
 
 class CreateEditProjectForm(forms.ModelForm):
     # business = selectable.AutoCompleteSelectField(BusinessLookup)
