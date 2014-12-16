@@ -71,7 +71,7 @@ class CreateEditProjectForm(forms.ModelForm):
 
     class Meta:
         model = Project
-        fields = ('name', 'business', 'finder', 
+        fields = ('name', 'business', 'business_department', 'finder', 
                 'point_person', 'binder', 'type', 
                 'status', 'activity_group', 'description')
 
@@ -82,6 +82,17 @@ class CreateEditProjectForm(forms.ModelForm):
         for f in ['point_person', 'finder', 'binder']:
             self.fields[f].choices = self.EMPLOYEE_CHOICES
 
+    def clean(self):
+            cleaned_data = super(CreateEditProjectForm, self).clean()
+            
+            biz = cleaned_data.get('business', None)
+            biz_dept = cleaned_data.get('business_department', None)
+            
+            if biz_dept and biz_dept.business != biz:
+                self._errors['business_department'] = self.error_class(
+                    ['Selected Company Department does not belong to selected Company.'])
+
+            return cleaned_data
 
 class CreateUserForm(UserCreationForm):
     business = forms.ModelChoiceField(Business.objects.all())

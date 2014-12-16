@@ -1,5 +1,5 @@
 {% extends "timepiece/business/base.html" %}
-{% load timepiece_tags bootstrap_toolkit %}
+{% load timepiece_tags bootstrap_toolkit humanize %}
 {% load url from future %}
 
 {% block title %}{{ object.name }}{% endblock title %}
@@ -73,17 +73,23 @@
 
             <h3>Departments</h3>
             <ul class="nav nav-pills">
-                {% if perms.crm.change_business %}
+                {% if perms.crm.add_businessdepartment %}
                     <li><a href='{% url "create_business_department" object.pk %}'>Add Department</a></li>
                 {% endif %}
             </ul>
             <table class="table table-bordered">
                 {% for bd in object.get_departments %}
                 <tr>
-                    <th><a href='{% url "edit_business_department" bd.business.id bd.id %}'>{{ bd.short_name }}</a></th>
+                    <th>
+                        {% if perms.crm.change_businessdepartment %}
+                        <a href='{% url "edit_business_department" bd.business.id bd.id %}'>{{ bd.short_name }}</a>
+                        {% else %}
+                        {{ bd.short_name }}
+                        {% endif %}
+                    </th>
                     <td>{{ bd.name }}</td>
                     <td>
-                        {% if object.active %}
+                        {% if bd.active %}
                             <span class="label label-success"><i class="icon-white icon-ok"></i></span>
                         {% else %}
                             <span class="label label-important"><i class="icon-white icon-remove"></i></span>
@@ -119,8 +125,8 @@
             <h3>Business Statistics</h3>
             <table class="table table-bordered">
                 <tr><th>Stock</th><td>$ {{ object.current_stock_value }} ({{ object.ticker_symbol }})</td></tr>
-                <tr><th>Annual Revenue</th><td>$ {{ object.annual_revenue }}</td></tr>
-                <tr><th>Number of Employees</th><td>{{ object.num_of_employees }}</td></tr>
+                <tr><th>Annual Revenue</th><td>$ {{ object.annual_revenue|intword }}</td></tr>
+                <tr><th>Number of Employees</th><td>{{ object.num_of_employees|intcomma }}</td></tr>
                 <tr><th>Ownership</th><td>{{ object.ownership }}</td></tr>
             </table>
 

@@ -285,7 +285,7 @@ class Business(models.Model):
     industry = models.CharField(max_length=64, blank=True, choices=BIZ_INDUSTRIES)
     ownership = models.CharField(max_length=255, blank=True)
     annual_revenue = models.FloatField(null=True, blank=True)
-    num_of_employees = models.FloatField(null=True, blank=True, verbose_name='Number of Employees')
+    num_of_employees = models.PositiveIntegerField(null=True, blank=True, verbose_name='Number of Employees')
     ticker_symbol = models.CharField(max_length=32, blank=True)
 
     class Meta:
@@ -406,6 +406,40 @@ class BusinessNote(models.Model):
         # send email to note author and business account owner
         timepiece_emails.business_new_note(self, url)
 
+
+# class Contact(models.Model):
+#     user = models.ForeignKey(User, null=True, blank=True)
+#     first_name = models.CharField(max_length=255, blank=True)
+#     last_name = models.CharField(max_length=255, blank=True)
+#     email = models.CharField(max_length=255, blank=True)
+#     office = models.CharField(max_length=16, blank=True)
+#     mobile = models.CharField(max_length=16, blank=True)
+#     fax = models.CharField(max_length=16, blank=True)
+#     business = model.ForeignKey(Business, null=True, blank=True)
+#     business_department = model.ForeignKey(BusinessDepartment, null=True, blank=True)
+
+#     @property
+#     def get_name(self):
+#         if self.user:
+#             return str(self.user)
+#         else:
+#             return '%s %s' % (self.first_name, self.last_name)
+
+#     @property
+#     def get_first_name(self):
+#         if self.user:
+#             return self.user.first_name
+#         else:
+#             return self.first_name
+
+#     @property
+#     def get_last_name(self):
+#         if self.user:
+#             return self.user.last_name
+#         else:
+#             return self.last_name
+
+
 class TrackableProjectManager(models.Manager):
 
     def get_query_set(self):
@@ -429,6 +463,10 @@ class Project(models.Model):
     business = models.ForeignKey(Business,
             verbose_name="Company",
             related_name='new_business_projects')
+    business_department = models.ForeignKey(BusinessDepartment,
+            null=True, blank=True,
+            verbose_name="Company Department",
+            related_name='new_business_department_projects')
     point_person = models.ForeignKey(User,
         verbose_name="Minder",
         related_name="minder",

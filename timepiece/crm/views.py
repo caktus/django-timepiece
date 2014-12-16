@@ -485,7 +485,7 @@ class EditBusiness(UpdateView):
     template_name = 'timepiece/business/create_edit.html'
     pk_url_kwarg = 'business_id'
 
-@cbv_decorator(permission_required('crm.add_business_department'))
+@cbv_decorator(permission_required('crm.add_businessdepartment'))
 class CreateBusinessDepartment(CreateView):
     model = BusinessDepartment
     form_class = CreateEditBusinessDepartmentForm
@@ -509,7 +509,7 @@ class CreateBusinessDepartment(CreateView):
         # messages.info(self.request, 'Your settings have been updated.')
         return reverse('view_business', args=(int(self.kwargs['business_id']), ))
 
-@cbv_decorator(permission_required('crm.add_business_department'))
+@cbv_decorator(permission_required('crm.change_businessdepartment'))
 class EditBusinessDepartment(UpdateView):
     model = BusinessDepartment
     form_class = CreateEditBusinessDepartmentForm
