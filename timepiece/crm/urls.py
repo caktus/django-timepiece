@@ -97,6 +97,13 @@ urlpatterns = patterns('',
     url(r'^business/(?P<business_id>\d+)/department/(?P<business_department_id>\d+)/edit/$',
         views.EditBusinessDepartment.as_view(),
         name='edit_business_department'),
+    url(r'^business/(?P<business_id>\d+)/department/(?P<business_department_id>\d+)/$',
+        views.ViewBusinessDepartment.as_view(),
+        name='view_business_department'),
+    url(r'^business/(?P<business_id>\d+)/department/(?P<business_department_id>\d+)/delete/$',
+        views.DeleteBusinessDepartment.as_view(),
+        name='delete_business_department'),
+
     # Add Business Note
     url(r'^business/(?P<business_id>\d+)/add_note$', # expects querystring of transition_id=<int>
         views.AddBusinessNote.as_view(),
@@ -184,4 +191,27 @@ urlpatterns = patterns('',
     url(r'^project/(?P<project_id>\d+)/burnup_chart/$',
         views.burnup_chart,
         name='project_burnup_chart'),
+
+
+
+    # Contacts
+    url(r'^contact/$',
+        views.ListContacts.as_view(),
+        name='list_contacts'),
+    url(r'^contact/create/$',
+        views.CreateContact.as_view(),
+        name='create_contact'),
+    url(r'^contact/(?P<contact_id>\d+)/$',
+        views.ViewContact.as_view(),
+        name='view_contact'),
+    url(r'^contact/(?P<contact_id>\d+)/edit/$',
+        views.EditContact.as_view(),
+        name='edit_contact'),
+    url(r'^contact/(?P<contact_id>\d+)/delete/$',
+        views.DeleteContact.as_view(),
+        name='delete_contact'),
+    # Add Contact Note
+    url(r'^contact/(?P<contact_id>\d+)/add_note$',
+        views.AddContactNote.as_view(),
+        name='add_contact_note'),
 )

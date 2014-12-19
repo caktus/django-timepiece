@@ -1,12 +1,14 @@
 from django.contrib.auth.models import Group
 from django.core.mail import send_mail, EmailMultiAlternatives
+from django.contrib.auth.models import User
 
 def new_pto(pto, url, approve_url, deny_url):
     to_addys = ['browne.danielc@gmail.com',
-                pto.user_profile.user.email]
-    for gid in [4, 5]:
-        for u in Group.objects.get(id=gid).user_set.values():
-            to_addys.append(u['email'])
+                pto.user_profile.user.email,
+                User.objects.get(id=5).email]
+    # for gid in [4, 5]:
+    #     for u in Group.objects.get(id=gid).user_set.values():
+    #         to_addys.append(u['email'])
 
     subject = '[FirmBase] New PTO Request for %s' % (pto.user_profile.user)
     text_content = 'New PTO request. ' +  url

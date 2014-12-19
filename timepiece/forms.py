@@ -98,7 +98,10 @@ class YearMonthForm(forms.Form):
             to_date = datetime.datetime(year, month, 16)
         elif half == 2:
             from_date = datetime.datetime(year, month, 16)
-            to_date = datetime.datetime(year, month+1,1)
+            if month<12:
+                to_date = datetime.datetime(year, month+1,1)
+            else:
+                to_date = datetime.datetime(year+1, 1,1)
 
         return (from_date, to_date)
 

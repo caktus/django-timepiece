@@ -81,8 +81,8 @@
                 {% for bd in object.get_departments %}
                 <tr>
                     <th>
-                        {% if perms.crm.change_businessdepartment %}
-                        <a href='{% url "edit_business_department" bd.business.id bd.id %}'>{{ bd.short_name }}</a>
+                        {% if perms.crm.view_business %}
+                        <a href='{% url "view_business_department" bd.business.id bd.id %}'>{{ bd.short_name }}</a>
                         {% else %}
                         {{ bd.short_name }}
                         {% endif %}

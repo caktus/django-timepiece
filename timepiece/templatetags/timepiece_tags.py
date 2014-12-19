@@ -256,3 +256,13 @@ def user_timesheet_url(user_id, date=None):
 def week_start(date):
     """Return the starting day of the week with the given date."""
     return utils.get_week_start(date)
+
+
+@register.simple_tag
+def format_phone_number(number):
+    """Shortcut to format a phone Number."""
+    if number:
+        number = str(number).strip()
+        if len(number) == 10:
+            return '(%s) %s-%s' % (number[:3], number[3:6], number[6:])
+    return number

@@ -1,0 +1,139 @@
+{% extends "timepiece/contact/base.html" %}
+{% load timepiece_tags bootstrap_toolkit %}
+{% load url from future %}
+
+{% block title %}{{ object.name }}{% endblock title %}
+
+{% block crumbs %}
+    {{ block.super }}
+    <li><span class="divider">/</span> <a href="">{{ object.name }}</a></li>
+{% endblock crumbs %}
+
+{% block content %}
+    <div class="row-fluid">
+        <div class="span12">
+            <h2>{{ object.name }}</h2>
+            <ul class="nav nav-pills">
+                {% if perms.crm.change_contact %}
+                    <li><a href="{% url 'edit_contact' object.pk %}">Edit</a></li>
+                {% endif %}
+                {% if perms.crm.delete_contact %}
+                    <li><a href="{% url 'delete_contact' object.pk %}">Delete</a></li>
+                {% endif %}
+            </ul>
+        </div>
+    </div>
+
+    <div class="row-fluid">
+        <div class="span4">
+            <h3>Contact Info</h3>
+            <table class="table table-bordered">
+                <tr><th>Name</th><td>{{ object.salutation }} {{ object.first_name }} {{ object.last_name }}</td></tr>
+                <tr><th>First Name</th><td>{{ object.first_name }}</td></tr>
+                <tr><th>Last Name</th><td>{{ object.last_name }}</td></tr>
+                <tr><th>Title</th><td>{{ object.title }}</td></tr>
+                <tr><th>Department</th><td>{{ object.business_department }}</td></tr>
+                <tr>
+                    <th>Business</th>
+                    <td>
+                        {% if object.business %}
+                        <a href="{% url 'view_business' object.business.id }%">{{ object.business }}<a/>
+                        {% else %}
+                        n/a
+                        {% endif %}
+                        </td>
+                </tr>
+
+                {% if object.has_opted_out_of_email %}
+                <tr class="error"><th colspan=2>This contact has opted out of email.</th></tr>
+                <tr class="error"><th>Email</th><td>{{ object.email }}</td></tr>
+                {% else %}
+                <tr><th>Email</th><td>{{ object.email }}</td></tr>
+                {% endif %}
+                
+                {% if object.do_not_call %}
+                <tr class="error"><th colspan=2>This contact is on the Do Not Call list.</th></tr>
+                <tr class="error"><th>Office</th><td>{% format_phone_number object.office_phone %}</td></tr>
+                <tr class="error"><th>Mobile</th><td>{% format_phone_number object.mobile_phone %}</td></tr>
+                <tr class="error"><th>Home</th><td>{% format_phone_number object.home_phone %}</td></tr>
+                <tr class="error"><th>Other</th><td>{% format_phone_number object.other_phone %}</td></tr>
+                {% else %}
+                <tr><th>Office</th><td>{% format_phone_number object.office_phone %}</td></tr>
+                <tr><th>Mobile</th><td>{% format_phone_number object.mobile_phone %}</td></tr>
+                <tr><th>Home</th><td>{% format_phone_number object.home_phone %}</td></tr>
+                <tr><th>Other</th><td>{% format_phone_number object.other_phone %}</td></tr>
+                {% endif %}
+                
+                {% if object.has_opted_out_of_fax %}
+                <tr class="error"><th colspan=2>This contact has opted out of fax.</th></tr>
+                <tr class="error"><th>Fax</th><td>{% format_phone_number object.fax %}</td></tr>
+                {% else %}
+                <tr><th>Fax</th><td>{% format_phone_number object.fax %}</td></tr>
+                {% endif %}                
+            </table>
+
+            {% if object.assistant or object.assistant_name or object.assistant_phone or object.assistant_email %}
+            <h3>Assistant Info</h3>
+            <table class="table table-bordered">
+                <tr>
+                    <th>Name</th>
+                    <td>
+                        {% if object.assistant %}
+                            <a href="{% url 'view_contact' object.assistant.id %}">{{ object.assistant.salutation }} {{ object.assistant.first_name }} {{ object.assistant.last_name }}</a>
+                        {% else %}
+                            {{ object.assistant_name }}
+                        {% endif %}
+                    </td>
+                </tr>
+                <tr><th>Phone</th><td>{% format_phone_number object.assistant_phone %}</td></tr>
+                <tr><th>Email</th><td>{{ object.assistant_email }}</td></tr>
+            </table>
+            {% else %}
+            {% endif %}
+        </div>
+
+        <div class="span4">
+            <h3>Mailing Address</h3>
+            <table class="table table-bordered">
+                <tr><th>Street</th><td>{{ object.mailing_street }}</td></tr>
+                <tr><th>City</th><td>{{ object.mailing_city }}</td></tr>
+                <tr><th>State</th><td>{{ object.mailing_state }}</td></tr>
+                <tr><th>Postal Code</th><td>{{ object.mailing_postalcode }}</td></tr>
+                <tr><th>Mailstop</th><td>{{ object.mailing_mailstop }}</td></tr>
+                <tr><th>Country</th><td>{{ object.mailing_country }}</td></tr>
+                <tr><th>Latitude / Longitude</th><td>{{ object.mailing_lat }} / {{ object.mailing_lon }}</td></tr>
+            </table>
+
+            <h3>Other Address</h3>
+            <table class="table table-bordered">
+                <tr><th>Street</th><td>{{ object.other_street }}</td></tr>
+                <tr><th>City</th><td>{{ object.other_city }}</td></tr>
+                <tr><th>State</th><td>{{ object.other_state }}</td></tr>
+                <tr><th>Postal Code</th><td>{{ object.other_postalcode }}</td></tr>
+                <tr><th>Mailstop</th><td>{{ object.other_mailstop }}</td></tr>
+                <tr><th>Country</th><td>{{ object.other_country }}</td></tr>
+                <tr><th>Latitude / Longitude</th><td>{{ object.other_lat }} / {{ object.other_lon }}</td></tr>
+            </table>
+        </div>
+
+        <div class="span4">
+            <table class="table table-bordered">
+                <tr><th>Lead Source</th>
+                    <td><a href="{% url 'view_user' object.lead_source.id%}">{{ object.lead_source }}</a></td>
+                </tr>
+            </table>
+            {% url 'view_contact' object.pk as next_url %}
+            <h3>Notes</h3>
+            <form class="form-inline" action="{% url 'add_contact_note' object.id %}?next={{ next_url }}" method="post" accept-charset="utf-8">
+                {% csrf_token %}
+                {{ add_contact_note_form|as_bootstrap }}
+                <input class="btn btn-primary" type="submit" value="Add" />
+            </form>
+            <ul>
+                {% for note in object.get_notes %}
+                <li><strong>{{ note.author }} @ {{ note.last_edited }}</strong><br/>{{ note.text|linebreaks }}</li>
+                {% endfor %}
+            </ul>
+        </div>
+    </div>
+{% endblock content %}

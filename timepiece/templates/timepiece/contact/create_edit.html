@@ -1,0 +1,36 @@
+{% extends "timepiece/contact/base.html" %}
+{% load bootstrap_toolkit %}
+{% load url from future %}
+
+{% block title %}{% if not object %}Create Contact{% else %}Edit {{ object }}{% endif %}{% endblock title %}
+
+{% block crumbs %}
+    {{ block.super }}
+    <li>
+        <span class="divider">/</span>
+        {% if not object %}
+            <a href="{% url 'create_contact' %}">Create Contact</a>
+        {% else %}
+            <a href="{% url 'edit_contact' object.pk %}">Edit Contact</a>
+        {% endif %}
+    </li>
+{% endblock crumbs %}
+
+{% block content %}
+    <div class="row-fluid">
+        <div class="span12">
+            <h2>{% if not object %}Create Contact{% else %}Edit {{ object.name }}{% endif %}</h2>
+
+            <br style="clear: both;" />
+
+            <form id="create-edit-business" class="form-horizontal" action="" method="post" accept-charset="utf-8">
+                {% csrf_token %}
+                {{ form|as_bootstrap:"horizontal" }}
+                <div class="form-actions">
+                    <input class="btn btn-primary" type="submit" value="Save" name="submit">
+                    <input class="btn" type="button" onclick="history.go(-1)" value="Cancel">
+                </div>
+            </form>
+        </div>
+    </div>
+{% endblock content %}

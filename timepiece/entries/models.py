@@ -157,13 +157,15 @@ class Entry(models.Model):
     MANUAL = 'manual'
     PTO = 'pto-approval'
     IMPORT = 'import'
+    CRON = 'cron'
 
     MECHANISMS = {
         TIMECLOCK: 'Timeclock',
         BULK: 'Bulk Entry',
         MANUAL: 'Manual Entry',
         PTO: 'PTO Approval',
-        IMPORT: 'Import'
+        IMPORT: 'Import',
+        CRON: 'Cron Job'
     }
 
 

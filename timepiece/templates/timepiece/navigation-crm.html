@@ -12,6 +12,9 @@
             {% if perms.auth.view_user %}
                 <li><a href="{% url 'list_users' %}">Users</a></li>
             {% endif %}
+            {% if perms.crm.view_contact %}
+                <li><a href="{% url 'list_contacts' %}">Contacts</a></li>
+            {% endif %}
             {% if perms.crm.view_business %}
                 <li><a href="{% url 'list_businesses' %}">Businesses</a></li>
             {% endif %}

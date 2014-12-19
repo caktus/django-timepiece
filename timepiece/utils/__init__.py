@@ -152,5 +152,8 @@ def get_bimonthly_dates(start_date):
         end = datetime.datetime(start_date.year, start_date.month, 16)
     else:
         start = datetime.datetime(start_date.year, start_date.month, 16)
-        end = datetime.datetime(start_date.year, start_date.month+1, 1)
+        if start_date.month < 12:
+            end = datetime.datetime(start_date.year, start_date.month+1, 1)
+        else:
+            end = datetime.datetime(start_date.year+1, 1, 1)
     return (start,end)

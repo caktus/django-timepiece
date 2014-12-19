@@ -58,7 +58,9 @@ class UserProfile(models.Model):
             default=40)
     business = models.ForeignKey('Business')
     employee_type = models.CharField(max_length=24, choices=EMPLOYEE_TYPES.items(), default=INACTIVE)
-    earns_pto = models.BooleanField(default=True, help_text='Does the employee earn Paid Time Off?')
+    earns_pto = models.BooleanField(default=False, help_text='Does the employee earn Paid Time Off?')
+    earns_holiday_pay = models.BooleanField(default=False, help_text='Does the employee earn Holiday Pay?')
+    pto_accrual = models.FloatField(default=0.0, verbose_name='PTO Accrual Amount', help_text='Number of PTO hours earned per pay period for the employee.')
     hire_date = models.DateField(blank=True, null=True)
 
     class Meta:
@@ -75,6 +77,16 @@ class UserProfile(models.Model):
             return pto
         else:
             return Decimal('0.0')
+
+    # suggest that a cron job be setup to call this function on a monthly basis
+    @classmethod
+    def accrue_pto(cls, date=datetime.date.today()):
+        for employee in UserProfile.objects.filter(user__is_active=True, earns_pto=True, pto_accrual__gt=0.0):
+            pto_log = PaidTimeOffLog(user_profile=employee,
+                date=date,
+                amount=employee.pto_accrual,
+                comment='Automated pay period accrual.')
+            pto_log.save()
 
 
 class PaidTimeOffRequest(models.Model):
@@ -249,7 +261,8 @@ class Business(models.Model):
     name = models.CharField(max_length=255)
     short_name = models.CharField(max_length=255, blank=True)
     #email = models.EmailField(blank=True)
-    poc = models.ForeignKey(User, related_name='business_poc', verbose_name='Primary Contact')
+    poc = models.ForeignKey(User, related_name='business_poc_old', verbose_name='Primary Contact', blank=True, null=True)
+    primary_contact = models.ForeignKey('Contact', related_name='business_poc', verbose_name='Primary Contact', blank=True, null=True)
     description = models.TextField(blank=True)
     notes = models.TextField(blank=True)
     external_id = models.CharField(max_length=32, blank=True)
@@ -382,9 +395,191 @@ class BusinessDepartment(models.Model):
     name = models.CharField(max_length=255)
     short_name = models.CharField(max_length=255, blank=True)
     active = models.BooleanField(default=False)
+    poc = models.ForeignKey('Contact', related_name='business_department_poc', verbose_name='Primary Contact', blank=True, null=True)
+
+    bd_billing_street = models.CharField(max_length=255, blank=True, verbose_name='Billing Street')
+    bd_billing_city = models.CharField(max_length=255, blank=True, verbose_name='Billing City')
+    bd_billing_state = models.CharField(max_length=2, blank=True, choices=Business.STATES, verbose_name='Billing State')
+    bd_billing_postalcode = models.CharField(max_length=32, blank=True, verbose_name='Billing Postal Code')
+    bd_billing_mailstop = models.CharField(max_length=16, blank=True, verbose_name='Billing Mailstop')
+    bd_billing_country = models.CharField(max_length=128, blank=True, verbose_name='Billing Country')
+    bd_billing_lat = models.FloatField(blank=True, null=True, verbose_name='Billing Latitude', help_text='This is automatically set using the Google Maps Geocode API on save.')
+    bd_billing_lon = models.FloatField(blank=True, null=True, verbose_name='Billing Longitude', help_text='This is automatically set using the Google Maps Geocode API on save.')
+
+    bd_shipping_street = models.CharField(max_length=255, blank=True, verbose_name='Shipping Street')
+    bd_shipping_city = models.CharField(max_length=255, blank=True, verbose_name='Shipping City')
+    bd_shipping_state = models.CharField(max_length=2, blank=True, choices=Business.STATES, verbose_name='Shipping State')
+    bd_shipping_postalcode = models.CharField(max_length=32, blank=True, verbose_name='Shipping Postal')
+    bd_shipping_mailstop = models.CharField(max_length=16, blank=True, verbose_name='Shipping Mailstop')
+    bd_shipping_country = models.CharField(max_length=128, blank=True, verbose_name='Shipping Country')
+    bd_shipping_lat = models.FloatField(blank=True, null=True, verbose_name='Shipping Latitude', help_text='This is automatically set using the Google Maps Geocode API on save.')
+    bd_shipping_lon = models.FloatField(blank=True, null=True, verbose_name='Shipping Longitude', help_text='This is automatically set using the Google Maps Geocode API on save.')
 
     def __unicode__(self):
-        return self.name
+        return '%s - %s' % (self.business.short_name, self.name)
+    
+    @property
+    def billing_street(self):
+        if self.bd_billing_street:
+            return bd_billing_street
+        else:
+            return self.business.billing_street
+    
+    @property
+    def billing_city(self):
+        if self.bd_billing_city:
+            return bd_billing_city
+        else:
+            return self.business.billing_city
+    
+    @property
+    def billing_state(self):
+        if self.bd_billing_state:
+            return bd_billing_state
+        else:
+            return self.business.billing_state
+    
+    @property
+    def billing_postalcode(self):
+        if self.bd_billing_postalcode:
+            return bd_billing_postalcode
+        else:
+            return self.business.billing_postalcode
+    
+    @property
+    def billing_mailstop(self):
+        if self.bd_billing_mailstop:
+            return bd_billing_mailstop
+        else:
+            return self.business.billing_mailstop
+    
+    @property
+    def billing_country(self):
+        if self.bd_billing_country:
+            return bd_billing_country
+        else:
+            return self.business.billing_country
+    
+    @property
+    def billing_lat(self):
+        if self.bd_billing_lat:
+            return bd_billing_lat
+        else:
+            return self.business.billing_lat
+    
+    @property
+    def billing_lon(self):
+        if self.bd_billing_lon:
+            return bd_billing_lon
+        else:
+            return self.business.billing_lon
+    
+    @property
+    def shipping_street(self):
+        if self.bd_shipping_street:
+            return bd_shipping_street
+        else:
+            return self.business.shipping_street
+    
+    @property
+    def shipping_city(self):
+        if self.bd_shipping_city:
+            return bd_shipping_city
+        else:
+            return self.business.shipping_city
+    
+    @property
+    def shipping_state(self):
+        if self.bd_shipping_state:
+            return bd_shipping_state
+        else:
+            return self.business.shipping_state
+    
+    @property
+    def shipping_postalcode(self):
+        if self.bd_shipping_postalcode:
+            return bd_shipping_postalcode
+        else:
+            return self.business.shipping_postalcode
+    
+    @property
+    def shipping_mailstop(self):
+        if self.bd_shipping_mailstop:
+            return bd_shipping_mailstop
+        else:
+            return self.business.shipping_mailstop
+    
+    @property
+    def shipping_country(self):
+        if self.bd_shipping_country:
+            return bd_shipping_country
+        else:
+            return self.business.shipping_country
+    
+    @property
+    def shipping_lat(self):
+        if self.bd_shipping_lat:
+            return bd_shipping_lat
+        else:
+            return self.business.shipping_lat
+    
+    @property
+    def shipping_lon(self):
+        if self.bd_shipping_lon:
+            return bd_shipping_lon
+        else:
+            return self.business.shipping_lon
+
+    def save(self):
+        try:
+            gmaps = googlemaps.Client(
+                key=settings.GOOGLE_SERVER_API_KEY,
+                client_id=settings.GOOGLE_CLIENT_ID,
+                client_secret=settings.GOOGLE_CLIENT_SECRET)
+            
+            try:
+                # geocode billing address
+                if (self.billing_street and self.billing_city and 
+                    self.billing_state and self.billing_postalcode and 
+                    self.billing_country):
+                    gc = gmaps.geocode('%s, %s, %s %s-%s, %s' % (
+                        self.billing_street, self.billing_city, 
+                        self.billing_state, self.billing_postalcode, 
+                        self.billing_postalcode, self.billing_country))
+                    if len(gc) == 1:
+                        self.billing_lat = float(
+                            gc[0]['geometry']['location']['lat'])
+                        self.billing_lon = float(
+                            gc[0]['geometry']['location']['lng'])
+            except:
+                self.billing_lat = None
+                self.billing_lon = None
+
+            try:
+                # geocode shipping address
+                if (self.shipping_street and self.shipping_city and 
+                    self.shipping_state and self.shipping_postalcode and 
+                    self.shipping_country):
+                    gc = gmaps.geocode('%s, %s, %s %s-%s, %s' % (
+                        self.shipping_street, self.shipping_city, 
+                        self.shipping_state, self.shipping_postalcode, 
+                        self.shipping_postalcode, self.shipping_country))
+                    if len(gc) == 1:
+                        self.shipping_lat = float(
+                            gc[0]['geometry']['location']['lat'])
+                        self.shipping_lon = float(
+                            gc[0]['geometry']['location']['lng'])
+            except:
+                self.shipping_lat = None
+                self.shipping_lon = None
+
+        except:
+            self.billing_lat = None
+            self.billing_lon = None
+            self.shipping_lat = None
+            self.shipping_lon = None
+
+        super(BusinessDepartment, self).save()
 
 class BusinessNote(models.Model):
     business = models.ForeignKey(Business)
@@ -407,37 +602,170 @@ class BusinessNote(models.Model):
         timepiece_emails.business_new_note(self, url)
 
 
-# class Contact(models.Model):
-#     user = models.ForeignKey(User, null=True, blank=True)
-#     first_name = models.CharField(max_length=255, blank=True)
-#     last_name = models.CharField(max_length=255, blank=True)
-#     email = models.CharField(max_length=255, blank=True)
-#     office = models.CharField(max_length=16, blank=True)
-#     mobile = models.CharField(max_length=16, blank=True)
-#     fax = models.CharField(max_length=16, blank=True)
-#     business = model.ForeignKey(Business, null=True, blank=True)
-#     business_department = model.ForeignKey(BusinessDepartment, null=True, blank=True)
+class Contact(models.Model):
+    SALUTATIONS = (('mr',  'Mr.'),
+                   ('mrs', 'Mrs.'),
+                   ('dr',  'Dr.'),
+                   ('ms',  'Ms.'),)
+    user = models.OneToOneField(User, null=True, blank=True, related_name='contact')
+    salutation = models.CharField(max_length=8, choices=SALUTATIONS, blank=True)
+    first_name = models.CharField(max_length=255, blank=True)
+    last_name = models.CharField(max_length=255, blank=True)
+    title = models.CharField(max_length=255, blank=True)
+    email = models.CharField(max_length=255, blank=True)
+    office_phone = models.CharField(max_length=24, blank=True)
+    mobile_phone = models.CharField(max_length=24, blank=True)
+    home_phone = models.CharField(max_length=24, blank=True)
+    other_phone = models.CharField(max_length=24, blank=True)
+    fax = models.CharField(max_length=24, blank=True)
+    
+    business = models.ForeignKey(Business, null=True, blank=True)
+    business_department = models.ForeignKey(BusinessDepartment, null=True, blank=True)
+    assistant = models.ForeignKey('self', null=True, blank=True, help_text='If the assistant is another contact, you can set that here.')
+    assistant_name = models.CharField(max_length=255, blank=True)
+    assistant_phone = models.CharField(max_length=24, blank=True)
+    assistant_email = models.CharField(max_length=255, blank=True)
 
-#     @property
-#     def get_name(self):
-#         if self.user:
-#             return str(self.user)
-#         else:
-#             return '%s %s' % (self.first_name, self.last_name)
+    mailing_street = models.CharField(max_length=255, blank=True, verbose_name='Mailing Street')
+    mailing_city = models.CharField(max_length=255, blank=True, verbose_name='Mailing City')
+    mailing_state = models.CharField(max_length=2, blank=True, choices=Business.STATES, verbose_name='Mailing State')
+    mailing_postalcode = models.CharField(max_length=32, blank=True, verbose_name='Mailing Postal')
+    mailing_mailstop = models.CharField(max_length=16, blank=True, verbose_name='Mailing Mailstop')
+    mailing_country = models.CharField(max_length=128, blank=True, verbose_name='Mailing Country')
+    mailing_lat = models.FloatField(blank=True, null=True, verbose_name='Mailing Latitude', help_text='This is automatically set using the Google Maps Geocode API on save.')
+    mailing_lon = models.FloatField(blank=True, null=True, verbose_name='Mailing Longitude', help_text='This is automatically set using the Google Maps Geocode API on save.')
 
-#     @property
-#     def get_first_name(self):
-#         if self.user:
-#             return self.user.first_name
-#         else:
-#             return self.first_name
+    other_street = models.CharField(max_length=255, blank=True, verbose_name='Other Street')
+    other_city = models.CharField(max_length=255, blank=True, verbose_name='Other City')
+    other_state = models.CharField(max_length=2, blank=True, choices=Business.STATES, verbose_name='Other State')
+    other_postalcode = models.CharField(max_length=32, blank=True, verbose_name='Other Postal')
+    other_mailstop = models.CharField(max_length=16, blank=True, verbose_name='Other Mailstop')
+    other_country = models.CharField(max_length=128, blank=True, verbose_name='Other Country')
+    other_lat = models.FloatField(blank=True, null=True, verbose_name='Other Latitude', help_text='This is automatically set using the Google Maps Geocode API on save.')
+    other_lon = models.FloatField(blank=True, null=True, verbose_name='Other Longitude', help_text='This is automatically set using the Google Maps Geocode API on save.')
 
-#     @property
-#     def get_last_name(self):
-#         if self.user:
-#             return self.user.last_name
-#         else:
-#             return self.last_name
+    has_opted_out_of_email = models.BooleanField(default=False)
+    has_opted_out_of_fax = models.BooleanField(default=False)
+    do_not_call = models.BooleanField(default=False)
+
+    birthday = models.DateField(null=True, blank=True)
+
+    lead_source = models.ForeignKey(User, related_name='lead_source')
+
+    class Meta:
+        ordering = ('last_name', 'first_name')
+        permissions = (
+            ('view_contact', 'Can view contact'),
+        )
+
+    def __unicode__(self):
+      return self.get_name
+
+    def save(self):
+        try:
+            gmaps = googlemaps.Client(
+                key=settings.GOOGLE_SERVER_API_KEY,
+                client_id=settings.GOOGLE_CLIENT_ID,
+                client_secret=settings.GOOGLE_CLIENT_SECRET)
+            
+            try:
+                # geocode mailing address
+                if (self.mailing_street and self.mailing_city and 
+                    self.mailing_state and self.mailing_postalcode and 
+                    self.mailing_country):
+                    gc = gmaps.geocode('%s, %s, %s %s-%s, %s' % (
+                        self.mailing_street, self.mailing_city, 
+                        self.mailing_state, self.mailing_postalcode, 
+                        self.mailing_postalcode, self.mailing_country))
+                    if len(gc) == 1:
+                        self.mailing_lat = float(
+                            gc[0]['geometry']['location']['lat'])
+                        self.mailing_lon = float(
+                            gc[0]['geometry']['location']['lng'])
+            except:
+                self.mailing_lat = None
+                self.mailing_lon = None
+
+            try:
+                # geocode other address
+                if (self.other_street and self.other_city and 
+                    self.other_state and self.other_postalcode and 
+                    self.other_country):
+                    gc = gmaps.geocode('%s, %s, %s %s-%s, %s' % (
+                        self.other_street, self.other_city, 
+                        self.other_state, self.other_postalcode, 
+                        self.other_postalcode, self.other_country))
+                    if len(gc) == 1:
+                        self.other_lat = float(
+                            gc[0]['geometry']['location']['lat'])
+                        self.other_lon = float(
+                            gc[0]['geometry']['location']['lng'])
+            except:
+                self.other_lat = None
+                self.other_lon = None
+
+        except:
+            self.mailing_lat = None
+            self.mailing_lon = None
+            self.other_lat = None
+            self.other_lon = None
+
+        super(Contact, self).save()
+
+    def get_absolute_url(self):
+        return reverse('view_contact', args=(self.pk,))
+
+    @property
+    def get_notes(self):
+        return ContactNote.objects.filter(contact=self).order_by('-created_at')
+
+    @property
+    def name(self):
+        if self.user:
+          return '%s %s' % (self.user.first_name, self.user.last_name)
+        else:
+          return '%s %s' % (self.first_name, self.last_name)
+
+    @property
+    def get_name(self):
+        if self.user:
+            return str(self.user)
+        else:
+            return '%s %s' % (self.first_name, self.last_name)
+
+    @property
+    def get_first_name(self):
+        if self.user:
+            return self.user.first_name
+        else:
+            return self.first_name
+
+    @property
+    def get_last_name(self):
+        if self.user:
+            return self.user.last_name
+        else:
+            return self.last_name
+
+class ContactNote(models.Model):
+    contact = models.ForeignKey(Contact)
+    author = models.ForeignKey(User)
+    created_at = models.DateTimeField(auto_now_add=True)
+    edited = models.BooleanField(default=False)
+    last_edited = models.DateTimeField(auto_now=True)
+    parent = models.ForeignKey('self', null=True, blank=True)
+    text = models.TextField()
+
+    def get_thread(self, thread):
+        thread.append(self)
+        for n in ContactNote.objects.filter(parent=self).order_by('-created_at'):
+            thread.append(n.get_thread(), thread)
+
+    def save(self, *args, **kwargs):
+        super(ContactNote, self).save(*args, **kwargs)
+        url = '%s%s' % (settings.DOMAIN, reverse('view_contact', args=(self.contact.id,)))
+        # send email to note author and contact lead source
+        timepiece_emails.contact_new_note(self, url)
 
 
 class TrackableProjectManager(models.Manager):

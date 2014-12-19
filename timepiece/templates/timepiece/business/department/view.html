@@ -1,5 +1,5 @@
 {% extends "timepiece/business/base.html" %}
-{% load timepiece_tags bootstrap_toolkit %}
+{% load timepiece_tags bootstrap_toolkit humanize %}
 {% load url from future %}
 
 {% block title %}{{ object.name }}{% endblock title %}
@@ -18,8 +18,8 @@
             <h2>{{ object.name }}</h2>
             <ul class="nav nav-pills">
                 {% if perms.crm.change_businessdepartment %}
-                    <li><a href='{% url "edit_business_department" object.pk %}'>Edit</a></li>
-                    <li><a href='{% url "delete_business_department" object.pk %}'>Delete</a></li>
+                    <li><a href='{% url "edit_business_department" object.business.id object.id %}'>Edit</a></li>
+                    <li><a href='{% url "delete_business_department" object.business.id object.id %}'>Delete</a></li>
                 {% endif %}
             </ul>
         </div>
@@ -55,7 +55,7 @@
                         {% endif %}
                     </td>
                 </tr>
-                <tr><th>Phone</th><td>{{ object.phone }}</td></tr>
+                <!-- <tr><th>Phone</th><td>{{ object.phone }}</td></tr>
                 <tr><th>Fax</th><td>{{ object.fax }}</td></tr>
                 <tr><th>Website</th>
                     <td>
@@ -68,21 +68,7 @@
                 <tr><th>Classification:</th><td>{{ object.get_classification_display }}</td></tr>
                 <tr><th>Status:</th><td>{{ object.get_status_display }}</td></tr>
                 <tr><th>Industry:</th><td>{{ object.get_industry_display }}</td></tr>
-                <tr><th>Account Number:</th><td>{{ object.account_number }}</td></tr>
-            </table>
-
-            <h3>Departments</h3>
-            <ul class="nav nav-pills">
-                {% if perms.crm.change_business %}
-                    <li><a href='{% url "add_business_department" object.pk %}'>Add Department</a></li>
-                {% endif %}
-            </ul>
-            <table class="table table-bordered">
-                {% for bd in object.get_departments %}
-
-                {% empty %}
-                There are no departments for this business
-                {% endfor %}
+                <tr><th>Account Number:</th><td>{{ object.account_number }}</td></tr> -->
             </table>
         </div>
         <div class="span4">
@@ -95,6 +81,8 @@
                 <tr><th>Country</th><td>{{ object.billing_country }}</td></tr>
                 <tr><th>Longitude / Latitude</th><td>{{ object.billing_lon }} / {{ object.billing_lat }}</td></tr>
             </table>
+        </div>
+        <div class="span4">
             <h3>Shipping Address</h3>
             <table class="table table-bordered">
                 <tr><th>Street Address</th><td>{{ object.shipping_street }}</td></tr>
@@ -105,15 +93,7 @@
                 <tr><th>Longitude / Latitude</th><td>{{ object.shipping_lon }} / {{ object.shipping_lat }}</td></tr>
             </table>
         </div>
-        <div class="span4">
-            <h3>Business Statistics</h3>
-            <table class="table table-bordered">
-                <tr><th>Stock</th><td>$ {{ object.current_stock_value }} ({{ object.ticker_symbol }})</td></tr>
-                <tr><th>Annual Revenue</th><td>$ {{ object.annual_revenue }}</td></tr>
-                <tr><th>Number of Employees</th><td>{{ object.num_of_employees }}</td></tr>
-                <tr><th>Ownership</th><td>{{ object.ownership }}</td></tr>
-            </table>
-
+        <!--div class="span4">
             <h3>Notes</h3>
             {% url 'view_business' object.id as next_url %}
             <form class="form-inline" action="{% url 'add_business_note' object.id %}?next={{ next_url }}" method="post" accept-charset="utf-8">
@@ -126,6 +106,6 @@
                 <li><strong>{{ note.author }} @ {{ note.last_edited }}</strong><br/>{{ note.text|linebreaks }}</li>
                 {% endfor %}
             </ul>
-        </div>
+        </div-->
     </div>
 {% endblock content %}

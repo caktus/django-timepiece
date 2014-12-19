@@ -13,7 +13,7 @@ from timepiece.crm.lookups import (BusinessLookup, ProjectLookup, UserLookup,
 from timepiece.crm.models import (Attribute, Business, Project,
         ProjectRelationship, UserProfile, PaidTimeOffRequest, 
         PaidTimeOffLog, Milestone, ActivityGoal, BusinessNote,
-        BusinessDepartment)
+        BusinessDepartment, Contact, ContactNote)
 
 
 class CreateEditBusinessForm(forms.ModelForm):
@@ -23,7 +23,7 @@ class CreateEditBusinessForm(forms.ModelForm):
 
     class Meta:
         model = Business
-        fields = ('name', 'short_name', 'active', 'description', 'poc',
+        fields = ('name', 'short_name', 'active', 'description', 'primary_contact',
             'phone', 'fax', 'website', 'industry', 
             'classification', 'status', 'account_owner',
             'billing_street',  'billing_city', 'billing_state',  
@@ -41,7 +41,12 @@ class CreateEditBusinessDepartmentForm(forms.ModelForm):
 
     class Meta:
         model = BusinessDepartment
-        fields = ('name', 'short_name', 'active', 'business')
+        fields = ('name', 'short_name', 'active', 'business', 'poc', 
+            'bd_billing_street', 'bd_billing_city', 'bd_billing_state',
+            'bd_billing_postalcode', 'bd_billing_mailstop',
+            'bd_billing_country', 'bd_shipping_street', 'bd_shipping_city', 
+            'bd_shipping_state', 'bd_shipping_postalcode', 
+            'bd_shipping_mailstop', 'bd_shipping_country')
 
     def __init__(self, *args, **kwargs):
         super(CreateEditBusinessDepartmentForm, self).__init__(*args, **kwargs)
@@ -98,6 +103,8 @@ class CreateUserForm(UserCreationForm):
     business = forms.ModelChoiceField(Business.objects.all())
     hire_date = forms.DateField()
     earns_pto = forms.BooleanField(required=False, label='Earns PTO')
+    earns_holiday_pay = forms.BooleanField(required=False, label='Earns Holiday Pay')
+    pto_accrual = forms.FloatField(initial=0.0, label='PTO Accrual Amount', help_text='Number of PTO hours earned per pay period for the employee.')
     employee_type = forms.ChoiceField(choices=UserProfile.EMPLOYEE_TYPES.items())
 
     class Meta:
@@ -115,7 +122,9 @@ class CreateUserForm(UserCreationForm):
         up = UserProfile(user=user,
                          business=self.cleaned_data['business'],
                          hire_date=self.cleaned_data['hire_date'],
-                         earns_pto=self.cleaned_data['hire_date'],
+                         earns_pto=self.cleaned_data['earns_pto'],
+                         earns_holiday_pay=self.cleaned_data['earns_holiday_pay'],
+                         pto_accrual=self.cleaned_data['pto_accrual'],
                          employee_type=self.cleaned_data['employee_type'])
         if commit:
             self.save_m2m()
@@ -142,6 +151,11 @@ class EditUserForm(UserChangeForm):
             label='Repeat Password',
             widget=forms.PasswordInput(render_value=False))
     business = forms.ModelChoiceField(Business.objects.all())
+    hire_date = forms.DateField()
+    earns_pto = forms.BooleanField(required=False, label='Earns PTO')
+    earns_holiday_pay = forms.BooleanField(required=False, label='Earns Holiday Pay')
+    pto_accrual = forms.FloatField(initial=0.0, label='PTO Accrual Amount', help_text='Number of PTO hours earned per pay period for the employee.')
+    employee_type = forms.ChoiceField(choices=UserProfile.EMPLOYEE_TYPES.items())
 
     class Meta:
         model = User
@@ -152,7 +166,13 @@ class EditUserForm(UserChangeForm):
         super(EditUserForm, self).__init__(*args, **kwargs)
         self.fields['groups'].widget = forms.CheckboxSelectMultiple()
         self.fields['groups'].help_text = None
-        self.fields['business'].initial = UserProfile.objects.get(user=kwargs['instance']).business
+        up = UserProfile.objects.get(user=kwargs['instance'])
+        self.fields['business'].initial = up.business
+        self.fields['hire_date'].initial = up.hire_date
+        self.fields['earns_pto'].initial = up.earns_pto
+        self.fields['earns_holiday_pay'].initial = up.earns_holiday_pay
+        self.fields['pto_accrual'].initial = up.pto_accrual
+        self.fields['employee_type'].initial = up.employee_type
         # In 1.4 this field is created even if it is excluded in Meta.
         if 'password' in self.fields:
             del(self.fields['password'])
@@ -171,6 +191,12 @@ class EditUserForm(UserChangeForm):
         # set the user's business in UserProfile
         up = UserProfile.objects.get(user=instance)
         up.business = self.cleaned_data.get('business')
+        up.hire_date = self.cleaned_data['hire_date']
+        up.earns_pto = self.cleaned_data['earns_pto']
+        up.earns_holiday_pay = self.cleaned_data['earns_holiday_pay']
+        up.pto_accrual = self.cleaned_data['pto_accrual']
+        up.employee_type = self.cleaned_data['employee_type']
+
         if password1:
             instance.set_password(password1)
         if commit:
@@ -283,3 +309,39 @@ class CreateEditActivityGoalForm(forms.ModelForm):
         if self.EMPLOYEE_CHOICES[0][1] != '-':
             self.EMPLOYEE_CHOICES.insert(0, ('', '-'))
         self.fields['employee'].choices = self.EMPLOYEE_CHOICES
+
+class CreateEditContactForm(forms.ModelForm):
+    EMPLOYEE_CHOICES = [(None, '-')] + [(u.pk, '%s, %s'%(u.last_name, u.first_name)) \
+        for u in Group.objects.get(id=1).user_set.filter(
+            is_active=True).order_by('last_name', 'first_name')]
+
+    class Meta:
+        model = Contact
+        fields = ('lead_source', 'first_name', 'last_name',
+            'salutation', 'first_name', 'last_name', 'title', 
+            'business', 'business_department', 'assistant',
+            'assistant_name', 'assistant_phone', 'assistant_email',
+            'email', 'office_phone', 'mobile_phone', 'home_phone', 
+            'other_phone', 'fax', 'mailing_street', 'mailing_city',
+            'mailing_state', 'mailing_postalcode', 'mailing_mailstop',
+            'mailing_country', 'other_street', 'other_city', 
+            'other_state', 'other_postalcode', 'other_mailstop',
+            'other_country', 'has_opted_out_of_email', 
+            'has_opted_out_of_fax', 'do_not_call')
+
+    def __init__(self, *args, **kwargs):        
+        super(CreateEditContactForm, self).__init__(*args, **kwargs)
+        self.fields['lead_source'].choices = self.EMPLOYEE_CHOICES
+
+class AddContactNoteForm(forms.ModelForm):
+
+    class Meta:
+        model = ContactNote
+        fields = ('text', 'contact', 'author')
+
+    def __init__(self, *args, **kwargs):
+        super(AddContactNoteForm, self).__init__(*args, **kwargs)
+        self.fields['text'].label = ''
+        self.fields['text'].widget.attrs['rows'] = 6
+        self.fields['author'].widget = widgets.HiddenInput()
+        self.fields['contact'].widget = widgets.HiddenInput()

@@ -31,10 +31,11 @@ from timepiece.crm.forms import (CreateEditBusinessForm, CreateEditProjectForm,
         QuickSearchForm, CreateEditPTORequestForm, CreateEditMilestoneForm,
         CreateEditActivityGoalForm, ApproveDenyPTORequestForm,
         CreateEditPaidTimeOffLog, AddBusinessNoteForm, 
-        CreateEditBusinessDepartmentForm)
+        CreateEditBusinessDepartmentForm, CreateEditContactForm, 
+        AddContactNoteForm)
 from timepiece.crm.models import (Business, Project, ProjectRelationship, UserProfile,
     PaidTimeOffLog, PaidTimeOffRequest, Milestone, ActivityGoal, BusinessNote,
-    BusinessDepartment)
+    BusinessDepartment, Contact, ContactNote)
 from timepiece.crm.utils import grouped_totals, project_activity_goals_with_progress
 from timepiece.entries.models import Entry, Activity, Location
 from timepiece.reports.forms import HourlyReportForm
@@ -448,6 +449,22 @@ class ViewBusiness(DetailView):
         # context['add_user_form'] = SelectUserForm()
         return context
 
+@cbv_decorator(permission_required('crm.view_business'))
+class ViewBusinessDepartment(DetailView):
+    model = BusinessDepartment
+    pk_url_kwarg = 'business_department_id'
+    template_name = 'timepiece/business/department/view.html'
+
+    def get_context_data(self, **kwargs):
+        context = super(ViewBusinessDepartment, self).get_context_data(**kwargs)
+        # context['add_business_note_form'] = AddBusinessNoteForm()
+        # context['ticket_history'] = GeneralTaskHistory.objects.filter(
+        #     general_task=self.object).order_by('-last_activity')
+        # context['is_it_admin'] = bool(len(self.request.user.groups.filter(id=8)))
+        # context['is_aac_mgmt'] = bool(len(self.request.user.groups.filter(id=5)))
+        # context['add_user_form'] = SelectUserForm()
+        return context
+
 @cbv_decorator(permission_required('workflow.add_businessnote'))
 class AddBusinessNote(View):
 
@@ -534,6 +551,19 @@ class EditBusinessDepartment(UpdateView):
         # messages.info(self.request, 'Your settings have been updated.')
         return reverse('view_business', args=(int(self.kwargs['business_id']), ))
 
+
+@cbv_decorator(permission_required('crm.delete_businessdepartment'))
+class DeleteBusinessDepartment(DeleteView):
+    model = BusinessDepartment
+    pk_url_kwarg = 'business_department_id'
+    template_name = 'timepiece/delete_object.html'
+
+    def get_success_url(self):
+        if self.object:
+            return reverse('view_business', args=(self.object.business,))
+        else:
+            return reverse('list_businesses')
+
 # Users
 
 
@@ -559,7 +589,7 @@ class ListUsers(SearchListView):
     template_name = 'timepiece/user/list.html'
 
     def get_queryset(self):
-        return super(ListUsers, self).get_queryset().select_related()
+        return super(ListUsers, self).get_queryset().select_related().order_by('last_name', 'first_name')
 
 
 @cbv_decorator(permission_required('auth.view_user'))
@@ -1276,3 +1306,58 @@ def burnup_chart(request, project_id):
     context = {'project': Project.objects.get(id=int(project_id))}
     return render(request, 'timepiece/project/burnup_charts/burnup_chart.html', context)
     # render_to_pdf(request, 'project-test')
+
+@cbv_decorator(permission_required('crm.view_contact'))
+class ListContacts(SearchListView):
+    model = Contact
+    redirect_if_one_result = True
+    search_fields = ['first_name__icontains', 'last_name__icontains']
+    template_name = 'timepiece/contact/list.html'
+
+@cbv_decorator(permission_required('crm.view_contact'))
+class ViewContact(DetailView):
+    model = Contact
+    pk_url_kwarg = 'contact_id'
+    template_name = 'timepiece/contact/view.html'
+
+    def get_context_data(self, **kwargs):
+        context = super(ViewContact, self).get_context_data(**kwargs)
+        context['add_contact_note_form'] = AddContactNoteForm()
+        return context
+
+@cbv_decorator(permission_required('workflow.add_contactnote'))
+class AddContactNote(View):
+
+    def post(self, request, *args, **kwargs):
+        user = self.request.user
+        contact = Contact.objects.get(id=int(kwargs['contact_id']))
+        note = ContactNote(contact=contact,
+                           author=user,
+                           text=request.POST.get('text', ''))
+        if len(note.text):
+            note.save()
+        return HttpResponseRedirect(request.GET.get('next', None) or reverse('view_contact', args=(contact.id,)))
+
+
+
+@cbv_decorator(permission_required('crm.add_contact'))
+class CreateContact(CreateView):
+    model = Contact
+    form_class = CreateEditContactForm
+    template_name = 'timepiece/contact/create_edit.html'
+
+
+@cbv_decorator(permission_required('crm.delete_contact'))
+class DeleteContact(DeleteView):
+    model = Contact
+    success_url = reverse_lazy('list_contacts')
+    pk_url_kwarg = 'contact_id'
+    template_name = 'timepiece/delete_object.html'
+
+
+@cbv_decorator(permission_required('crm.change_contact'))
+class EditContact(UpdateView):
+    model = Contact
+    form_class = CreateEditContactForm
+    template_name = 'timepiece/contact/create_edit.html'
+    pk_url_kwarg = 'contact_id'
