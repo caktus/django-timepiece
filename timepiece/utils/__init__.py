@@ -111,7 +111,7 @@ def get_period_end(period_start):
     #             period_start.year, period_start.month)[1])
     # return datetime.datetime.combine(
     #     period_end, datetime.datetime.max.time())
-    return period_start + relativedelta(days=6) # double check this
+    return period_start + relativedelta(days=7) # double check this
 
 def get_weekdays_count(period_start, period_end):
     """Returns the count oc weekdays in period."""
