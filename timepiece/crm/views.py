@@ -139,7 +139,7 @@ def view_user_timesheet(request, user_id, active_tab):
     month_qs = entries_qs.timespan(from_date, to_date=to_date)
     extra_values = ('start_time', 'end_time', 'comments', 'seconds_paused',
             'id', 'location__name', 'project__name', 'activity__name',
-            'status', 'mechanism')
+            'status', 'mechanism', 'writedown')
     month_entries = month_qs.date_trunc('month', extra_values)
     # For grouped entries, back date up to the start of the period.
     first_week = utils.get_period_start(from_date)
@@ -1308,11 +1308,86 @@ def burnup_chart(request, project_id):
     # render_to_pdf(request, 'project-test')
 
 @cbv_decorator(permission_required('crm.view_contact'))
-class ListContacts(SearchListView):
+class ListContacts(SearchListView, CSVViewMixin):
     model = Contact
     redirect_if_one_result = True
-    search_fields = ['first_name__icontains', 'last_name__icontains']
+    search_fields = ['first_name__icontains', 'last_name__icontains',
+                     'email__icontains', 'business__name__icontains', 
+                     'business_department__name__icontains']
     template_name = 'timepiece/contact/list.html'
+
+    def get(self, request, *args, **kwargs):
+        self.export_contact_list = request.GET.get('export_contact_list', False)
+        if self.export_contact_list:
+            kls = CSVViewMixin
+
+            form_class = self.get_form_class()
+            self.form = self.get_form(form_class)
+            self.object_list = self.get_queryset()
+            self.object_list = self.filter_results(self.form, self.object_list)
+
+            allow_empty = self.get_allow_empty()
+            if not allow_empty and len(self.object_list) == 0:
+                raise Http404("No results found.")
+
+            context = self.get_context_data(form=self.form,
+                object_list=self.object_list)
+
+            return kls.render_to_response(self, context)
+        else:
+            return super(ListContacts, self).get(request, *args, **kwargs)
+    
+    # def filter_form_valid(self, form, queryset):
+    #     queryset = super(ListContacts, self).filter_form_valid(form, queryset)
+    #     status = form.cleaned_data['status']
+    #     if status:
+    #         queryset = queryset.filter(status=status)
+    #     return queryset
+
+    def get_filename(self, context):
+        request = self.request.GET.copy()
+        search = request.get('search', '(empty)')
+        return 'contact_search_{0}.csv'.format(search)
+
+    def convert_context_to_csv(self, context):
+        """Convert the context dictionary into a CSV file."""
+        content = []
+        contact_list = context['contact_list']
+        if self.export_contact_list:
+            # this is a special csv export, different than stock Timepiece,
+            # requested by AAC Engineering for their detailed reporting reqs
+            headers = ['Salutaton', 'First Name', 'Last Name', 'Title', 'Email',
+                       'Office Phone', 'Mobile Phone', 'Home Phone', 
+                       'Other Phone', 'Fax', 'Business Name',
+                       'Business Department Name', 'Assistant Name',
+                       'Assistant Phone', 'Assistant Email', 'Mailing Street',
+                       'Mailing City', 'Mailing State', 'Mailing Postal Code',
+                       'Mailing Mailstop', 'Mailing Country', 'Mailing Latitude',
+                       'Mailing Longitude', 'Other Street', 'Other City', 
+                       'Other State', 'Other Postal Code', 'Other Mailstop', 
+                       'Other Country', 'Other Latitude', 'Other Longitude', 
+                       'Opted Out of Email', 'Opted Out of Fax', 'DO NOT CALL',
+                       'Birthday', 'Lead Source Email']
+            content.append(headers)
+            for contact in contact_list:
+                row = [contact.salutation, contact.first_name, contact.last_name, 
+                       contact.title, contact.email, contact.office_phone,
+                       contact.mobile_phone, contact.home_phone,
+                       contact.other_phone, contact.fax, contact.business,
+                       contact.business_department, contact.assistant_name,
+                       contact.assistant_phone, contact.assistant_email,
+                       contact.mailing_street, contact.mailing_city,
+                       contact.mailing_state, contact.mailing_postalcode,
+                       contact.mailing_mailstop, contact.mailing_country,
+                       contact.mailing_lat, contact.mailing_lon, contact.other_street,
+                       contact.other_city, contact.other_state,
+                       contact.other_postalcode, contact.other_mailstop,
+                       contact.other_country, contact.other_lat, contact.other_lon,
+                       contact.has_opted_out_of_email, contact.has_opted_out_of_fax,
+                       contact.do_not_call, contact.birthday, contact.lead_source.email]
+
+                content.append(row)
+        return content
 
 @cbv_decorator(permission_required('crm.view_contact'))
 class ViewContact(DetailView):

@@ -722,16 +722,16 @@ class Contact(models.Model):
     @property
     def name(self):
         if self.user:
-          return '%s %s' % (self.user.first_name, self.user.last_name)
+          return '%s, %s' % (self.user.last_name, self.user.first_name)
         else:
-          return '%s %s' % (self.first_name, self.last_name)
+          return '%s, %s' % (self.last_name, self.first_name)
 
     @property
     def get_name(self):
         if self.user:
-            return str(self.user)
+          return '%s, %s' % (self.user.last_name, self.user.first_name)
         else:
-            return '%s %s' % (self.first_name, self.last_name)
+          return '%s, %s' % (self.last_name, self.first_name)
 
     @property
     def get_first_name(self):
