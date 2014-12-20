@@ -158,6 +158,7 @@ class Entry(models.Model):
     PTO = 'pto-approval'
     IMPORT = 'import'
     CRON = 'cron'
+    WRITEDOWN = 'writedown'
 
     MECHANISMS = {
         TIMECLOCK: 'Timeclock',
@@ -165,7 +166,8 @@ class Entry(models.Model):
         MANUAL: 'Manual Entry',
         PTO: 'PTO Approval',
         IMPORT: 'Import',
-        CRON: 'Cron Job'
+        CRON: 'Cron Job',
+        WRITEDOWN: 'Writedown',
     }
 
 
@@ -191,6 +193,10 @@ class Entry(models.Model):
 
     mechanism = models.CharField(max_length=24, choices=MECHANISMS.items(),
             default=MANUAL)
+
+    writedown_user = models.ForeignKey(User, related_name='writedown_user', null=True, blank=True)
+    writedown = models.BooleanField(default=False, help_text='Select this if the entry is a writedown for another entry.')
+    writedown_entry = models.ForeignKey('self', blank=True, null=True, help_text='If this is a writedown, select the entry being written-down.')
 
     objects = EntryManager()
     worked = EntryWorkedManager()
@@ -375,6 +381,11 @@ class Entry(models.Model):
     def save(self, *args, **kwargs):
         #self.hours = Decimal('%.2f' % round(round(float(self.total_hours)*4.) / 4., 2))
         self.hours = Decimal('%.2f' % round(self.total_hours, 2))
+        
+        # for some reason the default value is not being set...
+        if self.writedown is None:
+            self.writedown = False
+        
         super(Entry, self).save(*args, **kwargs)
 
     def get_total_seconds(self):
@@ -416,6 +427,10 @@ class Entry(models.Model):
         if total < 0:
             total = 0
         return total
+
+    @property
+    def hours_paused(self):
+        return float(self.seconds_paused) / 3600.0
 
     @property
     def is_paused(self):

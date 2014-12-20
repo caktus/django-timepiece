@@ -1,0 +1,34 @@
+{% extends "timepiece/base.html" %}
+{% load bootstrap_toolkit %}
+
+{% block title %}Writedown Entry{% endblock title %}
+
+{% block content %}
+    <div class="row-fluid">
+        <div class="span12">
+            <h2>Writedown Entry for {{ orig_entry }}</h2>
+          <div class="span8 offset1">
+            <h4>Original Time Entry Data</h4>
+            <table class="table table-bordered">
+                <tr><th>User</th><td>{{ orig_entry.user.first_name }}</td></tr>
+                <tr><th>Project</th><td>{{ orig_entry.project }}</td></tr>
+                <tr><th>Activity</th><td>{{ orig_entry.activity }}</td></tr>
+                <tr><th>Location</th><td>{{ orig_entry.location }}</td></tr>
+                <tr><th>Total Hours</th><td>{{ orig_entry.hours }}</td></tr>
+                <tr><th>Start Time</th><td>{{ orig_entry.start_time }}</td></tr>
+                <tr><th>End Time</th><td>{{ orig_entry.end_time }}</td></tr>
+                <tr><th>Hours Paused</th><td>{{ orig_entry.hours_paused }}</td></tr>
+            </table>
+            <h4>Writedown Information</h4>
+            <form id="writedown-entry" class="form-horizontal" action="" method="post" accept-charset="utf-8">
+                {% csrf_token %}
+                {{ form|as_bootstrap:"horizontal" }}
+                <div class="form-actions">
+                    <input class="btn btn-primary" type='submit' name='submit' value='Writedown' />
+                    <input class="btn" type='button' value='Cancel' onclick='history.go(-1)' />
+                </div>
+            </form>
+          </div>
+        </div>
+    </div>
+{% endblock content %}

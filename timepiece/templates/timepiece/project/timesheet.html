@@ -77,9 +77,13 @@
 
     <div class="row-fluid">
         <div class="span12">
+            {% url 'view_project_timesheet' project.id as next_url %}
             {% if entries %}
                 <table class="table table-bordered table-striped">
                     <tr>
+                        {% if perms.entries.view_payroll_summary %}
+                        <th>Writedown</th>
+                        {% endif %}
                         <th>Date</th>
                         <th>User</th>
                         <th>Activity</th>
@@ -91,7 +95,21 @@
                         <th>Comments</th>
                     </tr>
                     {% for entry in entries %}
-                    <tr{% if entry.comments %} title='{{ entry.comments }}'{% endif %}>
+                    <tr{% if entry.comments %} title='{{ entry.comments }}'{% endif %}{% if entry.writedown %} class="error"{% endif %}>
+                        {% if perms.entries.view_payroll_summary %}
+                        <td>
+                            {% if entry.writedown %}
+                            <a class="btn btn-inverse btn-small" title="Delete Writedown" href="{% url 'delete_entry' entry.id %}?next={{ next_url|add_parameters:request.GET|urlencode }}">
+                                <i class="icon-trash icon-white"> </i>
+                            </a>
+                            {% else %}
+                            <a class="btn btn-inverse btn-small" title="Writedown" href="{% url 'writedown_entry' entry.id %}?next={{ next_url|add_parameters:request.GET|urlencode }}">
+                                <i class="icon-circle-arrow-down icon-white"> </i>
+                                <i class="icon-book icon-white"> </i>
+                            </a>
+                            {% endif %}
+                        </td>
+                        {% endif %}
                         <td>{{ entry.start_time|date:"m/d/Y (D)" }}</td>
                         <td>{{ entry.user__first_name }} {{ entry.user__last_name }}</td>
                         <td>{{ entry.activity__name }}</td>

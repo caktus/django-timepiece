@@ -27,7 +27,8 @@ from timepiece.utils.views import cbv_decorator
 
 from timepiece.crm.models import Project, UserProfile
 from timepiece.entries.forms import ClockInForm, ClockOutForm, \
-        AddUpdateEntryForm, ProjectHoursForm, ProjectHoursSearchForm
+        AddUpdateEntryForm, ProjectHoursForm, ProjectHoursSearchForm, \
+        WritedownEntryForm
 from timepiece.entries.models import Entry, ProjectHours, Location, Activity
 
 import pprint
@@ -78,7 +79,6 @@ class Dashboard(TemplateView):
 
         # Query for the user's active entry if it exists.
         active_entry = utils.get_active_entry(self.user)
-        print 'period', period_start, period_end
         # Process this period's entries to determine assignment progress.
         period_entries = Entry.objects.filter(
             user=self.user,
@@ -325,10 +325,19 @@ def delete_entry(request, entry_id):
     try:
         entry = Entry.no_join.get(pk=entry_id, user=request.user)
     except Entry.DoesNotExist:
-        message = 'No such entry found.'
-        messages.info(request, message)
-        url = request.REQUEST.get('next', reverse('dashboard'))
-        return HttpResponseRedirect(url)
+        if request.user.has_perm('entries.view_payroll_summary'):
+            try:
+                entry = Entry.no_join.get(pk=entry_id, writedown=True)
+            except:
+                message = 'No such entry found.'
+                messages.info(request, message)
+                url = request.REQUEST.get('next', reverse('dashboard'))
+                return HttpResponseRedirect(url)
+        else:
+            message = 'No such entry found.'
+            messages.info(request, message)
+            url = request.REQUEST.get('next', reverse('dashboard'))
+            return HttpResponseRedirect(url)
 
     if request.method == 'POST':
         key = request.POST.get('key', None)
@@ -347,6 +356,55 @@ def delete_entry(request, entry_id):
         'entry': entry,
     })
 
+def writedown_entry(request, orig_entry_id):
+    """
+
+    """
+    try:
+        orig_entry = Entry.no_join.get(pk=orig_entry_id)
+    except Entry.DoesNotExist:
+        message = 'No such entry found.'
+        messages.info(request, message)
+        url = request.REQUEST.get('next', reverse('dashboard'))
+        return HttpResponseRedirect(url)
+
+    if request.method == 'POST':
+        form = WritedownEntryForm(orig_entry=orig_entry, data=request.POST)
+        if form.is_valid():
+            end_time = orig_entry.start_time + datetime.timedelta(
+                hours=form.cleaned_data['hours'])
+            entry = Entry(start_time=orig_entry.start_time,
+                          end_time=end_time,
+                          seconds_paused=0,
+                          writedown=form.cleaned_data['writedown'],
+                          comments=form.cleaned_data['comments'],
+                          user=orig_entry.user,
+                          writedown_user=request.user,
+                          project=orig_entry.project,
+                          activity=orig_entry.activity,
+                          location=orig_entry.location,
+                          entry_group=orig_entry.entry_group,
+                          mechanism=Entry.WRITEDOWN)
+            entry.save()
+            message = 'The writeoff has been successfully created.'
+            messages.info(request, message)
+            url = request.REQUEST.get('next', reverse('dashboard'))
+            return HttpResponseRedirect(url)
+        else:
+            message = 'Please fix the errors below.'
+            messages.error(request, message)
+
+    else:
+        initial = {'hours': orig_entry.hours,
+                   'writedown': True,
+                   'comments': 'This is a write down for %s %s\'s entry against Project %s starting at %s (Entry ID %d).' % (
+                    orig_entry.user.first_name, orig_entry.user.last_name, orig_entry.project.code, orig_entry.start_time, orig_entry.id)}
+        form = WritedownEntryForm(orig_entry=orig_entry, initial=initial)
+
+    return render(request, 'timepiece/entry/writedown.html', {
+        'orig_entry': orig_entry,
+        'form': form,
+    })
 
 class ScheduleMixin(object):
 

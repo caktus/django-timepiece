@@ -211,6 +211,27 @@ class AddUpdateEntryForm(forms.ModelForm):
         return entry
 
 
+class WritedownEntryForm(forms.Form):
+    hours = forms.FloatField(required=True)
+    writedown = forms.BooleanField(required=True, initial=True, label='Writedown')
+    comments = forms.CharField(label='Note for writedown entry.',
+            widget=forms.Textarea, required=False)
+
+    def __init__(self, *args, **kwargs):
+        self.orig_entry = kwargs.pop('orig_entry')
+        super(WritedownEntryForm, self).__init__(*args, **kwargs)
+
+    def clean(self):
+        cleaned_data = super(WritedownEntryForm, self).clean()
+        hours = cleaned_data.get('hours', 0.0)
+        if float(hours) > float(self.orig_entry.hours):
+            raise forms.ValidationError("You cannot writedown more hours than"
+                "the original time entry.  You may need to writedown multiple"
+                "time entries.")
+        return cleaned_data
+
+
+
 class ProjectHoursForm(forms.ModelForm):
 
     class Meta:
