@@ -9,6 +9,8 @@ from decimal import Decimal
 from itertools import groupby
 from timepiece.utils import get_active_entry
 
+from taggit.managers import TaggableManager
+
 try:
     from wiki.models.urlpath import URLPath
 except:
@@ -651,6 +653,8 @@ class Contact(models.Model):
     birthday = models.DateField(null=True, blank=True)
 
     lead_source = models.ForeignKey(User, related_name='lead_source')
+
+    tags = TaggableManager()
 
     class Meta:
         ordering = ('last_name', 'first_name')

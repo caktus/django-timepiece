@@ -214,4 +214,12 @@ urlpatterns = patterns('',
     url(r'^contact/(?P<contact_id>\d+)/add_note$',
         views.AddContactNote.as_view(),
         name='add_contact_note'),
+    # Get Tags / Add Tag
+    url(r'^(?P<contact_id>\d+)/tags/$',
+        views.ContactTags.as_view(),
+        name='contact_tags'),
+    # Remove Tag
+    url(r'^(?P<contact_id>\d+)/tags/remove$',
+        views.RemoveContactTag.as_view(),
+        name='remove_contact_tag'),
 )

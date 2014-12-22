@@ -1368,7 +1368,7 @@ class ListContacts(SearchListView, CSVViewMixin):
                        'Other State', 'Other Postal Code', 'Other Mailstop', 
                        'Other Country', 'Other Latitude', 'Other Longitude', 
                        'Opted Out of Email', 'Opted Out of Fax', 'DO NOT CALL',
-                       'Birthday', 'Lead Source Email']
+                       'Birthday', 'Lead Source Email', 'Tags -->']
             content.append(headers)
             for contact in contact_list:
                 row = [contact.salutation, contact.first_name, contact.last_name, 
@@ -1386,6 +1386,8 @@ class ListContacts(SearchListView, CSVViewMixin):
                        contact.other_country, contact.other_lat, contact.other_lon,
                        contact.has_opted_out_of_email, contact.has_opted_out_of_fax,
                        contact.do_not_call, contact.birthday, contact.lead_source.email]
+                for tag in contact.tags.all():
+                    row.append(tag)
 
                 content.append(row)
         return content
@@ -1414,6 +1416,39 @@ class AddContactNote(View):
             note.save()
         return HttpResponseRedirect(request.GET.get('next', None) or reverse('view_contact', args=(contact.id,)))
 
+@cbv_decorator(permission_required('workflow.add_contactnote'))
+class ContactTags(View):
+
+    def get(self, request, *args, **kwargs):
+        return HttpResponse(status=200)
+
+    def post(self, request, *args, **kwargs):
+        contact = Contact.objects.get(id=int(kwargs['contact_id']))
+        tag = request.POST.get('tag')
+        for t in tag.split(','):
+            if len(t):
+                contact.tags.add(t)
+        tags = [t.name for t in contact.tags.all()]
+        return HttpResponse(json.dumps({'tags': tags}),
+                            content_type="application/json",
+                            status=200)
+
+@cbv_decorator(permission_required('workflow.delete_contact'))
+class RemoveContactTag(View):
+
+    def get(self, request, *args, **kwargs):
+        return HttpResponse(status=501)
+
+    def post(self, request, *args, **kwargs):
+        if request.user.is_superuser or bool(len(request.user.groups.filter(id=8))):
+            contact = Contact.objects.get(id=int(kwargs['contact_id']))
+            tag = request.POST.get('tag')
+            if len(tag):
+                contact.tags.remove(tag)
+        tags = [t.name for t in contact.tags.all()]
+        return HttpResponse(json.dumps({'tags': tags}),
+                            content_type="application/json",
+                            status=200)
 
 
 @cbv_decorator(permission_required('crm.add_contact'))
