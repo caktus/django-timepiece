@@ -155,7 +155,7 @@ def view_user_timesheet(request, user_id, active_tab):
     totals = grouped_totals(grouped_qs) if month_entries else ''
     project_entries = month_qs.order_by().values(
         'project__name').annotate(sum=Sum('hours')).order_by('-sum')
-    summary = Entry.summary(user, from_date, to_date)
+    summary = Entry.summary(user, from_date, to_date, writedown=False)
 
     show_approve = show_verify = False
     can_change = request.user.has_perm('entries.change_entry')

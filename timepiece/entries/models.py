@@ -503,7 +503,7 @@ class Entry(models.Model):
         return key
 
     @staticmethod
-    def summary(user, date, end_date):
+    def summary(user, date, end_date, writedown=None):
         """
         Returns a summary of hours worked in the given time frame, for this
         user.  The setting TIMEPIECE_PAID_LEAVE_PROJECTS can be used to
@@ -515,6 +515,8 @@ class Entry(models.Model):
         projects = utils.get_setting('TIMEPIECE_PAID_LEAVE_PROJECTS')
         entries = user.timepiece_entries.filter(
             end_time__gt=date, end_time__lt=end_date)
+        if writedown is not None:
+            entries = entries.filter(writedown=writedown)
         data = {
             'billable': Decimal('0'), 'non_billable': Decimal('0'),
             'invoiced': Decimal('0'), 'uninvoiced': Decimal('0'),
