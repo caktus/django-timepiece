@@ -59,10 +59,13 @@ def generate_dates(start=None, end=None, by='week'):
 
 
 def get_project_totals(entries, date_headers, hour_type=None, overtime=False,
-                   total_column=False, by='user'):
+                   total_column=False, by='user', writedown=None):
     """
     Yield hour totals grouped by user and date. Optionally including overtime.
     """
+    if writedown is not None:
+        entries = entries.filter(writedown=writedown)
+
     totals = [0 for date in date_headers]
     rows = []
     for thing, thing_entries in groupby(entries, lambda x: x[by]):

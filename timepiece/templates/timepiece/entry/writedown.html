@@ -15,6 +15,9 @@
                 <tr><th>Activity</th><td>{{ orig_entry.activity }}</td></tr>
                 <tr><th>Location</th><td>{{ orig_entry.location }}</td></tr>
                 <tr><th>Total Hours</th><td>{{ orig_entry.hours }}</td></tr>
+                {% if orig_entry.written_down_hours %}
+                <tr class="error"><th>Hours Already Written-Down</th><td>{{ orig_entry.written_down_hours }}</td></tr>
+                {% endif %}
                 <tr><th>Start Time</th><td>{{ orig_entry.start_time }}</td></tr>
                 <tr><th>End Time</th><td>{{ orig_entry.end_time }}</td></tr>
                 <tr><th>Hours Paused</th><td>{{ orig_entry.hours_paused }}</td></tr>

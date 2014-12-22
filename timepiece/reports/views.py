@@ -92,6 +92,7 @@ class ReportMixin(object):
         # Entry types.
         incl_billable = data.get('billable', True)
         incl_nonbillable = data.get('non_billable', True)
+        incl_writedown = data.get('writedown', True)
         incl_leave = data.get('paid_time_off', True)
 
         # If no types are selected, shortcut & return nothing.
@@ -114,6 +115,10 @@ class ReportMixin(object):
             basicQ &= Q(activity__in=data.get('activities'))
         if 'project_types' in data:
             basicQ &= Q(project__type__in=data.get('project_types'))
+        
+        # if we do not want to include writedown, set that here.
+        if not incl_writedown:
+            basicQ &= Q(writedown=False)
 
         # If all types are selected, no further filtering is required.
         if all((incl_billable, incl_nonbillable, incl_leave)):
@@ -230,6 +235,7 @@ class HourlyReport(ReportMixin, CSVViewMixin, TemplateView):
             'billable': True,
             'non_billable': False,
             'paid_time_off': False,
+            'writedown': True,
             'trunc': 'day',
             'projects': [],
             'businesses': [],
@@ -271,7 +277,7 @@ class HourlyReport(ReportMixin, CSVViewMixin, TemplateView):
             else:
                 ordered_entries = entries.order_by('project__type__label', 'project__name',
                     'project__code', 'date')
-            # print 'ordered_entries', ordered_entries
+            
             summaries.append(('By Project (All Projects)', get_project_totals(
                 ordered_entries, date_headers, 'total', total_column=True, by='project')))
             func = lambda x: x['project__type__label']
@@ -279,6 +285,9 @@ class HourlyReport(ReportMixin, CSVViewMixin, TemplateView):
                 title = 'By Project (' + label + ' Projects)'
                 summaries.append((title, get_project_totals(list(group),
                         date_headers, 'total', total_column=True, by='project')))
+
+            summaries.append(('Writedowns By Project (All Projects)', get_project_totals(
+                ordered_entries, date_headers, 'total', total_column=True, by='project', writedown=True)))
             
 
         # Adjust date headers & create range headers.
@@ -308,12 +317,156 @@ class HourlyReport(ReportMixin, CSVViewMixin, TemplateView):
         data = self.request.GET or self.defaults
         data = data.copy()  # make mutable
         # Fix booleans - the strings "0" and "false" are True in Python
-        for key in ['billable', 'non_billable', 'paid_time_off']:
+        for key in ['billable', 'non_billable', 'paid_time_off', 'writedown']:
             data[key] = key in data and \
                         str(data[key]).lower() in ('on', 'true', '1')
 
         return HourlyReportForm(data)
 
+
+class WritedownReport(ReportMixin, CSVViewMixin, TemplateView):
+    template_name = 'timepiece/reports/writedowns.html'
+
+    def convert_context_to_csv(self, context):
+        """Convert the context dictionary into a CSV file."""
+        content = []
+        if self.export_users_details:
+            # this is a special csv export, different than stock Timepiece,
+            # requested by AAC Engineering for their detailed reporting reqs
+            headers = ['Entry ID', 'Date', 'Employee ID', 'Employee Email',
+                       'Employee Last Name', 'Employee First Name', 'Project ID', 'Project Code',
+                       'Project Name', 'Project Type', 'Business ID', 'Business Name',
+                       'Duration', 'Activity ID', 'Activity Name', 'Comment']
+            content.append(headers)
+            for entry in context['entries']:
+                row = [entry['pk']]
+                row.append(entry['date'].strftime('%m/%d/%Y'))
+                for key in ['user', 'user__email', 'user__last_name', 'user__first_name',
+                          'project', 'project__code', 'project__name', 'project__type__label',
+                          'project__business__id', 'project__business__name',
+                          'hours', 'activity', 'activity__name', 'comments']:
+                    row.append(entry[key])
+                content.append(row)
+            return content
+
+        date_headers = context['date_headers']
+
+        headers = ['Name']
+        headers.extend([date.strftime('%m/%d/%Y') for date in date_headers])
+        headers.append('Total')
+        content.append(headers)
+        
+        if self.export_projects:
+            key = 'By Project (All Projects)'
+        elif self.export_users:
+            key = 'By User'
+
+        summaries = context['summaries']
+        try:
+            summary = filter(lambda x:x[0]==key, summaries)[0][1]
+        except:
+            summary = []
+        for rows, totals in summary:
+            for name, user_id, hours in rows:
+                data = [name]
+                data.extend(hours)
+                content.append(data)
+            total = ['Totals']
+            total.extend(totals)
+            content.append(total)
+        return content
+
+    @property
+    def defaults(self):
+        """Default filter form data when no GET data is provided."""
+        # Set default date span to previous week.
+        (start, end) = get_week_window(timezone.now() - relativedelta(days=7))
+        return {
+            'from_date': start,
+            'to_date': end,
+            'billable': True,
+            'non_billable': False,
+            'paid_time_off': False,
+            'writedown': True,
+            'trunc': 'day',
+            'projects': [],
+            'businesses': [],
+        }
+
+    def get(self, request, *args, **kwargs):
+        self.export_users = request.GET.get('export_users', False)
+        self.export_projects = request.GET.get('export_projects', False)
+        self.export_users_details = request.GET.get('export_users_details', False)
+        
+        context = self.get_context_data()
+        if self.export_users or self.export_projects or self.export_users_details:
+            kls = CSVViewMixin
+        else:
+            kls = TemplateView
+        return kls.render_to_response(self, context)
+
+    def get_context_data(self, **kwargs):
+        context = super(WritedownReport, self).get_context_data(**kwargs)
+
+        # Sum the hours totals for each user & interval.
+        entries = context['entries']
+        entries = entries.filter(writedown=True)
+        context['entries'] = entries
+        date_headers = context['date_headers']
+
+        summaries = []
+        if context['entries']:
+            entries_is_list = type(entries) is list
+            if entries_is_list:
+                ordered_entries = multikeysort(entries, ['user__last_name', 'user', 'date'])
+            else:
+                ordered_entries = entries.order_by('user__last_name', 'user__id', 'date')
+            summaries.append(('By User', get_project_totals(ordered_entries,
+                    date_headers, 'total', total_column=True, by='user')))
+
+            if entries_is_list:
+                ordered_entries = multikeysort(entries, ['project__type__label', 'project__name',
+                    'project__code', 'date'])
+            else:
+                ordered_entries = entries.order_by('project__type__label', 'project__name',
+                    'project__code', 'date')
+            
+            summaries.append(('By Project (All Projects)', get_project_totals(
+                ordered_entries, date_headers, 'total', total_column=True, by='project')))
+            
+
+        # Adjust date headers & create range headers.
+        from_date = context['from_date']
+        from_date = utils.add_timezone(from_date) if from_date else None
+        to_date = context['to_date']
+        to_date = utils.add_timezone(to_date) if to_date else None
+        trunc = context['trunc']
+        date_headers, range_headers = self.get_headers(date_headers,
+                from_date, to_date, trunc)
+
+        context.update({
+            'date_headers': date_headers,
+            'summaries': summaries,
+            'range_headers': range_headers,
+        })
+        return context
+
+    def get_filename(self, context):
+        request = self.request.GET.copy()
+        from_date = request.get('from_date')
+        to_date = request.get('to_date')
+        return 'writedowns_{0}_to_{1}_by_{2}.csv'.format(from_date, to_date,
+            context.get('trunc', ''))
+
+    def get_form(self):
+        data = self.request.GET or self.defaults
+        data = data.copy()  # make mutable
+        # Fix booleans - the strings "0" and "false" are True in Python
+        for key in ['billable', 'non_billable', 'paid_time_off', 'writedown']:
+            data[key] = key in data and \
+                        str(data[key]).lower() in ('on', 'true', '1')
+
+        return HourlyReportForm(data)
 
 class BillableHours(ReportMixin, TemplateView):
     template_name = 'timepiece/reports/billable_hours.html'
@@ -400,6 +553,7 @@ def report_payroll_summary(request):
         from_date, to_date = year_month_form.save()
     last_billable = utils.get_last_billable_day(from_date)
     projects = utils.get_setting('TIMEPIECE_PAID_LEAVE_PROJECTS')
+    writedownQ = Q(writedown=False)
     weekQ = Q(end_time__gt=utils.get_week_start(from_date),
               end_time__lt=last_billable + relativedelta(days=1))
     monthQ = Q(end_time__gt=from_date, end_time__lt=to_date)
@@ -412,7 +566,7 @@ def report_payroll_summary(request):
         ).order_by('user')
     else:
         week_entries = []
-        for we in Entry.objects.filter(weekQ, statusQ, workQ).order_by('user'):
+        for we in Entry.objects.filter(writedownQ, weekQ, statusQ, workQ).order_by('user'):
             week_entries.append(
                 {'billable': we.billable,
                  'date': utils.get_week_start(we.end_time).date(),
@@ -428,6 +582,8 @@ def report_payroll_summary(request):
     weekly_totals = list(get_project_totals(week_entries, date_headers,
                                               'total', overtime=True))
     # Monthly totals
+    # not filter on writedown here since there should never be a writedown
+    # against a PAID LEAVE project.
     leave = Entry.objects.filter(monthQ, ~workQ
                                   ).values('user', 'hours', 'project__name')
     extra_values = ('project__type__label',)
@@ -435,7 +591,7 @@ def report_payroll_summary(request):
     month_entries_valid = month_entries.filter(monthQ, statusQ, workQ)
     labels, monthly_totals = get_payroll_totals(month_entries_valid, leave)
     # Unapproved and unverified hours
-    entries = Entry.objects.filter(monthQ).order_by()  # No ordering
+    entries = Entry.objects.filter(writedownQ, monthQ).order_by()  # No ordering
     user_values = ['user__pk', 'user__first_name', 'user__last_name']
     unverified = entries.filter(status=Entry.UNVERIFIED, user__is_active=True) \
                         .values_list(*user_values).distinct()

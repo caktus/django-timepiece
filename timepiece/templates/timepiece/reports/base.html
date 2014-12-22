@@ -14,6 +14,9 @@
                         <li{% ifequal active 'hourly_report' %} class="active"{% endifequal %}>
                             <a href="{% ifequal active 'hourly_report' %}#{% else %}{% url 'report_hourly' %}{% endifequal %}">Hourly</a>
                         </li>
+                        <li{% ifequal active 'writedowns_report' %} class="active"{% endifequal %}>
+                            <a href="{% ifequal active 'writedowns_report' %}#{% else %}{% url 'report_writedowns' %}{% endifequal %}">Writedowns</a>
+                        </li>
                     {% endif %}
                     {% if perms.entries.view_payroll_summary %}
                         <li{% ifequal active 'payroll_summary' %} class="active"{% endifequal %}>

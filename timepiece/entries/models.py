@@ -379,12 +379,13 @@ class Entry(models.Model):
         return True
 
     def save(self, *args, **kwargs):
-        #self.hours = Decimal('%.2f' % round(round(float(self.total_hours)*4.) / 4., 2))
-        self.hours = Decimal('%.2f' % round(self.total_hours, 2))
-        
         # for some reason the default value is not being set...
         if self.writedown is None:
             self.writedown = False
+
+        self.hours = Decimal('%.2f' % round(self.total_hours, 2))
+        if self.writedown:
+            self.hours = -1 * self.hours
         
         super(Entry, self).save(*args, **kwargs)
 
@@ -552,6 +553,13 @@ class Entry(models.Model):
         Determines whether times should be shown on the dashboard.
         """
         return self.mechanism in [self.TIMECLOCK, self.MANUAL]
+
+    @property
+    def written_down_hours(self):
+        hours = Entry.objects.filter(writedown=True, 
+            writedown_entry=self).aggregate(
+            Sum('hours'))['hours__sum'] or 0.0
+        return -1 * float(hours)
 
 
 class ProjectHours(models.Model):

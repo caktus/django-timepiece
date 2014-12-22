@@ -7,6 +7,10 @@ urlpatterns = patterns('',
         views.HourlyReport.as_view(),
         name='report_hourly'),
 
+    url(r'^reports/writedowns/$',
+        views.WritedownReport.as_view(),
+        name='report_writedowns'),
+
     url(r'^reports/payroll/$',
         views.report_payroll_summary,
         name='report_payroll_summary'),

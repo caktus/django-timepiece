@@ -3,6 +3,7 @@ from dateutil.relativedelta import relativedelta
 
 from django import forms
 from django.core.urlresolvers import reverse, reverse_lazy
+from django.db.models import Sum
 
 from timepiece import utils
 from timepiece.crm.models import Project
@@ -224,7 +225,12 @@ class WritedownEntryForm(forms.Form):
     def clean(self):
         cleaned_data = super(WritedownEntryForm, self).clean()
         hours = cleaned_data.get('hours', 0.0)
-        if float(hours) > float(self.orig_entry.hours):
+        # other_writedown_hours = Entry.objects.filter(writedown=True, 
+        #     writedown_entry=self.orig_entry).aggregate(
+        #     Sum('hours'))['hours__sum'] or 0.0
+        # these hours would be negative, so subtract to add
+        total_hours = float(hours)+float(self.orig_entry.written_down_hours)
+        if total_hours > float(self.orig_entry.hours):
             raise forms.ValidationError("You cannot writedown more hours than"
                 "the original time entry.  You may need to writedown multiple"
                 "time entries.")

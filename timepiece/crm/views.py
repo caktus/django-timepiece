@@ -69,13 +69,12 @@ def reject_user_timesheet(request, user_id):
         half =1
     else:
         half = 2
-    print 'year', int(year), 'month', int(month), 'half', int(half)
     form = YearMonthForm({'year':int(year), 'month':int(month), 'half':half})
     user = User.objects.get(pk=user_id)
     if form.is_valid():
         from_date, to_date = form.save()
         entries = Entry.no_join.filter(status=Entry.VERIFIED, user=user,
-            start_time__gte=from_date, end_time__lte=to_date)
+            start_time__gte=from_date, end_time__lte=to_date, writedown=False)
         if request.POST.get('yes'):
             if entries.exists():
                 count = entries.count()
@@ -133,13 +132,13 @@ def view_user_timesheet(request, user_id, active_tab):
     else:
         # Default to showing current bi-monthly period.
         from_date, to_date = utils.get_bimonthly_dates(datetime.date.today())
-    entries_qs = Entry.objects.filter(user=user)
+    entries_qs = Entry.objects.filter(user=user, writedown=False)
     # DBROWNE - CHANGED THIS TO MATCH THE DESIRED RESULT FOR AAC ENGINEERING
     #month_qs = entries_qs.timespan(from_date, span='month')
     month_qs = entries_qs.timespan(from_date, to_date=to_date)
     extra_values = ('start_time', 'end_time', 'comments', 'seconds_paused',
             'id', 'location__name', 'project__name', 'activity__name',
-            'status', 'mechanism', 'writedown')
+            'status', 'mechanism')
     month_entries = month_qs.date_trunc('month', extra_values)
     # For grouped entries, back date up to the start of the period.
     first_week = utils.get_period_start(from_date)
@@ -219,7 +218,8 @@ def change_user_timesheet(request, user_id, action):
     from_date, to_date = utils.get_bimonthly_dates(from_date)
     entries = Entry.no_join.filter(user=user_id,
                                    end_time__gte=from_date,
-                                   end_time__lt=to_date)
+                                   end_time__lt=to_date,
+                                   writedown=False)
     active_entries = Entry.no_join.filter(
         user=user_id,
         start_time__lt=to_date,
@@ -290,7 +290,6 @@ class ProjectTimesheet(DetailView):
 
     def get_context_data(self, **kwargs):
         context = super(ProjectTimesheet, self).get_context_data(**kwargs)
-        print 'GET', self.request.GET
         project = self.object
         #year_month_form = YearMonthForm(self.request.GET or None)
         filter_form = HourlyReportForm(self.request.GET or None)
@@ -400,6 +399,7 @@ class ProjectTimesheetCSV(CSVViewMixin, ProjectTimesheet):
             'Time Out',
             'Breaks',
             'Hours',
+            'Writedown',
         ])
         for entry in context['entries']:
             data = [
@@ -411,6 +411,7 @@ class ProjectTimesheetCSV(CSVViewMixin, ProjectTimesheet):
                 entry['end_time'].strftime('%X'),
                 seconds_to_hours(entry['seconds_paused']),
                 entry['hours'],
+                entry['writedown'],
             ]
             rows.append(data)
         total = context['total']

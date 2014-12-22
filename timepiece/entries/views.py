@@ -80,8 +80,9 @@ class Dashboard(TemplateView):
         # Query for the user's active entry if it exists.
         active_entry = utils.get_active_entry(self.user)
         # Process this period's entries to determine assignment progress.
+        # DO NOT INCLUDE WRITEDOWNS ON THE DASHBOARD
         period_entries = Entry.objects.filter(
-            user=self.user,
+            user=self.user, writedown=False,
             start_time__gte=period_start,
             end_time__lte=period_end) \
                 .select_related('project')
@@ -358,7 +359,10 @@ def delete_entry(request, entry_id):
 
 def writedown_entry(request, orig_entry_id):
     """
-
+    When a time entry, or part of a time entry, needs to be written-down
+    this provide functionality to do that.  It requires that the amount
+    (i.e. hours) being written-down are no more than the entry.
+    Writedowns are only shown in certain parts of the front-end and reports.
     """
     try:
         orig_entry = Entry.no_join.get(pk=orig_entry_id)
@@ -380,11 +384,13 @@ def writedown_entry(request, orig_entry_id):
                           comments=form.cleaned_data['comments'],
                           user=orig_entry.user,
                           writedown_user=request.user,
+                          writedown_entry=orig_entry,
                           project=orig_entry.project,
                           activity=orig_entry.activity,
                           location=orig_entry.location,
                           entry_group=orig_entry.entry_group,
-                          mechanism=Entry.WRITEDOWN)
+                          mechanism=Entry.WRITEDOWN,
+                          status=Entry.APPROVED)
             entry.save()
             message = 'The writeoff has been successfully created.'
             messages.info(request, message)
@@ -395,7 +401,7 @@ def writedown_entry(request, orig_entry_id):
             messages.error(request, message)
 
     else:
-        initial = {'hours': orig_entry.hours,
+        initial = {'hours': float(orig_entry.hours) - orig_entry.written_down_hours,
                    'writedown': True,
                    'comments': 'This is a write down for %s %s\'s entry against Project %s starting at %s (Entry ID %d).' % (
                     orig_entry.user.first_name, orig_entry.user.last_name, orig_entry.project.code, orig_entry.start_time, orig_entry.id)}
@@ -446,17 +452,19 @@ class ScheduleMixin(object):
     def get_charges_for_period(self, period_start=None):
         """
         Gets all Entries in the 7-day period beginning on period_start.
+        TODO: IGNORE WRITEDOWNS OR NOT? Currently writedown=False.
         """
         period_start = period_start if period_start else self.period_start
         period_end = utils.get_period_end(period_start)
 
         return Entry.objects.filter(
             start_time__gte=period_start, end_time__lt=period_end,
-            user=self.user)
+            user=self.user, writedown=False)
 
     def get_charges_for_day(self, day=None):
         """
         Gets all Entries in the 7-day period beginning on period_start.
+        TODO: IGNORE WRITEDOWNS OR NOT? Currently writedown=False.
         """
         try:
             day = day or self.day
@@ -467,7 +475,7 @@ class ScheduleMixin(object):
 
             return Entry.objects.filter(
                 start_time__gte=period_start, end_time__lte=period_end,
-                user=self.user)
+                user=self.user, writedown=False)
         except:
             return []
 
