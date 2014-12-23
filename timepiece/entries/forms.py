@@ -214,7 +214,7 @@ class AddUpdateEntryForm(forms.ModelForm):
 
 class WritedownEntryForm(forms.Form):
     hours = forms.FloatField(required=True)
-    writedown = forms.BooleanField(required=True, initial=True, label='Writedown')
+    writedown = forms.BooleanField(required=True, initial=False, label='Writedown')
     comments = forms.CharField(label='Note for writedown entry.',
             widget=forms.Textarea, required=False)
 
@@ -224,6 +224,13 @@ class WritedownEntryForm(forms.Form):
 
     def clean(self):
         cleaned_data = super(WritedownEntryForm, self).clean()
+        if not self.orig_entry.project.billable:
+            raise forms.ValidationError("You can only writedown time entries "
+                "that were charged against a billable project.")
+        if not self.orig_entry.activity.billable:
+            raise forms.ValidationError("You can only writedown time entries "
+                "that were charged against a billable activity.")
+
         hours = cleaned_data.get('hours', 0.0)
         # other_writedown_hours = Entry.objects.filter(writedown=True, 
         #     writedown_entry=self.orig_entry).aggregate(

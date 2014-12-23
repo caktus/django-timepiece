@@ -402,7 +402,7 @@ def writedown_entry(request, orig_entry_id):
 
     else:
         initial = {'hours': float(orig_entry.hours) - orig_entry.written_down_hours,
-                   'writedown': True,
+                   'writedown': False,
                    'comments': 'This is a write down for %s %s\'s entry against Project %s starting at %s (Entry ID %d).' % (
                     orig_entry.user.first_name, orig_entry.user.last_name, orig_entry.project.code, orig_entry.start_time, orig_entry.id)}
         form = WritedownEntryForm(orig_entry=orig_entry, initial=initial)
