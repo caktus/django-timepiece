@@ -12,6 +12,17 @@ urlpatterns = patterns('',
         views.ContractDetail.as_view(),
         name='view_contract'),
 
+    url(r'^contract/(?P<contract_id>\d+)/rate/$',
+        views.AddContractRate.as_view(),
+        name='add_contract_rate'),
+    url(r'^contract/(?P<contract_id>\d+)/rate/(?P<contract_rate_id>\d+)/edit/$',
+        views.EditContractRate.as_view(),
+        name='edit_contract_rate'),
+    url(r'^contract/(?P<contract_id>\d+)/rate/(?P<contract_rate_id>\d+)/delete/$',
+        views.DeleteContractRate.as_view(),
+        name='delete_contract_rate'),
+
+
     # Invoices
     url(r'invoice/$',
         views.ListInvoices.as_view(),

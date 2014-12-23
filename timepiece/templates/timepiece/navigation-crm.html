@@ -6,6 +6,9 @@
     <li class="dropdown">
         <a href="#" class="dropdown-toggle" data-toggle="dropdown">CRM <b class="caret"></b></a>
         <ul class="dropdown-menu">
+            {% if perms.contracts.view_contract %}
+                <li><a href="{% url 'list_contracts' %}">Contracts</a></li>
+            {% endif %}
             {% if perms.crm.view_project %}
                 <li><a href="{% url 'list_projects' %}?search=&status={{ TIMEPIECE_DEFAULT_PROJECT_STATUS }}&submit=">Projects</a></li>
             {% endif %}
@@ -17,9 +20,6 @@
             {% endif %}
             {% if perms.crm.view_business %}
                 <li><a href="{% url 'list_businesses' %}">Businesses</a></li>
-            {% endif %}
-            {% if perms.contracts.add_projectcontract %}
-                <li><a href="{% url 'list_contracts' %}">Contracts</a></li>
             {% endif %}
         </ul>
     </li>

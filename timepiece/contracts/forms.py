@@ -3,8 +3,9 @@ from dateutil.relativedelta import relativedelta
 from django import forms
 
 from timepiece import utils
-from timepiece.contracts.models import EntryGroup
+from timepiece.contracts.models import EntryGroup, ContractRate
 from timepiece.crm.models import Attribute
+from timepiece.entries.models import Activity
 from timepiece.forms import DateForm
 
 
@@ -64,3 +65,15 @@ class OutstandingHoursFilterForm(DateForm):
             'from_date': self.get_from_date(),
             'statuses': self.get_statuses()
         }
+
+class CreateEditContractRateForm(forms.ModelForm):
+
+    class Meta:
+        model = ContractRate
+        fields = ('activity', 'rate', 'contract')
+
+    def __init__(self, *args, **kwargs):        
+        super(CreateEditContractRateForm, self).__init__(*args, **kwargs)
+        self.fields['activity'].choices = [(a.id, a.name) for a in 
+            Activity.objects.filter(billable=True).order_by('name')]
+        self.fields['rate'].initial = 100.00

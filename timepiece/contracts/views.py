@@ -6,9 +6,11 @@ from django.contrib import messages
 from django.core.urlresolvers import reverse
 from django.db import transaction, DatabaseError
 from django.db.models import Sum, Q
+from django.forms import widgets
 from django.http import HttpResponseRedirect, Http404, HttpResponseForbidden
 from django.shortcuts import get_object_or_404, redirect, render
-from django.views.generic import ListView, DetailView
+from django.views.generic import (ListView, DetailView, CreateView, 
+    UpdateView, DeleteView)
 
 from timepiece import utils
 from timepiece.templatetags.timepiece_tags import seconds_to_hours
@@ -16,8 +18,10 @@ from timepiece.utils.csv import CSVViewMixin
 from timepiece.utils.search import SearchListView
 from timepiece.utils.views import cbv_decorator
 
-from timepiece.contracts.forms import InvoiceForm, OutstandingHoursFilterForm
-from timepiece.contracts.models import ProjectContract, HourGroup, EntryGroup
+from timepiece.contracts.forms import (InvoiceForm,
+    OutstandingHoursFilterForm, CreateEditContractRateForm)
+from timepiece.contracts.models import (ProjectContract, HourGroup,
+    EntryGroup, ContractRate)
 from timepiece.entries.models import Project, Entry
 
 
@@ -55,6 +59,53 @@ class ContractList(ListView):
             [0.0] + [c.fraction_schedule for c in self.queryset.all()])
         return super(ContractList, self).get_context_data(*args, **kwargs)
 
+@cbv_decorator(permission_required('contracts.add_contractrate'))
+class AddContractRate(CreateView):
+    model = ContractRate
+    form_class = CreateEditContractRateForm
+    template_name = 'timepiece/contract/rate/create_edit.html'
+
+    def get_form(self, *args, **kwargs):
+        form = super(AddContractRate, self).get_form(*args, **kwargs)
+        form.fields['contract'].widget = widgets.HiddenInput()
+        form.fields['contract'].initial = ProjectContract.objects.get(
+            id=int(self.kwargs['contract_id']))
+        return form
+
+    def get_context_data(self, *args, **kwargs):
+        kwargs['contract'] = ProjectContract.objects.get(id=int(self.kwargs['contract_id']))
+        return super(AddContractRate, self).get_context_data(*args, **kwargs)
+
+    def get_success_url(self):
+        return reverse('view_contract', args=(int(self.kwargs['contract_id']), ))
+
+@cbv_decorator(permission_required('contracts.change_contractrate'))
+class EditContractRate(UpdateView):
+    model = ContractRate
+    form_class = CreateEditContractRateForm
+    template_name = 'timepiece/contract/rate/create_edit.html'
+    pk_url_kwarg = 'contract_rate_id'
+
+    def get_form(self, *args, **kwargs):
+        form = super(EditContractRate, self).get_form(*args, **kwargs)
+        form.fields['contract'].widget = widgets.HiddenInput()
+        return form
+
+    def get_context_data(self, *args, **kwargs):
+        kwargs['contract'] = ProjectContract.objects.get(id=int(self.kwargs['contract_id']))
+        return super(EditContractRate, self).get_context_data(*args, **kwargs)
+
+    def get_success_url(self):
+        return reverse('view_contract', args=(int(self.kwargs['contract_id']), ))
+
+@cbv_decorator(permission_required('contracts.delete_contractrate'))
+class DeleteContractRate(DeleteView):
+    model = ContractRate
+    template_name = 'timepiece/delete_object.html'
+    pk_url_kwarg = 'contract_rate_id'
+
+    def get_success_url(self):
+        return reverse('view_contract', args=(int(self.kwargs['contract_id']), ))
 
 @login_required
 @transaction.commit_on_success
