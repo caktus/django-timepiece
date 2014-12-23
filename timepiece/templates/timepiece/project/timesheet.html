@@ -103,11 +103,13 @@
                                 <i class="icon-trash icon-white"> </i>
                             </a>
                             {% else %}
+                            {% if entry.activity__billable %}
                             <a class="btn btn-inverse btn-small" title="Writedown" href="{% url 'writedown_entry' entry.id %}?next={{ next_url|add_parameters:request.GET|urlencode }}">
                                 <i class="icon-circle-arrow-down icon-white"> </i>
                                 <i class="icon-book icon-white"> </i>
                             </a>
-                            {% endif %}
+                            {% else %} {{ entry.activity }} {{ entry.project }}
+                            {% endif %}{% endif %}
                         </td>
                         {% endif %}
                         <td>{{ entry.start_time|date:"m/d/Y (D)" }}</td>
