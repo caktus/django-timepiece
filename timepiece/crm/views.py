@@ -327,7 +327,7 @@ class ProjectTimesheet(DetailView):
         # )
         extra_values = ('start_time', 'end_time', 'comments', 'seconds_paused',
                 'id', 'location__name', 'project__name', 'activity__name',
-                'status', 'writedown')
+                'status', 'writedown', 'activity__billable')
         month_entries = entries_qs.date_trunc('month', extra_values)
         total = entries_qs.aggregate(hours=Sum('hours'))['hours']
         user_entries = entries_qs.order_by().values(
@@ -466,7 +466,7 @@ class ViewBusinessDepartment(DetailView):
         # context['add_user_form'] = SelectUserForm()
         return context
 
-@cbv_decorator(permission_required('workflow.add_businessnote'))
+@cbv_decorator(permission_required('crm.add_businessnote'))
 class AddBusinessNote(View):
 
     def post(self, request, *args, **kwargs):
@@ -1403,7 +1403,7 @@ class ViewContact(DetailView):
         context['add_contact_note_form'] = AddContactNoteForm()
         return context
 
-@cbv_decorator(permission_required('workflow.add_contactnote'))
+@cbv_decorator(permission_required('crm.add_contactnote'))
 class AddContactNote(View):
 
     def post(self, request, *args, **kwargs):
@@ -1416,7 +1416,7 @@ class AddContactNote(View):
             note.save()
         return HttpResponseRedirect(request.GET.get('next', None) or reverse('view_contact', args=(contact.id,)))
 
-@cbv_decorator(permission_required('workflow.add_contactnote'))
+@cbv_decorator(permission_required('crm.add_contactnote'))
 class ContactTags(View):
 
     def get(self, request, *args, **kwargs):
@@ -1433,7 +1433,7 @@ class ContactTags(View):
                             content_type="application/json",
                             status=200)
 
-@cbv_decorator(permission_required('workflow.delete_contact'))
+@cbv_decorator(permission_required('crm.delete_contact'))
 class RemoveContactTag(View):
 
     def get(self, request, *args, **kwargs):
