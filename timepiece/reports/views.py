@@ -51,7 +51,7 @@ class ReportMixin(object):
                 vals = ('pk', 'activity', 'activity__name', 'project', 'project__code',
                         'project__name', 'project__status', 'project__type__label', 
                         'user__email', 'project__business__id', 'project__business__name',
-                        'comments')
+                        'comments', 'writedown')
                 # EXTRA LOGIC FOR SUN-SAT WEEK
                 if trunc == 'week':
                     entries = Entry.objects.date_trunc('day',
@@ -523,11 +523,21 @@ class BillableHours(ReportMixin, TemplateView):
                     select_all=True)
 
     def get_hours_data(self, entries, date_headers):
-        """Sum billable and non-billable hours across all users."""
-        project_totals = get_project_totals(entries, date_headers,
-                total_column=False) if entries else []
+        """
+        Sum billable and non-billable hours across all users.
+        Seprate writedowns so that they can be moved from billable
+        into non-billable.
+        """
+        writedowns_only = [e for e in entries if e['writedown']]
+        print 'writedowns_only', writedowns_only
+        project_totals = get_project_totals(entries, date_headers, 
+            total_column=False) if entries else []
+        project_writedown_totals = get_project_totals(writedowns_only,
+            date_headers, total_column=False
+            ) if writedowns_only else []
 
         data_map = {}
+        # first, get standard project totals data
         for rows, totals in project_totals:
             for user, user_id, periods in rows:
                 for period in periods:
@@ -537,6 +547,16 @@ class BillableHours(ReportMixin, TemplateView):
                     data_map[day]['billable'] += period['billable']
                     data_map[day]['nonbillable'] += period['nonbillable']
 
+        # then, add writedown entries that were not included in the above
+        # filtered entries to the non-billable totals
+        for rows, totals in project_writedown_totals:
+            for user, user_id, periods in rows:
+                for period in periods:
+                    day = period['day']
+                    if day not in data_map:
+                        data_map[day] = {'billable': 0, 'nonbillable': 0}
+                    data_map[day]['nonbillable'] -= period['billable']
+                    assert(period['nonbillable']==0)
         return data_map
 
 
@@ -562,7 +582,7 @@ def report_payroll_summary(request):
     # Weekly totals
     if utils.get_setting('TIMEPIECE_WEEK_START', default=0) == 0:
         week_entries = Entry.objects.date_trunc('week').filter(
-            weekQ, statusQ, workQ
+            writedownQ, weekQ, statusQ, workQ
         ).order_by('user')
     else:
         week_entries = []
@@ -593,8 +613,8 @@ def report_payroll_summary(request):
     # Unapproved and unverified hours
     entries = Entry.objects.filter(writedownQ, monthQ).order_by()  # No ordering
     user_values = ['user__pk', 'user__first_name', 'user__last_name']
-    unverified = entries.filter(status=Entry.UNVERIFIED, user__is_active=True) \
-                        .values_list(*user_values).distinct()
+    unverified = entries.filter(status=Entry.UNVERIFIED #, user__is_active=True) \
+                        ).values_list(*user_values).distinct()
     unapproved = entries.filter(status=Entry.VERIFIED) \
                         .values_list(*user_values).distinct()
     return render(request, 'timepiece/reports/payroll_summary.html', {
@@ -726,9 +746,7 @@ def report_backlog(request):
         backlog = {}
         for employee in Group.objects.get(id=1).user_set.filter(is_active=True).order_by('last_name', 'first_name'):
             backlog[employee.id] =[]
-            print 'employee 1', employee
             for employee, activity_goals in groupby(ActivityGoal.objects.filter(employee=employee, milestone__project__status=4).order_by('activity'), lambda x: x.employee):
-                print 'employee 2', employee
                 for activity, activity_goals in groupby(activity_goals, lambda x: x.activity):
                     activity_hours = 0.0
                     charged_hours = 0.0
