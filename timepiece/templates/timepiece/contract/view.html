@@ -60,6 +60,28 @@
                 <tr><th>Hours Remaining</th><td>{{ contract.hours_remaining|floatformat:2 }}</td></tr>
                 <tr><th>Type</th><td>{{  contract.get_type_display }}</td></tr>
             </table>
+
+            <h3>Contract Rates</h3>
+            <ul class="nav nav-pills">
+                {% if perms.contracts.add_contractrate %}
+                    <li><a href="{% url 'add_contract_rate' contract.id %}">Add Rate</a></li>
+                {% endif %}
+            </ul>
+            <table class="table table-bordered">
+                {% for cr in contract.get_rates %}
+                <tr>
+                    <th style="text-align:center;">
+                        <a href="{% url 'edit_contract_rate' contract.id cr.id %}"><i class="icon-pencil"> </i></a>
+                        <a href="{% url 'delete_contract_rate' contract.id cr.id %}"><i class="icon-trash"> </i></a>
+                    </th><th>
+                        {{ cr.activity }}
+                    </th>
+                    <td>{{ cr.rate }}</td>
+                </tr>
+                {% empty %}
+                <tr><th>There are no rates setup for the contract.</th></tr>
+                {% endfor %}
+            </table>
         </div>
         <div class="span7 offset1">
             <h3>Projects</h3>
