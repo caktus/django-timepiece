@@ -562,12 +562,14 @@ class BillableHours(ReportMixin, TemplateView):
 
 @permission_required('entries.view_payroll_summary')
 def report_payroll_summary(request):
-    date = timezone.now() - relativedelta(months=1)
-    from_date = utils.get_month_start(date).date()
-    to_date = from_date + relativedelta(months=1)
+    # date = timezone.now() - relativedelta(months=1)
+    # from_date = utils.get_month_start(date).date()
+    # to_date = from_date + relativedelta(months=1)
+    (from_date, to_date) = utils.get_bimonthly_dates(timezone.now())
+    (from_date, to_date) = utils.get_bimonthly_dates(from_date - relativedelta(days=1))
 
     year_month_form = PayrollSummaryReportForm(request.GET or None,
-        initial={'month': from_date.month, 'year': from_date.year})
+        initial={'month': from_date.month, 'year': from_date.year, 'half':1 if from_date.day <= 15 else 2})
 
     if year_month_form.is_valid():
         from_date, to_date = year_month_form.save()
@@ -617,8 +619,10 @@ def report_payroll_summary(request):
                         ).values_list(*user_values).distinct()
     unapproved = entries.filter(status=Entry.VERIFIED) \
                         .values_list(*user_values).distinct()
+    to_date_link = to_date - relativedelta(days=1)
     return render(request, 'timepiece/reports/payroll_summary.html', {
         'from_date': from_date,
+        'to_date': to_date_link,
         'year_month_form': year_month_form,
         'date_headers': date_headers,
         'weekly_totals': weekly_totals,

@@ -118,6 +118,57 @@ def date_filters(form_id, options=None, use_range=True):
     return {'filters': filters, 'form_id': form_id}
 
 
+@register.inclusion_tag('timepiece/bimonthly_date_filters.html')
+def bimonthly_date_filters(form_id, options=None, use_range=True):
+    if not options:
+        options = ('pay_periods', 'months')
+    filters = {}
+    date_format = DATE_FORM_FORMAT  # Expected for dates used in code
+    today = datetime.date.today()
+    single_day = relativedelta(days=1)
+    single_month = relativedelta(months=1)
+
+    if 'pay_periods' in options:
+        filters['Pay Periods'] = []
+        from_dateA = today.replace(day=1) + single_month
+        for x in range(3):
+            to_dateA = from_dateA
+            from_dateA = to_dateA - single_month
+            to_dateA = from_dateA.replace(day=15)
+            from_dateB = to_dateA.replace(day=16)
+            to_dateB = from_dateA + single_month - single_day
+            
+            if from_dateB <= today:
+                filters['Pay Periods'].append((
+                        date_format_filter(to_dateB, '16-d M Y'),  # displayed
+                        from_dateB.strftime(date_format) if use_range else "",  # used in code
+                        to_dateB.strftime(date_format)  # used in code
+                ))
+
+            filters['Pay Periods'].append((
+                    date_format_filter(to_dateA, '1-15 M Y'),  # displayed
+                    from_dateA.strftime(date_format) if use_range else "",  # used in code
+                    to_dateA.strftime(date_format)  # used in code
+            ))
+
+        # filters['Pay Periods'].reverse()
+
+    if 'months' in options:
+        filters['Past 6 Months'] = []
+        from_date = today.replace(day=1) + single_month
+        for x in range(6):
+            to_date = from_date
+            from_date = to_date - single_month
+            to_date = to_date - single_day
+            filters['Past 6 Months'].append((
+                    date_format_filter(from_date, 'M Y'),  # displayed
+                    from_date.strftime(date_format) if use_range else "",  # used in code
+                    to_date.strftime(date_format)  # used in code
+            ))
+        filters['Past 6 Months'].reverse()
+
+    return {'filters': filters, 'form_id': form_id}
+
 @register.simple_tag(takes_context=True)
 def get_max_hours(context):
     """Return the largest number of hours worked or assigned on any project."""
@@ -237,19 +288,21 @@ def sum_charged_hours(entries):
     return sum([e.hours for e in entries])
 
 
-def _timesheet_url(url_name, pk, date=None):
+def _timesheet_url(url_name, pk, from_date=None, to_date=None):
     """Utility to create a time sheet URL with optional date parameters."""
     url = reverse(url_name, args=(pk,))
-    if date:
-        params = {'month': date.month, 'year': date.year}
+    if from_date and to_date:
+        params = {'from_date': from_date.strftime('%Y-%m-%d'),
+                  'to_date': to_date.strftime('%Y-%m-%d'),
+                  'user': pk}
         return '?'.join((url, urllib.urlencode(params)))
     return url
 
 
 @register.simple_tag
-def user_timesheet_url(user_id, date=None):
+def user_timesheet_url(user_id, from_date=None, to_date=None):
     """Shortcut to create a time sheet URL with optional date parameters."""
-    return _timesheet_url('view_user_timesheet', user_id, date)
+    return _timesheet_url('view_user_timesheet', user_id, from_date, to_date)
 
 
 @register.filter
