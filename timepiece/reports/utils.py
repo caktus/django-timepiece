@@ -70,7 +70,6 @@ def get_project_totals(entries, date_headers, hour_type=None, overtime=False,
     rows = []
     for thing, thing_entries in groupby(entries, lambda x: x[by]):
         name, thing_id, date_dict = date_totals(thing_entries, by)
-        # print 'LOOP', name, thing_id, date_dict
         dates = []
         for index, day in enumerate(date_headers):
             if isinstance(day, datetime.datetime):

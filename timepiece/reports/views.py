@@ -577,7 +577,7 @@ def report_payroll_summary(request):
     projects = utils.get_setting('TIMEPIECE_PAID_LEAVE_PROJECTS')
     writedownQ = Q(writedown=False)
     weekQ = Q(end_time__gt=utils.get_week_start(from_date),
-              end_time__lt=last_billable + relativedelta(days=1))
+              end_time__lt=to_date) # CHANGED FOR AAC last_billable + relativedelta(days=1))
     monthQ = Q(end_time__gt=from_date, end_time__lt=to_date)
     workQ = ~Q(project__in=projects.values())
     statusQ = Q(status=Entry.INVOICED) | Q(status=Entry.APPROVED)
