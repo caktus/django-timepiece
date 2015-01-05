@@ -368,8 +368,10 @@ class Entry(models.Model):
         (period_start, period_end) = utils.get_bimonthly_dates(start)
         entries = self.user.timepiece_entries.filter(
             Q(status=Entry.APPROVED) | Q(status=Entry.INVOICED),
-            start_time__gte=period_start,
-            end_time__lt=period_end
+            #start_time__gte=period_start,
+            #end_time__lt=period_end
+            start_time__gte=start,
+            project=self.project
         )
         if ( (entries.exists() and not self.id)
                 or (self.id and (self.status == Entry.INVOICED or self.status == Entry.APPROVED)) ):
