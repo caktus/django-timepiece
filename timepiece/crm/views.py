@@ -19,7 +19,7 @@ from django.views.generic import (CreateView, DeleteView, DetailView,
 from django.forms import widgets
 
 from timepiece import utils
-from timepiece.forms import YearMonthForm, UserYearMonthForm
+from timepiece.forms import YearMonthForm, UserYearMonthForm, DateForm, UserDateForm, StatusUserDateForm, StatusDateForm
 from timepiece.templatetags.timepiece_tags import seconds_to_hours
 from timepiece.utils.csv import CSVViewMixin
 from timepiece.utils.search import SearchListView
@@ -103,42 +103,54 @@ def reject_user_timesheet(request, user_id):
 def view_user_timesheet(request, user_id, active_tab):
     # User can only view their own time sheet unless they have a permission.
     user = get_object_or_404(User, pk=user_id)
+    project_id = request.GET.get('project', None)
     has_perm = request.user.has_perm('entries.view_entry_summary')
     if not (has_perm or user.pk == request.user.pk):
         return HttpResponseForbidden('Forbidden')
 
-    FormClass = UserYearMonthForm if has_perm else YearMonthForm
-    form = FormClass(request.GET or None)
+    
+    from_date, to_date = utils.get_bimonthly_dates(datetime.date.today())
+    FormClass = StatusUserDateForm if has_perm else StatusDateForm
+    form = FormClass(request.GET or {'from_date': from_date, 'to_date': (to_date - relativedelta(days=1))})
     if form.is_valid():
         if has_perm:
-            from_date, to_date, form_user = form.save()
+            from_date, to_date, form_user, status = form.save()
             if form_user and request.GET.get('yearmonth', None):
                 # Redirect to form_user's time sheet.
                 # Do not use request.GET in urlencode to prevent redirect
                 # loop caused by yearmonth parameter.
                 url = reverse('view_user_timesheet', args=(form_user.pk,))
                 request_data = {
-                    'half': 1 if from_date.day <= 15 else 2,
-                    'month': from_date.month,
-                    'year': from_date.year,
+                    'from_date': from_date,
+                    'to_date': to_date - relativedelta(days=1),
+                    'status': status,
+                    # 'project': project_id,
                     'user': form_user.pk,  # Keep so that user appears in form.
                 }
                 url += '?{0}'.format(urllib.urlencode(request_data))
                 return HttpResponseRedirect(url)
         else:  # User must be viewing their own time sheet; no redirect needed.
-            from_date, to_date = form.save()
+            from_date, to_date, status = form.save()
+        if from_date is None or to_date is None:
+            (from_date, to_date) = utils.get_bimonthly_dates(datetime.date.today())
         from_date = utils.add_timezone(from_date)
         to_date = utils.add_timezone(to_date)
     else:
         # Default to showing current bi-monthly period.
         from_date, to_date = utils.get_bimonthly_dates(datetime.date.today())
+        status = None
     entries_qs = Entry.objects.filter(user=user, writedown=False)
     # DBROWNE - CHANGED THIS TO MATCH THE DESIRED RESULT FOR AAC ENGINEERING
     #month_qs = entries_qs.timespan(from_date, span='month')
+    if status:
+        entries_qs = entries_qs.filter(status=status)
+    if project_id:
+        entries_qs = entries_qs.filter(project__id=int(project_id))
+
     month_qs = entries_qs.timespan(from_date, to_date=to_date)
     extra_values = ('start_time', 'end_time', 'comments', 'seconds_paused',
             'id', 'location__name', 'project__name', 'activity__name',
-            'status', 'mechanism')
+            'status', 'mechanism', 'project__id')
     month_entries = month_qs.date_trunc('month', extra_values)
     # For grouped entries, back date up to the start of the period.
     first_week = utils.get_period_start(from_date)
@@ -154,7 +166,7 @@ def view_user_timesheet(request, user_id, active_tab):
         grouped_qs = entries_qs.timespan(from_date, to_date=to_date)
     totals = grouped_totals(grouped_qs) if month_entries else ''
     project_entries = month_qs.order_by().values(
-        'project__name').annotate(sum=Sum('hours')).order_by('-sum')
+        'project__name', 'project__id').annotate(sum=Sum('hours')).order_by('-sum')
     summary = Entry.summary(user, from_date, to_date, writedown=False)
 
     show_approve = show_verify = False
@@ -180,7 +192,7 @@ def view_user_timesheet(request, user_id, active_tab):
     #         print 'week', week, 'week_totals', week_totals, 'days', days
     return render(request, 'timepiece/user/timesheet/view.html', {
         'active_tab': active_tab or 'overview',
-        'year_month_form': form,
+        'filter_form': form,
         'from_date': from_date,
         'to_date': to_date - relativedelta(days=1),
         'show_verify': show_verify,
@@ -212,14 +224,19 @@ def change_user_timesheet(request, user_id, action):
         from_date = request.GET.get('from_date')
         from_date = utils.add_timezone(
             datetime.datetime.strptime(from_date, '%Y-%m-%d'))
+        to_date = request.GET.get('to_date')
+        to_date = utils.add_timezone(
+            datetime.datetime.strptime(to_date, '%Y-%m-%d')) + relativedelta(days=1)
+        project_id = request.GET.get('project', None)
     except (ValueError, OverflowError, KeyError):
         raise Http404
-    #to_date = from_date + relativedelta(months=1)
-    from_date, to_date = utils.get_bimonthly_dates(from_date)
+    
     entries = Entry.no_join.filter(user=user_id,
                                    end_time__gte=from_date,
                                    end_time__lt=to_date,
                                    writedown=False)
+    if project_id:
+        entries = entries.filter(project__id=int(project_id))
     active_entries = Entry.no_join.filter(
         user=user_id,
         start_time__lt=to_date,
@@ -234,14 +251,14 @@ def change_user_timesheet(request, user_id, action):
 
     return_url = reverse('view_user_timesheet', args=(user_id,))
     return_url += '?%s' % urllib.urlencode({
-        'year': from_date.year,
-        'month': from_date.month,
-        'half': 1 if from_date.day <= 15 else 2,
+        'from_date': from_date.date(),
+        'to_date': to_date.date() - relativedelta(days=1),
+        'user': user.id
     })
     if active_entries:
-        msg = 'You cannot verify/approve this timesheet while the user {0} ' \
+        msg = 'You cannot {0} this timesheet while the user {1} ' \
             'has an active entry. Please have them close any active ' \
-            'entries.'.format(user.get_name_or_username())
+            'entries.'.format(action, user.get_name_or_username())
         messages.error(request, msg)
         return redirect(return_url)
     if request.POST.get('do_action') == 'Yes':
@@ -255,7 +272,7 @@ def change_user_timesheet(request, user_id, action):
         return redirect(return_url)
     hours = entries.all().aggregate(s=Sum('hours'))['s']
     if not hours:
-        msg = 'You cannot verify/approve a timesheet with no hours'
+        msg = 'You cannot {0} a timesheet with no hours'.format(action)
         messages.error(request, msg)
         return redirect(return_url)
     return render(request, 'timepiece/user/timesheet/change.html', {
@@ -298,6 +315,7 @@ class ProjectTimesheet(DetailView):
             from_date, to_date = filter_form.save()
             incl_billable = filter_form.cleaned_data['billable']
             incl_non_billable = filter_form.cleaned_data['non_billable']
+            incl_writedowns = filter_form.cleaned_data['writedown']
         else:
             # date = utils.add_timezone(datetime.datetime.today())
             # from_date = utils.get_month_start(date).date()
@@ -305,11 +323,12 @@ class ProjectTimesheet(DetailView):
             to_date = from_date + relativedelta(months=1)
             incl_billable = True
             incl_non_billable = True
+            incl_writedowns = True
         
         from_datetime = datetime.datetime.combine(from_date, 
             datetime.datetime.min.time())
         to_datetime = datetime.datetime.combine(to_date,
-            datetime.datetime.max.time())
+            datetime.datetime.min.time())
 
         entries_qs = Entry.objects.filter(start_time__gte=from_datetime,
                                           end_time__lt=to_datetime,
@@ -322,6 +341,9 @@ class ProjectTimesheet(DetailView):
             pass
         else:
             entries_qs = entries_qs.filter(activity__billable=False).filter(activity__billable=True) # should return nothing
+        
+        if not incl_writedowns:
+            entries_qs = entries_qs.filter(writedown=False)
         # entries_qs = entries_qs.timespan(from_date, span='month').filter(
         #     project=project
         # )
@@ -362,6 +384,7 @@ class ProjectTimesheet(DetailView):
             'to_date': end,
             'billable': True,
             'non_billable': True,
+            'writedown': True,
             'paid_time_off': False,
             'trunc': 'day',
             'projects': [],
@@ -967,7 +990,7 @@ class ApprovePTORequest(UpdateView):
                 # if pto entry, add timesheet entry
                 if form.instance.pto and form.instance.amount > 0:
                     entry = Entry(user=form.instance.user_profile.user,
-                                  project=Project.objects.get(id=utils.get_setting('TIMEPIECE_PTO_PROJECT')[date.year]),
+                                  project=Project.objects.get(id=utils.get_setting('TIMEPIECE_PTO_PROJECT')),
                                   activity=Activity.objects.get(code='PTO', name='Paid Time Off'),
                                   location=Location.objects.get(id=3),
                                   start_time=start_time,

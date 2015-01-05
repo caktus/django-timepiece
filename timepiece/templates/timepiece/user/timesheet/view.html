@@ -22,41 +22,16 @@
 
 {% block content %}
     <h2>{{ timesheet_user.get_name_or_username }} - Time Sheet for {{ from_date|date:'M j' }} - {{ to_date|date:'j, Y' }}</h2>
-
     <div class="row-fluid">
-        <div class="span12" id="header">
-            <div id="options-buttons">
-                {% if show_verify %}
-                    {% url 'change_user_timesheet' timesheet_user.id 'verify' as base_url %}
-                    {% create_dict from_date=from_date|date:'Y-m-d' as params %}
-                    <a class="btn btn-primary" href="{{ base_url|add_parameters:params }}">Verify All Entries</a>
-                {% endif %}
-
-                {% if show_approve %}
-                    {% url 'change_user_timesheet' timesheet_user.id 'approve' as base_url %}
-                    {% create_dict from_date=from_date|date:'Y-m-d' as params %}
-                    <a class="btn btn-primary" href="{{ base_url|add_parameters:params }}">Approve All Entries</a>
-                {% endif %}
-
-                {% if perms.entries.view_payroll_summary %}
-                    {% url 'reject_user_timesheet' timesheet_user.pk as base_url %}
-                    {% create_dict from_date=from_date|date:'Y-m-d' as params %}
-                    <a class="btn btn-primary" href="{{ base_url|add_parameters:params }}">Reject All Entries</a>
-                {% endif %}
-
-                {% if perms.auth.view_user %} {# FIXME: This permission doesn't exist #}
-                    <a class="btn btn-primary" href="{% url 'view_user' timesheet_user.pk %}">View/Edit User</a>
-                {% endif %}
-            </div>
-
-            {# We have to duplicate the form so the hidden fields are not in the same form #}
-            <form class="form-inline visible-desktop" method="get" action="" accept-charset="utf-8">
-                {{ year_month_form|as_bootstrap:"inline" }}
-                <input type="submit" name="yearmonth" class="btn" value="Update" />
-            </form>
-            <form class="hidden-desktop" method="get" action="" accept-charset="utf-8">
-                {{ year_month_form|as_bootstrap }}
-                <input type="submit" name="yearmonth" class="btn" value="Update" />
+        <div class="span12">
+            {% bimonthly_date_filters "timesheet-filters" %}
+        </div>
+    </div>
+    <div class="row-fluid">
+        <div class="row-fluid">
+            <form class="span12 visible-desktop" method="get" action="" id="timesheet-filters" accept-charset="utf-8">
+                {{ filter_form|as_bootstrap:"inline" }}
+                <button type="submit" name="yearmonth" value="1" class="btn btn-primary" id="billable" style="margin-bottom: 10px;">Update</button>
             </form>
         </div>
     </div>
@@ -92,8 +67,9 @@
                                     </thead>
                                     <tbody>
                                         {% for entry in project_entries %}
+                                            {% create_dict project=entry.project__id as param %}
                                             <tr>
-                                                <td>{{ entry.project__name}} </td>
+                                                <td><a href="{{ request.get_full_path|add_parameters:param }}">{{ entry.project__name }}</a></td>
                                                 <td class="hours">{{ entry.sum|humanize_hours:"{hours:02d}:{minutes:02d}" }}</td>
                                             </tr>
                                         {% endfor %}
@@ -135,6 +111,32 @@
                     </div>
                 </div>
                 <div class="tab-pane{% if active_tab == 'all-entries' %} active{% endif %}" id="all-entries">
+                    {% if show_verify or show_approve or perms.entries.view_payroll_summary %}
+                    <div class="row-fluid">
+                        <div class="span12">
+                            <div id="options-buttons">
+                                {% if show_verify %}
+                                    {% url 'change_user_timesheet' timesheet_user.id 'verify' as base_url %}
+                                    {% create_dict from_date=from_date|date:'Y-m-d' as params %}
+                                    <a class="btn btn-primary" href="{{ base_url|add_parameters:request.GET }}">Verify All Entries</a>
+                                {% endif %}
+
+                                {% if show_approve %}
+                                    {% url 'change_user_timesheet' timesheet_user.id 'approve' as base_url %}
+                                    {% create_dict from_date=from_date|date:'Y-m-d' as params %}
+                                    <a class="btn btn-primary" href="{{ base_url|add_parameters:request.GET }}">Approve All Entries</a>
+                                {% endif %}
+
+                                {% if perms.entries.view_payroll_summary %}
+                                    {% url 'reject_user_timesheet' timesheet_user.pk as base_url %}
+                                    {% create_dict from_date=from_date|date:'Y-m-d' as params %}
+                                    <a class="btn btn-primary" href="{{ base_url|add_parameters:request.GET }}">Reject All Entries</a>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+                    <br />
+                    {% endif %}
 
                     {% if entries %}
                         {% url 'view_user_timesheet' timesheet_user.pk 'all-entries' as next_url %}
