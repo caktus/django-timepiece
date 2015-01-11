@@ -110,6 +110,7 @@ class Dashboard(TemplateView):
             'project_progress': project_progress,
             'period_entries': period_entries,
             'others_active_entries': others_active_entries,
+            'period_end_display': (period_end + relativedelta(days=-1)).date()
         }
 
     def process_progress(self, entries, assignments):
