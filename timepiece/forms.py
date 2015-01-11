@@ -49,6 +49,45 @@ class DateForm(forms.Form):
         to_date = to_date + relativedelta(days=1) if to_date else to_date
         return (from_date, to_date)
 
+class UserDateForm(DateForm):
+    user = UserModelChoiceField(label='', queryset=None, required=False)
+
+    def __init__(self, *args, **kwargs):
+        super(UserDateForm, self).__init__(*args, **kwargs)
+        queryset = User.objects.exclude(timepiece_entries=None)\
+                               .order_by('first_name')
+        self.fields['user'].queryset = queryset
+        self.fields['to_date'].label = ''
+        self.fields['to_date'].widget.attrs['placeholder'] = 'End Date'
+        self.fields['from_date'].label = ''
+        self.fields['from_date'].widget.attrs['placeholder'] = 'Start Date'
+
+    def save(self):
+        from_date, to_date = super(UserDateForm, self).save()
+        return (from_date, to_date, self.cleaned_data.get('user', None))
+
+class StatusDateForm(DateForm):
+    status = forms.ChoiceField(label='', required=False)
+
+    def __init__(self, *args, **kwargs):
+        super(StatusDateForm, self).__init__(*args, **kwargs)
+        self.fields['status'].choices = [('', 'All')] + Entry.STATUSES.items()
+
+    def save(self):
+        (from_date, to_date) = super(StatusDateForm, self).save()
+        return (from_date, to_date, self.cleaned_data.get('status', None))
+
+class StatusUserDateForm(UserDateForm):
+    status = forms.ChoiceField(label='', required=False)
+
+    def __init__(self, *args, **kwargs):
+        super(StatusUserDateForm, self).__init__(*args, **kwargs)
+        self.fields['status'].choices = [('', 'All')] + Entry.STATUSES.items()
+
+    def save(self):
+        (from_date, to_date, user) = super(StatusUserDateForm, self).save()
+        return (from_date, to_date, user, self.cleaned_data.get('status', None))
+
 
 class YearMonthForm(forms.Form):
     MONTH_CHOICES = [(i, time.strftime('%b', time.strptime(str(i), '%m')))

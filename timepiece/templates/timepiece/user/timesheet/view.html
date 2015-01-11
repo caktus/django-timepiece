@@ -21,7 +21,7 @@
 {% endblock extrajs %}
 
 {% block content %}
-    <h2>{{ timesheet_user.get_name_or_username }} - Time Sheet for {{ from_date|date:'M j' }} - {{ to_date|date:'j, Y' }}</h2>
+    <h2>{{ timesheet_user.get_name_or_username }} - Time Sheet for {{ from_date|date:'M j' }} - {{ to_date|date:'j, Y' }}{% if project %} for {{ project.code }}: {{ project.name }}{% endif %}</h2>
     <div class="row-fluid">
         <div class="span12">
             {% bimonthly_date_filters "timesheet-filters" %}
@@ -58,6 +58,12 @@
                         {% if project_entries %}
                             <div class="span6">
                                 <h3>Project Summary</h3>
+                                {% if project %}
+                                {% create_dict clear_project=True as param %}
+                                <div class="alert alert-info alert-block">You have applied a single project filter for {{ project.code }}: {{ project.name }}. To clear the filter click the Update button in the form above.<button type="button" class="close" data-dismiss="alert">&times;</button></div>
+                                {% else %}
+                                <div class="alert alert-info">To filter time sheet entries to a specific project, click the project link below.<button type="button" class="close" data-dismiss="alert">&times;</button></div>
+                                {% endif %}
                                 <table class="table table-bordered table-striped table-condensed">
                                     <thead>
                                         <tr>
@@ -99,6 +105,9 @@
                                         </tr>
                                         <tr>
                                             <td>Uninvoiced</td><td class="hours">{{summary.uninvoiced|humanize_hours:"{hours:02d}:{minutes:02d}" }}</td>
+                                        </tr>
+                                        <tr{% if summary.unpaid %} class="warning"{% endif %}>
+                                            <td>Unpaid Time Off</td><td class="hours">{{summary.unpaid|humanize_hours:"{hours:02d}:{minutes:02d}" }}</td>
                                         </tr>
                                     </tbody>
                                 </table>
