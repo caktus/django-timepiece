@@ -217,13 +217,18 @@
                     <td style="white-space: nowrap;">{{ ptor.request_date }}</td>
                     <td style="white-space: nowrap;">{{ ptor.pto_start_date }}</td>
                     <td style="white-space: nowrap;">{{ ptor.pto_end_date }}</td>
-                    <td style="white-space: nowrap;">{{ ptor.amount }}</td>
+                    <td style="white-space: nowrap;">
+                        {{ ptor.amount }}
+                        {% if ptor.pto %}<i class="icon-flag" title="Paid Time Off Request"> </i>{% endif %}
+                    </td>
                     <td>{{ ptor.comment }}</td>
                     <td style="white-space: nowrap;">
                         {% if ptor.status == 'pending' %}
                         <span class="label">Pending</span>
                         {% elif ptor.status == 'approved' %}
                         <span class="label label-success">Approved</span>
+                        {% elif ptor.status == 'processed' %}
+                        <span class="label label-info">Processed</span>
                         {% elif ptor.status == 'denied' %}
                         <span class="label label-important">Denied</span>
                         {% endif %}

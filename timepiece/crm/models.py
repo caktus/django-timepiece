@@ -74,7 +74,7 @@ class UserProfile(models.Model):
     @property
     def get_pto(self):
         pto = PaidTimeOffLog.objects.filter(
-            user_profile=self).aggregate(Sum('amount'))['amount__sum']
+            user_profile=self, pto=True).aggregate(Sum('amount'))['amount__sum']
         if pto:
             return pto
         else:
@@ -134,6 +134,7 @@ class PaidTimeOffLog(models.Model):
     amount = models.DecimalField(max_digits=7, decimal_places=2)
     comment = models.TextField(blank=True)
     pto_request = models.ForeignKey(PaidTimeOffRequest, blank=True, null=True)
+    pto = models.BooleanField(default=True, help_text='Select for Paid Time Off (Unselect for Unpaid Time Off)')
 
     class Meta:
         ordering = ('user_profile', '-date',)

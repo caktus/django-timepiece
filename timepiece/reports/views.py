@@ -94,9 +94,10 @@ class ReportMixin(object):
         incl_nonbillable = data.get('non_billable', True)
         incl_writedown = data.get('writedown', True)
         incl_leave = data.get('paid_time_off', True)
+        incl_unpaid = data.get('unpaid_time_off', True)
 
         # If no types are selected, shortcut & return nothing.
-        if not any((incl_billable, incl_nonbillable, incl_leave)):
+        if not any((incl_billable, incl_nonbillable, incl_writedown, incl_leave, incl_unpaid)):
             return None
 
         # All entries must meet time period requirements.
@@ -121,8 +122,14 @@ class ReportMixin(object):
             basicQ &= Q(writedown=False)
 
         # If all types are selected, no further filtering is required.
-        if all((incl_billable, incl_nonbillable, incl_leave)):
+        if all((incl_billable, incl_nonbillable, incl_leave, incl_unpaid)):
             return basicQ
+        
+        # If all but unpaid types are selected, little filtering is required.
+        unpaid_ids = utils.get_setting('TIMEPIECE_UNPAID_LEAVE_PROJECTS').values()
+        unpaidQ = Q(project__in=unpaid_ids)
+        if all((incl_billable, incl_nonbillable, incl_leave)):
+            return basicQ & ~unpaidQ
 
         # Filter by whether a project is billable or non-billable.
         billableQ = None
@@ -141,6 +148,11 @@ class ReportMixin(object):
         else:
             extraQ = (~leaveQ & billableQ) if billableQ else ~leaveQ
 
+        if incl_unpaid:
+            extraQ = (extraQ | unpaidQ) if billableQ or incl_leave else unpaidQ
+        else:
+            extraQ &= ~unpaidQ
+        
         return basicQ & extraQ
 
     def get_headers(self, date_headers, from_date, to_date, trunc):
@@ -235,6 +247,7 @@ class HourlyReport(ReportMixin, CSVViewMixin, TemplateView):
             'billable': True,
             'non_billable': False,
             'paid_time_off': False,
+            'unpaid_time_off': False,
             'writedown': True,
             'trunc': 'day',
             'projects': [],
@@ -317,7 +330,7 @@ class HourlyReport(ReportMixin, CSVViewMixin, TemplateView):
         data = self.request.GET or self.defaults
         data = data.copy()  # make mutable
         # Fix booleans - the strings "0" and "false" are True in Python
-        for key in ['billable', 'non_billable', 'paid_time_off', 'writedown']:
+        for key in ['billable', 'non_billable', 'paid_time_off', 'unpaid_time_off', 'writedown']:
             data[key] = key in data and \
                         str(data[key]).lower() in ('on', 'true', '1')
 
@@ -575,20 +588,22 @@ def report_payroll_summary(request):
         from_date, to_date = year_month_form.save()
     last_billable = utils.get_last_billable_day(from_date)
     projects = utils.get_setting('TIMEPIECE_PAID_LEAVE_PROJECTS')
+    unpaid_projects = utils.get_setting('TIMEPIECE_UNPAID_LEAVE_PROJECTS')
     writedownQ = Q(writedown=False)
     weekQ = Q(end_time__gt=from_date, #utils.get_week_start(from_date),
               end_time__lt=to_date) # CHANGED FOR AAC last_billable + relativedelta(days=1))
     monthQ = Q(end_time__gt=from_date, end_time__lt=to_date)
     workQ = ~Q(project__in=projects.values())
+    unpaidQ = ~Q(project__in=unpaid_projects.values())
     statusQ = Q(status=Entry.INVOICED) | Q(status=Entry.APPROVED)
     # Weekly totals
     if utils.get_setting('TIMEPIECE_WEEK_START', default=0) == 0:
         week_entries = Entry.objects.date_trunc('week').filter(
-            writedownQ, weekQ, statusQ, workQ
+            writedownQ, weekQ, statusQ, workQ, unpaidQ
         ).order_by('user')
     else:
         week_entries = []
-        for we in Entry.objects.filter(writedownQ, weekQ, statusQ, workQ).order_by('user'):
+        for we in Entry.objects.filter(writedownQ, weekQ, statusQ, workQ, unpaidQ).order_by('user'):
             week_entries.append(
                 {'billable': we.billable,
                  'date': utils.get_week_start(we.end_time).date(),
@@ -610,7 +625,7 @@ def report_payroll_summary(request):
                                   ).values('user', 'hours', 'project__name')
     extra_values = ('project__type__label',)
     month_entries = Entry.objects.date_trunc('month', extra_values)
-    month_entries_valid = month_entries.filter(monthQ, statusQ, workQ)
+    month_entries_valid = month_entries.filter(monthQ, statusQ, workQ, unpaidQ)
     labels, monthly_totals = get_payroll_totals(month_entries_valid, leave)
     # Unapproved and unverified hours
     entries = Entry.objects.filter(writedownQ, monthQ).order_by()  # No ordering

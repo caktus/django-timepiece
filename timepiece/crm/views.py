@@ -104,6 +104,8 @@ def view_user_timesheet(request, user_id, active_tab):
     # User can only view their own time sheet unless they have a permission.
     user = get_object_or_404(User, pk=user_id)
     project_id = request.GET.get('project', None)
+    # if request.GET.get('clear_project', None):
+    #     project_id = None
     has_perm = request.user.has_perm('entries.view_entry_summary')
     if not (has_perm or user.pk == request.user.pk):
         return HttpResponseForbidden('Forbidden')
@@ -202,6 +204,7 @@ def view_user_timesheet(request, user_id, active_tab):
         'grouped_totals': totals,
         'project_entries': project_entries,
         'summary': summary,
+        'project': Project.objects.get(id=project_id) if project_id else None
     })
 
 
@@ -865,7 +868,8 @@ def pto_home(request, active_tab='summary'):
     data['pto_log'] = PaidTimeOffLog.objects.filter(user_profile=data['user_profile'])
     if request.user.has_perm('crm.can_approve_pto_requests') or request.user.has_perm('crm.can_process_pto_requests'):
         data['pto_approvals'] = PaidTimeOffRequest.objects.filter(Q(status=PaidTimeOffRequest.PENDING) | Q(status=PaidTimeOffRequest.APPROVED))
-        data['pto_all_history'] = PaidTimeOffLog.objects.filter().order_by('user_profile', '-date')
+        data['pto_all_history'] = PaidTimeOffLog.objects.filter(pto=True).order_by('user_profile', '-date')
+        data['upto_all_history'] = PaidTimeOffLog.objects.filter(pto=False).order_by('user_profile', '-date')
         data['all_pto_requests'] = PaidTimeOffRequest.objects.all().order_by('-request_date')
     if active_tab:
         data['active_tab'] = active_tab
@@ -965,33 +969,35 @@ class ApprovePTORequest(UpdateView):
                                             holidays)
         
         # add PTO log entries
-        if form.instance.pto:
-            delta = form.instance.pto_end_date - form.instance.pto_start_date
-            hours = float(form.instance.amount)/float(num_workdays)
-            days_delta = delta.days + 1
-            for i in range(days_delta):
-                date = form.instance.pto_start_date + datetime.timedelta(days=i)
-                
-                # if the date is weekend or holiday, skip it
-                if (date.weekday() >= 5) or (date in holidays):
-                    continue
+        # if form.instance.pto:
+        delta = form.instance.pto_end_date - form.instance.pto_start_date
+        hours = float(form.instance.amount)/float(num_workdays)
+        days_delta = delta.days + 1
+        for i in range(days_delta):
+            date = form.instance.pto_start_date + datetime.timedelta(days=i)
+            
+            # if the date is weekend or holiday, skip it
+            if (date.weekday() >= 5) or (date in holidays):
+                continue
 
-                start_time = datetime.datetime.combine(date, datetime.time(8))
-                end_time = start_time + datetime.timedelta(hours=hours)
-                
-                # add pto log entry
-                pto_log = PaidTimeOffLog(user_profile=up, 
-                                         date=date,
-                                         amount=-1*(float(form.instance.amount) / float(num_workdays)), 
-                                         comment=form.instance.comment,
-                                         pto_request=form.instance)
-                pto_log.save()
+            start_time = datetime.datetime.combine(date, datetime.time(8))
+            end_time = start_time + datetime.timedelta(hours=hours)
+            
+            # add pto log entry
+            pto_log = PaidTimeOffLog(user_profile=up, 
+                                     date=date,
+                                     amount=-1*(float(form.instance.amount) / float(num_workdays)), 
+                                     comment=form.instance.comment,
+                                     pto_request=form.instance,
+                                     pto=form.instance.pto)
+            pto_log.save()
 
-                # if pto entry, add timesheet entry
-                if form.instance.pto and form.instance.amount > 0:
+            # if pto entry, add timesheet entry
+            if form.instance.amount > 0:
+                if form.instance.pto:
                     entry = Entry(user=form.instance.user_profile.user,
                                   project=Project.objects.get(id=utils.get_setting('TIMEPIECE_PTO_PROJECT')),
-                                  activity=Activity.objects.get(code='PTO', name='Paid Time Off'),
+                                  activity=Activity.objects.get(id=24),
                                   location=Location.objects.get(id=3),
                                   start_time=start_time,
                                   end_time=end_time,
@@ -999,6 +1005,19 @@ class ApprovePTORequest(UpdateView):
                                   hours=hours,
                                   pto_log=pto_log,
                                   mechanism=Entry.PTO)
+                    entry.save()
+                else:
+                    entry = Entry(user=form.instance.user_profile.user,
+                                  project=Project.objects.get(id=utils.get_setting('TIMEPIECE_UPTO_PROJECT')),
+                                  activity=Activity.objects.get(id=41),
+                                  location=Location.objects.get(id=3),
+                                  start_time=start_time,
+                                  end_time=end_time,
+                                  comments='Approved UPTO %s.' % form.instance.pk,
+                                  hours=hours,
+                                  pto_log=pto_log,
+                                  mechanism=Entry.PTO)
+                                  #status=Entry.APPROVED)
                     entry.save()
 
         return super(ApprovePTORequest, self).form_valid(form)
@@ -1038,7 +1057,7 @@ class CreatePTOLogEntry(CreateView):
     template_name = 'timepiece/pto/create-edit-log.html'
 
     def get_success_url(self):
-        return '/timepiece/pto/all_history/'
+        return reverse('pto', args=('all_history',))
 
 @login_required
 def pto_request_details(request, pto_request_id):

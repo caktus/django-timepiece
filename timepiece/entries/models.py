@@ -522,17 +522,22 @@ class Entry(models.Model):
         data = {
             'billable': Decimal('0'), 'non_billable': Decimal('0'),
             'invoiced': Decimal('0'), 'uninvoiced': Decimal('0'),
-            'total': Decimal('0')
+            'total': Decimal('0'), 'unpaid': Decimal('0')
             }
         invoiced = entries.filter(
             status=Entry.INVOICED).aggregate(i=Sum('hours'))['i']
         uninvoiced = entries.exclude(
             status=Entry.INVOICED).aggregate(uninv=Sum('hours'))['uninv']
+        unpaid = entries.filter(
+            project__in=utils.get_setting('TIMEPIECE_UNPAID_LEAVE_PROJECTS').values()
+            ).aggregate(unpaid=Sum('hours'))['unpaid']
         total = entries.aggregate(s=Sum('hours'))['s']
         if invoiced:
             data['invoiced'] = invoiced
         if uninvoiced:
             data['uninvoiced'] = uninvoiced
+        if unpaid:
+            data['unpaid'] = unpaid
         if total:
             data['total'] = total
         billable = entries.exclude(project__in=projects.values())
