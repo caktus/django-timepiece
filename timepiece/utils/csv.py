@@ -23,12 +23,17 @@ class CSVViewMixin(object):
         response['Content-Disposition'] = 'attachment; filename=%s.csv' % fn
         rows = self.convert_context_to_csv(context)
         writer = csv.writer(response)
+        row_errors = 0
         for row in rows:
             try:
                 writer.writerow(row)
             except:
-                print 'ERROR making row', row
-                pass
+                try:
+                    writer.writerow([row[0]])
+                except:
+                    row_errors += 1
+        if row_errors:
+            writer.writerow(['There were %d rows that caused an error when exporting and are not included.'])
         return response
 
     def get_filename(self, context):
