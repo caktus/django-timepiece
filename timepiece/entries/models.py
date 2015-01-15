@@ -98,7 +98,7 @@ class EntryQuerySet(models.query.QuerySet):
 
 class EntryManager(models.Manager):
 
-    def get_query_set(self):
+    def get_queryset(self):
         qs = EntryQuerySet(self.model)
         qs = qs.select_related('activity', 'project__type')
 
@@ -113,15 +113,15 @@ class EntryManager(models.Manager):
         return qs
 
     def date_trunc(self, key='month', extra_values=()):
-        return self.get_query_set().date_trunc(key, extra_values)
+        return self.get_queryset().date_trunc(key, extra_values)
 
     def timespan(self, from_date, to_date=None, span='month'):
-        return self.get_query_set().timespan(from_date, to_date, span)
+        return self.get_queryset().timespan(from_date, to_date, span)
 
 
 class EntryWorkedManager(models.Manager):
 
-    def get_query_set(self):
+    def get_queryset(self):
         qs = EntryQuerySet(self.model)
         projects = utils.get_setting('TIMEPIECE_PAID_LEAVE_PROJECTS')
         return qs.exclude(project__in=projects.values())

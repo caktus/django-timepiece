@@ -36,16 +36,16 @@ class UserProfile(models.Model):
 class TypeAttributeManager(models.Manager):
     """Object manager for type attributes."""
 
-    def get_query_set(self):
-        qs = super(TypeAttributeManager, self).get_query_set()
+    def get_queryset(self):
+        qs = super(TypeAttributeManager, self).get_queryset()
         return qs.filter(type=Attribute.PROJECT_TYPE)
 
 
 class StatusAttributeManager(models.Manager):
     """Object manager for status attributes."""
 
-    def get_query_set(self):
-        qs = super(StatusAttributeManager, self).get_query_set()
+    def get_queryset(self):
+        qs = super(StatusAttributeManager, self).get_queryset()
         return qs.filter(type=Attribute.PROJECT_STATUS)
 
 
@@ -108,8 +108,8 @@ class Business(models.Model):
 
 class TrackableProjectManager(models.Manager):
 
-    def get_query_set(self):
-        return super(TrackableProjectManager, self).get_query_set().filter(
+    def get_queryset(self):
+        return super(TrackableProjectManager, self).get_queryset().filter(
             status__enable_timetracking=True,
             type__enable_timetracking=True,
         )
