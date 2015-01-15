@@ -107,11 +107,11 @@ class PayrollTest(ViewTestMixin, LogTimeMixin, TestCase):
     def testWeeklyOvertimes(self):
         """Date_trunc on week should result in correct overtime totals"""
         dates = self.dates
-        for day_num in xrange(28, 31):
+        for day_num in range(28, 31):
             dates.append(utils.add_timezone(
                 datetime.datetime(2011, 4, day_num)
             ))
-        for day_num in xrange(5, 9):
+        for day_num in range(5, 9):
             dates.append(utils.add_timezone(
                 datetime.datetime(2011, 5, day_num)
             ))

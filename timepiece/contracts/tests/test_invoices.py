@@ -141,7 +141,7 @@ class InvoiceViewPreviousTestCase(ViewTestMixin, LogTimeMixin, TestCase):
 
     def log_many(self, projects, num_entries=20, start=None, billable=True):
         start = utils.add_timezone(datetime.datetime(2011, 1, 1, 0, 0, 0))
-        for index in xrange(0, num_entries):
+        for index in range(0, num_entries):
             start += relativedelta(hours=(5 * index))
             project = projects[index % len(projects)]  # Alternate projects
             self.log_time(start=start, status=Entry.APPROVED, project=project,
@@ -448,7 +448,7 @@ class InvoiceCreateTestCase(ViewTestMixin, TestCase):
         # start = utils.add_timezone(datetime.datetime.now())
         # end = start + relativedelta(hours=4)
         activity = factories.Activity(billable=True, name='activity1')
-        for num in xrange(0, 4):
+        for num in range(0, 4):
             new_entry = factories.Entry(user=self.user,
                     project=self.project_billable,
                     start_time=start - relativedelta(days=num),

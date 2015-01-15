@@ -56,7 +56,7 @@ class Attribute(models.Model):
         PROJECT_TYPE: 'Project Type',
         PROJECT_STATUS: 'Project Status',
     }
-    SORT_ORDER_CHOICES = [(x, x) for x in xrange(-20, 21)]
+    SORT_ORDER_CHOICES = [(x, x) for x in range(-20, 21)]
 
     type = models.CharField(max_length=32, choices=ATTRIBUTE_TYPES.items())
     label = models.CharField(max_length=255)

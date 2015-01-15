@@ -51,7 +51,7 @@ class DateForm(forms.Form):
 
 class YearMonthForm(forms.Form):
     MONTH_CHOICES = [(i, time.strftime('%b', time.strptime(str(i), '%m')))
-                     for i in xrange(1, 13)]
+                     for i in range(1, 13)]
     month = forms.ChoiceField(choices=MONTH_CHOICES, label='')
     year = forms.ChoiceField(label='')
 
@@ -67,7 +67,7 @@ class YearMonthForm(forms.Form):
             first_year = this_year
         else:
             first_year = first_entry['end_time'].year
-        years = [(year, year) for year in xrange(first_year, this_year + 1)]
+        years = [(year, year) for year in range(first_year, this_year + 1)]
         self.fields['year'].choices = years
         initial = kwargs.get('initial')
         if initial:

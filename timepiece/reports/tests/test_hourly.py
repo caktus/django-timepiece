@@ -19,7 +19,7 @@ class TestHourlyReport(ViewTestMixin, LogTimeMixin, ReportsTestBase):
 
     def test_generate_months(self):
         dates = [utils.add_timezone(datetime.datetime(2011, month, 1))
-            for month in xrange(1, 13)]
+            for month in range(1, 13)]
         start = datetime.date(2011, 1, 1)
         end = datetime.date(2011, 12, 1)
         self.check_generate_dates(start, end, 'month', dates)
@@ -39,7 +39,7 @@ class TestHourlyReport(ViewTestMixin, LogTimeMixin, ReportsTestBase):
 
     def test_generate_days(self):
         dates = [utils.add_timezone(datetime.datetime(2011, 1, day))
-            for day in xrange(1, 32)]
+            for day in range(1, 32)]
         start = utils.add_timezone(datetime.datetime(2011, 1, 1))
         end = utils.add_timezone(datetime.datetime(2011, 1, 31))
         self.check_generate_dates(start, end, 'day', dates)
@@ -139,8 +139,8 @@ class TestHourlyReport(ViewTestMixin, LogTimeMixin, ReportsTestBase):
         last_day = randint(5, 10)
         worked1 = randint(1, 3)
         worked2 = randint(1, 3)
-        for month in xrange(1, 7):
-            for day in xrange(1, last_day + 1):
+        for month in range(1, 7):
+            for day in range(1, last_day + 1):
                 day = utils.add_timezone(datetime.datetime(2011, month, day))
                 self.log_time(start=day, delta=(worked1, 0), user=self.user)
                 self.log_time(start=day, delta=(worked2, 0), user=self.user2)
