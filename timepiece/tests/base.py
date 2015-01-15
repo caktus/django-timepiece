@@ -1,5 +1,5 @@
-from urllib import urlencode
-from urlparse import parse_qs, urlparse
+from six.moves.urllib.parse import parse_qs, urlparse
+from six.moves.urllib.parse import urlencode
 
 from dateutil.relativedelta import relativedelta
 

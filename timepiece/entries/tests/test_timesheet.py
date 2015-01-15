@@ -2,7 +2,8 @@ import datetime
 from dateutil.relativedelta import relativedelta
 from decimal import Decimal
 import random
-import urllib
+
+from six.moves.urllib.parse import urlencode
 
 from django.contrib.auth.models import Permission
 from django.contrib.contenttypes.models import ContentType
@@ -1427,7 +1428,7 @@ class StatusTest(ViewTestMixin, TestCase):
         from_date = from_date or self.from_date
         base_url = reverse('change_user_timesheet', args=(user.pk, 'verify'))
         params = {'from_date': from_date.strftime('%Y-%m-%d')}
-        params = urllib.urlencode(params)
+        params = urlencode(params)
         return '{0}?{1}'.format(base_url, params)
 
     def approve_url(self, user=None, from_date=None):
@@ -1435,7 +1436,7 @@ class StatusTest(ViewTestMixin, TestCase):
         from_date = from_date or self.from_date
         base_url = reverse('change_user_timesheet', args=(user.pk, 'approve'))
         params = {'from_date': from_date.strftime('%Y-%m-%d')}
-        params = urllib.urlencode(params)
+        params = urlencode(params)
         return '{0}?{1}'.format(base_url, params)
 
     def get_reject_url(self, entry_id):
@@ -2005,7 +2006,7 @@ class HourlySummaryTest(ViewTestMixin, TestCase):
         })
 
         response = self.client.get(self.url + '?{0}'.format(
-            urllib.urlencode({'year': 2012, 'month': 4})
+            urlencode({'year': 2012, 'month': 4})
         ))
         self.assertEquals(response.status_code, 200)
         # entries context object is a ValuesQuerySet

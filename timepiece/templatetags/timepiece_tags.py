@@ -1,6 +1,7 @@
 import datetime
 from dateutil.relativedelta import relativedelta
-import urllib
+
+from six.moves.urllib.parse import urlencode
 
 from django import template
 from django.core.urlresolvers import reverse
@@ -34,7 +35,7 @@ def add_parameters(url, parameters):
     """
     if parameters:
         sep = '&' if '?' in url else '?'
-        return '{0}{1}{2}'.format(url, sep, urllib.urlencode(parameters))
+        return '{0}{1}{2}'.format(url, sep, urlencode(parameters))
     return url
 
 
@@ -194,7 +195,7 @@ def _project_report_url_params(contract, project):
 @register.simple_tag
 def project_report_url_for_contract(contract, project):
     data = _project_report_url_params(contract, project)
-    return '{0}?{1}'.format(reverse('report_hourly'), urllib.urlencode(data))
+    return '{0}?{1}'.format(reverse('report_hourly'), urlencode(data))
 
 
 @register.simple_tag
@@ -220,7 +221,7 @@ def _timesheet_url(url_name, pk, date=None):
     url = reverse(url_name, args=(pk,))
     if date:
         params = {'month': date.month, 'year': date.year}
-        return '?'.join((url, urllib.urlencode(params)))
+        return '?'.join((url, urlencode(params)))
     return url
 
 

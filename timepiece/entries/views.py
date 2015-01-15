@@ -4,7 +4,8 @@ from dateutil.relativedelta import relativedelta
 from decimal import Decimal
 from itertools import groupby
 import json
-import urllib
+
+from six.moves.urllib.parse import urlencode
 
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required, permission_required
@@ -440,7 +441,7 @@ class EditScheduleView(ScheduleMixin, TemplateView):
         param = {
             'week_start': self.week_start.strftime(DATE_FORM_FORMAT)
         }
-        url = '?'.join((reverse('edit_schedule'), urllib.urlencode(param),))
+        url = '?'.join((reverse('edit_schedule'), urlencode(param),))
 
         return HttpResponseRedirect(url)
 
@@ -538,7 +539,7 @@ class ScheduleAjaxView(ScheduleMixin, View):
             'week_start': week_update
         }
         url = '?'.join((reverse('edit_schedule'),
-            urllib.urlencode(param),))
+            urlencode(param),))
 
         if not prev_week_qs.exists():
             msg = 'There are no hours to copy'

@@ -1,7 +1,8 @@
 import datetime
 from dateutil.relativedelta import relativedelta
 import random
-import urllib
+
+from six.moves.urllib.parse import urlencode
 
 from django.contrib.auth.models import Permission
 from django.core.urlresolvers import reverse
@@ -136,7 +137,7 @@ class InvoiceViewPreviousTestCase(ViewTestMixin, LogTimeMixin, TestCase):
 
     def get_create_url(self, **kwargs):
         base_url = reverse('create_invoice')
-        params = urllib.urlencode(kwargs)
+        params = urlencode(kwargs)
         return '{0}?{1}'.format(base_url, params)
 
     def log_many(self, projects, num_entries=20, start=None, billable=True):
@@ -374,7 +375,7 @@ class InvoiceCreateTestCase(ViewTestMixin, TestCase):
 
     def get_create_url(self, **kwargs):
         base_url = reverse('create_invoice')
-        params = urllib.urlencode(kwargs)
+        params = urlencode(kwargs)
         return '{0}?{1}'.format(base_url, params)
 
     def make_hourgroups(self):

@@ -1,6 +1,7 @@
 import datetime
 from dateutil.relativedelta import relativedelta
-from urllib import urlencode
+
+from six.moves.urllib.parse import urlencode
 
 from django.contrib.auth.models import Permission
 from django.core.urlresolvers import reverse

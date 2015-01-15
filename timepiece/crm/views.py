@@ -1,6 +1,7 @@
 import datetime
 from dateutil.relativedelta import relativedelta
-import urllib
+
+from six.moves.urllib.parse import urlencode
 
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required, permission_required
@@ -98,7 +99,7 @@ def view_user_timesheet(request, user_id, active_tab):
                     'year': from_date.year,
                     'user': form_user.pk,  # Keep so that user appears in form.
                 }
-                url += '?{0}'.format(urllib.urlencode(request_data))
+                url += '?{0}'.format(urlencode(request_data))
                 return HttpResponseRedirect(url)
         else:  # User must be viewing their own time sheet; no redirect needed.
             from_date, to_date = form.save()
@@ -200,7 +201,7 @@ def change_user_timesheet(request, user_id, action):
     entries = entries.filter(status=filter_status[action])
 
     return_url = reverse('view_user_timesheet', args=(user_id,))
-    return_url += '?%s' % urllib.urlencode({
+    return_url += '?%s' % urlencode({
         'year': from_date.year,
         'month': from_date.month,
     })
@@ -250,7 +251,7 @@ class ProjectTimesheet(DetailView):
             request_get.pop('csv')
             return_url = reverse('view_project_timesheet_csv',
                                  args=(self.get_object().pk,))
-            return_url += '?%s' % urllib.urlencode(request_get)
+            return_url += '?%s' % urlencode(request_get)
             return redirect(return_url)
         return super(ProjectTimesheet, self).get(*args, **kwargs)
 
