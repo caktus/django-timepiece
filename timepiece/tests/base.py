@@ -8,7 +8,7 @@ from django.conf import settings
 from django.contrib.auth import login
 from django.http import HttpRequest
 from django.utils import timezone
-from django.utils.encoding import force_unicode
+from django.utils.encoding import force_text
 
 from . import factories
 
@@ -88,10 +88,10 @@ class ViewTestMixin(object):
                 "(expected {1})".format(response.status_code, status_code))
 
         # Assert that the response redirects to the correct base URL.
-        # Use force_unicode to force evaluation of anything created by
+        # Use force_text to force evaluation of anything created by
         # reverse_lazy.
-        response_url = force_unicode(response['location'])
-        expected_url = force_unicode(expected_url)
+        response_url = force_text(response['location'])
+        expected_url = force_text(expected_url)
         parsed1 = urlparse(response_url)
         parsed2 = urlparse(expected_url)
         self.assertEquals(parsed1.path, parsed2.path,
