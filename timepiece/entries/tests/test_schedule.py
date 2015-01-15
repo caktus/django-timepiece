@@ -71,7 +71,7 @@ class ProjectHoursModelTestCase(ProjectHoursTestCase):
 
     def test_week_start(self):
         """week_start should always save to Monday of the given week."""
-        monday = datetime.date(2012, 07, 16)
+        monday = datetime.date(2012, 7, 16)
         for i in range(7):
             date = monday + relativedelta(days=i)
             entry = ProjectHours.objects.create(
