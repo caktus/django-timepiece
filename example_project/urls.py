@@ -1,14 +1,8 @@
-try:
-    from django.conf.urls import patterns, include, url
-except ImportError:
-    from django.conf.urls.defaults import patterns, include, url
-
+from django.conf.urls import include, url
 from django.contrib import admin
 
 
-admin.autodiscover()
-
-urlpatterns = patterns('',
+urlpatterns = [
     url(r'^admin/', include(admin.site.urls)),
     url(r'^selectable/', include('selectable.urls')),
     url(r'', include('timepiece.urls')),
@@ -32,4 +26,4 @@ urlpatterns = patterns('',
         'django.contrib.auth.views.password_reset_confirm'),
     url(r'^accounts/reset/done/$',
         'django.contrib.auth.views.password_reset_complete'),
-)
+]

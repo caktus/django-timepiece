@@ -1,8 +1,9 @@
-from django.conf.urls import patterns, url
+from django.conf.urls import url
+
 from timepiece.reports import views
 
 
-urlpatterns = patterns('',
+urlpatterns = [
     url(r'^reports/hourly/$',
         views.HourlyReport.as_view(),
         name='report_hourly'),
@@ -22,4 +23,4 @@ urlpatterns = patterns('',
     url(r'^reports/estimation_accuracy/$',
         views.report_estimation_accuracy,
         name='report_estimation_accuracy'),
-)
+]
