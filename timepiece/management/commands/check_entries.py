@@ -92,7 +92,7 @@ For options type:
         all_entries = self.find_entries(users, start, *args, **kwargs)
         all_overlaps = self.check_all(all_entries, *args, **kwargs)
         if verbosity >= 1:
-            print 'Total overlapping entries: %d' % all_overlaps
+            self.stdout.write('Total overlapping entries: %d' % all_overlaps)
 
     def check_all(self, all_entries, *args, **kwargs):
         """
@@ -133,8 +133,8 @@ For options type:
                 'last': user.last_name,
                 'total': user_total_overlaps,
             }
-            print 'Total overlapping entries for user ' + \
-                '%(first)s %(last)s: %(total)d' % overlap_data
+            self.stdout.write('Total overlapping entries for user ' + \
+                '%(first)s %(last)s: %(total)d' % overlap_data)
         return user_total_overlaps
 
     def find_start(self, **kwargs):
@@ -205,16 +205,16 @@ For options type:
         verbosity = kwargs.get('verbosity', 1)
         if forever:
             if verbosity >= 1:
-                print 'Checking overlaps from the beginning ' + \
-                    'of time'
+                self.stdout.write('Checking overlaps from the beginning ' + \
+                    'of time')
         else:
             if verbosity >= 1:
-                print 'Checking overlap starting on: ' + \
-                    start.strftime('%m/%d/%Y')
+                self.stdout.write('Checking overlap starting on: ' + \
+                    start.strftime('%m/%d/%Y'))
 
     def show_name(self, user):
-        print 'Checking %s %s...' % \
-        (user.first_name, user.last_name)
+        self.stdout.write('Checking %s %s...' % \
+            (user.first_name, user.last_name))
 
     def show_overlap(self, entry_a, entry_b=None, **kwargs):
         def make_output_data(entry):
@@ -238,4 +238,4 @@ For options type:
             % data_a + '%(start)s to %(end)s on %(project)s overlaps ' \
             % data_a + 'with another entry.'
         if kwargs.get('verbosity', 1):
-            print output
+            self.stdout.write(output)
