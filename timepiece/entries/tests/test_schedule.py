@@ -210,7 +210,7 @@ class ProjectHoursEditTestCase(ProjectHoursTestCase):
             'week_start': '2012-07-23'
         })
         self.assertEquals(response.status_code, 500)
-        self.assertEquals(response.content, msg)
+        self.assertEquals(response.content.decode('utf-8'), msg)
 
         response = self.client.post(self.ajax_url, data={
             'hours': 5,
@@ -218,14 +218,14 @@ class ProjectHoursEditTestCase(ProjectHoursTestCase):
             'week_start': '2012-07-23'
         })
         self.assertEquals(response.status_code, 500)
-        self.assertEquals(response.content, msg)
+        self.assertEquals(response.content.decode('utf-8'), msg)
 
         response = self.client.post(self.ajax_url, data={
             'project': self.tracked_project.pk,
             'week_start': '2012-07-23'
         })
         self.assertEquals(response.status_code, 500)
-        self.assertEquals(response.content, msg)
+        self.assertEquals(response.content.decode('utf-8'), msg)
 
         response = self.client.post(self.ajax_url, data={
             'project': self.tracked_project.pk,
@@ -233,14 +233,14 @@ class ProjectHoursEditTestCase(ProjectHoursTestCase):
             'week_start': '2012-07-23'
         })
         self.assertEquals(response.status_code, 500)
-        self.assertEquals(response.content, msg)
+        self.assertEquals(response.content.decode('utf-8'), msg)
 
         response = self.client.post(self.ajax_url, data={
             'user': self.manager.pk,
             'week_start': '2012-07-23'
         })
         self.assertEquals(response.status_code, 500)
-        self.assertEquals(response.content, msg)
+        self.assertEquals(response.content.decode('utf-8'), msg)
 
         response = self.client.post(self.ajax_url, data={
             'hours': 5,
@@ -248,13 +248,13 @@ class ProjectHoursEditTestCase(ProjectHoursTestCase):
             'week_start': '2012-07-23'
         })
         self.assertEquals(response.status_code, 500)
-        self.assertEquals(response.content, msg)
+        self.assertEquals(response.content.decode('utf-8'), msg)
 
         response = self.client.post(self.ajax_url, data={
             'week_start': '2012-07-23'
         })
         self.assertEquals(response.status_code, 500)
-        self.assertEquals(response.content, msg)
+        self.assertEquals(response.content.decode('utf-8'), msg)
 
         response = self.client.post(self.ajax_url, data={
             'hours': 5,
@@ -262,12 +262,12 @@ class ProjectHoursEditTestCase(ProjectHoursTestCase):
             'project': self.tracked_project.pk
         })
         self.assertEquals(response.status_code, 500)
-        self.assertEquals(response.content, date_msg)
+        self.assertEquals(response.content.decode('utf-8'), date_msg)
 
     def process_default_call(self, response):
         self.assertEquals(response.status_code, 200)
 
-        data = json.loads(response.content)
+        data = json.loads(response.content.decode('utf-8'))
 
         self.assertEquals(len(data['project_hours']), 2)
         self.assertEquals(len(data['projects']), 1)
@@ -312,7 +312,7 @@ class ProjectHoursEditTestCase(ProjectHoursTestCase):
         response = self.client.get(self.ajax_url)
         self.assertEquals(response.status_code, 200)
 
-        data = json.loads(response.content)
+        data = json.loads(response.content.decode('utf-8'))
 
         self.assertEquals(data['project_hours'], [])
         self.assertEquals(data['projects'], [])
@@ -331,7 +331,7 @@ class ProjectHoursEditTestCase(ProjectHoursTestCase):
         self.login_user(self.manager)
         response = self.client.get(self.ajax_url)
         self.assertEquals(response.status_code, 200)
-        users = [u['id'] for u in json.loads(response.content)['all_users']]
+        users = [u['id'] for u in json.loads(response.content.decode('utf-8'))['all_users']]
         self.assertEquals(len(users), 3)
         self.assertTrue(group_user.id in users)
         self.assertTrue(perm_user.id in users)
@@ -377,7 +377,7 @@ class ProjectHoursEditTestCase(ProjectHoursTestCase):
         })
         self.assertEquals(response.status_code, 200)
 
-        data = json.loads(response.content)
+        data = json.loads(response.content.decode('utf-8'))
 
         self.assertEquals(len(data['project_hours']), 2)
         self.assertEquals(len(data['projects']), 1)
@@ -408,7 +408,7 @@ class ProjectHoursEditTestCase(ProjectHoursTestCase):
 
         ph = ProjectHours.objects.get()
         self.assertEquals(ProjectHours.objects.count(), 1)
-        self.assertEquals(int(response.content), ph.pk)
+        self.assertEquals(int(response.content.decode('utf-8')), ph.pk)
         self.assertEquals(ph.hours, Decimal("5.0"))
 
     def test_ajax_create_unsuccessful(self):

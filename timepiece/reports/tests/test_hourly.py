@@ -173,7 +173,7 @@ class TestHourlyReport(ViewTestMixin, LogTimeMixin, ReportsTestBase):
         self.login_user(self.superuser)
         response = self._get(data=args, follow=True)
         return [item.split(',') \
-                for item in response.content.split('\r\n')][:-1]
+                for item in response.content.decode('utf-8').split('\r\n')][:-1]
 
     def check_totals(self, args, data):
         """assert that project_totals contains the data passed in"""

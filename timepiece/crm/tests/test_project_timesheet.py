@@ -136,7 +136,7 @@ class TestProjectTimesheet(ViewTestMixin, LogTimeMixin, TestCase):
         self.assertEqual(data['Content-Type'], 'text/csv')
         disposition = data['Content-Disposition']
         self.assertTrue(disposition.startswith('attachment; filename='))
-        contents = response.content.splitlines()
+        contents = response.content.decode('utf-8').splitlines()
         headers = contents[0].split(',')
         # Assure user's comments are not included.
         self.assertTrue('comments' not in headers)

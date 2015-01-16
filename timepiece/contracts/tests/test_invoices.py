@@ -223,7 +223,7 @@ class InvoiceViewPreviousTestCase(ViewTestMixin, LogTimeMixin, TestCase):
         self.assertEqual(data['Content-Type'], 'text/csv')
         disposition = data['Content-Disposition']
         self.assertTrue(disposition.startswith('attachment; filename=Invoice'))
-        contents = response.content.splitlines()
+        contents = response.content.decode('utf-8').splitlines()
         # TODO: Possibly find a meaningful way to test contents
         # Pull off header line and totals line
         header = contents.pop(0)
