@@ -186,6 +186,7 @@ class SumHoursTagTestCase(TestCase):
         class Entry(object):
             def __init__(self, seconds):
                 self.seconds = seconds
+
             def get_total_seconds(self):
                 return self.seconds
 
@@ -211,9 +212,9 @@ class ArithmeticTagTestCase(TestCase):
     def test_get_max_hours(self):
         ctx = {
             'project_progress': [
-                { 'worked': 1, 'assigned': 2},
-                { 'worked': 3, 'assigned': 0},
-                { 'worked': 2, 'assigned': 1},
+                {'worked': 1, 'assigned': 2},
+                {'worked': 3, 'assigned': 0},
+                {'worked': 2, 'assigned': 1},
             ]
         }
         self.assertEqual(3, tags.get_max_hours(ctx))
@@ -222,8 +223,8 @@ class ArithmeticTagTestCase(TestCase):
         # min of max hours is zero
         ctx = {
             'project_progress': [
-                { 'worked': -1, 'assigned': -4},
-                { 'worked': -3, 'assigned': -5},
+                {'worked': -1, 'assigned': -4},
+                {'worked': -3, 'assigned': -5},
                 ]
         }
         self.assertEqual(0, tags.get_max_hours(ctx))

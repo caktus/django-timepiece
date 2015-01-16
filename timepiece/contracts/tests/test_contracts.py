@@ -198,7 +198,6 @@ class ContractHourTestCase(TestCase):
         pc._worked = 5.0
         self.assertEqual(0.5, pc.fraction_hours)
 
-
     def test_fraction_schedule(self):
         # fraction_schedule returns what fraction of the contract period
         # has elapsed - if the contract is current

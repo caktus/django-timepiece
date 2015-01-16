@@ -893,7 +893,6 @@ class ClockOutTest(ViewTestMixin, TestCase):
                              status_code=302, target_status_code=200)
 
 
-
 class CheckOverlap(ViewTestMixin, LogTimeMixin, TestCase):
     """
     With entry overlaps, entry.check_overlap method should return True

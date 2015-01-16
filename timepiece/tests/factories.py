@@ -103,6 +103,7 @@ class EntryGroup(factory.DjangoModelFactory):
     project = factory.SubFactory('timepiece.tests.factories.Project')
     end = FuzzyDate(datetime.date.today() - relativedelta(months=1))
 
+
 class TypeAttribute(factory.DjangoModelFactory):
     FACTORY_FOR = crm.Attribute
 

@@ -463,6 +463,7 @@ def report_productivity(request):
         'total_assigned': sum([r[2] for r in report[1:]]),
     })
 
+
 @permission_required('contracts.view_estimation_accuracy')
 def report_estimation_accuracy(request):
     """
