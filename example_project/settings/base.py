@@ -5,14 +5,25 @@ import os
 
 PROJECT_PATH = os.path.abspath(os.path.join(os.path.dirname(__file__), os.pardir))
 
+DATABASES = {
+    'default': {
+        'ENGINE': 'django.db.backends.postgresql_psycopg2',
+        'NAME': 'timepiece',
+        'USER': '',
+        'PASSWORD': '',
+        'HOST': '',
+        'PORT': '',
+    },
+}
+
 INSTALLED_APPS = [
+    'django.contrib.admin',
     'django.contrib.auth',
     'django.contrib.contenttypes',
+    'django.contrib.messages',
     'django.contrib.sessions',
     'django.contrib.sites',
-    'django.contrib.messages',
     'django.contrib.staticfiles',
-    'django.contrib.admin',
 
     # Timepiece apps must be listed before third-party apps in order
     # for template overrides to work.
@@ -22,8 +33,8 @@ INSTALLED_APPS = [
     'timepiece.entries',
     'timepiece.reports',
 
-    'compressor',
     'bootstrap_toolkit',
+    'compressor',
     'selectable',
 ]
 
