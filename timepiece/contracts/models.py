@@ -155,6 +155,7 @@ class ProjectContract(models.Model):
         return float(days_elapsed) / contract_period
 
 
+@python_2_unicode_compatible
 class ContractHour(models.Model):
     PENDING_STATUS = 1
     APPROVED_STATUS = 2
@@ -178,6 +179,10 @@ class ContractHour(models.Model):
         verbose_name_plural = verbose_name
         db_table = 'timepiece_contracthour'  # Using legacy table name.
 
+    def __str__(self):
+        return "{} on {} ({})".format(
+            self.hours, self.contract, self.get_status_display())
+
     def __init__(self, *args, **kwargs):
         super(ContractHour, self).__init__(*args, **kwargs)
         # Save the current values so we can report changes later
@@ -189,7 +194,7 @@ class ContractHour(models.Model):
             'date_requested': self.date_requested,
             'date_approved': self.date_approved,
             'contract': self.contract if self.contract_id else None,
-            }
+        }
 
     def get_absolute_url(self):
         return reverse('admin:contracts_contracthour_change', args=[self.pk])
