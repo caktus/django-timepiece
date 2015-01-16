@@ -167,10 +167,10 @@ def list_outstanding_invoices(request):
         # Find users with unverified/unapproved entries to warn invoice creator
         date_range_entries = Entry.objects.filter(dates)
         user_values = ['user__pk', 'user__first_name', 'user__last_name']
-        unverified = date_range_entries.filter(
-            status=Entry.UNVERIFIED).values_list(*user_values).order_by('user__first_name').distinct()
-        unapproved = date_range_entries.filter(
-            status=Entry.VERIFIED).values_list(*user_values).order_by('user__first_name').distinct()
+        unverified = date_range_entries.filter(status=Entry.UNVERIFIED)
+        unverified = unverified.values_list(*user_values).order_by('user__first_name').distinct()
+        unapproved = date_range_entries.filter(status=Entry.VERIFIED)
+        unapproved = unapproved.values_list(*user_values).order_by('user__first_name').distinct()
     else:
         project_totals = unverified = unapproved = Entry.objects.none()
     return render(request, 'timepiece/invoice/outstanding.html', {
