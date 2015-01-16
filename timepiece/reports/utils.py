@@ -88,7 +88,7 @@ def get_project_totals(entries, date_headers, hour_type=None, overtime=False,
         rows.append((name, thing_id, dates))
     if total_column:
         totals.append(sum(totals))
-    totals = [total or '' for total in totals]
+    totals = [t or '' for t in totals]
     yield (rows, totals)
 
 
