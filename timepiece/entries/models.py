@@ -7,11 +7,13 @@ from django.core.exceptions import ValidationError
 from django.db import models
 from django.db.models import Q, Sum, Max, Min
 from django.utils import timezone
+from django.utils.encoding import python_2_unicode_compatible
 
 from timepiece import utils
 from timepiece.crm.models import Project
 
 
+@python_2_unicode_compatible
 class Activity(models.Model):
     """
     Represents different types of activity: debugging, developing,
@@ -23,7 +25,7 @@ class Activity(models.Model):
             'meaningful name for the activity.')
     billable = models.BooleanField(default=True)
 
-    def __unicode__(self):
+    def __str__(self):
         return self.name
 
     class Meta:
@@ -32,6 +34,7 @@ class Activity(models.Model):
         verbose_name_plural = 'activities'
 
 
+@python_2_unicode_compatible
 class ActivityGroup(models.Model):
     """Activities that are allowed for a project"""
     name = models.CharField(max_length=255, unique=True)
@@ -40,10 +43,11 @@ class ActivityGroup(models.Model):
     class Meta:
         db_table = 'timepiece_activitygroup'  # Using legacy table
 
-    def __unicode__(self):
+    def __str__(self):
         return self.name
 
 
+@python_2_unicode_compatible
 class Location(models.Model):
     name = models.CharField(max_length=255, unique=True)
     slug = models.CharField(max_length=255, unique=True)
@@ -51,7 +55,7 @@ class Location(models.Model):
     class Meta:
         db_table = 'timepiece_location'  # Using legacy table name
 
-    def __unicode__(self):
+    def __str__(self):
         return self.name
 
 
@@ -127,6 +131,7 @@ class EntryWorkedManager(models.Manager):
         return qs.exclude(project__in=projects.values())
 
 
+@python_2_unicode_compatible
 class Entry(models.Model):
     """
     This class is where all of the time logs are taken care of
@@ -179,7 +184,7 @@ class Entry(models.Model):
             ('approve_timesheet', 'Can approve a verified timesheet'),
         )
 
-    def __unicode__(self):
+    def __str__(self):
         return '%s on %s' % (self.user, self.project)
 
     def check_overlap(self, entry_b, **kwargs):
@@ -495,6 +500,7 @@ class Entry(models.Model):
         return data
 
 
+@python_2_unicode_compatible
 class ProjectHours(models.Model):
     week_start = models.DateField(verbose_name='start of week')
     project = models.ForeignKey('crm.Project')
@@ -505,7 +511,7 @@ class ProjectHours(models.Model):
     )
     published = models.BooleanField(default=False)
 
-    def __unicode__(self):
+    def __str__(self):
         return "{0} on {1} for Week of {2}".format(
                 self.user.get_name_or_username(),
                 self.project, self.week_start.strftime('%B %d, %Y'))

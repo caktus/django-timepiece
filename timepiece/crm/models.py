@@ -2,6 +2,7 @@ from django.contrib.auth.models import User
 from django.core.urlresolvers import reverse
 from django.db import models
 from django.db.models import get_model
+from django.utils.encoding import python_2_unicode_compatible
 
 from timepiece.utils import get_active_entry
 
@@ -21,6 +22,7 @@ _get_absolute_url = lambda user: reverse('view_user', args=(user.pk,))
 User.add_to_class('get_absolute_url', _get_absolute_url)
 
 
+@python_2_unicode_compatible
 class UserProfile(models.Model):
     user = models.OneToOneField(User, unique=True, related_name='profile')
     hours_per_week = models.DecimalField(max_digits=8, decimal_places=2,
@@ -29,8 +31,8 @@ class UserProfile(models.Model):
     class Meta:
         db_table = 'timepiece_userprofile'  # Using legacy table name.
 
-    def __unicode__(self):
-        return self.user.__unicode__()
+    def __str__(self):
+        return self.user
 
 
 class TypeAttributeManager(models.Manager):
@@ -49,6 +51,7 @@ class StatusAttributeManager(models.Manager):
         return qs.filter(type=Attribute.PROJECT_STATUS)
 
 
+@python_2_unicode_compatible
 class Attribute(models.Model):
     PROJECT_TYPE = 'project-type'
     PROJECT_STATUS = 'project-status'
@@ -76,10 +79,11 @@ class Attribute(models.Model):
         unique_together = ('type', 'label')
         ordering = ('sort_order',)
 
-    def __unicode__(self):
+    def __str__(self):
         return self.label
 
 
+@python_2_unicode_compatible
 class Business(models.Model):
     name = models.CharField(max_length=255)
     short_name = models.CharField(max_length=255, blank=True)
@@ -96,7 +100,7 @@ class Business(models.Model):
             ('view_business', 'Can view businesses'),
         )
 
-    def __unicode__(self):
+    def __str__(self):
         return self.get_display_name()
 
     def get_absolute_url(self):
@@ -115,6 +119,7 @@ class TrackableProjectManager(models.Manager):
         )
 
 
+@python_2_unicode_compatible
 class Project(models.Model):
     name = models.CharField(max_length=255)
     tracker_url = models.CharField(max_length=255, blank=True, null=False,
@@ -149,7 +154,7 @@ class Project(models.Model):
             ('generate_project_invoice', 'Can generate project invoice'),
         )
 
-    def __unicode__(self):
+    def __str__(self):
         return '{0} ({1})'.format(self.name, self.business.get_display_name())
 
     @property
@@ -165,6 +170,7 @@ class Project(models.Model):
         return self.contracts.exclude(status=ProjectContract.STATUS_COMPLETE)
 
 
+@python_2_unicode_compatible
 class RelationshipType(models.Model):
     name = models.CharField(max_length=255, unique=True)
     slug = models.SlugField(max_length=255)
@@ -172,10 +178,11 @@ class RelationshipType(models.Model):
     class Meta:
         db_table = 'timepiece_relationshiptype'  # Using legacy table name.
 
-    def __unicode__(self):
+    def __str__(self):
         return self.name
 
 
+@python_2_unicode_compatible
 class ProjectRelationship(models.Model):
     types = models.ManyToManyField(RelationshipType, blank=True,
         related_name='project_relationships')
@@ -186,7 +193,7 @@ class ProjectRelationship(models.Model):
         db_table = 'timepiece_projectrelationship'  # Using legacy table name.
         unique_together = ('user', 'project')
 
-    def __unicode__(self):
+    def __str__(self):
         return "{project}'s relationship to {user}".format(
             project=self.project.name,
             user=self.user.get_name_or_username(),

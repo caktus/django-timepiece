@@ -10,11 +10,13 @@ from django.db import models
 from django.db.models import Sum
 from django.template import Context
 from django.template.loader import get_template
+from django.utils.encoding import python_2_unicode_compatible
 
 from timepiece import utils
 from timepiece.entries.models import Entry
 
 
+@python_2_unicode_compatible
 class ProjectContract(models.Model):
     STATUS_UPCOMING = 'upcoming'
     STATUS_CURRENT = 'current'
@@ -48,7 +50,7 @@ class ProjectContract(models.Model):
         verbose_name = 'contract'
         db_table = 'timepiece_projectcontract'  # Using legacy table name.
 
-    def __unicode__(self):
+    def __str__(self):
         return self.name
 
     def get_admin_url(self):
@@ -271,6 +273,7 @@ class ContractHour(models.Model):
             self._send_mail(subject, ctx)
 
 
+@python_2_unicode_compatible
 class ContractAssignment(models.Model):
     contract = models.ForeignKey(ProjectContract, related_name='assignments')
     user = models.ForeignKey(User, related_name='assignments')
@@ -283,7 +286,7 @@ class ContractAssignment(models.Model):
         unique_together = (('contract', 'user'),)
         db_table = 'timepiece_contractassignment'  # Using legacy table name.
 
-    def __unicode__(self):
+    def __str__(self):
         return u'{0} / {1}'.format(self.user, self.contract)
 
     @property
@@ -347,6 +350,7 @@ class HourGroupManager(models.Manager):
         return totals
 
 
+@python_2_unicode_compatible
 class HourGroup(models.Model):
     """Activities that are bundled together for billing"""
     name = models.CharField(max_length=255, unique=True)
@@ -359,10 +363,11 @@ class HourGroup(models.Model):
     class Meta:
         db_table = 'timepiece_hourgroup'  # Using legacy table name.
 
-    def __unicode__(self):
+    def __str__(self):
         return self.name
 
 
+@python_2_unicode_compatible
 class EntryGroup(models.Model):
     INVOICED = Entry.INVOICED
     NOT_INVOICED = Entry.NOT_INVOICED
@@ -390,7 +395,7 @@ class EntryGroup(models.Model):
         self.entries.update(status=Entry.APPROVED)
         super(EntryGroup, self).delete()
 
-    def __unicode__(self):
+    def __str__(self):
         invoice_data = {
             'number': self.number,
             'status': self.status,
