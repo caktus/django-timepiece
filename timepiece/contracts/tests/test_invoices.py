@@ -252,7 +252,7 @@ class InvoiceViewPreviousTestCase(ViewTestMixin, LogTimeMixin, TestCase):
     def test_invoice_edit_post(self):
         invoice = self.get_invoice()
         url = reverse('edit_invoice', args=(invoice.id,))
-        if invoice.status == EntryGroup.INVOICED:
+        if invoice.status != EntryGroup.INVOICED:
             status = EntryGroup.INVOICED
         else:
             status = EntryGroup.NOT_INVOICED
