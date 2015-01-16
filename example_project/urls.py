@@ -2,6 +2,9 @@ from django.conf.urls import include, url
 from django.contrib import admin
 
 
+admin.autodiscover()  # For Django 1.6
+
+
 urlpatterns = [
     url(r'^admin/', include(admin.site.urls)),
     url(r'^selectable/', include('selectable.urls')),
