@@ -1,40 +1,45 @@
 {% load i18n %}
+{% load timepiece_tags %}
 <div class="pagination">
-    <ul>
-        {% if object_list.has_previous %}
-            <li>
-                <a href="?page={{ object_list.previous_page_number }}{{ getvars }}{{ hashtag }}" class="prev">&laquo; {% trans "previous" %}</a>
-            </li>
-        {% else %}
-            <li class="disabled">
-                <a>&laquo; {% trans "previous" %}</a>
-            </li>
-        {% endif %}
-        {% for page in pages %}
-            {% if page %}
-                {% ifequal page object_list.number %}
-                <li class="active">
-                    <a>{{ page }}</a>
-                </li>
-                {% else %}
-                <li>
-                    <a href="?page={{ page }}{{ getvars }}{{ hashtag }}">{{ page }}</a>
-                </li>
-                {% endifequal %}
-            {% else %}
-                <li>
-                    <a>...</a>
-                </li>
-            {% endif %}
-        {% endfor %}
-        {% if object_list.has_next %}
-            <li>
-                <a href="?page={{ object_list.next_page_number }}{{ getvars }}{{ hashtag }}" class="next">{% trans "next" %} &raquo;</a>
-            </li>
-        {% else %}
-            <li class="disabled">
-                <a class="disabled next">{% trans "next" %} &raquo;</a>
-            </li>
-        {% endif %}
-    </ul>
+  <ul>
+    {% if page_obj.has_previous %}
+      <li>
+        {% with base_url="?" %}
+          <a href="{{ base_url|add_parameters:request.GET }}&page={{ page_obj.previous_page_number }}"
+             class="prev">&laquo; {% trans "previous" %}</a>
+        {% endwith %}
+      </li>
+    {% else %}
+      <li class="disabled">
+        <a>&laquo; {% trans "previous" %}</a>
+      </li>
+    {% endif %}
+
+    {% for page_num in paginator.page_range %}
+      {% ifequal page_num page_obj.number %}
+        <li class="active">
+          <a>{{ page_num }}</a>
+        </li>
+      {% else %}
+        <li>
+          {% with base_url="?" %}
+            <a href="{{ base_url|add_parameters:request.GET }}&page={{ page_num }}">{{ page_num }}</a>
+          {% endwith %}
+        </li>
+      {% endifequal %}
+    {% endfor %}
+
+    {% if page_obj.has_next %}
+      <li>
+        {% with base_url="?" %}
+          <a href="{{ base_url|add_parameters:request.GET }}&page={{ page_obj.next_page_number }}"
+             class="next">{% trans "next" %} &raquo;</a>
+        {% endwith %}
+      </li>
+    {% else %}
+      <li class="disabled">
+        <a class="disabled next">{% trans "next" %} &raquo;</a>
+      </li>
+    {% endif %}
+  </ul>
 </div>
