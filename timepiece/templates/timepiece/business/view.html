@@ -4,6 +4,10 @@
 
 {% block title %}{{ object.name }}{% endblock title %}
 
+{% block extracss %}
+<link href="{{ STATIC_URL }}ajaxuploader/css/fileuploader.css" media="screen" rel="stylesheet" type="text/css" />
+{% endblock extracss %}
+
 {% block crumbs %}
     {{ block.super }}
     <li>
@@ -142,6 +146,58 @@
                 <li><strong>{{ note.author }} @ {{ note.last_edited }}</strong><br/>{{ note.text|linebreaks }}</li>
                 {% endfor %}
             </ul>
+
+            <h3>Attachments</h3>
+            <div id="file-uploader" name="File" class="controls">
+              <noscript>          
+                <p>Please enable JavaScript to use file uploader.</p>
+              </noscript>
+            </div>
+            <small>Drag and drop a file above to attach it.</small>
+            {% if object.get_attachments|length %}
+            {% for attachment in object.get_attachments %}
+            <blockquote>
+            <p><a href="{% url 'download_business_attachment' object.id attachment.id %}" target="_blank">{{ attachment.filename }}</a></p>
+            <small>{{ attachment.uploader }} @ {{ attachment.upload_time }}</small>
+            </blockquote>
+            {% endfor %}
+            {% else %}
+            <br/><em>There are no attachments.</em>
+            {% endif %}
         </div>
     </div>
 {% endblock content %}
+
+{% block extrajs %}
+<script src="{{ STATIC_URL }}ajaxuploader/js/fileuploader.js" ></script>
+<script>
+    ATTACHMENTS = {};
+    $(function(){
+    var uploader = new qq.FileUploader({
+        action: "{% url 'add_business_attachment' object.id %}",
+        element: $('#file-uploader')[0],
+        multiple: true,
+        onComplete: function(id, filename, responseJSON) {
+            if(responseJSON.success) {
+                ATTACHMENTS[id] = {'id': id,
+                                   'filename': filename,
+                                   'json': responseJSON};
+            } else {
+                console.log('fail', id, filename, responseJSON);
+            }
+        },
+        onAllComplete: function(uploads) {
+            // uploads is an array of maps
+            // the maps look like this: {file: FileObject, response: JSONServerResponse}
+            // do nothing
+        },
+        params: {
+            'csrf_token': '{{ csrf_token }}',
+            'csrf_name': 'csrfmiddlewaretoken',
+            'csrf_xname': 'X-CSRFToken',
+        },
+    });
+    });
+    
+</script>
+{% endblock extrajs %}

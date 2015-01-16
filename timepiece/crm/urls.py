@@ -109,6 +109,13 @@ urlpatterns = patterns('',
         views.AddBusinessNote.as_view(),
         name='add_business_note'),
     
+    # Business Attachments
+    url(r'^business/(?P<business_id>\d+)/add-attachment$', # expects querystring of transition_id=<int>
+        views.business_upload_attachment,
+        name='add_business_attachment'),
+    url(r'^business/(?P<business_id>\d+)/download-attachment/(?P<attachment_id>\w+)/$',
+        views.business_download_attachment,
+        name='download_business_attachment'),
 
     # User-project relationships
     url(r'^relationship/create/$',

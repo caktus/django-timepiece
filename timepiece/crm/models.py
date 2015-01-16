@@ -8,6 +8,7 @@ import sys, traceback
 from decimal import Decimal
 from itertools import groupby
 from timepiece.utils import get_active_entry
+from timepiece.models import MongoAttachment
 
 from taggit.managers import TaggableManager
 
@@ -337,7 +338,12 @@ class Business(models.Model):
     @property
     def get_notes(self):
         return BusinessNote.objects.filter(business=self).order_by('-created_at')
-
+    
+    @property
+    def get_attachments(self):
+        return BusinessAttachment.objects.filter(
+            business=self).order_by('upload_time')
+    
     @property
     def get_departments(self):
         return BusinessDepartment.objects.filter(business=self).order_by('short_name')
@@ -604,6 +610,11 @@ class BusinessNote(models.Model):
         # send email to note author and business account owner
         timepiece_emails.business_new_note(self, url)
 
+class BusinessAttachment(MongoAttachment):
+    business = models.ForeignKey(Business)
+
+    def __unicode__(self):
+        return "%s: %s" % (self.business.short_name, self.filename)
 
 class Contact(models.Model):
     SALUTATIONS = (('mr',  'Mr.'),

@@ -35,7 +35,7 @@ from timepiece.crm.forms import (CreateEditBusinessForm, CreateEditProjectForm,
         AddContactNoteForm)
 from timepiece.crm.models import (Business, Project, ProjectRelationship, UserProfile,
     PaidTimeOffLog, PaidTimeOffRequest, Milestone, ActivityGoal, BusinessNote,
-    BusinessDepartment, Contact, ContactNote)
+    BusinessDepartment, Contact, ContactNote, BusinessAttachment)
 from timepiece.crm.utils import grouped_totals, project_activity_goals_with_progress
 from timepiece.entries.models import Entry, Activity, Location
 from timepiece.reports.forms import HourlyReportForm
@@ -45,6 +45,12 @@ from . import emails
 
 import workdays
 
+from ajaxuploader.views import AjaxFileUploader
+from ajaxuploader.backends.mongodb import MongoDBUploadBackend
+# TODO: change this to be a utils.get_setting
+from project_toolbox_main import settings as project_settings
+from bson.objectid import ObjectId
+import gridfs
 
 @cbv_decorator(login_required)
 class QuickSearch(FormView):
@@ -505,6 +511,43 @@ class AddBusinessNote(View):
             note.save()
         return HttpResponseRedirect(request.GET.get('next', None) or reverse('view_business', args=(business.id,)))
 
+@permission_required('workflow.view_business')
+def business_upload_attachment(request, business_id):
+    try:
+        afu = AjaxFileUploader(MongoDBUploadBackend, db='business_attachments')
+        hr = afu(request)
+        content = json.loads(hr.content)
+        memo = {'uploader': str(request.user),
+                'file_id': str(content['_id']),
+                'upload_time': str(datetime.datetime.now()),
+                'filename': content['filename']}
+        memo.update(content)
+        # save attachment to ticket
+        attachment = BusinessAttachment(
+            business=Business.objects.get(id=int(business_id)),
+            file_id=str(content['_id']),
+            filename=content['filename'],
+            upload_time=datetime.datetime.now(),
+            uploader=request.user,
+            description='n/a')
+        attachment.save()
+        return HttpResponse(json.dumps(memo),
+                            content_type="application/json")
+    except:
+        print sys.exc_info(), traceback.format_exc()
+    return hr
+
+@permission_required('workflow.view_business')
+def business_download_attachment(request, business_id, attachment_id):
+    MONGO_DB_INSTANCE = project_settings.MONGO_CLIENT.business_attachments
+    GRID_FS_INSTANCE = gridfs.GridFS(MONGO_DB_INSTANCE)
+    try:
+        business_attachment = BusinessAttachment.objects.get(
+            business__id=business_id, id=attachment_id)
+        f = GRID_FS_INSTANCE.get(ObjectId(business_attachment.file_id))
+        return HttpResponse(f.read(), content_type=f.content_type)
+    except:
+        return HttpResponse("Attachment could not be found.")
 
 
 @cbv_decorator(permission_required('crm.add_business'))

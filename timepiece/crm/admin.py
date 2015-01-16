@@ -3,7 +3,7 @@ from django.contrib import admin
 from timepiece.crm.models import (Attribute, Business, Project,
         RelationshipType, UserProfile, PaidTimeOffRequest,
         PaidTimeOffLog, Milestone, ActivityGoal,
-        Contact, ContactNote, BusinessNote)
+        Contact, ContactNote, BusinessNote, BusinessAttachment)
 
 
 class AttributeAdmin(admin.ModelAdmin):
@@ -20,6 +20,8 @@ class BusinessAdmin(admin.ModelAdmin):
 class BusinessNoteAdmin(admin.ModelAdmin):
     pass
 
+class BusinessAttachmentAdmin(admin.ModelAdmin):
+    pass
 
 class ProjectAdmin(admin.ModelAdmin):
     raw_id_fields = ('business',)
@@ -58,6 +60,7 @@ class UserProfileAdmin(admin.ModelAdmin):
 admin.site.register(Attribute, AttributeAdmin)
 admin.site.register(Business, BusinessAdmin)
 admin.site.register(BusinessNote, BusinessNoteAdmin)
+admin.site.register(BusinessAttachment, BusinessAttachmentAdmin)
 admin.site.register(Project, ProjectAdmin)
 admin.site.register(RelationshipType, RelationshipTypeAdmin)
 admin.site.register(UserProfile, UserProfileAdmin)
