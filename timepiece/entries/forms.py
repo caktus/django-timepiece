@@ -158,6 +158,7 @@ class ProjectHoursForm(forms.ModelForm):
 
     class Meta:
         model = ProjectHours
+        fields = ['week_start', 'project', 'user', 'hours', 'published']
 
 
 class ProjectHoursSearchForm(forms.Form):
