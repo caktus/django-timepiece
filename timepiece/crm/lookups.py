@@ -71,7 +71,7 @@ class QuickLookup(LookupBase):
                 value = lookup.get_item_value(item)
                 results.append(SearchResult(result_type, item, label, value))
 
-        results.sort(lambda a, b: cmp(a.value, b.value))
+        results.sort(lambda a, b: a.value > b.value - a.value < b.value)
         return results
 
     def get_item_label(self, item):

@@ -49,7 +49,7 @@ class ProjectContract(models.Model):
         db_table = 'timepiece_projectcontract'  # Using legacy table name.
 
     def __unicode__(self):
-        return unicode(self.name)
+        return self.name
 
     def get_admin_url(self):
         return reverse('admin:contracts_projectcontract_change', args=[self.pk])

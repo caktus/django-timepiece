@@ -32,7 +32,7 @@ class EntryAdmin(admin.ModelAdmin):
 
     def _project(self, obj):
         """Use a proxy to avoid an infinite loop from ordering."""
-        return unicode(obj.project)
+        return obj.__unicode__()
     _project.admin_order_field = 'project__name'
     _project.short_description = 'Project'
 
@@ -51,7 +51,7 @@ class ProjectHoursAdmin(admin.ModelAdmin):
 
     def _project(self, obj):
         """Use a proxy to avoid an infinite loop from ordering."""
-        return unicode(obj.project)
+        return obj.project.__unicode__()
     _project.admin_order_field = 'project__name'
     _project.short_description = 'Project'
 

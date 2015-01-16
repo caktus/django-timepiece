@@ -30,7 +30,7 @@ class UserProfile(models.Model):
         db_table = 'timepiece_userprofile'  # Using legacy table name.
 
     def __unicode__(self):
-        return unicode(self.user)
+        return self.user.__unicode__()
 
 
 class TypeAttributeManager(models.Manager):
