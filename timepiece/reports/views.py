@@ -401,25 +401,25 @@ def report_productivity(request):
             # Determine the project's time range.
             amin, amax, pmin, pmax = (None, None, None, None)
             if actuals.count() > 0:
-                amin = actuals.aggregate(Min('start_time')).values()[0]
+                amin = list(actuals.aggregate(Min('start_time')).values())[0]
                 amin = utils.get_week_start(amin).date()
-                amax = actuals.aggregate(Max('start_time')).values()[0]
+                amax = list(actuals.aggregate(Max('start_time')).values())[0]
                 amax = utils.get_week_start(amax).date()
             if projections.count() > 0:
-                pmin = projections.aggregate(Min('week_start')).values()[0]
-                pmax = projections.aggregate(Max('week_start')).values()[0]
+                pmin = list(projections.aggregate(Min('week_start')).values())[0]
+                pmax = list(projections.aggregate(Max('week_start')).values())[0]
             current = min(amin, pmin) if (amin and pmin) else (amin or pmin)
             latest = max(amax, pmax) if (amax and pmax) else (amax or pmax)
 
             # Report for each week during the project's time range.
             while current <= latest:
                 next_week = current + relativedelta(days=7)
-                actual_hours = actuals.filter(start_time__gte=current,
+                actual_hours = list(actuals.filter(start_time__gte=current,
                         start_time__lt=next_week).aggregate(
-                        Sum('hours')).values()[0]
-                projected_hours = projections.filter(week_start__gte=current,
+                        Sum('hours')).values())[0]
+                projected_hours = list(projections.filter(week_start__gte=current,
                         week_start__lt=next_week).aggregate(
-                        Sum('hours')).values()[0]
+                        Sum('hours')).values())[0]
                 report.append([date_format_filter(current, 'M j, Y'),
                         actual_hours or 0, projected_hours or 0])
                 current = next_week
@@ -436,10 +436,10 @@ def report_productivity(request):
             # Report for each user.
             for user in users:
                 name = '{0} {1}'.format(user[1], user[2])
-                actual_hours = actuals.filter(user=user[0]) \
-                        .aggregate(Sum('hours')).values()[0]
-                projected_hours = projections.filter(user=user[0]) \
-                        .aggregate(Sum('hours')).values()[0]
+                actual_hours = list(actuals.filter(user=user[0]) \
+                        .aggregate(Sum('hours')).values())[0]
+                projected_hours = list(projections.filter(user=user[0]) \
+                        .aggregate(Sum('hours')).values())[0]
                 report.append([name, actual_hours or 0, projected_hours or 0])
 
         col_headers = [organize_by.title(), 'Worked Hours', 'Assigned Hours']
@@ -476,7 +476,7 @@ def report_estimation_accuracy(request):
     for c in contracts:
         if c.contracted_hours() == 0:
             continue
-        pt_label = "%s (%.2f%%)" % (c.name, 
+        pt_label = "%s (%.2f%%)" % (c.name,
                                     c.hours_worked / c.contracted_hours() * 100)
         data.append((c.contracted_hours(), c.hours_worked, pt_label))
         chart_max = max([max(x[0], x[1]) for x in data[1:]]) #max of all targets & actuals
