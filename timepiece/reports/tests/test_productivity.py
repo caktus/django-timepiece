@@ -202,7 +202,7 @@ class TestProductivityReport(ViewTestMixin, TestCase):
         def parse_csv_row(s):
             """Given a string in CSV format, return a list of strings that
             represent the fields from the CSV line, with e.g. quotes removed"""
-            return csv.reader([s]).next()
+            return next(csv.reader([s]))
 
         self._check_row(parse_csv_row(report[1]), [u'Sep 24, 2012', 0.0, 4.0])
         self._check_row(parse_csv_row(report[2]), [u'Oct 1, 2012', 4.0, 4.0])

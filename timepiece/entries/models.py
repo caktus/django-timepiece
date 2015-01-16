@@ -489,7 +489,7 @@ class Entry(models.Model):
                 data['non_billable'] += row['s']
         data['total_worked'] = data['billable'] + data['non_billable']
         data['paid_leave'] = {}
-        for name, pk in projects.iteritems():
+        for name, pk in projects.items():
             qs = entries.filter(project=projects[name])
             data['paid_leave'][name] = qs.aggregate(s=Sum('hours'))['s']
         return data

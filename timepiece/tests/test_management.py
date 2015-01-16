@@ -165,7 +165,7 @@ class CheckEntries(TestCase):
         total_entries = 0
         while True:
             try:
-                user_entries = entries.next()
+                user_entries = next(entries)
                 for entry in user_entries:
                     total_entries += 1
             except StopIteration:
@@ -188,7 +188,7 @@ class CheckEntries(TestCase):
         self.make_entry_bulk(self.all_users, num_days)
         while True:
             try:
-                user_entries = entries.next()
+                user_entries = next(entries)
                 user_overlaps = check_entries.Command().check_entry(
                     user_entries, verbosity=0)
                 total_overlaps += user_overlaps

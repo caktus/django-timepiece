@@ -473,7 +473,7 @@ class TestEditSettings(ViewTestMixin, TestCase):
         response = self._post()
         self.assertRedirectsNoFollow(response, reverse('dashboard'))
         updated_user = User.objects.get(pk=self.user.pk)
-        for k, v in self.post_data.iteritems():
+        for k, v in self.post_data.items():
             self.assertEquals(getattr(updated_user, k), v)
 
     def test_post_invalid(self):
@@ -495,5 +495,5 @@ class TestEditSettings(ViewTestMixin, TestCase):
         response = self._post(get_kwargs={'next': '/hello/'})
         self.assertRedirectsNoFollow(response, '/hello/')
         updated_user = User.objects.get(pk=self.user.pk)
-        for k, v in self.post_data.iteritems():
+        for k, v in self.post_data.items():
             self.assertEquals(getattr(updated_user, k), v)
