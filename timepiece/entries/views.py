@@ -507,7 +507,7 @@ class ScheduleAjaxView(ScheduleMixin, View):
             'ajax_url': reverse('ajax_schedule'),
         }
         return HttpResponse(json.dumps(data, cls=DecimalEncoder),
-            mimetype='application/json')
+            content_type='application/json')
 
     def duplicate_entries(self, duplicate, week_update):
         def duplicate_builder(queryset, new_date):
@@ -561,7 +561,7 @@ class ScheduleAjaxView(ScheduleMixin, View):
 
         if form.is_valid():
             ph = form.save()
-            return HttpResponse(str(ph.pk), mimetype='text/plain')
+            return HttpResponse(str(ph.pk), content_type='text/plain')
 
         msg = 'The request must contain values for user, project, and hours'
         return HttpResponse(msg, status=500)
@@ -597,6 +597,6 @@ class ScheduleDetailView(ScheduleMixin, View):
 
         if assignment_id:
             ProjectHours.objects.filter(pk=assignment_id).delete()
-            return HttpResponse('ok', mimetype='text/plain')
+            return HttpResponse('ok', content_type='text/plain')
 
         return HttpResponse('', status=500)
