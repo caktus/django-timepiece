@@ -480,7 +480,7 @@ def report_estimation_accuracy(request):
         pt_label = "%s (%.2f%%)" % (c.name,
                                     c.hours_worked / c.contracted_hours() * 100)
         data.append((c.contracted_hours(), c.hours_worked, pt_label))
-        chart_max = max([max(x[0], x[1]) for x in data[1:]]) #max of all targets & actuals
+        chart_max = max([max(x[0], x[1]) for x in data[1:]])  # max of all targets & actuals
     return render(request, 'timepiece/reports/estimation_accuracy.html', {
         'data': json.dumps(data, cls=DecimalEncoder),
         'chart_max': chart_max,

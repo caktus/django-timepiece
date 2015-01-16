@@ -17,7 +17,7 @@ class Command(BaseCommand):
     Management command to check entries for overlapping times.
     Use ./manage.py check_entries --help for more details
     """
-    #boiler plate for console programs using optparse
+    # boiler plate for console programs using optparse
     args = '<user\'s first or last name or user.id> <user\'s first...>...'
     help = """Check the database for entries that overlap.
     Use --help for options"""
@@ -34,7 +34,7 @@ For options type:
         Define the arguments that can be used with this command
         """
         return (
-        #Jenkins arguments to ignore
+        # Jenkins arguments to ignore
         make_option('--pep8-exclude',
             dest='ignore_pep8',
             type='str',
@@ -118,7 +118,7 @@ For options type:
         user_total_overlaps = 0
         user = ''
         for index_a, entry_a in enumerate(entries):
-            #Show the name the first time through
+            # Show the name the first time through
             if index_a == 0:
                 if args and verbosity >= 1 or verbosity >= 2:
                     self.show_name(entry_a.user)
@@ -146,10 +146,10 @@ For options type:
         month = kwargs.get('month', False)
         year = kwargs.get('year', False)
         days = kwargs.get('days', 0)
-        #If no flags are True, set to the beginning of last billing window
-        #to assure we catch all recent violations
+        # If no flags are True, set to the beginning of last billing window
+        # to assure we catch all recent violations
         start = timezone.now() - relativedelta(months=1, day=1)
-        #Set the start date based on arguments provided through options
+        # Set the start date based on arguments provided through options
         if week:
             start = utils.get_week_start()
         if month:
@@ -171,10 +171,10 @@ For options type:
                 (Q(first_name__icontains=arg) | Q(last_name__icontains=arg)),
                 args, Q())
             users = User.objects.filter(names)
-        #If no args given, check every user
+        # If no args given, check every user
         else:
             users = User.objects.all()
-        #Display errors if no user was found
+        # Display errors if no user was found
         if not users.count() and args:
             if len(args) == 1:
                 raise CommandError('No user was found with the name %s' \
@@ -200,7 +200,7 @@ For options type:
                     'start_time')
             yield entries
 
-    #output methods
+    # output methods
     def show_init(self, start, *args, **kwargs):
         forever = kwargs.get('all', False)
         verbosity = kwargs.get('verbosity', 1)

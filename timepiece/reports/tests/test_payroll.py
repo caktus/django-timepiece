@@ -82,7 +82,7 @@ class PayrollTest(ViewTestMixin, LogTimeMixin, TestCase):
             for month in months]
         last_billable = [utils.get_last_billable_day(day).day \
                          for day in first_days]
-        #should equal the last saturday of every month in 2011
+        # should equal the last saturday of every month in 2011
         self.assertEqual(last_billable,
                          [30, 27, 27, 24, 29, 26, 31, 28, 25, 30, 27, 25])
 
@@ -127,13 +127,13 @@ class PayrollTest(ViewTestMixin, LogTimeMixin, TestCase):
             self.assertEqual(weekly_totals[1], week1)
             self.assertEqual(weekly_totals[5], overtime)
         check_overtime()
-        #Entry on following Monday doesn't add to week1 or overtime
+        # Entry on following Monday doesn't add to week1 or overtime
         self.make_logs(utils.add_timezone(datetime.datetime(2011, 5, 9)))
         check_overtime()
-        #Entries in previous month before last_billable do not change overtime
+        # Entries in previous month before last_billable do not change overtime
         self.make_logs(utils.add_timezone(datetime.datetime(2011, 4, 24)))
         check_overtime()
-        #Entry in previous month after last_billable change week0 and overtime
+        # Entry in previous month after last_billable change week0 and overtime
         self.make_logs(utils.add_timezone(
             datetime.datetime(2011, 4, 25, 1, 0)
         ))

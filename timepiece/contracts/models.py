@@ -157,7 +157,7 @@ class ContractHour(models.Model):
     PENDING_STATUS = 1
     APPROVED_STATUS = 2
     CONTRACT_HOUR_STATUS = (
-        (PENDING_STATUS, 'Pending'), # default
+        (PENDING_STATUS, 'Pending'),  # default
         (APPROVED_STATUS, 'Approved')
         )
 
@@ -306,7 +306,7 @@ class ContractAssignment(models.Model):
 class HourGroupManager(models.Manager):
 
     def summaries(self, entries):
-        #Get the list of bundle names and hour sums
+        # Get the list of bundle names and hour sums
         bundled_entries = entries.values('activity__activity_bundle',
                                          'activity__activity_bundle__name')
         bundled_entries = bundled_entries.annotate(Sum('hours'))
@@ -319,7 +319,7 @@ class HourGroupManager(models.Manager):
                                              'activity__activity_bundle',
                                              'hours__sum')
         )
-        #Get the list of activity names and hour sums
+        # Get the list of activity names and hour sums
         activity_entries = entries.values('activity', 'activity__name',
                                           'activity__activity_bundle')
         activity_entries = activity_entries.annotate(Sum('hours'))

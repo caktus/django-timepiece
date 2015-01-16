@@ -335,7 +335,7 @@ class TestHourlyReport(ViewTestMixin, LogTimeMixin, ReportsTestBase):
 
     def test_form_projects(self):
         """Filter hours for specific projects."""
-        #Test project 1
+        # Test project 1
         self.bulk_entries()
         args = {
             'billable': True,
@@ -353,7 +353,7 @@ class TestHourlyReport(ViewTestMixin, LogTimeMixin, ReportsTestBase):
         ]
         self.check_totals(args, data)
 
-        #Test with project 2
+        # Test with project 2
         args = {
             'billable': True,
             'non_billable': True,
@@ -370,7 +370,7 @@ class TestHourlyReport(ViewTestMixin, LogTimeMixin, ReportsTestBase):
         ]
         self.check_totals(args, data)
 
-        #Test with 2 project filters
+        # Test with 2 project filters
         args = {
             'billable': True,
             'non_billable': True,

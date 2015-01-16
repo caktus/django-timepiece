@@ -159,7 +159,7 @@ class LogTimeMixin(object):
             minutes = 0
         if not start:
             start = timezone.now() - relativedelta(hour=0)
-            #In case the default would fall off the end of the billing period
+            # In case the default would fall off the end of the billing period
             if start.day >= 28:
                 start -= relativedelta(days=1)
         if not end:

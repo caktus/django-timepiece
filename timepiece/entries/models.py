@@ -186,10 +186,10 @@ class Entry(models.Model):
         """Return True if the two entries overlap."""
         consider_pause = kwargs.get('pause', True)
         entry_a = self
-        #if entries are open, consider them to be closed right now
+        # if entries are open, consider them to be closed right now
         if not entry_a.end_time or not entry_b.end_time:
             return False
-        #Check the two entries against each other
+        # Check the two entries against each other
         start_inside = entry_a.start_time > entry_b.start_time \
             and entry_a.start_time < entry_b.end_time
         end_inside = entry_a.end_time > entry_b.start_time \
@@ -246,14 +246,14 @@ class Entry(models.Model):
         start = self.start_time
         if self.end_time:
             end = self.end_time
-        #Current entries have no end_time
+        # Current entries have no end_time
         else:
             end = start + relativedelta(seconds=1)
         entries = self.user.timepiece_entries.filter(
             Q(end_time__range=(start, end)) |
             Q(start_time__range=(start, end)) |
             Q(start_time__lte=start, end_time__gte=end))
-        #An entry can not conflict with itself so remove it from the list
+        # An entry can not conflict with itself so remove it from the list
         if self.id:
             entries = entries.exclude(pk=self.id)
         for entry in entries:
@@ -263,7 +263,7 @@ class Entry(models.Model):
                 'start_time': entry.start_time,
                 'end_time': entry.end_time
             }
-            #Conflicting saved entries
+            # Conflicting saved entries
             if entry.end_time:
                 if entry.start_time.date() == start.date() \
                 and entry.end_time.date() == end.date():
@@ -375,7 +375,7 @@ class Entry(models.Model):
         Determined the total number of hours worked in this entry
         """
         total = self.get_total_seconds() / 3600.0
-        #in case seconds paused are greater than the elapsed time
+        # in case seconds paused are greater than the elapsed time
         if total < 0:
             total = 0
         return total

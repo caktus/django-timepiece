@@ -253,14 +253,14 @@ class ClockInTest(ViewTestMixin, TestCase):
         })
         response = self.client.post(self.url, data)
         entries = Entry.objects.all()
-        #These clock in times do not overlap
+        # These clock in times do not overlap
         for entry in entries:
             if entry.is_overlapping():
                 self.fail('Overlapping Times')
-        #There is one closed entry and open current entry
+        # There is one closed entry and open current entry
         closed_entry = entries.get(end_time__isnull=False)
         current_entry = entries.get(end_time__isnull=True)
-        #The current start time is one second after the closed entry's end time
+        # The current start time is one second after the closed entry's end time
         self.assertEqual(closed_entry.end_time + relativedelta(seconds=1),
                          current_entry.start_time)
 
@@ -327,7 +327,7 @@ class ClockInTest(ViewTestMixin, TestCase):
             'active_comment': 'test comment',
         })
         response = self.client.post(self.url, data, follow=True)
-        #obtain entry1 now that it is closed. The hours should be recorded
+        # obtain entry1 now that it is closed. The hours should be recorded
         e_id = Entry.objects.get(pk=entry1.id)
         self.assertTrue(e_id.is_closed)
         self.assertTrue(e_id.hours)
@@ -356,7 +356,7 @@ class ClockInTest(ViewTestMixin, TestCase):
             'start_time_0': blocked_start_time.strftime('%m/%d/%Y'),
             'start_time_1': blocked_start_time.strftime('%H:%M:%S'),
         })
-        #This clock in attempt should be blocked by entry1
+        # This clock in attempt should be blocked by entry1
         response = self.client.post(self.url, data)
         form = response.context['form']
         self.assertEquals(len(form.errors), 1, form.errors)
@@ -383,7 +383,7 @@ class ClockInTest(ViewTestMixin, TestCase):
             'start_time_0': entry1.start_time.strftime('%m/%d/%Y'),
             'start_time_1': entry1.start_time.strftime('%H:%M:%S'),
         })
-        #This clock in attempt should be blocked by entry1 (same start time)
+        # This clock in attempt should be blocked by entry1 (same start time)
         response = self.client.post(self.url, data)
         self.assertFormError(response, 'form', None, \
             'Please enter a valid start time')
@@ -413,8 +413,8 @@ class ClockInTest(ViewTestMixin, TestCase):
             'start_time_0': before_entry1.strftime('%m/%d/%Y'),
             'start_time_1': before_entry1.strftime('%H:%M:%S'),
         })
-        #This clock in attempt should be blocked by entry1
-        #(It is before the start time of the current entry)
+        # This clock in attempt should be blocked by entry1
+        # (It is before the start time of the current entry)
         response = self.client.post(self.url, data)
         form = response.context['form']
         self.assertEquals(len(form.errors), 2, form.errors)
@@ -644,7 +644,7 @@ class AutoActivityTest(ViewTestMixin, LogTimeMixin, TestCase):
         for day in range(0, 10):
             this_day = utils.add_timezone(datetime.datetime(2011, 1, 1))
             this_day += relativedelta(days=day)
-            #Cycle through projects and activities
+            # Cycle through projects and activities
             project = project1 if day % 2 == 0 else project2
             activity = self.devl_activity if day % 3 == 0 else self.activity
             self.log_time(start=this_day, project=project, activity=activity)
@@ -733,7 +733,7 @@ class ClockOutTest(ViewTestMixin, TestCase):
         calculates the correct amount of unpaused time.
         """
         entry_with_pause = self.entry
-        #paused for a total of 1 hour
+        # paused for a total of 1 hour
         entry_with_pause.seconds_paused = 3600
         entry_with_pause.save()
         data = {
@@ -772,7 +772,7 @@ class ClockOutTest(ViewTestMixin, TestCase):
         """
         backward_entry = self.entry
         backward_entry.save()
-        #reverse the times
+        # reverse the times
         data = {
             'start_time_0': self.default_end_time.strftime('%m/%d/%Y'),
             'start_time_1': self.default_end_time.strftime('%H:%M:%S'),
@@ -947,18 +947,18 @@ class CheckOverlap(ViewTestMixin, LogTimeMixin, TestCase):
 
         self.login_user(self.user)
         self.now = timezone.now()
-        #define start and end times to create valid entries
+        # define start and end times to create valid entries
         self.start = self.now - relativedelta(days=0, hours=8)
         self.end = self.now - relativedelta(days=0)
-        #Create a valid entry for the tests to overlap with
+        # Create a valid entry for the tests to overlap with
         self.log_time(start=self.start, end=self.end)
-        #define bad start times relative to the valid one (just in/outside)
+        # define bad start times relative to the valid one (just in/outside)
         self.start_before = self.start - relativedelta(minutes=2)
         self.start_inside = self.start + relativedelta(minutes=2)
         self.end_inside = self.end - relativedelta(minutes=2)
         self.end_after = self.end + relativedelta(minutes=2)
 
-    #helper functions
+    # helper functions
     def use_checkoverlap(self, entries):
         """
         Uses entry.check_overlap given a list of entries returns all overlaps
@@ -974,7 +974,7 @@ class CheckOverlap(ViewTestMixin, LogTimeMixin, TestCase):
     def get_entries(self):
         return Entry.objects.filter(user=self.user)
 
-    #Invalid entries to test against
+    # Invalid entries to test against
     def testBeforeAndIn(self):
         self.log_time(start=self.start_before, end=self.end_inside)
         user_total_overlaps = self.use_checkoverlap(self.get_entries())
@@ -1065,7 +1065,7 @@ class CreateEditEntry(ViewTestMixin, TestCase):
         self.ten_min_ago = self.now - relativedelta(minutes=10)
         self.two_hour_ago = self.now - relativedelta(hours=2)
         self.one_hour_ago = self.now - relativedelta(hours=1)
-        #establish data, entries, urls for all tests
+        # establish data, entries, urls for all tests
         self.default_data = {
             'project': self.project.pk,
             'location': self.location.pk,
@@ -1138,8 +1138,8 @@ class CreateEditEntry(ViewTestMixin, TestCase):
                 '%H:%M:%S'),
         })
         response = self.client.post(self.edit_current_url, data, follow=True)
-        #This post should redirect to the dashboard, with the correct message
-        #and 1 active entry, because we updated the current entry from setUp
+        # This post should redirect to the dashboard, with the correct message
+        # and 1 active entry, because we updated the current entry from setUp
         self.assertRedirects(response, reverse('dashboard'),
             status_code=302, target_status_code=200)
         self.assertContains(response,
@@ -1161,8 +1161,8 @@ class CreateEditEntry(ViewTestMixin, TestCase):
             'start_time_1': new_start.strftime('%H:%M:%S'),
         })
         response = self.client.post(self.edit_current_url, data, follow=True)
-        #This post should redirect to the dashboard, with the correct message
-        #and 1 active entry, because we updated the current entry from setUp
+        # This post should redirect to the dashboard, with the correct message
+        # and 1 active entry, because we updated the current entry from setUp
         self.assertRedirects(response, reverse('dashboard'),
             status_code=302, target_status_code=200)
         entries = Entry.objects.filter(
@@ -1810,7 +1810,7 @@ class TestTotals(ViewTestMixin, LogTimeMixin, TestCase):
         self.p1 = factories.BillableProject(name='1')
         self.p2 = factories.NonbillableProject(name='2')
         self.p4 = factories.BillableProject(name='4')
-        #For use with daily totals (Same project, non-billable activity)
+        # For use with daily totals (Same project, non-billable activity)
         self.p3 = factories.NonbillableProject(name='1')
 
     def testGroupedTotals(self):
@@ -1843,7 +1843,7 @@ class TestTotals(ViewTestMixin, LogTimeMixin, TestCase):
         entries = Entry.objects.timespan(first_week, to_date=to_date)
         totals = grouped_totals(entries)
         for week, week_totals, days in totals:
-            #Jan. 3rd is a monday. Each week should be on a monday
+            # Jan. 3rd is a monday. Each week should be on a monday
             if week.month == 1:
                 self.assertEqual(week.day % 7, 3)
             self.assertEqual(week_totals['billable'], 4)
