@@ -1,13 +1,13 @@
 language: python
 python:
-  - "2.7"
+  - "3.4"
 env:
-  - TOXENV=py26-1.4
-  - TOXENV=py27-1.4
-  - TOXENV=py26-1.5
-  - TOXENV=py27-1.5
+  - TOXENV=py3.4-django1.7
+  - TOXENV=py2.7-django1.7
+  - TOXENV=py3.3-django1.6
+  - TOXENV=py2.7-django1.6
 install:
-  - pip install -q --use-mirrors tox==1.4.2
+  - pip install -q --use-mirrors tox==1.8.1
 before_script:
   - psql -c 'create database django_timepiece;' -U postgres
 script:
