@@ -234,9 +234,9 @@ class InvoiceEntriesDetail(InvoiceDetail):
         billable_entries = context['billable_entries']
         nonbillable_entries = context['nonbillable_entries']
         context.update({
-            'billable_total': billable_entries \
+            'billable_total': billable_entries
                               .aggregate(hours=Sum('hours'))['hours'],
-            'nonbillable_total': nonbillable_entries\
+            'nonbillable_total': nonbillable_entries
                                  .aggregate(hours=Sum('hours'))['hours'],
         })
         return context

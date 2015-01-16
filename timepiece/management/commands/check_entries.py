@@ -134,7 +134,7 @@ For options type:
                 'last': user.last_name,
                 'total': user_total_overlaps,
             }
-            self.stdout.write('Total overlapping entries for user ' + \
+            self.stdout.write('Total overlapping entries for user ' +
                 '%(first)s %(last)s: %(total)d' % overlap_data)
         return user_total_overlaps
 
@@ -177,11 +177,11 @@ For options type:
         # Display errors if no user was found
         if not users.count() and args:
             if len(args) == 1:
-                raise CommandError('No user was found with the name %s' \
+                raise CommandError('No user was found with the name %s'
                 % args[0])
             else:
                 arg_list = ', '.join(args)
-                raise CommandError('No users found with the names: %s' \
+                raise CommandError('No users found with the names: %s'
                 % arg_list)
         return users
 
@@ -206,15 +206,15 @@ For options type:
         verbosity = kwargs.get('verbosity', 1)
         if forever:
             if verbosity >= 1:
-                self.stdout.write('Checking overlaps from the beginning ' + \
+                self.stdout.write('Checking overlaps from the beginning ' +
                     'of time')
         else:
             if verbosity >= 1:
-                self.stdout.write('Checking overlap starting on: ' + \
+                self.stdout.write('Checking overlap starting on: ' +
                     start.strftime('%m/%d/%Y'))
 
     def show_name(self, user):
-        self.stdout.write('Checking %s %s...' % \
+        self.stdout.write('Checking %s %s...' %
             (user.first_name, user.last_name))
 
     def show_overlap(self, entry_a, entry_b=None, **kwargs):

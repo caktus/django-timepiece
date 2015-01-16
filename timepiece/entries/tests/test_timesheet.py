@@ -385,10 +385,10 @@ class ClockInTest(ViewTestMixin, TestCase):
         })
         # This clock in attempt should be blocked by entry1 (same start time)
         response = self.client.post(self.url, data)
-        self.assertFormError(response, 'form', None, \
+        self.assertFormError(response, 'form', None,
             'Please enter a valid start time')
-        self.assertFormError(response, 'form', 'start_time', \
-            'The start time is on or before the current entry: ' + \
+        self.assertFormError(response, 'form', 'start_time',
+            'The start time is on or before the current entry: ' +
             '%(project)s - %(activity)s starting at %(st_str)s' % entry1_data)
 
     def testClockInBeforeCurrent(self):
@@ -1615,7 +1615,7 @@ class StatusTest(ViewTestMixin, TestCase):
         self.assertNotContains(response, self.verify_url())
         entry = factories.Entry(**{
             'user': self.user,
-            'start_time': timezone.now() - \
+            'start_time': timezone.now() -
                 relativedelta(hours=1),
             'end_time':  timezone.now(),
         })
@@ -1649,7 +1649,7 @@ class StatusTest(ViewTestMixin, TestCase):
     def testVerifyPage(self):
         entry = factories.Entry(**{
             'user': self.user,
-            'start_time': timezone.now() - \
+            'start_time': timezone.now() -
                 relativedelta(hours=1),
             'end_time':  timezone.now(),
         })
@@ -1717,7 +1717,7 @@ class StatusTest(ViewTestMixin, TestCase):
         self.login_as_admin()
         entry = factories.Entry(**{
             'user': self.user,
-            'start_time': timezone.now() - \
+            'start_time': timezone.now() -
                 relativedelta(hours=1),
             'end_time':  timezone.now(),
         })
@@ -1741,7 +1741,7 @@ class StatusTest(ViewTestMixin, TestCase):
     def testNotAllowedToRejectTimesheet(self):
         entry = factories.Entry(**{
             'user': self.user,
-            'start_time': timezone.now() - \
+            'start_time': timezone.now() -
                 relativedelta(hours=1),
             'end_time':  timezone.now(),
         })

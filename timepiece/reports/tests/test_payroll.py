@@ -80,7 +80,7 @@ class PayrollTest(ViewTestMixin, LogTimeMixin, TestCase):
         months = range(1, 13)
         first_days = [utils.add_timezone(datetime.datetime(2011, month, 1))
             for month in months]
-        last_billable = [utils.get_last_billable_day(day).day \
+        last_billable = [utils.get_last_billable_day(day).day
                          for day in first_days]
         # should equal the last saturday of every month in 2011
         self.assertEqual(last_billable,

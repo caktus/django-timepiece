@@ -172,7 +172,7 @@ class TestHourlyReport(ViewTestMixin, LogTimeMixin, ReportsTestBase):
         """Return CSV from hourly report for verification in tests"""
         self.login_user(self.superuser)
         response = self._get(data=args, follow=True)
-        return [item.split(',') \
+        return [item.split(',')
                 for item in response.content.decode('utf-8').split('\r\n')][:-1]
 
     def check_totals(self, args, data):

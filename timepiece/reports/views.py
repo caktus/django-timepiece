@@ -436,9 +436,9 @@ def report_productivity(request):
             # Report for each user.
             for user in users:
                 name = '{0} {1}'.format(user[1], user[2])
-                actual_hours = list(actuals.filter(user=user[0]) \
+                actual_hours = list(actuals.filter(user=user[0])
                         .aggregate(Sum('hours')).values())[0]
-                projected_hours = list(projections.filter(user=user[0]) \
+                projected_hours = list(projections.filter(user=user[0])
                         .aggregate(Sum('hours')).values())[0]
                 report.append([name, actual_hours or 0, projected_hours or 0])
 
