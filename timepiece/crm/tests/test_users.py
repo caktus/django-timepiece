@@ -98,7 +98,7 @@ class TestCreateUser(ViewTestMixin, TestCase):
         self.assertEquals(obj.is_active, self.post_data['is_active']),
         self.assertEquals(obj.is_staff, self.post_data['is_staff']),
         groups = obj.groups.values_list('pk', flat=True)
-        self.asserEqual(len(groups), len(self.post_data['groups']))
+        self.assertEqual(len(groups), len(self.post_data['groups']))
         self.assertEqual(sorted(groups), sorted(self.post_data['groups']))
         self.assertTrue(obj.check_password(self.post_data['password1']))
 
