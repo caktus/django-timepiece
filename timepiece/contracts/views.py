@@ -158,7 +158,7 @@ def list_outstanding_invoices(request):
         project_status = Q(project__status__in=statuses) if statuses is not None else Q()
         # Calculate hours for each project
         ordering = ('project__type__label', 'project__status__label',
-                'project__business__name', 'project__name', 'status')
+                    'project__business__name', 'project__name', 'status')
         project_totals = Entry.objects.filter(
             dates, billable, entry_status, project_status).order_by(*ordering)
         # Find users with unverified/unapproved entries to warn invoice creator
@@ -185,7 +185,7 @@ class ListInvoices(SearchListView):
     model = EntryGroup
     paginate_by = 20
     search_fields = ['user__username__icontains', 'project__name__icontains',
-            'comments__icontains', 'number__icontains']
+                     'comments__icontains', 'number__icontains']
     template_name = 'timepiece/invoice/list.html'
 
     def get_queryset(self):

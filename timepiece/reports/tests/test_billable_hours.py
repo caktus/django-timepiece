@@ -30,7 +30,7 @@ class TestBillableHours(ViewTestMixin, LogTimeMixin, ReportsTestBase):
     def get_entries_data(self):
         # Account for the day added by the form
         query = Q(end_time__gte=self.from_date,
-                end_time__lt=self.to_date + relativedelta(days=1))
+                  end_time__lt=self.to_date + relativedelta(days=1))
         return Entry.objects.date_trunc('week').filter(query)
 
     def test_access_permission(self):
@@ -56,9 +56,9 @@ class TestBillableHours(ViewTestMixin, LogTimeMixin, ReportsTestBase):
             'trunc': 'week',
             'users': list(Entry.objects.values_list('user', flat=True)),
             'activities': list(Entry.objects.values_list('activity',
-                    flat=True)),
+                                                         flat=True)),
             'project_types': list(Entry.objects.values_list('project__type',
-                    flat=True)),
+                                                            flat=True)),
         })
         self.assertEqual(response.status_code, 200)
 

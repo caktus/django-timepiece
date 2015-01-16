@@ -92,10 +92,12 @@ class DashboardViewTestCase(ViewTestMixin, TestCase):
         """Get without param gets entries for this week."""
         response = self.client.get(reverse('dashboard'))
         self.assertEqual(response.status_code, 200)
-        self.assertEqual(response.context['week_start'],
-                utils.get_week_start().date())
-        self.assertEqual(response.context['week_end'],
-                utils.get_week_start().date() + relativedelta(days=6))
+        self.assertEqual(
+            response.context['week_start'],
+            utils.get_week_start().date())
+        self.assertEqual(
+            response.context['week_end'],
+            utils.get_week_start().date() + relativedelta(days=6))
 
     def test_active_entry(self):
         """Active entry should be given if it exists."""
@@ -202,8 +204,8 @@ class ProcessProgressTestCase(TestCase):
 
         progress = self._get_progress()
         self.assertEqual(len(progress), 1)
-        self._check_progress(progress[0], self.project,
-                assigned_hours, worked_hours)
+        self._check_progress(
+            progress[0], self.project, assigned_hours, worked_hours)
 
     def test_work_with_no_assignment(self):
         """Progress when work has been done on an unassigned project."""

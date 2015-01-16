@@ -64,8 +64,7 @@ class ProjectContract(factory.DjangoModelFactory):
         if create:
             num_hours = extracted or random.randint(10, 400)
             for i in range(2):
-                ContractHour(contract=self,
-                        hours=Decimal(str(num_hours/2.0)))
+                ContractHour(contract=self, hours=Decimal(str(num_hours/2.0)))
 
     @factory.post_generation
     def projects(self, create, extracted, **kwargs):

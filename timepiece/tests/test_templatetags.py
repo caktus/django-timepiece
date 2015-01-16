@@ -130,8 +130,8 @@ class DateFiltersTagTestCase(TestCase):
 
     def test_no_use_range(self):
         # sniff test of turning off use_range
-        retval = tags.date_filters("FORM_ID", options=('years',),
-            use_range=False)
+        retval = tags.date_filters(
+            "FORM_ID", options=('years',), use_range=False)
         filter = retval['filters']['Years']
         for year, first_date, last_date in filter:
             # first date is blank
@@ -250,7 +250,7 @@ class TestProjectHoursForContract(TestCase):
             self.a_project,
             self.another_project,
             self.billable_project,
-            self.project_without_hours
+            self.project_without_hours,
         ]
 
         self.contract = factories.ProjectContract(projects=projects)
@@ -258,21 +258,21 @@ class TestProjectHoursForContract(TestCase):
         unbillable_activity = factories.Activity(billable=False)
 
         start_time = datetime.datetime.now()
-        factories.Entry(project=self.a_project,
-                activity=activity, start_time=start_time,
-                end_time=start_time + relativedelta(hours=1))
-        factories.Entry(project=self.a_project,
-                activity=unbillable_activity, start_time=start_time,
-                end_time=start_time + relativedelta(hours=16))
-        factories.Entry(project=self.another_project,
-                activity=activity, start_time=start_time,
-                end_time=start_time + relativedelta(hours=2))
-        factories.Entry(project=self.billable_project,
-                activity=activity, start_time=start_time,
-                end_time=start_time + relativedelta(hours=4))
-        factories.Entry(project=self.billable_project,
-                activity=unbillable_activity, start_time=start_time,
-                end_time=start_time + relativedelta(hours=8))
+        factories.Entry(
+            project=self.a_project, activity=activity, start_time=start_time,
+            end_time=start_time + relativedelta(hours=1))
+        factories.Entry(
+            project=self.a_project, activity=unbillable_activity,
+            start_time=start_time, end_time=start_time + relativedelta(hours=16))
+        factories.Entry(
+            project=self.another_project, activity=activity,
+            start_time=start_time, end_time=start_time + relativedelta(hours=2))
+        factories.Entry(
+            project=self.billable_project, activity=activity,
+            start_time=start_time, end_time=start_time + relativedelta(hours=4))
+        factories.Entry(
+            project=self.billable_project, activity=unbillable_activity,
+            start_time=start_time, end_time=start_time + relativedelta(hours=8))
 
     def test_project_hours_for_contract(self):
         retval = tags.project_hours_for_contract(self.contract, self.a_project)
@@ -281,27 +281,27 @@ class TestProjectHoursForContract(TestCase):
 
     def test_project_hours_for_contract_none(self):
         # Try it with the aggregate returning None
-        retval = tags.project_hours_for_contract(self.contract,
-            self.project_without_hours)
+        retval = tags.project_hours_for_contract(
+            self.contract, self.project_without_hours)
         self.assertEqual(0, retval)
 
     def test_project_hours_for_contract_billable(self):
         # only include billable hours
-        retval = tags.project_hours_for_contract(self.contract,
-            self.billable_project, 'billable')
+        retval = tags.project_hours_for_contract(
+            self.contract, self.billable_project, 'billable')
         self.assertEqual(4, retval)
 
     def test_project_hours_for_contract_nonbillable(self):
         # only include non-billable hours
-        retval = tags.project_hours_for_contract(self.contract,
-            self.billable_project, 'nonbillable')
+        retval = tags.project_hours_for_contract(
+            self.contract, self.billable_project, 'nonbillable')
         self.assertEqual(8, retval)
 
     def test_project_hours_for_contract_badbillable(self):
         # template tag does syntax check on the 'billable' arg
         with self.assertRaises(template.TemplateSyntaxError):
-            tags.project_hours_for_contract(self.contract,
-                self.a_project, 'invalidarg')
+            tags.project_hours_for_contract(
+                self.contract, self.a_project, 'invalidarg')
 
 
 class AddParametersTest(TestCase):

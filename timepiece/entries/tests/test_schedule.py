@@ -23,8 +23,7 @@ class ProjectHoursTestCase(ViewTestMixin, TestCase):
         permissions = Permission.objects.filter(
             content_type=ContentType.objects.get_for_model(Entry),
             codename__in=('can_clock_in', 'can_clock_out', 'can_pause',
-                    'change_entry')
-        )
+                          'change_entry'))
         self.user.user_permissions = permissions
         self.user.save()
         self.superuser = factories.Superuser()
@@ -87,10 +86,8 @@ class ProjectHoursListViewTestCase(ProjectHoursTestCase):
         self.past_week = utils.get_week_start(datetime.date(2012, 4, 1)).date()
         self.current_week = utils.get_week_start().date()
         for i in range(5):
-            factories.ProjectHours(week_start=self.past_week,
-                    published=True)
-            factories.ProjectHours(week_start=self.current_week,
-                    published=True)
+            factories.ProjectHours(week_start=self.past_week, published=True)
+            factories.ProjectHours(week_start=self.current_week, published=True)
         self.url = reverse('view_schedule')
         self.login_user(self.user)
         self.date_format = '%Y-%m-%d'

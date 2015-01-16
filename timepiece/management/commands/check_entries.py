@@ -129,7 +129,7 @@ For options type:
                 'total': user_total_overlaps,
             }
             self.stdout.write('Total overlapping entries for user ' +
-                '%(first)s %(last)s: %(total)d' % overlap_data)
+                              '%(first)s %(last)s: %(total)d' % overlap_data)
         return user_total_overlaps
 
     def find_start(self, **kwargs):
@@ -163,7 +163,7 @@ For options type:
         if args:
             names = reduce(lambda query, arg: query |
                 (Q(first_name__icontains=arg) | Q(last_name__icontains=arg)),
-                args, Q())
+                args, Q())  # noqa
             users = User.objects.filter(names)
         # If no args given, check every user
         else:
@@ -171,12 +171,10 @@ For options type:
         # Display errors if no user was found
         if not users.count() and args:
             if len(args) == 1:
-                raise CommandError('No user was found with the name %s'
-                % args[0])
+                raise CommandError('No user was found with the name %s' % args[0])
             else:
                 arg_list = ', '.join(args)
-                raise CommandError('No users found with the names: %s'
-                % arg_list)
+                raise CommandError('No users found with the names: %s' % arg_list)
         return users
 
     def find_entries(self, users, start, *args, **kwargs):
@@ -200,16 +198,15 @@ For options type:
         verbosity = kwargs.get('verbosity', 1)
         if forever:
             if verbosity >= 1:
-                self.stdout.write('Checking overlaps from the beginning ' +
-                    'of time')
+                self.stdout.write(
+                    'Checking overlaps from the beginning of time')
         else:
             if verbosity >= 1:
-                self.stdout.write('Checking overlap starting on: ' +
-                    start.strftime('%m/%d/%Y'))
+                self.stdout.write(
+                    'Checking overlap starting on: ' + start.strftime('%m/%d/%Y'))
 
     def show_name(self, user):
-        self.stdout.write('Checking %s %s...' %
-            (user.first_name, user.last_name))
+        self.stdout.write('Checking %s %s...' % (user.first_name, user.last_name))
 
     def show_overlap(self, entry_a, entry_b=None, **kwargs):
         def make_output_data(entry):

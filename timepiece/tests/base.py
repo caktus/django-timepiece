@@ -27,7 +27,7 @@ class ViewTestMixin(object):
     login_url = reverse_lazy('auth_login')
 
     def _url(self, url_name=None, url_args=None, url_kwargs=None,
-            get_kwargs=None):
+             get_kwargs=None):
         """Builds a URL with reverse(), then adds GET parameters."""
         url_name = url_name or self.url_name
         url_args = self.url_args if url_args is None else url_args
@@ -40,7 +40,7 @@ class ViewTestMixin(object):
         return url
 
     def _get(self, url_name=None, url_args=None, url_kwargs=None,
-            get_kwargs=None, url=None, *args, **kwargs):
+             get_kwargs=None, url=None, *args, **kwargs):
         """Convenience wrapper for self.client.get.
 
         If url is not passed, it is built using url_name, url_args, url_kwargs.
@@ -50,7 +50,7 @@ class ViewTestMixin(object):
         return self.client.get(path=url, *args, **kwargs)
 
     def _post(self, data=None, url_name=None, url_args=None,
-            url_kwargs=None, get_kwargs=None, url=None, *args, **kwargs):
+              url_kwargs=None, get_kwargs=None, url=None, *args, **kwargs):
         """Convenience wrapper for self.client.post.
 
         If url is not passed, it is built using url_name, url_args, url_kwargs.
@@ -75,7 +75,7 @@ class ViewTestMixin(object):
         return self._post(*args, **kwargs)
 
     def assertRedirectsNoFollow(self, response, expected_url, use_params=True,
-            status_code=302):
+                                status_code=302):
         """Checks response redirect without loading the destination page.
 
         Django's assertRedirects method loads the destination page, which
@@ -83,9 +83,10 @@ class ViewTestMixin(object):
         (possibly requiring additional, unrelated setup).
         """
         # Assert that the response has the correct redirect code.
-        self.assertEqual(response.status_code, status_code,
-                "Response didn't redirect as expected: Response code was {0} "
-                "(expected {1})".format(response.status_code, status_code))
+        self.assertEqual(
+            response.status_code, status_code,
+            "Response didn't redirect as expected: Response code was {0} "
+            "(expected {1})".format(response.status_code, status_code))
 
         # Assert that the response redirects to the correct base URL.
         # Use force_text to force evaluation of anything created by
@@ -94,10 +95,10 @@ class ViewTestMixin(object):
         expected_url = force_text(expected_url)
         parsed1 = urlparse(response_url)
         parsed2 = urlparse(expected_url)
-        self.assertEquals(parsed1.path, parsed2.path,
-                "Response did not redirect to the expected URL: Redirect "
-                "location was {0} (expected {1})".format(parsed1.path,
-                parsed2.path))
+        self.assertEquals(
+            parsed1.path, parsed2.path,
+            "Response did not redirect to the expected URL: Redirect "
+            "location was {0} (expected {1})".format(parsed1.path, parsed2.path))
 
         # Optionally assert that the response redirect URL has the correct
         # GET parameters.
@@ -150,7 +151,7 @@ class ViewTestMixin(object):
 class LogTimeMixin(object):
 
     def log_time(self, delta=None, billable=True, project=None, start=None,
-            end=None, status=None, pause=0, activity=None, user=None):
+                 end=None, status=None, pause=0, activity=None, user=None):
         if not user:
             user = self.user
         if delta and not end:

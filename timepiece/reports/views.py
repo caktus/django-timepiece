@@ -220,8 +220,16 @@ class HourlyReport(ReportMixin, CSVViewMixin, TemplateView):
             func = lambda x: x['project__type__label']
             for label, group in groupby(entries, func):
                 title = label + ' Projects'
-                summaries.append((title, get_project_totals(list(group),
-                        date_headers, 'total', total_column=True, by='project')))
+                summaries.append((
+                    title,
+                    get_project_totals(
+                        list(group),
+                        date_headers,
+                        'total',
+                        total_column=True,
+                        by='project',
+                    ),
+                ))
 
         # Adjust date headers & create range headers.
         from_date = context['from_date']
@@ -229,8 +237,8 @@ class HourlyReport(ReportMixin, CSVViewMixin, TemplateView):
         to_date = context['to_date']
         to_date = utils.add_timezone(to_date) if to_date else None
         trunc = context['trunc']
-        date_headers, range_headers = self.get_headers(date_headers,
-                from_date, to_date, trunc)
+        date_headers, range_headers = self.get_headers(
+            date_headers, from_date, to_date, trunc)
 
         context.update({
             'date_headers': date_headers,
@@ -243,8 +251,8 @@ class HourlyReport(ReportMixin, CSVViewMixin, TemplateView):
         request = self.request.GET.copy()
         from_date = request.get('from_date')
         to_date = request.get('to_date')
-        return 'hours_{0}_to_{1}_by_{2}.csv'.format(from_date, to_date,
-            context.get('trunc', ''))
+        return 'hours_{0}_to_{1}_by_{2}.csv'.format(
+            from_date, to_date, context.get('trunc', ''))
 
     def get_form(self):
         data = self.request.GET or self.defaults
@@ -306,13 +314,12 @@ class BillableHours(ReportMixin, TemplateView):
             return BillableHoursReportForm(self.request.GET)
         else:
             # Select all available users, activities, and project types.
-            return BillableHoursReportForm(self.defaults,
-                    select_all=True)
+            return BillableHoursReportForm(self.defaults, select_all=True)
 
     def get_hours_data(self, entries, date_headers):
         """Sum billable and non-billable hours across all users."""
-        project_totals = get_project_totals(entries, date_headers,
-                total_column=False) if entries else []
+        project_totals = get_project_totals(
+            entries, date_headers, total_column=False) if entries else []
 
         data_map = {}
         for rows, totals in project_totals:
@@ -333,8 +340,10 @@ def report_payroll_summary(request):
     from_date = utils.get_month_start(date).date()
     to_date = from_date + relativedelta(months=1)
 
-    year_month_form = PayrollSummaryReportForm(request.GET or None,
-        initial={'month': from_date.month, 'year': from_date.year})
+    year_month_form = PayrollSummaryReportForm(request.GET or None, initial={
+        'month': from_date.month,
+        'year': from_date.year,
+    })
 
     if year_month_form.is_valid():
         from_date, to_date = year_month_form.save()
@@ -432,10 +441,10 @@ def report_productivity(request):
             # Report for each user.
             for user in users:
                 name = '{0} {1}'.format(user[1], user[2])
-                actual_hours = list(actuals.filter(user=user[0])
-                        .aggregate(Sum('hours')).values())[0]
-                projected_hours = list(projections.filter(user=user[0])
-                        .aggregate(Sum('hours')).values())[0]
+                actual_hours = actuals.filter(user=user[0])
+                actual_hours = list(actual_hours.aggregate(Sum('hours')).values())[0]
+                projected_hours = projections.filter(user=user[0])
+                projected_hours = list(projected_hours.aggregate(Sum('hours')).values())[0]
                 report.append([name, actual_hours or 0, projected_hours or 0])
 
         col_headers = [organize_by.title(), 'Worked Hours', 'Assigned Hours']

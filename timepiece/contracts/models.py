@@ -41,8 +41,8 @@ class ProjectContract(models.Model):
     projects = models.ManyToManyField('crm.Project', related_name='contracts')
     start_date = models.DateField()
     end_date = models.DateField()
-    status = models.CharField(choices=CONTRACT_STATUS.items(),
-            default=STATUS_UPCOMING, max_length=32)
+    status = models.CharField(
+        choices=CONTRACT_STATUS.items(), default=STATUS_UPCOMING, max_length=32)
     type = models.IntegerField(choices=PROJECT_TYPE.items())
 
     class Meta:
@@ -65,9 +65,10 @@ class ProjectContract(models.Model):
         All Entries worked on projects in this contract during the contract
         period.
         """
-        return Entry.objects.filter(project__in=self.projects.all(),
-                start_time__gte=self.start_date,
-                end_time__lt=self.end_date + relativedelta(days=1))
+        return Entry.objects.filter(
+            project__in=self.projects.all(),
+            start_time__gte=self.start_date,
+            end_time__lt=self.end_date + relativedelta(days=1))
 
     def contracted_hours(self, approved_only=True):
         """Compute the hours contracted for this contract.
@@ -164,14 +165,14 @@ class ContractHour(models.Model):
         (APPROVED_STATUS, 'Approved')
         )
 
-    hours = models.DecimalField(max_digits=8, decimal_places=2,
-            default=0)
-    contract = models.ForeignKey(ProjectContract,
-            related_name='contract_hours')
+    hours = models.DecimalField(
+        max_digits=8, decimal_places=2, default=0)
+    contract = models.ForeignKey(
+        ProjectContract, related_name='contract_hours')
     date_requested = models.DateField()
     date_approved = models.DateField(blank=True, null=True)
-    status = models.IntegerField(choices=CONTRACT_HOUR_STATUS,
-            default=PENDING_STATUS)
+    status = models.IntegerField(
+        choices=CONTRACT_HOUR_STATUS, default=PENDING_STATUS)
     notes = models.TextField(blank=True)
 
     class Meta(object):
@@ -296,9 +297,10 @@ class ContractAssignment(models.Model):
 
     @property
     def entries(self):
-        return Entry.objects.filter(project__in=self.contract.projects.all(),
-                user=self.user, start_time__gte=self.start_date,
-                end_time__lt=self.end_date + relativedelta(days=1))
+        return Entry.objects.filter(
+            project__in=self.contract.projects.all(),
+            user=self.user, start_time__gte=self.start_date,
+            end_time__lt=self.end_date + relativedelta(days=1))
 
     @property
     def hours_remaining(self):
@@ -357,8 +359,8 @@ class HourGroupManager(models.Manager):
 class HourGroup(models.Model):
     """Activities that are bundled together for billing"""
     name = models.CharField(max_length=255, unique=True)
-    activities = models.ManyToManyField('entries.Activity',
-            related_name='activity_bundle')
+    activities = models.ManyToManyField(
+        'entries.Activity', related_name='activity_bundle')
     order = models.PositiveIntegerField(unique=True, blank=True, null=True)
 
     objects = HourGroupManager()

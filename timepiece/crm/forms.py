@@ -6,10 +6,10 @@ from selectable import forms as selectable
 
 from timepiece.utils.search import SearchForm
 
-from timepiece.crm.lookups import (BusinessLookup, ProjectLookup, UserLookup,
-        QuickLookup)
-from timepiece.crm.models import (Attribute, Business, Project,
-        ProjectRelationship)
+from timepiece.crm.lookups import (
+    BusinessLookup, ProjectLookup, UserLookup, QuickLookup)
+from timepiece.crm.models import (
+    Attribute, Business, Project, ProjectRelationship)
 
 
 class CreateEditBusinessForm(forms.ModelForm):
@@ -61,16 +61,17 @@ class EditProjectRelationshipForm(forms.ModelForm):
 
 
 class EditUserForm(UserChangeForm):
-    password1 = forms.CharField(required=False, max_length=36,
-            label='Password', widget=forms.PasswordInput(render_value=False))
-    password2 = forms.CharField(required=False, max_length=36,
-            label='Repeat Password',
-            widget=forms.PasswordInput(render_value=False))
+    password1 = forms.CharField(
+        required=False, max_length=36, label='Password',
+        widget=forms.PasswordInput(render_value=False))
+    password2 = forms.CharField(
+        required=False, max_length=36, label='Repeat Password',
+        widget=forms.PasswordInput(render_value=False))
 
     class Meta:
         model = User
         fields = ('username', 'first_name', 'last_name', 'email', 'is_active',
-                'is_staff', 'groups')
+                  'is_staff', 'groups')
 
     def __init__(self, *args, **kwargs):
         super(EditUserForm, self).__init__(*args, **kwargs)

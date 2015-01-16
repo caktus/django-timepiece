@@ -25,8 +25,8 @@ User.add_to_class('get_absolute_url', _get_absolute_url)
 @python_2_unicode_compatible
 class UserProfile(models.Model):
     user = models.OneToOneField(User, unique=True, related_name='profile')
-    hours_per_week = models.DecimalField(max_digits=8, decimal_places=2,
-            default=40)
+    hours_per_week = models.DecimalField(
+        max_digits=8, decimal_places=2, default=40)
 
     class Meta:
         db_table = 'timepiece_userprofile'  # Using legacy table name.
@@ -63,11 +63,12 @@ class Attribute(models.Model):
 
     type = models.CharField(max_length=32, choices=ATTRIBUTE_TYPES.items())
     label = models.CharField(max_length=255)
-    sort_order = models.SmallIntegerField(null=True, blank=True,
-            choices=SORT_ORDER_CHOICES)
-    enable_timetracking = models.BooleanField(default=False,
-            help_text='Enable time tracking functionality for projects '
-            'with this type or status.')
+    sort_order = models.SmallIntegerField(
+        null=True, blank=True, choices=SORT_ORDER_CHOICES)
+    enable_timetracking = models.BooleanField(
+        default=False,
+        help_text=('Enable time tracking functionality for projects '
+                   'with this type or status.'))
     billable = models.BooleanField(default=False)
 
     objects = models.Manager()
@@ -184,8 +185,8 @@ class RelationshipType(models.Model):
 
 @python_2_unicode_compatible
 class ProjectRelationship(models.Model):
-    types = models.ManyToManyField(RelationshipType, blank=True,
-        related_name='project_relationships')
+    types = models.ManyToManyField(
+        RelationshipType, blank=True, related_name='project_relationships')
     user = models.ForeignKey(User, related_name='project_relationships')
     project = models.ForeignKey(Project, related_name='project_relationships')
 

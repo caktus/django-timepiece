@@ -72,8 +72,8 @@ class Dashboard(TemplateView):
         week_entries = Entry.objects.filter(user=self.user)
         week_entries = week_entries.timespan(week_start, span='week', current=True)
         week_entries = week_entries.select_related('project')
-        assignments = ProjectHours.objects.filter(user=self.user,
-                week_start=week_start.date())
+        assignments = ProjectHours.objects.filter(
+            user=self.user, week_start=week_start.date())
         project_progress = self.process_progress(week_entries, assignments)
 
         # Total hours that the user is expected to clock this week.
@@ -213,16 +213,15 @@ def create_edit_entry(request, entry_id=None):
             entry = Entry.no_join.get(pk=entry_id)
         except Entry.DoesNotExist:
             entry = None
-        if not entry or not (entry.is_editable or
-                request.user.has_perm('entries.view_payroll_summary')):
-            raise Http404
+        else:
+            if not (entry.is_editable or request.user.has_perm('entries.view_payroll_summary')):
+                raise Http404
     else:
         entry = None
 
     entry_user = entry.user if entry else request.user
     if request.method == 'POST':
-        form = AddUpdateEntryForm(data=request.POST, instance=entry,
-                user=entry_user)
+        form = AddUpdateEntryForm(data=request.POST, instance=entry, user=entry_user)
         if form.is_valid():
             entry = form.save()
             if entry_id:
@@ -237,8 +236,7 @@ def create_edit_entry(request, entry_id=None):
             messages.error(request, message)
     else:
         initial = dict([(k, request.GET[k]) for k in request.GET.keys()])
-        form = AddUpdateEntryForm(instance=entry, user=entry_user,
-                initial=initial)
+        form = AddUpdateEntryForm(instance=entry, user=entry_user, initial=initial)
 
     return render(request, 'timepiece/entry/create_edit.html', {
         'form': form,
@@ -297,8 +295,7 @@ def delete_entry(request, entry_id):
         key = request.POST.get('key', None)
         if key and key == entry.delete_key:
             entry.delete()
-            message = 'Deleted {0} for {1}.'.format(entry.activity.name,
-                    entry.project)
+            message = 'Deleted {0} for {1}.'.format(entry.activity.name, entry.project)
             messages.info(request, message)
             url = request.REQUEST.get('next', reverse('dashboard'))
             return HttpResponseRedirect(url)
@@ -327,8 +324,7 @@ class ScheduleMixin(object):
             else utils.get_week_start(datetime.datetime.strptime(
                 week_start_str, '%Y-%m-%d').date())
 
-        return super(ScheduleMixin, self).dispatch(request, *args,
-                **kwargs)
+        return super(ScheduleMixin, self).dispatch(request, *args, **kwargs)
 
     def get_hours_for_week(self, week_start=None):
         """
@@ -368,11 +364,11 @@ class ScheduleView(ScheduleMixin, TemplateView):
         form = ProjectHoursSearchForm(initial=initial)
 
         project_hours = self.get_hours_for_week()
-        project_hours = project_hours.values('project__id', 'project__name',
-                'user__id', 'user__first_name', 'user__last_name', 'hours',
-                'published')
-        project_hours = project_hours.order_by('-project__type__billable',
-                'project__name')
+        project_hours = project_hours.values(
+            'project__id', 'project__name', 'user__id', 'user__first_name',
+            'user__last_name', 'hours', 'published')
+        project_hours = project_hours.order_by(
+            '-project__type__billable', 'project__name')
         if not self.request.user.has_perm('entries.add_projecthours'):
             project_hours = project_hours.filter(published=True)
         users = self.get_users_from_project_hours(project_hours)
@@ -411,8 +407,7 @@ class EditScheduleView(ScheduleMixin, TemplateView):
         if not request.user.has_perm('entries.add_projecthours'):
             return HttpResponseRedirect(reverse('view_schedule'))
 
-        return super(EditScheduleView, self).dispatch(request, *args,
-                **kwargs)
+        return super(EditScheduleView, self).dispatch(request, *args, **kwargs)
 
     def get_context_data(self, **kwargs):
         context = super(EditScheduleView, self).get_context_data(**kwargs)
@@ -454,19 +449,16 @@ class ScheduleAjaxView(ScheduleMixin, View):
         if not request.user.has_perm('entries.add_projecthours'):
             return HttpResponseRedirect(reverse('auth_login'))
 
-        return super(ScheduleAjaxView, self).dispatch(request, *args,
-                **kwargs)
+        return super(ScheduleAjaxView, self).dispatch(request, *args, **kwargs)
 
     def get_instance(self, data, week_start):
         try:
             user = User.objects.get(pk=data.get('user', None))
             project = Project.objects.get(pk=data.get('project', None))
             hours = data.get('hours', None)
-            week = datetime.datetime.strptime(week_start,
-                    DATE_FORM_FORMAT).date()
+            week = datetime.datetime.strptime(week_start, DATE_FORM_FORMAT).date()
 
-            ph = ProjectHours.objects.get(user=user, project=project,
-                    week_start=week)
+            ph = ProjectHours.objects.get(user=user, project=project, week_start=week)
             ph.hours = Decimal(hours)
         except (exceptions.ObjectDoesNotExist):
             ph = None
@@ -486,10 +478,12 @@ class ScheduleAjaxView(ScheduleMixin, View):
             content_type=ContentType.objects.get_for_model(Entry),
             codename='can_clock_in'
         )
-        project_hours = self.get_hours_for_week().values(
+        project_hours = self.get_hours_for_week()
+        project_hours = project_hours.values(
             'id', 'user', 'user__first_name', 'user__last_name',
-            'project', 'hours', 'published'
-        ).order_by('-project__type__billable', 'project__name',
+            'project', 'hours', 'published')
+        project_hours = project_hours.order_by(
+            '-project__type__billable', 'project__name',
             'user__first_name', 'user__last_name')
         inner_qs = project_hours.values_list('project', flat=True)
         projects = Project.objects.filter(pk__in=inner_qs).values() \
@@ -508,7 +502,7 @@ class ScheduleAjaxView(ScheduleMixin, View):
             'ajax_url': reverse('ajax_schedule'),
         }
         return HttpResponse(json.dumps(data, cls=DecimalEncoder),
-            content_type='application/json')
+                            content_type='application/json')
 
     def duplicate_entries(self, duplicate, week_update):
         def duplicate_builder(queryset, new_date):
@@ -530,8 +524,7 @@ class ScheduleAjaxView(ScheduleMixin, View):
             msg = 'Project hours were copied'
             messages.info(self.request, msg)
 
-        this_week = datetime.datetime.strptime(week_update,
-                DATE_FORM_FORMAT).date()
+        this_week = datetime.datetime.strptime(week_update, DATE_FORM_FORMAT).date()
         prev_week = this_week - relativedelta(days=7)
         prev_week_qs = self.get_hours_for_week(prev_week)
         this_week_qs = self.get_hours_for_week(this_week)
@@ -539,8 +532,7 @@ class ScheduleAjaxView(ScheduleMixin, View):
         param = {
             'week_start': week_update
         }
-        url = '?'.join((reverse('edit_schedule'),
-            urlencode(param),))
+        url = '?'.join((reverse('edit_schedule'), urlencode(param),))
 
         if not prev_week_qs.exists():
             msg = 'There are no hours to copy'

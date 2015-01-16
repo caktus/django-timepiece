@@ -12,8 +12,8 @@ from django.db.models import Sum
 from django.http import HttpResponseRedirect, HttpResponseForbidden, Http404
 from django.shortcuts import get_object_or_404, render, redirect
 from django.views.decorators.csrf import csrf_exempt
-from django.views.generic import (CreateView, DeleteView, DetailView,
-        UpdateView, FormView, View)
+from django.views.generic import (
+    CreateView, DeleteView, DetailView, UpdateView, FormView, View)
 
 from timepiece import utils
 from timepiece.forms import YearMonthForm, UserYearMonthForm
@@ -22,10 +22,10 @@ from timepiece.utils.csv import CSVViewMixin
 from timepiece.utils.search import SearchListView
 from timepiece.utils.views import cbv_decorator
 
-from timepiece.crm.forms import (CreateEditBusinessForm, CreateEditProjectForm,
-        EditUserSettingsForm, EditProjectRelationshipForm, SelectProjectForm,
-        EditUserForm, CreateUserForm, SelectUserForm, ProjectSearchForm,
-        QuickSearchForm)
+from timepiece.crm.forms import (
+    CreateEditBusinessForm, CreateEditProjectForm, EditUserSettingsForm,
+    EditProjectRelationshipForm, SelectProjectForm, EditUserForm,
+    CreateUserForm, SelectUserForm, ProjectSearchForm, QuickSearchForm)
 from timepiece.crm.models import Business, Project, ProjectRelationship
 from timepiece.crm.utils import grouped_totals
 from timepiece.entries.models import Entry
@@ -52,8 +52,9 @@ def reject_user_timesheet(request, user_id):
     user = User.objects.get(pk=user_id)
     if form.is_valid():
         from_date, to_date = form.save()
-        entries = Entry.no_join.filter(status=Entry.VERIFIED, user=user,
-            start_time__gte=from_date, end_time__lte=to_date)
+        entries = Entry.no_join.filter(
+            status=Entry.VERIFIED, user=user, start_time__gte=from_date,
+            end_time__lte=to_date)
         if request.POST.get('yes'):
             if entries.exists():
                 count = entries.count()
@@ -113,15 +114,15 @@ def view_user_timesheet(request, user_id, active_tab):
     entries_qs = Entry.objects.filter(user=user)
     month_qs = entries_qs.timespan(from_date, span='month')
     extra_values = ('start_time', 'end_time', 'comments', 'seconds_paused',
-            'id', 'location__name', 'project__name', 'activity__name',
-            'status')
+                    'id', 'location__name', 'project__name', 'activity__name',
+                    'status')
     month_entries = month_qs.date_trunc('month', extra_values)
     # For grouped entries, back date up to the start of the week.
     first_week = utils.get_week_start(from_date)
     month_week = first_week + relativedelta(weeks=1)
     grouped_qs = entries_qs.timespan(first_week, to_date=to_date)
-    intersection = grouped_qs.filter(start_time__lt=month_week,
-        start_time__gte=from_date)
+    intersection = grouped_qs.filter(
+        start_time__lt=month_week, start_time__gte=from_date)
     # If the month of the first week starts in the previous
     # month and we dont have entries in that previous ISO
     # week, then update the first week to start at the first
@@ -178,8 +179,7 @@ def change_user_timesheet(request, user_id, action):
         perm = False
 
     if not perm:
-        return HttpResponseForbidden('Forbidden: You cannot {0} this '
-                'timesheet.'.format(action))
+        return HttpResponseForbidden('Forbidden: You cannot {0} this timesheet.'.format(action))
 
     try:
         from_date = request.GET.get('from_date')
@@ -220,8 +220,7 @@ def change_user_timesheet(request, user_id, action):
             'approve': 'approved',
         }
         entries.update(status=update_status[action])
-        messages.info(request,
-            'Your entries have been %s' % update_status[action])
+        messages.info(request, 'Your entries have been %s' % update_status[action])
         return redirect(return_url)
     hours = entries.all().aggregate(s=Sum('hours'))['s']
     if not hours:
@@ -273,8 +272,8 @@ class ProjectTimesheet(DetailView):
             project=project
         )
         extra_values = ('start_time', 'end_time', 'comments', 'seconds_paused',
-                'id', 'location__name', 'project__name', 'activity__name',
-                'status')
+                        'id', 'location__name', 'project__name',
+                        'activity__name', 'status')
         month_entries = entries_qs.date_trunc('month', extra_values)
         total = entries_qs.aggregate(hours=Sum('hours'))['hours']
         user_entries = entries_qs.order_by().values('user__first_name', 'user__last_name')
@@ -394,7 +393,7 @@ class ListUsers(SearchListView):
     paginate_by = 20
     redirect_if_one_result = True
     search_fields = ['first_name__icontains', 'last_name__icontains',
-            'email__icontains', 'username__icontains']
+                     'email__icontains', 'username__icontains']
     template_name = 'timepiece/user/list.html'
 
     def get_queryset(self):
@@ -525,12 +524,10 @@ class RelationshipObjectMixin(object):
         queryset = self.get_queryset() if queryset is None else queryset
         user_id = self.request.REQUEST.get('user_id', None)
         project_id = self.request.REQUEST.get('project_id', None)
-        return get_object_or_404(self.model, user__id=user_id,
-                project__id=project_id)
+        return get_object_or_404(self.model, user__id=user_id, project__id=project_id)
 
     def get_success_url(self):
-        return self.request.REQUEST.get('next',
-                self.object.project.get_absolute_url())
+        return self.request.REQUEST.get('next', self.object.project.get_absolute_url())
 
 
 @cbv_decorator(permission_required('crm.change_projectrelationship'))

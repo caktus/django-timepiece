@@ -12,8 +12,8 @@ class RelationshipTestBase(TestCase):
     def setUp(self):
         super(RelationshipTestBase, self).setUp()
         self.user = factories.User()
-        self.permissions = [Permission.objects.get(codename=n) for n in
-                self.perm_names]
+        self.permissions = [Permission.objects.get(codename=n)
+                            for n in self.perm_names]
         self.user.user_permissions.add(*self.permissions)
         self.login_user(self.user)
 
@@ -34,12 +34,12 @@ class TestAddProjectToUser(ViewTestMixin, RelationshipTestBase):
     def test_other_methods(self):
         """Add Project Relationship requires POST."""
         for method in (self.client.get, self.client.head, self.client.put,
-                self.client.delete):
+                       self.client.delete):
             response = method(self._url())
-            self.assertEquals(response.status_code, 405, '{method} request '
-                    'did not have expected code: {actual} instead of '
-                    '{expected}'.format(method=method,
-                    actual=response.status_code, expected=405))
+            self.assertEquals(
+                response.status_code, 405, '{method} request '
+                'did not have expected code: {actual} instead of '
+                '{expected}'.format(method=method, actual=response.status_code, expected=405))
             self.assertEquals(ProjectRelationship.objects.count(), 0)
 
     def test_permission(self):
@@ -64,8 +64,7 @@ class TestAddProjectToUser(ViewTestMixin, RelationshipTestBase):
 
     def test_add_again(self):
         """Adding project again should have no effect."""
-        rel = factories.ProjectRelationship(project=self.project,
-                user=self.user)
+        rel = factories.ProjectRelationship(project=self.project, user=self.user)
 
         response = self._post(data=self._data())
         self.assertEquals(response.status_code, 302)
@@ -106,12 +105,12 @@ class TestAddUserToProject(ViewTestMixin, RelationshipTestBase):
     def test_other_methods(self):
         """Add Project Relationship requires POST."""
         for method in (self.client.get, self.client.head, self.client.put,
-                self.client.delete):
+                       self.client.delete):
             response = method(self._url())
-            self.assertEquals(response.status_code, 405, '{method} request '
-                    'did not have expected code: {actual} instead of '
-                    '{expected}'.format(method=method,
-                    actual=response.status_code, expected=405))
+            self.assertEquals(
+                response.status_code, 405, '{method} request did not have '
+                'expected code: {actual} instead of '
+                '{expected}'.format(method=method, actual=response.status_code, expected=405))
             self.assertEquals(ProjectRelationship.objects.count(), 0)
 
     def test_permission(self):
@@ -136,8 +135,8 @@ class TestAddUserToProject(ViewTestMixin, RelationshipTestBase):
 
     def test_add_again(self):
         """Adding user again should have no effect."""
-        rel = factories.ProjectRelationship(project=self.project,
-                user=self.user)
+        rel = factories.ProjectRelationship(
+            project=self.project, user=self.user)
 
         response = self._post(data=self._data())
         self.assertEquals(response.status_code, 302)

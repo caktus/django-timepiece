@@ -31,8 +31,8 @@ class UtilityFunctionsTest(TestCase):
 
     def test_get_last_billable_day(self):
         for idx, date in enumerate(self.dates):
-            self.assertEquals(self.last_billable[idx],
-                utils.get_last_billable_day(date))
+            self.assertEquals(
+                self.last_billable[idx], utils.get_last_billable_day(date))
 
 
 class GetActiveEntryTest(TestCase):
@@ -47,8 +47,8 @@ class GetActiveEntryTest(TestCase):
         now = datetime.datetime.now()
         entry = factories.Entry(user=self.user, start_time=now)
         # not active
-        factories.Entry(user=self.user, start_time=now,
-                end_time=now)
+        factories.Entry(
+            user=self.user, start_time=now, end_time=now)
         # different user
         factories.Entry(start_time=now)
         self.assertEqual(entry, get_active_entry(self.user))

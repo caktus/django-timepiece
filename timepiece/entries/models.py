@@ -19,10 +19,12 @@ class Activity(models.Model):
     Represents different types of activity: debugging, developing,
     brainstorming, QA, etc...
     """
-    code = models.CharField(max_length=5, unique=True, help_text='Enter a '
-            'short code to describe the type of activity that took place.')
-    name = models.CharField(max_length=50, help_text='Now enter a more '
-            'meaningful name for the activity.')
+    code = models.CharField(
+        max_length=5, unique=True,
+        help_text='Enter a short code to describe the type of activity that took place.')
+    name = models.CharField(
+        max_length=50,
+        help_text='Now enter a more meaningful name for the activity.')
     billable = models.BooleanField(default=True)
 
     def __str__(self):
@@ -154,10 +156,11 @@ class Entry(models.Model):
     project = models.ForeignKey('crm.Project', related_name='entries')
     activity = models.ForeignKey(Activity, related_name='entries')
     location = models.ForeignKey(Location, related_name='entries')
-    entry_group = models.ForeignKey('contracts.EntryGroup', blank=True,
-            null=True, related_name='entries', on_delete=models.SET_NULL)
-    status = models.CharField(max_length=24, choices=STATUSES.items(),
-            default=UNVERIFIED)
+    entry_group = models.ForeignKey(
+        'contracts.EntryGroup', blank=True, null=True, related_name='entries',
+        on_delete=models.SET_NULL)
+    status = models.CharField(
+        max_length=24, choices=STATUSES.items(), default=UNVERIFIED)
 
     start_time = models.DateTimeField()
     end_time = models.DateTimeField(blank=True, null=True, db_index=True)
@@ -283,9 +286,9 @@ class Entry(models.Model):
                         '%H:%M:%S on %m\%d\%Y')
                     entry_data['end_time'] = entry.end_time.strftime(
                         '%H:%M:%S on %m\%d\%Y')
-                    raise ValidationError('Start time overlaps with '
-                            '{activity} on {project} from {start_time} to '
-                            '{end_time}.'.format(**entry_data))
+                    raise ValidationError(
+                        'Start time overlaps with {activity} on {project} '
+                        'from {start_time} to {end_time}.'.format(**entry_data))
         try:
             act_group = self.project.activity_group
             if act_group:

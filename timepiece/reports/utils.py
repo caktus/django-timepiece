@@ -19,7 +19,7 @@ def date_totals(entries, by):
 
         if by == 'user':
             name = ' '.join((d_entries[0]['user__first_name'],
-                    d_entries[0]['user__last_name']))
+                             d_entries[0]['user__last_name']))
         elif by == 'project':
             name = d_entries[0]['project__name']
         else:
@@ -55,7 +55,7 @@ def generate_dates(start=None, end=None, by='week'):
 
 
 def get_project_totals(entries, date_headers, hour_type=None, overtime=False,
-                   total_column=False, by='user'):
+                       total_column=False, by='user'):
     """
     Yield hour totals grouped by user and date. Optionally including overtime.
     """
@@ -145,7 +145,7 @@ def get_payroll_totals(month_work_entries, month_leave_entries):
         for status in labels.keys():
             # Include an extra entry for summary.
             row[status] = [{'hours': Decimal(), 'percent': Decimal()}
-                    for i in range(len(labels[status]) + 1)]
+                           for i in range(len(labels[status]) + 1)]
         row['work_total'] = Decimal()
         row['grand_total'] = Decimal()
         return row

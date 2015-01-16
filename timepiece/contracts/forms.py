@@ -27,8 +27,9 @@ class InvoiceForm(forms.ModelForm):
 
 
 class OutstandingHoursFilterForm(DateForm):
-    statuses = forms.ModelMultipleChoiceField(queryset=Attribute.objects.none(),
-            required=False, widget=forms.CheckboxSelectMultiple())
+    statuses = forms.ModelMultipleChoiceField(
+        queryset=Attribute.objects.none(), required=False,
+        widget=forms.CheckboxSelectMultiple())
 
     def __init__(self, *args, **kwargs):
         super(OutstandingHoursFilterForm, self).__init__(*args, **kwargs)

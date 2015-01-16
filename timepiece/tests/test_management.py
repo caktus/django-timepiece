@@ -17,8 +17,9 @@ class CheckEntries(TestCase):
         self.user = factories.User()
         self.user2 = factories.User()
         self.superuser = factories.Superuser()
-        self.project = factories.Project(type__enable_timetracking=True,
-                status__enable_timetracking=True, point_person=self.user)
+        self.project = factories.Project(
+            type__enable_timetracking=True, status__enable_timetracking=True,
+            point_person=self.user)
 
         self.default_data = {
             'user': self.user,

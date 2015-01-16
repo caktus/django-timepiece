@@ -128,8 +128,8 @@ class TestProjectTimesheet(ViewTestMixin, LogTimeMixin, TestCase):
     def test_project_csv(self):
         self.login_user(self.superuser)
         self.make_entries()
-        response = self._get(url_name='view_project_timesheet_csv',
-                url_args=(self.p1.pk,))
+        response = self._get(
+            url_name='view_project_timesheet_csv', url_args=(self.p1.pk,))
         self.assertEqual(response.status_code, 200)
         data = dict(response.items())
         self.assertEqual(data['Content-Type'], 'text/csv')

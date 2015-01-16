@@ -19,11 +19,12 @@ class ActivityGroupAdmin(admin.ModelAdmin):
 
 class EntryAdmin(admin.ModelAdmin):
     model = Entry
-    list_display = ('user', '_project', 'location', 'project_type', 'activity',
-            'start_time', 'end_time', 'hours', 'is_closed', 'is_paused')
+    list_display = ('user', '_project', 'location', 'project_type',
+                    'activity', 'start_time', 'end_time', 'hours',
+                    'is_closed', 'is_paused')
     list_filter = ['activity', 'project__type', 'user', 'project']
     search_fields = ['user__first_name', 'user__last_name', 'project__name',
-            'activity__name', 'comments']
+                     'activity__name', 'comments']
     date_hierarchy = 'start_time'
     ordering = ('-start_time',)
 
