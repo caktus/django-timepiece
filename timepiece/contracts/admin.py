@@ -1,7 +1,7 @@
 from django.contrib import admin
 
-from timepiece.contracts.models import ProjectContract, ContractHour,\
-        ContractAssignment, HourGroup
+from timepiece.contracts.models import (
+    ProjectContract, ContractHour, ContractAssignment, HourGroup)
 
 
 class ContractAssignmentInline(admin.TabularInline):

@@ -6,8 +6,8 @@ from django import forms
 from timepiece import utils
 from timepiece.crm.models import Project
 from timepiece.entries.models import Entry, Location, ProjectHours
-from timepiece.forms import INPUT_FORMATS, TimepieceSplitDateTimeWidget,\
-        TimepieceDateInput
+from timepiece.forms import (
+    INPUT_FORMATS, TimepieceSplitDateTimeWidget, TimepieceDateInput)
 
 
 class ClockInForm(forms.ModelForm):
@@ -47,7 +47,7 @@ class ClockInForm(forms.ModelForm):
         self.fields['start_time'].initial = datetime.datetime.now()
         self.fields['start_time'].widget = TimepieceSplitDateTimeWidget()
         self.fields['project'].queryset = Project.trackable.filter(
-                users=self.user)
+            users=self.user)
         if not self.active:
             self.fields.pop('active_comment')
         else:
@@ -64,9 +64,9 @@ class ClockInForm(forms.ModelForm):
         active_entries = self.user.timepiece_entries.filter(
             start_time__gte=start, end_time__isnull=True)
         for entry in active_entries:
-            output = 'The start time is on or before the current entry: ' + \
-            '%s - %s starting at %s' % (entry.project, entry.activity,
-                entry.start_time.strftime('%H:%M:%S'))
+            output = ('The start time is on or before the current entry: '
+                      '%s - %s starting at %s' % (entry.project, entry.activity,
+                                                  entry.start_time.strftime('%H:%M:%S')))
             raise forms.ValidationError(output)
         return start
 
@@ -128,7 +128,7 @@ class AddUpdateEntryForm(forms.ModelForm):
         self.instance.user = self.user
 
         self.fields['project'].queryset = Project.trackable.filter(
-                users=self.user)
+            users=self.user)
         # If editing the active entry, remove the end_time field.
         if self.instance.start_time and not self.instance.end_time:
             self.fields.pop('end_time')

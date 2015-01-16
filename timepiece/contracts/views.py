@@ -42,7 +42,7 @@ class ContractList(ListView):
     model = ProjectContract
     context_object_name = 'contracts'
     queryset = ProjectContract.objects.filter(
-            status=ProjectContract.STATUS_CURRENT).order_by('name')
+        status=ProjectContract.STATUS_CURRENT).order_by('name')
 
     def get_context_data(self, *args, **kwargs):
         if 'today' not in kwargs:
@@ -133,10 +133,8 @@ def create_invoice(request):
         'billable_entries': billable_entries,
         'nonbillable_entries': nonbillable_entries,
         'project': project,
-        'billable_totals': HourGroup.objects
-            .summaries(billable_entries),
-        'nonbillable_totals': HourGroup.objects
-            .summaries(nonbillable_entries),
+        'billable_totals': HourGroup.objects.summaries(billable_entries),
+        'nonbillable_totals': HourGroup.objects.summaries(nonbillable_entries),
         'from_date': from_date,
         'to_date': to_date,
     })
@@ -157,8 +155,7 @@ def list_outstanding_invoices(request):
         dates &= Q(end_time__lt=to_date) if to_date else Q()
         billable = Q(project__type__billable=True, project__status__billable=True)
         entry_status = Q(status=Entry.APPROVED)
-        project_status = Q(project__status__in=statuses)\
-                if statuses is not None else Q()
+        project_status = Q(project__status__in=statuses) if statuses is not None else Q()
         # Calculate hours for each project
         ordering = ('project__type__label', 'project__status__label',
                 'project__business__name', 'project__name', 'status')
@@ -234,10 +231,8 @@ class InvoiceEntriesDetail(InvoiceDetail):
         billable_entries = context['billable_entries']
         nonbillable_entries = context['nonbillable_entries']
         context.update({
-            'billable_total': billable_entries
-                              .aggregate(hours=Sum('hours'))['hours'],
-            'nonbillable_total': nonbillable_entries
-                                 .aggregate(hours=Sum('hours'))['hours'],
+            'billable_total': billable_entries.aggregate(hours=Sum('hours'))['hours'],
+            'nonbillable_total': nonbillable_entries.aggregate(hours=Sum('hours'))['hours'],
         })
         return context
 

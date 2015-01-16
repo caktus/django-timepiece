@@ -152,10 +152,8 @@ class TestHourlyReport(ViewTestMixin, LogTimeMixin, ReportsTestBase):
             self.assertEqual(hour, last_day * worked2)
 
     def args_helper(self, **kwargs):
-        start = utils.add_timezone(
-                kwargs.pop('start', datetime.datetime(2011, 1, 2)))
-        end = utils.add_timezone(
-                kwargs.pop('end', datetime.datetime(2011, 1, 4)))
+        start = utils.add_timezone(kwargs.pop('start', datetime.datetime(2011, 1, 2)))
+        end = utils.add_timezone(kwargs.pop('end', datetime.datetime(2011, 1, 4)))
         defaults = {
             'from_date': start.strftime('%Y-%m-%d'),
             'to_date': end.strftime('%Y-%m-%d'),

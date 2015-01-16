@@ -122,22 +122,22 @@ class TrackableProjectManager(models.Manager):
 @python_2_unicode_compatible
 class Project(models.Model):
     name = models.CharField(max_length=255)
-    tracker_url = models.CharField(max_length=255, blank=True, null=False,
-            default="")
-    business = models.ForeignKey(Business,
-            related_name='new_business_projects')
+    tracker_url = models.CharField(
+        max_length=255, blank=True, null=False, default="")
+    business = models.ForeignKey(
+        Business, related_name='new_business_projects')
     point_person = models.ForeignKey(User, limit_choices_to={'is_staff': True})
-    users = models.ManyToManyField(User, related_name='user_projects',
-            through='ProjectRelationship')
-    activity_group = models.ForeignKey('entries.ActivityGroup',
-            related_name='activity_group', null=True, blank=True,
-            verbose_name='restrict activities to')
-    type = models.ForeignKey(Attribute,
-            limit_choices_to={'type': 'project-type'},
-            related_name='projects_with_type')
-    status = models.ForeignKey(Attribute,
-            limit_choices_to={'type': 'project-status'},
-            related_name='projects_with_status')
+    users = models.ManyToManyField(
+        User, related_name='user_projects', through='ProjectRelationship')
+    activity_group = models.ForeignKey(
+        'entries.ActivityGroup', related_name='activity_group', null=True,
+        blank=True, verbose_name='restrict activities to')
+    type = models.ForeignKey(
+        Attribute, limit_choices_to={'type': 'project-type'},
+        related_name='projects_with_type')
+    status = models.ForeignKey(
+        Attribute, limit_choices_to={'type': 'project-status'},
+        related_name='projects_with_status')
     description = models.TextField()
 
     objects = models.Manager()

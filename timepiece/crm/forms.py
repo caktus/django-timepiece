@@ -26,7 +26,7 @@ class CreateEditProjectForm(forms.ModelForm):
     class Meta:
         model = Project
         fields = ('name', 'business', 'tracker_url', 'point_person', 'type',
-                'status', 'activity_group', 'description')
+                  'status', 'activity_group', 'description')
 
 
 class CreateUserForm(UserCreationForm):
@@ -34,7 +34,7 @@ class CreateUserForm(UserCreationForm):
     class Meta:
         model = User
         fields = ('username', 'first_name', 'last_name', 'email', 'is_active',
-                'is_staff', 'groups')
+                  'is_staff', 'groups')
 
     def __init__(self, *args, **kwargs):
         super(CreateUserForm, self).__init__(*args, **kwargs)
@@ -57,7 +57,7 @@ class EditProjectRelationshipForm(forms.ModelForm):
     def __init__(self, *args, **kwargs):
         super(EditProjectRelationshipForm, self).__init__(*args, **kwargs)
         self.fields['types'].widget = forms.CheckboxSelectMultiple(
-                choices=self.fields['types'].choices)
+            choices=self.fields['types'].choices)
 
 
 class EditUserForm(UserChangeForm):

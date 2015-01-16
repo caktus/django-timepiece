@@ -62,7 +62,7 @@ class TestBillableHours(ViewTestMixin, LogTimeMixin, ReportsTestBase):
         })
         self.assertEqual(response.status_code, 200)
 
-        entries_data = self.get_entries_data().order_by('user', 'date')
+        entries_data = self.get_entries_data().order_by('user', 'date')  # noqa
         response_data = json.loads(response.context['data'])
 
         self.assertEqual(response_data[1][1:], [9, 9])

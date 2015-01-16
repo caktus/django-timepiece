@@ -34,48 +34,42 @@ For options type:
         Define the arguments that can be used with this command
         """
         return (
-        # Jenkins arguments to ignore
-        make_option('--pep8-exclude',
-            dest='ignore_pep8',
-            type='str',
-            default='',
-            help='Jenkins only'),
-        ) + (
-        make_option('--coverage-exclude',
-            dest='ignore_coverage',
-            type='str',
-            default='',
-            help='Jenkins only'),
-        ) + (
-        make_option('--thisweek',
-            action='store_true',
-            dest='week',
-            default=False,
-            help='Show entries from this week only'),
-        ) + (
-        make_option('--thismonth',
-            action='store_true',
-            dest='month',
-            default=False,
-            help='Show entries from this month only'),
-        ) + (
-        make_option('-y', '--thisyear',
-            action='store_true',
-            dest='year',
-            default=False,
-            help='Show entries from this year only'),
-        ) + (
-        make_option('-a', '--all', '--forever',
-            action='store_true',
-            dest='all',
-            default=False,
-            help='Show entries from all recorded history'),
-        ) + (
-        make_option('-d', '--days',
-            dest='days',
-            type='int',
-            default=0,
-            help='Show entries for the last n days only'),
+            # Jenkins arguments to ignore
+            make_option('--pep8-exclude',
+                        dest='ignore_pep8',
+                        type='str',
+                        default='',
+                        help='Jenkins only'),
+            make_option('--coverage-exclude',
+                        dest='ignore_coverage',
+                        type='str',
+                        default='',
+                        help='Jenkins only'),
+            make_option('--thisweek',
+                        action='store_true',
+                        dest='week',
+                        default=False,
+                        help='Show entries from this week only'),
+            make_option('--thismonth',
+                        action='store_true',
+                        dest='month',
+                        default=False,
+                        help='Show entries from this month only'),
+            make_option('-y', '--thisyear',
+                        action='store_true',
+                        dest='year',
+                        default=False,
+                        help='Show entries from this year only'),
+            make_option('-a', '--all', '--forever',
+                        action='store_true',
+                        dest='all',
+                        default=False,
+                        help='Show entries from all recorded history'),
+            make_option('-d', '--days',
+                        dest='days',
+                        type='int',
+                        default=0,
+                        help='Show entries for the last n days only'),
         )
 
     option_list = BaseCommand.option_list + make_options(*args)
@@ -230,13 +224,13 @@ For options type:
         data_a = make_output_data(entry_a)
         if entry_b:
             data_b = make_output_data(entry_b)
-            output = 'Entry %(entry)d for %(first_name)s %(last_name)s from ' \
-            % data_a + '%(start)s to %(end)s on %(project)s overlaps ' \
-            % data_a + 'entry %(entry)d from %(start)s to %(end)s on ' \
-            % data_b + '%(project)s.' % data_b
+            output = ('Entry %(entry)d for %(first_name)s %(last_name)s from '
+                      '%(start)s to %(end)s on %(project)s overlaps ' % data_a +
+                      'entry %(entry)d from %(start)s to %(end)s on '
+                      '%(project)s.' % data_b)
         else:
-            output = 'Entry %(entry)d for %(first_name)s %(last_name)s from ' \
-            % data_a + '%(start)s to %(end)s on %(project)s overlaps ' \
-            % data_a + 'with another entry.'
+            output = ('Entry %(entry)d for %(first_name)s %(last_name)s from '
+                      '%(start)s to %(end)s on %(project)s overlaps '
+                      'with another entry.' % data_a)
         if kwargs.get('verbosity', 1):
             self.stdout.write(output)

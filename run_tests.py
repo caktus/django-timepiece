@@ -3,8 +3,6 @@ import os
 import sys
 import optparse
 
-from django.conf import settings
-
 
 parser = optparse.OptionParser()
 _, args = parser.parse_args()

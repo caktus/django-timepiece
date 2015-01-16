@@ -178,7 +178,7 @@ class TestEditRelationship(ViewTestMixin, RelationshipTestBase):
     def setUp(self):
         super(TestEditRelationship, self).setUp()
         self.relationship = factories.ProjectRelationship(
-                project=self.project, user=self.user)
+            project=self.project, user=self.user)
         self.rel_type1 = factories.RelationshipType()
         self.rel_type2 = factories.RelationshipType()
 
@@ -264,7 +264,7 @@ class TestDeleteRelationship(ViewTestMixin, RelationshipTestBase):
     def setUp(self):
         super(TestDeleteRelationship, self).setUp()
         self.relationship = factories.ProjectRelationship(
-                project=self.project, user=self.user)
+            project=self.project, user=self.user)
 
     @property
     def get_kwargs(self):

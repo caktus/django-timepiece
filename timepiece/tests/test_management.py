@@ -87,8 +87,7 @@ class CheckEntries(TestCase):
             # Range uses 1 so that good_start/good_end use today as valid times.
             for day in range(1, days + 1):
                 self.default_data.update({
-                    'start_time': timezone.now() -
-                                  relativedelta(days=day, minutes=1),
+                    'start_time': timezone.now() - relativedelta(days=day, minutes=1),
                     'end_time': timezone.now() - relativedelta(days=day,)
                 })
                 factories.Entry(**self.default_data)

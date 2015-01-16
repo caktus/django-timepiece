@@ -194,7 +194,7 @@ class TestProductivityReport(ViewTestMixin, TestCase):
         data = dict(response.items())
         self.assertEqual(data['Content-Type'], 'text/csv')
         disposition = 'attachment; filename={0}_productivity.csv'.format(
-                self.project.name)
+            self.project.name)
         self.assertTrue(data['Content-Disposition'].startswith(disposition))
         report = response.content.decode('utf-8').splitlines()
         self.assertEqual(len(report), 1 + 4)  # Include header row

@@ -1,7 +1,7 @@
 from django.contrib import admin
 
-from timepiece.entries.models import Activity, ActivityGroup, Entry, Location,\
-        ProjectHours
+from timepiece.entries.models import (
+    Activity, ActivityGroup, Entry, Location, ProjectHours)
 
 
 class ActivityAdmin(admin.ModelAdmin):

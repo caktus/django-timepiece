@@ -63,10 +63,11 @@ class EntryQuerySet(models.query.QuerySet):
     """QuerySet extension to provide filtering by billable status"""
 
     def date_trunc(self, key='month', extra_values=None):
-        select = {"day": {"date": """DATE_TRUNC('day', end_time)"""},
-                  "week": {"date": """DATE_TRUNC('week', end_time)"""},
-                  "month": {"date": """DATE_TRUNC('month', end_time)"""},
-                  "year": {"date": """DATE_TRUNC('year', end_time)"""},
+        select = {
+            "day": {"date": """DATE_TRUNC('day', end_time)"""},
+            "week": {"date": """DATE_TRUNC('week', end_time)"""},
+            "month": {"date": """DATE_TRUNC('month', end_time)"""},
+            "year": {"date": """DATE_TRUNC('year', end_time)"""},
         }
         basic_values = (
             'user', 'date', 'user__first_name', 'user__last_name', 'billable',
@@ -212,8 +213,7 @@ class Entry(models.Model):
                 min_start = min(entry_a.start_time, entry_b.start_time)
                 diff = max_end - min_start
                 diff = diff.seconds + diff.days * 86400
-                total = entry_a.get_total_seconds() + \
-                        entry_b.get_total_seconds() - 1
+                total = entry_a.get_total_seconds() + entry_b.get_total_seconds() - 1
                 if total >= diff:
                     return True
             return False
@@ -221,12 +221,12 @@ class Entry(models.Model):
     def is_overlapping(self):
         if self.start_time and self.end_time:
             entries = self.user.timepiece_entries.filter(
-            Q(end_time__range=(self.start_time, self.end_time)) |
-            Q(start_time__range=(self.start_time, self.end_time)) |
-            Q(start_time__lte=self.start_time, end_time__gte=self.end_time))
+                Q(end_time__range=(self.start_time, self.end_time)) |
+                Q(start_time__range=(self.start_time, self.end_time)) |
+                Q(start_time__lte=self.start_time, end_time__gte=self.end_time)
+            )
 
-            totals = entries.aggregate(
-            max=Max('end_time'), min=Min('start_time'))
+            totals = entries.aggregate(max=Max('end_time'), min=Min('start_time'))
 
             totals['total'] = 0
             for entry in entries:
@@ -270,15 +270,14 @@ class Entry(models.Model):
             }
             # Conflicting saved entries
             if entry.end_time:
-                if entry.start_time.date() == start.date() \
-                and entry.end_time.date() == end.date():
+                if entry.start_time.date() == start.date() and entry.end_time.date() == end.date():
                     entry_data['start_time'] = entry.start_time.strftime(
                         '%H:%M:%S')
                     entry_data['end_time'] = entry.end_time.strftime(
                         '%H:%M:%S')
                     raise ValidationError('Start time overlaps with '
-                            '{activity} on {project} from {start_time} to '
-                            '{end_time}.'.format(**entry_data))
+                                          '{activity} on {project} from {start_time} to '
+                                          '{end_time}.'.format(**entry_data))
                 else:
                     entry_data['start_time'] = entry.start_time.strftime(
                         '%H:%M:%S on %m\%d\%Y')
@@ -403,8 +402,7 @@ class Entry(models.Model):
         """
         Pause all open entries
         """
-        entries = self.user.timepiece_entries.filter(
-        end_time__isnull=True).all()
+        entries = self.user.timepiece_entries.filter(end_time__isnull=True).all()
         for entry in entries:
             entry.pause()
             entry.save()
@@ -507,14 +505,13 @@ class ProjectHours(models.Model):
     user = models.ForeignKey(User)
     hours = models.DecimalField(
         max_digits=8, decimal_places=2, default=0,
-        validators=[validators.MinValueValidator(Decimal("0.01"))]
-    )
+        validators=[validators.MinValueValidator(Decimal("0.01"))])
     published = models.BooleanField(default=False)
 
     def __str__(self):
         return "{0} on {1} for Week of {2}".format(
-                self.user.get_name_or_username(),
-                self.project, self.week_start.strftime('%B %d, %Y'))
+            self.user.get_name_or_username(),
+            self.project, self.week_start.strftime('%B %d, %Y'))
 
     def save(self, *args, **kwargs):
         # Ensure that week_start is the Monday of a given week.

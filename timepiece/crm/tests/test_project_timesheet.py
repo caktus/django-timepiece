@@ -109,8 +109,7 @@ class TestProjectTimesheet(ViewTestMixin, LogTimeMixin, TestCase):
         self.assertEqual(user_entry0['sum'], Decimal(2))
         self.assertEqual(user_entry1['user__last_name'], self.user2.last_name)
         self.assertEqual(user_entry1['user__first_name'],
-                         self.user2.first_name
-        )
+                         self.user2.first_name)
         self.assertEqual(user_entry1['sum'], Decimal(1))
 
     def testOtherProjectTimesheet(self):

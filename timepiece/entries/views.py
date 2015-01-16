@@ -26,8 +26,9 @@ from timepiece.utils.csv import DecimalEncoder
 from timepiece.utils.views import cbv_decorator
 
 from timepiece.crm.models import Project, UserProfile
-from timepiece.entries.forms import ClockInForm, ClockOutForm, \
-        AddUpdateEntryForm, ProjectHoursForm, ProjectHoursSearchForm
+from timepiece.entries.forms import (
+    ClockInForm, ClockOutForm, AddUpdateEntryForm, ProjectHoursForm,
+    ProjectHoursSearchForm)
 from timepiece.entries.models import Entry, ProjectHours
 
 
@@ -68,9 +69,9 @@ class Dashboard(TemplateView):
         active_entry = utils.get_active_entry(self.user)
 
         # Process this week's entries to determine assignment progress.
-        week_entries = Entry.objects.filter(user=self.user) \
-                .timespan(week_start, span='week', current=True) \
-                .select_related('project')
+        week_entries = Entry.objects.filter(user=self.user)
+        week_entries = week_entries.timespan(week_start, span='week', current=True)
+        week_entries = week_entries.select_related('project')
         assignments = ProjectHours.objects.filter(user=self.user,
                 week_start=week_start.date())
         project_progress = self.process_progress(week_entries, assignments)
@@ -80,9 +81,9 @@ class Dashboard(TemplateView):
         total_worked = sum([p['worked'] for p in project_progress])
 
         # Others' active entries.
-        others_active_entries = Entry.objects.filter(end_time__isnull=True) \
-                .exclude(user=self.user).select_related('user', 'project',
-                'activity')
+        others_active_entries = Entry.objects.filter(end_time__isnull=True)
+        others_active_entries = others_active_entries.exclude(user=self.user)
+        others_active_entries = others_active_entries.select_related('user', 'project', 'activity')
 
         return {
             'active_tab': self.active_tab,
@@ -148,7 +149,7 @@ def clock_in(request):
     if form.is_valid():
         entry = form.save()
         message = 'You have clocked into {0} on {1}.'.format(
-                entry.activity.name, entry.project)
+            entry.activity.name, entry.project)
         messages.info(request, message)
         return HttpResponseRedirect(reverse('dashboard'))
 
@@ -170,7 +171,7 @@ def clock_out(request):
         if form.is_valid():
             entry = form.save()
             message = 'You have clocked out of {0} on {1}.'.format(
-                    entry.activity.name, entry.project)
+                entry.activity.name, entry.project)
             messages.info(request, message)
             return HttpResponseRedirect(reverse('dashboard'))
         else:
@@ -198,7 +199,7 @@ def toggle_pause(request):
     # create a message that can be displayed to the user
     action = 'paused' if entry.is_paused else 'resumed'
     message = 'Your entry, {0} on {1}, has been {2}.'.format(
-            entry.activity.name, entry.project, action)
+        entry.activity.name, entry.project, action)
     messages.info(request, message)
 
     # redirect to the log entry list

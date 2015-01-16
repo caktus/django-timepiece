@@ -57,7 +57,7 @@ class TestListInvoicesView(ViewTestMixin, TestCase):
 
     def test_no_results(self):
         """Page should render if there are no search results."""
-        obj = self.factory.create()
+        self.factory.create()
         response = self._get(get_kwargs={'search': 'hello'})
         self.assertEquals(response.status_code, 200)
         self.assertTemplateUsed(response, self.template_name)
@@ -85,7 +85,7 @@ class TestListInvoicesView(ViewTestMixin, TestCase):
     def test_filter_number(self):
         """User should be able to filter by search query."""
         obj = self.factory.create(number='hello')
-        other_obj = self.factory.create()
+        self.factory.create()
         response = self._get(get_kwargs={'search': 'hello'})
         self.assertEquals(response.status_code, 200)
         self.assertEquals(response.context['object_list'].get(), obj)
@@ -93,7 +93,7 @@ class TestListInvoicesView(ViewTestMixin, TestCase):
     def test_filter_comments(self):
         """User should be able to filter by search query."""
         obj = self.factory.create(comments='hello')
-        other_obj = self.factory.create()
+        self.factory.create()
         response = self._get(get_kwargs={'search': 'hello'})
         self.assertEquals(response.status_code, 200)
         self.assertEquals(response.context['object_list'].get(), obj)
@@ -101,7 +101,7 @@ class TestListInvoicesView(ViewTestMixin, TestCase):
     def test_filter_project_name(self):
         """User should be able to filter by search query."""
         obj = self.factory.create(project__name='hello')
-        other_obj = self.factory.create()
+        self.factory.create()
         response = self._get(get_kwargs={'search': 'hello'})
         self.assertEquals(response.status_code, 200)
         self.assertEquals(response.context['object_list'].get(), obj)
@@ -109,7 +109,7 @@ class TestListInvoicesView(ViewTestMixin, TestCase):
     def test_filter_user_username(self):
         """User should be able to filter by search query."""
         obj = self.factory.create(user__username='hello')
-        other_obj = self.factory.create()
+        self.factory.create()
         response = self._get(get_kwargs={'search': 'hello'})
         self.assertEquals(response.status_code, 200)
         self.assertEquals(response.context['object_list'].get(), obj)
@@ -160,7 +160,7 @@ class InvoiceViewPreviousTestCase(ViewTestMixin, LogTimeMixin, TestCase):
             'status': EntryGroup.INVOICED,
         }
         params.update(data)
-        response = self.client.post(url, params)
+        self.client.post(url, params)
 
     def get_invoice(self):
         invoices = EntryGroup.objects.all()
@@ -226,8 +226,8 @@ class InvoiceViewPreviousTestCase(ViewTestMixin, LogTimeMixin, TestCase):
         contents = response.content.decode('utf-8').splitlines()
         # TODO: Possibly find a meaningful way to test contents
         # Pull off header line and totals line
-        header = contents.pop(0)
-        total = contents.pop()
+        contents.pop(0)  # header
+        contents.pop()  # totals
         num_entries = invoice.entries.all().count()
         self.assertEqual(num_entries, len(contents))
 
@@ -252,8 +252,10 @@ class InvoiceViewPreviousTestCase(ViewTestMixin, LogTimeMixin, TestCase):
     def test_invoice_edit_post(self):
         invoice = self.get_invoice()
         url = reverse('edit_invoice', args=(invoice.id,))
-        status = EntryGroup.INVOICED if invoice.status != EntryGroup.INVOICED \
-                else EntryGroup.NOT_INVOICED
+        if invoice.status == EntryGroup.INVOICED:
+            status = EntryGroup.INVOICED
+        else:
+            status = EntryGroup.NOT_INVOICED
         params = {
             'number': int(invoice.number) + 1,
             'status': status,
@@ -304,8 +306,7 @@ class InvoiceViewPreviousTestCase(ViewTestMixin, LogTimeMixin, TestCase):
         self.assertTrue(EntryGroup.objects.get(pk=invoice.id))
 
     def test_invoice_delete_bad_args(self):
-        invoice = self.get_invoice()
-        entry_ids = [entry.pk for entry in invoice.entries.all()]
+        self.get_invoice()
         url = reverse('delete_invoice', args=[1232345345])
         response = self.client.post(url, {'delete': 'delete'})
         self.assertEqual(response.status_code, 404)
@@ -450,11 +451,11 @@ class InvoiceCreateTestCase(ViewTestMixin, TestCase):
         # end = start + relativedelta(hours=4)
         activity = factories.Activity(billable=True, name='activity1')
         for num in range(0, 4):
-            new_entry = factories.Entry(user=self.user,
-                    project=self.project_billable,
-                    start_time=start - relativedelta(days=num),
-                    end_time=end - relativedelta(days=num),
-                    status=Entry.APPROVED, activity=activity)
+            factories.Entry(
+                user=self.user, project=self.project_billable,
+                start_time=start - relativedelta(days=num),
+                end_time=end - relativedelta(days=num),
+                status=Entry.APPROVED, activity=activity)
         self.make_hourgroups()
         to_date = datetime.datetime(2011, 1, 31)
         kwargs = {
@@ -619,11 +620,12 @@ class ListOutstandingInvoicesViewTestCase(ViewTestMixin, TestCase):
     def test_unverified(self):
         start = utils.add_timezone(datetime.datetime(2011, 1, 1, 8))
         end = utils.add_timezone(datetime.datetime(2011, 1, 1, 12))
-        unverified_entry = factories.Entry(user=self.user,
+        factories.Entry(
+            user=self.user,
             project=self.project_non_billable,
             start_time=start + relativedelta(hours=11),
             end_time=end + relativedelta(hours=15), status=Entry.UNVERIFIED
-        )
+        )  # unverified
         response = self._get()
         self.assertEquals(response.status_code, 200)
         form = response.context['form']

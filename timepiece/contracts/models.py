@@ -142,10 +142,10 @@ class ProjectContract(models.Model):
         If the contract status is not current, or either the start or end
         date is not set, returns 0.0
         """
-        if self.status != ProjectContract.STATUS_CURRENT or \
-            not self.start_date or \
-            not self.end_date:
-                return 0.0
+        if not all([self.status == ProjectContract.STATUS_CURRENT,
+                    bool(self.start_date),
+                    bool(self.end_date)]):
+            return 0.0
         contract_period = (self.end_date - self.start_date).days
         if contract_period <= 0.0:
             return 0.0
@@ -314,24 +314,22 @@ class HourGroupManager(models.Manager):
                                          'activity__activity_bundle__name')
         bundled_entries = bundled_entries.annotate(Sum('hours'))
         bundled_entries = bundled_entries.order_by(
-                                            'activity__activity_bundle__order',
-                                            'activity__activity_bundle__name'
-        )
+            'activity__activity_bundle__order', 'activity__activity_bundle__name')
         bundled_totals = list(bundled_entries.values_list(
-                                             'activity__activity_bundle__name',
-                                             'activity__activity_bundle',
-                                             'hours__sum')
-        )
+            'activity__activity_bundle__name',
+            'activity__activity_bundle',
+            'hours__sum',
+        ))
         # Get the list of activity names and hour sums
         activity_entries = entries.values('activity', 'activity__name',
                                           'activity__activity_bundle')
         activity_entries = activity_entries.annotate(Sum('hours'))
         activity_entries = activity_entries.order_by('activity')
         activity_totals = list(activity_entries.values_list(
-                                                   'activity__name',
-                                                   'activity__activity_bundle',
-                                                   'hours__sum')
-        )
+            'activity__name',
+            'activity__activity_bundle',
+            'hours__sum',
+        ))
         totals = {}
         other_values = ()
         for bundle in bundled_totals:

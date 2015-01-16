@@ -70,9 +70,9 @@ def date_filters(form_id, options=None, use_range=True):
             from_date = to_date - single_month
             to_date = to_date - single_day
             filters['Past 12 Months'].append((
-                    date_format_filter(from_date, 'M Y'),  # displayed
-                    from_date.strftime(date_format) if use_range else "",  # used in code
-                    to_date.strftime(date_format)  # used in code
+                date_format_filter(from_date, 'M Y'),  # displayed
+                from_date.strftime(date_format) if use_range else "",  # used in code
+                to_date.strftime(date_format)  # used in code
             ))
         filters['Past 12 Months'].reverse()
 
@@ -83,9 +83,9 @@ def date_filters(form_id, options=None, use_range=True):
             from_date = datetime.datetime(year, 1, 1)
             to_date = from_date + single_year - single_day
             filters['Years'].append((
-                    str(from_date.year),
-                    from_date.strftime(date_format) if use_range else "",
-                    to_date.strftime(date_format)
+                str(from_date.year),
+                from_date.strftime(date_format) if use_range else "",
+                to_date.strftime(date_format)
             ))
 
     if 'quarters' in options:
@@ -95,9 +95,9 @@ def date_filters(form_id, options=None, use_range=True):
             from_date = to_date + single_day
             to_date = from_date + relativedelta(months=3) - single_day
             filters['Quarters (Calendar Year)'].append((
-                    'Q%s %s' % ((x % 4) + 1, from_date.year),
-                    from_date.strftime(date_format) if use_range else "",
-                    to_date.strftime(date_format)
+                'Q%s %s' % ((x % 4) + 1, from_date.year),
+                from_date.strftime(date_format) if use_range else "",
+                to_date.strftime(date_format)
             ))
 
     return {'filters': filters, 'form_id': form_id}
@@ -126,7 +126,7 @@ def get_uninvoiced_hours(entries, billable=None):
 
 @register.filter
 def humanize_hours(total_hours, frmt='{hours:02d}:{minutes:02d}:{seconds:02d}',
-        negative_frmt=None):
+                   negative_frmt=None):
     """Given time in hours, return a string representing the time."""
     seconds = int(float(total_hours) * 3600)
     return humanize_seconds(seconds, frmt, negative_frmt)
@@ -134,7 +134,8 @@ def humanize_hours(total_hours, frmt='{hours:02d}:{minutes:02d}:{seconds:02d}',
 
 @register.filter
 def humanize_seconds(total_seconds,
-        frmt='{hours:02d}:{minutes:02d}:{seconds:02d}', negative_frmt=None):
+                     frmt='{hours:02d}:{minutes:02d}:{seconds:02d}',
+                     negative_frmt=None):
     """Given time in int(seconds), return a string representing the time.
 
     If negative_frmt is not given, a negative sign is prepended to frmt

@@ -4,8 +4,9 @@ from dateutil.relativedelta import relativedelta
 from decimal import Decimal
 from itertools import groupby
 
-from timepiece.utils import get_hours_summary, add_timezone, get_week_start,\
-        get_month_start, get_year_start
+from timepiece.utils import (
+    get_hours_summary, add_timezone, get_week_start, get_month_start,
+    get_year_start)
 
 
 def date_totals(entries, by):

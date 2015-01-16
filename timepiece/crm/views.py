@@ -145,8 +145,11 @@ def view_user_timesheet(request, user_id, active_tab):
     if can_change or user == request.user:
         show_verify = unverified_count != 0
     if can_approve:
-        show_approve = verified_count + approved_count == total_statuses \
-                and verified_count > 0 and total_statuses != 0
+        show_approve = all([
+            verified_count + approved_count == total_statuses,
+            verified_count > 0,
+            total_statuses != 0,
+        ])
 
     return render(request, 'timepiece/user/timesheet/view.html', {
         'active_tab': active_tab or 'overview',
@@ -274,14 +277,10 @@ class ProjectTimesheet(DetailView):
                 'status')
         month_entries = entries_qs.date_trunc('month', extra_values)
         total = entries_qs.aggregate(hours=Sum('hours'))['hours']
-        user_entries = entries_qs.order_by().values(
-            'user__first_name', 'user__last_name').annotate(
-            sum=Sum('hours')).order_by('-sum'
-        )
-        activity_entries = entries_qs.order_by().values(
-            'activity__name').annotate(
-            sum=Sum('hours')).order_by('-sum'
-        )
+        user_entries = entries_qs.order_by().values('user__first_name', 'user__last_name')
+        user_entries = user_entries.annotate(sum=Sum('hours')).order_by('-sum')
+        activity_entries = entries_qs.order_by().values('activity__name')
+        activity_entries = activity_entries.annotate(sum=Sum('hours')).order_by('-sum')
         context.update({
             'project': project,
             'year_month_form': year_month_form,

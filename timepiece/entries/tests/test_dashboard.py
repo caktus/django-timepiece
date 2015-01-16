@@ -195,10 +195,10 @@ class ProcessProgressTestCase(TestCase):
         """Progress when work has been done for an assigned project."""
         start_time = datetime.datetime(2012, 11, 7, 8, 0)
         end_time = datetime.datetime(2012, 11, 7, 12, 0)
-        entry = self._create_entry(start_time, end_time)
+        self._create_entry(start_time, end_time)
         worked_hours = 4
         assigned_hours = 5
-        assignment = self._create_hours(assigned_hours)
+        self._create_hours(assigned_hours)
 
         progress = self._get_progress()
         self.assertEqual(len(progress), 1)
@@ -209,7 +209,7 @@ class ProcessProgressTestCase(TestCase):
         """Progress when work has been done on an unassigned project."""
         start_time = datetime.datetime(2012, 11, 7, 8, 0)
         end_time = datetime.datetime(2012, 11, 7, 12, 0)
-        entry = self._create_entry(start_time, end_time)
+        self._create_entry(start_time, end_time)
         worked_hours = 4
 
         progress = self._get_progress()
@@ -219,7 +219,7 @@ class ProcessProgressTestCase(TestCase):
     def test_assignment_with_no_work(self):
         """Progress when no work has been done on an assigned project."""
         assigned_hours = 5
-        assignment = self._create_hours(assigned_hours)
+        self._create_hours(assigned_hours)
 
         progress = self._get_progress()
         self.assertEqual(len(progress), 1)
@@ -235,8 +235,8 @@ class ProcessProgressTestCase(TestCase):
         for i in range(3):
             start_time = datetime.datetime(2012, 11, 5 + i, 8, 0)
             end_time = datetime.datetime(2012, 11, 5 + i, 12, 0)
-            entry = self._create_entry(start_time, end_time, projects[i])
-            assignment = self._create_hours(5 + 5 * i, projects[i])
+            self._create_entry(start_time, end_time, projects[i])
+            self._create_hours(5 + 5 * i, projects[i])
 
         progress = self._get_progress()
         self.assertEqual(len(progress), 3)

@@ -30,8 +30,8 @@ urlpatterns = [
         name='delete_user'),
 
     # User timesheets
-    url(r'^user/(?P<user_id>\d+)/timesheet/' +
-                '(?:(?P<active_tab>overview|all-entries|daily-summary)/)?$',
+    url(r'^user/(?P<user_id>\d+)/timesheet/'
+        '(?:(?P<active_tab>overview|all-entries|daily-summary)/)?$',
         views.view_user_timesheet,
         name='view_user_timesheet'),
     url(r'^user/(?P<user_id>\d+)/timesheet/reject/$',

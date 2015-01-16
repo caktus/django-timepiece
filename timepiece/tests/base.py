@@ -102,16 +102,17 @@ class ViewTestMixin(object):
         # Optionally assert that the response redirect URL has the correct
         # GET parameters.
         if use_params:
-            self.assertDictEqual(parse_qs(parsed1.query),
-                    parse_qs(parsed2.query), "Response did not have the GET "
-                    "parameters expected: GET parameters were {0} (expected "
-                    "{1})".format(parsed1.query or {}, parsed2.query or {}))
+            self.assertDictEqual(
+                parse_qs(parsed1.query), parse_qs(parsed2.query),
+                "Response did not have the GET parameters expected: GET "
+                "parameters were {0} (expected "
+                "{1})".format(parsed1.query or {}, parsed2.query or {}))
 
     def assertRedirectsToLogin(self, response, login_url=None,
-            use_params=False, status_code=302):
+                               use_params=False, status_code=302):
         login_url = login_url or self.login_url
-        return self.assertRedirectsNoFollow(response, login_url, use_params,
-                status_code)
+        return self.assertRedirectsNoFollow(
+            response, login_url, use_params, status_code)
 
     def login_user(self, user, strict=True):
         """Log in a user without need for a password.

@@ -30,26 +30,26 @@ class ProjectHoursTestCase(ViewTestMixin, TestCase):
         self.superuser = factories.Superuser()
 
         self.tracked_status = factories.StatusAttribute(
-                label='Current', billable=True, enable_timetracking=True)
+            label='Current', billable=True, enable_timetracking=True)
         self.untracked_status = factories.StatusAttribute(
-                label='Closed', billable=False, enable_timetracking=False)
+            label='Closed', billable=False, enable_timetracking=False)
         self.tracked_type = factories.TypeAttribute(
-                label='Tracked', billable=True, enable_timetracking=True)
+            label='Tracked', billable=True, enable_timetracking=True)
         self.untracked_type = factories.TypeAttribute(
-                label='Untracked', billable=False, enable_timetracking=False)
+            label='Untracked', billable=False, enable_timetracking=False)
 
         self.work_activities = factories.ActivityGroup(name='Work')
         self.leave_activities = factories.ActivityGroup(name='Leave')
         self.all_activities = factories.ActivityGroup(name='All')
 
-        self.leave_activity = factories.Activity(code='leave',
-                name='Leave', billable=False)
-        self.leave_activity.activity_group.add(self.leave_activities,
-                self.all_activities)
-        self.work_activity = factories.Activity(code='work',
-                name='Work', billable=True)
-        self.work_activity.activity_group.add(self.work_activities,
-                self.all_activities)
+        self.leave_activity = factories.Activity(
+            code='leave', name='Leave', billable=False)
+        self.leave_activity.activity_group.add(
+            self.leave_activities, self.all_activities)
+        self.work_activity = factories.Activity(
+            code='work', name='Work', billable=True)
+        self.work_activity.activity_group.add(
+            self.work_activities, self.all_activities)
 
         data = {
             'type': self.tracked_type,
@@ -57,14 +57,14 @@ class ProjectHoursTestCase(ViewTestMixin, TestCase):
             'activity_group': self.work_activities,
         }
         self.tracked_project = factories.BillableProject(
-                name='Tracked', **data)
+            name='Tracked', **data)
         data = {
             'type': self.untracked_type,
             'status': self.untracked_status,
             'activity_group': self.all_activities,
         }
         self.untracked_project = factories.BillableProject(
-                name='Untracked', **data)
+            name='Untracked', **data)
 
 
 class ProjectHoursModelTestCase(ProjectHoursTestCase):
@@ -75,8 +75,7 @@ class ProjectHoursModelTestCase(ProjectHoursTestCase):
         for i in range(7):
             date = monday + relativedelta(days=i)
             entry = ProjectHours.objects.create(
-                    week_start=date, project=self.tracked_project,
-                    user=self.user)
+                week_start=date, project=self.tracked_project, user=self.user)
             self.assertEquals(entry.week_start.date(), monday)
             ProjectHours.objects.all().delete()
 
@@ -136,8 +135,8 @@ class ProjectHoursListViewTestCase(ProjectHoursTestCase):
                 if entry:
                     count += 1
                     self.assertTrue(all_entries.filter(project__id=proj_id,
-                            user__id=users[i][0],
-                            hours=entry['hours']).exists())
+                                    user__id=users[i][0],
+                                    hours=entry['hours']).exists())
         self.assertEquals(count, all_entries.count())
 
     def test_week_filter_midweek(self):
