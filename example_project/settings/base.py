@@ -22,7 +22,6 @@ INSTALLED_APPS = [
     'timepiece.entries',
     'timepiece.reports',
 
-    'pagination',
     'compressor',
     'bootstrap_toolkit',
     'selectable',

@@ -186,6 +186,7 @@ def list_outstanding_invoices(request):
 @cbv_decorator(permission_required('contracts.add_entrygroup'))
 class ListInvoices(SearchListView):
     model = EntryGroup
+    paginate_by = 20
     search_fields = ['user__username__icontains', 'project__name__icontains',
             'comments__icontains', 'number__icontains']
     template_name = 'timepiece/invoice/list.html'

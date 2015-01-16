@@ -1,10 +1,9 @@
-{% if is_paginated %}
 {% load i18n %}
 <div class="pagination">
     <ul>
-        {% if page_obj.has_previous %}
+        {% if object_list.has_previous %}
             <li>
-                <a href="?page={{ page_obj.previous_page_number }}{{ getvars }}{{ hashtag }}" class="prev">&laquo; {% trans "previous" %}</a>
+                <a href="?page={{ object_list.previous_page_number }}{{ getvars }}{{ hashtag }}" class="prev">&laquo; {% trans "previous" %}</a>
             </li>
         {% else %}
             <li class="disabled">
@@ -13,7 +12,7 @@
         {% endif %}
         {% for page in pages %}
             {% if page %}
-                {% ifequal page page_obj.number %}
+                {% ifequal page object_list.number %}
                 <li class="active">
                     <a>{{ page }}</a>
                 </li>
@@ -28,9 +27,9 @@
                 </li>
             {% endif %}
         {% endfor %}
-        {% if page_obj.has_next %}
+        {% if object_list.has_next %}
             <li>
-                <a href="?page={{ page_obj.next_page_number }}{{ getvars }}{{ hashtag }}" class="next">{% trans "next" %} &raquo;</a>
+                <a href="?page={{ object_list.next_page_number }}{{ getvars }}{{ hashtag }}" class="next">{% trans "next" %} &raquo;</a>
             </li>
         {% else %}
             <li class="disabled">
@@ -39,4 +38,3 @@
         {% endif %}
     </ul>
 </div>
-{% endif %}

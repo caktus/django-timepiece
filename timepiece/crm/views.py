@@ -337,6 +337,7 @@ class ProjectTimesheetCSV(CSVViewMixin, ProjectTimesheet):
 @cbv_decorator(permission_required('crm.view_business'))
 class ListBusinesses(SearchListView):
     model = Business
+    paginate_by = 20
     redirect_if_one_result = True
     search_fields = ['name__icontains', 'description__icontains']
     template_name = 'timepiece/business/list.html'
@@ -391,6 +392,7 @@ class EditSettings(UpdateView):
 @cbv_decorator(permission_required('auth.view_user'))
 class ListUsers(SearchListView):
     model = User
+    paginate_by = 20
     redirect_if_one_result = True
     search_fields = ['first_name__icontains', 'last_name__icontains',
             'email__icontains', 'username__icontains']
@@ -441,6 +443,7 @@ class EditUser(UpdateView):
 class ListProjects(SearchListView):
     model = Project
     form_class = ProjectSearchForm
+    paginate_by = 20
     redirect_if_one_result = True
     search_fields = ['name__icontains', 'description__icontains']
     template_name = 'timepiece/project/list.html'
