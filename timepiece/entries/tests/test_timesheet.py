@@ -112,7 +112,7 @@ class MyLedgerTest(ViewTestMixin, LogTimeMixin, TestCase):
         self.url = reverse('dashboard')
         try:
             response = self.client.get(self.url)
-        except Exception, e:
+        except Exception as e:
             self.fail(e)
 
     def make_entries(self):
