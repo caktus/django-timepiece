@@ -57,7 +57,7 @@ class ContractList(ListView):
 
 
 @login_required
-@transaction.commit_on_success
+@transaction.atomic
 def create_invoice(request):
     pk = request.GET.get('project', None)
     to_date = request.GET.get('to_date', None)

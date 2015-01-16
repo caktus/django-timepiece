@@ -134,7 +134,7 @@ class Dashboard(TemplateView):
 
 
 @permission_required('entries.can_clock_in')
-@transaction.commit_on_success
+@transaction.atomic
 def clock_in(request):
     """For clocking the user into a project."""
     user = request.user

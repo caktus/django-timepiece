@@ -495,7 +495,7 @@ class EditProject(UpdateView):
 
 @cbv_decorator(permission_required('crm.add_projectrelationship'))
 @cbv_decorator(csrf_exempt)
-@cbv_decorator(transaction.commit_on_success)
+@cbv_decorator(transaction.atomic)
 class CreateRelationship(View):
 
     def post(self, request, *args, **kwargs):
@@ -535,7 +535,7 @@ class RelationshipObjectMixin(object):
 
 
 @cbv_decorator(permission_required('crm.change_projectrelationship'))
-@cbv_decorator(transaction.commit_on_success)
+@cbv_decorator(transaction.atomic)
 class EditRelationship(RelationshipObjectMixin, UpdateView):
     model = ProjectRelationship
     template_name = 'timepiece/relationship/edit.html'
@@ -544,7 +544,7 @@ class EditRelationship(RelationshipObjectMixin, UpdateView):
 
 @cbv_decorator(permission_required('crm.delete_projectrelationship'))
 @cbv_decorator(csrf_exempt)
-@cbv_decorator(transaction.commit_on_success)
+@cbv_decorator(transaction.atomic)
 class DeleteRelationship(RelationshipObjectMixin, DeleteView):
     model = ProjectRelationship
     template_name = 'timepiece/relationship/delete.html'
