@@ -1,2 +1,4 @@
-docutils
-Sphinx
+docutils>=0.12
+Sphinx>=1.2.3
+  Jinja2>=2.7.3
+  MarkupSafe>=0.23
