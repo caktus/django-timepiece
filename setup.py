@@ -1,22 +1,12 @@
 from setuptools import setup, find_packages
 
 
-required_packages = [
-    'Django>=1.6',
-    'django-appconf==0.6',
-    'django-bootstrap-toolkit==2.15.0',
-    'django-compressor==1.4',
-    'django-selectable==0.9.0',
-    'psycopg2==2.5.4',
-    'python-dateutil==2.4.0',
-    'pytz==2014.10',
-    'six==1.9.0',
-]
+required_packages = open("example_project/requirements/base.txt").read()
+required_packages = [r.strip() for r in required_packages.splitlines() if r.strip()]
 
-test_packages = [
-    'factory-boy==2.4.1',
-    'Mock==1.0.1',
-]
+test_packages = open("example_project/requirements/tests.txt").read()
+test_packages = [t.strip() for t in test_packages.splitlines()
+                 if t.strip() and not t.strip().startswith("-r")]
 
 setup(
     author='Caktus Consulting Group, LLC',
