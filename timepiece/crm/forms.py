@@ -152,6 +152,7 @@ class EditUserForm(UserChangeForm):
             widget=forms.PasswordInput(render_value=False))
     business = forms.ModelChoiceField(Business.objects.all())
     hire_date = forms.DateField()
+    hours_per_week = forms.DecimalField(max_digits=4, decimal_places=2)
     earns_pto = forms.BooleanField(required=False, label='Earns PTO')
     earns_holiday_pay = forms.BooleanField(required=False, label='Earns Holiday Pay')
     pto_accrual = forms.FloatField(initial=0.0, label='PTO Accrual Amount', help_text='Number of PTO hours earned per pay period for the employee.')
@@ -169,6 +170,7 @@ class EditUserForm(UserChangeForm):
         up = UserProfile.objects.get(user=kwargs['instance'])
         self.fields['business'].initial = up.business
         self.fields['hire_date'].initial = up.hire_date
+        self.fields['hours_per_week'].initial = up.hours_per_week
         self.fields['earns_pto'].initial = up.earns_pto
         self.fields['earns_holiday_pay'].initial = up.earns_holiday_pay
         self.fields['pto_accrual'].initial = up.pto_accrual
@@ -192,6 +194,7 @@ class EditUserForm(UserChangeForm):
         up = UserProfile.objects.get(user=instance)
         up.business = self.cleaned_data.get('business')
         up.hire_date = self.cleaned_data['hire_date']
+        up.hours_per_week = self.cleaned_data['hours_per_week']
         up.earns_pto = self.cleaned_data['earns_pto']
         up.earns_holiday_pay = self.cleaned_data['earns_holiday_pay']
         up.pto_accrual = self.cleaned_data['pto_accrual']
