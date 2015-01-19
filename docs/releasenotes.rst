@@ -6,6 +6,7 @@ Release Notes
 
 * Compatibility with Django 1.6/1.7 and Python 2.7/3
 * Flake8 compliance
+* Drops support for testing with Jenkins
 
 0.9.5 (Released 06-16-2014)
 ---------------------------
