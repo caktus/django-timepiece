@@ -1,21 +1,22 @@
 Testing
 =======
 
-django-timepiece includes several different alternatives for testing. Test can be run using the default django test runner, through `Tox <http://tox.testrun.org/latest/>`_, or with `django-jenkins <https://github.com/kmmbvnr/django-jenkins>`_. Tox and django-jenkins are not required to run the tests for django-timepiece, but it is possible to use them::
+Full tests requirements are listed `here <../example_project/requirements/tests.txt>`_.
 
-    pip install --upgrade tox django-jenkins
+You can run tests against your installation of django-timepiece using the
+Django test runner::
 
-A Python module, ``run_tests.py``, is included if you do not want to run tests using Tox. This is the Python module used to run tests when executing ``python setup.py test``. The tests are run through Django, using Django's default test runner. It accepts an optional argument, ``run_tests.py jenkins``, that runs the tests using django-jenkins. Running the tests with django-jenkins also requires you to install `coverage <http://pypi.python.org/pypi/coverage>`_ and `pep8 <http://pypi.python.org/pypi/pep8/>`_.
+    python manage.py test
 
-To run a subset of the Django tests for django-timepiece, you can pass their names to ``run_tests.py`` as you would for ``django-admin.py test``, e.g. ``run_tests.py timepiece.TestClassName [...]``.
+Or with specific apps::
 
-django-timepiece inclues a Tox configuration file to run tests in a variety of environments:
+    python manage.py test timepiece timepiece.crm timepiece.reports
 
- * `py26-1.4` - Test using Python 2.6 and Django 1.4.x
- * `py26-1.5` - Test using Python 2.6 and Django 1.5.x
- * `py27-1.4` - Test using Python 2.7 and Django 1.4.x
- * `py27-1.5` - Test using Python 2.7 and Django 1.5.x
+You can also use tox to run tests against a specific environment::
 
-You can run any of the environments listed above using: ``tox -e name``. The tests are run through Django's default test runner, but you can also run the tests using django-jenkins along with tox by providing an extra argument: ``tox -e name -- jenkins``.
+    tox -e py3.4-django1.7
 
-
+Or omit the `-e` argument to run tests against all combinations of Python
+and Django that django-timepiece supports. By default tox uses the example
+project test settings, but you can specify different test settings using the
+``--settings`` flag. You can also specify which apps to test against.
