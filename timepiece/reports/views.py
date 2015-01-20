@@ -2,6 +2,8 @@ import csv
 from dateutil.relativedelta import relativedelta
 from itertools import groupby
 import json
+import datetime
+from decimal import Decimal
 import pprint
 pp = pprint.PrettyPrinter(indent=4)
 
@@ -21,13 +23,15 @@ from timepiece.utils.csv import CSVViewMixin, DecimalEncoder
 
 from timepiece.contracts.models import ProjectContract
 from timepiece.entries.models import Entry, ProjectHours
-from timepiece.crm.models import Project
+from timepiece.crm.models import Project, PaidTimeOffRequest
 from timepiece.reports.forms import BillableHoursReportForm, HourlyReportForm,\
         ProductivityReportForm, PayrollSummaryReportForm
 from timepiece.reports.utils import get_project_totals, get_payroll_totals,\
         generate_dates, get_week_window
 
 from timepiece.reports.utils import get_week_trunc_sunday, multikeysort
+
+from holidays.models import Holiday
 
 
 class ReportMixin(object):
@@ -757,19 +761,22 @@ from django.contrib.auth.models import Group
 from timepiece.crm.models import ActivityGoal, Project
 from django.db.models import Sum, Q
 @permission_required('crm.view_employee_backlog')
-def report_backlog(request):
+def report_backlog(request, active_tab='company'):
     """
     Determines company-wide backlog and displays
     """
     if request.user.has_perm('crm.view_backlog'):
         backlog = {}
+        backlog_summary = {}
+        company_total_hours = {}
         for employee in Group.objects.get(id=1).user_set.filter(is_active=True).order_by('last_name', 'first_name'):
-            backlog[employee.id] =[]
+            backlog[employee.id] = []
+            backlog_summary[employee.id] = {'total_available_hours': 0,
+                                            'drop_dead_date': None}
             for employee, activity_goals in groupby(ActivityGoal.objects.filter(employee=employee, milestone__project__status=4).order_by('activity'), lambda x: x.employee):
                 for activity, activity_goals in groupby(activity_goals, lambda x: x.activity):
                     activity_hours = 0.0
                     charged_hours = 0.0
-                    #print 'employee', employee.first_name, employee.last_name, 'activity', activity
                     if activity is None:
                         activity_name = 'Other'
                         for activity_goal in activity_goals:
@@ -796,14 +803,131 @@ def report_backlog(request):
                                                                         ).aggregate(Sum('hours'))['hours__sum'] or 0.0)
                     percentage = 100.*(float(charged_hours)/float(activity_hours)) if float(activity_hours) > 0 else 0
                     percentage = 100 if float(activity_hours)==0.0 else percentage
+                    remaining_hours = activity_hours - charged_hours
                     backlog[employee.id].append({'activity': activity,
                                                  'activity_name': activity_name,
                                                  'employee': employee,
                                                  'hours': activity_hours,
                                                  'charged_hours': charged_hours,
-                                                 'remaining_hours': activity_hours - charged_hours,
+                                                 'remaining_hours': remaining_hours,
                                                  'percentage': percentage})
-        return render(request, 'timepiece/reports/backlog.html', {'backlog': backlog})
+                    backlog_summary[employee.id]['total_available_hours'] += max(remaining_hours, 0.0)
+                    if activity_name not in company_total_hours.keys():
+                        company_total_hours[activity_name] = \
+                            {'activity': activity,
+                             'remaining_hours': 0.0}
+                    company_total_hours[activity_name]['remaining_hours'] += \
+                        max(remaining_hours, 0.0)
+
+        
+        for employee_id, values in backlog_summary.items():
+            employee = User.objects.get(id=employee_id)
+            backlog_summary[employee_id]['employee'] = employee
+            if float(employee.profile.hours_per_week) <= 0:
+                backlog_summary[employee_id]['drop_dead_date'] = datetime.date.today()
+                backlog_summary[employee_id]['no_hours_per_week'] = True
+                continue
+
+            num_weeks = values['total_available_hours'] / float(employee.profile.hours_per_week)
+            approx_days = 7 * num_weeks
+            drop_dead_date = datetime.date.today() + relativedelta(days=int(approx_days))
+            # backlog_summary[employee_id]['drop_dead_date'] = drop_dead_date
+            
+            future_approved_time_off = PaidTimeOffRequest.objects.filter(
+                Q(status=PaidTimeOffRequest.APPROVED
+                    )|Q(status=PaidTimeOffRequest.PROCESSED),
+                user_profile=employee.profile,
+                pto_start_date__gte=datetime.date.today(),
+                pto_end_date__lte=drop_dead_date,
+                ).aggregate(s=Sum('amount'))['s'] or Decimal('0.0')
+            backlog_summary[employee_id]['future_approved_time_off'] = \
+                future_approved_time_off
+
+            future_holiday_time_off = Decimal('0.0')
+            holidays = Holiday.holidays_between_dates(datetime.date.today(),
+                drop_dead_date, {'paid_holiday': True})
+            for holiday in holidays:
+                future_holiday_time_off += Decimal('8.0') * \
+                employee.profile.hours_per_week / Decimal('40.0')
+            backlog_summary[employee_id]['future_holiday_time_off'] = \
+                future_holiday_time_off
+
+            total_hours = values['total_available_hours'] \
+                        + float(future_holiday_time_off) \
+                        + float(future_approved_time_off)
+
+            num_weeks = total_hours / float(employee.profile.hours_per_week)
+            # subtract 1 for 
+            approx_days = 7.0 * num_weeks - 1.0
+            drop_dead_date = datetime.date.today() \
+                           + relativedelta(days=int(approx_days))
+            while drop_dead_date.weekday() >= 5:
+                drop_dead_date -= relativedelta(days=1)
+            backlog_summary[employee_id]['drop_dead_date'] = drop_dead_date
+
+        backlog_summary_sorted = sorted(backlog_summary.values(), key=lambda x: x['drop_dead_date'])
+
+        company_hours_per_week = Group.objects.get(id=1).user_set.filter(
+            is_active=True).aggregate(hours=Sum('profile__hours_per_week')
+            )['hours']
+        company_hours = 0.0
+        for activity_id, values in company_total_hours.items():
+            company_hours += values['remaining_hours']
+        num_weeks = company_hours / float(company_hours_per_week)
+        approx_days = 7 * num_weeks
+        drop_dead_date = datetime.date.today() + relativedelta(days=int(approx_days))
+        
+        future_approved_time_off = PaidTimeOffRequest.objects.filter(
+                Q(status=PaidTimeOffRequest.APPROVED
+                    )|Q(status=PaidTimeOffRequest.PROCESSED),
+                pto_start_date__gte=datetime.date.today(),
+                pto_end_date__lte=drop_dead_date,
+                ).aggregate(s=Sum('amount'))['s'] or Decimal('0.0')
+
+        future_holiday_time_off = Decimal('0.0')
+        holidays = Holiday.holidays_between_dates(datetime.date.today(),
+            drop_dead_date, {'paid_holiday': True})
+        for holiday in holidays:
+            future_holiday_time_off += Decimal('8.0') * (
+                company_hours_per_week / (Group.objects.get(id=1
+                    ).user_set.filter(is_active=True).count() * \
+                Decimal('40.0')))
+
+        total_hours = company_hours \
+                    + float(future_holiday_time_off) \
+                    + float(future_approved_time_off)
+
+        num_weeks = total_hours / float(company_hours_per_week)
+        approx_days = 7 * num_weeks
+        drop_dead_date = datetime.date.today() + relativedelta(days=int(approx_days))
+        while drop_dead_date.weekday() >= 5:
+            drop_dead_date -= relativedelta(days=1)
+            backlog_summary[employee_id]['drop_dead_date'] = drop_dead_date
+
+        chart_data = []
+        # chart_data = {'activities': [], 'values': []}
+        for activity_name, values in company_total_hours.items():
+            chart_data.append([activity_name, values['remaining_hours']])
+            # chart_data['activities'].append(activity_name)
+            # chart_data['values'].append(values['remaining_hours'])
+
+        company_total_hours_sorted = sorted(company_total_hours.values(), key=lambda x: -1*x['remaining_hours'])
+        company_backlog = {
+            'company_total_hours': company_total_hours_sorted,
+            'company_work_hours': company_hours,
+            'company_total_hours_with_time_off': total_hours,
+            'drop_dead_date': drop_dead_date,
+            'company_hours': company_hours,
+            'future_approved_time_off': future_approved_time_off,
+            'future_holiday_time_off': future_holiday_time_off,
+            'chart_data': json.dumps(chart_data)
+        }
+
+        return render(request, 'timepiece/reports/backlog.html', 
+            {'backlog': backlog,
+             'backlog_summary': backlog_summary_sorted,
+             'company_backlog': company_backlog,
+             'active_tab': active_tab or 'company'})
     else:
         return HttpResponseRedirect( reverse('report_employee_backlog', args=(request.user.id,)) )
 

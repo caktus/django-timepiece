@@ -27,11 +27,11 @@ urlpatterns = patterns('',
         views.report_estimation_accuracy,
         name='report_estimation_accuracy'),
 
-    url(r'^reports/backlog/$',
+    url(r'^reports/backlog/(?:(?P<active_tab>company|individual-summary|individual-details)/)?$',
         views.report_backlog,
         name='report_backlog'),
 
-    url(r'^reports/backlog/(?P<user_id>\d+)/$',
+    url(r'^reports/backlog/user/(?P<user_id>\d+)/$',
         views.report_employee_backlog,
         name='report_employee_backlog'),
 

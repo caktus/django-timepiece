@@ -1,8 +1,12 @@
 {% extends "timepiece/reports/base.html" %}
-{% load timepiece_tags bootstrap_toolkit %}
+{% load timepiece_tags bootstrap_toolkit humanize %}
 {% load url from future %}
 
 {% block title %}Backlog Report{% endblock title %}
+
+{% block extracss %}
+    <link rel="stylesheet" type="text/css" href="{{ STATIC_URL }}timepiece/js/burnup_charts/c3.min.css" />
+{% endblock extracss %}
 
 {% block bodyid %}backlog-report{% endblock bodyid %}
 
@@ -24,31 +28,123 @@
 {% block report_content %}
 <div class="row-fluid">
     <div class="span12" name="backlog-container">
-        <table class="table">
-            <tr>
-                <th>Employee</th>
-                <th>Activity</th>
-                <th style="width: 40%">Progress</th>
-                <th colspan="2">Hours</th>
-            </tr>
-            {% for employee, ags in backlog.items %}
-                {% for ag in ags %}
-                <tr>
-                    {% if forloop.first %}
-                    <td rowspan="{{ ags|length }}"><a href="{% url 'report_employee_backlog' ag.employee.id %}">{{ ag.employee.first_name }} {{ ag.employee.last_name }}</a></td>
-                    {% endif %}
-                    <td>{{ ag.activity_name }}</td>
-                    <td>
-                        <div class="progress{% if ag.hours == 0.0 %} progress-danger progress-striped{% endif %}">
-                            <div class="bar" style="width: {{ ag.percentage }}%;"></div>
-                        </div>
-                    </td>
-                    <td>{{ ag.charged_hours }} / {{ ag.hours }}</td>
-                    <td><span class="label">{{ ag.remaining_hours }} remaining</span></td>
-                </tr>
-                {% endfor %}
-            {% endfor %}
-        </table>
+
+        <ul class="nav nav-tabs">
+            <li{% if active_tab == 'company' %} class="active"{% endif %}>
+                {% url "report_backlog" "company" as link %}
+                <a class="tab-link" to="company" href="{{ link|add_parameters:request.GET }}">Company</a>
+            </li>
+            <li{% if active_tab == 'individual-summary' %} class="active"{% endif %}>
+                {% url "report_backlog" "individual-summary" as link %}
+                <a class="tab-link" to="individual-summary" href="{{ link|add_parameters:request.GET }}">Individual Summary</a>
+            </li>
+            <li{% if active_tab == 'individual-details' %} class="active"{% endif %}>
+                {% url "report_backlog" "individual-details" as link %}
+                <a class="tab-link" to="individual-details" href="{{ link|add_parameters:request.GET }}">Individual Detail</a>
+            </li>
+        </ul>
+
+        <div class="tab-content">
+            <div class="tab-pane{% if active_tab == 'company' %} active{% endif %}" id="company">
+                <div class="span4">
+                    <h3>Drop Dead Date: {{ company_backlog.drop_dead_date }}</h3>
+                    <table class="table">
+                        <tr>
+                            <th>Activity</th>
+                            <th>Hours</th>
+                        </tr>
+                        {% for activity_hours in company_backlog.company_total_hours %}
+                            <tr id='activity-hours-{{ forloop.counter0 }}'>
+                                <td>{% if activity_hours.activity %}{{ activity_hours.activity.name }}{% else %}Other{% endif %}</td>
+                                <td>{{ activity_hours.remaining_hours|floatformat:2|intcomma }}</td>
+                            </tr>
+                        {% endfor %}
+                    </table>
+                </div>
+                <div class="span6 offset1">
+                    <h3>Backlog by Activity</h3>
+                    <div id="activity-breakdown-chart" data="{{ company_backlog.chart_data }}"></div>
+                </div>
+            </div>
+
+            <div class="tab-pane{% if active_tab == 'individual-summary' %} active{% endif %}" id="individual-summary">
+                <table class="table">
+                    <tr>
+                        <th>Employee</th>
+                        <th title="The last date the employee has available hours based on Activity Goals.">Drop Dead Date</th>
+                        <th title="The total number of hours remaining based on Activity Goals.">Total Hours Remaining</th>
+                        <th title="The number of approved time off hours included in reaching the Drop Dead Date.">Approved Time Off</th>
+                        <th title="The number of holiday hours included in reaching the Drop Dead Date.">Included Holidays</th>
+                    </tr>
+                    {% for employee in backlog_summary %}
+                        <tr>
+                            <td><a href="{% url 'report_employee_backlog' employee.employee.id %}">{{ employee.employee.first_name }} {{ employee.employee.last_name }}</a></td>
+                            <td>{{ employee.drop_dead_date }}</td>
+                            <td>{{ employee.total_available_hours }}</td>
+                            <td>{{ employee.future_approved_time_off }}</td>
+                            <td>{{ employee.future_holiday_time_off }}</td>
+                        </tr>
+                    {% endfor %}
+                </table>
+            </div>
+
+            <div class="tab-pane{% if active_tab == 'individual-details' %} active{% endif %}" id="individual-details">
+                <table class="table">
+                    <tr>
+                        <th>Employee</th>
+                        <th>Activity</th>
+                        <th style="width: 40%">Progress</th>
+                        <th colspan="2">Hours</th>
+                    </tr>
+                    {% for employee, ags in backlog.items %}
+                        {% for ag in ags %}
+                        <tr>
+                            {% if forloop.first %}
+                            <td rowspan="{{ ags|length }}"><a href="{% url 'report_employee_backlog' ag.employee.id %}">{{ ag.employee.first_name }} {{ ag.employee.last_name }}</a></td>
+                            {% endif %}
+                            <td>{{ ag.activity_name }}</td>
+                            <td>
+                                <div class="progress{% if ag.hours == 0.0 %} progress-danger progress-striped{% endif %}">
+                                    <div class="bar" style="width: {{ ag.percentage }}%;"></div>
+                                </div>
+                            </td>
+                            <td>{{ ag.charged_hours }} / {{ ag.hours }}</td>
+                            <td><span class="label">{{ ag.remaining_hours }} remaining</span></td>
+                        </tr>
+                        {% endfor %}
+                    {% endfor %}
+                </table>
+            </div>
     </div>
 </div>
 {% endblock report_content %}
+
+{% block extrajs %}
+<script charset="utf-8" src="{{ STATIC_URL }}timepiece/js/burnup_charts/c3.min.js"></script>
+<script charset="utf-8" src="{{ STATIC_URL }}timepiece/js/burnup_charts/d3.min.js"></script>
+<script charset="utf-8" src="{{ STATIC_URL }}timepiece/js/burnup_charts/burnup_charts.js"></script>
+<script>
+    $(document).ready( function () {
+        var data = $.parseJSON($('#activity-breakdown-chart').attr('data'))
+        console.log('data', data);
+        var chart = c3.generate({
+            bindto: '#activity-breakdown-chart',
+            data: {
+                columns: data,
+                type : 'donut',
+                onclick: function (d, i) { console.log("onclick", d, i); },
+                onmouseover: function (d, i) { $('#activity-hours-' + d.index).addClass('success'); },
+                onmouseout: function (d, i) { $('#activity-hours-' + d.index).removeClass('success'); }
+            },
+            donut: {
+                title: "",
+                label: {//"Backlog by Activity",
+                    format: function (value, ratio, id) {
+                        return d3.format(',.2f')(value);
+                    }
+                }
+            }
+        });
+    });
+</script>
+{% endblock extrajs %}
