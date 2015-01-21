@@ -33,7 +33,7 @@ Requirements
 django-timepiece is compatible with Django 1.6 (on Python 2.7 and Python 3.3),
 and Django 1.7 (on Python 2.7 and Python 3.4). PostgreSQL is the only
 officially supported backend. For a full list of required libraries, see
-the example project `requirements`_.
+the `requirements`_.
 
 We actively support desktop versions of Chrome and Firefox, as well as common
 mobile platforms. We do not support most versions of Internet Explorer. We
@@ -52,7 +52,7 @@ Installation
 ------------
 
 #. django-timepiece is available on `PyPI`_, so the easiest way to
-   install it is to use `pip <http://pip.openplans.org/>`_::
+   install it and its dependencies is to use `pip <http://pip.openplans.org/>`_::
 
     $ pip install django-timepiece
 
@@ -177,6 +177,5 @@ Development sponsored by `Caktus Consulting Group, LLC
 
 .. _PyPI: http://pypi.python.org/pypi/django-timepiece
 .. _Read The Docs: http://django-timepiece.readthedocs.org
-.. _requirements: example_project/requirements/base.txt
-.. _documentation requirements: example_project/requirements/docs.txt
-.. _test requirements: example_project/requirements/tests.txt
+.. _requirements: requirements/base.txt
+.. _documentation requirements: requirements/docs.txt

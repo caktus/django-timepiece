@@ -1,7 +1,7 @@
 Testing
 =======
 
-Full tests requirements are listed `here <../example_project/requirements/tests.txt>`_.
+Test requirements are listed `here <../requirements/tests.txt>`_.
 
 You can run tests against your installation of django-timepiece using the
 Django test runner::
