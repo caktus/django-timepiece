@@ -34,6 +34,12 @@
         {% url "pto" "history" as link %}
         <a class="tab-link" to="history" href="{{ link|add_parameters:request.GET }}">My PTO History</a>
     </li>
+    {% if perms.crm.view_current_pto %}
+    <li{% if active_tab == 'current_pto' %} class="active"{% endif %}>
+        {% url "pto" "current_pto" as link %}
+        <a class="tab-link" to="current_pto" href="{{ link|add_parameters:request.GET }}">All Employees Current PTO</a>
+    </li>
+    {% endif %}
     {% if perms.crm.can_approve_pto_requests %}
     <li{% if active_tab == 'approvals' %} class="active"{% endif %}>
         {% url "pto" "approvals" as link %}
@@ -46,7 +52,7 @@
     <li{% if active_tab == 'all_history' %} class="active"{% endif %}>
         {% url "pto" "all_history" as link %}
         <a class="tab-link" to="all_history" href="{{ link|add_parameters:request.GET }}">All PTO History</a>
-    </li>
+    </li>    
     {% endif %}
 </ul>
 
@@ -158,6 +164,26 @@
       {% endif %}
     </div>
 
+    {% if perms.crm.view_current_pto %}
+    <div class="tab-pane{% if active_tab == 'current_pto' %} active{% endif %}" id="current_pto">      
+        NOTE: This list only contains the users that are active and are set to earn Paid Time Off.
+        <table id="current_pto" class="table table-striped table-bordered table-hover table-condensed">
+            <thead><tr>
+                <th>Employee</th>
+                <th>Current Available PTO</th>
+            </tr></thead>
+            <tbody>
+                {% for employee in current_pto %}
+                <tr>
+                    <td><a href="mailto:{{ employee.email }}">{{ employee.last_name }}, {{ employee.first_name }}</a></td>
+                    <td>{{ employee.profile.get_pto }}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    {% endif %}
+
     {% if perms.crm.can_approve_pto_requests or perms.crm.can_process_pto_requests %}
     <div class="tab-pane{% if active_tab == 'approvals' %} active{% endif %}" id="approvals">
       {% if pto_approvals|length %}
@@ -178,7 +204,7 @@
                     <td>{% if ptor.pto %}Paid Time Off{% else %}Unpaid Time Off{% endif %}</td>
                     <td>{{ ptor.pto_start_date }}</td>
                     <td>{{ ptor.pto_end_date }}</td>
-                    <td>{% if ptor.pto %}{{ ptor.amount }}{% else %}n/a{% endif %}</td>
+                    <td>{{ ptor.amount }}</td>
                     <td>{{ ptor.comment }}</td>
                     <td>
                         {% if ptor.user_profile.user != request.user and ptor.status == "pending" %}

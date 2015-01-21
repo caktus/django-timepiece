@@ -7,7 +7,7 @@ import os
 from django.conf import settings
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required, permission_required
-from django.contrib.auth.models import User
+from django.contrib.auth.models import User, Group
 from django.core.urlresolvers import reverse, reverse_lazy
 from django.db import transaction
 from django.db.models import Sum, Q
@@ -927,6 +927,9 @@ def pto_home(request, active_tab='summary'):
              'holidays': Holiday.get_holidays_for_year(year=year, kwargs={'paid_holiday': True})}
         )
     data['today'] = datetime.date.today()
+
+    if request.user.has_perm('crm.view_current_pto'):
+        data['current_pto'] = Group.objects.get(id=1).user_set.all().filter(is_active=True, profile__earns_pto=True).order_by('last_name', 'first_name')
     return render(request, 'timepiece/pto/home.html', data)
 
 
