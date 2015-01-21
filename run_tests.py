@@ -29,20 +29,20 @@ parser.add_argument(
 )
 
 
-def run_django_tests(options):
-    # Use the example project settings, which are intentionally bare-bones.
-    os.environ['DJANGO_SETTINGS_MODULE'] = options.settings
+def run_django_tests(settings, apps):
+    os.environ['DJANGO_SETTINGS_MODULE'] = settings
 
     import django
-    if hasattr(django, 'setup'):  # Django 1.7
+    if hasattr(django, 'setup'):  # Django 1.7+
         django.setup()
 
-    from django.test.runner import DiscoverRunner
-    runner = DiscoverRunner(verbosity=1, interactive=True, failfast=False)
-    failures = runner.run_tests(options.apps or DEFAULT_APPS)
+    from django.conf import settings
+    from django.test.utils import get_runner
+    runner = get_runner(settings)(verbosity=1, interactive=True, failfast=False)
+    failures = runner.run_tests(apps or DEFAULT_APPS)
     sys.exit(failures)
 
 
 if __name__ == '__main__':
     options = parser.parse_args()
-    run_django_tests(options)
+    run_django_tests(options.settings, options.apps)

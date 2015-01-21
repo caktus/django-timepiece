@@ -1,12 +1,22 @@
 from setuptools import setup, find_packages
 
 
-required_packages = open("example_project/requirements/base.txt").read()
-required_packages = [r.strip() for r in required_packages.splitlines() if r.strip()]
+def _is_requirement(line):
+    """Returns whether the line is a valid package requirement."""
+    line = line.strip()
+    return line and not (line.startswith("-r") or line.startswith("#"))
 
-test_packages = open("example_project/requirements/tests.txt").read()
-test_packages = [t.strip() for t in test_packages.splitlines()
-                 if t.strip() and not t.strip().startswith("-r")]
+
+def _read_requirements(filename):
+    """Returns a list of package requirements read from the file."""
+    requirements_file = open(filename).read()
+    return [line.strip() for line in requirements_file.splitlines()
+            if _is_requirement(line)]
+
+
+required_packages = _read_requirements("requirements/base.txt")
+test_packages = _read_requirements("requirements/tests.txt")
+
 
 setup(
     author='Caktus Consulting Group, LLC',
@@ -33,7 +43,7 @@ setup(
     license='BSD',
     long_description=open('README.rst').read(),
     name='django-timepiece',
-    test_suite='run_tests.run',
+    test_suite='run_tests.run_django_tests',
     tests_require=required_packages + test_packages,
     url='https://github.com/caktus/django-timepiece',
     version=__import__('timepiece').__version__,
