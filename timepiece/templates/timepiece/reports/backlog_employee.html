@@ -36,7 +36,7 @@
                 {% for ag in project %}
                 <tr>
                     {% if forloop.first %}
-                    <td rowspan="{{ project|length }}"><strong>{{ ag.project.code }}</strong><br><small>{{ ag.project.name }}</small></td>
+                    <td rowspan="{{ project|length }}"><strong><a href="{% url 'view_project' ag.project.id %}">{{ ag.project.code }}</a></strong><br><small>{{ ag.project.name }}</small></td>
                     {% endif %}
                     <td>{{ ag.activity_name }}</td>
                     <td>
