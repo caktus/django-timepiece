@@ -1,13 +1,14 @@
 Release Notes
 =============
 
-0.10.0 (Unreleased)
--------------------
+0.10.0 (In Development)
+-----------------------
 
 * Compatibility with Django 1.6 with Python 2.7 or Python 3.3
 * Compatibility with Django 1.7 with Python 2.7 or Python 3.4
-* Flake8 compliance
+* Drops support for all other combinations of Django and Python
 * Drops support for testing with Jenkins
+* Flake8 compliance
 
 0.9.5 (Released 06-16-2014)
 ---------------------------
