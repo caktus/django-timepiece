@@ -98,7 +98,6 @@ class TestCreateUser(ViewTestMixin, TestCase):
         self.assertEquals(obj.is_active, self.post_data['is_active']),
         self.assertEquals(obj.is_staff, self.post_data['is_staff']),
         groups = obj.groups.values_list('pk', flat=True)
-        self.assertEqual(len(groups), len(self.post_data['groups']))
         self.assertEqual(sorted(groups), sorted(self.post_data['groups']))
         self.assertTrue(obj.check_password(self.post_data['password1']))
 
@@ -212,7 +211,6 @@ class TestEditUser(ViewTestMixin, TestCase):
         self.assertEquals(obj.is_staff, self.obj.is_staff)
         groups1 = obj.groups.values_list('pk', flat=True)
         groups2 = self.obj.groups.values_list('pk', flat=True)
-        self.assertEqual(len(groups1), len(groups2))
         self.assertEqual(sorted(groups1), sorted(groups2))
 
     def test_get_no_permission(self):
@@ -260,7 +258,6 @@ class TestEditUser(ViewTestMixin, TestCase):
         self.assertEquals(obj.is_active, self.post_data['is_active'])
         self.assertEquals(obj.is_staff, self.post_data['is_staff'])
         groups = obj.groups.values_list('pk', flat=True)
-        self.assertEqual(len(groups), len(self.post_data['groups']))
         self.assertEqual(sorted(groups), sorted(self.post_data['groups']))
 
     def test_post_invalid(self):

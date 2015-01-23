@@ -4,7 +4,8 @@ Release Notes
 0.10.0 (Unreleased)
 -------------------
 
-* Compatibility with Django 1.6/1.7 and Python 2.7/3
+* Compatibility with Django 1.6 with Python 2.7 or Python 3.3
+* Compatibility with Django 1.7 with Python 2.7 or Python 3.4
 * Flake8 compliance
 * Drops support for testing with Jenkins
 

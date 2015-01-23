@@ -33,7 +33,7 @@ Requirements
 django-timepiece is compatible with Django 1.6 (on Python 2.7 and Python 3.3),
 and Django 1.7 (on Python 2.7 and Python 3.4). PostgreSQL is the only
 officially supported backend. For a full list of required libraries, see
-the `requirements`_.
+the `requirements/base.txt` from the project source on `GitHub`_.
 
 We actively support desktop versions of Chrome and Firefox, as well as common
 mobile platforms. We do not support most versions of Internet Explorer. We
@@ -44,19 +44,31 @@ Documentation
 
 Documentation is hosted on `Read The Docs`_.
 
-To build the documentation locally, install the `documentation requirements`_.
-A makefile is included with the documentation so you can run `make html` in
-the `doc/` directory to build docs as HTML.
+To build the documentation locally:
+
+#. Download a copy of the `django-timepiece` source, either through
+   use of `git clone` or by downloading a zipfile from `GitHub`_.
+
+#. Make sure that the top-level directory is on your Python path. If you're
+   using a virtual environment, this can be accomplished via::
+
+        cd /path/to/django-timepiece/ && add2virtualenv .
+
+#. Install the requirements in `requirements/docs.txt` from the project
+   source on `GitHub`_.
+
+#. Run ``make html`` from within the `docs/` directory. HTML files will be
+   output in the `docs/_build/html/` directory.
 
 Installation
 ------------
 
 #. django-timepiece is available on `PyPI`_, so the easiest way to
-   install it and its dependencies is to use `pip <http://pip.openplans.org/>`_::
+   install it and its dependencies is to use `pip`_::
 
     $ pip install django-timepiece
 
-#. Ensure that `less <http://lesscss.org>`_ is installed on your machine::
+#. Ensure that `less`_ is installed on your machine::
 
     # Install node.js and npm:
     $ sudo apt-get install python-software-properties
@@ -172,10 +184,12 @@ Installation
         ...
     )
 
-Development sponsored by `Caktus Consulting Group, LLC
-<http://www.caktusgroup.com/services>`_.
+Development sponsored by `Caktus Group`_.
 
+
+.. _Caktus Group: https://www.caktusgroup.com/services
+.. _GitHub: https://github.com/caktus/django-timepiece
+.. _less: http://lesscss.org
+.. _pip: http://pip.openplans.org/
 .. _PyPI: http://pypi.python.org/pypi/django-timepiece
 .. _Read The Docs: http://django-timepiece.readthedocs.org
-.. _requirements: requirements/base.txt
-.. _documentation requirements: requirements/docs.txt

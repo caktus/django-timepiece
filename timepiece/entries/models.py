@@ -405,7 +405,7 @@ class Entry(models.Model):
         """
         Pause all open entries
         """
-        entries = self.user.timepiece_entries.filter(end_time__isnull=True).all()
+        entries = self.user.timepiece_entries.filter(end_time__isnull=True)
         for entry in entries:
             entry.pause()
             entry.save()
