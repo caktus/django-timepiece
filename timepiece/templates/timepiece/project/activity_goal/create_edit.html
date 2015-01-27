@@ -1,4 +1,4 @@
-{% extends "timepiece/project/milestone/activity_goal/base.html" %}
+{% extends "timepiece/project/activity_goal/base.html" %}
 {% load url from future %}
 {% load bootstrap_toolkit %}
 
@@ -6,10 +6,13 @@
     {{ block.super }}
     <li>
         <span class="divider">/</span>
+        <a href="{% url 'view_project' project.id %}">{{ project.code }}</a>
+        
+        <span class="divider">/</span>
         {% if not object %}
             <a href="">Create Activity Goal</a>
         {% else %}
-            <a href="{% url 'edit_activity_goal' object.milestone.project.id object.milestone.id object.pk %}">Edit Activity Goal</a>
+            <a href="{% url 'edit_activity_goal' object.project.id object.pk %}">Edit Activity Goal</a>
         {% endif %}
     </li>
 {% endblock crumbs %}
@@ -25,6 +28,15 @@
 
             <form id="create-edit-project" class="form-horizontal" action="" method="post" accept-charset="utf-8">
                 {% csrf_token %}
+                <div class="control-group">
+                    <label class="control-label" for="project_label">Project</label>
+                    <div class="controls">
+                        <label id="project_label" name="project_label" type="text">
+                            <h4>{{ project.code }}: {{ project.name }}</h4>
+                        </label>
+                    </div>
+                </div>
+
                 {{ form|as_bootstrap:"horizontal" }}
                 <div class="form-actions">
                     <input class="btn btn-primary" type='submit' name='submit' value='Save' />

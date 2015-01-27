@@ -31,6 +31,10 @@ urlpatterns = patterns('',
         views.report_backlog,
         name='report_backlog'),
 
+    url(r'^reports/backlog/activity/(?P<activity_id>\d+)/$',
+        views.report_activity_backlog,
+        name='report_activity_backlog'),
+
     url(r'^reports/backlog/user/(?P<user_id>\d+)/$',
         views.report_employee_backlog,
         name='report_employee_backlog'),

@@ -904,6 +904,11 @@ class Project(models.Model):
     def milestones(self):
         return Milestone.objects.filter(project=self)
 
+    @property
+    def activity_goals(self):
+        return ActivityGoal.objects.filter(project=self).order_by(
+          'employee__last_name', 'employee__first_name', 'goal_hours',)
+
 
 class RelationshipType(models.Model):
     name = models.CharField(max_length=255, unique=True)
@@ -942,29 +947,27 @@ class Milestone(models.Model):
     def __unicode__(self):
         return '%s: %s' % (self.project.code, self.name)
 
-    @property
-    def activity_goals(self):
-        return ActivityGoal.objects.filter(milestone=self)
-
     class Meta:
         ordering = ('due_date',)
 
 
 from timepiece.entries.models import Activity
 class ActivityGoal(models.Model):
-    milestone = models.ForeignKey(Milestone)
+    milestone = models.ForeignKey(Milestone, null=True, blank=True)
+    project = models.ForeignKey(Project, null=True, blank=True)
     activity = models.ForeignKey(Activity, null=True, blank=True, help_text='Review <a href="/timepiece/activity/cheat-sheet" target="_blank">this reference</a> for guidance on activities.')
     goal_hours = models.DecimalField(max_digits=7, decimal_places=2)
     employee = models.ForeignKey(User, related_name='activity_goals', null=True, blank=True)
-    date = models.DateField(null=True, blank=True)
+    date = models.DateField(null=True, blank=True, verbose_name='Start Date')
+    end_date = models.DateField(verbose_name='End Date')
 
     def __unicode__(self):
         if self.employee:
-            return '%s: %s - %s (%s)' % (self.milestone, 
+            return '%s: %s - %s (%s)' % (self.project.code, 
                 self.activity, self.employee, self.goal_hours)
         else:
-            return '%s: %s - %s (%s)' % (self.milestone, 
+            return '%s: %s - %s (%s)' % (self.project.code, 
                 self.activity, 'n/a', self.goal_hours)
 
     class Meta:
-        ordering = ('milestone', 'employee__last_name', 'goal_hours',)
+        ordering = ('project__code', 'employee__last_name', 'employee__first_name', 'goal_hours',)

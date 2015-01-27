@@ -15,6 +15,8 @@ from timepiece.crm.models import (Attribute, Business, Project,
         PaidTimeOffLog, Milestone, ActivityGoal, BusinessNote,
         BusinessDepartment, Contact, ContactNote)
 
+import datetime
+
 
 class CreateEditBusinessForm(forms.ModelForm):
     EMPLOYEE_CHOICES = [(None, '-')] + [(u.pk, '%s, %s'%(u.last_name, u.first_name)) \
@@ -305,13 +307,13 @@ class CreateEditActivityGoalForm(forms.ModelForm):
 
     class Meta:
         model = ActivityGoal
-        fields = ('goal_hours', 'employee', 'activity', 'date')
+        fields = ('goal_hours', 'employee', 'activity', 'date', 'end_date')
 
     def __init__(self, *args, **kwargs):
         super(CreateEditActivityGoalForm, self).__init__(*args, **kwargs)
-        if self.EMPLOYEE_CHOICES[0][1] != '-':
-            self.EMPLOYEE_CHOICES.insert(0, ('', '-'))
         self.fields['employee'].choices = self.EMPLOYEE_CHOICES
+        self.fields['date'].initial = datetime.date.today()
+        self.fields['activity'].required = True
 
 class CreateEditContactForm(forms.ModelForm):
     EMPLOYEE_CHOICES = [(None, '-')] + [(u.pk, '%s, %s'%(u.last_name, u.first_name)) \

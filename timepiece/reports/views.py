@@ -22,7 +22,7 @@ from timepiece import utils
 from timepiece.utils.csv import CSVViewMixin, DecimalEncoder
 
 from timepiece.contracts.models import ProjectContract
-from timepiece.entries.models import Entry, ProjectHours
+from timepiece.entries.models import Entry, ProjectHours, Activity
 from timepiece.crm.models import Project, PaidTimeOffRequest
 from timepiece.reports.forms import BillableHoursReportForm, HourlyReportForm,\
         ProductivityReportForm, PayrollSummaryReportForm
@@ -784,7 +784,9 @@ def report_backlog(request, active_tab='company'):
                                 # only get the latest date for this combo
                                 continue
                             activity_hours += float(activity_goal.goal_hours)
-                            charged_hours += float(Entry.objects.filter(project=activity_goal.milestone.project, user=employee
+                            charged_hours += float(Entry.objects.filter(
+                                project=activity_goal.milestone.project,
+                                project__status=4, user=employee
                                 ).exclude(Q(activity__id=12)|Q(activity__id=17)|Q(activity__id=11)
                                 ).aggregate(Sum('hours'))['hours__sum'] or 0.0)
                     else:
@@ -798,6 +800,7 @@ def report_backlog(request, active_tab='company'):
                                 continue
                             activity_hours += float(activity_goal.goal_hours)
                             charged_hours += float(Entry.objects.filter(project=activity_goal.milestone.project,
+                                                                        project__status=4,
                                                                         activity=activity,
                                                                         user=employee
                                                                         ).aggregate(Sum('hours'))['hours__sum'] or 0.0)
@@ -811,13 +814,15 @@ def report_backlog(request, active_tab='company'):
                                                  'charged_hours': charged_hours,
                                                  'remaining_hours': remaining_hours,
                                                  'percentage': percentage})
-                    backlog_summary[employee.id]['total_available_hours'] += max(remaining_hours, 0.0)
+                    backlog_summary[employee.id]['total_available_hours'] += remaining_hours #max(remaining_hours, 0.0)
                     if activity_name not in company_total_hours.keys():
                         company_total_hours[activity_name] = \
                             {'activity': activity,
                              'remaining_hours': 0.0}
                     company_total_hours[activity_name]['remaining_hours'] += \
-                        max(remaining_hours, 0.0)
+                        remaining_hours #max(remaining_hours, 0.0)
+                    if activity_name == 'Sales and Marketing':
+                        print 'remaining_hours', remaining_hours, company_total_hours[activity_name]
 
         
         for employee_id, values in backlog_summary.items():
@@ -931,51 +936,191 @@ def report_backlog(request, active_tab='company'):
     else:
         return HttpResponseRedirect( reverse('report_employee_backlog', args=(request.user.id,)) )
 
+@permission_required('crm.view_backlog')
+def report_activity_backlog(request, activity_id):
+    """
+    Determines company-wide backlog and displays
+    """
+    if int(activity_id):
+        activity = Activity.objects.get(id=int(activity_id))
+        project_list = list(set([ag.milestone.project for ag in ActivityGoal.objects.filter(milestone__project__status=4, activity=activity)]))
+        backlog = []
+        print 'projects', project_list
+        for project in project_list:
+            employees = list(set([ag.employee for ag in ActivityGoal.objects.filter(milestone__project=project, activity=activity)]))
+            if None in employees:
+                charged_hours = Entry.objects.filter(
+                    activity=activity, project=project).aggregate(
+                    hours=Sum('hours'))['hours'] or 0.0
+            else:
+                charged_hours = Entry.objects.filter(
+                    activity=activity, project=project, user__in=employees
+                    ).aggregate(hours=Sum('hours'))['hours'] or 0.0
+            activity_hours = ActivityGoal.objects.filter(
+                milestone__project=project, activity=activity
+                ).aggregate(hours=Sum('goal_hours'))['hours']
+            print 'charged_hours', charged_hours, 'activity_hours', activity_hours, 'employees', employees
+            percentage = 100.*(float(charged_hours)/float(activity_hours)) if float(activity_hours) > 0 else 0
+            percentage = 100 if float(activity_hours)==0.0 else percentage
+            backlog.append({'activity': activity,
+                            'activity_name': activity.name,
+                            'project': project,
+                            'hours': activity_hours,
+                            'charged_hours': charged_hours,
+                            'remaining_hours': float(activity_hours) - float(charged_hours),
+                            'percentage': percentage})
+
+        sorted_backlog = sorted(backlog, key=lambda x: -1*x['percentage'])
+        context = {'backlog': sorted_backlog,
+                   'activity': activity,
+                   'activity_name': activity.name}
+        return render(request, 'timepiece/reports/backlog_activity.html', context)
+    else:
+        activity = None
+    backlog = []
+    counter = -1
+    for project, activity_goals in groupby(ActivityGoal.objects.filter(
+        activity=activity, milestone__project__status=4).order_by(
+        'milestone__project__code'), lambda x: x.milestone.project):
+        
+        for activity, activity_goals in groupby(activity_goals, lambda x: x.activity):
+            activity_hours = 0.0
+            charged_hours = 0.0
+            if activity is None:
+                activity_name = 'Other'
+                exclude_Q = Q()
+                for activity_goal in activity_goals:
+                    #if activity_goal.date and ActivityGoal.objects.filter(milestone=activity_goal.milestone, date__gt=activity_goal.date, activity=activity).count():
+                        # only get the latest date for this combo
+                    #    continue
+                    activity_hours += float(activity_goal.goal_hours)
+                    for ag in ActivityGoal.objects.filter(milestone=activity_goal.milestone, activity__isnull=False):
+                        exclude_Q |= Q(activity__id=ag.activity.id)
+                charged_hours += float(Entry.objects.filter(project=activity_goal.milestone.project, project__status=4
+                    ).exclude(exclude_Q).aggregate(Sum('hours'))['hours__sum'] or 0.0)
+            else:
+                activity_name = activity.name
+                for activity_goal in activity_goals:
+                    #if activity_goal.date and ActivityGoal.objects.filter(milestone=activity_goal.milestone, date__gt=activity_goal.date, activity=activity).count():
+                        # only get the latest date for this combo
+                    #    continue
+                    activity_hours += float(activity_goal.goal_hours)
+                charged_hours = float(Entry.objects.filter(
+                    project=activity_goal.milestone.project, activity=activity, project__status=4
+                    ).aggregate(Sum('hours'))['hours__sum'] or 0.0)
+            percentage = 100.*(float(charged_hours)/float(activity_hours)) if float(activity_hours) > 0 else 0
+            percentage = 100 if float(activity_hours)==0.0 else percentage
+            backlog.append({'activity': activity,
+                            'activity_name': activity_name,
+                            'project': project,
+                            'hours': activity_hours,
+                            'charged_hours': charged_hours,
+                            'remaining_hours': activity_hours - charged_hours,
+                            'percentage': percentage})
+    context = {'backlog': backlog,
+               'activity': activity}
+    return render(request, 'timepiece/reports/backlog_activity.html', context)
+
 @permission_required('crm.view_employee_backlog')
 def report_employee_backlog(request, user_id):
     """
     Determines company-wide backlog and displays
     """
     employee = User.objects.get(id=int(user_id))
+    activitygoal_projects = list(Project.objects.filter(
+        id__in=utils.get_setting('TIMEPIECE_PAID_LEAVE_PROJECTS').values() + \
+        utils.get_setting('TIMEPIECE_UNPAID_LEAVE_PROJECTS').values()))
     if request.user.has_perm('crm.view_backlog') or request.user==employee:
         backlog = []
         counter = -1
-        for project, activity_goals in groupby(ActivityGoal.objects.filter(employee=employee, milestone__project__status=4).order_by('milestone__project__code'), lambda x: x.milestone.project):
+        for project, activity_goals in groupby(ActivityGoal.objects.filter(employee=employee, project__status=4).order_by('project__code'), lambda x: x.project):
+            activitygoal_projects.append(project)
             counter += 1
             backlog.append([])
+            activity_exclude_Q = Q()
             for activity, activity_goals in groupby(activity_goals, lambda x: x.activity):
+                activity_exclude_Q |= Q(activity=activity)
                 activity_hours = 0.0
                 charged_hours = 0.0
                 if activity is None:
                     activity_name = 'Other'
+                    exclude_Q = Q()
                     for activity_goal in activity_goals:
-                        if activity_goal.date and ActivityGoal.objects.filter(employee=employee, milestone=activity_goal.milestone, date__gt=activity_goal.date, activity=activity).count():
+                        if activity_goal.date and ActivityGoal.objects.filter(employee=employee, project=activity_goal.project, date__gt=activity_goal.date, activity=activity).count():
                             # only get the latest date for this combo
                             continue
                         activity_hours += float(activity_goal.goal_hours)
-                        charged_hours += float(Entry.objects.filter(project=activity_goal.milestone.project, user=employee
-                            ).exclude(Q(activity__id=12)|Q(activity__id=17)|Q(activity__id=11)
+                        for ag in ActivityGoal.objects.filter(project=activity_goal.project, activity__isnull=False):
+                            exclude_Q |= Q(activity__id=ag.activity.id)
+                        charged_hours += float(Entry.objects.filter(project=activity_goal.project, user=employee, project__status=4
+                            ).exclude(exclude_Q #Q(activity__id=12)|Q(activity__id=17)|Q(activity__id=11)
                             ).aggregate(Sum('hours'))['hours__sum'] or 0.0)
                 else:
                     activity_name = activity.name
                     for activity_goal in activity_goals:
-                        if activity_goal.date and ActivityGoal.objects.filter(employee=employee, milestone=activity_goal.milestone, date__gt=activity_goal.date, activity=activity).count():
+                        if activity_goal.date and ActivityGoal.objects.filter(employee=employee, project=activity_goal.project, date__gt=activity_goal.date, activity=activity).count():
                             # only get the latest date for this combo
                             continue
                         activity_hours += float(activity_goal.goal_hours)
-                        charged_hours += float(Entry.objects.filter(project=activity_goal.milestone.project,
+                        charged_hours += float(Entry.objects.filter(project=activity_goal.project,
+                                                                    project__status=4,
                                                                     activity=activity,
                                                                     user=employee
                                                                     ).aggregate(Sum('hours'))['hours__sum'] or 0.0)
                 percentage = 100.*(float(charged_hours)/float(activity_hours)) if float(activity_hours) > 0 else 0
                 percentage = 100 if float(activity_hours)==0.0 else percentage
-                backlog[counter].append({'activity': activity,
+                backlog[counter].append({'id': activity_goal.id,
+                                         'activity': activity,
                                          'activity_name': activity_name,
                                          'project': project,
                                          'hours': activity_hours,
                                          'charged_hours': charged_hours,
                                          'remaining_hours': activity_hours - charged_hours,
                                          'percentage': percentage})
+
+            # add missing activity goals for this Employee/Project
+            for activity_sum in Entry.objects.filter(project=project, user=employee
+                ).exclude(activity_exclude_Q).values('activity'
+                ).annotate(hours=Sum('hours')).order_by('-hours'):
+
+                activity = Activity.objects.get(id=activity_sum['activity'])
+
+                backlog[counter].append({'id': None,
+                                         'activity': activity,
+                                         'activity_name': activity.name,
+                                         'project': project,
+                                         'employee': employee,
+                                         'hours': 0.0,
+                                         'charged_hours': activity_sum['hours'],
+                                         'remaining_hours': -1*activity_sum['hours'],
+                                         'percentage': 100.0})
+        
+        for entry in Entry.objects.filter(
+            project__status=4, user=employee
+            ).exclude(project__in=activitygoal_projects
+            ).values('project__code').order_by('project__code'
+            ).distinct('project__code'):
+            
+            counter += 1
+            backlog.append([])
+            project = Project.objects.get(code=entry['project__code'])
+            for entry2 in Entry.objects.filter(
+                project=project, user=employee).values('activity__id'
+                ).order_by('activity__id').distinct('activity__id'):
+
+                activity = Activity.objects.get(id=entry2['activity__id'])
+                charged_hours = Entry.objects.filter(project=project, 
+                    activity=activity, user=employee
+                    ).aggregate(hours=Sum('hours'))['hours']
+                activity_hours = Decimal('0.0')
+                backlog[counter].append({'activity': activity,
+                                         'activity_name': activity.name,
+                                         'project': project,
+                                         'hours': activity_hours,
+                                         'charged_hours': charged_hours,
+                                         'remaining_hours': activity_hours - charged_hours,
+                                         'percentage': 100})
+
         context = {'backlog': backlog,
                    'employee': employee}
         return render(request, 'timepiece/reports/backlog_employee.html', context)

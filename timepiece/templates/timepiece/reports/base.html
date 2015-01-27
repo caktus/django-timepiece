@@ -33,7 +33,7 @@
                     {% endif %}
                     {% if perms.crm.view_employee_backlog %}
                         <li{% ifequal active 'backlog' %} class="active"{% endifequal %}>
-                            <a href="{% ifequal active 'backlog' %}#{% else %}{% url 'report_backlog' %}{% endifequal %}">Backlog</a>
+                            <a href="{% url 'report_backlog' %}">Backlog</a>
                         </li>
                     {% endif %}
                     {% if perms.crm.view_backlog %}

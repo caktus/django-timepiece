@@ -38,7 +38,14 @@
                     {% if forloop.first %}
                     <td rowspan="{{ project|length }}"><strong><a href="{% url 'view_project' ag.project.id %}">{{ ag.project.code }}</a></strong><br><small>{{ ag.project.name }}</small></td>
                     {% endif %}
-                    <td>{{ ag.activity_name }}</td>
+                    <td>
+                        {% if ag.id %}
+                        <a href="{% url 'edit_activity_goal' ag.project.id ag.id %}?next={{ request.path }}"><i class="icon-edit" title="Edit Activity Goal for {{ ag.employee.first_name }} on {{ ag.project.code }} for {{ ag.activity_name }}."> </i></a>
+                        {% else %}
+                        <a href="{% url 'create_activity_goal' ag.project.id %}?employee={{ employee.id }}&activity={{ ag.activity.id }}&goal_hours={{ ag.charged_hours }}&next={{ request.path }}"><i class="icon-plus" title="Create Activity Goal for  {{ employee.first_name }} on {{ ag.project.code }} for {{ ag.activity_name }}."> </i></a>
+                        {% endif %}
+                        {{ ag.activity_name }}
+                    </td>
                     <td>
                         <div class="progress{% if ag.hours == 0.0 %} progress-danger progress-striped{% endif %}{% if ag.charged_hours > ag.hours %} progress-danger{% endif %}">
                             <div class="bar" style="width: {{ ag.percentage }}%;"></div>

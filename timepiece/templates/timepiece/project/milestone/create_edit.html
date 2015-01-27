@@ -6,6 +6,9 @@
     {{ block.super }}
     <li>
         <span class="divider">/</span>
+        <a href="{% url 'view_project' project.id %}">{{ project.code }}</a>
+        
+        <span class="divider">/</span>
         {% if not object %}
             <a href="{% url 'create_project' %}">Create Project</a>
         {% else %}

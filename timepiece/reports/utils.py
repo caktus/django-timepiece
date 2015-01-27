@@ -64,7 +64,14 @@ def get_project_totals(entries, date_headers, hour_type=None, overtime=False,
     Yield hour totals grouped by user and date. Optionally including overtime.
     """
     if writedown is not None:
-        entries = entries.filter(writedown=writedown)
+        try:
+            entries = entries.filter(writedown=writedown)
+        except:
+            filtered_entries = []
+            for entry in entries:
+                if entry['writedown'] == writedown:
+                    filtered_entries.append(entry)
+            entries = filtered_entries
 
     totals = [0 for date in date_headers]
     rows = []

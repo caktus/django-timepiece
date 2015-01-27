@@ -1,0 +1,49 @@
+{% extends "timepiece/reports/base.html" %}
+{% load timepiece_tags bootstrap_toolkit %}
+{% load url from future %}
+
+{% block title %}Backlog Report{% endblock title %}
+
+{% block bodyid %}backlog-report{% endblock bodyid %}
+
+{% block crumbs %}
+    {{ block.super }}
+    <li>
+        <span class="divider">/</span>
+        <a href="{% url 'report_backlog' %}">Backlog Report</a>
+    </li>
+{% endblock crumbs %}
+
+{% block report_nav %}
+    {% with 'backlog' as active %}
+        {{ block.super }}
+    {% endwith %}
+{% endblock report_nav %}
+
+
+{% block report_content %}
+<div class="row-fluid">
+    <div class="span12" name="backlog-container">
+        <h3>Backlog for {{ backlog.0.activity_name }} Activity by Project</h3>
+        <table class="table">
+            <tr>
+                <th>Project</th>
+                <th style="width: 40%">Progress</th>
+                <th colspan="2">Hours</th>
+            </tr>
+            {% for activity in backlog %}
+            <tr>
+                <td><strong><a href="{% url 'view_project' activity.project.id %}">{{ activity.project.code }}</a></strong><br><small>{{ activity.project.name }}</small></td>
+                <td>
+                    <div class="progress{% if activity.hours == 0.0 %} progress-danger progress-striped{% endif %}{% if activity.charged_hours > activity.hours %} progress-danger{% endif %}">
+                        <div class="bar" style="width: {{ activity.percentage }}%;"></div>
+                    </div>
+                </td>
+                <td>{{ activity.charged_hours }} / {{ activity.hours }}</td>
+                <td><span class="label{% if activity.charged_hours > activity.hours %} label-important{% endif %}">{{ activity.remaining_hours }} remaining</span></td>
+            </tr>
+            {% endfor %}
+        </table>
+    </div>
+</div>
+{% endblock report_content %}

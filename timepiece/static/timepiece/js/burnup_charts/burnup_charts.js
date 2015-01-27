@@ -69,7 +69,8 @@ function draw_burnup_chart(data, project_id) {
             x: {
                 type: 'timeseries',
                 tick: {
-                    format: '%Y-%m-%d'
+                    format: '%Y-%m-%d',
+                    count: 30
                 }
             },
             y: {

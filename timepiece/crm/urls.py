@@ -178,16 +178,13 @@ urlpatterns = patterns('',
 
     
     # Activity Goals
-    # url(r'^project/(?P<project_id>\d+)/milestones/(?P<milestone_id>\d+)/activity_goals$',
-    #     views.ListProjects.as_view(),
-    #     name='view_activity_goals'),
-    url(r'^project/(?P<project_id>\d+)/milestone/(?P<milestone_id>\d+)/activity_goal/create/$',
+    url(r'^project/(?P<project_id>\d+)/activity_goal/create/$',
         views.CreateActivityGoal.as_view(),
         name='create_activity_goal'),
-    url(r'^project/(?P<project_id>\d+)/milestone/(?P<milestone_id>\d+)/activity_goal/(?P<activity_goal_id>\d+)/edit/$',
+    url(r'^project/(?P<project_id>\d+)/activity_goal/(?P<activity_goal_id>\d+)/edit/$',
         views.EditActivityGoal.as_view(),
         name='edit_activity_goal'),
-    url(r'^project/(?P<project_id>\d+)/milestone/(?P<milestone_id>\d+)/activity_goal/(?P<activity_goal_id>\d+)/delete/$',
+    url(r'^project/(?P<project_id>\d+)/activity_goal/(?P<activity_goal_id>\d+)/delete/$',
         views.DeleteActivityGoal.as_view(),
         name='delete_activity_goal'),
 

@@ -55,7 +55,16 @@
                         </tr>
                         {% for activity_hours in company_backlog.company_total_hours %}
                             <tr id='activity-hours-{{ forloop.counter0 }}'>
-                                <td>{% if activity_hours.activity %}{{ activity_hours.activity.name }}{% else %}Other{% endif %}</td>
+                                <td>{% if activity_hours.activity %}
+                                    <a href="{% url 'report_activity_backlog' activity_hours.activity.id %}">
+                                            {{ activity_hours.activity.name }}
+                                    </a>
+                                    {% else %}
+                                    <a href="{% url 'report_activity_backlog' 0 %}">
+                                        Other
+                                    {% endif %}
+                                    </a>
+                                </td>
                                 <td>{{ activity_hours.remaining_hours|floatformat:2|intcomma }}</td>
                             </tr>
                         {% endfor %}

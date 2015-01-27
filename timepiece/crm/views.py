@@ -1126,6 +1126,11 @@ class CreateMilestone(CreateView):
     form_class = CreateEditMilestoneForm
     template_name = 'timepiece/project/milestone/create_edit.html'
 
+    def get_context_data(self, **kwargs):
+        context = super(CreateMilestone, self).get_context_data(**kwargs)
+        context['project'] = Project.objects.get(id=int(self.kwargs['project_id']))
+        return context
+
     def form_valid(self, form):
         form.instance.project = Project.objects.get(id=int(self.kwargs['project_id']))
         return super(CreateMilestone, self).form_valid(form)
@@ -1140,6 +1145,11 @@ class EditMilestone(UpdateView):
     form_class = CreateEditMilestoneForm
     template_name = 'timepiece/project/milestone/create_edit.html'
     pk_url_kwarg = 'milestone_id'
+
+    def get_context_data(self, **kwargs):
+        context = super(EditMilestone, self).get_context_data(**kwargs)
+        context['project'] = Project.objects.get(id=int(self.kwargs['project_id']))
+        return context
 
     def get_success_url(self):
         return '/timepiece/project/%d' % int(self.kwargs['project_id'])
@@ -1160,43 +1170,69 @@ class DeleteMilestone(DeleteView):
 class CreateActivityGoal(CreateView):
     model = ActivityGoal
     form_class = CreateEditActivityGoalForm
-    template_name = 'timepiece/project/milestone/activity_goal/create_edit.html'
+    template_name = 'timepiece/project/activity_goal/create_edit.html'
+
+    def get_context_data(self, **kwargs):
+        context = super(CreateActivityGoal, self).get_context_data(**kwargs)
+        context['project'] = Project.objects.get(id=int(self.kwargs['project_id']))
+        return context
+
+    def get_initial(self):
+        employee = self.request.GET.get('employee', None)
+        activity = self.request.GET.get('activity', None)
+        try:
+            project = Project.objects.get(id=int(self.kwargs['project_id']))
+        except:
+            # redirect somewhere else with an error
+            pass
+        initial = {'employee': employee,
+                   'activity': self.request.GET.get('activity', None),
+                   'goal_hours': self.request.GET.get('goal_hours', None)}
+        # if employee and activity:
+            # find the initial date of charging
+        return initial
 
     def get_form(self, *args, **kwargs):
         form = super(CreateActivityGoal, self).get_form(*args, **kwargs)
         project = Project.objects.get(id=int(self.kwargs['project_id']))
         if project.activity_group:
             activities = [(a.id, a.name) for a in project.activity_group.activities.all()]
-            activities.insert(0, ('', '---------'))
             form.fields['activity'].choices = activities
         return form
 
     def form_valid(self, form):
-        form.instance.milestone = Milestone.objects.get(id=int(self.kwargs['milestone_id']))
+        form.instance.project = Project.objects.get(id=int(self.kwargs['project_id']))
         return super(CreateActivityGoal, self).form_valid(form)
 
     def get_success_url(self):
-        return '/timepiece/project/%d/milestone/%d' % (int(self.kwargs['project_id']), int(self.kwargs['milestone_id']))
+        return self.request.GET.get('next', None) or reverse_lazy(
+            'view_project', args=(int(self.kwargs['project_id']),))
 
 
 @cbv_decorator(permission_required('crm.change_activitygoal'))
 class EditActivityGoal(UpdateView):
     model = ActivityGoal
     form_class = CreateEditActivityGoalForm
-    template_name = 'timepiece/project/milestone/activity_goal/create_edit.html'
+    template_name = 'timepiece/project/activity_goal/create_edit.html'
     pk_url_kwarg = 'activity_goal_id'
+
+
+    def get_context_data(self, **kwargs):
+        context = super(EditActivityGoal, self).get_context_data(**kwargs)
+        context['project'] = Project.objects.get(id=int(self.kwargs['project_id']))
+        return context
 
     def get_form(self, *args, **kwargs):
         form = super(EditActivityGoal, self).get_form(*args, **kwargs)
         project = Project.objects.get(id=int(self.kwargs['project_id']))
         if project.activity_group is not None:
             activities = [(a.id, a.name) for a in project.activity_group.activities.all()]
-            activities.insert(0, ('', '---------'))
             form.fields['activity'].choices = activities
         return form
 
     def get_success_url(self):
-        return '/timepiece/project/%d/milestone/%d' % (int(self.kwargs['project_id']), int(self.kwargs['milestone_id']))
+        return self.request.GET.get('next', None) or reverse_lazy(
+            'view_project', args=(int(self.kwargs['project_id']),))
 
 
 @cbv_decorator(permission_required('crm.delete_activitygoal'))
@@ -1206,7 +1242,7 @@ class DeleteActivityGoal(DeleteView):
     template_name = 'timepiece/delete_object.html'
 
     def get_success_url(self):
-        return '/timepiece/project/%d/milestone/%d' % (int(self.kwargs['project_id']), int(self.kwargs['milestone_id']))
+        return '/timepiece/project/%d' % (int(self.kwargs['project_id']),)
 
 from itertools import groupby
 import numpy
@@ -1239,10 +1275,14 @@ def burnup_chart_data(request, project_id):
                            datetime.date.today() + datetime.timedelta(days=7))
         except:
             try:
-                end_date = max(Entry.objects.filter(project=project).order_by('-start_time')[0].start_time.date(),
+                end_date = max(Milestone.objects.filter(project=project).order_by('-due_date')[0].due_date,
                                datetime.date.today() + datetime.timedelta(days=7))
             except:
-                end_date = datetime.date.today() + datetime.timedelta(days=7)
+                try:
+                    end_date = max(Entry.objects.filter(project=project).order_by('-start_time')[0].start_time.date(),
+                                   datetime.date.today() + datetime.timedelta(days=7))
+                except:
+                    end_date = datetime.date.today() + datetime.timedelta(days=7)
         end_date += datetime.timedelta(days=1)
         mgmt_entries_raw = Entry.objects.filter(project=project).values('start_time', 'activity', 'hours').order_by('start_time')
         mgmt_entries = []
@@ -1325,7 +1365,7 @@ def burnup_chart_data(request, project_id):
         
         # get ActivityGoals and group by Activity
         ag_temp = [[], [], [], []]
-        for ag in ActivityGoal.objects.filter(milestone__project=project):
+        for ag in ActivityGoal.objects.filter(project=project).order_by('employee__last_name', 'employee__first_name', 'goal_hours'):
             if ag.activity is None:
                 ag_temp[3].append(ag)
             elif ag.activity.id == PROJECT_MANAGEMENT_ACTIVITY_ID:
@@ -1350,9 +1390,9 @@ def burnup_chart_data(request, project_id):
                 vals = []
                 for ag in ags:
                     gh = float(ag.goal_hours)
-                    for j in range((ag.milestone.due_date - last_date).days + 1):
+                    for j in range((ag.end_date - last_date).days + 1):
                         vals.append(gh)
-                    last_date = ag.milestone.due_date
+                    last_date = ag.end_date
                 ag_hours.append(vals)
             
             max_len = len(ag_hours[0])
