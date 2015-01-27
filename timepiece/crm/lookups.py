@@ -12,8 +12,8 @@ from timepiece.crm.models import Project, Business
 
 class ProjectLookup(ModelLookup):
     model = Project
-    search_fields = ('name__icontains', 'business__name__icontains',
-            'business__short_name__icontains')
+    search_fields = ('name__icontains', 'code__icontains',
+        'business__name__icontains', 'business__short_name__icontains')
 
     def get_item_label(self, project):
         return mark_safe(u'<span class="project">%s</span>' %
@@ -22,6 +22,16 @@ class ProjectLookup(ModelLookup):
     def get_item_value(self, project):
         return project.name if project else ''
 
+class ProjectCodeLookup(ModelLookup):
+    model = Project
+    search_fields = ('code__icontains', )
+
+    def get_item_label(self, project):
+        return mark_safe(u'<span class="project">%s</span>' %
+                self.get_item_value(project))
+
+    def get_item_value(self, project):
+        return '%s: %s' % (project.code, project.name) if project else ''
 
 class BusinessLookup(ModelLookup):
     model = Business
@@ -93,5 +103,6 @@ class QuickLookup(LookupBase):
 
 registry.register(BusinessLookup)
 registry.register(ProjectLookup)
+registry.register(ProjectCodeLookup)
 registry.register(UserLookup)
 registry.register(QuickLookup)
