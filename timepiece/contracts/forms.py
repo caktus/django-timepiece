@@ -2,9 +2,13 @@ from dateutil.relativedelta import relativedelta
 
 from django import forms
 
+from selectable import forms as selectable
+
 from timepiece import utils
-from timepiece.contracts.models import EntryGroup, ContractRate
+from timepiece.contracts.models import (EntryGroup, ContractRate, ProjectContract,
+    ContractBudget, ContractHour)
 from timepiece.crm.models import Attribute
+from timepiece.crm.lookups import ProjectLookup, ProjectCodeLookup
 from timepiece.entries.models import Activity
 from timepiece.forms import DateForm
 
@@ -76,4 +80,24 @@ class CreateEditContractRateForm(forms.ModelForm):
         super(CreateEditContractRateForm, self).__init__(*args, **kwargs)
         self.fields['activity'].choices = [(a.id, a.name) for a in 
             Activity.objects.filter(billable=True).order_by('name')]
-        self.fields['rate'].initial = 100.00
+
+class CreateEditContractBudgetForm(forms.ModelForm):
+
+    class Meta:
+        model = ContractBudget
+
+class CreateEditContractHourForm(forms.ModelForm):
+
+    class Meta:
+        model = ContractHour
+
+
+class CreateEditContractForm(forms.ModelForm):
+
+    class Meta:
+        model = ProjectContract
+
+    def __init__(self, *args, **kwargs):
+        super(CreateEditContractForm, self).__init__(*args, **kwargs)
+        self.fields['projects'] = selectable.AutoCompleteSelectMultipleField(
+            ProjectCodeLookup, required=False, help_text='Search by Project Code.')

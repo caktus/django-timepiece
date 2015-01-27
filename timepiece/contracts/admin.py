@@ -1,7 +1,7 @@
 from django.contrib import admin
 
 from timepiece.contracts.models import ProjectContract, ContractHour,\
-        ContractAssignment, HourGroup
+        ContractAssignment, ContractRate, HourGroup, ContractBudget
 
 
 class ContractAssignmentInline(admin.TabularInline):
@@ -22,13 +22,13 @@ class ProjectContractAdmin(admin.ModelAdmin):
     list_display = ('name', 'start_date', 'end_date', 'status',
                     'contracted_hours', 'pending_hours',
                     'hours_assigned', 'hours_unassigned',
-                    'hours_worked',
-                    'type')
+                    'hours_worked', 'payment_terms',
+                    'type',)
     inlines = (ContractAssignmentInline, ContractHourInline)
-    list_filter = ('status', 'type')
-    filter_horizontal = ('projects',)
+    list_filter = ('status', 'type', )
+    filter_horizontal = ('projects', )
     list_per_page = 20
-    search_fields = ('name', 'projects__name', 'projects__business__name')
+    search_fields = ('name', 'projects__name', 'projects__business__name', )
 
     def hours_unassigned(self, obj):
         return obj.contracted_hours() - obj.hours_assigned
@@ -45,3 +45,6 @@ class HourGroupAdmin(admin.ModelAdmin):
 admin.site.register(ProjectContract, ProjectContractAdmin)
 admin.site.register(HourGroup, HourGroupAdmin)
 admin.site.register(ContractHour)
+admin.site.register(ContractRate)
+admin.site.register(ContractBudget)
+

@@ -3,7 +3,7 @@ from dateutil.relativedelta import relativedelta
 
 from django.contrib.auth.decorators import login_required, permission_required
 from django.contrib import messages
-from django.core.urlresolvers import reverse
+from django.core.urlresolvers import reverse, reverse_lazy
 from django.db import transaction, DatabaseError
 from django.db.models import Sum, Q
 from django.forms import widgets
@@ -19,11 +19,36 @@ from timepiece.utils.search import SearchListView
 from timepiece.utils.views import cbv_decorator
 
 from timepiece.contracts.forms import (InvoiceForm,
-    OutstandingHoursFilterForm, CreateEditContractRateForm)
+    OutstandingHoursFilterForm, CreateEditContractRateForm,
+    CreateEditContractForm, CreateEditContractBudgetForm,
+    CreateEditContractHourForm)
 from timepiece.contracts.models import (ProjectContract, HourGroup,
-    EntryGroup, ContractRate)
-from timepiece.entries.models import Project, Entry
+    EntryGroup, ContractRate, ProjectContract, ContractAttachment,
+    ContractBudget, ContractHour)
+from timepiece.entries.models import Project, Entry, Activity
 
+from ajaxuploader.views import AjaxFileUploader
+from ajaxuploader.backends.mongodb import MongoDBUploadBackend
+
+@cbv_decorator(permission_required('contracts.add_projectcontract'))
+class CreateContract(CreateView):
+    model = ProjectContract
+    form_class = CreateEditContractForm
+    template_name = 'timepiece/contract/create_edit.html'
+
+@cbv_decorator(permission_required('contracts.change_projectcontract'))
+class EditContract(UpdateView):
+    model = ProjectContract
+    form_class = CreateEditContractForm
+    template_name = 'timepiece/contract/create_edit.html'
+    pk_url_kwarg = 'contract_id'
+
+@cbv_decorator(permission_required('contracts.delete_projectcontract'))
+class DeleteContract(DeleteView):
+    model = ProjectContract
+    success_url = reverse_lazy('list_contracts')
+    pk_url_kwarg = 'contract_id'
+    template_name = 'timepiece/delete_object.html'
 
 @cbv_decorator(permission_required('contracts.add_projectcontract'))
 class ContractDetail(DetailView):
@@ -39,7 +64,6 @@ class ContractDetail(DetailView):
             kwargs['warning_date'] = datetime.date.today() + relativedelta(weeks=2)
         return super(ContractDetail, self).get_context_data(*args, **kwargs)
 
-
 @cbv_decorator(permission_required('contracts.add_projectcontract'))
 class ContractList(ListView):
     template_name = 'timepiece/contract/list.html'
@@ -54,10 +78,118 @@ class ContractList(ListView):
         if 'warning_date' not in kwargs:
             kwargs['warning_date'] = datetime.date.today() + relativedelta(weeks=2)
         kwargs['max_work_fraction'] = max(
-            [0.0] + [c.fraction_hours for c in self.queryset.all()])
+            [0.0] + [c.fraction_value for c in self.queryset.all()])
         kwargs['max_schedule_fraction'] = max(
             [0.0] + [c.fraction_schedule for c in self.queryset.all()])
         return super(ContractList, self).get_context_data(*args, **kwargs)
+
+@permission_required('contracts.add_contractincrement')
+def add_contract_increment(request, contract_id):
+    contract = ProjectContract.objects.get(id=contract_id)
+    if contract.ceiling_type == contract.HOURS:
+        return HttpResponseRedirect(reverse('add_contract_hours', args=(contract.id,)))
+    elif contract.ceiling_type == contract.BUDGET:
+        return HttpResponseRedirect(reverse('add_contract_budget', args=(contract.id,)))
+    else:
+        return HttpResponseRedirect(reverse('dashboard'))
+
+@cbv_decorator(permission_required('contracts.add_contractbudget'))
+class AddContractBudget(CreateView):
+    model = ContractBudget
+    form_class = CreateEditContractBudgetForm
+    template_name = 'timepiece/contract/hour/create_edit.html'
+
+    def get_form(self, *args, **kwargs):
+        form = super(AddContractBudget, self).get_form(*args, **kwargs)
+        form.fields['contract'].widget = widgets.HiddenInput()
+        contract = ProjectContract.objects.get(
+            id=int(self.kwargs['contract_id']))
+        form.fields['contract'].initial = contract
+        return form
+
+    def get_context_data(self, *args, **kwargs):
+        kwargs['contract'] = ProjectContract.objects.get(id=int(self.kwargs['contract_id']))
+        return super(AddContractBudget, self).get_context_data(*args, **kwargs)
+
+    def get_success_url(self):
+        return reverse('view_contract', args=(int(self.kwargs['contract_id']), ))
+
+@cbv_decorator(permission_required('contracts.change_contractbudget'))
+class EditContractBudget(UpdateView):
+    model = ContractBudget
+    form_class = CreateEditContractBudgetForm
+    template_name = 'timepiece/contract/hour/create_edit.html'
+    pk_url_kwarg = 'contract_budget_id'
+
+    def get_form(self, *args, **kwargs):
+        form = super(EditContractBudget, self).get_form(*args, **kwargs)
+        form.fields['contract'].widget = widgets.HiddenInput()
+        return form
+
+    def get_context_data(self, *args, **kwargs):
+        kwargs['contract'] = ProjectContract.objects.get(id=int(self.kwargs['contract_id']))
+        return super(EditContractBudget, self).get_context_data(*args, **kwargs)
+
+    def get_success_url(self):
+        return reverse('view_contract', args=(int(self.kwargs['contract_id']), ))
+
+@cbv_decorator(permission_required('contracts.delete_contractbudget'))
+class DeleteContractBudget(DeleteView):
+    model = ContractBudget
+    template_name = 'timepiece/delete_object.html'
+    pk_url_kwarg = 'contract_budget_id'
+
+    def get_success_url(self):
+        return reverse('view_contract', args=(int(self.kwargs['contract_id']), ))
+
+@cbv_decorator(permission_required('contracts.add_contracthour'))
+class AddContractHour(CreateView):
+    model = ContractHour
+    form_class = CreateEditContractHourForm
+    template_name = 'timepiece/contract/hour/create_edit.html'
+
+    def get_form(self, *args, **kwargs):
+        form = super(AddContractHour, self).get_form(*args, **kwargs)
+        form.fields['contract'].widget = widgets.HiddenInput()
+        contract = ProjectContract.objects.get(
+            id=int(self.kwargs['contract_id']))
+        form.fields['contract'].initial = contract
+        return form
+
+    def get_context_data(self, *args, **kwargs):
+        kwargs['contract'] = ProjectContract.objects.get(id=int(self.kwargs['contract_id']))
+        return super(AddContractHour, self).get_context_data(*args, **kwargs)
+
+    def get_success_url(self):
+        return reverse('view_contract', args=(int(self.kwargs['contract_id']), ))
+
+@cbv_decorator(permission_required('contracts.change_contracthour'))
+class EditContractHour(UpdateView):
+    model = ContractHour
+    form_class = CreateEditContractHourForm
+    template_name = 'timepiece/contract/hour/create_edit.html'
+    pk_url_kwarg = 'contract_hours_id'
+
+    def get_form(self, *args, **kwargs):
+        form = super(EditContractHour, self).get_form(*args, **kwargs)
+        form.fields['contract'].widget = widgets.HiddenInput()
+        return form
+
+    def get_context_data(self, *args, **kwargs):
+        kwargs['contract'] = ProjectContract.objects.get(id=int(self.kwargs['contract_id']))
+        return super(EditContractHour, self).get_context_data(*args, **kwargs)
+
+    def get_success_url(self):
+        return reverse('view_contract', args=(int(self.kwargs['contract_id']), ))
+
+@cbv_decorator(permission_required('contracts.delete_contracthour'))
+class DeleteContractHour(DeleteView):
+    model = ContractHour
+    template_name = 'timepiece/delete_object.html'
+    pk_url_kwarg = 'contract_hours_id'
+
+    def get_success_url(self):
+        return reverse('view_contract', args=(int(self.kwargs['contract_id']), ))
 
 @cbv_decorator(permission_required('contracts.add_contractrate'))
 class AddContractRate(CreateView):
@@ -68,8 +200,17 @@ class AddContractRate(CreateView):
     def get_form(self, *args, **kwargs):
         form = super(AddContractRate, self).get_form(*args, **kwargs)
         form.fields['contract'].widget = widgets.HiddenInput()
-        form.fields['contract'].initial = ProjectContract.objects.get(
+        contract = ProjectContract.objects.get(
             id=int(self.kwargs['contract_id']))
+        form.fields['contract'].initial = contract
+        
+        activity_id = self.request.GET.get('activity', None)
+        if activity_id:
+            form.fields['activity'].initial = Activity.objects.get(
+                id=activity_id)
+
+        form.fields['rate'].initial = contract.min_rate
+        
         return form
 
     def get_context_data(self, *args, **kwargs):
@@ -387,3 +528,45 @@ def delete_invoice_entry(request, invoice_id, entry_id):
         'invoice': invoice,
         'entry': entry,
     })
+
+@permission_required('contracts.add_contractattachment')
+def contract_upload_attachment(request, contract_id):
+    try:
+        afu = AjaxFileUploader(MongoDBUploadBackend, db='contract_attachments')
+        hr = afu(request)
+        content = json.loads(hr.content)
+        memo = {'uploader': str(request.user),
+                'file_id': str(content['_id']),
+                'upload_time': str(datetime.datetime.now()),
+                'filename': content['filename']}
+        memo.update(content)
+        
+        # save attachment to ticket
+        attachment = ContractAttachment(
+            contract=ProjectContract.objects.get(id=int(contract_id)),
+            file_id=str(content['_id']),
+            filename=content['filename'],
+            upload_time=datetime.datetime.now(),
+            uploader=request.user,
+            description='n/a')
+        attachment.save()
+        return HttpResponse(json.dumps(memo),
+                            content_type="application/json")
+    except:
+        print sys.exc_info(), traceback.format_exc()
+    return hr
+
+from project_toolbox_main import settings as project_settings
+from bson.objectid import ObjectId
+import gridfs
+@permission_required('contracts.view_contractattachment')
+def contract_download_attachment(request, contract_id, attachment_id):
+    try:
+        contract_attachment = ContractAttachment.objects.get(
+            contract_id=contract_id, id=attachment_id)
+        MONGO_DB_INSTANCE = project_settings.MONGO_CLIENT.firmbase_ticket_attachments
+        GRID_FS_INSTANCE = gridfs.GridFS(MONGO_DB_INSTANCE)
+        f = GRID_FS_INSTANCE.get(ObjectId(contract_attachment.file_id))
+        return HttpResponse(f.read(), content_type=f.content_type)
+    except:
+        return HttpResponse('Attachment could not be found.')

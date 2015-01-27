@@ -1,5 +1,5 @@
 {% extends 'timepiece/contract/base.html' %}
-{% load timepiece_tags %}
+{% load timepiece_tags humanize %}
 {% load url from future %}
 
 {% block title %}{{ contract }}{% endblock title %}
@@ -15,8 +15,8 @@
         <div class="span12">
             <h2>{{ contract }}</h2>
             <ul class="nav nav-pills">
-                {% if perms.contracts.change_contract %}  {# FIXME: permission doesn't exist #}
-                    <li><a href="{{ contract.get_admin_url }}">Edit</a></li>
+                {% if perms.contracts.change_projectcontract %}  {# FIXME: permission doesn't exist #}
+                    <li><a href="{% url 'edit_contract' contract.id %}">Edit</a></li>
                 {% endif %}
             </ul>
         </div>
@@ -43,7 +43,7 @@
                         {% endif %}
                     </td>
                 </tr>
-                <tr><th>Contract Hours</th>
+                <tr><th>Contract {{ contract.get_cieling_type_display }}</th>
                     <td>
                         {{ contract.contracted_hours|floatformat:2 }}
                         {% if contract.pending_hours %}
@@ -54,11 +54,12 @@
                 <tr><th>Hours Worked (billable)</th>
                     <td>
                         {{ contract.hours_worked|floatformat:2 }}
-                        ({% widthratio contract.hours_worked contract.contracted_hours 100 %}%)
+                        ({% widthratio contract.value_expended contract.contract_value 100 %}%)
                     </td>
                 </tr>
-                <tr><th>Hours Remaining</th><td>{{ contract.hours_remaining|floatformat:2 }}</td></tr>
+                <tr><th>{{ contract.get_ceiling_type_display }} Remaining</th><td>{{ contract.display_value_remaining|intcomma }}</td></tr>
                 <tr><th>Type</th><td>{{  contract.get_type_display }}</td></tr>
+                <tr><th>Payment Terms</th><td> {{contract.get_payment_terms_display }}</td></tr>
             </table>
 
             <h3>Contract Rates</h3>
@@ -68,18 +69,45 @@
                 {% endif %}
             </ul>
             <table class="table table-bordered">
+                <tr>
+                    <th></th>
+                    <th>Activity</th>
+                    <th>Rate</th>
+                    <th>Charged Hours</th>
+                </tr>
                 {% for cr in contract.get_rates %}
                 <tr>
-                    <th style="text-align:center;">
-                        <a href="{% url 'edit_contract_rate' contract.id cr.id %}"><i class="icon-pencil"> </i></a>
-                        <a href="{% url 'delete_contract_rate' contract.id cr.id %}"><i class="icon-trash"> </i></a>
-                    </th><th>
-                        {{ cr.activity }}
+                    <th class="nowrap">
+                        {% if perms.contracts.change_contractrate %}
+                        <a href="{% url 'edit_contract_rate' contract.id cr.id %}" title="Edit Contract Rate."><i class="icon-pencil"> </i></a>
+                        {% endif %}
+                        {% if perms.contracts.delete_contractrate %}
+                        <a href="{% url 'delete_contract_rate' contract.id cr.id %}" title="Delete Contract Rate."><i class="icon-trash"> </i></a>
+                        {% endif %}
                     </th>
-                    <td>{{ cr.rate }}</td>
+                    <th>{{ cr.activity }}</th>
+                    <td>{{ cr.rate }}</td><td>{{ cr.get_hours|floatformat:2 }}</td>
                 </tr>
                 {% empty %}
-                <tr><th>There are no rates setup for the contract.</th></tr>
+                <tr><th colspan=4>There are no rates setup for the contract.</th></tr>
+                {% endfor %}
+                {% for mr in contract.missing_rates %}
+                {% if forloop.first %}
+                <tr class="error">
+                    <th colspan=4>
+                    The following activities have hours charged against them with no assigned contract rate.  The minimum available rate is being used for calculating amount invoiced against the contract.
+                    </th>
+                </tr>
+                {% endif %}
+                <tr class="error">
+                    <th>
+                        {% if perms.contracts.add_contractrate %}
+                        <a href="{% url 'add_contract_rate' contract.id %}?activity={{ mr.activity.id }}" title="Add Contract Rate"><i class="icon-plus"> </i></a>
+                        {% endif %}
+                    </th>
+                    <th>{{ mr.activity }}</th>
+                    <td>{{ mr.rate }}</td><td>{{ mr.hours|floatformat:2 }}</td>
+                </tr>
                 {% endfor %}
             </table>
         </div>
@@ -104,7 +132,7 @@
                         {% project_hours_for_contract contract project 'billable' as project_hours %}
                         {% project_hours_for_contract contract project 'nonbillable' as nonbillable_hours %}
                         <tr>
-                            <td><a href="{% url 'view_project' project.pk %}">{{ project.name }}</a></td>
+                            <td><a href="{% url 'view_project' project.pk %}">{{ project.code }}: {{ project.name }}</a></td>
                             <td class="hours">{{ project_hours|floatformat:'2' }}</td>
                             <td class="hours">{{ nonbillable_hours|floatformat:'2' }}</td>
                             <td><a href="{% url 'view_project_timesheet' project.id %}">Time Sheet</a></td>
@@ -117,26 +145,41 @@
                 <p>This contract is not associated with any projects.</p>
             {% endif %}
         </div>
+        </div>
     </div>
 
     <div class="row-fluid">
         <div class="span12">
-            <h3>Contract Hours</h3>
+            <h3>Contract {{ contract.get_ceiling_type_display }}</h3>
+            <ul class="nav nav-pills">
+                {% if perms.contracts.add_contractincrement %}
+                    <li><a href="{% url 'add_contract_increment' contract.id %}">Add {{ contract.get_ceiling_type_display }}</a></li>
+                {% endif %}
+            </ul>
             <table class='table table-bordered'>
                 <tr>
+                    <th></th>
                     <th>Date Requested</th>
-                    <th>Hours</th>
+                    <th>{{ contract.get_ceiling_type_display }}</th>
                     <th>Status</th>
                     <th>Date Approved</th>
                     <th>Notes</th>
                 </tr>
-                {% for hour in contract.contract_hours.all %}
+                {% for increment in contract.increments %}
                     <tr>
-                        <td>{{ hour.date_requested }}</td>
-                        <td class="hours">{{ hour.hours }}</td>
-                        <td>{{ hour.get_status_display }}</td>
-                        <td>{% if hour.date_approved %}{{ hour.date_approved }}{% endif %}</td>
-                        <td>{{ hour.notes }}</td>
+                        <td>
+                            {% if perms.contracts.change_contractincrement %}
+                            <a href="{{ increment.edit_url }}" title="Edit Contract {{ contract.get_ceiling_type_display }}."><i class="icon-pencil"> </i></a>
+                            {% endif %}
+                            {% if perms.contracts.delete_contractincrement %}
+                            <a href="{{ increment.delete_url }}" title="Delete Contract {{ contract.get_ceiling_type_display }}."><i class="icon-trash"> </i></a>
+                            {% endif %}
+                        </td>
+                        <td>{{ increment.date_requested }}</td>
+                        <td class="hours">{{ increment.value|intcomma }}</td>
+                        <td>{{ increment.get_status_display }}</td>
+                        <td>{% if increment.date_approved %}{{ increment.date_approved }}{% endif %}</td>
+                        <td>{{ increment.notes }}</td>
                     </tr>
                 {% endfor %}
             </table>
