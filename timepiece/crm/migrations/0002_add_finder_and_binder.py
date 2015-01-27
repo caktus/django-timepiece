@@ -18,6 +18,10 @@ class Migration(SchemaMigration):
                       self.gf('django.db.models.fields.related.ForeignKey')(default=1, related_name='binder', to=orm['auth.User']),
                       keep_default=False)
 
+        # Adding field 'ActivityGroup'
+        db.add_column('timepiece_project', 'activity_group',
+                      self.gf('django.db.models.fields.related.ForeignKey')(blank=True, related_name='activity_group', null=True, to=orm['entries.ActivityGroup']))
+
 
     def backwards(self, orm):
         # Deleting field 'Project.finder'

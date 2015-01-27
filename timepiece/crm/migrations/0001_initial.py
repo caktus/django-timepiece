@@ -48,7 +48,7 @@ class Migration(SchemaMigration):
             ('tracker_url', self.gf('django.db.models.fields.CharField')(default='', max_length=255, blank=True)),
             ('business', self.gf('django.db.models.fields.related.ForeignKey')(related_name='new_business_projects', to=orm['crm.Business'])),
             ('point_person', self.gf('django.db.models.fields.related.ForeignKey')(to=orm['auth.User'])),
-            ('activity_group', self.gf('django.db.models.fields.related.ForeignKey')(blank=True, related_name='activity_group', null=True, to=orm['entries.ActivityGroup'])),
+            #('activity_group', self.gf('django.db.models.fields.related.ForeignKey')(blank=True, related_name='activity_group', null=True, to=orm['entries.ActivityGroup'])),
             ('type', self.gf('django.db.models.fields.related.ForeignKey')(related_name='projects_with_type', to=orm['crm.Attribute'])),
             ('status', self.gf('django.db.models.fields.related.ForeignKey')(related_name='projects_with_status', to=orm['crm.Attribute'])),
             ('description', self.gf('django.db.models.fields.TextField')()),
@@ -170,7 +170,7 @@ class Migration(SchemaMigration):
         },
         'crm.project': {
             'Meta': {'ordering': "('name', 'status', 'type')", 'object_name': 'Project', 'db_table': "'timepiece_project'"},
-            'activity_group': ('django.db.models.fields.related.ForeignKey', [], {'blank': 'True', 'related_name': "'activity_group'", 'null': 'True', 'to': "orm['entries.ActivityGroup']"}),
+            # 'activity_group': ('django.db.models.fields.related.ForeignKey', [], {'blank': 'True', 'related_name': "'activity_group'", 'null': 'True', 'to': "orm['entries.ActivityGroup']"}),
             'business': ('django.db.models.fields.related.ForeignKey', [], {'related_name': "'new_business_projects'", 'to': "orm['crm.Business']"}),
             'description': ('django.db.models.fields.TextField', [], {}),
             'id': ('django.db.models.fields.AutoField', [], {'primary_key': 'True'}),
@@ -206,13 +206,13 @@ class Migration(SchemaMigration):
             'code': ('django.db.models.fields.CharField', [], {'unique': 'True', 'max_length': '5'}),
             'id': ('django.db.models.fields.AutoField', [], {'primary_key': 'True'}),
             'name': ('django.db.models.fields.CharField', [], {'max_length': '50'})
-        },
-        'entries.activitygroup': {
-            'Meta': {'object_name': 'ActivityGroup', 'db_table': "'timepiece_activitygroup'"},
-            'activities': ('django.db.models.fields.related.ManyToManyField', [], {'related_name': "'activity_group'", 'symmetrical': 'False', 'to': "orm['entries.Activity']"}),
-            'id': ('django.db.models.fields.AutoField', [], {'primary_key': 'True'}),
-            'name': ('django.db.models.fields.CharField', [], {'unique': 'True', 'max_length': '255'})
-        }
+        }#,
+        # 'entries.activitygroup': {
+        #     'Meta': {'object_name': 'ActivityGroup', 'db_table': "'timepiece_activitygroup'"},
+        #     'activities': ('django.db.models.fields.related.ManyToManyField', [], {'related_name': "'activity_group'", 'symmetrical': 'False', 'to': "orm['entries.Activity']"}),
+        #     'id': ('django.db.models.fields.AutoField', [], {'primary_key': 'True'}),
+        #     'name': ('django.db.models.fields.CharField', [], {'unique': 'True', 'max_length': '255'})
+        # }
     }
 
     complete_apps = ['crm']
