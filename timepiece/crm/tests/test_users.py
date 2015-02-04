@@ -97,8 +97,8 @@ class TestCreateUser(ViewTestMixin, TestCase):
         self.assertEquals(obj.email, self.post_data['email'])
         self.assertEquals(obj.is_active, self.post_data['is_active']),
         self.assertEquals(obj.is_staff, self.post_data['is_staff']),
-        self.assertItemsEqual(obj.groups.values_list('pk', flat=True),
-                self.post_data['groups'])
+        groups = obj.groups.values_list('pk', flat=True)
+        self.assertEqual(sorted(groups), sorted(self.post_data['groups']))
         self.assertTrue(obj.check_password(self.post_data['password1']))
 
     def test_nonmatching_passwords(self):
@@ -209,8 +209,9 @@ class TestEditUser(ViewTestMixin, TestCase):
         self.assertEquals(obj.email, self.obj.email)
         self.assertEquals(obj.is_active, self.obj.is_active)
         self.assertEquals(obj.is_staff, self.obj.is_staff)
-        self.assertItemsEqual(obj.groups.values_list('pk', flat=True),
-                self.obj.groups.values_list('pk', flat=True))
+        groups1 = obj.groups.values_list('pk', flat=True)
+        groups2 = self.obj.groups.values_list('pk', flat=True)
+        self.assertEqual(sorted(groups1), sorted(groups2))
 
     def test_get_no_permission(self):
         """Permission is required for this view."""
@@ -256,8 +257,8 @@ class TestEditUser(ViewTestMixin, TestCase):
         self.assertEquals(obj.email, self.post_data['email'])
         self.assertEquals(obj.is_active, self.post_data['is_active'])
         self.assertEquals(obj.is_staff, self.post_data['is_staff'])
-        self.assertItemsEqual(obj.groups.values_list('pk', flat=True),
-                self.post_data['groups'])
+        groups = obj.groups.values_list('pk', flat=True)
+        self.assertEqual(sorted(groups), sorted(self.post_data['groups']))
 
     def test_post_invalid(self):
         """Invalid POST should not edit the object."""
@@ -469,7 +470,7 @@ class TestEditSettings(ViewTestMixin, TestCase):
         response = self._post()
         self.assertRedirectsNoFollow(response, reverse('dashboard'))
         updated_user = User.objects.get(pk=self.user.pk)
-        for k, v in self.post_data.iteritems():
+        for k, v in self.post_data.items():
             self.assertEquals(getattr(updated_user, k), v)
 
     def test_post_invalid(self):
@@ -491,5 +492,5 @@ class TestEditSettings(ViewTestMixin, TestCase):
         response = self._post(get_kwargs={'next': '/hello/'})
         self.assertRedirectsNoFollow(response, '/hello/')
         updated_user = User.objects.get(pk=self.user.pk)
-        for k, v in self.post_data.iteritems():
+        for k, v in self.post_data.items():
             self.assertEquals(getattr(updated_user, k), v)

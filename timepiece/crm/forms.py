@@ -6,10 +6,10 @@ from selectable import forms as selectable
 
 from timepiece.utils.search import SearchForm
 
-from timepiece.crm.lookups import (BusinessLookup, ProjectLookup, UserLookup,
-        QuickLookup)
-from timepiece.crm.models import (Attribute, Business, Project,
-        ProjectRelationship)
+from timepiece.crm.lookups import (
+    BusinessLookup, ProjectLookup, UserLookup, QuickLookup)
+from timepiece.crm.models import (
+    Attribute, Business, Project, ProjectRelationship)
 
 
 class CreateEditBusinessForm(forms.ModelForm):
@@ -26,7 +26,7 @@ class CreateEditProjectForm(forms.ModelForm):
     class Meta:
         model = Project
         fields = ('name', 'business', 'tracker_url', 'point_person', 'type',
-                'status', 'activity_group', 'description')
+                  'status', 'activity_group', 'description')
 
 
 class CreateUserForm(UserCreationForm):
@@ -34,7 +34,7 @@ class CreateUserForm(UserCreationForm):
     class Meta:
         model = User
         fields = ('username', 'first_name', 'last_name', 'email', 'is_active',
-                'is_staff', 'groups')
+                  'is_staff', 'groups')
 
     def __init__(self, *args, **kwargs):
         super(CreateUserForm, self).__init__(*args, **kwargs)
@@ -57,20 +57,21 @@ class EditProjectRelationshipForm(forms.ModelForm):
     def __init__(self, *args, **kwargs):
         super(EditProjectRelationshipForm, self).__init__(*args, **kwargs)
         self.fields['types'].widget = forms.CheckboxSelectMultiple(
-                choices=self.fields['types'].choices)
+            choices=self.fields['types'].choices)
 
 
 class EditUserForm(UserChangeForm):
-    password1 = forms.CharField(required=False, max_length=36,
-            label='Password', widget=forms.PasswordInput(render_value=False))
-    password2 = forms.CharField(required=False, max_length=36,
-            label='Repeat Password',
-            widget=forms.PasswordInput(render_value=False))
+    password1 = forms.CharField(
+        required=False, max_length=36, label='Password',
+        widget=forms.PasswordInput(render_value=False))
+    password2 = forms.CharField(
+        required=False, max_length=36, label='Repeat Password',
+        widget=forms.PasswordInput(render_value=False))
 
     class Meta:
         model = User
         fields = ('username', 'first_name', 'last_name', 'email', 'is_active',
-                'is_staff', 'groups')
+                  'is_staff', 'groups')
 
     def __init__(self, *args, **kwargs):
         super(EditUserForm, self).__init__(*args, **kwargs)

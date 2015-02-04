@@ -1,9 +1,9 @@
-from django.conf.urls import patterns, url
+from django.conf.urls import url
 
 from timepiece.crm import views
 
 
-urlpatterns = patterns('',
+urlpatterns = [
     # Search
     url(r'^quick_search/$',
         views.QuickSearch.as_view(),
@@ -30,8 +30,8 @@ urlpatterns = patterns('',
         name='delete_user'),
 
     # User timesheets
-    url(r'^user/(?P<user_id>\d+)/timesheet/' +
-                '(?:(?P<active_tab>overview|all-entries|daily-summary)/)?$',
+    url(r'^user/(?P<user_id>\d+)/timesheet/'
+        '(?:(?P<active_tab>overview|all-entries|daily-summary)/)?$',
         views.view_user_timesheet,
         name='view_user_timesheet'),
     url(r'^user/(?P<user_id>\d+)/timesheet/reject/$',
@@ -93,4 +93,4 @@ urlpatterns = patterns('',
     url(r'^relationship/delete/$',
         views.DeleteRelationship.as_view(),
         name='delete_relationship'),
-)
+]

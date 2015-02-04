@@ -41,7 +41,7 @@ class ReportsTestBase(TestCase):
         ]
 
     def make_entries(self, user=None, projects=None, dates=None,
-                 hours=1, minutes=0):
+                     hours=1, minutes=0):
         """Make several entries to help with reports tests"""
         if not user:
             user = self.user
@@ -55,7 +55,7 @@ class ReportsTestBase(TestCase):
                               delta=(hours, minutes), user=user)
 
     def bulk_entries(self, start=datetime.datetime(2011, 1, 2),
-                   end=datetime.datetime(2011, 1, 4)):
+                     end=datetime.datetime(2011, 1, 4)):
         start = utils.add_timezone(start)
         end = utils.add_timezone(end)
         dates = generate_dates(start, end, 'day')

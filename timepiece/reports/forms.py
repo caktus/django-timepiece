@@ -18,14 +18,14 @@ class BillableHoursReportForm(DateForm):
         ('month', 'Month'),
     )
 
-    trunc = forms.ChoiceField(label='Group Totals By', choices=TRUNC_CHOICES,
-            widget=forms.RadioSelect())
-    users = UserModelMultipleChoiceField(required=False, queryset=None,
-            widget=forms.CheckboxSelectMultiple())
-    activities = forms.ModelMultipleChoiceField(required=False, queryset=None,
-            widget=forms.CheckboxSelectMultiple())
-    project_types = forms.ModelMultipleChoiceField(required=False,
-            queryset=None, widget=forms.CheckboxSelectMultiple())
+    trunc = forms.ChoiceField(
+        label='Group Totals By', choices=TRUNC_CHOICES, widget=forms.RadioSelect())
+    users = UserModelMultipleChoiceField(
+        required=False, queryset=None, widget=forms.CheckboxSelectMultiple())
+    activities = forms.ModelMultipleChoiceField(
+        required=False, queryset=None, widget=forms.CheckboxSelectMultiple())
+    project_types = forms.ModelMultipleChoiceField(
+        required=False, queryset=None, widget=forms.CheckboxSelectMultiple())
 
     def __init__(self, *args, **kwargs):
         """
@@ -51,9 +51,9 @@ class BillableHoursReportForm(DateForm):
         if select_all:
             self.data['users'] = list(users.values_list('id', flat=True))
             self.data['activities'] = list(activities.values_list('id',
-                    flat=True))
+                                                                  flat=True))
             self.data['project_types'] = list(project_types.values_list('id',
-                    flat=True))
+                                                                        flat=True))
 
 
 class ProductivityReportForm(forms.Form):
@@ -62,8 +62,9 @@ class ProductivityReportForm(forms.Form):
         ('user', 'User'),
     )
     project = selectable.AutoCompleteSelectField(ProjectLookup)
-    organize_by = forms.ChoiceField(choices=ORGANIZE_BY_CHOICES,
-            widget=forms.RadioSelect(), initial=ORGANIZE_BY_CHOICES[0][0])
+    organize_by = forms.ChoiceField(
+        choices=ORGANIZE_BY_CHOICES, widget=forms.RadioSelect(),
+        initial=ORGANIZE_BY_CHOICES[0][0])
 
 
 class HourlyReportForm(DateForm):
@@ -77,10 +78,10 @@ class HourlyReportForm(DateForm):
     billable = forms.BooleanField(required=False)
     non_billable = forms.BooleanField(label='Non-billable', required=False)
     paid_leave = forms.BooleanField(required=False)
-    trunc = forms.ChoiceField(label='Group Totals By', choices=TRUNC_CHOICES,
-            widget=forms.RadioSelect())
-    projects = selectable.AutoCompleteSelectMultipleField(ProjectLookup,
-            label='Project Name', required=False)
+    trunc = forms.ChoiceField(
+        label='Group Totals By', choices=TRUNC_CHOICES, widget=forms.RadioSelect())
+    projects = selectable.AutoCompleteSelectMultipleField(
+        ProjectLookup, label='Project Name', required=False)
 
     def __init__(self, *args, **kwargs):
         super(HourlyReportForm, self).__init__(*args, **kwargs)

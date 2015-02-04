@@ -5,6 +5,8 @@ import factory
 from factory.fuzzy import FuzzyDate, FuzzyInteger
 import random
 
+import six
+
 from django.contrib.auth import models as auth
 from django.contrib.auth.hashers import make_password
 
@@ -28,7 +30,7 @@ class User(factory.DjangoModelFactory):
     def permissions(self, create, extracted, **kwargs):
         if create and extracted:
             for perm in extracted:
-                if isinstance(perm, basestring):
+                if isinstance(perm, six.string_types):
                     app_label, codename = perm.split('.')
                     perm = auth.Permission.objects.get(
                         content_type__app_label=app_label,
@@ -62,8 +64,7 @@ class ProjectContract(factory.DjangoModelFactory):
         if create:
             num_hours = extracted or random.randint(10, 400)
             for i in range(2):
-                ContractHour(contract=self,
-                        hours=Decimal(str(num_hours/2.0)))
+                ContractHour(contract=self, hours=Decimal(str(num_hours/2.0)))
 
     @factory.post_generation
     def projects(self, create, extracted, **kwargs):
@@ -100,6 +101,7 @@ class EntryGroup(factory.DjangoModelFactory):
     user = factory.SubFactory('timepiece.tests.factories.User')
     project = factory.SubFactory('timepiece.tests.factories.Project')
     end = FuzzyDate(datetime.date.today() - relativedelta(months=1))
+
 
 class TypeAttribute(factory.DjangoModelFactory):
     FACTORY_FOR = crm.Attribute

@@ -1,20 +1,13 @@
-from .base import *
+from .base import *  # noqa
 
 
 DEBUG = True
 
 TEMPLATE_DEBUG = True
 
-DATABASES = {
-    'default': {
-        'ENGINE': 'django.db.backends.postgresql_psycopg2',
-        'NAME': 'timepiece',
-        'USER': 'timepiece',
-        'PASSWORD': '',
-        'HOST': '',
-        'PORT': '',
-    }
-}
+DATABASES['default']['NAME'] = 'timepiece'
+DATABASES['default']['USER'] = ''
+DATABASES['default']['PASSWORD'] = ''
 
 INTERNAL_IPS = ('127.0.0.1',)
 

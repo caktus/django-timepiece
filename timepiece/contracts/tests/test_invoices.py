@@ -1,7 +1,8 @@
 import datetime
 from dateutil.relativedelta import relativedelta
 import random
-import urllib
+
+from six.moves.urllib.parse import urlencode
 
 from django.contrib.auth.models import Permission
 from django.core.urlresolvers import reverse
@@ -56,7 +57,7 @@ class TestListInvoicesView(ViewTestMixin, TestCase):
 
     def test_no_results(self):
         """Page should render if there are no search results."""
-        obj = self.factory.create()
+        self.factory.create()
         response = self._get(get_kwargs={'search': 'hello'})
         self.assertEquals(response.status_code, 200)
         self.assertTemplateUsed(response, self.template_name)
@@ -84,7 +85,7 @@ class TestListInvoicesView(ViewTestMixin, TestCase):
     def test_filter_number(self):
         """User should be able to filter by search query."""
         obj = self.factory.create(number='hello')
-        other_obj = self.factory.create()
+        self.factory.create()
         response = self._get(get_kwargs={'search': 'hello'})
         self.assertEquals(response.status_code, 200)
         self.assertEquals(response.context['object_list'].get(), obj)
@@ -92,7 +93,7 @@ class TestListInvoicesView(ViewTestMixin, TestCase):
     def test_filter_comments(self):
         """User should be able to filter by search query."""
         obj = self.factory.create(comments='hello')
-        other_obj = self.factory.create()
+        self.factory.create()
         response = self._get(get_kwargs={'search': 'hello'})
         self.assertEquals(response.status_code, 200)
         self.assertEquals(response.context['object_list'].get(), obj)
@@ -100,7 +101,7 @@ class TestListInvoicesView(ViewTestMixin, TestCase):
     def test_filter_project_name(self):
         """User should be able to filter by search query."""
         obj = self.factory.create(project__name='hello')
-        other_obj = self.factory.create()
+        self.factory.create()
         response = self._get(get_kwargs={'search': 'hello'})
         self.assertEquals(response.status_code, 200)
         self.assertEquals(response.context['object_list'].get(), obj)
@@ -108,7 +109,7 @@ class TestListInvoicesView(ViewTestMixin, TestCase):
     def test_filter_user_username(self):
         """User should be able to filter by search query."""
         obj = self.factory.create(user__username='hello')
-        other_obj = self.factory.create()
+        self.factory.create()
         response = self._get(get_kwargs={'search': 'hello'})
         self.assertEquals(response.status_code, 200)
         self.assertEquals(response.context['object_list'].get(), obj)
@@ -120,10 +121,10 @@ class InvoiceViewPreviousTestCase(ViewTestMixin, LogTimeMixin, TestCase):
         super(InvoiceViewPreviousTestCase, self).setUp()
         self.user = factories.Superuser()
         self.login_user(self.user)
-        self.devl_activity = factories.Activity(code='devl',
-                name='development', billable=True)
-        self.activity = factories.Activity(code='WRK',
-                name='Work')
+        self.devl_activity = factories.Activity(
+            code='devl', name='development', billable=True)
+        self.activity = factories.Activity(
+            code='WRK', name='Work')
         # Make some projects and entries for invoice creation
         self.project = factories.BillableProject()
         self.project2 = factories.BillableProject()
@@ -136,12 +137,12 @@ class InvoiceViewPreviousTestCase(ViewTestMixin, LogTimeMixin, TestCase):
 
     def get_create_url(self, **kwargs):
         base_url = reverse('create_invoice')
-        params = urllib.urlencode(kwargs)
+        params = urlencode(kwargs)
         return '{0}?{1}'.format(base_url, params)
 
     def log_many(self, projects, num_entries=20, start=None, billable=True):
         start = utils.add_timezone(datetime.datetime(2011, 1, 1, 0, 0, 0))
-        for index in xrange(0, num_entries):
+        for index in range(0, num_entries):
             start += relativedelta(hours=(5 * index))
             project = projects[index % len(projects)]  # Alternate projects
             self.log_time(start=start, status=Entry.APPROVED, project=project,
@@ -159,7 +160,7 @@ class InvoiceViewPreviousTestCase(ViewTestMixin, LogTimeMixin, TestCase):
             'status': EntryGroup.INVOICED,
         }
         params.update(data)
-        response = self.client.post(url, params)
+        self.client.post(url, params)
 
     def get_invoice(self):
         invoices = EntryGroup.objects.all()
@@ -222,11 +223,11 @@ class InvoiceViewPreviousTestCase(ViewTestMixin, LogTimeMixin, TestCase):
         self.assertEqual(data['Content-Type'], 'text/csv')
         disposition = data['Content-Disposition']
         self.assertTrue(disposition.startswith('attachment; filename=Invoice'))
-        contents = response.content.splitlines()
+        contents = response.content.decode('utf-8').splitlines()
         # TODO: Possibly find a meaningful way to test contents
         # Pull off header line and totals line
-        header = contents.pop(0)
-        total = contents.pop()
+        contents.pop(0)  # header
+        contents.pop()  # totals
         num_entries = invoice.entries.all().count()
         self.assertEqual(num_entries, len(contents))
 
@@ -251,8 +252,10 @@ class InvoiceViewPreviousTestCase(ViewTestMixin, LogTimeMixin, TestCase):
     def test_invoice_edit_post(self):
         invoice = self.get_invoice()
         url = reverse('edit_invoice', args=(invoice.id,))
-        status = EntryGroup.INVOICED if invoice.status != EntryGroup.INVOICED \
-                else EntryGroup.NOT_INVOICED
+        if invoice.status != EntryGroup.INVOICED:
+            status = EntryGroup.INVOICED
+        else:
+            status = EntryGroup.NOT_INVOICED
         params = {
             'number': int(invoice.number) + 1,
             'status': status,
@@ -303,8 +306,7 @@ class InvoiceViewPreviousTestCase(ViewTestMixin, LogTimeMixin, TestCase):
         self.assertTrue(EntryGroup.objects.get(pk=invoice.id))
 
     def test_invoice_delete_bad_args(self):
-        invoice = self.get_invoice()
-        entry_ids = [entry.pk for entry in invoice.entries.all()]
+        self.get_invoice()
         url = reverse('delete_invoice', args=[1232345345])
         response = self.client.post(url, {'delete': 'delete'})
         self.assertEqual(response.status_code, 404)
@@ -353,28 +355,28 @@ class InvoiceCreateTestCase(ViewTestMixin, TestCase):
         self.project_billable = factories.BillableProject()
         self.project_billable2 = factories.BillableProject()
         self.project_non_billable = factories.NonbillableProject()
-        self.entry1 = factories.Entry(user=self.user,
-                project=self.project_billable,
-                activity=factories.Activity(billable=True),
-                start_time=start, end_time=end, status=Entry.APPROVED)
-        self.entry2 = factories.Entry(user=self.user,
-                project=self.project_billable,
-                activity=factories.Activity(billable=True),
-                start_time=start - relativedelta(days=5),
-                end_time=end - relativedelta(days=5), status=Entry.APPROVED)
-        self.entry3 = factories.Entry(user=self.user,
-                project=self.project_billable2,
-                activity=factories.Activity(billable=False),
-                start_time=start - relativedelta(days=10),
-                end_time=end - relativedelta(days=10), status=Entry.APPROVED)
-        self.entry4 = factories.Entry(user=self.user,
-                project=self.project_non_billable,
-                start_time=start + relativedelta(hours=11),
-                end_time=end + relativedelta(hours=15), status=Entry.APPROVED)
+        self.entry1 = factories.Entry(
+            user=self.user, project=self.project_billable,
+            activity=factories.Activity(billable=True),
+            start_time=start, end_time=end, status=Entry.APPROVED)
+        self.entry2 = factories.Entry(
+            user=self.user, project=self.project_billable,
+            activity=factories.Activity(billable=True),
+            start_time=start - relativedelta(days=5),
+            end_time=end - relativedelta(days=5), status=Entry.APPROVED)
+        self.entry3 = factories.Entry(
+            user=self.user, project=self.project_billable2,
+            activity=factories.Activity(billable=False),
+            start_time=start - relativedelta(days=10),
+            end_time=end - relativedelta(days=10), status=Entry.APPROVED)
+        self.entry4 = factories.Entry(
+            user=self.user, project=self.project_non_billable,
+            start_time=start + relativedelta(hours=11),
+            end_time=end + relativedelta(hours=15), status=Entry.APPROVED)
 
     def get_create_url(self, **kwargs):
         base_url = reverse('create_invoice')
-        params = urllib.urlencode(kwargs)
+        params = urlencode(kwargs)
         return '{0}?{1}'.format(base_url, params)
 
     def make_hourgroups(self):
@@ -398,8 +400,9 @@ class InvoiceCreateTestCase(ViewTestMixin, TestCase):
         """A regular user should not be able to access this page"""
         self.login_user(factories.User())
         to_date = utils.add_timezone(datetime.datetime(2011, 1, 31))
-        url = self.get_create_url(project=self.project_billable.pk,
-                to_date=to_date.strftime(DATE_FORM_FORMAT))
+        url = self.get_create_url(
+            project=self.project_billable.pk,
+            to_date=to_date.strftime(DATE_FORM_FORMAT))
 
         response = self.client.get(url)
         self.assertEquals(response.status_code, 403)
@@ -411,16 +414,18 @@ class InvoiceCreateTestCase(ViewTestMixin, TestCase):
         """
         self.login_with_permission()
         to_date = utils.add_timezone(datetime.datetime(2011, 1, 31))
-        url = self.get_create_url(project=self.project_billable.pk,
-                to_date=to_date.strftime(DATE_FORM_FORMAT))
+        url = self.get_create_url(
+            project=self.project_billable.pk,
+            to_date=to_date.strftime(DATE_FORM_FORMAT))
 
         response = self.client.get(url)
         self.assertEquals(response.status_code, 200)
 
     def test_invoice_confirm_view(self):
         to_date = utils.add_timezone(datetime.datetime(2011, 1, 31))
-        url = self.get_create_url(project=self.project_billable.pk,
-                to_date=to_date.strftime(DATE_FORM_FORMAT))
+        url = self.get_create_url(
+            project=self.project_billable.pk,
+            to_date=to_date.strftime(DATE_FORM_FORMAT))
         response = self.client.get(url)
         self.assertEqual(response.status_code, 200)
         to_date_str = response.context['to_date'].strftime('%Y %m %d')
@@ -448,12 +453,12 @@ class InvoiceCreateTestCase(ViewTestMixin, TestCase):
         # start = utils.add_timezone(datetime.datetime.now())
         # end = start + relativedelta(hours=4)
         activity = factories.Activity(billable=True, name='activity1')
-        for num in xrange(0, 4):
-            new_entry = factories.Entry(user=self.user,
-                    project=self.project_billable,
-                    start_time=start - relativedelta(days=num),
-                    end_time=end - relativedelta(days=num),
-                    status=Entry.APPROVED, activity=activity)
+        for num in range(0, 4):
+            factories.Entry(
+                user=self.user, project=self.project_billable,
+                start_time=start - relativedelta(days=num),
+                end_time=end - relativedelta(days=num),
+                status=Entry.APPROVED, activity=activity)
         self.make_hourgroups()
         to_date = datetime.datetime(2011, 1, 31)
         kwargs = {
@@ -503,8 +508,10 @@ class InvoiceCreateTestCase(ViewTestMixin, TestCase):
             'to_date': to_date.strftime(DATE_FORM_FORMAT),
         }
         url = self.get_create_url(**kwargs)
-        response = self.client.post(url, {'number': '3',
-                'status': EntryGroup.INVOICED})
+        response = self.client.post(url, {
+            'number': '3',
+            'status': EntryGroup.INVOICED,
+        })
         self.assertEqual(response.status_code, 302)
         # Verify an invoice was created with the correct attributes
         invoice = EntryGroup.objects.get(number=3)
@@ -563,24 +570,24 @@ class ListOutstandingInvoicesViewTestCase(ViewTestMixin, TestCase):
         self.project_billable2 = factories.BillableProject()
         self.project_non_billable = factories.NonbillableProject()
 
-        self.entry1 = factories.Entry(user=self.user,
-                project=self.project_billable,
-                activity=factories.Activity(billable=True),
-                start_time=start, end_time=end, status=Entry.APPROVED)
-        self.entry2 = factories.Entry(user=self.user,
-                project=self.project_billable,
-                activity=factories.Activity(billable=True),
-                start_time=start - relativedelta(days=5),
-                end_time=end - relativedelta(days=5), status=Entry.APPROVED)
-        self.entry3 = factories.Entry(user=self.user,
-                project=self.project_billable2,
-                activity=factories.Activity(billable=False),
-                start_time=start - relativedelta(days=10),
-                end_time=end - relativedelta(days=10), status=Entry.APPROVED)
-        self.entry4 = factories.Entry(user=self.user,
-                project=self.project_non_billable,
-                start_time=start + relativedelta(hours=11),
-                end_time=end + relativedelta(hours=15), status=Entry.APPROVED)
+        self.entry1 = factories.Entry(
+            user=self.user, project=self.project_billable,
+            activity=factories.Activity(billable=True),
+            start_time=start, end_time=end, status=Entry.APPROVED)
+        self.entry2 = factories.Entry(
+            user=self.user, project=self.project_billable,
+            activity=factories.Activity(billable=True),
+            start_time=start - relativedelta(days=5),
+            end_time=end - relativedelta(days=5), status=Entry.APPROVED)
+        self.entry3 = factories.Entry(
+            user=self.user, project=self.project_billable2,
+            activity=factories.Activity(billable=False),
+            start_time=start - relativedelta(days=10),
+            end_time=end - relativedelta(days=10), status=Entry.APPROVED)
+        self.entry4 = factories.Entry(
+            user=self.user, project=self.project_non_billable,
+            start_time=start + relativedelta(hours=11),
+            end_time=end + relativedelta(hours=15), status=Entry.APPROVED)
 
         # Default get kwargs.
         self.to_date = utils.add_timezone(datetime.datetime(2011, 1, 31, 0, 0, 0))
@@ -618,11 +625,12 @@ class ListOutstandingInvoicesViewTestCase(ViewTestMixin, TestCase):
     def test_unverified(self):
         start = utils.add_timezone(datetime.datetime(2011, 1, 1, 8))
         end = utils.add_timezone(datetime.datetime(2011, 1, 1, 12))
-        unverified_entry = factories.Entry(user=self.user,
+        factories.Entry(
+            user=self.user,
             project=self.project_non_billable,
             start_time=start + relativedelta(hours=11),
             end_time=end + relativedelta(hours=15), status=Entry.UNVERIFIED
-        )
+        )  # unverified
         response = self._get()
         self.assertEquals(response.status_code, 200)
         form = response.context['form']
@@ -638,16 +646,14 @@ class ListOutstandingInvoicesViewTestCase(ViewTestMixin, TestCase):
     def test_approved(self):
         start = utils.add_timezone(datetime.datetime(2011, 1, 1, 8))
         end = utils.add_timezone(datetime.datetime(2011, 1, 1, 12))
-        unapproved_entry_a = factories.Entry(user=self.user,
-            project=self.project_non_billable,
+        unapproved_entry_a = factories.Entry(
+            user=self.user, project=self.project_non_billable,
             start_time=start + relativedelta(hours=11),
-            end_time=end + relativedelta(hours=15), status=Entry.VERIFIED
-        )
-        unapproved_entry_b = factories.Entry(user=self.user,
-            project=self.project_non_billable,
+            end_time=end + relativedelta(hours=15), status=Entry.VERIFIED)
+        unapproved_entry_b = factories.Entry(
+            user=self.user, project=self.project_non_billable,
             start_time=start + relativedelta(hours=11),
-            end_time=end + relativedelta(hours=15), status=Entry.VERIFIED
-        )
+            end_time=end + relativedelta(hours=15), status=Entry.VERIFIED)
         response = self._get()
         self.assertEquals(response.status_code, 200)
         form = response.context['form']

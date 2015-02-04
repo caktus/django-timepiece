@@ -52,24 +52,20 @@ class PayrollTest(ViewTestMixin, LogTimeMixin, TestCase):
                       billable=billable, project=project)
 
     def make_logs(self, day=None, user=None, billable_project=None,
-            nonbillable_project=None):
+                  nonbillable_project=None):
         if not user:
             user = self.user
         if not day:
             day = self.first
-        billable = self.make_entry(user, day, (3, 30),
-                project=billable_project)
-        non_billable = self.make_entry(user, day, (2, 0),
-                project=nonbillable_project)
-        invoiced = self.make_entry(user, day, (5, 30), status=Entry.INVOICED,
-                project=billable_project)
-        unapproved = self.make_entry(user, day, (6, 0), status=Entry.VERIFIED,
-                project=billable_project)
-        sick = self.make_entry(user, day, (8, 0), project=self.sick)
-        vacation = self.make_entry(user, day, (4, 0), project=self.vacation)
+        self.make_entry(user, day, (3, 30), project=billable_project)
+        self.make_entry(user, day, (2, 0), project=nonbillable_project)
+        self.make_entry(user, day, (5, 30), status=Entry.INVOICED, project=billable_project)
+        self.make_entry(user, day, (6, 0), status=Entry.VERIFIED, project=billable_project)
+        self.make_entry(user, day, (8, 0), project=self.sick)
+        self.make_entry(user, day, (4, 0), project=self.vacation)
 
     def all_logs(self, user=None, billable_project=None,
-            nonbillable_project=None):
+                 nonbillable_project=None):
         if not user:
             user = self.user
         for day in self.dates:
@@ -79,10 +75,10 @@ class PayrollTest(ViewTestMixin, LogTimeMixin, TestCase):
         """Test the get_last_billable_day utility for validity"""
         months = range(1, 13)
         first_days = [utils.add_timezone(datetime.datetime(2011, month, 1))
-            for month in months]
-        last_billable = [utils.get_last_billable_day(day).day \
+                      for month in months]
+        last_billable = [utils.get_last_billable_day(day).day
                          for day in first_days]
-        #should equal the last saturday of every month in 2011
+        # should equal the last saturday of every month in 2011
         self.assertEqual(last_billable,
                          [30, 27, 27, 24, 29, 26, 31, 28, 25, 30, 27, 25])
 
@@ -97,21 +93,23 @@ class PayrollTest(ViewTestMixin, LogTimeMixin, TestCase):
         self.login_user(self.superuser)
         response = self.client.get(self.url, self.args)
         weekly_totals = response.context['weekly_totals']
-        self.assertEqual(weekly_totals[0][0][0][2],
-                         [Decimal('22.00'),
-                          Decimal('11.00'), '',
-                          Decimal('11.00'),
-                          Decimal('11.00'), ''
-                         ])
+        self.assertEqual(weekly_totals[0][0][0][2], [
+            Decimal('22.00'),
+            Decimal('11.00'),
+            '',
+            Decimal('11.00'),
+            Decimal('11.00'),
+            '',
+        ])
 
     def testWeeklyOvertimes(self):
         """Date_trunc on week should result in correct overtime totals"""
         dates = self.dates
-        for day_num in xrange(28, 31):
+        for day_num in range(28, 31):
             dates.append(utils.add_timezone(
                 datetime.datetime(2011, 4, day_num)
             ))
-        for day_num in xrange(5, 9):
+        for day_num in range(5, 9):
             dates.append(utils.add_timezone(
                 datetime.datetime(2011, 5, day_num)
             ))
@@ -127,13 +125,13 @@ class PayrollTest(ViewTestMixin, LogTimeMixin, TestCase):
             self.assertEqual(weekly_totals[1], week1)
             self.assertEqual(weekly_totals[5], overtime)
         check_overtime()
-        #Entry on following Monday doesn't add to week1 or overtime
+        # Entry on following Monday doesn't add to week1 or overtime
         self.make_logs(utils.add_timezone(datetime.datetime(2011, 5, 9)))
         check_overtime()
-        #Entries in previous month before last_billable do not change overtime
+        # Entries in previous month before last_billable do not change overtime
         self.make_logs(utils.add_timezone(datetime.datetime(2011, 4, 24)))
         check_overtime()
-        #Entry in previous month after last_billable change week0 and overtime
+        # Entry in previous month after last_billable change week0 and overtime
         self.make_logs(utils.add_timezone(
             datetime.datetime(2011, 4, 25, 1, 0)
         ))
@@ -146,10 +144,8 @@ class PayrollTest(ViewTestMixin, LogTimeMixin, TestCase):
         """
         self.billable_project = factories.BillableProject()
         self.nonbillable_project = factories.NonbillableProject()
-        self.all_logs(self.user, self.billable_project,
-                self.nonbillable_project)
-        self.all_logs(self.user2, self.billable_project,
-                self.nonbillable_project)
+        self.all_logs(self.user, self.billable_project, self.nonbillable_project)
+        self.all_logs(self.user2, self.billable_project, self.nonbillable_project)
         self.login_user(self.superuser)
         self.response = self.client.get(self.url, self.args)
         self.rows = self.response.context['monthly_totals']
@@ -161,10 +157,10 @@ class PayrollTest(ViewTestMixin, LogTimeMixin, TestCase):
         as well as all leave project names.
         """
         self._setupMonthlyTotals()
-        self.assertEquals(self.labels['billable'],
-                [self.billable_project.type.label])
-        self.assertEquals(self.labels['nonbillable'],
-                [self.nonbillable_project.type.label])
+        self.assertEquals(
+            self.labels['billable'], [self.billable_project.type.label])
+        self.assertEquals(
+            self.labels['nonbillable'], [self.nonbillable_project.type.label])
         self.assertEquals(len(self.labels['leave']), 2)
         self.assertTrue(self.sick.name in self.labels['leave'])
         self.assertTrue(self.vacation.name in self.labels['leave'])
@@ -184,30 +180,29 @@ class PayrollTest(ViewTestMixin, LogTimeMixin, TestCase):
             self.assertEquals(len(row['billable']), 1 + 1)
             for entry in row['billable']:
                 self.assertEquals(entry['hours'], Decimal('45.00'))
-                self.assertEquals(entry['percent'],
-                        Decimal('45.00') / work_total * 100)
+                self.assertEquals(entry['percent'], Decimal('45.00') / work_total * 100)
 
             # Last entry is summary of status.
             self.assertEquals(len(row['nonbillable']), 1 + 1)
             for entry in row['nonbillable']:
                 self.assertEquals(entry['hours'], Decimal('10.00'))
-                self.assertEquals(entry['percent'],
-                        Decimal('10.00') / work_total * 100)
+                self.assertEquals(entry['percent'], Decimal('10.00') / work_total * 100)
 
             self.assertEquals(len(row['leave']), 2 + 1)
             sick_index = self.labels['leave'].index(self.sick.name)
             vacation_index = self.labels['leave'].index(self.vacation.name)
-            self.assertEquals(row['leave'][sick_index]['hours'],
-                    Decimal('40.00'))
-            self.assertEquals(row['leave'][sick_index]['percent'],
-                    Decimal('40.00') / Decimal('60.00') * 100)
-            self.assertEquals(row['leave'][vacation_index]['hours'],
-                    Decimal('20.00'))
-            self.assertEquals(row['leave'][vacation_index]['percent'],
-                    Decimal('20.00') / Decimal('60.00') * 100)
+            self.assertEquals(
+                row['leave'][sick_index]['hours'], Decimal('40.00'))
+            self.assertEquals(
+                row['leave'][sick_index]['percent'],
+                Decimal('40.00') / Decimal('60.00') * 100)
+            self.assertEquals(
+                row['leave'][vacation_index]['hours'], Decimal('20.00'))
+            self.assertEquals(
+                row['leave'][vacation_index]['percent'],
+                Decimal('20.00') / Decimal('60.00') * 100)
             self.assertEquals(row['leave'][-1]['hours'], Decimal('60.00'))
             self.assertEquals(row['leave'][-1]['percent'], Decimal('100.00'))
-
             self.assertEquals(row['grand_total'], Decimal('115.00'))
 
     def testMonthlyPayrollTotals(self):
@@ -221,26 +216,26 @@ class PayrollTest(ViewTestMixin, LogTimeMixin, TestCase):
         self.assertEquals(len(totals['billable']), 1 + 1)
         for entry in totals['billable']:
             self.assertEquals(entry['hours'], Decimal('90.00'))
-            self.assertEquals(entry['percent'],
-                    Decimal('90.00') / work_total * 100)
+            self.assertEquals(entry['percent'], Decimal('90.00') / work_total * 100)
 
         self.assertEquals(len(totals['nonbillable']), 1 + 1)
         for entry in totals['nonbillable']:
             self.assertEquals(entry['hours'], Decimal('20.00'))
-            self.assertEquals(entry['percent'],
-                    Decimal('20.00') / work_total * 100)
+            self.assertEquals(entry['percent'], Decimal('20.00') / work_total * 100)
 
         self.assertEquals(len(totals['leave']), 2 + 1)
         sick_index = self.labels['leave'].index(self.sick.name)
         vacation_index = self.labels['leave'].index(self.vacation.name)
-        self.assertEquals(totals['leave'][sick_index]['hours'],
-                Decimal('80.00'))
-        self.assertEquals(totals['leave'][sick_index]['percent'],
-                Decimal('80.00') / Decimal('120.00') * 100)
-        self.assertEquals(totals['leave'][vacation_index]['hours'],
-                Decimal('40.00'))
-        self.assertEquals(totals['leave'][vacation_index]['percent'],
-                Decimal('40.00') / Decimal('120.00') * 100)
+        self.assertEquals(
+            totals['leave'][sick_index]['hours'], Decimal('80.00'))
+        self.assertEquals(
+            totals['leave'][sick_index]['percent'],
+            Decimal('80.00') / Decimal('120.00') * 100)
+        self.assertEquals(
+            totals['leave'][vacation_index]['hours'], Decimal('40.00'))
+        self.assertEquals(
+            totals['leave'][vacation_index]['percent'],
+            Decimal('40.00') / Decimal('120.00') * 100)
         self.assertEquals(totals['leave'][-1]['hours'], Decimal('120.00'))
         self.assertEquals(totals['leave'][-1]['percent'], Decimal('100.00'))
 
@@ -250,7 +245,6 @@ class PayrollTest(ViewTestMixin, LogTimeMixin, TestCase):
         """
         Regular users shouldn't be able to retrieve the payroll report
         page.
-
         """
         self.login_user(self.user)
         response = self.client.get(self.url, self.args)
