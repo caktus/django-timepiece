@@ -184,6 +184,7 @@ class AddUpdateEntryForm(forms.ModelForm):
         conflict with or come after the active entry.
         """
         active = utils.get_active_entry(self.user)
+        end_time = None
         if active and active.pk != self.instance.pk:
             start_time = self.cleaned_data.get('start_time', None)
             end_time = self.cleaned_data.get('end_time', None)
@@ -202,6 +203,15 @@ class AddUpdateEntryForm(forms.ModelForm):
             hours_paused = 0
         if hours_paused < 0:
             raise forms.ValidationError('The hours paused must be >= 0.')
+
+        total_time = (self.cleaned_data.get('end_time', 
+            datetime.datetime.now()) - self.cleaned_data.get(
+            'start_time', datetime.datetime.now())
+            ).seconds / 3600.0 + hours_paused
+        if total_time  > 20.0:
+            raise forms.ValidationError('The total time entry, '
+                'including paused time, must be less than 20.0 hours.  '
+                'Ensure that you entered the pause time in hours.')
         return self.cleaned_data
 
     def save(self, commit=True):
