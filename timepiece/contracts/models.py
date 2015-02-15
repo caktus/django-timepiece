@@ -269,7 +269,7 @@ class ProjectContract(models.Model):
         elif self.ceiling_type == self.BUDGET:
             return self.not_to_exceed(approved_only)
         else:
-            return 0
+            return 0.0
 
     @property
     def display_contract_value(self):
@@ -432,7 +432,10 @@ class ProjectContract(models.Model):
         if 50 hours have been worked of 100 contracted, value is 0.5.
         Or if $5,000 has been worked of $10,000 contracted, value is 0.5.
         """
-        return 1.0 - (float(self.value_remaining()) / float(self.contract_value()))
+        try:
+            return 1.0 - (float(self.value_remaining()) / float(self.contract_value()))
+        except:
+            return 1.0
 
     @property
     def fraction_schedule(self):
