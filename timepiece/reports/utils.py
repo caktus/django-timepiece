@@ -6,6 +6,7 @@ from itertools import groupby
 
 from timepiece.utils import get_hours_summary, add_timezone, get_week_start,\
         get_month_start, get_year_start, get_setting
+from timepiece.entries.models import Entry
 
 
 def date_totals(entries, by):
@@ -249,3 +250,4 @@ def multikeysort(items, columns):
         else:
             return 0
     return sorted(items, cmp=comparer)
+
