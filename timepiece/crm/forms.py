@@ -301,9 +301,6 @@ class CreateEditMilestoneForm(forms.ModelForm):
         fields = ('name', 'due_date', 'description')
 
 class CreateEditActivityGoalForm(forms.ModelForm):
-    EMPLOYEE_CHOICES = [(u.pk, '%s, %s'%(u.last_name, u.first_name)) \
-        for u in Group.objects.get(id=1).user_set.filter(
-            is_active=True).order_by('last_name')]
 
     class Meta:
         model = ActivityGoal
@@ -311,8 +308,8 @@ class CreateEditActivityGoalForm(forms.ModelForm):
 
     def __init__(self, *args, **kwargs):
         super(CreateEditActivityGoalForm, self).__init__(*args, **kwargs)
-        self.fields['employee'].choices = self.EMPLOYEE_CHOICES
         self.fields['date'].initial = datetime.date.today()
+        self.fields['date'].required = True
         self.fields['activity'].required = True
 
 class CreateEditContactForm(forms.ModelForm):

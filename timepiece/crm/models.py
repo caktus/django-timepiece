@@ -951,7 +951,7 @@ class Milestone(models.Model):
         ordering = ('due_date',)
 
 
-from timepiece.entries.models import Activity
+from timepiece.entries.models import Entry, Activity
 class ActivityGoal(models.Model):
     milestone = models.ForeignKey(Milestone, null=True, blank=True)
     project = models.ForeignKey(Project, null=True, blank=True)
@@ -962,12 +962,32 @@ class ActivityGoal(models.Model):
     end_date = models.DateField(verbose_name='End Date')
 
     def __unicode__(self):
-        if self.employee:
-            return '%s: %s - %s (%s)' % (self.project.code, 
-                self.activity, self.employee, self.goal_hours)
-        else:
-            return '%s: %s - %s (%s)' % (self.project.code, 
-                self.activity, 'n/a', self.goal_hours)
+        return '%s: %s - %s (%s)' % (self.project.code, 
+            self.activity, self.employee, self.goal_hours)
 
     class Meta:
         ordering = ('project__code', 'employee__last_name', 'employee__first_name', 'goal_hours',)
+
+    @property
+    def get_charged_hours(self):
+        return Entry.objects.filter(
+            project=self.project,
+            activity=self.activity,
+            start_time__gte=datetime.datetime.combine(
+                self.date, datetime.time.min),
+            end_time__lte=datetime.datetime.combine(
+                self.end_date, datetime.time.max),
+            user=self.employee
+            ).aggregate(Sum('hours'))['hours__sum'] or Decimal('0.0')
+
+    @property
+    def get_percent_complete(self):
+        return 100.*(float(self.get_charged_hours) / float(self.goal_hours))
+
+    @property
+    def get_remaining_hours(self):
+        return self.goal_hours - self.get_charged_hours
+
+    @property
+    def goal_overrun(self):
+        return self.get_remaining_hours < 0

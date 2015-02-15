@@ -9,6 +9,7 @@ from django.contrib import messages
 from django.contrib.auth.decorators import login_required, permission_required
 from django.contrib.auth.models import User, Group
 from django.core.urlresolvers import reverse, reverse_lazy
+from django.core.exceptions import ObjectDoesNotExist
 from django.db import transaction
 from django.db.models import Sum, Q
 from django.http import HttpResponseRedirect, HttpResponseForbidden, Http404, HttpResponse
@@ -395,6 +396,7 @@ class ProjectTimesheet(DetailView):
             'non_billable': True,
             'writedown': True,
             'paid_time_off': False,
+            'unpaid_time_off': False,
             'trunc': 'day',
             'projects': [],
         }
@@ -407,8 +409,12 @@ class ProjectTimesheet(DetailView):
             data[key] = key in data and \
                         str(data[key]).lower() in ('on', 'true', '1')
 
+        data['trunc'] = 'day'
+        data['projects'] = []
+        data['paid_time_off'] = False
+        data['unpaid_time_off'] = False
         form = HourlyReportForm(data)
-        for field in ['projects', 'paid_time_off', 'trunc']:
+        for field in ['projects', 'paid_time_off', 'trunc', 'unpaid_time_off']:
             form.fields[field].widget = widgets.HiddenInput()
         return form
 
@@ -1180,16 +1186,28 @@ class CreateActivityGoal(CreateView):
     def get_initial(self):
         employee = self.request.GET.get('employee', None)
         activity = self.request.GET.get('activity', None)
+        start_date = self.request.GET.get('start_date', datetime.date.today())
+        end_date = self.request.GET.get('end_date', None)
         try:
             project = Project.objects.get(id=int(self.kwargs['project_id']))
         except:
             # redirect somewhere else with an error
             pass
         initial = {'employee': employee,
-                   'activity': self.request.GET.get('activity', None),
+                   'activity': activity,
+                   'date': start_date,
+                   'end_date': end_date,
                    'goal_hours': self.request.GET.get('goal_hours', None)}
-        # if employee and activity:
+        if employee and activity and project and start_date==datetime.date.today():
             # find the initial date of charging
+            try:
+                e = Entry.objects.filter(user__id=employee, 
+                    activity__id=activity, project=project
+                    ).order_by('-start_time')[0:1].get()
+                initial['date'] = e.start_time.date()
+            except ObjectDoesNotExist:
+                pass
+        
         return initial
 
     def get_form(self, *args, **kwargs):
@@ -1198,6 +1216,29 @@ class CreateActivityGoal(CreateView):
         if project.activity_group:
             activities = [(a.id, a.name) for a in project.activity_group.activities.all()]
             form.fields['activity'].choices = activities
+
+        employee_choices = [(None, '--- AAC EMPLOYEES ---')]
+        exclude = []
+        for u in Group.objects.get(id=1).user_set.filter(
+            is_active=True).order_by('last_name', 'first_name'):
+            
+            employee_choices.append((u.pk, '%s, %s'%(u.last_name, u.first_name)))
+            exclude.append(u.pk)
+
+        employee_choices.append((None, '--- EXTERNAL USERS ---'))
+        for u in User.objects.filter(is_active=True).exclude(id__in=exclude
+            ).order_by('last_name', 'first_name'):
+            
+            employee_choices.append((u.pk, '%s, %s'%(u.last_name, u.first_name)))
+            # exclude.append(u.pk)
+
+        # employee_choices.append((None, 'INACTIVE USERS'), (None, '--------------'))
+        # for u in User.objects.all().exclude(id__in=exclude
+        #     ).order_by('last_name', 'first_name'):
+            
+        #     employee_choices.append((u.pk, '%s, %s'%(u.last_name, u.first_name)))
+        
+        form.fields['employee'].choices = employee_choices 
         return form
 
     def form_valid(self, form):
@@ -1228,6 +1269,30 @@ class EditActivityGoal(UpdateView):
         if project.activity_group is not None:
             activities = [(a.id, a.name) for a in project.activity_group.activities.all()]
             form.fields['activity'].choices = activities
+
+        employee_choices = [(None, '--- AAC EMPLOYEES ---')]
+        exclude = []
+        for u in Group.objects.get(id=1).user_set.filter(
+            is_active=True).order_by('last_name', 'first_name'):
+            
+            employee_choices.append((u.pk, '%s, %s'%(u.last_name, u.first_name)))
+            exclude.append(u.pk)
+
+        employee_choices.append((None, '--- EXTERNAL USERS ---'))
+        for u in User.objects.filter(is_active=True).exclude(id__in=exclude
+            ).order_by('last_name', 'first_name'):
+            
+            employee_choices.append((u.pk, '%s, %s'%(u.last_name, u.first_name)))
+            exclude.append(u.pk)
+
+        employee_choices.append((None, '--- INACTIVE USERS ---'))
+        for u in User.objects.all().exclude(id__in=exclude
+            ).order_by('last_name', 'first_name'):
+            
+            employee_choices.append((u.pk, '%s, %s'%(u.last_name, u.first_name)))
+        
+        form.fields['employee'].choices = employee_choices 
+        
         return form
 
     def get_success_url(self):
@@ -1380,29 +1445,44 @@ def burnup_chart_data(request, project_id):
         # sort ActivityGoals by date within categories
         for i in range(len(ag_temp)):
             ag_temp[i] = sorted(ag_temp[i], key=lambda x: x.date or datetime.date.today())
+            ag_len = len(ag_temp[i])
+            k = 0
+            day_totals = []
+            for j in range((end_date - start_date).days):
+                cur_date = start_date + datetime.timedelta(days=j)
+                day_totals.append(0.0)
+                while k < ag_len:
+                    if ag_temp[i][k].date <= cur_date:
+                        day_totals[j] += float(ag_temp[i][k].goal_hours)
+                        k += 1
+                    else:
+                        break
+            # print numpy.cumsum(day_totals)
+
+            activity_goals[i].extend(list(numpy.cumsum(day_totals)))
         
-        for i in range(len(ag_temp)):
-            if len(ag_temp[i]) == 0:
-                continue
-            ag_hours = []
-            for employee, ags in groupby(ag_temp[i], lambda x: x.employee):
-                last_date = start_date
-                vals = []
-                for ag in ags:
-                    gh = float(ag.goal_hours)
-                    for j in range((ag.end_date - last_date).days + 1):
-                        vals.append(gh)
-                    last_date = ag.end_date
-                ag_hours.append(vals)
+        # for i in range(len(ag_temp)):
+        #     if len(ag_temp[i]) == 0:
+        #         continue
+        #     ag_hours = []
+        #     for employee, ags in groupby(ag_temp[i], lambda x: x.employee):
+        #         last_date = start_date
+        #         vals = []
+        #         for ag in ags:
+        #             gh = float(ag.goal_hours)
+        #             for j in range((ag.end_date - last_date).days + 1):
+        #                 vals.append(gh)
+        #             last_date = ag.end_date
+        #         ag_hours.append(vals)
             
-            max_len = len(ag_hours[0])
-            for ag_hours_employee in ag_hours:
-                max_len = max(max_len, len(ag_hours_employee))
-            for ag_hours_employee in ag_hours:
-                val = ag_hours_employee[-1]
-                while len(ag_hours_employee) < max_len:
-                    ag_hours_employee.append(val)
-            activity_goals[i].extend(list(numpy.sum(ag_hours, axis=0)))
+        #     max_len = len(ag_hours[0])
+        #     for ag_hours_employee in ag_hours:
+        #         max_len = max(max_len, len(ag_hours_employee))
+        #     for ag_hours_employee in ag_hours:
+        #         val = ag_hours_employee[-1]
+        #         while len(ag_hours_employee) < max_len:
+        #             ag_hours_employee.append(val)
+        #     activity_goals[i].extend(list(numpy.sum(ag_hours, axis=0)))
 
         data = {'entries': entries,
                 'start_date': str(start_date),
