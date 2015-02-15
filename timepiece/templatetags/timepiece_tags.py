@@ -50,9 +50,9 @@ def week(date):
     instead of Monday.
     """
     week_start = utils.get_setting('TIMEPIECE_WEEK_START')
-    if week_start == 6:
+    if week_start == 6: # if week_start is Sunday instead of Monday
         (year, week, dow) = date.isocalendar()
-        if dow == 6:
+        if dow == 7: # dow from isocalendar uses 1==Monday, 7==Sunday
             return week + 1
         else:
             return week
