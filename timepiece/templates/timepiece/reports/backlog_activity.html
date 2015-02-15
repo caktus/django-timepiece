@@ -36,7 +36,7 @@
                 <td><strong><a href="{% url 'view_project' activity.project.id %}">{{ activity.project.code }}</a></strong><br><small>{{ activity.project.name }}</small></td>
                 <td>
                     <div class="progress{% if activity.hours == 0.0 %} progress-danger progress-striped{% endif %}{% if activity.charged_hours > activity.hours %} progress-danger{% endif %}">
-                        <div class="bar" style="width: {{ activity.percentage }}%;"></div>
+                        <div class="bar{% if activity.percentage == 100 %} bar-success{% endif %}" style="width: {{ activity.percentage }}%;"></div>
                     </div>
                 </td>
                 <td>{{ activity.charged_hours }} / {{ activity.hours }}</td>

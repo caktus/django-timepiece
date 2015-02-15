@@ -32,15 +32,15 @@
         <ul class="nav nav-tabs">
             <li{% if active_tab == 'company' %} class="active"{% endif %}>
                 {% url "report_backlog" "company" as link %}
-                <a class="tab-link" to="company" href="{{ link|add_parameters:request.GET }}">Company</a>
+                <a class="tab-link" to="company" href="{{ link|add_parameters:request.GET }}">Company Summary</a>
             </li>
             <li{% if active_tab == 'individual-summary' %} class="active"{% endif %}>
                 {% url "report_backlog" "individual-summary" as link %}
-                <a class="tab-link" to="individual-summary" href="{{ link|add_parameters:request.GET }}">Individual Summary</a>
+                <a class="tab-link" to="individual-summary" href="{{ link|add_parameters:request.GET }}">Employee Summary</a>
             </li>
             <li{% if active_tab == 'individual-details' %} class="active"{% endif %}>
                 {% url "report_backlog" "individual-details" as link %}
-                <a class="tab-link" to="individual-details" href="{{ link|add_parameters:request.GET }}">Individual Detail</a>
+                <a class="tab-link" to="individual-details" href="{{ link|add_parameters:request.GET }}">Employee Totals by Activity</a>
             </li>
         </ul>
 
@@ -54,7 +54,7 @@
                             <th>Hours</th>
                         </tr>
                         {% for activity_hours in company_backlog.company_total_hours %}
-                            <tr id='activity-hours-{{ forloop.counter0 }}'>
+                            <tr id='activity-hours-{{ forloop.counter0 }}'{% if activity_hours.remaining_hours < 0 %} class="error"{% endif %}>
                                 <td>{% if activity_hours.activity %}
                                     <a href="{% url 'report_activity_backlog' activity_hours.activity.id %}">
                                             {{ activity_hours.activity.name }}
@@ -113,12 +113,12 @@
                             {% endif %}
                             <td>{{ ag.activity_name }}</td>
                             <td>
-                                <div class="progress{% if ag.hours == 0.0 %} progress-danger progress-striped{% endif %}">
-                                    <div class="bar" style="width: {{ ag.percentage }}%;"></div>
+                                <div class="progress{% if ag.hours == 0.0 %} progress-danger progress-striped{% endif %}{% if ag.charged_hours > ag.hours %} progress-danger{% endif %}">
+                                    <div class="bar{% if ag.percentage == 100 %} bar-success{% endif %}" style="width: {{ ag.percentage }}%;"></div>
                                 </div>
                             </td>
                             <td>{{ ag.charged_hours }} / {{ ag.hours }}</td>
-                            <td><span class="label">{{ ag.remaining_hours }} remaining</span></td>
+                            <td><span class="label{% if ag.charged_hours > ag.hours %} label-important{% endif %}">{{ ag.remaining_hours }} remaining</span></td>
                         </tr>
                         {% endfor %}
                     {% endfor %}
@@ -144,6 +144,12 @@
                 onclick: function (d, i) { console.log("onclick", d, i); },
                 onmouseover: function (d, i) { $('#activity-hours-' + d.index).addClass('success'); },
                 onmouseout: function (d, i) { $('#activity-hours-' + d.index).removeClass('success'); }
+            },
+            size: {
+                height: 600,
+            },
+            legend: {
+                show: true,
             },
             donut: {
                 title: "",

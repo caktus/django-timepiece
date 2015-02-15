@@ -24,7 +24,13 @@
 {% block report_content %}
 <div class="row-fluid">
     <div class="span12" name="backlog-container">
-        <h3>{{ employee }} Activity Goals for Active Projects</h3>
+        <h3>{{ employee }} Backlog</h3>       
+
+        <h4>Summary</h4>
+        <div id="backlog-chart">
+        </div>
+
+        <h4>By Project Breakdown</h4>
         <table class="table">
             <tr>
                 <th>Project</th>
@@ -33,26 +39,27 @@
                 <th colspan="2">Hours</th>
             </tr>
             {% for project in backlog %}
-                {% for ag in project %}
+                {% for ag in project.activity_goals %}
                 <tr>
                     {% if forloop.first %}
-                    <td rowspan="{{ project|length }}"><strong><a href="{% url 'view_project' ag.project.id %}">{{ ag.project.code }}</a></strong><br><small>{{ ag.project.name }}</small></td>
+                    <td rowspan="{{ project.activity_goals|length }}"><strong><a href="{% url 'view_project' ag.project.id %}">{{ ag.project.code }}</a></strong><br><small>{{ ag.project.name }}</small></td>
                     {% endif %}
                     <td>
                         {% if ag.id %}
-                        <a href="{% url 'edit_activity_goal' ag.project.id ag.id %}?next={{ request.path }}"><i class="icon-edit" title="Edit Activity Goal for {{ ag.employee.first_name }} on {{ ag.project.code }} for {{ ag.activity_name }}."> </i></a>
+                        <a href="{% url 'edit_activity_goal' ag.project.id ag.id %}?next={{ request.path }}"><i class="icon-edit" title="Edit Activity Goal for {{ ag.employee.first_name }} on {{ ag.project.code }} for {{ ag.activity.name }}."> </i></a>
                         {% else %}
-                        <a href="{% url 'create_activity_goal' ag.project.id %}?employee={{ employee.id }}&activity={{ ag.activity.id }}&goal_hours={{ ag.charged_hours }}&next={{ request.path }}"><i class="icon-plus" title="Create Activity Goal for  {{ employee.first_name }} on {{ ag.project.code }} for {{ ag.activity_name }}."> </i></a>
+                        <a href="{% url 'create_activity_goal' ag.project.id %}?employee={{ employee.id }}&activity={{ ag.activity.id }}&goal_hours={{ ag.get_charged_hours }}&start_date={{ ag.date|date:"Y-m-d" }}&end_date={{ ag.end_date|date:"Y-m-d" }}&next={{ request.path }}"><i class="icon-plus" title="Create Activity Goal for  {{ employee.first_name }} on {{ ag.project.code }} for {{ ag.activity.name }}."> </i></a>
                         {% endif %}
-                        {{ ag.activity_name }}
+                        {{ ag.activity.name }}<br/>
+                        {{ ag.date }} - {{ ag.end_date }}
                     </td>
                     <td>
-                        <div class="progress{% if ag.hours == 0.0 %} progress-danger progress-striped{% endif %}{% if ag.charged_hours > ag.hours %} progress-danger{% endif %}">
-                            <div class="bar" style="width: {{ ag.percentage }}%;"></div>
+                        <div class="progress{% if ag.goal_hours == 0.0 %} progress-danger progress-striped{% endif %}{% if ag.goal_overrun %} progress-danger{% endif %}">
+                            <div class="bar{% if ag.get_percent_complete == 100 %} bar-success{% endif %}" style="width: {{ ag.get_percent_complete }}%;"></div>
                         </div>
                     </td>
-                    <td>{{ ag.charged_hours }} / {{ ag.hours }}</td>
-                    <td><span class="label{% if ag.charged_hours > ag.hours %} label-important{% endif %}">{{ ag.remaining_hours }} remaining</span></td>
+                    <td>{{ ag.get_charged_hours }} / {{ ag.goal_hours }}</td>
+                    <td><span class="label{% if ag.goal_overrun or ag.goal_hours == 0.0 %} label-important{% endif %}">{{ ag.get_remaining_hours }} remaining</span></td>
                 </tr>
                 {% endfor %}
             {% endfor %}
