@@ -4,7 +4,7 @@
 {% load bootstrap_toolkit %}
 
 
-{% block title %}{{ project }} - Time Sheet for {{ from_date|date:'M Y' }}{% endblock title %}
+{% block title %}{{ project }} - Time Sheet for {{ from_date|date:'M d, Y' }} to {{ to_date|date:'M d, Y' }}{% endblock title %}
 
 {% block extrajs %}
     {{ pj_filters.media }}
@@ -19,7 +19,7 @@
 {% block content %}
     <div class="row-fluid">
         <div class="span12">
-            <h2>{{ project }} - Time Sheet for {{ from_date|date:'M Y' }}</h2>
+            <h2>{{ project }} - Time Sheet for {{ from_date|date:'M d, Y' }} to {{ to_date|date:'M d, Y' }}</h2>
             <ul class="nav nav-pills">
                 <li><a href='{% url 'view_project' project.id %}'>Project Information</a></li>
             </ul>
