@@ -47,7 +47,7 @@
             {% for minder in minders %}
             <div class="tab-pane{% if minder.active_tab %} active{% endif %}" id="burnup_charts_{{ minder.minder.id }}">
                 {% for project in minder.projects %}
-                    <h3>{{ project.code }}: {{ project.name }}</h3>
+                    <h3>{{ project.code }}: {{ project.name }}<a href="{% url 'view_project' project.id %}" target="_blank" title="View project details in separate tab."> <i class="icon-list-alt"></i></a></h3>
                     <div id="burnup-chart-{{ project.id }}">
                     </div>
                     <hr>
