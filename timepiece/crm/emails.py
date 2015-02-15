@@ -10,16 +10,15 @@ def new_pto(pto, url, approve_url, deny_url):
     #     for u in Group.objects.get(id=gid).user_set.values():
     #         to_addys.append(u['email'])
 
-    subject = '[FirmBase] New PTO Request for %s' % (pto.user_profile.user)
-    text_content = 'New PTO request. ' +  url
-    print 'email', str(pto.user_profile.user)
+    subject = '[FirmBase] New Time Off Request for %s' % (pto.user_profile.user)
+    text_content = 'New Time Off request. ' +  url
     html_content = '<dl>' + \
-                      '<dt>Requester</dt><dd>' + str(pto.user_profile.user) + '</dd>' + \
+                      '<dt>Requested by</dt><dd>' + str(pto.user_profile.user) + '</dd>' + \
                       '<dt>Type</dt><dd>' + ('Paid Time Off' if pto.pto else 'Unpaid Time Off') + '</dd>' + \
                       '<dt>Date Submitted</dt><dd>' + pto.request_date.strftime('%F') + '</dd>' + \
                       '<dt>Time Off Start Date</dt><dd>' + pto.pto_start_date.strftime('%F') + '</dd>' + \
                       '<dt>Time Off End Date</dt><dd>' + pto.pto_end_date.strftime('%F') + '</dd>' + \
-                      '<dt>PTO Hours</dt><dd>' + str(pto.amount) + '</dd>' + \
+                      '<dt>Number of Hours</dt><dd>' + str(pto.amount) + '</dd>' + \
                       '<dt>Reasons</dt><dd>' + pto.comment + '</dd>' + \
                       '<dt>Links</dt>' + \
                         '<dd>' + \

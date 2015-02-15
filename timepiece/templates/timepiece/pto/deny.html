@@ -6,15 +6,15 @@
     {{ block.super }}
     <li>
         <span class="divider">/</span>
-        <a href="{% url 'pto' 'approvals' %}">Review PTO Request</a>
+        <a href="{% url 'pto' 'approvals' %}">Review Time Off Request</a>
     </li>
 {% endblock crumbs %}
 
-{% block title %}Confirm Deny PTO Request{% endblock title %}
+{% block title %}Confirm Deny Time Off Request{% endblock title %}
 
 {% block extra_content %}
 <div class="span12">
-    <h2>Confirm Deny PTO Request</h2>
+    <h2>Confirm Deny Time OFf Request</h2>
 </div>
 <div class="span10">
     {% if object.pto %}

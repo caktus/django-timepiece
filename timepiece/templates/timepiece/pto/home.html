@@ -3,16 +3,16 @@
 {% load url from future %}
 {% load timepiece_tags %}
 
-{% block title %}FirmBase: PTO{% endblock title %}
+{% block title %}FirmBase: Time Off{% endblock title %}
 
 {% block content %}
-<h2>Paid Time Off</h2>
+<h2>Time Off</h2>
 <div class="row-fluid">
     <div class="span12" id="active-entry">
         <div>
-            <span>Here you can view your <a href="javascript:changeActiveTab('summary');">available</a> PTO, PTO <a href="javascript:changeActiveTab('history');">history</a>, and <a href="{% url 'create_pto_request' %}">submit</a> and <a to="requests" href="javascript:changeActiveTab('requests');">track</a> requests for future PTO.</span>
+            <span>Here you can view your <a href="javascript:changeActiveTab('summary');">available</a> PTO, Time Off <a href="javascript:changeActiveTab('history');">history</a>, and <a href="{% url 'create_pto_request' %}">submit</a> and <a to="requests" href="javascript:changeActiveTab('requests');">track</a> requests for future Time Off.</span>
             {% if perms.crm.can_approve_pto_requests %}
-            <span>Additionally, admins can <a to="requests" href="javascript:changeActiveTab('approvals');">approve<a/> open PTO requests and view PTO <a to="requests" href="javascript:changeActiveTab('all_history');">history</a>.
+            <span>Additionally, admins can <a to="requests" href="javascript:changeActiveTab('approvals');">approve</a> open Time Off Requests and view Time Off <a to="requests" href="javascript:changeActiveTab('all_history');">history</a>.
             {% endif %}
         </div>
         <div>
@@ -24,20 +24,20 @@
 <ul class="nav nav-tabs">
     <li{% if active_tab == 'summary' %} class="active"{% endif %}>
         {% url "pto" "summary" as link %}
-        <a class="tab-link" to="summary" href="{{ link|add_parameters:request.GET }}">My PTO Summary</a>
+        <a class="tab-link" to="summary" href="{{ link|add_parameters:request.GET }}">My Summary</a>
     </li>
     <li{% if active_tab == 'requests' %} class="active"{% endif %}>
         {% url "pto" "requests" as link %}
-        <a class="tab-link" to="requests" href="{{ link|add_parameters:request.GET }}">My PTO Requests</a>
+        <a class="tab-link" to="requests" href="{{ link|add_parameters:request.GET }}">My Requests</a>
     </li>
     <li{% if active_tab == 'history' %} class="active"{% endif %}>
         {% url "pto" "history" as link %}
-        <a class="tab-link" to="history" href="{{ link|add_parameters:request.GET }}">My PTO History</a>
+        <a class="tab-link" to="history" href="{{ link|add_parameters:request.GET }}">My History</a>
     </li>
     {% if perms.crm.view_current_pto %}
     <li{% if active_tab == 'current_pto' %} class="active"{% endif %}>
         {% url "pto" "current_pto" as link %}
-        <a class="tab-link" to="current_pto" href="{{ link|add_parameters:request.GET }}">All Employees Current PTO</a>
+        <a class="tab-link" to="current_pto" href="{{ link|add_parameters:request.GET }}">All Employees Current Time Off</a>
     </li>
     {% endif %}
     {% if perms.crm.can_approve_pto_requests %}
@@ -47,11 +47,11 @@
     </li>
     <li{% if active_tab == 'all_request_history' %} class="active"{% endif %}>
         {% url "pto" "all_request_history" as link %}
-        <a class="tab-link" to="all_request_history" href="{{ link|add_parameters:request.GET }}">All PTO Request History</a>
+        <a class="tab-link" to="all_request_history" href="{{ link|add_parameters:request.GET }}">All Time Off Request History</a>
     </li>
     <li{% if active_tab == 'all_history' %} class="active"{% endif %}>
         {% url "pto" "all_history" as link %}
-        <a class="tab-link" to="all_history" href="{{ link|add_parameters:request.GET }}">All PTO History</a>
+        <a class="tab-link" to="all_history" href="{{ link|add_parameters:request.GET }}">All Time Off History</a>
     </li>    
     {% endif %}
 </ul>
@@ -129,7 +129,7 @@
             </tbody>
         </table>
       {% else %}
-        <div style="margin-bottom: 18px;"><h5>You have no PTO requests.</h5></div>
+        <div style="margin-bottom: 18px;"><h5>You have no Time Off Requests.</h5></div>
       {% endif %}
     </div>
 
@@ -160,7 +160,7 @@
             </tbody>
         </table>
       {% else %}
-        <div style="margin-bottom: 18px;"><h5>You have no PTO history.</h5></div>
+        <div style="margin-bottom: 18px;"><h5>You have no Time Off History.</h5></div>
       {% endif %}
     </div>
 
@@ -219,7 +219,7 @@
             </tbody>
         </table>
       {% else %}
-        <div style="margin-bottom: 18px;"><h5>There are no open PTO requests needing approval.</h5></div>
+        <div style="margin-bottom: 18px;"><h5>There are no open Time Off Requests needing approval.</h5></div>
       {% endif %}
     </div>
 
@@ -274,12 +274,12 @@
             </tbody>
         </table>
       {% else %}
-        <div style="margin-bottom: 18px;"><h5>There are no PTO requests.</h5></div>
+        <div style="margin-bottom: 18px;"><h5>There are no Time Off Requests.</h5></div>
       {% endif %}
     </div>
 
     <div class="tab-pane{% if active_tab == 'all_history' %} active{% endif %}" id="all_history">
-      <a style="margin-bottom: 12px;" class="btn btn-primary" href="{% url 'create_pto_log' %}">Add PTO Log Entry</a>
+      <a style="margin-bottom: 12px;" class="btn btn-primary" href="{% url 'create_pto_log' %}">Add Time Off Log Entry</a>
       {% if pto_all_history|length %}
         <table id="pto_all_history" class="table table-striped table-bordered table-hover table-condensed">
             <thead><tr>
@@ -298,7 +298,7 @@
                     <td>{{ pto.comment }}</td>
                     <td>
                         {% if pto.pto_request %}
-                        <a href="{% url 'pto_request_details' pto.pto_request.id %}">View PTO Request Details</a>
+                        <a href="{% url 'pto_request_details' pto.pto_request.id %}">View Time Off Request Details</a>
                         {% else %}
                         <label>---</label>
                         {% endif %}
@@ -308,7 +308,7 @@
             </tbody>
         </table>
       {% else %}
-        <div style="margin-bottom: 18px;"><h5>There is no PTO history.</h5></div>
+        <div style="margin-bottom: 18px;"><h5>There is no Time Off History.</h5></div>
       {% endif %}
     </div>
     {% endif %}

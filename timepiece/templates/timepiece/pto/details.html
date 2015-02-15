@@ -6,16 +6,16 @@
     {{ block.super }}
     <li>
         <span class="divider">/</span>
-        <a href="">View PTO Request Details</a>
+        <a href="">View Time Off Request Details</a>
     </li>
 {% endblock crumbs %}
 
-{% block title %}PTO Request Details{% endblock title %}
+{% block title %}Time OFf Request Details{% endblock title %}
 
 {% block content %}
     <div class="row-fluid">
         <div class="span12">
-            <h2>PTO Request Details</h2>
+            <h2>Time Off Request Details</h2>
 
             <br style="clear: both;" />
             <dl class="dl-horizontal">
@@ -34,7 +34,7 @@
                 <dt>Hours</dt>
                 <dd>{{ pto_request.amount }}</dd>
 
-                <dt>PTO Reason/Comment</dt>
+                <dt>Time Off Reason/Comment</dt>
                 <dd>{{ pto_request.comment }}</dt>
 
                 {% if pto_request.status == 'approved' %}
