@@ -51,14 +51,14 @@
                 {% ifnotequal object.project_relationships.count 0 %}
                 {% for relationship in object.project_relationships.select_related %}
                     <li>
-                        {{ relationship.project.name }}
+                        {{ relationship.project }}
                         {% if perms.crm.change_projectrelationship %}
-                            {% with caption="Edit "|add:object.get_name_or_username|add:"'s relationship to "|add:relationship.project.name project=relationship.project %}
+                            {% with caption="Edit "|add:object.get_name_or_username|add:"'s relationship to "|add:relationship.project.code project=relationship.project %}
                                 <a title="{{ caption }}" href="{% url 'edit_relationship' %}?project_id={{ project.id }}&user_id={{ object.pk }}&next={{ next_url|add_parameters:request.GET|urlencode }}"><i alt="{{ caption }}" class="icon-pencil"></i></a>
                             {% endwith %}
                         {% endif %}
                         {% if perms.crm.delete_projectrelationship %}
-                            {% with caption="Remove "|add:object.get_name_or_username|add:" from "|add:relationship.project.name project=relationship.project %}
+                            {% with caption="Remove "|add:object.get_name_or_username|add:" from "|add:relationship.project.code project=relationship.project %}
                                 <a title="{{ caption }}" href="{% url 'delete_relationship' %}?project_id={{ project.id }}&user_id={{ object.pk }}&next={{ next_url|add_parameters:request.GET|urlencode }}"><i alt="{{ caption }}" class="icon-remove"></i></a>
                             {% endwith %}
                         {% endif %}

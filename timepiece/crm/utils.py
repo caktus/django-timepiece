@@ -3,7 +3,7 @@ from itertools import groupby
 from django.db.models import Sum, Q, Min, Max
 from django.contrib.auth.models import User
 
-from timepiece.utils import add_timezone, get_hours_summary, get_period_start
+from timepiece.utils import add_timezone, remove_timezone, get_hours_summary, get_period_start
 
 from timepiece.entries.models import Entry, Activity
 from timepiece.crm.models import Project, ActivityGoal, Milestone
@@ -41,10 +41,9 @@ def grouped_totals(entries):
         # start LOGIC TO SUPPORT SUN-SAT WEEK
         week -= timedelta(days=1)
         # end LOGIC TO SUPPORT SUN-SAT WEEK
-        if week is not None:
-            week = add_timezone(week)
+        # if week is not None:
+        #     week = add_timezone(week)
         weeks[week] = get_hours_summary(week_entries)
-    
     # start LOGIC TO SUPPORT SUN-SAT WEEK
     # TODO: for some reason aggregate is not working, so this needs to be
     # improved
@@ -76,18 +75,17 @@ def grouped_totals(entries):
         weeks[week]['non_billable'] += (start_sun_nb - end_sun_nb)
         weeks[week]['total'] = weeks[week]['billable'] + weeks[week]['non_billable']
     # end LOGIC TO SUPPORT SUN-SAT WEEK
-    
     days = []
     last_week = None
     for day, day_entries in groupby(daily, lambda x: x['date']):
         week = get_period_start(day)
         if last_week and week > last_week:
-            yield last_week, weeks.get(last_week, {}), days
+            yield last_week, weeks.get(last_week, weeks.get(remove_timezone(last_week), {})), days
             days = []
         days.append((day, daily_summary(day_entries)))
         last_week = week
 
-    yield week, weeks.get(week, {}), days
+    yield week, weeks.get(week, weeks.get(remove_timezone(week), {})), days
 # from django.db.models import Q
 def project_activity_goals_with_progress(project):
     backlog = []
@@ -95,30 +93,35 @@ def project_activity_goals_with_progress(project):
     exclude_user_Q = Q()
     for employee, ags in groupby(ActivityGoal.objects.filter(
         project=project).order_by('employee__last_name', 
-        'employee__first_name', 'employee', 'activity__name', 'activity__id'
-        ), lambda ag: ag.employee):
+        'employee__first_name', 'employee', 'activity__name', 'activity__id',
+        '-end_date'), lambda ag: ag.employee):
         
         exclude_user_Q |= Q(user=employee)
         counter += 1
         backlog.append({'employee': employee,
                         'activity_goals': []})
-
+        print 'employee', employee
         activity_exclude_Q = Q()
         for activity, activity_goals in groupby(ags, lambda x: x.activity):
             activity_exclude_Q |= Q(activity=activity)
             dates_exclude_Q = Q()
+            print '0'
             for activity_goal in activity_goals:
+                print 'activity_goal', activity_goal
                 backlog[counter]['activity_goals'].append(activity_goal)
                 dates_exclude_Q |= Q(start_time__gte=datetime.datetime.combine(activity_goal.date, datetime.time.min), 
                                      start_time__lt=datetime.datetime.combine(activity_goal.end_date, datetime.time.max))
+                print '\n1', dates_exclude_Q
 
             # add missing date ranges for existing Project+Employee+Activity
             missing_entries = Entry.objects.filter(
                 project=project, user=employee, activity=activity
                 ).exclude(dates_exclude_Q
                 ).aggregate(hours=Sum('hours'), earliest=Min('start_time'), latest=Max('start_time'))
-                
+
             if missing_entries['hours']:
+                print '2', dates_exclude_Q
+                print 'missing entry', missing_entries
                 backlog[counter]['activity_goals'].append(
                     {'id': None,
                      'activity': activity,
@@ -156,6 +159,7 @@ def project_activity_goals_with_progress(project):
                  'employee': employee,
                  'goal_hours': 0.0,
                  'date': start_date,
+                 'current': end_date >= datetime.date.today(),
                  'end_date': end_date,
                  'get_charged_hours': activity_sum['hours'],
                  'get_remaining_hours': -1*activity_sum['hours'],
@@ -195,6 +199,7 @@ def project_activity_goals_with_progress(project):
                  'employee': employee,
                  'goal_hours': 0.0,
                  'date': start_date,
+                 'current': end_date >= datetime.date.today(),
                  'end_date': end_date,
                  'get_charged_hours': activity_sum['hours'],
                  'get_remaining_hours': -1*activity_sum['hours'],

@@ -9,11 +9,13 @@ from timepiece.utils.search import SearchForm
 from timepiece.utils import get_setting
 
 from timepiece.crm.lookups import (BusinessLookup, ProjectLookup, UserLookup,
-        QuickLookup)
+        QuickLookup, ContactLookup)
 from timepiece.crm.models import (Attribute, Business, Project,
         ProjectRelationship, UserProfile, PaidTimeOffRequest, 
         PaidTimeOffLog, Milestone, ActivityGoal, BusinessNote,
-        BusinessDepartment, Contact, ContactNote)
+        BusinessDepartment, Contact, ContactNote, Lead, LeadNote,
+        DistinguishingValueChallenge, TemplateDifferentiatingValue,
+        DVCostItem, Opportunity, LeadAttachment)
 
 import datetime
 
@@ -38,6 +40,13 @@ class CreateEditBusinessForm(forms.ModelForm):
     def __init__(self, *args, **kwargs):        
         super(CreateEditBusinessForm, self).__init__(*args, **kwargs)
         self.fields['account_owner'].choices = self.EMPLOYEE_CHOICES
+
+    def clean_short_name(self):
+        short_name = self.cleaned_data['short_name']
+        if len(short_name) == 0:
+            raise forms.ValidationError("A Short Name is required.")
+
+        return short_name
 
 class CreateEditBusinessDepartmentForm(forms.ModelForm):
 
@@ -268,6 +277,13 @@ class SelectUserForm(forms.Form):
     def get_user(self):
         return self.cleaned_data['user'] if self.is_valid() else None
 
+class SelectContactForm(forms.Form):
+    user = selectable.AutoCompleteSelectField(ContactLookup, label='')
+    user.widget.attrs['placeholder'] = 'Add Contact'
+
+    def get_contact(self):
+        return self.cleaned_data['user'] if self.is_valid() else None
+
 class ApproveDenyPTORequestForm(forms.ModelForm):
 
     class Meta:
@@ -312,6 +328,12 @@ class CreateEditActivityGoalForm(forms.ModelForm):
         self.fields['date'].required = True
         self.fields['activity'].required = True
 
+    def clean_goal_hours(self):
+        goal_hours = self.cleaned_data['goal_hours']
+        if goal_hours <= 0:
+            raise forms.ValidationError("Goal Hours must be greater than 0.")
+        return goal_hours
+
 class CreateEditContactForm(forms.ModelForm):
     EMPLOYEE_CHOICES = [(None, '-')] + [(u.pk, '%s, %s'%(u.last_name, u.first_name)) \
         for u in Group.objects.get(id=1).user_set.filter(
@@ -347,3 +369,94 @@ class AddContactNoteForm(forms.ModelForm):
         self.fields['text'].widget.attrs['rows'] = 6
         self.fields['author'].widget = widgets.HiddenInput()
         self.fields['contact'].widget = widgets.HiddenInput()
+
+class CreateEditLeadForm(forms.ModelForm):
+    EMPLOYEE_CHOICES = [(None, '-')] + [(u.pk, '%s, %s'%(u.last_name, u.first_name)) \
+        for u in Group.objects.get(id=1).user_set.filter(
+            is_active=True).order_by('last_name', 'first_name')]
+
+    class Meta:
+        model = Lead
+        fields = ('title', 'status', 'lead_source', 'aac_poc',
+            'primary_contact', 'business_placeholder',
+            'created_by', 'last_editor')
+
+    def __init__(self, *args, **kwargs):        
+        super(CreateEditLeadForm, self).__init__(*args, **kwargs)
+        self.fields['aac_poc'].choices = self.EMPLOYEE_CHOICES
+        self.fields['lead_source'].choices = self.EMPLOYEE_CHOICES
+        self.fields['created_by'].widget = widgets.HiddenInput()
+        self.fields['last_editor'].widget = widgets.HiddenInput()
+
+        self.fields['primary_contact'].widget = selectable.AutoCompleteSelectWidget(ContactLookup)
+        self.fields['primary_contact'].widget.attrs['placeholder'] = 'Find Contact'
+        self.fields['business_placeholder'].widget = selectable.AutoCompleteSelectWidget(BusinessLookup)
+        self.fields['business_placeholder'].widget.attrs['placeholder'] = 'Find Business'
+
+    def clean(self):
+        super(CreateEditLeadForm, self).clean()
+        primary_contact = self.cleaned_data.get('primary_contact', None)
+        business = self.cleaned_data.get('business_placeholder', None)
+        if primary_contact is None and business is None:
+            raise forms.ValidationError('You must select either a Primary Contact (preferred) or a Business.')
+        return self.cleaned_data
+
+class AddLeadNoteForm(forms.ModelForm):
+
+    class Meta:
+        model = LeadNote
+        fields = ('text', 'lead', 'author')
+
+    def __init__(self, *args, **kwargs):
+        super(AddLeadNoteForm, self).__init__(*args, **kwargs)
+        self.fields['text'].label = ''
+        self.fields['text'].widget.attrs['rows'] = 6
+        self.fields['author'].widget = widgets.HiddenInput()
+        self.fields['lead'].widget = widgets.HiddenInput()
+
+class AddDistinguishingValueChallenegeForm(forms.ModelForm):
+
+    class Meta:
+        model = DistinguishingValueChallenge
+        fields = ('probing_question', 'order', 'short_name', 'description', 
+            'longevity', 'start_date', 'steps', 'results', 'due', 
+            'due_date', 'cost', 'confirm_resources', 'resources_notes', 
+            'benefits_begin', 'date_benefits_begin', 'confirm', 
+            'confirm_notes', 'commitment', 'commitment_notes', 'closed')
+
+
+class AddTemplateDifferentiatingValuesForm(forms.Form):
+    template_dvs = forms.MultipleChoiceField(
+        required=True, widget=forms.CheckboxSelectMultiple,
+        label='Select at least one Template Differenitating Values')
+
+    def __init__(self, *args, **kwargs):
+        super(AddTemplateDifferentiatingValuesForm, self).__init__(*args, **kwargs)
+        TEMPLATE_DV_CHOICES = [(tdv.id, '%s: %s' % (tdv.short_name, 
+            tdv.probing_question)) for tdv in 
+            TemplateDifferentiatingValue.objects.all()]
+        self.fields['template_dvs'].choices = TEMPLATE_DV_CHOICES
+
+class CreateEditTemplateDVForm(forms.ModelForm):
+
+    class Meta:
+        model = TemplateDifferentiatingValue
+        fields = ('short_name', 'probing_question')
+
+class CreateEditDVCostItem(forms.ModelForm):
+
+    class Meta:
+        model = DVCostItem
+        fields = ('dv', 'description', 'details', 'cost', 'man_hours', 'rate')
+
+class CreateEditOpportunity(forms.ModelForm):
+    # project = selectable.AutoCompleteSelectField(ProjectLookup, required=False)
+    class Meta:
+        model = Opportunity
+        fields = ('title', 'lead', 'differentiating_value', 'proposal',
+            'proposal_status', 'project')
+
+    def __init__(self, *args, **kwargs):
+        super(CreateEditOpportunity, self).__init__(*args, **kwargs)
+        self.fields['lead'].widget = widgets.HiddenInput()
+        self.fields['project'].widget = selectable.widgets.AutoCompleteSelectMultipleWidget(ProjectLookup)

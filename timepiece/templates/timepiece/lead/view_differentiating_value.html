@@ -1,0 +1,280 @@
+{% extends "timepiece/lead/view_base.html" %}
+{% load timepiece_tags bootstrap_toolkit humanize %}
+{% load url from future %}
+
+{% block title %}{{ object.title }}{% endblock title %}
+
+{% block crumbs %}
+    {{ block.super }}
+    <li><span class="divider">/</span> <a href="{% url 'view_lead_distinguishing_value' object.id %}">Differentiating Value</a></li>
+{% endblock crumbs %}
+
+{% block lead_content %}
+    {% url 'view_lead' object.id as next_url %}
+    <div class="row">
+        <div class="span12">
+            <h4>Here are the challenges (or pains, problems, concerns) I heard. Is that everything?</h4>
+            <h5>In what order should we address these?  (set the Priority/Order on each DV tab)</h5>
+            <ul class="nav nav-tabs">
+                {% url "view_lead_distinguishing_value" object.id as link %}
+                {% for dvc in object.distinguishingvaluechallenge_set.all %}
+                <li{% if active_tab == dvc.tab_name %} class="active"{% endif %}>
+                    <a class="tab-link" to="active-dvc" href="{{ link }}?tab={{ forloop.counter }}">{{ dvc.short_name }}</a>
+                </li>
+                {% empty %}
+                <li class="active">
+                    <a class="tab-link" to="empty" href="{{ link|add_parameters:request.GET }}">(empty)</a>
+                </li>
+                {% endfor %}
+                <li>
+                    <a class="tab-link" href="{% url 'add_lead_distinguishing_value_challenge' object.id %}"><i class="icon-plus"> </i></a>
+                </li>
+                <li class="pull-right">
+                    <a class="tab-link" href="{% url 'add_template_differentiating_values' object.id %}">Add Template DV</a>
+                </li>
+            </ul>
+
+            <div class="tab-content">
+                <div class="tab-pane{% if active_tab == 'empty' %} active{% endif %}" id="empty">
+                    <h5>You have no Differentiating Values.  Click the <i class="icon-plus"></i> button above to add one.</h5>
+                </div>
+                {% if dvc %}
+                <div class="tab-pane{% if dvc %} active{% endif%}" id="active-dvc">                    
+                    <div class="span7">                        
+                      <form action="{% url 'update_distinguishing_value_challenge' object.id dvc.id %}" method="post">
+                        {% csrf_token %}
+                        <div class="control-group">
+                            <span class="help-inline">{{ dvc_form.probing_question.help_text }}</span>
+                            <div class="controls">
+                                <textarea cols="40" id="id_probing_question" name="probing_question" rows="10">{{ dvc.probing_question }}</textarea>
+                            </div>
+                        </div>
+
+                        {% if perms.crm.change_distinguishingvaluechallenge %}
+                        <button type="submit" name="dvc" value="{{ dvc.id }}" class="btn btn-small btn-primary" id="save_dvc">Save</button>
+                        {% endif %}
+                        {% if perms.crm.delete_distinguishingvaluechallenge %}
+                        <a href="{% url 'delete_distinguishing_value_challenge' object.id dvc.id %}" class="btn btn-small btn-danger">Delete</a>
+                        {% endif %}
+                        {% if perms.crm.add_opportunity %}
+                        <a class="btn btn-small btn-success" href="{% url 'add_lead_opportunity' dvc.lead.id %}?differentiating_value={{ dvc.id }}"><i class="icon-share-alt icon-white"></i> Convert to Opportunity</a>
+                        {% endif %}
+
+                        <div class="control-group">
+                            <span class="help-inline">{{ dvc_form.order.help_text }}</span>
+                            <div class="controls">
+                                <input id="id_short_name" value="{{ dvc.order }}" name="order" type="text">
+                            </div>
+                        </div>
+                        <div class="control-group">
+                            <span class="help-inline">{{ dvc_form.short_name.help_text }}</span>
+                            <div class="controls">
+                                <input id="id_short_name" value="{{ dvc.short_name }}" maxlength="{{ dvc_form.short_name.max_length }}" name="short_name" type="text">
+                            </div>
+                        </div>
+                        <div class="control-group">
+                            <span class="help-inline">{{ dvc_form.description.help_text }}</span>
+                            <div class="controls">
+                                <textarea cols="40" id="id_description" name="description" rows="10">{{ dvc.description }}</textarea>
+                            </div>
+                        </div>
+                        <div class="control-group">
+                            <span class="help-inline">{{ dvc_form.longevity.help_text }}</span>
+                            <div class="controls">
+                                <textarea cols="40" id="id_longevity" name="longevity" rows="10">{{ dvc.longevity }}</textarea>
+                            </div>
+                        </div>
+                        <div class="control-group">
+                            <span class="help-inline">{{ dvc_form.start_date.help_text }}</span>
+                            <div class="controls">
+                                <input id="id_start_date" value="{{ dvc.start_date|date:'Y-m-d' }}" name="start_date" type="text">
+                            </div>
+                        </div>
+                        <div class="control-group">
+                            <span class="help-inline">{{ dvc_form.steps.help_text }}</span>
+                            <div class="controls">
+                                <textarea cols="40" id="id_steps" name="steps" rows="10">{{ dvc.steps }}</textarea>
+                            </div>
+                        </div>
+                        <div class="control-group">
+                            <span class="help-inline">{{ dvc_form.results.help_text }}</span>
+                            <div class="controls">
+                                <textarea cols="40" id="id_results" name="results" rows="10">{{ dvc.results }}</textarea>
+                            </div>
+                        </div>
+                        <div class="control-group">
+                            <span class="help-inline">{{ dvc_form.due.help_text }}</span>
+                            <div class="controls">
+                                <textarea cols="40" id="id_due" name="due" rows="10">{{ dvc.due }}</textarea>
+                            </div>
+                        </div>
+                        <div class="control-group">
+                            <span class="help-inline">{{ dvc_form.due_date.help_text }}</span>
+                            <div class="controls">
+                                <input id="id_due_date" value="{{ dvc.due_date|date:'Y-m-d' }}" name="due_date" type="text">
+                            </div>
+                        </div>
+                        <div class="control-group" name="cost" id="cost">
+                            <span class="help-inline">{{ dvc_form.cost.help_text}}</span>
+                            <div class="controls">
+                                <textarea cols="40" id="id_cost" name="cost" rows="10">{{ dvc.cost }}</textarea>
+                            </div>
+                        </div>
+                        <div class="control-group">
+                            <h4>Cost Breakdown for Proposed Project</h4>
+                            <span class="help-inline">(adding individual line items for cost)</span>
+                            <div class="controls">
+                                <table class="table table-condensed table-striped">
+                                    <tr>
+                                        <th><a href="{% url 'create_dv_cost_item' dvc.lead.id dvc.id %}" class="btn btn-success btn-mini">Add Cost Item</a></th>
+                                        <th>Description</th>
+                                        <th>Cost</th>
+                                    </tr>
+                                    {% for ci in dvc.get_cost_items %}
+                                    <tr>
+                                        <td>
+                                            <a href="{% url 'edit_dv_cost_item' ci.dv.lead.id ci.dv.id ci.id %}"><i class="icon-pencil"> </i></a>
+                                            <a href="{% url 'delete_dv_cost_item' ci.dv.lead.id ci.dv.id ci.id %}"><i class="icon-trash"> </i></a>
+                                        </td>
+                                        <td>{{ ci.description }}</td>
+                                        <td>$ {{ ci.get_cost|intcomma }} <i class="icon-info-sign pull-right" title="{{ ci.cost_explanation }}"> </i></td>
+                                    </tr>
+                                    {% endfor %}
+                                    <tr class="success">
+                                        <td></td>
+                                        <td>Total Cost</td>
+                                        <td>$ {{ dvc.get_cost|intcomma }}</td>
+                                    </tr>
+                                </table>
+                            </div>
+                        </div>
+                        <div class="control-group">
+                            <div class="controls">
+                                <label class="checkbox">
+                                    <input id="id_confirm_resources"{% if dvc.confirm_resources %} checked="checked"{% endif %} name="confirm_resources" type="checkbox">{{ dvc_form.confirm_resources.help_text }}</input>
+                                </label>
+                            </div>
+                        </div>
+                        <div class="control-group">
+                            <span class="help-inline">{{ dvc_form.resources_notes.help_text}}</span>
+                            <div class="controls">
+                                <textarea cols="40" id="id_resources_notes" name="resources_notes" rows="10">{{ dvc.resources_notes }}</textarea>
+                            </div>
+                        </div>
+                        <div class="control-group">
+                            <span class="help-inline">{{ dvc_form.benefits_begin.help_text}}</span>
+                            <div class="controls">
+                                <textarea cols="40" id="id_benefits_begin" name="benefits_begin" rows="10">{{ dvc.benefits_begin }}</textarea>
+                            </div>
+                        </div>
+                        <div class="control-group">
+                            <span class="help-inline">{{ dvc_form.date_benefits_begin.help_text }}</span>
+                            <div class="controls">
+                                <input id="id_date_benefits_begin" value="{{ dvc.date_benefits_begin|date:'Y-m-d' }}" name="date_benefits_begin" type="text">
+                            </div>
+                        </div>
+                        <div class="control-group">
+                            <div class="controls">
+                                <label class="checkbox">
+                                    <input id="id_confirm"{% if dvc.confirm %} checked="checked"{% endif %} name="confirm" type="checkbox">{{ dvc_form.confirm.help_text }}</input>
+                                </label>
+                            </div>
+                        </div>
+                        <div class="control-group">
+                            <span class="help-inline">{{ dvc_form.confirm_notes.help_text}}</span>
+                            <div class="controls">
+                                <textarea cols="40" id="id_confirm_notes" name="confirm_notes" rows="10">{{ dvc.confirm_notes }}</textarea>
+                            </div>
+                        </div>
+                        <div class="control-group">
+                            <div class="controls">
+                                <label class="checkbox">
+                                    <input id="id_commitment"{% if dvc.commitment %} checked="checked"{% endif %} name="commitment" type="checkbox">{{ dvc_form.commitment.help_text }}</input>
+                                </label>
+                            </div>
+                        </div>
+                        <div class="control-group">
+                            <span class="help-inline">{{ dvc_form.commitment_notes.help_text}}</span>
+                            <div class="controls">
+                                <textarea cols="40" id="id_commitment_notes" name="commitment_notes" rows="10">{{ dvc.commitment_notes }}</textarea>
+                            </div>
+                        </div>
+                        <div class="control-group">
+                            <div class="controls">
+                                <label class="checkbox">
+                                    <input id="id_closed"{% if dvc.closed %} checked="checked"{% endif %} name="closed" type="checkbox">{{ dvc_form.closed.help_text }}</input>
+                                </label>
+                            </div>
+                        </div>
+                        {% if perms.crm.change_distinguishingvaluechallenge %}
+                        <button type="submit" name="dvc" value="{{ dvc.id }}" class="btn btn-small btn-primary" id="save_dvc">Save</button>
+                        {% endif %}
+                        {% if perms.crm.delete_distinguishingvaluechallenge %}
+                        <a href="{% url 'delete_distinguishing_value_challenge' object.id dvc.id %}" class="btn btn-small btn-danger">Delete</a>
+                        {% endif %}
+                        {% if perms.crm.add_opportunity %}
+                        <a class="btn btn-small btn-success" href="{% url 'add_lead_opportunity' dvc.lead.id %}?differentiating_value={{ dvc.id }}"><i class="icon-share-alt icon-white"></i> Convert to Opportunity</a>
+                        {% endif %}
+                    </form>
+                    </div>
+                    <div class="span3 offset1">
+                        <h3>Tags</h3>
+                        <div id="tags">
+                        {% if object.tags.all|length %}
+                        {% for tag in object.tags.all %}
+                        <span class="label label-info">
+                            <a href="{% url 'similar_items' tag.id %}"> <i class="icon-magnet icon-white icon-small"> </i></a>
+                            {{ tag }}
+                            {% if perms.crm.change_lead %}
+                            <a class="remove_tag"> <i class="icon-remove icon-white icon-small"> </i></a>
+                            {% endif %}
+                        </span>
+                        {% endfor %}
+                        {% else %}
+                        <br/><em>There are no tags for this project yet.</em>
+                        {% endif %}
+                        </div>
+                        <form id="add_tag_form">
+                            <div style="margin-top: 12px;">
+                                <input id="new_tag" type="text" />
+                                <input id="add_tag_button" class="btn btn-primary" type="submit" value="Add" />
+                            </div>
+                        </form>
+
+                        <h3>Attachments</h3>
+                        <div id="file-uploader" name="File" class="controls">
+                          <noscript>          
+                            <p>Please enable JavaScript to use file uploader.</p>
+                          </noscript>
+                        </div>
+                        <small>Drag and drop a file above to attach it.</small>
+                        {% if object.get_attachments|length %}
+                        {% for attachment in object.get_attachments %}
+                        <blockquote>
+                        <p><a href="{% url 'download_lead_attachment' object.id attachment.id %}?next={{ request.get_full_path }}" target="_blank">{{ attachment.filename }}</a></p>
+                        <small>{{ attachment.uploader }} @ {{ attachment.upload_datetime }}</small>
+                        </blockquote>
+                        {% endfor %}
+                        {% else %}
+                        <br/><em>There are no attachments for this ticket yet.</em>
+                        {% endif %}
+
+                        <h3>Notes</h3>
+                        <form class="form-inline" action="{% url 'add_lead_note' object.id %}?next={{ request.get_full_path }}" method="post" accept-charset="utf-8">
+                            {% csrf_token %}
+                            {{ add_lead_note_form|as_bootstrap }}
+                            <input class="btn btn-primary" type="submit" value="Add" />
+                        </form>
+                        <ul>
+                            {% for note in object.get_notes %}
+                            <li><strong>{{ note.author }} @ {{ note.last_edited }}</strong><br/>{{ note.text|linebreaks }}</li>
+                            {% endfor %}
+                        </ul>
+                    </div>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+
+{% endblock lead_content %}

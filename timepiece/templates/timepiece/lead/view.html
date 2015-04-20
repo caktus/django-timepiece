@@ -1,0 +1,282 @@
+{% extends "timepiece/lead/view_base.html" %}
+{% load timepiece_tags bootstrap_toolkit %}
+{% load url from future %}
+
+{% block title %}{{ object.title }}{% endblock title %}
+
+{% block lead_content %}
+    {% url 'view_lead' object.id as next_url %}
+    <div class="row-fluid">
+        <div class="span4">
+            <h3>Lead Primary Contact Info
+                {% if perms.crm.change_lead %}
+                    <a href="{% url 'edit_lead' object.pk %}" title="Edit Lead {{ object.title }}"><i class="icon-pencil"> </i></a>
+                {% endif %}
+                {% if perms.crm.delete_lead %}
+                    <a href="{% url 'delete_lead' object.pk %}" title="Delete Lead {{ object.title }}"><i class="icon-trash"> </i></a>
+                {% endif %}
+
+            </h3>
+            <table class="table table-bordered">
+                {% if object.primary_contact %}
+                <tr>
+                    <th>Name</th>
+                    <td><a href="{% url 'view_contact' object.primary_contact.id %}" target="_blank">
+                        {{ object.primary_contact.get_salutation_display }} {{ object.primary_contact.first_name }} {{ object.primary_contact.last_name }}
+                    </a></td>
+                </tr>
+                <tr><th>Title</th><td>{{ object.primary_contact.title }}</td></tr>
+                <tr><th>Department</th><td>{{ object.primary_contact.business_department }}</td></tr>
+                <tr>
+                    <th>Business</th>
+                    <td>
+                        {% if object.primary_contact.business %}
+                        <a href="{% url 'view_business' object.primary_contact.business.id %}" target="_blank">
+                            {{ object.primary_contact.business }}
+                        <a/>
+                        {% else %}
+                            n/a
+                        {% endif %}
+                    </td>
+                </tr>
+
+                {% if object.primary_contact.has_opted_out_of_email %}
+                <tr class="error">
+                    <th colspan=2>This contact has opted out of email.</th>
+                </tr>
+                <tr class="error">
+                    <th>Email</th>
+                    <td>{{ object.email }}</td>
+                </tr>
+                {% else %}
+                <tr>
+                    <th>Email</th>
+                    <td>
+                        <a href="mailto:{{ object.primary_contact.email }}">
+                            {{ object.email }}
+                        </a>
+                    </td>
+                </tr>
+                {% endif %}
+                
+                {% with tr_class=object.primary_contact.do_not_call_class %}
+                {% if object.primary_contact.do_not_call %}
+                <tr class="{{ tr_class }}"><th colspan=2>This contact is on the Do Not Call list.</th></tr>
+                {% endif %}
+                {% if object.primary_contact.office_phone %}
+                <tr class="{{ tr_class }}">
+                    <th>Office</th>
+                    <td>{% format_phone_number object.primary_contact.office_phone %}</td>
+                </tr>
+                {% endif %}
+                {% if object.primary_contact.mobile_phone %}
+                <tr class="{{ tr_class }}">
+                    <th>Mobile</th>
+                    <td>{% format_phone_number object.primary_contact.mobile_phone %}</td>
+                </tr>
+                {% endif %}
+                {% if object.primary_contact.home_phone %}
+                <tr class="{{ tr_class }}">
+                    <th>Home</th>
+                    <td>{% format_phone_number object.primary_contact.home_phone %}</td>
+                </tr>
+                {% endif %}
+                {% if object.primary_contact.other_phone %}
+                <tr class="{{ tr_class }}">
+                    <th>Other</th>
+                    <td>{% format_phone_number object.primary_contact.other_phone %}</td>
+                </tr>
+                {% endif %}
+                {% endwith %}
+                
+                {% if object.primary_contact.has_opted_out_of_fax %}
+                <tr class="error"><th colspan=2>This contact has opted out of fax.</th></tr>
+                <tr class="error"><th>Fax</th><td>{% format_phone_number object.primary_contact.fax %}</td></tr>
+                {% else %}
+                <tr><th>Fax</th><td>{% format_phone_number object.primary_contact.fax %}</td></tr>
+                {% endif %}
+
+                {% else %}
+                <tr class="error">
+                    <td colspan=2><strong>
+                        No Contact has been identified yet. Replace the
+                        selected Business with a Primary Contact as
+                        soon as the person is identified.
+                    </strong></td>
+                </tr>
+                <tr>
+                    <th>Business</th>
+                    <td>
+                        <a href="{% url 'view_business' object.business_placeholder.id %}" target="_blank">
+                            {{ object.business_placeholder }}
+                        <a/>
+                    </td>
+                </tr>
+                {% endif %}
+
+            </table>
+
+            <h3>Secondary Contacts</h3>
+            <ul class="users">
+                {% for contact in object.contacts.all %}
+                    <li>
+                        {{ contact }}
+                        {% with caption="View "|add:contact.first_name|add:"'s details." %}
+                            <a title="{{ caption }}" href="{% url 'view_contact' contact.id %}" target="_blank"><i alt="{{ caption }}" class="icon-list-alt"></i></a>
+                        {% endwith %}
+                        {% if perms.crm.change_lead %}
+                            {% with caption="Remove "|add:contact.first_name|add:" from "|add:object.title %}
+                                <a title="{{ caption }}" href="{% url 'lead_remove_contact' object.id %}?contact_id={{ contact.id }}&next={{ next_url|add_parameters:request.GET|urlencode }}"><i alt="{{ caption }}" class="icon-remove"></i></a>
+                            {% endwith %}
+                        {% endif %}
+                    </li>
+                {% endfor %}
+            </ul>
+            {% if perms.crm.change_lead %}
+                <form class="form-inline" action="{% url 'lead_add_contact' object.id %}?next={{ next_url|add_parameters:request.GET|urlencode }}" method="post" accept-charset="utf-8">
+                    {% csrf_token %}
+                    {{ add_user_form|as_bootstrap:"inline" }}
+                    <input class="btn" type="submit" value="Add" />
+                </form>
+            {% endif %}
+        </div>
+
+        <div class="span4">
+            <h3>Notes</h3>
+            <form class="form-inline" action="{% url 'add_lead_note' object.id %}?next={{ next_url }}" method="post" accept-charset="utf-8">
+                {% csrf_token %}
+                {{ add_lead_note_form|as_bootstrap }}
+                <input class="btn btn-primary" type="submit" value="Add" />
+            </form>
+            <ul>
+                {% for note in object.get_notes %}
+                <li><strong>{{ note.author }} @ {{ note.last_edited }}</strong><br/>{{ note.text|linebreaks }}</li>
+                {% endfor %}
+            </ul>
+        </div>
+
+        <div class="span4">
+            <table class="table table-bordered">
+                <tr><th>Lead Source</th>
+                    <td><a href="mailto:{{ object.lead_source.email }}">
+                        {{ object.lead_source }}
+                    </a></td>
+                </tr>
+                <tr><th>AAC Primary</th>
+                    <td><a href="mailto:{{ object.aac_poc.email }}">
+                        {{ object.aac_poc }}
+                    </a></td>
+                </tr>
+            </table>
+
+            <h3>Tags</h3>
+            <div id="tags">
+            {% if object.tags.all|length %}
+            {% for tag in object.tags.all %}
+            <span class="label label-info">
+                <a href="{% url 'similar_items' tag.id %}"> <i class="icon-search icon-white icon-small"> </i></a>
+                {{ tag }}
+                {% if perms.crm.change_lead %}
+                <a class="remove_tag"> <i class="icon-remove icon-white icon-small"> </i></a>
+                {% endif %}
+            </span>
+            {% endfor %}
+            {% else %}
+            <br/><em>There are no tags for this lead yet.</em>
+            {% endif %}
+            </div>
+            <form id="add_tag_form">
+                <div style="margin-top: 12px;">
+                    <input id="new_tag" type="text" />
+                    <input id="add_tag_button" class="btn btn-primary" type="submit" value="Add" />
+                </div>
+            </form>
+
+            <h3>Attachments</h3>
+            <div id="file-uploader" name="File" class="controls">
+              <noscript>          
+                <p>Please enable JavaScript to use file uploader.</p>
+              </noscript>
+            </div>
+            <small>Drag and drop a file above to attach it.</small>
+            {% if object.get_attachments|length %}
+            {% for attachment in object.get_attachments %}
+            <blockquote>
+            <p><a href="{% url 'download_lead_attachment' object.id attachment.id %}?next={{ request.get_full_path }}" target="_blank">{{ attachment.filename }}</a></p>
+            <small>{{ attachment.uploader }} @ {{ attachment.upload_datetime }}</small>
+            </blockquote>
+            {% endfor %}
+            {% else %}
+            <br/><em>There are no attachments for this ticket yet.</em>
+            {% endif %}
+        </div>
+    </div>
+
+    <div class="row-fluid">
+        <div class="span12">
+            <h3>General Tasks</h3>
+            {% if perms.crm.change_lead %}
+                <form class="form-inline" action="{% url 'lead_add_general_task' object.id %}?next={{ next_url|add_parameters:request.GET|urlencode }}" method="post" accept-charset="utf-8">
+                    {% csrf_token %}
+                    {{ add_general_task_form|as_bootstrap:"inline" }}
+                    <input class="btn btn-primary" type="submit" value="Add" />
+
+                    {% if perms.workflow.add_generaltask %}
+                    <a class="btn btn-success" href="{% url 'create_general_task' %}?lead={{ object.id }}&next={{ next_url|add_parameters:request.GET|urlencode }}">Create New General Task for this Lead</a>
+                    {% endif %}
+                </form>
+            {% endif %}
+            <table class='table table-bordered table-striped table-condensed'>
+                <thead>
+                    <tr>
+                        <th></th>
+                        <th>Ticket ID</th>
+                        <th>Priority</th>
+                        <th>Status</th>
+                        <th>Create</th>
+                        <th>Due Date /<br/>Scheduled</th>
+                        <th>Assigned To</th>
+                        <th>Last Activity</th>
+                        <th>Description</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for general_task in object.generaltask_set.all %}
+                        <tr>
+                            <td>
+                                <a href="{% url 'lead_remove_general_task' object.id %}?general_task_id={{ general_task.id }}&next={{ next_url }}"><i class="icon-remove-circle" title="Remove {{ general_task }} from this Lead."> </i></a>
+                            </td>
+                            <td style="white-space: nowrap">
+                                <a href="{% url 'view_general_task' general_task.id %}" target="_blank">{{ general_task.form_id }}
+                            </td>
+                            <td style="white-space: nowrap ;text-align: center;">
+                                <span class="label label-{{ general_task.priority }}">{{ general_task.get_priority_display }}</span>
+                            </td>
+                            <td style="white-space: nowrap">
+                                <span class="label {{ general_task.status.label_style}}">{{ general_task.status }}</span>
+                            </td>
+                            <td style="white-space: nowrap">
+                                {{ general_task.created_by }} @<br/>
+                                {{ general_task.created_at|date:"N j, P" }}
+                            </td>
+                            <td style="white-space: nowrap">
+                                {{ general_task.requested_date }}<br/>
+                                {{ general_task.scheduled|date }}
+                            </td>
+                            <td style="white-space: nowrap">
+                                {{ general_task.assignee }}
+                                {% if not general_task.status.terminal and perms.workflow.assign_general_task %}
+                                    <a href='{% url "assign_general_task" general_task.pk %}?next={{ next_url }}' title="Change assigned user"><i class="icon-pencil"></i> </a>
+                                {% endif %}
+                            </td>
+                            <td>{{ general_task.last_user }} @ {{ general_task.last_activity|date:"N j, P" }}</td>
+                            <td>{{ general_task.description|truncatewords:12 }}</td>
+                        </tr>
+                    {% empty %}
+                    <tr><td colspan=9>There are no General Tasks associated with this Lead.</td></tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+{% endblock lead_content %}

@@ -22,7 +22,7 @@
             <h2>{% if not object %}Create Business Department {% else %}Edit {{ object.name }}{% endif %}</h2>
 
             <br style="clear: both;" />
-            <span class="alert alert-info">NOTE: For address fields, any field left blank will default to the value provided for the selected Business.  If the Business Department address is the same as the Business except for one field, you only need to enter that one field in this form.</span>
+            <div class="alert alert-block alert-info">NOTE: For address fields, any field left blank will default to the value provided for the selected Business.  If the Business Department address is the same as the Business except for one field, you only need to enter that one field in this form.</div>
 
             <form id="create-edit-business" class="form-horizontal" action="" method="post" accept-charset="utf-8">
                 {% csrf_token %}

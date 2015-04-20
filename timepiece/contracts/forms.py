@@ -1,12 +1,14 @@
 from dateutil.relativedelta import relativedelta
 
 from django import forms
+from django.forms import widgets
 
 from selectable import forms as selectable
 
 from timepiece import utils
+from timepiece.utils.search import SearchForm
 from timepiece.contracts.models import (EntryGroup, ContractRate, ProjectContract,
-    ContractBudget, ContractHour)
+    ContractBudget, ContractHour, ContractNote)
 from timepiece.crm.models import Attribute
 from timepiece.crm.lookups import ProjectLookup, ProjectCodeLookup
 from timepiece.entries.models import Activity
@@ -101,3 +103,27 @@ class CreateEditContractForm(forms.ModelForm):
         super(CreateEditContractForm, self).__init__(*args, **kwargs)
         self.fields['projects'] = selectable.AutoCompleteSelectMultipleField(
             ProjectCodeLookup, required=False, help_text='Search by Project Code.')
+
+class ContractSearchForm(SearchForm):
+    status = forms.ChoiceField(required=False, choices=[], label='')
+
+    def __init__(self, *args, **kwargs):
+        super(ContractSearchForm, self).__init__(*args, **kwargs)
+        statuses = Attribute.statuses.all()
+        choices = [('', 'Any Status')] + ProjectContract.CONTRACT_STATUS.items()
+        self.fields['status'].choices = choices
+        if kwargs.get('data', None) is None:
+            self.fields['status'].initial = ProjectContract.STATUS_CURRENT
+
+class AddContractNoteForm(forms.ModelForm):
+
+    class Meta:
+        model = ContractNote
+        fields = ('text', 'contract', 'author')
+
+    def __init__(self, *args, **kwargs):
+        super(AddContractNoteForm, self).__init__(*args, **kwargs)
+        self.fields['text'].label = ''
+        self.fields['text'].widget.attrs['rows'] = 6
+        self.fields['author'].widget = widgets.HiddenInput()
+        self.fields['contract'].widget = widgets.HiddenInput()

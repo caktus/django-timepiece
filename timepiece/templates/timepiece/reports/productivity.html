@@ -1,5 +1,5 @@
 {% extends "timepiece/reports/base.html" %}
-{% load timepiece_tags bootstrap_toolkit %}
+{% load timepiece_tags bootstrap_toolkit humanize %}
 {% load url from future %}
 
 {% block title %}Productivity Report{% endblock title %}
@@ -39,14 +39,43 @@
     </div>
 
     <div class="row-fluid">
+        <div class="span6 offset3">
+            {% if type %}
+            <table id="productivity-summary" class="table table-bordered">
+                <tr><th>Total Worked</th><td>{{ total_worked|floatformat:2|intcomma }} hours</td></tr>
+                <tr><th>Total Assigned</th><td>{{ total_assigned|floatformat:2|intcomma }} hours</td></tr>
+                <tr><th>Total Remaining</th><td>{{ total_remaining|floatformat:2|intcomma }} hours</td></tr>
+            </table>
+            {% endif %}
+        </div>
+    </div>
+
+    <div class="row-fluid">
+        <div class="span12">
+            <div id="chart" class="chart"></div>
+        </div>
+    </div>
+
+    <div class="row-fluid">
         <div class="span12">
             {% if type %}
-                <div id="productivity-summary">
-                    <p><span>Total Worked:</span> {{ total_worked|floatformat:0 }} hours</p>
-                    <p><span>Total Assigned:</span> {{ total_assigned|floatformat:0 }} hours</p>
-                </div>
+            <table id="productivity-details" class="table table-bordered">
+                <tr>
+                    <th>{{ type|capfirst }}</th>
+                    <th>Worked Hours</th>
+                    <th>Assigned Hours</th>
+                    <th>Remaining Hours</th>
+                </tr>
+                {% for row in report_table %}
+                <tr>
+                    <td><a href="{{ row.url }}">{{ row.label }}</a></td>
+                    <td>{{ row.worked }}</td>
+                    <td>{{ row.assigned }}</td>
+                    <td>{{ row.remaining }}</td>
+                </tr>
+                {% endfor %}
+            </table>
             {% endif %}
-            <div id="chart" class="chart"></div>
         </div>
     </div>
 {% endblock report_content %}

@@ -11,7 +11,7 @@ from django.utils import timezone
 from timepiece import utils
 from timepiece.crm.models import Project, PaidTimeOffLog
 
-
+import sys, traceback
 class Activity(models.Model):
     """
     Represents different types of activity: debugging, developing,

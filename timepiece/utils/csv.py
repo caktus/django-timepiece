@@ -20,7 +20,7 @@ class CSVViewMixin(object):
     def render_to_response(self, context):
         response = HttpResponse(content_type='text/csv')
         fn = self.get_filename(context)
-        response['Content-Disposition'] = 'attachment; filename=%s.csv' % fn
+        response['Content-Disposition'] = 'attachment; filename="%s.csv"' % fn
         rows = self.convert_context_to_csv(context)
         writer = csv.writer(response)
         row_errors = 0

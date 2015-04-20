@@ -3,7 +3,9 @@ from django.contrib import admin
 from timepiece.crm.models import (Attribute, Business, Project,
         RelationshipType, UserProfile, PaidTimeOffRequest,
         PaidTimeOffLog, Milestone, ActivityGoal,
-        Contact, ContactNote, BusinessNote, BusinessAttachment)
+        Contact, ContactNote, BusinessNote, BusinessAttachment,
+        Lead, LeadNote, DistinguishingValueChallenge, 
+        TemplateDifferentiatingValue, DVCostItem)
 
 
 class AttributeAdmin(admin.ModelAdmin):
@@ -35,6 +37,12 @@ class ContactAdmin(admin.ModelAdmin):
     pass
 
 class ContactNoteAdmin(admin.ModelAdmin):
+    pass
+
+class LeadAdmin(admin.ModelAdmin):
+    pass
+
+class LeadNoteAdmin(admin.ModelAdmin):
     pass
 
 class RelationshipTypeAdmin(admin.ModelAdmin):
@@ -70,3 +78,8 @@ admin.site.register(Milestone, MilestoneAdmin)
 admin.site.register(ActivityGoal, ActivityGoalAdmin)
 admin.site.register(Contact, ContactAdmin)
 admin.site.register(ContactNote, ContactNoteAdmin)
+admin.site.register(Lead, LeadAdmin)
+admin.site.register(LeadNote, LeadNoteAdmin)
+admin.site.register(DistinguishingValueChallenge)
+admin.site.register(TemplateDifferentiatingValue)
+admin.site.register(DVCostItem)

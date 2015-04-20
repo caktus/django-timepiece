@@ -1,5 +1,6 @@
 from django.contrib.auth.models import User, Group
 from django.contrib.sites.models import Site
+from django.core.exceptions import ValidationError
 from django.core.urlresolvers import reverse
 from django.db import models
 from django.db.models import get_model, Sum, Q
@@ -263,9 +264,9 @@ class Business(models.Model):
               ('WY', 'Wyoming'))
 
     name = models.CharField(max_length=255)
-    short_name = models.CharField(max_length=255, blank=True)
+    short_name = models.CharField(max_length=3, blank=True, unique=True)
     #email = models.EmailField(blank=True)
-    poc = models.ForeignKey(User, related_name='business_poc_old', verbose_name='Primary Contact', blank=True, null=True)
+    poc = models.ForeignKey(User, related_name='business_poc_old', verbose_name='Old Primary Contact (User)', blank=True, null=True)
     primary_contact = models.ForeignKey('Contact', related_name='business_poc', verbose_name='Primary Contact', blank=True, null=True)
     description = models.TextField(blank=True)
     notes = models.TextField(blank=True)
@@ -304,6 +305,8 @@ class Business(models.Model):
     annual_revenue = models.FloatField(null=True, blank=True)
     num_of_employees = models.PositiveIntegerField(null=True, blank=True, verbose_name='Number of Employees')
     ticker_symbol = models.CharField(max_length=32, blank=True)
+
+    tags = TaggableManager()
 
     class Meta:
         db_table = 'timepiece_business'  # Using legacy table name.
@@ -548,45 +551,45 @@ class BusinessDepartment(models.Model):
             
             try:
                 # geocode billing address
-                if (self.billing_street and self.billing_city and 
-                    self.billing_state and self.billing_postalcode and 
-                    self.billing_country):
+                if (self.bd_billing_street and self.bd_billing_city and 
+                    self.bd_billing_state and self.bd_billing_postalcode and 
+                    self.bd_billing_country):
                     gc = gmaps.geocode('%s, %s, %s %s-%s, %s' % (
-                        self.billing_street, self.billing_city, 
-                        self.billing_state, self.billing_postalcode, 
-                        self.billing_postalcode, self.billing_country))
+                        self.bd_billing_street, self.bd_billing_city, 
+                        self.bd_billing_state, self.bd_billing_postalcode, 
+                        self.bd_billing_postalcode, self.bd_billing_country))
                     if len(gc) == 1:
-                        self.billing_lat = float(
+                        self.bd_billing_lat = float(
                             gc[0]['geometry']['location']['lat'])
-                        self.billing_lon = float(
+                        self.bd_billing_lon = float(
                             gc[0]['geometry']['location']['lng'])
             except:
-                self.billing_lat = None
-                self.billing_lon = None
+                self.bd_billing_lat = None
+                self.bd_billing_lon = None
 
             try:
                 # geocode shipping address
-                if (self.shipping_street and self.shipping_city and 
-                    self.shipping_state and self.shipping_postalcode and 
-                    self.shipping_country):
+                if (self.bd_shipping_street and self.bd_shipping_city and 
+                    self.bd_shipping_state and self.bd_shipping_postalcode and 
+                    self.bd_shipping_country):
                     gc = gmaps.geocode('%s, %s, %s %s-%s, %s' % (
-                        self.shipping_street, self.shipping_city, 
-                        self.shipping_state, self.shipping_postalcode, 
-                        self.shipping_postalcode, self.shipping_country))
+                        self.bd_shipping_street, self.bd_shipping_city, 
+                        self.bd_shipping_state, self.bd_shipping_postalcode, 
+                        self.bd_shipping_postalcode, self.bd_shipping_country))
                     if len(gc) == 1:
-                        self.shipping_lat = float(
+                        self.bd_shipping_lat = float(
                             gc[0]['geometry']['location']['lat'])
-                        self.shipping_lon = float(
+                        self.bd_shipping_lon = float(
                             gc[0]['geometry']['location']['lng'])
             except:
-                self.shipping_lat = None
-                self.shipping_lon = None
+                self.bd_shipping_lat = None
+                self.bd_shipping_lon = None
 
         except:
-            self.billing_lat = None
-            self.billing_lon = None
-            self.shipping_lat = None
-            self.shipping_lon = None
+            self.bd_billing_lat = None
+            self.bd_billing_lon = None
+            self.bd_shipping_lat = None
+            self.bd_shipping_lon = None
 
         super(BusinessDepartment, self).save()
 
@@ -664,7 +667,7 @@ class Contact(models.Model):
 
     birthday = models.DateField(null=True, blank=True)
 
-    lead_source = models.ForeignKey(User, related_name='lead_source')
+    lead_source = models.ForeignKey(User, related_name='contact_lead_source')
 
     tags = TaggableManager()
 
@@ -763,6 +766,10 @@ class Contact(models.Model):
         else:
             return self.last_name
 
+    @property
+    def do_not_call_class(self):
+        return "error" if self.do_not_call else ""
+
 class ContactNote(models.Model):
     contact = models.ForeignKey(Contact)
     author = models.ForeignKey(User)
@@ -837,6 +844,8 @@ class Project(models.Model):
             related_name='projects_with_status')
     description = models.TextField()
     year = models.SmallIntegerField(blank=True, null=True) # this field is required, but is taken care of in code
+    
+    tags = TaggableManager()
 
     objects = models.Manager()
     trackable = TrackableProjectManager()
@@ -854,6 +863,16 @@ class Project(models.Model):
 
     def __unicode__(self):
         return '{0}: {1}'.format(self.code, self.name)
+    
+    def delete(self, *args, **kwargs):
+        try:
+            # we need to delete the associate wiki to free up the slug
+            urlpath = URLPath.objects.get(slug=self.code)
+            urlpath.delete()
+        except:
+            pass
+
+        return super(Project, self).delete(*args, **kwargs)
 
     def save(self, *args, **kwargs):
         # if this is a CREATE, create Project Code
@@ -862,10 +881,12 @@ class Project(models.Model):
             # get the current year, if year not provided
             if not self.year:
                 self.year = datetime.datetime.now().year
-
+            print 'year', self.year
             # determine the project counter incrementer and create unique code
             proj_count = Project.objects.filter(business=self.business, year=self.year).count() + 1
+            print 'proj_count', proj_count
             self.code = '%s-%s-%03d' % (self.business.short_name, str(self.year)[2:], proj_count)
+            print 'code', self.code
 
             # create new wiki
             try:
@@ -982,7 +1003,10 @@ class ActivityGoal(models.Model):
 
     @property
     def get_percent_complete(self):
-        return 100.*(float(self.get_charged_hours) / float(self.goal_hours))
+        if self.goal_hours == Decimal('0.0'):
+            return 100.
+        else:
+            return 100.*(float(self.get_charged_hours) / float(self.goal_hours))
 
     @property
     def get_remaining_hours(self):
@@ -991,3 +1015,265 @@ class ActivityGoal(models.Model):
     @property
     def goal_overrun(self):
         return self.get_remaining_hours < 0
+
+    @property
+    def current(self):
+        return self.end_date >= datetime.date.today()
+
+class Lead(models.Model):
+    STATUS_OPEN = '0-open'
+    STATUS_CONTACTING = '1-contacting'
+    STATUS_CONTACTED = '2-contacted'
+    STATUS_BAD_INFO = '3-bad-info'
+    STATUS_NO_RESPONSE = '4-no-response'
+    STATUS_QUALIFIED = '5-qualified'
+    STATUS_GARDEN = '6-garden'
+    STATUS_UNQUALIFIED = '7-unqualified'
+    STATUSES = [
+        (STATUS_OPEN, 'Open'),
+        (STATUS_CONTACTING, 'Contacting'),
+        (STATUS_CONTACTED, 'Contacted'),
+        (STATUS_BAD_INFO, 'Bad Information'),
+        (STATUS_NO_RESPONSE, 'No Response'),
+        (STATUS_QUALIFIED, 'Qualified'),
+        (STATUS_GARDEN, 'Garden'),
+        (STATUS_UNQUALIFIED, 'Unqualified'),
+    ]
+
+    title = models.CharField(max_length=64,
+        help_text='Provide a name or title to identify the lead.')
+    status = models.CharField(max_length=16, 
+        default=STATUS_OPEN, choices=STATUSES)
+    lead_source = models.ForeignKey(User, related_name='lead_source',
+        limit_choices_to={'groups':1})
+    aac_poc = models.ForeignKey(User, related_name='lead_poc',
+        verbose_name='AAC Primary',
+        limit_choices_to={'groups':1, 'is_active':True})
+    primary_contact = models.ForeignKey(Contact,
+        verbose_name='Primary Contact', blank=True, null=True,
+        help_text=('Search for a Contact to select as the Primary Contact '
+        'for this lead.  If the contact is not yet in the Contact database, '
+        '<a href="/timepiece/contact/create" target="_blank">add</a> them '
+        'first.  If a contact is not yet identified, you can select '
+        'a Business instead.'))
+    business_placeholder = models.ForeignKey(Business, verbose_name='Business',
+        blank=True, null=True,
+        help_text=('If a Primary Contact has not yet been identified, select '
+        'the Business this lead is associated with.  Once a Contact is '
+        'identified, this field will be ignored.  If the business is not yet '
+        'in the Business database, <a href="/timepiece/business/create" '
+        'target="_blank">add</a> it first.'))
+    contacts = models.ManyToManyField(Contact, null=True, blank=True,
+        related_name='lead_contacts', verbose_name='Other Contacts')
+    
+    created_by = models.ForeignKey(User, related_name='lead_created_by')
+    last_editor = models.ForeignKey(User, related_name='lead_edited_by')
+    created_at = models.DateTimeField(auto_now_add=True)
+    last_activity = models.DateTimeField(auto_now=True)
+
+    tags = TaggableManager()
+
+    class Meta:
+        ordering = ['status', 'title']
+
+    def __unicode__(self):
+        return self.title
+
+    def get_absolute_url(self):
+        return reverse('view_lead', args=(self.id,))
+
+    @property
+    def get_notes(self):
+        return LeadNote.objects.filter(lead=self).order_by('-created_at')
+
+    @property
+    def get_attachments(self):
+        return LeadAttachment.objects.filter(lead=self)
+
+    @property
+    def get_opportunities(self):
+        return self.opportunity_set.all().order_by('title')
+
+class LeadAttachment(MongoAttachment):
+    lead = models.ForeignKey(Lead)
+
+    def __unicode__(self):
+        return "%s: %s" % (self.lead, self.filename)
+
+class LeadNote(models.Model):
+    lead = models.ForeignKey(Lead)
+    author = models.ForeignKey(User)
+    created_at = models.DateTimeField(auto_now_add=True)
+    edited = models.BooleanField(default=False)
+    last_edited = models.DateTimeField(auto_now=True)
+    parent = models.ForeignKey('self', null=True, blank=True)
+    text = models.TextField()
+
+    def get_thread(self, thread):
+        thread.append(self)
+        for n in LeadNote.objects.filter(parent=self).order_by('-created_at'):
+            thread.append(n.get_thread(), thread)
+
+    def save(self, *args, **kwargs):
+        super(LeadNote, self).save(*args, **kwargs)
+        url = '%s%s' % (settings.DOMAIN, reverse('view_lead', args=(self.lead.id,)))
+        # send email to lead aac primary poc
+        timepiece_emails.lead_new_note(self, url)
+
+
+class DistinguishingValueChallenge(models.Model):
+    lead = models.ForeignKey(Lead, blank=True, null=True)
+    business = models.ForeignKey(Business, blank=True, null=True)
+    order = models.PositiveSmallIntegerField(help_text='Define order/priority of this DV.')
+    probing_question = models.TextField(blank=True, help_text='Provide a probing question that could be used in a conversation with a potential client.')
+    description = models.TextField(blank=True, help_text='Have the potential customer describe the pain/challenge.')
+    short_name = models.CharField(max_length=32, blank=True, help_text='Provide a short identifying name for this DV.')
+    longevity = models.TextField(blank=True, help_text='How long have you been facing this pain/challenge?')
+    start_date = models.DateField(blank=True, null=True, help_text='Based on the response to the above question, estimate the date when the pain/challenge started.')
+    steps = models.TextField(blank=True, help_text='What steps have you already taken to overcome it?')
+    results = models.TextField(blank=True, help_text='What were the results from the steps already taken?')
+    due = models.TextField(blank=True, help_text='Do you have a specific timeline for overcoming this pain/challenge?')
+    due_date = models.DateField(blank=True, null=True, help_text='If possible, set a specific date for the timeline described above.')
+    cost = models.TextField(blank=True, help_text='What do you estimate this challenges costs you (in time or money) each month?')
+    confirm_resources = models.BooleanField(blank=True, default=False, help_text='Have you confirmed that AAC Engineering has adequate resources to support the proposed project? (Contact the Operations Manager.)')
+    resources_notes = models.TextField(blank=True, help_text='Optionally add notes on the available resources.')
+    benefits_begin = models.TextField(blank=True, help_text='When do you expect benefits from the project execution to begin?')
+    date_benefits_begin = models.DateField(blank=True, null=True, help_text='If possible, set a specific date for when benefits are to begin.')
+    confirm = models.BooleanField(blank=True, default=False, help_text='Confirm Evaluation and Decision Process.')
+    confirm_notes = models.TextField(blank=True, help_text='Optionally add notes on the confirmation.')
+    commitment = models.BooleanField(blank=True, default=False, help_text='Commitment: Agree on clear outcomes.')
+    commitment_notes = models.TextField(blank=True, help_text='Optionally add notes on the commitment.')
+    last_activity = models.DateTimeField(auto_now=True)
+    closed = models.BooleanField(default=False, help_text='Check this box once this DV is resolved and/or closed.')
+
+    class Meta:
+        ordering = ['order', '-due_date']
+        verbose_name = 'Differentiating Value'
+        verbose_name_plural = 'Differentiating Values'
+
+    def __unicode__(self):
+        return '%s - DV - %s' % (self.lead, self.short_name)
+
+    def save(self, *args, **kwargs):
+        if self.id is None:
+            self.order = self.lead.distinguishingvaluechallenge_set.count() + 1
+        if len(self.short_name) == 0:
+            self.short_name = 'DV %d' % self.order
+        
+        return super(DistinguishingValueChallenge, self).save(*args, **kwargs)
+
+    def tab_name(self):
+        return 'dvc%d' % (list(self.lead.distinguishingvaluechallenge_set.all()
+            ).index(self) + 1)
+
+    @property
+    def get_cost_items(self):
+        return DVCostItem.objects.filter(dv=self)
+
+    @property
+    def get_cost(self):
+        cost = Decimal('0.0')
+        for ci in DVCostItem.objects.filter(dv=self):
+            cost += ci.get_cost
+        return cost
+
+class DVCostItem(models.Model):
+    dv = models.ForeignKey(DistinguishingValueChallenge)
+    description = models.CharField(max_length=64, 
+        help_text='Provide a summary description of the cost line item.')
+    details = models.TextField(blank=True, 
+        help_text='Optionally add more details about this cost item.  You can reference an attachmen here as well.')
+    cost = models.DecimalField(max_digits=11, decimal_places=2, 
+        null=True, blank=True,
+        help_text='Either set a cost or define man hours and rate below.')
+    man_hours = models.DecimalField(max_digits=11, decimal_places=2, 
+        null=True, blank=True, verbose_name='Man Hours')
+    rate = models.DecimalField(max_digits=6, decimal_places=2,
+        verbose_name='Houlry Rate', null=True, blank=True)
+
+    class Meta:
+        ordering = ['description']
+
+    def __unicode__(self):
+        return '%s - %s - %f' % (self.dv, self.description, 
+            float(self.get_cost))
+
+    @property
+    def get_cost(self):
+        if self.cost:
+            return self.cost
+        else:
+            return self.man_hours * self.rate
+
+    @property
+    def cost_explanation(self):
+        if self.cost:
+            return 'Direct cost estimate.'
+        else:
+            return 'Labor cost of %.2f hours at $%.2f per hour.' % (
+                self.man_hours, self.rate)
+
+    def clean(self):
+        # ensure that either a cost is provided or a combination of Man Hours and Rate
+        if self.cost is None:
+            if self.man_hours is None or self.rate is None:
+                raise ValidationError('You must set either a direct Cost '
+                    'or both Man Hours and Hourly Rate.')
+        else:
+            if self.man_hours or self.rate:
+                raise ValidationError('If you set a direct Cost, you ' 
+                    'cannot also set both Man Hours and an Hourly Rate.')
+
+class TemplateDifferentiatingValue(models.Model):
+    short_name = models.CharField(max_length=32, help_text='Provide a short identifying name for this Template DV.')
+    probing_question = models.TextField(help_text='Provide a probing question that could be used in a conversation with a potential client.')
+
+    class Meta:
+        ordering = ['short_name']
+    
+    def __unicode__(self):
+        return self.short_name
+
+class Opportunity(models.Model):
+    PROPOSAL_STATUSES = (
+        ('0-in-progress', 'In Progress'),
+        ('1-submitted', 'Submitted'),
+        ('2-counter', 'Counter Received'),
+        ('3-accepted', 'Accepted'),
+        ('4-cancelled', 'Cancelled'),
+        ('5-declined', 'Declined')
+    )
+    title = models.CharField(max_length=128,
+        help_text='Provide a name for the Opportunity (or name of the associated proposal).')
+    created_at = models.DateTimeField(auto_now_add=True)
+    last_activity = models.DateTimeField(auto_now=True)
+    lead = models.ForeignKey(Lead)
+    differentiating_value = models.ForeignKey(DistinguishingValueChallenge, null=True, blank=True,
+        help_text='If the Opportunity started as a Lead\'s Differentiating Value, associate it here.')
+    proposal = models.ForeignKey(LeadAttachment, null=True, blank=True,
+        help_text='After uploading the proposal as an attachment to the Lead, associate the proposal with this Opportunity.')
+    proposal_status = models.CharField(max_length=16, default='in-progress', choices=PROPOSAL_STATUSES)
+    proposal_status_date = models.DateTimeField(auto_now_add=True,
+        help_text='Timestamp for when the proposal status was set.')
+    project = models.ManyToManyField(Project, null=True, blank=True,
+        help_text='If this Opportunity results in a project, identify the project(s) here.')
+
+    @property
+    def get_status_class(self):
+        CLASSES = {'0-in-progress': '',
+                   '1-submitted': 'label-info',
+                   '2-counter': 'label-warning',
+                   '3-accepted': 'label-success',
+                   '4-cancelled': 'label-inverse',
+                   '5-declined': 'label-important'}
+
+        return CLASSES[self.proposal_status]
+
+    def update_status(self, status):
+        """Updates the status of the Opportunity's proposal and sets the
+        associated timestamp.
+        """
+
+        self.status = status
+        self.proposal_status_date = datetime.datetime.now()
+        self.save()

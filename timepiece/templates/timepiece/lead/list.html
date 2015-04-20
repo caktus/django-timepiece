@@ -1,0 +1,68 @@
+{% extends "timepiece/lead/base.html" %}
+{% load bootstrap_toolkit %}
+{% load timepiece_tags %}
+{% load url from future %}
+
+{% block title %}Leads{% endblock title %}
+
+{% block content %}
+    <div class="row-fluid">
+        <div class="span12">
+            <h2>Leads</h2>
+            <ul class="nav nav-pills">
+                {% if perms.crm.add_lead %}
+                    <li><a href="{% url 'create_lead' %}">Create Lead</a></li>
+                {% endif %}
+                {% if perms.crm.add_templatedifferentiatingvalue %}
+                    <li><a href="{% url 'list_template_differentiating_values' %}">Manage Template Differentiating Values</a></li>
+                {% endif %}
+            </ul>
+        </div>
+    </div>
+
+    <div class="row-fluid">
+        <div class="span12">
+            <form class='form-inline' accept-charset='UTF-8' method='get' action=''>
+                {{ form|as_bootstrap:"inline" }}
+                <button type='submit' class='btn' name='submit'>Search</button>
+                <button type="submit" class="btn btn-success" name="export_lead_list" value="True">Export Lead List</button>
+            </form>
+        </div>
+    </div>
+
+    <div class="row-fluid">
+        <div class="span12">
+            {% load pagination_tags %}
+            {% autopaginate object_list %}
+
+            {% paginate %}
+            <table class='table table-bordered table-striped table-condensed'>
+                <thead>
+                    <tr>
+                        <th>Title</th>
+                        <th>Status</th>
+                        <th>AAC Primary</th>
+                        <th>Lead POC</th>
+                        <th>Last Activity</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for lead in object_list %}
+                        <tr>
+                            <td><a href="{% url 'view_lead' lead.pk %}">{{ lead.title }}</a></td>
+                            <td>{{ lead.get_status_display }}</td>
+                            <td><a href="mailto:{{ lead.aac_poc.email }}">{{ lead.aac_poc }}</a></td>
+                            {% if lead.primary_contact %}
+                            <td><a href="{% url 'view_contact' lead.primary_contact.id %}">{{ lead.primary_contact }}</a></td>
+                            {% else %}
+                            <td><a href="{% url 'view_business' lead.business_placeholder.id %}">{{ lead.business_placeholder }}</a> <i class="icon-warning-sign" title="Update this Lead with a Primary Contact as soon as you can."> </></td>
+                            {% endif %}
+                            <td>{{ lead.last_editor }} @ {{ lead.last_activity }}</td>
+                        </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+            {% paginate %}
+        </div>
+    </div>
+{% endblock content %}

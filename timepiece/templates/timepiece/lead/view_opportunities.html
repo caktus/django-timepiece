@@ -1,0 +1,153 @@
+{% extends "timepiece/lead/view_base.html" %}
+{% load timepiece_tags bootstrap_toolkit %}
+{% load url from future %}
+
+{% block title %}{{ object.title }}{% endblock title %}
+
+{% block lead_content %}
+    <div class="row-fluid">
+        <div class="span8">
+            {% if perms.crm.add_opportunity %}
+            <a class="btn btn-small btn-success" href="{% url 'add_lead_opportunity' object.id %}" title="Create Opportunity for {{ object.title }}"><i class="icon-plus icon-white"> </i> Create Opportunity</a>
+            {% endif %}
+        </div>
+    </div>
+    {% url 'view_lead' object.id as next_url %}
+    <div class="row-fluid">
+        <div class="span8">
+            {% for opportunity in object.get_opportunities %}
+            <div class="well">
+                <h3>
+                    {{ opportunity.title }} 
+                    {% if perms.crm.change_opportunity %}
+                    <a href="{% url 'edit_lead_opportunity' opportunity.lead.id opportunity.id %}" title="Edit Lead {{ opportunity.title }}"><i class="icon-pencil"> </i></a>
+                    {% endif %}
+                    {% if perms.crm.delete_opportuniy %}
+                        <a href="{% url 'delete_lead_opportunity' opportunity.lead.id opportunity.id %}" title="Delete Lead {{ opportunity.title }}"><i class="icon-trash"> </i></a>
+                    {% endif %}
+                    <div class="label label-info pull-right">Last Updated {{ opportunity.last_activity }}</div>
+                </h3>
+                
+                <h4>Proposal</h4>
+                <table class="table table-striped table-bordered table-condensed" style="background: white;">
+                    <thead>
+                        <tr>
+                            <th>Status</th>
+                            <th>Status Update</th>
+                            <th>Document</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td>
+                                <div class="label {{ opportunity.get_status_class }}">{{ opportunity.get_proposal_status_display }}</div>
+                            </td>
+                            <td>
+                                {{ opportunity.proposal_status_date }}
+                            </td>
+                            <td>
+                                {% if opportunity.proposal %}
+                                <a href="{% url 'download_lead_attachment' opportunity.lead.id opportunity.proposal.id %}?next={{ request.get_full_path }}" target="_blank">{{ opportunity.proposal.filename }}</a>
+                                {% else %}
+                                No proposal document has been associated with this opportunity.
+                                {% endif %}
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+                
+
+                
+                <h4>Resulting Projects</h4>
+                <table class="table table-striped table-bordered table-condensed" style="background: white;">
+                    <thead>
+                        <tr>
+                            <th>Code</th>
+                            <th>Name</th>
+                            <th>Minder</th>
+                            <th>Business</th>
+                            <th>Description</th>
+                            <th>Time Sheet</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                    {% for project in opportunity.project.all %}
+                        <tr>
+                            <td style="white-space: nowrap;"><a href="{% url 'view_project' project.id %}" target="_blank">{{ project.code }}</a></td>
+                            <td>{{ project.name }}</td>
+                            <td style="white-space: nowrap;"><a href="mailto:{{project.point_person.email}}">{{ project.point_person }}</a></td>
+                            <td style="white-space: nowrap;">{{ project.business }}</td>
+                            <td>{{ project.description }}</td> <!-- |truncatewords:8 -->
+                            <td style="white-space: nowrap;"><a href="{% url 'view_project_timesheet' project.id %}">Time Sheet</a></td>
+                        </tr>
+                    {% empty %}
+                        <tr>
+                            <td colspan=6>No projects have yet been associated as the result of this opportunity. To add a project, click the edit pencil icon above.</td>
+                        </tr>
+                    {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+            {% empty %}
+            <div class="label label-info">There are no Opportunities associated with this Lead yet.</div>
+            {% endfor %}
+
+        </div>
+
+        <div class="span4">
+            <h3>Tags</h3>
+            <div id="tags">
+            {% if object.tags.all|length %}
+            {% for tag in object.tags.all %}
+            <span class="label label-info">
+                <a href="{% url 'similar_items' tag.id %}"> <i class="icon-search icon-white icon-small"> </i></a>
+                {{ tag }}
+                {% if perms.crm.change_lead %}
+                <a class="remove_tag"> <i class="icon-remove icon-white icon-small"> </i></a>
+                {% endif %}
+            </span>
+            {% endfor %}
+            {% else %}
+            <br/><em>There are no tags for this lead yet.</em>
+            {% endif %}
+            </div>
+            <form id="add_tag_form">
+                <div style="margin-top: 12px;">
+                    <input id="new_tag" type="text" />
+                    <input id="add_tag_button" class="btn btn-primary" type="submit" value="Add" />
+                </div>
+            </form>
+
+            <h3>Attachments</h3>
+            <div id="file-uploader" name="File" class="controls">
+              <noscript>          
+                <p>Please enable JavaScript to use file uploader.</p>
+              </noscript>
+            </div>
+            <small>Drag and drop a file above to attach it.</small>
+            {% if object.get_attachments|length %}
+            {% for attachment in object.get_attachments %}
+            <blockquote>
+            <p><a href="{% url 'download_lead_attachment' object.id attachment.id %}?next={{ request.get_full_path }}" target="_blank">{{ attachment.filename }}</a></p>
+            <small>{{ attachment.uploader }} @ {{ attachment.upload_datetime }}</small>
+            </blockquote>
+            {% endfor %}
+            {% else %}
+            <br/><em>There are no attachments for this ticket yet.</em>
+            {% endif %}
+
+            <h3>Notes</h3>
+            <form class="form-inline" action="{% url 'add_lead_note' object.id %}?next={{ next_url }}" method="post" accept-charset="utf-8">
+                {% csrf_token %}
+                {{ add_lead_note_form|as_bootstrap }}
+                <input class="btn btn-primary" type="submit" value="Add" />
+            </form>
+            <ul>
+                {% for note in object.get_notes %}
+                <li><strong>{{ note.author }} @ {{ note.last_edited }}</strong><br/>{{ note.text|linebreaks }}</li>
+                {% endfor %}
+            </ul>
+        </div>
+    </div>
+
+{% endblock lead_content %}

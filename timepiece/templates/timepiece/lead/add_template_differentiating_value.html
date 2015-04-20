@@ -1,0 +1,28 @@
+{% extends "timepiece/lead/view_base.html" %}
+{% load timepiece_tags bootstrap_toolkit %}
+{% load url from future %}
+
+{% block title %}{{ object.title }}{% endblock title %}
+
+{% block crumbs %}
+    {{ block.super }}
+    <li><span class="divider">/</span> <a href="{% url 'add_template_differentiating_values' object.id %}">Add Template Differentiating Value(s)</a></li>
+{% endblock crumbs %}
+
+{% block lead_content %}
+    {% if perms.crm.add_templatedifferentiatingvalue %}
+    <div class="alert alert-success alert-block">
+        You can <a target="_blank" href="{% url 'list_template_differentiating_values' %}">Manage Template Differentiating Values</a> to add/modify the list below.  After making changes, refresh this page to reflect those changes.
+    </div>
+    {% endif %}
+	<form id="add-template-dv-form" class="form-horizontal" action="" method="post" accept-charset="utf-8">
+        {% csrf_token %}
+        {{ form|as_bootstrap:"horizontal" }}
+        <div class="form-actions">
+            <input class="btn btn-primary" type="submit" value="Add Selected" name="submit">
+            <input class="btn" type="button" onclick="history.go(-1)" value="Cancel">
+            
+        </div>
+        
+    </form>
+{% endblock lead_content %}

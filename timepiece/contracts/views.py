@@ -1,5 +1,6 @@
 import datetime
 from dateutil.relativedelta import relativedelta
+import json
 
 from django.contrib.auth.decorators import login_required, permission_required
 from django.contrib import messages
@@ -7,10 +8,10 @@ from django.core.urlresolvers import reverse, reverse_lazy
 from django.db import transaction, DatabaseError
 from django.db.models import Sum, Q
 from django.forms import widgets
-from django.http import HttpResponseRedirect, Http404, HttpResponseForbidden
+from django.http import HttpResponseRedirect, Http404, HttpResponseForbidden, HttpResponse
 from django.shortcuts import get_object_or_404, redirect, render
 from django.views.generic import (ListView, DetailView, CreateView, 
-    UpdateView, DeleteView)
+    UpdateView, DeleteView, View)
 
 from timepiece import utils
 from timepiece.templatetags.timepiece_tags import seconds_to_hours
@@ -21,10 +22,11 @@ from timepiece.utils.views import cbv_decorator
 from timepiece.contracts.forms import (InvoiceForm,
     OutstandingHoursFilterForm, CreateEditContractRateForm,
     CreateEditContractForm, CreateEditContractBudgetForm,
-    CreateEditContractHourForm)
+    CreateEditContractHourForm, ContractSearchForm,
+    AddContractNoteForm)
 from timepiece.contracts.models import (ProjectContract, HourGroup,
     EntryGroup, ContractRate, ProjectContract, ContractAttachment,
-    ContractBudget, ContractHour)
+    ContractBudget, ContractHour, ContractNote)
 from timepiece.entries.models import Project, Entry, Activity
 
 from ajaxuploader.views import AjaxFileUploader
@@ -62,15 +64,59 @@ class ContractDetail(DetailView):
             kwargs['today'] = datetime.date.today()
         if 'warning_date' not in kwargs:
             kwargs['warning_date'] = datetime.date.today() + relativedelta(weeks=2)
-        return super(ContractDetail, self).get_context_data(*args, **kwargs)
+        context = super(ContractDetail, self).get_context_data(*args, **kwargs)
+        context['add_contract_note_form'] = AddContractNoteForm()
+        return context
+
 
 @cbv_decorator(permission_required('contracts.add_projectcontract'))
-class ContractList(ListView):
-    template_name = 'timepiece/contract/list.html'
+class ContractList(SearchListView, CSVViewMixin):
     model = ProjectContract
+    form_class = ContractSearchForm
+    redirect_if_one_result = True
+    search_fields = ['name__icontains']
     context_object_name = 'contracts'
-    queryset = ProjectContract.objects.filter(
-            status=ProjectContract.STATUS_CURRENT).order_by('name')
+    template_name = 'timepiece/contract/list.html'
+
+    def get(self, request, *args, **kwargs):
+        if len(request.GET.keys()) == 0:
+            return HttpResponseRedirect(reverse('list_contracts') \
+                + '?status=' + ProjectContract.STATUS_CURRENT)
+        self.export_contract_list = request.GET.get(
+            'export_contract_list', False)
+        if self.export_contract_list:
+            kls = CSVViewMixin
+
+            form_class = self.get_form_class()
+            self.form = self.get_form(form_class)
+            self.object_list = self.get_queryset()
+            self.object_list = self.filter_results(self.form, self.object_list)
+
+            # allow_empty = self.get_allow_empty()
+            # if not allow_empty and len(self.object_list) == 0:
+            #     raise Http404("No results found.")
+
+            context = self.get_context_data(form=self.form,
+                object_list=self.object_list)
+
+            return kls.render_to_response(self, context)
+        else:
+            return super(ContractList, self).get(request, *args, **kwargs)
+
+    def filter_form_valid(self, form, queryset):
+        queryset = super(ContractList, self).filter_form_valid(form, queryset)
+        status = form.cleaned_data['status']
+        if status:
+            queryset = queryset.filter(status=status)
+        return queryset.order_by('name')
+
+    def get_filename(self, context):
+        request = self.request.GET.copy()
+        status = request.get('status', 'all') or 'all'
+        search = request.get('search', '(empty)') or '(empty)'
+        return 'contract_list_{0}_{1}_{2}'.format(
+            datetime.datetime.now().strftime('%Y%m%d_%H%M%S'),
+            status, search)
 
     def get_context_data(self, *args, **kwargs):
         if 'today' not in kwargs:
@@ -78,10 +124,38 @@ class ContractList(ListView):
         if 'warning_date' not in kwargs:
             kwargs['warning_date'] = datetime.date.today() + relativedelta(weeks=2)
         kwargs['max_work_fraction'] = max(
-            [0.0] + [c.fraction_value for c in self.queryset.all()])
+            [0.0] + [c.fraction_value for c in self.object_list])
         kwargs['max_schedule_fraction'] = max(
-            [0.0] + [c.fraction_schedule for c in self.queryset.all()])
+            [0.0] + [c.fraction_schedule for c in self.object_list])
         return super(ContractList, self).get_context_data(*args, **kwargs)
+
+    def convert_context_to_csv(self, context):
+        """Convert the context dictionary into a CSV file."""
+        content = []
+        contracts = context['contracts']
+        if self.export_contract_list:
+            headers = ['Contract Name', 'Start Date', 'End Date',
+                       'Contract Value', 'Contract Value Unit',
+                       'Billable Hours Works', 'Non-Billable Hours Worked',
+                       'Schedule Progress', 'Ceiling Progress',
+                       'Contract Type', 'Client Expense Category',
+                       'Tags', 'Projects -->']
+            content.append(headers)
+            for contract in contracts:
+                row = [contract.name, contract.start_date, contract.end_date,
+                       contract.contract_value(),
+                       contract.get_ceiling_type_display(),
+                       contract.hours_worked,
+                       contract.nonbillable_hours_worked,
+                       contract.fraction_schedule, contract.fraction_value,
+                       contract.get_type_display(),
+                       contract.get_client_expense_category_display(),
+                       ', '.join(
+                        [t.name.strip() for t in contract.tags.all()])]
+                for project in contract.projects.all():
+                    row.append(str(project))
+                content.append(row)
+        return content
 
 @permission_required('contracts.add_contractincrement')
 def add_contract_increment(request, contract_id):
@@ -92,6 +166,46 @@ def add_contract_increment(request, contract_id):
         return HttpResponseRedirect(reverse('add_contract_budget', args=(contract.id,)))
     else:
         return HttpResponseRedirect(reverse('dashboard'))
+
+@cbv_decorator(permission_required('crm.change_projectcontract'))
+class ContractTags(View):
+
+    def get(self, request, *args, **kwargs):
+        return HttpResponse(status=200)
+
+    def post(self, request, *args, **kwargs):
+        contract = ProjectContract.objects.get(id=int(kwargs['contract_id']))
+        tag = request.POST.get('tag')
+        for t in tag.split(','):
+            if len(t):
+                contract.tags.add(t)
+        tags = [{'id': t.id, 
+                 'url': reverse('similar_items', args=(t.id,)),
+                 'name':t.name} for t in contract.tags.all()]
+        return HttpResponse(json.dumps({'tags': tags}),
+                            content_type="application/json",
+                            status=200)
+
+@cbv_decorator(permission_required('crm.change_projectcontract'))
+class RemoveContractTag(View):
+
+    def get(self, request, *args, **kwargs):
+        return HttpResponse(status=501)
+
+    def post(self, request, *args, **kwargs):
+        if request.user.is_superuser or \
+            bool(len(request.user.groups.filter(id=8))):
+            contract = ProjectContract.objects.get(
+                id=int(kwargs['contract_id']))
+            tag = request.POST.get('tag')
+            if len(tag):
+                contract.tags.remove(tag)
+        tags = [{'id': t.id, 
+                 'url': reverse('similar_items', args=(t.id,)),
+                 'name':t.name} for t in contract.tags.all()]
+        return HttpResponse(json.dumps({'tags': tags}),
+                            content_type="application/json",
+                            status=200)
 
 @cbv_decorator(permission_required('contracts.add_contractbudget'))
 class AddContractBudget(CreateView):
@@ -247,6 +361,21 @@ class DeleteContractRate(DeleteView):
 
     def get_success_url(self):
         return reverse('view_contract', args=(int(self.kwargs['contract_id']), ))
+
+@cbv_decorator(permission_required('contracts.add_contractnote'))
+class AddContractNote(View):
+
+    def post(self, request, *args, **kwargs):
+        user = self.request.user
+        contract = ProjectContract.objects.get(id=int(kwargs['contract_id']))
+        note = ContractNote(contract=contract,
+                            author=user,
+                            text=request.POST.get('text', ''))
+        if len(note.text):
+            note.save()
+        return HttpResponseRedirect(request.GET.get('next', None) or \
+            reverse('view_contract', args=(contract.id,)))
+
 
 @login_required
 @transaction.commit_on_success
@@ -529,6 +658,7 @@ def delete_invoice_entry(request, invoice_id, entry_id):
         'entry': entry,
     })
 
+import sys, traceback
 @permission_required('contracts.add_contractattachment')
 def contract_upload_attachment(request, contract_id):
     try:
@@ -546,7 +676,7 @@ def contract_upload_attachment(request, contract_id):
             contract=ProjectContract.objects.get(id=int(contract_id)),
             file_id=str(content['_id']),
             filename=content['filename'],
-            upload_time=datetime.datetime.now(),
+            upload_datetime=datetime.datetime.now(),
             uploader=request.user,
             description='n/a')
         attachment.save()
@@ -564,7 +694,7 @@ def contract_download_attachment(request, contract_id, attachment_id):
     try:
         contract_attachment = ContractAttachment.objects.get(
             contract_id=contract_id, id=attachment_id)
-        MONGO_DB_INSTANCE = project_settings.MONGO_CLIENT.firmbase_ticket_attachments
+        MONGO_DB_INSTANCE = project_settings.MONGO_CLIENT.contract_attachments
         GRID_FS_INSTANCE = gridfs.GridFS(MONGO_DB_INSTANCE)
         f = GRID_FS_INSTANCE.get(ObjectId(contract_attachment.file_id))
         return HttpResponse(f.read(), content_type=f.content_type)

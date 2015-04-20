@@ -1,0 +1,14 @@
+{% extends "timepiece/base.html" %}
+{% load url from future %}
+
+{% block crumbs %}
+    {{ block.super }}
+    <li>
+    	<span class="divider">/</span>
+    	<a href="{% url 'list_leads' %}">Leads</a>
+   	</li>
+    <li>
+        <span class="divider">/</span>
+        <a href="{% url 'list_template_differentiating_values' %}">Manage Template Differentiating Values</a>
+    </li>
+{% endblock crumbs %}

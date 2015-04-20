@@ -37,9 +37,7 @@
             <form class="form-horizontal" method="get" action="" id="project-timesheet-filters" accept-charset="utf-8">
                 {{ filter_form|as_bootstrap:"horizontal" }}
                 <input class="btn" type='submit' name='yearmonth' value="Update" id='yearmonth'/>
-                {% if perms.crm.export_project_time_sheet %}
-                    <button class="btn" type='submit' name='csv' value="csv" id='csv' disabled='disabled'>Download XLS</button><span class="label">in progress</span>
-                {% endif %}
+                <button type="submit" class="btn btn-success" name="export_project_timesheet" value="True">Download CSV</button>
             </form>
         </div>
     </div>

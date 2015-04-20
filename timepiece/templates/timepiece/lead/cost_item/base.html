@@ -1,0 +1,10 @@
+{% extends "timepiece/lead/base.html" %}
+{% load url from future %}
+
+{% block crumbs %}
+    {{ block.super }}
+    <li>
+        <span class="divider">/</span>
+        <a href="{% url 'view_lead_distinguishing_value' dv.lead.id %}">DV {{ dv }}</a>
+    </li>
+{% endblock crumbs %}

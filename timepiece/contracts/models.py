@@ -10,153 +10,17 @@ from django.db import models
 from django.db.models import Sum
 from django.template import Context
 from django.template.loader import get_template
+from django.conf import settings
 
 from timepiece import utils
 from timepiece.crm.models import Contact
 from timepiece.entries.models import Entry, Activity
+from timepiece import emails as timepiece_emails
 
 from decimal import Decimal
 from itertools import groupby
 
-# class Contract(models.Model):
-#     STATUS_UPCOMING = 'upcoming'
-#     STATUS_CURRENT = 'current'
-#     STATUS_COMPLETE = 'complete'
-#     CONTRACT_STATUS = {
-#         STATUS_UPCOMING: 'Upcoming',
-#         STATUS_CURRENT: 'Current',
-#         STATUS_COMPLETE: 'Complete',
-#     }
-
-#     PROJECT_UNSET = 0  # Have to set existing contracts to something...
-#     PROJECT_FIXED = 1
-#     PROJECT_PRE_PAID_HOURLY = 2
-#     PROJECT_POST_PAID_HOURLY = 3
-#     PROJECT_TYPE = {   # UNSET is not an option
-#         PROJECT_FIXED: 'Fixed',
-#         PROJECT_PRE_PAID_HOURLY: 'Pre-paid Hourly',
-#         PROJECT_POST_PAID_HOURLY: 'Post-paid Hourly',
-#     }
-
-#     name = models.CharField(max_length=255)
-#     projects = models.ManyToManyField('crm.Project', related_name='contracts')
-#     start_date = models.DateField()
-#     end_date = models.DateField()
-#     status = models.CharField(choices=CONTRACT_STATUS.items(),
-#             default=STATUS_UPCOMING, max_length=32)
-#     type = models.IntegerField(choices=PROJECT_TYPE.items())
-
-#     class Meta:
-#         ordering = ('-end_date',)
-#         verbose_name = 'contract'
-#         db_table = 'timepiece_projectcontract'  # Using legacy table name.
-#         permissions = (
-#             ('view_contract', 'Can view contracts'),
-#         )
-
-#     def __unicode__(self):
-#         return unicode(self.name)
-
-#     def get_admin_url(self):
-#         return reverse('admin:contracts_projectcontract_change', args=[self.pk])
-
-#     def get_absolute_url(self):
-#         return reverse('view_contract', args=[self.pk])
-
-#     @property
-#     def entries(self):
-#         """
-#         All Entries worked on projects in this contract during the contract
-#         period.
-#         """
-#         return Entry.objects.filter(project__in=self.projects.all(),
-#                 start_time__gte=self.start_date,
-#                 end_time__lt=self.end_date + relativedelta(days=1))
-
-#     def contracted_hours(self, approved_only=True):
-#         """Compute the hours contracted for this contract.
-#         (This replaces the old `num_hours` field.)
-
-#         :param boolean approved_only: If true, only include approved
-#             contract hours; if false, include pending ones too.
-#         :returns: The sum of the contracted hours, subject to the
-#             `approved_only` parameter.
-#         :rtype: Decimal
-#         """
-
-#         qset = self.contract_increment
-#         if approved_only:
-#             qset = qset.filter(status=ContractHour.APPROVED_STATUS)
-#         result = qset.aggregate(sum=Sum('hours'))['sum']
-#         return result or 0
-
-#     def pending_hours(self):
-#         """Compute the contract hours still in pending status"""
-#         qset = self.contract_increment.filter(status=ContractHour.PENDING_STATUS)
-#         result = qset.aggregate(sum=Sum('hours'))['sum']
-#         return result or 0
-
-#     @property
-#     def hours_assigned(self):
-#         """Total assigned hours for this contract."""
-#         if not hasattr(self, '_assigned'):
-#             # TODO put this in a .extra w/a subselect
-#             assignments = self.assignments.aggregate(s=Sum('num_hours'))
-#             self._assigned = assignments['s'] or 0
-#         return self._assigned or 0
-
-#     @property
-#     def hours_remaining(self):
-#         return self.contracted_hours() - self.hours_worked
-
-#     @property
-#     def hours_worked(self):
-#         """Number of billable hours worked on the contract."""
-#         if not hasattr(self, '_worked'):
-#             # TODO put this in a .extra w/a subselect
-#             entries = self.entries.filter(activity__billable=True)
-#             self._worked = entries.aggregate(s=Sum('hours'))['s'] or 0
-#         return self._worked or 0
-
-#     @property
-#     def nonbillable_hours_worked(self):
-#         """Number of non-billable hours worked on the contract."""
-#         if not hasattr(self, '_nb_worked'):
-#             # TODO put this in a .extra w/a subselect
-#             entries = self.entries.filter(activity__billable=False)
-#             self._nb_worked = entries.aggregate(s=Sum('hours'))['s'] or 0
-#         return self._nb_worked or 0
-
-#     @property
-#     def fraction_hours(self):
-#         """Fraction of contracted hours that have been worked.  E.g.
-#         if 50 hours have been worked of 100 contracted, value is 0.5.
-#         """
-#         if self.contracted_hours():
-#             return float(self.hours_worked) / float(self.contracted_hours())
-#         return 0.0
-
-#     @property
-#     def fraction_schedule(self):
-#         """If contract status is current, return the current date as a
-#         fraction of the scheduled period - e.g. if the contract period is
-#         June 1 to July 31, and today is July 1, then the value is
-#         about 0.5.
-
-#         If the contract status is not current, or either the start or end
-#         date is not set, returns 0.0
-#         """
-#         if self.status != ProjectContract.STATUS_CURRENT or \
-#             not self.start_date or \
-#             not self.end_date:
-#                 return 0.0
-#         contract_period = (self.end_date - self.start_date).days
-#         if contract_period <= 0.0:
-#             return 0.0
-#         days_elapsed = (datetime.date.today() - self.start_date).days
-#         if days_elapsed <= 0.0:
-#             return 0.0
-#         return float(days_elapsed) / contract_period
+from taggit.managers import TaggableManager
 
 class ProjectContract(models.Model):
     STATUS_UPCOMING = 'upcoming'
@@ -202,6 +66,16 @@ class ProjectContract(models.Model):
         BUDGET: 'Budget'
     }
 
+    CEC_CAPITAL = 'capital'
+    CEC_OPERATIONAL = 'operational'
+    CEC_UNKNOWN = 'unknown'
+    CLIENT_EXPENSE_CATEGORIES = {
+        CEC_CAPITAL: 'Capital',
+        CEC_OPERATIONAL: 'Operational',
+        CEC_UNKNOWN: 'Unknown'
+    }
+
+
     name = models.CharField(max_length=255)
     primary_contact = models.ForeignKey(Contact)
     projects = models.ManyToManyField('crm.Project', related_name='contracts')
@@ -216,9 +90,14 @@ class ProjectContract(models.Model):
         default=BUDGET,
         choices=CONTRACT_LIMIT_TYPE.items(),
         help_text='How is the ceiling value determined for the contract?')
+    client_expense_category = models.CharField(
+        choices=CLIENT_EXPENSE_CATEGORIES.items(),
+        default=CEC_UNKNOWN, max_length=16)
+
+    tags = TaggableManager()
 
     class Meta:
-        ordering = ('-end_date',)
+        ordering = ('name',)
         verbose_name = 'contract'
         db_table = 'timepiece_projectcontract'  # Using legacy table name.
         permissions = (
@@ -457,7 +336,7 @@ class ProjectContract(models.Model):
         days_elapsed = (datetime.date.today() - self.start_date).days
         if days_elapsed <= 0.0:
             return 0.0
-        return float(days_elapsed) / contract_period
+        return min(float(days_elapsed) / contract_period, 1.0)
 
     def get_rate(self, activity_id):
         try:
@@ -495,6 +374,29 @@ class ProjectContract(models.Model):
     def get_attachments(self):
         return ContractAttachment.objects.filter(contract=self).order_by('filename')
 
+    @property
+    def get_notes(self):
+        return ContractNote.objects.filter(contract=self).order_by('-created_at')
+
+class ContractNote(models.Model):
+    contract = models.ForeignKey(ProjectContract)
+    author = models.ForeignKey(User)
+    created_at = models.DateTimeField(auto_now_add=True)
+    edited = models.BooleanField(default=False)
+    last_edited = models.DateTimeField(auto_now=True)
+    parent = models.ForeignKey("self", null=True, blank=True)
+    text = models.TextField()
+
+    def get_thread(self, thread):
+        thread.append(self)
+        for n in ContractNote.objects.filter(parent=self).order_by('-created_at'):
+            thread.append(n.get_thread(), thread)
+
+    def save(self, *args, **kwargs):
+        super(ContractNote, self).save(*args, **kwargs)
+        url = '%s%s' % (settings.DOMAIN, reverse('view_contract', args=(self.contract.id,)))
+        # send email to AAC Management
+        timepiece_emails.contract_new_note(self, url)
 
 class ContractIncrement(models.Model):
     PENDING_STATUS = 1

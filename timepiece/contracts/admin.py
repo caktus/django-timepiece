@@ -1,7 +1,8 @@
 from django.contrib import admin
 
 from timepiece.contracts.models import ProjectContract, ContractHour,\
-        ContractAssignment, ContractRate, HourGroup, ContractBudget
+        ContractAssignment, ContractRate, HourGroup, ContractBudget, \
+        ContractNote
 
 
 class ContractAssignmentInline(admin.TabularInline):
@@ -47,4 +48,4 @@ admin.site.register(HourGroup, HourGroupAdmin)
 admin.site.register(ContractHour)
 admin.site.register(ContractRate)
 admin.site.register(ContractBudget)
-
+admin.site.register(ContractNote)

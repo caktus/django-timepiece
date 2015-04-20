@@ -36,13 +36,13 @@
                 <tr><th>Short name:</th><td>{{ object.short_name }}</td></tr>
                 <tr><th>Primary Contact:</th>
                     <td>
-                        {% if object.poc %}
+                        {% if object.primary_contact %}
                             {% if perms.crm.view_user %}
-                            <a href='{% url "view_user" object.poc.id %}'>
-                                {{ object.poc }}
+                            <a href='{% url "view_contact" object.primary_contact.id %}'target='_blank'>
+                                {{ object.primary_contact }}
                             </a>
                             {% else %}
-                                {{ object.poc }}
+                                {{ object.primary_contact }}
                             {% endif %}
                         {% else %}
                             Not Available
@@ -64,7 +64,7 @@
                 <tr><th>Website</th>
                     <td>
                         {% if object.website %}
-                        <a href='{{ object.website }}'>{{ object.website }}</a>
+                        <a href='{{ object.website }}' target='_blank'>{{ object.website }}</a>
                         {% endif %}
                     </td>
                 </tr>
@@ -134,6 +134,30 @@
                 <tr><th>Ownership</th><td>{{ object.ownership }}</td></tr>
             </table>
 
+            {% url 'view_business' object.id as next_url %}
+            <h3>Tags</h3>
+            <div id="tags">
+            {% if object.tags.all|length %}
+            {% for tag in object.tags.all %}
+            <span class="label label-info">
+                <a href="{% url 'similar_items' tag.id %}"> <i class="icon-magnet icon-white icon-small"> </i></a>
+                {{ tag }}
+                {% if perms.crm.change_business %}
+                <a class="remove_tag"> <i class="icon-remove icon-white icon-small"> </i></a>
+                {% endif %}
+            </span>
+            {% endfor %}
+            {% else %}
+            <br/><em>There are no tags for this business yet.</em>
+            {% endif %}
+            </div>
+            <form id="add_tag_form">
+                <div style="margin-top: 12px;">
+                    <input id="new_tag" type="text" />
+                    <input id="add_tag_button" class="btn btn-primary" type="submit" value="Add" />
+                </div>
+            </form>
+
             <h3>Notes</h3>
             {% url 'view_business' object.id as next_url %}
             <form class="form-inline" action="{% url 'add_business_note' object.id %}?next={{ next_url }}" method="post" accept-charset="utf-8">
@@ -169,8 +193,14 @@
 {% endblock content %}
 
 {% block extrajs %}
+<script src="{{ STATIC_URL }}project-toolbox/js/tags.js" ></script>
 <script src="{{ STATIC_URL }}ajaxuploader/js/fileuploader.js" ></script>
 <script>
+    $(document).ready( function () {
+        create_remove_tag_handler("{% url 'remove_business_tag' object.id %}");
+        create_add_tag_handler("{% url 'business_tags' object.id %}");
+    });
+
     ATTACHMENTS = {};
     $(function(){
     var uploader = new qq.FileUploader({

@@ -4,11 +4,13 @@ from itertools import groupby
 import json
 import datetime
 from decimal import Decimal
+import workdays
 import pprint
 pp = pprint.PrettyPrinter(indent=4)
 
 from django.contrib.auth.decorators import permission_required
 from django.contrib.auth.models import User
+from django.contrib import messages
 from django.core.urlresolvers import reverse
 from django.db.models import Sum, Q, Min, Max
 from django.http import HttpResponse, HttpResponseRedirect
@@ -23,7 +25,7 @@ from timepiece.utils.csv import CSVViewMixin, DecimalEncoder
 
 from timepiece.contracts.models import ProjectContract
 from timepiece.entries.models import Entry, ProjectHours, Activity
-from timepiece.crm.models import Project, PaidTimeOffRequest
+from timepiece.crm.models import Project, PaidTimeOffRequest, Attribute
 from timepiece.reports.forms import BillableHoursReportForm, HourlyReportForm,\
         ProductivityReportForm, PayrollSummaryReportForm
 from timepiece.reports.utils import get_project_totals, get_payroll_totals,\
@@ -127,6 +129,11 @@ class ReportMixin(object):
 
         # If all types are selected, no further filtering is required.
         if all((incl_billable, incl_nonbillable, incl_leave, incl_unpaid)):
+            return basicQ
+
+        # If only writedowns are included
+        if incl_writedown and not any((incl_billable, incl_nonbillable, incl_leave, incl_unpaid)):
+            basicQ &= Q(writedown=True)
             return basicQ
         
         # If all but unpaid types are selected, little filtering is required.
@@ -603,10 +610,11 @@ def report_payroll_summary(request):
     # Weekly totals
     if utils.get_setting('TIMEPIECE_WEEK_START', default=0) == 0:
         week_entries = Entry.objects.date_trunc('week').filter(
-            writedownQ, weekQ, statusQ, workQ, unpaidQ
+            writedownQ, weekQ, statusQ, workQ, unpaidQ # removed the workQ because we do want Paid Lead to show up
         ).order_by('user')
     else:
         week_entries = []
+        # removed the workQ because we do want Paid Lead to show up
         for we in Entry.objects.filter(writedownQ, weekQ, statusQ, workQ, unpaidQ).order_by('user'):
             week_entries.append(
                 {'billable': we.billable,
@@ -626,10 +634,11 @@ def report_payroll_summary(request):
     # not filter on writedown here since there should never be a writedown
     # against a PAID LEAVE project.
     leave = Entry.objects.filter(monthQ, ~workQ
-                                  ).values('user', 'hours', 'project__name')
+                                  ).values('user', 'user__first_name',
+                                  'user__last_name', 'hours', 'project__name')
     extra_values = ('project__type__label',)
     month_entries = Entry.objects.date_trunc('month', extra_values)
-    month_entries_valid = month_entries.filter(monthQ, statusQ, workQ, unpaidQ)
+    month_entries_valid = month_entries.filter(monthQ, statusQ, workQ, unpaidQ, writedownQ)
     labels, monthly_totals = get_payroll_totals(month_entries_valid, leave)
     # Unapproved and unverified hours
     entries = Entry.objects.filter(writedownQ, monthQ).order_by()  # No ordering
@@ -655,17 +664,71 @@ def report_payroll_summary(request):
 @permission_required('entries.view_entry_summary')
 def report_productivity(request):
     report = []
+    report_table = []
     organize_by = None
 
-    form = ProductivityReportForm(request.GET or None)
+    defaults = {'writedown': False,
+                # 'unpaid_time_off': False,
+                'billable': True,
+                'project_statuses': [a.id for a in Attribute.objects.filter(
+                    type='project-status')],
+                'non_billable': False, 
+                # 'paid_time_off': False,
+                'organize_by': 'project'}
+    form = ProductivityReportForm(request.GET or defaults)
     if form.is_valid():
+        # only a business or a project can be set, not both.
+        # if both are set, business takes precedence.
+        business = form.cleaned_data['business']
         project = form.cleaned_data['project']
+        project_statuses = form.cleaned_data['project_statuses']
+        writedown = form.cleaned_data['writedown']
+        billable = form.cleaned_data['billable']
+        non_billable =form.cleaned_data['non_billable']
+        # unpaid_time_off = form.cleaned_data['unpaid_time_off']
+        # paid_time_off = form.cleaned_data['paid_time_off']
+
         organize_by = form.cleaned_data['organize_by']
         export = request.GET.get('export', False)
 
-        actualsQ = Q(project=project, end_time__isnull=False)
+        if business and project:
+            messages.warning(request, 'Select a Business, a Project, or neither.  Do not select both.  For this report the Business was utilized and the Project was ignored.')
+
+        actualsQ = Q(end_time__isnull=False)
+        if business:
+            actualsQ &= Q(project__business=business)
+            actualsQ &= Q(project__status__in=project_statuses)
+        
+        elif project:
+            actualsQ &= Q(project=project)
+
+        # filter further based on whether just billable
+        # or non-billable is selected
+        billableQ = Q()
+        if billable and not non_billable:
+            billableQ &= (Q(project__type__billable=True) &
+                          Q(activity__billable=True))
+
+        elif non_billable and not billable:
+            billableQ &= (Q(project__type__billable=False) | 
+                          Q(activity__billable=False))
+        
+        actualsQ &= billableQ
+
+        # exclude writedowns if it is not selected
+        if not writedown:
+            actualsQ &= ~Q(writedown=True)
+
         actuals = Entry.objects.filter(actualsQ)
-        projections = ProjectHours.objects.filter(project=project)
+        if business:
+            projections = ActivityGoal.objects.filter(billableQ,
+                project__business=business)
+        elif project:
+            projections = ActivityGoal.objects.filter(billableQ,
+                project=project)
+        else:
+            projections = ActivityGoal.objects.filter(billableQ)
+
         entry_count = actuals.count() + projections.count()
 
         if organize_by == 'week' and entry_count > 0:
@@ -687,38 +750,127 @@ def report_productivity(request):
                 next_week = current + relativedelta(days=7)
                 actual_hours = actuals.filter(start_time__gte=current,
                         start_time__lt=next_week).aggregate(
-                        Sum('hours')).values()[0]
+                        Sum('hours')).values()[0] or 0
                 projected_hours = projections.filter(week_start__gte=current,
                         week_start__lt=next_week).aggregate(
-                        Sum('hours')).values()[0]
+                        Sum('hours')).values()[0] or 0
                 report.append([date_format_filter(current, 'M j, Y'),
-                        actual_hours or 0, projected_hours or 0])
+                        actual_hours, projected_hours, projected_hours - actual_hours])
                 current = next_week
+
+        elif organize_by == 'activity' and entry_count > 0:
+
+            if business:
+                activity_goals = ActivityGoal.objects.filter(billableQ,
+                    project__business=business, 
+                    project__status__in=project_statuses
+                    ).order_by('activity')
+            elif project:
+                activity_goals = ActivityGoal.objects.filter(
+                    project=project).order_by('activity')
+            else:
+                activity_goals = ActivityGoal.objects.filter(
+                    billableQ).order_by('activity')
+
+            for activity, activity_goals in groupby(
+                activity_goals, lambda x: x.activity):
+
+                actual_hours = Decimal('0.0')
+                projected_hours = Decimal('0.0')
+                for activity_goal in activity_goals:
+                    projected_hours += activity_goal.goal_hours
+                    actual_hours += Entry.objects.filter(
+                        billableQ,
+                        user=activity_goal.employee,
+                        project=activity_goal.project,
+                        activity=activity_goal.activity,
+                        ).aggregate(hours=Sum('hours')
+                        )['hours'] or Decimal('0.0')
+
+                report.append([activity.name, actual_hours, 
+                    projected_hours, projected_hours - actual_hours])
+                report_table.append(
+                    {'label':activity.name,
+                     'url': reverse('report_activity_backlog',
+                        args=(activity.id,)),
+                     'worked': actual_hours,
+                     'assigned': projected_hours,
+                     'remaining': projected_hours - actual_hours})
+
+        elif organize_by == 'project' and entry_count > 0:
+
+            if business:
+                activity_goals = ActivityGoal.objects.filter(billableQ,
+                    project__business=business, 
+                    project__status__in=project_statuses,
+                    ).order_by('project__code')
+            
+            elif project:
+                # this is not an option
+                activity_goals = ActivityGoal.objects.filter(
+                    project=project).order_by('project__code')
+
+            else:
+                activity_goals = ActivityGoal.objects.filter(billableQ)
+
+            for proj, activity_goals in groupby(
+                activity_goals, lambda x: x.project.code):
+                actual_hours = Decimal('0.0')
+                projected_hours = Decimal('0.0')
+                for activity_goal in activity_goals:
+                    projected_hours += activity_goal.goal_hours
+                    actual_hours += Entry.objects.filter(
+                        billableQ,
+                        user=activity_goal.employee,
+                        project=activity_goal.project,
+                        activity=activity_goal.activity,
+                        ).aggregate(hours=Sum('hours')
+                        )['hours'] or Decimal('0.0')
+
+                label = '%s: %s' % (activity_goal.project.code,
+                    activity_goal.project.name)
+                report.append([label, actual_hours, 
+                    projected_hours, projected_hours - actual_hours])
+                report_table.append(
+                    {'label':label,
+                     'url': reverse('view_project',
+                        args=(activity_goal.project.id,)),
+                     'worked': actual_hours,
+                     'assigned': projected_hours,
+                     'remaining': projected_hours - actual_hours})
 
         elif organize_by == 'user' and entry_count > 0:
             # Determine all users who worked on or were assigned to the
             # project.
-            vals = ('user', 'user__first_name', 'user__last_name')
-            ausers = list(actuals.values_list(*vals).distinct())
-            pusers = list(projections.values_list(*vals).distinct())
-            key = lambda x: (x[1] + x[2]).lower()  # Sort by name
+            avals = ('user', 'user__first_name', 'user__last_name')
+            pvals = ('employee', 'employee__first_name', 'employee__last_name')
+            ausers = list(actuals.values_list(*avals).distinct())
+            pusers = list(projections.values_list(*pvals).distinct())
+            key = lambda x: (x[2] + ',' + x[1]).lower()  # Sort by name
             users = sorted(list(set(ausers + pusers)), key=key)
 
             # Report for each user.
             for user in users:
-                name = '{0} {1}'.format(user[1], user[2])
+                name = '{0}, {1}'.format(user[2], user[1])
                 actual_hours = actuals.filter(user=user[0]) \
-                        .aggregate(Sum('hours')).values()[0]
-                projected_hours = projections.filter(user=user[0]) \
-                        .aggregate(Sum('hours')).values()[0]
-                report.append([name, actual_hours or 0, projected_hours or 0])
+                        .aggregate(Sum('hours')).values()[0] or 0
+                projected_hours = projections.filter(employee=user[0]) \
+                        .aggregate(Sum('goal_hours')).values()[0] or 0
+                report.append([name, actual_hours, projected_hours,
+                    projected_hours - actual_hours])
+                report_table.append(
+                    {'label':name,
+                     'url': reverse('report_employee_backlog', args=(user[0],)),
+                     'worked': actual_hours,
+                     'assigned': projected_hours,
+                     'remaining': projected_hours - actual_hours})
 
-        col_headers = [organize_by.title(), 'Worked Hours', 'Assigned Hours']
+        col_headers = [organize_by.title(), 'Worked Hours', 'Assigned Hours', 'Remaining Hours']
         report.insert(0, col_headers)
 
         if export:
             response = HttpResponse(content_type='text/csv')
-            filename = '{0}_productivity'.format(project.name)
+            filename = '{0}_productivity'.format(project.name if project else business.short_name) 
             content_disp = 'attachment; filename={0}.csv'.format(filename)
             response['Content-Disposition'] = content_disp
             writer = csv.writer(response)
@@ -728,10 +880,12 @@ def report_productivity(request):
 
     return render(request, 'timepiece/reports/productivity.html', {
         'form': form,
+        'report_table': report_table,
         'report': json.dumps(report, cls=DecimalEncoder),
         'type': organize_by or '',
         'total_worked': sum([r[1] for r in report[1:]]),
         'total_assigned': sum([r[2] for r in report[1:]]),
+        'total_remaining': sum([r[3] for r in report[1:]]),
     })
 
 @permission_required('contracts.view_estimation_accuracy')
@@ -1106,6 +1260,9 @@ def report_employee_backlog(request, user_id):
                     activity=activity, user=employee
                     ).aggregate(hours=Sum('hours'), 
                     start_date=Min('start_time'), end_date=Max('end_time'))
+                if entries_summary['end_date'] is None:
+                    print 'got here', entries_summary
+                    entries_summary['end_date'] = datetime.datetime.now()
                 activity_hours = Decimal('0.0')
                 backlog[counter]['activity_goals'].append(
                     {'activity': activity,
@@ -1118,96 +1275,147 @@ def report_employee_backlog(request, user_id):
                      'get_percent_complete': 100})
 
         context = {'backlog': backlog,
-                   'employee': employee}
+                   'employee': employee,
+                   'chart_data': json.dumps(get_employee_backlog_chart_data(user_id))}
         return render(request, 'timepiece/reports/backlog_employee.html', context)
     else:
         return HttpResponseRedirect( reverse('report_employee_backlog', args=(request.user.id,)) )
 
-@permission_required('crm.view_employee_backlog')
-def employee_backlog_chart_data(request, user_id):
+def get_employee_backlog_chart_data(user_id):
     """
     Creates the data objects required by the c3 frond-end visualization
     """
+
+    def new_empty_date():
+        return {'Holiday': 0.0,
+                'Approved Paid Time Off': 0.0,
+                'Approved Unpaid Time Off': 0.0}
+
     employee = User.objects.get(id=int(user_id))
     avg_hours_per_day = employee.profile.hours_per_week / Decimal('5.0')
+    coverage = {}
 
+    start_week = utils.get_week_start(datetime.date.today()).date()
+    start_week = datetime.date.today()
+    activity_goals = ActivityGoal.objects.filter(
+        employee=employee, end_date__gte=start_week, 
+        project__status=utils.get_setting(
+            'TIMEPIECE_DEFAULT_PROJECT_STATUS'))
+
+    if activity_goals.count() == 0:
+         return {}
+
+    # determine the end date and add one more week to show clearly that
+    # the employee has no coverage then
+    end_date = max(
+        utils.get_bimonthly_dates(datetime.date.today())[1].date(),
+        activity_goals.aggregate(end_date=Max('end_date'))['end_date'])
+    end_week = utils.get_week_start(end_date).date() \
+              + datetime.timedelta(days=7)
+
+    # get total number of weeks shown on plot; this equals the
+    # length of the arrays
+    num_weeks = (end_week - start_week).days / 7 + 1
+
+    # determine holidays and add time (whether paid or not)
+    holidays = [h['date'] for h in Holiday.holidays_between_dates(
+        start_week, end_week, {'paid_holiday': True})]
+    for holiday in holidays:
+        if str(holiday) not in coverage:
+            coverage[str(holiday)] = new_empty_date()
+        coverage[str(holiday)]['Holiday'] = float(avg_hours_per_day)
+
+    # add Time Off requests as holidays
+    # TODO: should make this smarter so that if it is a partial day it
+    #       does not count as a full day
+    for ptor in employee.profile.paidtimeoffrequest_set.filter(
+        Q(pto_start_date__gte=start_week)|Q(pto_end_date__gte=end_week),
+        Q(status='approved')|Q(status='processed')):
+        
+        num_workdays = max(workdays.networkdays(ptor.pto_start_date, 
+            ptor.pto_end_date, holidays), 1)
+        ptor_hours_per_day = ptor.amount / Decimal(num_workdays)
+
+        for i in range((ptor.pto_end_date-ptor.pto_start_date).days + 1):
+            date = ptor.pto_start_date + datetime.timedelta(days=i)
+            if date.weekday() < 5:
+                holidays.append(date)
+                if str(date) not in coverage:
+                    coverage[str(date)] = \
+                        new_empty_date()
+                coverage[str(date)]['Approved Time Off'] = \
+                    float(ptor_hours_per_day)
+
+    y_axes = {'Holiday': ['data1'],
+              'Approved Time Off': ['data2']}
+    data_counter = 3
+    for activity_goal in activity_goals:
+        if activity_goal.project.code not in y_axes.keys():
+            y_axes[activity_goal.project.code] = ['data%s'%data_counter]
+            data_counter += 1
+
+        start_date = start_week if activity_goal.date < start_week \
+            else activity_goal.date
+        
+        end_date = activity_goal.end_date
+        num_workdays = max(workdays.networkdays(start_date, end_date, 
+            holidays), 1)
+        ag_hours_per_workday = activity_goal.get_remaining_hours / Decimal(num_workdays)
+
+        for i in range((end_date-start_date).days + 1):
+            date = start_date + datetime.timedelta(days=i)
+            if workdays.networkdays(date, date, holidays):
+                if str(date) not in coverage:
+                    coverage[str(date)] = new_empty_date()
+                if activity_goal.project.code not in coverage[str(date)]:
+                    coverage[str(date)][activity_goal.project.code] = 0.0
+                coverage[str(date)][activity_goal.project.code] += \
+                    float(ag_hours_per_workday)
+
+    # x_axis = ['x']
+
+    # for i in range((end_week - start_week).days + 1):
+    #     date = start_week + datetime.timedelta(days=i)
+    #     x_axis.append(str(date))
+        
+    #     for project in y_axes.keys():
+    #         pass
+
+    # sorted_coverage = []
+    # for k in sorted(coverage.keys()):
+    #     sorted_coverage = coverage[k]
+    columns = {'x': []}
+    for date in sorted(coverage.keys()):
+        columns['x'].append(date)
+        for proj, hours in coverage[date].items():
+            if proj not in columns:
+                columns[proj] = [0.0] * (len(columns['x']) - 1)
+            columns[proj].append(hours)
+        
+        expected_len = len(columns['x'])
+        for check_key, vals in columns.items():
+            while len(vals) != expected_len:
+                columns[check_key].append(0.0)
+
+    c3_columns = []
+    for proj, vals in columns.items():
+        if proj != 'x':
+            c3_columns.append([proj] + vals)
+        else:
+            c3_columns.insert(0, [proj] + vals)
+    c3_columns.append(['Avg Hours'] + [float(avg_hours_per_day)]*len(columns['x']))
+    keys = columns.keys()
+    keys.remove('x')
+    data = {'columns': c3_columns,
+            'keys': keys,
+            'avg_hours': float(avg_hours_per_day)}
+    return data
+
+@permission_required('crm.view_employee_backlog')
+def employee_backlog_chart_data(request, user_id):
     if request.user.has_perm('crm.view_backlog') or request.user==employee:
-
-        start_week = utils.get_week_start(datetime.date.today()).date()
-        activity_goals = ActivityGoal.objects.filter(
-            employee=employee, end_date__gte=start_week, 
-            project__status=utils.get_setting(
-                'TIMEPIECE_DEFAULT_PROJECT_STATUS'))
-
-        if activity_goals.count() == 0:
-             return HttpResponse(json.dumps({}), 
-                status=200, mimetype='application/json')
-
-        # determine the end date and add one more week to show clearly that
-        # the employee has no coverage then
-        end_date = max(
-            utils.get_bimonthly_dates(datetime.date.today())[1].date(),
-            activity_goals.aggregate(end_date=Max('end_date'))['end_date'])
-        end_week = utils.get_week_start(end_date).date() \
-                  + datetime.timedelta(days=7)
-
-        # get total number of weeks shown on plot; this equals the
-        # length of the arrays
-        num_weeks = (end_week - start_week).days / 7 + 1
-
-        # determine holidays and add time (whether paid or not)
-        holidays = [h['date'] for h in Holiday.holidays_between_dates(
-            start_week, end_week, {'paid_holiday': True})]
-        for holiday in holidays:
-            coverage[str(date)]['Holiday'] = avg_hours_per_day
-
-        # add Time Off requests as holidays
-        # TODO: should make this smarter so that if it is a partial day it
-        #       does not count as a full day
-        for ptor in employee.profile.paidtimeoffrequest_set.filter(
-            Q(pto_start_date__gte=start_week)|Q(pto_end_date__gte=end_week),
-            Q(status='approved')|Q(status='processed')):
-            
-            num_workdays = workdays.networkdays(ptor.pto_start_date, 
-                ptor.pto_end_date, holidays)
-            ptor_hours_per_day = ptor.amount / Decimal(num_workdays)
-
-            for i in range((ptor.pto_end_date-ptor.pto_start_date).days + 1):
-                date = ptor.pto_start_date + datetime.timedelta(days=i)
-                if date.weekday() < 5:
-                    holidays.append(date)
-                    coverage[str(date)]['Approved Time Off'] = \
-                    ptor_hours_per_day
-
-        y_axes = {'Holiday': ['data1'],
-                  'Approved Time Off': ['data2']}
-        data_counter = 3
-        for activity_goal in activity_goals:
-            if activity_goal.project.code not in y_axes.keys():
-                y_axes[activity_goal.project.code] = ['data%s'%data_counter]
-                data_counter += 1
-
-            start_date = start_week if activity_goal.date < start_week \
-                else activity_goal.date
-            
-            end_date = activity_goal.end_date
-            num_workdays = workdays.networkdays(start_date, end_date, holidays)
-            ag_hours_per_workday = activity_goal.goal_hours / Decimal(num_workdays)
-
-            for i in range((end_date-start_date).days + 1):
-                date = start_date + datetime.timedelta(days=i)
-                if workdays.networkdays(date, date, holidays):
-                    coverage[str(date)][activity_goal.project.code] = \
-                    ag_hours_per_workday
-
-        x_axis = ['x']
-
-        for i in range((end_week - start_week).days + 1):
-            date = start_week + datetime.timedelta(days=i)
-            x_axis.append(str(date))
-            
-            for project in y_axes.keys():
-                pass
+        return HttpResponse(json.dumps(get_employee_backlog_chart_data(user_id)),
+            status=200, mimetype='application/json')
 
 @permission_required('crm.view_backlog')
 def active_projects_burnup_charts(request, minder_id=-1):

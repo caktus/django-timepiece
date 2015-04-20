@@ -6,7 +6,7 @@ from selectable import forms as selectable
 from timepiece.fields import UserModelMultipleChoiceField
 from timepiece.forms import DateForm, YearMonthForm
 
-from timepiece.crm.lookups import ProjectLookup, BusinessLookup
+from timepiece.crm.lookups import ProjectLookup, ProjectCodeLookup, BusinessLookup
 from timepiece.crm.models import Attribute
 from timepiece.entries.models import Entry, Activity
 
@@ -58,12 +58,31 @@ class BillableHoursReportForm(DateForm):
 
 class ProductivityReportForm(forms.Form):
     ORGANIZE_BY_CHOICES = (
-        ('week', 'Week'),
+        ('project', 'Project'),
+        ('activity', 'Activity'),
         ('user', 'User'),
+        # ('week', 'Week'),
     )
-    project = selectable.AutoCompleteSelectField(ProjectLookup)
+    
+    business = selectable.AutoCompleteSelectField(BusinessLookup,
+        label='Client', required=False)
+    project_statuses = forms.ModelMultipleChoiceField(required=False,
+        label='Project Status',
+        help_text='If you do not provide a Project, select one or more Project Statuses.',
+        queryset=Attribute.objects.filter(type='project-status'),
+        widget=forms.CheckboxSelectMultiple)
+
+    project = selectable.AutoCompleteSelectField(ProjectCodeLookup,
+        label='Project', required=False)
+
+    billable = forms.BooleanField(required=False)
+    non_billable = forms.BooleanField(label='Non-billable', required=False)
+    writedown = forms.BooleanField(label='Include Writedowns', required=False)
+    # paid_time_off = forms.BooleanField(required=False)
+    # unpaid_time_off = forms.BooleanField(required=False)
+
     organize_by = forms.ChoiceField(choices=ORGANIZE_BY_CHOICES,
-            widget=forms.RadioSelect(), initial=ORGANIZE_BY_CHOICES[0][0])
+        widget=forms.RadioSelect(), initial=ORGANIZE_BY_CHOICES[0][0])
 
 
 class HourlyReportForm(DateForm):
@@ -76,7 +95,7 @@ class HourlyReportForm(DateForm):
 
     billable = forms.BooleanField(required=False)
     non_billable = forms.BooleanField(label='Non-billable', required=False)
-    writedown = forms.BooleanField(label='Include Writdowns', required=False)
+    writedown = forms.BooleanField(label='Include Writedowns', required=False)
     paid_time_off = forms.BooleanField(required=False)
     unpaid_time_off = forms.BooleanField(required=False)
     trunc = forms.ChoiceField(label='Group Totals By', choices=TRUNC_CHOICES,

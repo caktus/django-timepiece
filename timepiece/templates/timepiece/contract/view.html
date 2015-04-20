@@ -1,9 +1,13 @@
 {% extends 'timepiece/contract/base.html' %}
-{% load timepiece_tags humanize %}
+{% load timepiece_tags humanize bootstrap_toolkit %}
 {% load url from future %}
 
 {% block title %}{{ contract }}{% endblock title %}
 {% block bodyid %}contracts{% endblock bodyid %}
+
+{% block extracss %}
+<link href="{{ STATIC_URL }}ajaxuploader/css/fileuploader.css" media="screen" rel="stylesheet" type="text/css" />
+{% endblock extracss %}
 
 {% block crumbs %}
     {{ block.super }}
@@ -14,17 +18,19 @@
     <div class="row-fluid">
         <div class="span12">
             <h2>{{ contract }}</h2>
+        </div>
+    </div>
+
+    <div class="row-fluid">
+      <div class="span8">
+      <div class="row-fluid">
+        <div class="span6">
+            <h3>Contract Info</h3>
             <ul class="nav nav-pills">
                 {% if perms.contracts.change_projectcontract %}  {# FIXME: permission doesn't exist #}
                     <li><a href="{% url 'edit_contract' contract.id %}">Edit</a></li>
                 {% endif %}
             </ul>
-        </div>
-    </div>
-
-    <div class="row-fluid">
-        <div class="span4">
-            <h3>Contract Info</h3>
             <table class="table table-bordered">
                 <tr><th>Status</th><td>{{ contract.get_status_display }}</td></tr>
                 <tr><th>Start Date</th><td>{{ contract.start_date|date:'M j, Y' }}</td></tr>
@@ -60,8 +66,14 @@
                 <tr><th>{{ contract.get_ceiling_type_display }} Remaining</th><td>{{ contract.display_value_remaining|intcomma }}</td></tr>
                 <tr><th>Type</th><td>{{  contract.get_type_display }}</td></tr>
                 <tr><th>Payment Terms</th><td> {{contract.get_payment_terms_display }}</td></tr>
+                <tr>
+                    <th>Client Expense Category</th>
+                    <td>{{ contract.get_client_expense_category_display }}</td>
+                </tr>
             </table>
+        </div>
 
+        <div class="span6">
             <h3>Contract Rates</h3>
             <ul class="nav nav-pills">
                 {% if perms.contracts.add_contractrate %}
@@ -111,7 +123,105 @@
                 {% endfor %}
             </table>
         </div>
-        <div class="span7 offset1">
+      </div>
+      <div class="row-fluid">
+        <div class="span12">
+            <h3>Contract {{ contract.get_ceiling_type_display }}</h3>
+            <ul class="nav nav-pills">
+                {% if perms.contracts.add_contractincrement %}
+                    <li><a href="{% url 'add_contract_increment' contract.id %}">Add {{ contract.get_ceiling_type_display }}</a></li>
+                {% endif %}
+            </ul>
+            <table class='table table-bordered'>
+                <tr>
+                    <th></th>
+                    <th>Date Requested</th>
+                    <th>{{ contract.get_ceiling_type_display }}</th>
+                    <th>Status</th>
+                    <th>Date Approved</th>
+                    <th>Notes</th>
+                </tr>
+                {% for increment in contract.increments %}
+                    <tr>
+                        <td style="white-space: nowrap;">
+                            {% if perms.contracts.change_contractincrement %}
+                            <a href="{{ increment.edit_url }}" title="Edit Contract {{ contract.get_ceiling_type_display }}."><i class="icon-pencil"> </i></a>
+                            {% endif %}
+                            {% if perms.contracts.delete_contractincrement %}
+                            <a href="{{ increment.delete_url }}" title="Delete Contract {{ contract.get_ceiling_type_display }}."><i class="icon-trash"> </i></a>
+                            {% endif %}
+                        </td>
+                        <td>{{ increment.date_requested }}</td>
+                        <td class="hours">{{ increment.value|intcomma }}</td>
+                        <td>{{ increment.get_status_display }}</td>
+                        <td>{% if increment.date_approved %}{{ increment.date_approved }}{% endif %}</td>
+                        <td>{{ increment.notes }}</td>
+                    </tr>
+                {% endfor %}
+            </table>
+        </div>
+      </div>
+      </div>
+        <div class="span4">
+            {% url 'view_contract' object.id as next_url %}
+            <h3>Tags</h3>
+            <div id="tags">
+            {% if object.tags.all|length %}
+            {% for tag in object.tags.all %}
+            <span class="label label-info">
+                <a href="{% url 'similar_items' tag.id %}"> <i class="icon-magnet icon-white icon-small"> </i></a>
+                {{ tag }}
+                {% if perms.crm.change_project %}
+                <a class="remove_tag"> <i class="icon-remove icon-white icon-small"> </i></a>
+                {% endif %}
+            </span>
+            {% endfor %}
+            {% else %}
+            <br/><em>There are no tags for this project yet.</em>
+            {% endif %}
+            </div>
+            <form id="add_tag_form">
+                <div style="margin-top: 12px;">
+                    <input id="new_tag" type="text" />
+                    <input id="add_tag_button" class="btn btn-primary" type="submit" value="Add" />
+                </div>
+            </form>
+
+            <h3>Attachments</h3>
+            <div id="file-uploader" name="File" class="controls">
+              <noscript>          
+                <p>Please enable JavaScript to use file uploader.</p>
+              </noscript>
+            </div>
+            <small>Drag and drop a file above to attach it.</small>
+            {% if object.get_attachments|length %}
+            {% for attachment in object.get_attachments %}
+            <blockquote>
+            <p><a href="{% url 'download_contract_attachment' object.id attachment.id %}" target="_blank">{{ attachment.filename }}</a></p>
+            <small>{{ attachment.uploader }} @ {{ attachment.upload_datetime }}</small>
+            </blockquote>
+            {% endfor %}
+            {% else %}
+            <br/><em>There are no attachments for this ticket yet.</em>
+            {% endif %}
+
+            {% url 'view_contract' object.pk as next_url %}
+            <h3>Notes</h3>
+            <form class="form-inline" action="{% url 'add_contract_note' object.id %}?next={{ next_url }}" method="post" accept-charset="utf-8">
+                {% csrf_token %}
+                {{ add_contract_note_form|as_bootstrap }}
+                <input class="btn btn-primary" type="submit" value="Add" />
+            </form>
+            <ul>
+                {% for note in object.get_notes %}
+                <li><strong>{{ note.author }} @ {{ note.last_edited }}</strong><br/>{{ note.text|linebreaks }}</li>
+                {% endfor %}
+            </ul>
+        </div>
+    </div>
+
+    <div class="row-fluid">
+        <div class="span12">
             <h3>Projects</h3>
             {% if contract.projects.exists %}
                 <table class="table table-bordered">
@@ -145,44 +255,44 @@
                 <p>This contract is not associated with any projects.</p>
             {% endif %}
         </div>
-        </div>
-    </div>
-
-    <div class="row-fluid">
-        <div class="span12">
-            <h3>Contract {{ contract.get_ceiling_type_display }}</h3>
-            <ul class="nav nav-pills">
-                {% if perms.contracts.add_contractincrement %}
-                    <li><a href="{% url 'add_contract_increment' contract.id %}">Add {{ contract.get_ceiling_type_display }}</a></li>
-                {% endif %}
-            </ul>
-            <table class='table table-bordered'>
-                <tr>
-                    <th></th>
-                    <th>Date Requested</th>
-                    <th>{{ contract.get_ceiling_type_display }}</th>
-                    <th>Status</th>
-                    <th>Date Approved</th>
-                    <th>Notes</th>
-                </tr>
-                {% for increment in contract.increments %}
-                    <tr>
-                        <td>
-                            {% if perms.contracts.change_contractincrement %}
-                            <a href="{{ increment.edit_url }}" title="Edit Contract {{ contract.get_ceiling_type_display }}."><i class="icon-pencil"> </i></a>
-                            {% endif %}
-                            {% if perms.contracts.delete_contractincrement %}
-                            <a href="{{ increment.delete_url }}" title="Delete Contract {{ contract.get_ceiling_type_display }}."><i class="icon-trash"> </i></a>
-                            {% endif %}
-                        </td>
-                        <td>{{ increment.date_requested }}</td>
-                        <td class="hours">{{ increment.value|intcomma }}</td>
-                        <td>{{ increment.get_status_display }}</td>
-                        <td>{% if increment.date_approved %}{{ increment.date_approved }}{% endif %}</td>
-                        <td>{{ increment.notes }}</td>
-                    </tr>
-                {% endfor %}
-            </table>
-        </div>
     </div>
 {% endblock content %}
+
+{% block extrajs %}
+<script src="{{ STATIC_URL }}ajaxuploader/js/fileuploader.js" ></script>
+<script src="{{ STATIC_URL }}project-toolbox/js/tags.js" ></script>
+<script>
+$(document).ready( function () {
+    ATTACHMENTS = {};
+    $(function(){
+    var uploader = new qq.FileUploader({
+        action: "{% url 'add_contract_attachment' object.id %}",
+        element: $('#file-uploader')[0],
+        multiple: true,
+        onComplete: function(id, filename, responseJSON) {
+            if(responseJSON.success) {
+                ATTACHMENTS[id] = {'id': id,
+                                   'filename': filename,
+                                   'json': responseJSON};
+            } else {
+                console.log('fail', id, filename, responseJSON);
+            }
+        },
+        onAllComplete: function(uploads) {
+            // uploads is an array of maps
+            // the maps look like this: {file: FileObject, response: JSONServerResponse}
+            // do nothing
+        },
+        params: {
+            'csrf_token': '{{ csrf_token }}',
+            'csrf_name': 'csrfmiddlewaretoken',
+            'csrf_xname': 'X-CSRFToken',
+        },
+    });
+    });
+
+    create_remove_tag_handler("{% url 'remove_contract_tag' object.id %}");
+    create_add_tag_handler("{% url 'contract_tags' object.id %}");
+});
+</script>
+{% endblock extrajs %}

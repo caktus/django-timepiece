@@ -16,7 +16,7 @@ from django.http import HttpResponseRedirect, HttpResponseForbidden, Http404, Ht
 from django.shortcuts import get_object_or_404, render, redirect
 from django.views.decorators.csrf import csrf_exempt
 from django.views.generic import (CreateView, DeleteView, DetailView,
-        UpdateView, FormView, View)
+        UpdateView, FormView, View, TemplateView)
 from django.forms import widgets
 
 from timepiece import utils
@@ -33,16 +33,27 @@ from timepiece.crm.forms import (CreateEditBusinessForm, CreateEditProjectForm,
         CreateEditActivityGoalForm, ApproveDenyPTORequestForm,
         CreateEditPaidTimeOffLog, AddBusinessNoteForm, 
         CreateEditBusinessDepartmentForm, CreateEditContactForm, 
-        AddContactNoteForm)
+        AddContactNoteForm, CreateEditLeadForm, AddLeadNoteForm,
+        SelectContactForm, AddDistinguishingValueChallenegeForm,
+        AddTemplateDifferentiatingValuesForm, CreateEditTemplateDVForm,
+        CreateEditDVCostItem, CreateEditOpportunity)
 from timepiece.crm.models import (Business, Project, ProjectRelationship, UserProfile,
     PaidTimeOffLog, PaidTimeOffRequest, Milestone, ActivityGoal, BusinessNote,
-    BusinessDepartment, Contact, ContactNote, BusinessAttachment)
+    BusinessDepartment, Contact, ContactNote, BusinessAttachment, Lead, LeadNote,
+    DistinguishingValueChallenge, TemplateDifferentiatingValue, LeadAttachment,
+    DVCostItem, Opportunity)
 from timepiece.crm.utils import grouped_totals, project_activity_goals_with_progress
 from timepiece.entries.models import Entry, Activity, Location
 from timepiece.reports.forms import HourlyReportForm
 
 from holidays.models import Holiday
 from . import emails
+
+try:
+    from workflow.general_task.forms import SelectGeneralTaskForm
+    from workflow.models import GeneralTask
+except:
+    pass
 
 import workdays
 
@@ -231,10 +242,12 @@ def change_user_timesheet(request, user_id, action):
                 'timesheet.'.format(action))
 
     try:
-        from_date = request.GET.get('from_date')
+        (start, end) = utils.get_bimonthly_dates(datetime.date.today())
+        from_date = request.GET.get('from_date', start.strftime('%Y-%m-%d'))
         from_date = utils.add_timezone(
             datetime.datetime.strptime(from_date, '%Y-%m-%d'))
-        to_date = request.GET.get('to_date')
+        to_date = request.GET.get('to_date', 
+            (end - relativedelta(days=1)).strftime('%Y-%m-%d'))
         to_date = utils.add_timezone(
             datetime.datetime.strptime(to_date, '%Y-%m-%d')) + relativedelta(days=1)
         project_id = request.GET.get('project', None)
@@ -299,21 +312,21 @@ def change_user_timesheet(request, user_id, action):
 
 
 @cbv_decorator(permission_required('entries.view_project_timesheet'))
-class ProjectTimesheet(DetailView):
+class ProjectTimesheet(CSVViewMixin, DetailView):
     template_name = 'timepiece/project/timesheet.html'
     model = Project
     context_object_name = 'project'
     pk_url_kwarg = 'project_id'
 
     def get(self, *args, **kwargs):
-        if 'csv' in self.request.GET:
-            request_get = self.request.GET.copy()
-            request_get.pop('csv')
-            return_url = reverse('view_project_timesheet_csv',
-                                 args=(self.get_object().pk,))
-            return_url += '?%s' % urllib.urlencode(request_get)
-            return redirect(return_url)
-        return super(ProjectTimesheet, self).get(*args, **kwargs)
+        self.object = self.model.objects.get(id=kwargs[self.pk_url_kwarg])
+        context = self.get_context_data()
+        if self.request.GET.get('export_project_timesheet', False):
+            kls = CSVViewMixin
+        else:
+            kls = DetailView
+        return kls.render_to_response(self, context)
+        
 
     def get_context_data(self, **kwargs):
         context = super(ProjectTimesheet, self).get_context_data(**kwargs)
@@ -418,13 +431,11 @@ class ProjectTimesheet(DetailView):
             form.fields[field].widget = widgets.HiddenInput()
         return form
 
-
-class ProjectTimesheetCSV(CSVViewMixin, ProjectTimesheet):
-
     def get_filename(self, context):
-        project = self.object.name
+        project = self.object.code
+        from_date_str = context['from_date'].strftime('%m-%d-%Y')
         to_date_str = context['to_date'].strftime('%m-%d-%Y')
-        return 'Project_timesheet {0} {1}'.format(project, to_date_str)
+        return '{0} {1} {2} timesheet'.format(project, from_date_str, to_date_str)
 
     def convert_context_to_csv(self, context):
         rows = []
@@ -438,6 +449,7 @@ class ProjectTimesheetCSV(CSVViewMixin, ProjectTimesheet):
             'Breaks',
             'Hours',
             'Writedown',
+            'Comments',
         ])
         for entry in context['entries']:
             data = [
@@ -450,6 +462,7 @@ class ProjectTimesheetCSV(CSVViewMixin, ProjectTimesheet):
                 seconds_to_hours(entry['seconds_paused']),
                 entry['hours'],
                 entry['writedown'],
+                entry['comments'],
             ]
             rows.append(data)
         total = context['total']
@@ -461,11 +474,90 @@ class ProjectTimesheetCSV(CSVViewMixin, ProjectTimesheet):
 
 
 @cbv_decorator(permission_required('crm.view_business'))
-class ListBusinesses(SearchListView):
+class ListBusinesses(SearchListView, CSVViewMixin):
     model = Business
     redirect_if_one_result = True
     search_fields = ['name__icontains', 'description__icontains']
     template_name = 'timepiece/business/list.html'
+
+    def get(self, request, *args, **kwargs):
+        self.export_business_list = request.GET.get('export_business_list', False)
+        if self.export_business_list:
+            kls = CSVViewMixin
+
+            form_class = self.get_form_class()
+            self.form = self.get_form(form_class)
+            self.object_list = self.get_queryset()
+            self.object_list = self.filter_results(self.form, self.object_list)
+
+            allow_empty = self.get_allow_empty()
+            if not allow_empty and len(self.object_list) == 0:
+                raise Http404("No results found.")
+
+            context = self.get_context_data(form=self.form,
+                object_list=self.object_list)
+
+            return kls.render_to_response(self, context)
+        else:
+            return super(ListBusinesses, self).get(request, *args, **kwargs)
+    
+    # def filter_form_valid(self, form, queryset):
+    #     queryset = super(ListBusinesses, self).filter_form_valid(form, queryset)
+    #     status = form.cleaned_data['status']
+    #     if status:
+    #         queryset = queryset.filter(status=status)
+    #     return queryset
+
+    def get_filename(self, context):
+        request = self.request.GET.copy()
+        search = request.get('search', '(empty)')
+        return 'business_search_{0}'.format(search)
+
+    def convert_context_to_csv(self, context):
+        """Convert the context dictionary into a CSV file."""
+        content = []
+        business_list = context['business_list']
+        if self.export_business_list:
+            headers = ['Short Name', 'Business Name', 'Active?',
+                       'Primary Contact', 'Description', 'Classification',
+                       'Status', 'Phone', 'Fax', 'Website', 'Account Number',
+                       'Industry', 'Ownership', 'Annual Revenue',
+                       'Number of Employees', 'Ticket Symbol', 'Tags',
+                       'Billing Street','Billing City', 'Billing State',
+                       'Billing Zip', 'Billing Mailstop', 'Billing Country',
+                       'Billing Latitude', 'Billing Longitude',
+                       'Shipping Street', 'Shipping City', 'Shipping State',
+                       'Shipping Zip', 'Shipping Mailstop', 'Shipping Country',
+                       'Shipping Latitude', 'Shipping Longitude'
+                       ]
+            content.append(headers)
+            for business in business_list:
+                primary_contact = 'n/a'
+                if business.primary_contact:
+                    primary_contact = '%s %s, %s, %s' % (
+                        business.primary_contact.first_name,
+                        business.primary_contact.last_name,
+                        business.primary_contact.office_phone,
+                        business.primary_contact.email)
+                row = [business.short_name, business.name, business.active,
+                       primary_contact, business.description, 
+                       business.get_classification_display(),
+                       business.get_status_display(), business.phone,
+                       business.fax, business.website, business.account_number,
+                       business.get_industry_display(), business.ownership,
+                       business.annual_revenue, business.num_of_employees,
+                       business.ticker_symbol,
+                       ', '.join([str(t) for t in business.tags.all()]),
+                       business.billing_street, business.billing_city,
+                       business.billing_state, business.billing_postalcode,
+                       business.billing_mailstop, business.billing_country,
+                       business.billing_lat, business.billing_lon,
+                       business.shipping_street, business.shipping_city,
+                       business.shipping_state, business.shipping_postalcode,
+                       business.shipping_mailstop, business.shipping_country,
+                       business.shipping_lat, business.shipping_lon]
+                content.append(row)
+        return content
 
 @permission_required('crm.view_business')
 def business(request):
@@ -577,6 +669,43 @@ class EditBusiness(UpdateView):
     form_class = CreateEditBusinessForm
     template_name = 'timepiece/business/create_edit.html'
     pk_url_kwarg = 'business_id'
+
+@cbv_decorator(permission_required('crm.change_business'))
+class BusinessTags(View):
+
+    def get(self, request, *args, **kwargs):
+        return HttpResponse(status=501)
+
+    def post(self, request, *args, **kwargs):
+        business = Business.objects.get(id=int(kwargs['business_id']))
+        tag = request.POST.get('tag')
+        for t in tag.split(','):
+            if len(t):
+                business.tags.add(t)
+        tags = [{'id': t.id, 
+                 'url': reverse('similar_items', args=(t.id,)),
+                 'name':t.name} for t in business.tags.all()]
+        return HttpResponse(json.dumps({'tags': tags}),
+                            content_type="application/json",
+                            status=200)
+@cbv_decorator(permission_required('crm.change_business'))
+class RemoveBusinessTag(View):
+
+    def get(self, request, *args, **kwargs):
+        return HttpResponse(status=501)
+
+    def post(self, request, *args, **kwargs):
+        if request.user.is_superuser or bool(len(request.user.groups.filter(id=8))):
+            business = Business.objects.get(id=int(kwargs['business_id']))
+            tag = request.POST.get('tag')
+            if len(tag):
+                business.tags.remove(tag)
+        tags = [{'id': t.id, 
+                 'url': reverse('similar_items', args=(t.id,)),
+                 'name':t.name} for t in business.tags.all()]
+        return HttpResponse(json.dumps({'tags': tags}),
+                            content_type="application/json",
+                            status=200)
 
 @cbv_decorator(permission_required('crm.add_businessdepartment'))
 class CreateBusinessDepartment(CreateView):
@@ -736,19 +865,11 @@ class ListProjects(SearchListView, CSVViewMixin):
             context = self.get_context_data(form=self.form,
                 object_list=self.object_list)
 
-
-            # qs = self.get_queryset()
-            # self.object_list = qs
-            # self.get_context_object_name(qs)
-            # kwargs['object_list'] = qs
-            # print 'count', qs.count()
-            # context = self.get_context_data(**kwargs)
             return kls.render_to_response(self, context)
         else:
             return super(ListProjects, self).get(request, *args, **kwargs)
     
     def filter_form_valid(self, form, queryset):
-        print 'form', form, 'queryset', queryset
         queryset = super(ListProjects, self).filter_form_valid(form, queryset)
         status = form.cleaned_data['status']
         if status:
@@ -768,16 +889,18 @@ class ListProjects(SearchListView, CSVViewMixin):
         if self.export_project_list:
             # this is a special csv export, different than stock Timepiece,
             # requested by AAC Engineering for their detailed reporting reqs
-            headers = ['Project Code', 'Project Name', 'Type', 'Business', 'Status',
-                       'Billable', 'Finder', 'Minder', 'Binder', 'Description',
-                       'Contracts -->']
+            headers = ['Project Code', 'Project Name', 'Type', 'Business', 'Business Department',
+                       'Status', 'Billable', 'Finder', 'Minder', 'Binder',
+                       'Description', 'Tags', 'Contracts -->']
             content.append(headers)
             for project in project_list:
                 row = [project.code, project.name, str(project.type),
                        '%s:%s'%(project.business.short_name, project.business.name),
+                       project.business_department.name if project.business_department else '',
                        project.status, project.billable, str(project.finder),
                        str(project.point_person), str(project.binder), 
-                       project.description]
+                       project.description, ', '.join(
+                        [t.name.strip() for t in project.tags.all()])]
                 for contract in project.contracts.all():
                     row.append(str(contract))
                 content.append(row)
@@ -818,6 +941,43 @@ class EditProject(UpdateView):
     template_name = 'timepiece/project/create_edit.html'
     pk_url_kwarg = 'project_id'
 
+@cbv_decorator(permission_required('crm.change_project'))
+class ProjectTags(View):
+
+    def get(self, request, *args, **kwargs):
+        return HttpResponse(status=501)
+
+    def post(self, request, *args, **kwargs):
+        project = Project.objects.get(id=int(kwargs['project_id']))
+        tag = request.POST.get('tag')
+        for t in tag.split(','):
+            if len(t):
+                project.tags.add(t)
+        tags = [{'id': t.id, 
+                 'url': reverse('similar_items', args=(t.id,)),
+                 'name':t.name} for t in project.tags.all()]
+        return HttpResponse(json.dumps({'tags': tags}),
+                            content_type="application/json",
+                            status=200)
+
+@cbv_decorator(permission_required('crm.change_project'))
+class RemoveProjectTag(View):
+
+    def get(self, request, *args, **kwargs):
+        return HttpResponse(status=501)
+
+    def post(self, request, *args, **kwargs):
+        if request.user.is_superuser or bool(len(request.user.groups.filter(id=8))):
+            project = Project.objects.get(id=int(kwargs['project_id']))
+            tag = request.POST.get('tag')
+            if len(tag):
+                project.tags.remove(tag)
+        tags = [{'id': t.id, 
+                 'url': reverse('similar_items', args=(t.id,)),
+                 'name':t.name} for t in project.tags.all()]
+        return HttpResponse(json.dumps({'tags': tags}),
+                            content_type="application/json",
+                            status=200)
 
 # User-project relationships
 
@@ -1232,11 +1392,11 @@ class CreateActivityGoal(CreateView):
             employee_choices.append((u.pk, '%s, %s'%(u.last_name, u.first_name)))
             # exclude.append(u.pk)
 
-        # employee_choices.append((None, 'INACTIVE USERS'), (None, '--------------'))
-        # for u in User.objects.all().exclude(id__in=exclude
-        #     ).order_by('last_name', 'first_name'):
+        employee_choices.append((None, '--- INACTIVE USERS ---'))
+        for u in User.objects.all().exclude(id__in=exclude
+            ).order_by('last_name', 'first_name'):
             
-        #     employee_choices.append((u.pk, '%s, %s'%(u.last_name, u.first_name)))
+            employee_choices.append((u.pk, '%s, %s'%(u.last_name, u.first_name)))
         
         form.fields['employee'].choices = employee_choices 
         return form
@@ -1636,7 +1796,9 @@ class ContactTags(View):
         for t in tag.split(','):
             if len(t):
                 contact.tags.add(t)
-        tags = [t.name for t in contact.tags.all()]
+        tags = [{'id': t.id, 
+                 'url': reverse('similar_items', args=(t.id,)),
+                 'name':t.name} for t in contact.tags.all()]
         return HttpResponse(json.dumps({'tags': tags}),
                             content_type="application/json",
                             status=200)
@@ -1653,7 +1815,9 @@ class RemoveContactTag(View):
             tag = request.POST.get('tag')
             if len(tag):
                 contact.tags.remove(tag)
-        tags = [t.name for t in contact.tags.all()]
+        tags = [{'id': t.id, 
+                 'url': reverse('similar_items', args=(t.id,)),
+                 'name':t.name} for t in contact.tags.all()]
         return HttpResponse(json.dumps({'tags': tags}),
                             content_type="application/json",
                             status=200)
@@ -1680,3 +1844,777 @@ class EditContact(UpdateView):
     form_class = CreateEditContactForm
     template_name = 'timepiece/contact/create_edit.html'
     pk_url_kwarg = 'contact_id'
+
+
+""" LEADS """
+@cbv_decorator(permission_required('crm.view_lead'))
+class ListLeads(SearchListView, CSVViewMixin):
+    model = Lead
+    redirect_if_one_result = True
+    search_fields = ['title__icontains', 
+                     'primary_contact__first_name__icontains',
+                     'primary_contact__last_name__icontains',
+                     'primary_contact__email__icontains',
+                     'primary_contact__business__name__icontains']
+    template_name = 'timepiece/lead/list.html'
+
+    def get(self, request, *args, **kwargs):
+        self.export_lead_list = request.GET.get('export_lead_list', False)
+        if self.export_lead_list:
+            kls = CSVViewMixin
+
+            form_class = self.get_form_class()
+            self.form = self.get_form(form_class)
+            self.object_list = self.get_queryset()
+            self.object_list = self.filter_results(self.form, self.object_list)
+
+            allow_empty = self.get_allow_empty()
+            if not allow_empty and len(self.object_list) == 0:
+                raise Http404("No results found.")
+
+            context = self.get_context_data(form=self.form,
+                object_list=self.object_list)
+
+            return kls.render_to_response(self, context)
+        else:
+            return super(ListLeads, self).get(request, *args, **kwargs)
+    
+    # def filter_form_valid(self, form, queryset):
+    #     queryset = super(ListContacts, self).filter_form_valid(form, queryset)
+    #     status = form.cleaned_data['status']
+    #     if status:
+    #         queryset = queryset.filter(status=status)
+    #     return queryset
+
+    def get_filename(self, context):
+        request = self.request.GET.copy()
+        search = request.get('search', '(empty)')
+        return 'lead_search_{0}.csv'.format(search)
+
+    def convert_context_to_csv(self, context):
+        """Convert the context dictionary into a CSV file."""
+        content = []
+        lead_list = context['lead_list']
+        if self.export_lead_list:
+            headers = ['Title',
+                       'Status',
+                       'AAC Primary',
+                       'Primary Contact Salutaton', 
+                       'Primary Contact First Name', 
+                       'Primary Contact Last Name', 
+                       'Primary Contact Title', 
+                       'Primary Contact Email',
+                       'Primary Contact Office Phone', 
+                       'Primary Contact Mobile Phone', 
+                       'Primary Contact Home Phone', 
+                       'Primary Contact Other Phone', 
+                       'Primary Contact Fax', 
+                       'Primary Contact Business Name',
+                       'Primary Contact Business Department Name', 
+                       'Primary Contact Assistant Name',
+                       'Primary Contact Assistant Phone', 
+                       'Primary Contact Assistant Email', 
+                       'Primary Contact Mailing Street',
+                       'Primary Contact Mailing City', 
+                       'Primary Contact Mailing State', 
+                       'Primary Contact Mailing Postal Code',
+                       'Primary Contact Mailing Mailstop', 
+                       'Primary Contact Mailing Country', 
+                       'Primary Contact Mailing Latitude',
+                       'Primary Contact Mailing Longitude', 
+                       'Primary Contact Other Street', 
+                       'Primary Contact Other City', 
+                       'Primary Contact Other State', 
+                       'Primary Contact Other Postal Code', 
+                       'Primary Contact Other Mailstop', 
+                       'Primary Contact Other Country', 
+                       'Primary Contact Other Latitude', 
+                       'Primary Contact Other Longitude', 
+                       'Primary Contact Opted Out of Email', 
+                       'Primary Contact Opted Out of Fax', 
+                       'Primary Contact DO NOT CALL',
+                       'Primary Contact Birthday', 
+                       'Lead Source Email', 'Tags -->']
+            content.append(headers)
+            for lead in lead_list:
+                if lead.primary_contact:
+                    row = [lead.title,
+                           lead.get_status_display(),
+                           lead.aac_poc.email,
+                           lead.primary_contact.salutation, 
+                           lead.primary_contact.first_name, 
+                           lead.primary_contact.last_name, 
+                           lead.primary_contact.title, 
+                           lead.primary_contact.email, 
+                           lead.primary_contact.office_phone,
+                           lead.primary_contact.mobile_phone, 
+                           lead.primary_contact.home_phone,
+                           lead.primary_contact.other_phone, 
+                           lead.primary_contact.fax, 
+                           lead.primary_contact.business,
+                           lead.primary_contact.business_department, 
+                           lead.primary_contact.assistant_name,
+                           lead.primary_contact.assistant_phone, 
+                           lead.primary_contact.assistant_email,
+                           lead.primary_contact.mailing_street, 
+                           lead.primary_contact.mailing_city,
+                           lead.primary_contact.mailing_state, 
+                           lead.primary_contact.mailing_postalcode,
+                           lead.primary_contact.mailing_mailstop, 
+                           lead.primary_contact.mailing_country,
+                           lead.primary_contact.mailing_lat, 
+                           lead.primary_contact.mailing_lon, 
+                           lead.primary_contact.other_street,
+                           lead.primary_contact.other_city, 
+                           lead.primary_contact.other_state,
+                           lead.primary_contact.other_postalcode, 
+                           lead.primary_contact.other_mailstop,
+                           lead.primary_contact.other_country, 
+                           lead.primary_contact.other_lat, 
+                           lead.primary_contact.other_lon,
+                           lead.primary_contact.has_opted_out_of_email, 
+                           lead.primary_contact.has_opted_out_of_fax,
+                           lead.primary_contact.do_not_call, 
+                           lead.primary_contact.birthday, 
+                           lead.lead_source.email]
+                else:
+                    row = [lead.title,
+                           lead.get_status_display(),
+                           lead.aac_poc.email,
+                           'n/a', 
+                           'n/a', 
+                           'n/a', 
+                           'n/a', 
+                           'n/a', 
+                           'n/a',
+                           'n/a', 
+                           'n/a',
+                           'n/a', 
+                           'n/a', 
+                           'n/a',
+                           'n/a', 
+                           'n/a',
+                           'n/a', 
+                           'n/a',
+                           'n/a', 
+                           'n/a',
+                           'n/a', 
+                           'n/a',
+                           'n/a', 
+                           'n/a',
+                           'n/a', 
+                           'n/a', 
+                           'n/a',
+                           'n/a', 
+                           'n/a',
+                           'n/a', 
+                           'n/a',
+                           'n/a', 
+                           'n/a', 
+                           'n/a',
+                           'n/a', 
+                           'n/a',
+                           'n/a', 
+                           'n/a', 
+                           lead.lead_source.email]
+                for tag in lead.tags.all():
+                    row.append(tag)
+
+                content.append(row)
+        return content
+
+@cbv_decorator(permission_required('crm.view_lead'))
+class ViewLead(DetailView):
+    model = Lead
+    pk_url_kwarg = 'lead_id'
+
+    def get_context_data(self, **kwargs):
+        context = super(ViewLead, self).get_context_data(**kwargs)
+        context['add_lead_note_form'] = AddLeadNoteForm()
+        context['open_general_task_count'] = \
+            self.object.generaltask_set.filter(status__terminal=False).count()
+        context['dv_count'] = \
+            self.object.distinguishingvaluechallenge_set.all().count()
+        context['opportunity_count'] = self.object.opportunity_set.all().count()
+
+        return context
+
+class ViewLeadGeneralInfo(ViewLead):
+    template_name = 'timepiece/lead/view.html'
+    
+    def get_context_data(self, **kwargs):
+        context = super(ViewLeadGeneralInfo, self).get_context_data(**kwargs)
+        context['add_user_form'] = SelectContactForm()
+        context['active'] = 'general_info'
+
+        try:
+            context['add_general_task_form'] = SelectGeneralTaskForm()
+        except:
+            pass
+
+        return context
+
+class ViewLeadDistinguishingValue(ViewLead):
+    template_name = 'timepiece/lead/view_differentiating_value.html'
+
+    def get_context_data(self, **kwargs):
+        context = super(ViewLeadDistinguishingValue, self).get_context_data(**kwargs)
+        context['active'] = 'distinguishing_value'
+
+        if context['dv_count'] == 0:
+            context['active_tab'] = 'empty'
+        else:
+            dvc_index = int(self.request.GET.get('tab', 1))
+            context['active_tab'] = 'dvc%d' % (dvc_index)
+            dvc_form = AddDistinguishingValueChallenegeForm()
+            dvc = self.object.distinguishingvaluechallenge_set.all(
+                )[dvc_index - 1]
+            context['dvc_form'] = dvc_form
+            context['dvc'] = dvc
+        return context
+
+class ViewLeadOpportunities(ViewLead):
+    template_name = 'timepiece/lead/view_opportunities.html'
+
+    def get_context_data(self, **kwargs):
+        context = super(ViewLeadOpportunities, self).get_context_data(**kwargs)
+        context['active'] = 'opportunities'
+
+        return context
+
+@cbv_decorator(permission_required('crm.add_leadnote'))
+class AddLeadNote(View):
+
+    def post(self, request, *args, **kwargs):
+        user = self.request.user
+        lead = Lead.objects.get(id=int(kwargs['lead_id']))
+        note = LeadNote(lead=lead,
+                           author=user,
+                           text=request.POST.get('text', ''))
+        if len(note.text):
+            note.save()
+        return HttpResponseRedirect(request.GET.get('next', None) 
+            or reverse('view_lead', args=(lead.id,)))
+
+@cbv_decorator(permission_required('crm.add_leadnote'))
+class LeadTags(View):
+
+    def get(self, request, *args, **kwargs):
+        return HttpResponse(status=200)
+
+    def post(self, request, *args, **kwargs):
+        lead = Lead.objects.get(id=int(kwargs['lead_id']))
+        tag = request.POST.get('tag')
+        for t in tag.split(','):
+            if len(t):
+                lead.tags.add(t)
+        tags = [{'id': t.id, 
+                 'url': reverse('similar_items', args=(t.id,)),
+                 'name':t.name} for t in lead.tags.all()]
+        return HttpResponse(json.dumps({'tags': tags}),
+                            content_type="application/json",
+                            status=200)
+
+@cbv_decorator(permission_required('crm.delete_lead'))
+class RemoveLeadTag(View):
+
+    def get(self, request, *args, **kwargs):
+        return HttpResponse(status=501)
+
+    def post(self, request, *args, **kwargs):
+        # TODO: make this a permission
+        if request.user.is_superuser or bool(len(request.user.groups.filter(id=8))):
+            lead = Lead.objects.get(id=int(kwargs['lead_id']))
+            tag = request.POST.get('tag')
+            if len(tag):
+                lead.tags.remove(tag)
+        tags = [{'id': t.id, 
+                 'url': reverse('similar_items', args=(t.id,)),
+                 'name':t.name} for t in lead.tags.all()]
+        return HttpResponse(json.dumps({'tags': tags}),
+                            content_type="application/json",
+                            status=200)
+
+@permission_required('crm.view_lead')
+def lead_upload_attachment(request, lead_id):
+    try:
+        afu = AjaxFileUploader(MongoDBUploadBackend, db='lead_attachments')
+        hr = afu(request)
+        content = json.loads(hr.content)
+        memo = {'uploader': str(request.user),
+                'file_id': str(content['_id']),
+                'upload_time': str(datetime.datetime.now()),
+                'filename': content['filename']}
+        memo.update(content)
+        # save attachment to ticket
+        attachment = LeadAttachment(
+            lead=Lead.objects.get(id=int(lead_id)),
+            file_id=str(content['_id']),
+            filename=content['filename'],
+            upload_time=datetime.datetime.now(),
+            uploader=request.user,
+            description='n/a')
+        attachment.save()
+        return HttpResponse(json.dumps(memo),
+                            content_type="application/json")
+    except:
+        print sys.exc_info(), traceback.format_exc()
+    return hr
+
+@permission_required('crm.view_lead')
+def lead_download_attachment(request, lead_id, attachment_id):
+    MONGO_DB_INSTANCE = project_settings.MONGO_CLIENT.lead_attachments
+    GRID_FS_INSTANCE = gridfs.GridFS(MONGO_DB_INSTANCE)
+    try:
+        lead_attachment = LeadAttachment.objects.get(
+            lead__id=lead_id, id=attachment_id)
+        f = GRID_FS_INSTANCE.get(ObjectId(lead_attachment.file_id))
+        return HttpResponse(f.read(), content_type=f.content_type)
+    except:
+        return HttpResponse("Attachment could not be found.")
+
+@cbv_decorator(permission_required('crm.add_lead'))
+class CreateLead(CreateView):
+    model = Lead
+    form_class = CreateEditLeadForm
+    template_name = 'timepiece/lead/create_edit.html'
+
+    def get_initial(self):
+        return {
+            'lead_source': self.request.user,
+            'aac_poc': self.request.user,
+            'created_by': self.request.user,
+            'last_editor': self.request.user,
+        }
+
+    def form_valid(self, form):
+        form.instance.created_by = self.request.user
+        form.instance.last_editor = self.request.user
+        return super(CreateLead, self).form_valid(form)
+
+
+@cbv_decorator(permission_required('crm.delete_lead'))
+class DeleteLead(DeleteView):
+    model = Lead
+    success_url = reverse_lazy('list_leads')
+    pk_url_kwarg = 'lead_id'
+    template_name = 'timepiece/delete_object.html'
+
+
+@cbv_decorator(permission_required('crm.change_lead'))
+class EditLead(UpdateView):
+    model = Lead
+    form_class = CreateEditLeadForm
+    template_name = 'timepiece/lead/create_edit.html'
+    pk_url_kwarg = 'lead_id'
+
+
+@cbv_decorator(permission_required('crm.change_lead'))
+class AddLeadContact(View):
+
+    def get(self, request, *args, **kwargs):
+        return HttpResponse(status=501)
+
+    def post(self, request, *args, **kwargs):
+        try:
+            lead = Lead.objects.get(id=int(kwargs['lead_id']))
+            contact = SelectContactForm(request.POST).get_contact()
+            if contact:
+                lead.contacts.add(contact)
+            return HttpResponseRedirect(request.GET.get('next', None) 
+                or reverse_lazy('view_lead', args=(lead.id,)))
+        except:
+            return HttpResponseRedirect(request.GET.get('next', None) 
+                or reverse_lazy('view_lead', args=(lead.id,)))
+
+@cbv_decorator(permission_required('crm.change_lead'))
+class RemoveLeadContact(View):
+
+    def get(self, request, *args, **kwargs):
+        lead = Lead.objects.get(id=int(kwargs['lead_id']))
+        contact_id = request.GET.get('contact_id')
+        contact = Contact.objects.get(id=int(contact_id))
+        lead.contacts.remove(contact)
+        return HttpResponseRedirect(request.GET.get('next', None) 
+            or reverse_lazy('view_lead', args=(lead.id,)))
+
+@cbv_decorator(permission_required('crm.change_lead'))
+class AddLeadGeneralTask(View):
+
+    def get(self, request, *args, **kwargs):
+        return HttpResponse(status=501)
+
+    def post(self, request, *args, **kwargs):
+        try:
+            lead = Lead.objects.get(id=int(kwargs['lead_id']))
+            general_task = SelectGeneralTaskForm(request.POST).get_general_task()
+            if general_task.lead is None:
+                general_task.lead = lead
+                general_task.save()
+            else:
+                msg = '%s already belongs to Lead <a href="' + \
+                reverse('view_lead', args=(general_task.lead.id,)) + \
+                '">%s.  Please remove it from that Lead before ' + \
+                'associating with this lead.' % (
+                    general_task.form_id, general_task.lead.title)
+                messages.error(request, msg)
+        except:
+            pass
+        finally:
+            return HttpResponseRedirect(request.GET.get('next', None) 
+                or reverse_lazy('view_lead', args=(lead.id,)))
+
+@cbv_decorator(permission_required('crm.change_lead'))
+class RemoveLeadGeneralTask(View):
+
+    def get(self, request, *args, **kwargs):
+        try:
+            lead = Lead.objects.get(id=int(kwargs['lead_id']))
+            general_task_id = request.GET.get('general_task_id')
+            general_task = GeneralTask.objects.get(id=int(general_task_id))
+            general_task.lead = None
+            general_task.save()
+        except:
+            print sys.exc_info(), traceback.format_exc()
+            pass
+        finally:
+            return HttpResponseRedirect(request.GET.get('next', None) 
+                or reverse_lazy('view_lead', args=(lead.id,)))
+
+
+@cbv_decorator(permission_required('crm.add_distinguishingvaluechallenge'))
+class AddDistinguishingValueChallenge(View):
+
+    def get(self, request, *args, **kwargs):
+        lead = Lead.objects.get(id=int(kwargs['lead_id']))
+        dvc = DistinguishingValueChallenge(lead=lead)
+        dvc.save()
+        url = '%s?tab=%d' % (
+            reverse('view_lead_distinguishing_value', args=(dvc.lead.id,)),
+            list(dvc.lead.distinguishingvaluechallenge_set.all()
+                ).index(dvc)+1)
+        return HttpResponseRedirect(url)
+
+@cbv_decorator(permission_required('crm.change_distinguishingvaluechallenge'))
+class UpdateDistinguishingValueChallenge(View):
+
+    def post(self, request, *args, **kwargs):
+        
+        dvc = DistinguishingValueChallenge.objects.get(id=int(request.POST.get('dvc', None)))
+        dvc.probing_question = request.POST.get('probing_question', '')
+        dvc.short_name = request.POST.get('short_name', '')
+        dvc.description = request.POST.get('description', '')
+        dvc.longevity = request.POST.get('longevity', '')
+        if request.POST.get('start_date', None):
+            try:
+                start_date = datetime.datetime.strptime(
+                    request.POST.get('start_date'), '%Y-%m-%d').date()
+                dvc.start_date = start_date
+            except:
+                dvc.start_date = None
+        else:
+            dvc.start_date = None
+        dvc.steps = request.POST.get('steps', '')
+        dvc.results = request.POST.get('results', '')
+        dvc.due = request.POST.get('due', '')
+        if request.POST.get('due_date', None):
+            try:
+                due_date = datetime.datetime.strptime(
+                    request.POST.get('due_date'), '%Y-%m-%d').date()
+                dvc.due_date = due_date
+            except:
+                dvc.due_date = None
+        else:
+            dvc.due_date = None
+        dvc.cost = request.POST.get('cost', '')
+        dvc.closed = True if request.POST.get('closed', 'off') == 'on' else False
+        dvc.save()
+
+        try:
+            order = int(request.POST.get('order', dvc.order))
+            order = max(order, 1)
+            if order != dvc.order:
+                counter = 1
+                for dvc2 in dvc.lead.distinguishingvaluechallenge_set.all():
+                    if counter == order:
+                        dvc.order = counter
+                        dvc.save()
+                        counter += 1
+                    if dvc2 != dvc:
+                        dvc2.order = counter
+                        dvc2.save()
+                        counter += 1
+        except:
+            pass
+        
+        url = '%s?tab=%d' % (
+            reverse('view_lead_distinguishing_value', args=(dvc.lead.id,)),
+            list(dvc.lead.distinguishingvaluechallenge_set.all()
+                ).index(dvc)+1)
+        return HttpResponseRedirect(url)
+
+@cbv_decorator(permission_required('crm.delete_distinguishingvaluechallenge'))
+class DeleteDistinguishingValueChallenge(DeleteView):
+    model = DistinguishingValueChallenge
+    pk_url_kwarg = 'dvc_id'
+    template_name = 'timepiece/delete_object.html'
+
+    def get_success_url(self):
+        return reverse('view_lead_distinguishing_value', 
+            args=(int(self.kwargs['lead_id']),))
+
+@cbv_decorator(permission_required('crm.add_distinguishingvaluechallenge'))
+class AddTemplateDifferentiatingValues(FormView):
+    form_class = AddTemplateDifferentiatingValuesForm
+    template_name = 'timepiece/lead/add_template_differentiating_value.html'
+
+    # def get_form(self, request):
+    #     form = super(AddTemplateDifferentiatingValues, self).get_form(request)
+    #     return form
+
+    def form_valid(self, form):
+        lead = Lead.objects.get(id=int(self.kwargs['lead_id']))
+        for template_dv_id in form.cleaned_data['template_dvs']:
+            template_dv = TemplateDifferentiatingValue.objects.get(
+                id=int(template_dv_id))
+            dv = DistinguishingValueChallenge(
+                lead=lead,
+                short_name=template_dv.short_name,
+                probing_question=template_dv.probing_question)
+            dv.save()
+
+        return super(AddTemplateDifferentiatingValues, self).form_valid(form)
+
+    def get_context_data(self, **kwargs):
+        context = super(AddTemplateDifferentiatingValues, self).get_context_data(**kwargs)
+        context['object'] = Lead.objects.get(id=int(self.kwargs.get('lead_id')))
+        return context
+
+    def get_success_url(self):
+        return reverse('view_lead_distinguishing_value', 
+            args=(int(self.kwargs['lead_id']),))
+
+
+@cbv_decorator(permission_required('auth.view_user'))
+class ListTemplateDifferentiatingValue(SearchListView, CSVViewMixin):
+    model = TemplateDifferentiatingValue
+    search_fields = ['probing_question__icontains', 'short_name__icontains']
+    template_name = 'timepiece/differentiating_value/list.html'
+
+    def get(self, request, *args, **kwargs):
+        self.export_template_dv_list = request.GET.get('export_template_dv_list', False)
+        if self.export_template_dv_list:
+            kls = CSVViewMixin
+
+            form_class = self.get_form_class()
+            self.form = self.get_form(form_class)
+            self.object_list = self.get_queryset()
+            self.object_list = self.filter_results(self.form, self.object_list)
+
+            allow_empty = self.get_allow_empty()
+            if not allow_empty and len(self.object_list) == 0:
+                raise Http404("No results found.")
+
+            context = self.get_context_data(form=self.form,
+                object_list=self.object_list)
+
+            return kls.render_to_response(self, context)
+        else:
+            return super(ListTemplateDifferentiatingValue, self).get(request, *args, **kwargs)
+
+    def get_filename(self, context):
+        request = self.request.GET.copy()
+        search = request.get('search', '(empty)')
+        return 'template_dv_search_{0}'.format(search)
+
+    def convert_context_to_csv(self, context):
+        """Convert the context dictionary into a CSV file."""
+        content = []
+        dv_list = context['object_list']
+        if self.export_template_dv_list:
+            headers = ['Short Name', 'Probing Question']
+            content.append(headers)
+            for dv in dv_list:
+                row = [dv.short_name, dv.probing_question]
+                print 'row', row
+                content.append(row)
+        return content
+
+@cbv_decorator(permission_required('crm.add_templatedifferentiatingvalue'))
+class CreateTemplateDifferentiatingValue(CreateView):
+    model = TemplateDifferentiatingValue
+    form_class = CreateEditTemplateDVForm
+    template_name = 'timepiece/differentiating_value/create_edit.html'
+
+    def get_success_url(self):
+        return reverse('list_template_differentiating_values')
+
+@cbv_decorator(permission_required('crm.change_templatedifferentiatingvalue'))
+class EditTemplateDifferentiatingValue(UpdateView):
+    model = TemplateDifferentiatingValue
+    pk_url_kwarg = 'template_dv_id'
+    form_class = CreateEditTemplateDVForm
+    template_name = 'timepiece/differentiating_value/create_edit.html'
+
+    def get_success_url(self):
+        return reverse('list_template_differentiating_values')
+
+@cbv_decorator(permission_required('crm.delete_templatedifferentiatingvalue'))
+class DeleteTemplateDifferentiatingValue(DeleteView):
+    model = TemplateDifferentiatingValue
+    pk_url_kwarg = 'template_dv_id'
+    template_name = 'timepiece/delete_object.html'
+
+    def get_success_url(self):
+        return reverse('list_template_differentiating_values')
+
+@cbv_decorator(permission_required('crm.add_templatedifferentiatingvalue'))
+class CreateDVCostItem(CreateView):
+    model = DVCostItem
+    form_class = CreateEditDVCostItem
+    template_name = 'timepiece/lead/cost_item/create_edit.html'
+
+    def get_context_data(self, **kwargs):
+        context = super(CreateDVCostItem, self).get_context_data(**kwargs)
+        context['dv'] = DistinguishingValueChallenge.objects.get(
+            id=int(self.kwargs['dvc_id']))
+        return context
+
+    def get_form(self, *args, **kwargs):
+        form = super(CreateDVCostItem, self).get_form(*args, **kwargs)
+        form.fields['dv'].widget = widgets.HiddenInput()
+        form.fields['dv'].initial = DistinguishingValueChallenge.objects.get(
+            id=int(self.kwargs['dvc_id']))
+        return form
+
+    def form_valid(self, form):
+        form.instance.dv = DistinguishingValueChallenge.objects.get(
+            id=int(self.kwargs['dvc_id']))
+        return super(CreateDVCostItem, self).form_valid(form)
+
+    def get_success_url(self):
+        dvc = DistinguishingValueChallenge.objects.get(id=int(self.kwargs['dvc_id']))
+        return '%s?tab=%d#cost' % (
+            reverse('view_lead_distinguishing_value', args=(dvc.lead.id,)),
+            list(dvc.lead.distinguishingvaluechallenge_set.all()
+                ).index(dvc)+1)
+
+@cbv_decorator(permission_required('crm.change_templatedifferentiatingvalue'))
+class EditDVCostItem(UpdateView):
+    model = DVCostItem
+    pk_url_kwarg = 'cost_item_id'
+    form_class = CreateEditDVCostItem
+    template_name = 'timepiece/lead/cost_item/create_edit.html'
+
+    def get_context_data(self, **kwargs):
+        context = super(EditDVCostItem, self).get_context_data(**kwargs)
+        context['dv'] = DistinguishingValueChallenge.objects.get(
+            id=int(self.kwargs['dvc_id']))
+        return context
+
+    def get_form(self, *args, **kwargs):
+        form = super(EditDVCostItem, self).get_form(*args, **kwargs)
+        form.fields['dv'].widget = widgets.HiddenInput()
+        form.fields['dv'].initial = DistinguishingValueChallenge.objects.get(
+            id=int(self.kwargs['dvc_id']))
+        return form
+
+    def form_valid(self, form):
+        form.instance.dv = DistinguishingValueChallenge.objects.get(
+            id=int(self.kwargs['dvc_id']))
+        return super(EditDVCostItem, self).form_valid(form)
+
+    def get_success_url(self):
+        dvc = DistinguishingValueChallenge.objects.get(id=int(self.kwargs['dvc_id']))
+        return '%s?tab=%d#cost' % (
+            reverse('view_lead_distinguishing_value', args=(dvc.lead.id,)),
+            list(dvc.lead.distinguishingvaluechallenge_set.all()
+                ).index(dvc)+1)
+
+@cbv_decorator(permission_required('crm.delete_templatedifferentiatingvalue'))
+class DeleteDVCostItem(DeleteView):
+    model = DVCostItem
+    pk_url_kwarg = 'cost_item_id'
+    template_name = 'timepiece/delete_object.html'
+
+    def get_success_url(self):
+        dvc = DistinguishingValueChallenge.objects.get(id=int(self.kwargs['dvc_id']))
+        return '%s?tab=%d#cost' % (
+            reverse('view_lead_distinguishing_value', args=(dvc.lead.id,)),
+            list(dvc.lead.distinguishingvaluechallenge_set.all()
+                ).index(dvc)+1)
+
+@cbv_decorator(permission_required('crm.add_opportunity'))
+class CreateOpportunity(CreateView):
+    model = Opportunity
+    pk_url_kwarg = 'opportunity_id'
+    form_class = CreateEditOpportunity
+    template_name = 'timepiece/lead/opportunity/create_edit.html'
+
+    def get_success_url(self):
+        return reverse('view_lead_opportunities', args=(int(self.kwargs['lead_id']), ))
+
+    def get_form(self, *args, **kwargs):
+        form = super(CreateOpportunity, self).get_form(*args, **kwargs)
+        form.fields['proposal'].queryset = LeadAttachment.objects.filter(
+            lead__id=int(self.kwargs['lead_id']))
+        form.fields['differentiating_value'].queryset = \
+            DistinguishingValueChallenge.objects.filter(
+            lead__id=int(self.kwargs['lead_id']))
+        return form
+
+    def get_context_data(self, **kwargs):
+        context = super(CreateOpportunity, self).get_context_data(**kwargs)
+        context['lead'] = Lead.objects.get(id=int(self.kwargs['lead_id']))
+        return context
+
+    def get_initial(self):
+        return {
+            'lead': self.kwargs['lead_id'],
+            'differentiating_value': self.request.GET.get(
+                'differentiating_value', None),
+        }
+
+    def form_valid(self, form):
+        # form.instance.created_by = self.request.user
+        # form.instance.last_editor = self.request.user
+        return super(CreateOpportunity, self).form_valid(form)
+
+@cbv_decorator(permission_required('crm.change_opportunity'))
+class EditOpportunity(UpdateView):
+    model = Opportunity
+    pk_url_kwarg = 'opportunity_id'
+    form_class = CreateEditOpportunity
+    template_name = 'timepiece/lead/create_edit.html'
+
+    def get_form(self, *args, **kwargs):
+        form = super(EditOpportunity, self).get_form(*args, **kwargs)
+        form.fields['proposal'].queryset = LeadAttachment.objects.filter(
+            lead__id=int(self.kwargs['lead_id']))
+        form.fields['differentiating_value'].queryset = \
+            DistinguishingValueChallenge.objects.filter(
+            lead__id=int(self.kwargs['lead_id']))
+        return form
+
+    def get_context_data(self, **kwargs):
+        context = super(EditOpportunity, self).get_context_data(**kwargs)
+        context['lead'] = Lead.objects.get(id=int(self.kwargs['lead_id']))
+        return context
+
+    def form_valid(self, form):
+        # form.instance.last_editor = self.request.user
+        return super(EditOpportunity, self).form_valid(form)
+
+    def get_success_url(self):
+        return reverse('view_lead_opportunities',
+            args=(int(self.kwargs['lead_id']),))
+
+@cbv_decorator(permission_required('crm.delete_opportunity'))
+class DeleteOpportunity(DeleteView):
+    model = Opportunity
+    pk_url_kwarg = 'opportunity_id'
+    template_name = 'timepiece/delete_object.html'
+
+    def get_success_url(self):
+        return reverse('view_lead_opportunities',
+            args=(int(self.kwargs['lead_id']),))

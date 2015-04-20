@@ -1,5 +1,5 @@
 {% extends 'timepiece/contract/base.html' %}
-{% load timepiece_tags humanize %}
+{% load timepiece_tags humanize bootstrap_toolkit %}
 {% load url from future %}
 
 {% block title %}Current Contracts{% endblock title %}
@@ -16,7 +16,7 @@
 {% block content %}
     <div class="row-fluid">
         <div class="span12">
-            <h2 class="page-title">Current Contracts</h2>
+            <h2 class="page-title">Contracts</h2>
             <ul class="nav nav-pills">
             {% if perms.contracts.add_projectcontract %}
                 <li><a href="{% url 'create_contract' %}">Add Contract</a></li>
@@ -24,8 +24,24 @@
             </ul>
         </div>
     </div>
+
     <div class="row-fluid">
         <div class="span12">
+            <form class='form-inline' accept-charset='UTF-8' method='get' action=''>
+                {{ form|as_bootstrap:"inline" }}
+                <button type='submit' class="btn" name='submit'>Search</button>
+                <button type="submit" class="btn btn-success" name="export_contract_list" value="True">Export Contract List</button>
+            </form>
+        </div>
+    </div>
+
+    {% load pagination_tags %}
+
+    <div class="row-fluid">
+        <div class="span12">
+            <span class="label label-success">{{ contracts|length }} Contracts Found</span>
+            {% autopaginate contracts %}
+            {% paginate %}
             <table class="table table-bordered table-striped table-condensed contracts">
                 <thead>
                     <tr>
@@ -78,6 +94,7 @@
                     {% endfor %}
                 </tbody>
             </table>
+            {% paginate %}
         </div>
     </div>
 {% endblock content %}

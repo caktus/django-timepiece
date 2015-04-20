@@ -46,6 +46,10 @@
                         {% endif %}
                     </td>
                 </tr>
+                <tr>
+                    <th>Business Department</th>
+                    <td>{{ object.business_department }}</td>
+                </tr>
                 <tr><th>Status</th><td>{{ object.status }}</td></tr>
                 <tr><th>Billable</th><td>{{ object.billable }}</td></tr>
                 <tr>
@@ -99,6 +103,29 @@
 
         <div class="span4 offset2">
             {% url 'view_project' object.id as next_url %}
+            <h3>Tags</h3>
+            <div id="tags">
+            {% if object.tags.all|length %}
+            {% for tag in object.tags.all %}
+            <span class="label label-info">
+                <a href="{% url 'similar_items' tag.id %}"> <i class="icon-magnet icon-white icon-small"> </i></a>
+                {{ tag }}
+                {% if perms.crm.change_project %}
+                <a class="remove_tag"> <i class="icon-remove icon-white icon-small"> </i></a>
+                {% endif %}
+            </span>
+            {% endfor %}
+            {% else %}
+            <br/><em>There are no tags for this project yet.</em>
+            {% endif %}
+            </div>
+            <form id="add_tag_form">
+                <div style="margin-top: 12px;">
+                    <input id="new_tag" type="text" />
+                    <input id="add_tag_button" class="btn btn-primary" type="submit" value="Add" />
+                </div>
+            </form>
+
             <h3>Users</h3>
             <ul class="users">
                 {% for user in object.users.all %}
@@ -163,6 +190,25 @@
         <div class="span12" name="milestones">
             <h3>Activity Goals</h3>
             <a type="button" class="btn btn-primary" href="{% url 'create_activity_goal' object.pk %}">Add Activity Goal</a><p/>
+            <div>
+                <label class="radio inline">
+                    <input type="radio" name="ag-filter" id="ag-all" value="all">
+                    All Employees
+                </label>
+                <label class="radio inline">
+                    <input type="radio" name="ag-filter" id="ag-active" value="active" checked>
+                    Only Active Employees
+                </label>
+                |
+                <label class="radio inline">
+                    <input type="radio" name="ag-current" value="all" checked>
+                    All Goals
+                </label>
+                <label class="radio inline">
+                    <input type="radio" name="ag-current" value="current">
+                    Only Current/Future Goals
+                </label>
+            </div>
             {% if object.activity_goals|length %}
             <table id="milestones_table" class="table table-striped table-bordered table-hover table-condensed">
                 <thead><tr>
@@ -175,7 +221,7 @@
                 </tr></thead>
                 <tbody>
                     {% for ag in object.activity_goals %}
-                    <tr id="{{ ag.id }}">
+                    <tr id="{{ ag.id }}" class="ag-active-{{ ag.employee.is_active }} ag-current-{{ ag.current }}">
                         <td>{{ ag.activity }}</td>
                         <td>{{ ag.employee }}</td>
                         <td>{{ ag.goal_hours }}</td>
@@ -198,6 +244,25 @@
     <div class="row-fluid">
         <div class="span12" name="activity-goal-container">
             <h3>Activity Goals Progress Summary</h3>
+            <div>
+                <label class="radio inline">
+                    <input type="radio" name="ag-progress-filter" value="all">
+                    All Employees
+                </label>
+                <label class="radio inline">
+                    <input type="radio" name="ag-progress-filter" value="active" checked>
+                    Only Active Employees
+                </label>
+                {% comment %}|
+                <label class="radio inline">
+                    <input type="radio" name="ag-progress-current" value="all" checked>
+                    All Goals
+                </label>
+                <label class="radio inline">
+                    <input type="radio" name="ag-progress-current" value="current">
+                    Only Current/Future Goals
+                </label>{% endcomment %}
+            </div>
             <table class="table">
                 <tr>
                     <th>Employee</th>
@@ -207,13 +272,13 @@
                 </tr>
                 {% for employee_ags in activity_goals %}
                     {% for ag in employee_ags.activity_goals %}
-                    <tr>
+                    <tr class="ag-progress-active-{{ ag.employee.is_active }}">
                         {% if forloop.first %}
-                        <td rowspan="{{ employee_ags.activity_goals|length }}">
+                        <td rowspan="{{ employee_ags.activity_goals|length }}" class="ag-progress-active-{{ ag.employee.is_active }}  ag-progress-current-{{ ag.current }}">
                           {{ ag.employee.last_name }}, {{ ag.employee.first_name }}
                         </td>
                         {% endif %}
-                        <td>
+                        <td class="ag-progress-active-{{ ag.employee.is_active }}  ag-progress-current-{{ ag.current }}">
                             {% if ag.id %}
                             <a href="{% url 'edit_activity_goal' ag.project.id ag.id %}"><i class="icon-edit" title="Edit Activity Goal for {{ ag.employee.first_name }} on {{ ag.project.code }} for {{ ag.activity_name }}."> </i></a>
                             {% else %}
@@ -221,13 +286,13 @@
                             {% endif %}
                             {{ ag.activity.name }}<br/>{{ ag.date }} - {{ ag.end_date }}
                         </td>
-                        <td>
+                        <td class="ag-progress-active-{{ ag.employee.is_active }}  ag-progress-current-{{ ag.current }}">
                             <div class="progress{% if ag.goal_hours == 0.0 %} progress-danger progress-striped{% endif %}{% if ag.get_remaining_hours < 0 %} progress-danger{% endif %}">
                                 <div class="bar{% if ag.get_percent_complete == 100 %} bar-success{% endif %}" style="width: {{ ag.get_percent_complete }}%;"></div>
                             </div>
                         </td>
-                        <td>{{ ag.charged_hours }} / {{ ag.hours }}</td>
-                        <td><span class="label{% if ag.get_remaining_hours < 0 %} label-important{% endif %}">{{ ag.get_remaining_hours }} remaining</span></td>
+                        <td class="ag-progress-active-{{ ag.employee.is_active }}  ag-progress-current-{{ ag.current }}">{{ ag.charged_hours }} / {{ ag.hours }}</td>
+                        <td class="ag-progress-active-{{ ag.employee.is_active }}  ag-progress-current-{{ ag.current }}"><span class="label{% if ag.get_remaining_hours < 0 %} label-important{% endif %}">{{ ag.get_remaining_hours }} remaining</span></td>
                     </tr>
                     {% endfor %}
                 {% endfor %}
@@ -251,12 +316,72 @@
 <script charset="utf-8" src="{{ STATIC_URL }}timepiece/js/burnup_charts/c3.min.js"></script>
 <script charset="utf-8" src="{{ STATIC_URL }}timepiece/js/burnup_charts/d3.min.js"></script>
 <script charset="utf-8" src="{{ STATIC_URL }}timepiece/js/burnup_charts/burnup_charts.js"></script>
+<script src="{{ STATIC_URL }}project-toolbox/js/tags.js" ></script>
 <script>
 $('#burnup_chart_button').click(function() {
     create_burnup_chart({{ object.id }});
 })
+
+function filter_activity_goals() {
+    $('.ag-active-False').show();
+    $('.ag-current-False').show();
+
+    if ($('input[name="ag-filter"]:checked').attr('value') == 'active') {
+        $('.ag-active-False').hide();
+    }
+
+    if ($('input[name="ag-current"]:checked').attr('value') == 'current') {
+        $('.ag-current-False').hide();
+    }
+}
+
+function filter_activity_goals_progress() {
+    $('.ag-progress-active-False').show();
+    $('.ag-progress-current-False').show();
+
+    if ($('input[name="ag-progress-filter"]:checked').attr('value') == 'active') {
+        $('.ag-progress-active-False').hide();
+    }
+
+    if ($('input[name="ag-progress-current"]:checked').attr('value') == 'current') {
+        $('.ag-progress-current-False').hide();
+    }
+}
+
 $(document).ready( function () {
+    create_remove_tag_handler("{% url 'remove_project_tag' object.id %}");
+    create_add_tag_handler("{% url 'project_tags' object.id %}");
+
     create_burnup_chart({{ object.id }});
-})
+
+    $('input[name="ag-filter"]').change(
+        function() {
+            filter_activity_goals();
+        }
+    );
+
+    $('input[name="ag-progress-filter"]').change(
+        function(){
+            filter_activity_goals_progress();
+        }
+    );
+
+    $('input[name="ag-current"]').change(
+        function() {
+            filter_activity_goals();
+        }
+    );
+
+    $('input[name="ag-progress-current"]').change(
+        function(){
+            filter_activity_goals_progress();
+        }
+    );
+
+    filter_activity_goals();
+    filter_activity_goals_progress();
+});
+
+
 </script>
 {% endblock extrajs %}

@@ -1,0 +1,87 @@
+{% extends "timepiece/lead/base.html" %}
+{% load timepiece_tags bootstrap_toolkit %}
+{% load url from future %}
+
+{% block extracss %}
+<link href="{{ STATIC_URL }}ajaxuploader/css/fileuploader.css" media="screen" rel="stylesheet" type="text/css" />
+{% endblock extracss %}
+
+
+{% block crumbs %}
+    {{ block.super }}
+    <li><span class="divider">/</span> <a href="{% url 'view_lead' object.id %}">{{ object.title }}</a></li>
+{% endblock crumbs %}
+
+{% block content %}
+    {% block lead_nav %}
+        <div class="row-fluid">
+            <div class="span12">
+                <h2>{{ object.title }}</h2>
+                <ul class="nav nav-pills">
+                    <li{% ifequal active 'general_info' %} class="active"{% endifequal %}>
+                        <a href="{% ifequal active 'general_info' %}#{% else %}{% url 'view_lead' object.id %}{% endifequal %}">
+                            <span style="padding: 2px 9px 2px 9px; margin: -2px 0px 0px 8px;" class="badge badge-info pull-right" title="This Lead has {{ open_general_task_count }} open General Tasks associated with it.">{{ open_general_task_count }}</span>
+                            General Info
+                        </a>
+                    </li>
+                    <li{% ifequal active 'distinguishing_value' %} class="active"{% endifequal %}>
+                        <a href="{% ifequal active 'distinguishing_value' %}#{% else %}{% url 'view_lead_distinguishing_value' object.id %}{% endifequal %}">
+                            <span style="padding: 2px 9px 2px 9px; margin: -2px 0px 0px 8px;" class="badge badge-info pull-right" title="This Lead has {{ dv_count }} differentiating values associated with it.">{{ dv_count }}</span>
+                            Differentiating Values
+                        </a>
+                    </li>
+                    <li{% ifequal active 'opportunities' %} class="active"{% endifequal %}>
+                        <a href="{% ifequal active 'opportunities' %}#{% else %}{% url 'view_lead_opportunities' object.id %}{% endifequal %}">
+                            <span style="padding: 2px 9px 2px 9px; margin: -2px 0px 0px 8px;" class="badge badge-info pull-right" title="This Lead has {{ dv_count }} opportunities associated with it.">{{ opportunity_count }}</span>
+                            Opportunities
+                        </a>
+                    </li>
+                </ul>
+            </div>
+        </div>
+    {% endblock lead_nav %}
+
+    {% block lead_content %}
+    {% endblock lead_content %}
+{% endblock content %}
+
+{% block extrajs %}
+<script src="{{ STATIC_URL }}ajaxuploader/js/fileuploader.js" ></script>
+<script src="{{ STATIC_URL }}project-toolbox/js/tags.js" ></script>
+<script>
+    ATTACHMENTS = {};
+        $(function(){
+        var uploader = new qq.FileUploader({
+            action: "{% url 'add_lead_attachment' object.id %}",
+            element: $('#file-uploader')[0],
+            multiple: true,
+            onComplete: function(id, filename, responseJSON) {
+                if(responseJSON.success) {
+                    ATTACHMENTS[id] = {'id': id,
+                                       'filename': filename,
+                                       'json': responseJSON};
+                } else {
+                    console.log('fail', id, filename, responseJSON);
+                }
+            },
+            onAllComplete: function(uploads) {
+                // uploads is an array of maps
+                // the maps look like this: {file: FileObject, response: JSONServerResponse}
+                // do nothing
+            },
+            params: {
+                'csrf_token': '{{ csrf_token }}',
+                'csrf_name': 'csrfmiddlewaretoken',
+                'csrf_xname': 'X-CSRFToken',
+            },
+        });
+        });
+
+    $(document).ready(
+        function () {
+            create_remove_tag_handler("{% url 'remove_lead_tag' object.id %}");
+            create_add_tag_handler("{% url 'lead_tags' object.id %}");
+        }
+    );
+</script>
+{% endblock extrajs %}

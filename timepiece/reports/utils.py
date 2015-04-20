@@ -8,6 +8,8 @@ from timepiece.utils import get_hours_summary, add_timezone, get_week_start,\
         get_month_start, get_year_start, get_setting
 from timepiece.entries.models import Entry
 
+from django.contrib.auth.models import User
+
 
 def date_totals(entries, by):
     """Yield a user's name and a dictionary of their hours"""
@@ -182,10 +184,17 @@ def get_payroll_totals(month_work_entries, month_leave_entries):
     labels = dict([(status, []) for status in work_statuses + leave_statuses])
     rows = []
     totals = _construct_row('Totals')
-    for user, work_entries in groupby(month_work_entries, lambda e: e['user']):
+    users = set([e['user'] for e in month_work_entries] + [e['user'] for e in month_leave_entries])
+    print 'users', users
+    # for user, work_entries in groupby(month_work_entries, lambda e: e['user']):
+    for user in users:
+        work_entries = list(month_work_entries.filter(user=user))
+        leave_entries = month_leave_entries.filter(user=user)
+        if len(work_entries):
+            row = _construct_row(**_get_user_info(work_entries))
+        else:
+            row = _construct_row(**_get_user_info(leave_entries))
 
-        work_entries = list(work_entries)
-        row = _construct_row(**_get_user_info(work_entries))
         rows.append(row)
         for entry in work_entries:
             status = 'billable' if entry['billable'] else 'nonbillable'
@@ -197,7 +206,6 @@ def get_payroll_totals(month_work_entries, month_leave_entries):
             totals[status][index]['hours'] += hours
             totals[status][-1]['hours'] += hours
 
-        leave_entries = month_leave_entries.filter(user=user)
         status = 'leave'
         for entry in leave_entries:
             label = entry.get('project__name')

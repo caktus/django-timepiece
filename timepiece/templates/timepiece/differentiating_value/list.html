@@ -1,0 +1,59 @@
+{% extends "timepiece/differentiating_value/base.html" %}
+{% load bootstrap_toolkit %}
+{% load url from future %}
+
+{% block title %}Template Differentiating Values{% endblock title %}
+
+{% block content %}
+    <div class="row-fluid">
+        <div class="span12">
+            <h2>Template Differentiating Values</h2>
+            <ul class="nav nav-pills">
+                {% if perms.crm.add_templatedifferentiatingvalue %}
+                    <li><a href="{% url 'create_template_differentiating_value' %}">Create Template DV</a></li>
+                {% endif %}
+            </ul>
+        </div>
+    </div>
+
+    <div class="row-fluid">
+        <div class="span12">
+            <form class='form-inline' accept-charset='UTF-8' method='get' action=''>
+                {{ form|as_bootstrap:"inline" }}
+                <button type='submit' class='btn' name='submit'>Search</button>
+                <button type="submit" class="btn btn-success" name="export_template_dv_list" value="True">Export List</button>
+            </form>
+        </div>
+    </div>
+
+    <div class="row-fluid">
+        <div class="span12">
+            {% load pagination_tags %}
+            {% autopaginate object_list %}
+
+            {% paginate %}
+            <table class='table table-bordered table-striped table-condensed'>
+                <thead>
+                    <tr>
+                        <th></th>
+                        <th>Short Name</th>
+                        <th>Probing Question</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for object in object_list %}
+                        <tr>
+                            <td style="white-space: nowrap;">
+                                <a href="{% url 'edit_template_differentiating_value' object.pk %}" title="Edit {{ object.short_name }}"><i class="icon-pencil"></i> </a>
+                                <a href="{% url 'delete_template_differentiating_value' object.pk %}" title="Delete {{ object.short_name }}"><i class="icon-trash"></i> </a>
+                            </td>
+                            <td style="white-space: nowrap;">{{ object.short_name }}</td>
+                            <td>{{ object.probing_question }}</td>
+                        </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+            {% paginate %}
+        </div>
+    </div>
+{% endblock content %}

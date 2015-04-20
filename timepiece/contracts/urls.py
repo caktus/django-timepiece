@@ -22,6 +22,20 @@ urlpatterns = patterns('',
         views.DeleteContract.as_view(),
         name='delete_contract'),
 
+    # Get Tags / Add Tag
+    url(r'^contract/(?P<contract_id>\d+)/tags/$',
+        views.ContractTags.as_view(),
+        name='contract_tags'),
+    # Remove Tag
+    url(r'^contract/(?P<contract_id>\d+)/tags/remove$',
+        views.RemoveContractTag.as_view(),
+        name='remove_contract_tag'),
+
+    # Add Contract Note
+    url(r'^contract/(?P<contract_id>\d+)/add_note$', # expects querystring of transition_id=<int>
+        views.AddContractNote.as_view(),
+        name='add_contract_note'),
+
     # Contract Atachments
     url(r'^(?P<contract_id>\d+)/attachment/add/$',
         views.contract_upload_attachment,

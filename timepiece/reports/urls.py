@@ -39,6 +39,10 @@ urlpatterns = patterns('',
         views.report_employee_backlog,
         name='report_employee_backlog'),
 
+    url(r'^reports/backlog/user/(?P<user_id>\d+)/chart_data/$',
+        views.employee_backlog_chart_data,
+        name='employee_backlog_chart_data'),
+
     url(r'^reports/active_project_burnup_charts/$',
         views.active_projects_burnup_charts,
         name='report_active_projects_burnup_charts'),

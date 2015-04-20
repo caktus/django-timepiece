@@ -27,6 +27,12 @@ def add_timezone(value, tz=None):
         return timezone.make_aware(dt, tz)
     return value
 
+def remove_timezone(value):
+    if timezone.is_aware(value):
+        return datetime.datetime(value.year, value.month, value.day, 
+            value.hour, value.minute, value.second)
+    else:
+        return value
 
 def get_active_entry(user, select_for_update=False):
     """Returns the user's currently-active entry, or None."""
