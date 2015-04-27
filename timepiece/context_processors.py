@@ -55,5 +55,7 @@ def extra_settings(request):
     return {
         'COMPRESS_ENABLED': settings.COMPRESS_ENABLED,
         'TIMEPIECE_DEFAULT_PROJECT_STATUS': settings.TIMEPIECE_DEFAULT_PROJECT_STATUS,
+        'AWS_UPLOAD_BUCKET_NAME': settings.AWS_UPLOAD_BUCKET_NAME,
+        'AWS_CLIENT_ACCESS_KEY': settings.AWS_UPLOAD_CLIENT_KEY,
         'now': datetime.datetime.now(),
     }

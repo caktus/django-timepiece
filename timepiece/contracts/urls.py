@@ -37,12 +37,16 @@ urlpatterns = patterns('',
         name='add_contract_note'),
 
     # Contract Atachments
-    url(r'^(?P<contract_id>\d+)/attachment/add/$',
+    url(r'^contract/(?P<contract_id>\d+)/attachment/add/$',
         views.contract_upload_attachment,
         name='add_contract_attachment'),
-    url(r'^(?P<contract_id>\d+)/attachment/(?P<attachment_id>\w+)/$',
+    url(r'^contract/(?P<contract_id>\d+)/attachment/s3/$',
+        views.contract_s3_attachment,
+        name='s3_contract_attachment'),
+    url(r'^contract/(?P<contract_id>\d+)/attachment/(?P<attachment_id>\d+)/$',
         views.contract_download_attachment,
         name='download_contract_attachment'),
+    
 
     # Contract Increment (Budget and Hours)
     url(r'^contract/(?P<contract_id>\d+)/increment/$',

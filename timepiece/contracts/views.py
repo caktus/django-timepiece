@@ -3,6 +3,8 @@ from dateutil.relativedelta import relativedelta
 import json
 
 from django.contrib.auth.decorators import login_required, permission_required
+from django.contrib.auth.models import User
+from django.views.decorators.csrf import csrf_exempt
 from django.contrib import messages
 from django.core.urlresolvers import reverse, reverse_lazy
 from django.db import transaction, DatabaseError
@@ -659,6 +661,24 @@ def delete_invoice_entry(request, invoice_id, entry_id):
     })
 
 import sys, traceback
+@csrf_exempt
+# @permission_required('contracts.add_contractattachment')
+def contract_s3_attachment(request, contract_id):
+    bucket = request.POST.get('bucket', None)
+    uuid = request.POST.get('key', None)
+    userid = int(request.POST.get('firmbase-userid', 4))
+    filename = request.POST.get('name', '')
+
+    attachment = ContractAttachment(
+        contract=ProjectContract.objects.get(id=int(contract_id)),
+        bucket=bucket,
+        uuid=uuid,
+        filename=filename,
+        uploader=User.objects.get(id=userid))
+    attachment.save()
+
+    return HttpResponse(status=200)
+
 @permission_required('contracts.add_contractattachment')
 def contract_upload_attachment(request, contract_id):
     try:
@@ -686,17 +706,11 @@ def contract_upload_attachment(request, contract_id):
         print sys.exc_info(), traceback.format_exc()
     return hr
 
-from project_toolbox_main import settings as project_settings
-from bson.objectid import ObjectId
-import gridfs
 @permission_required('contracts.view_contractattachment')
 def contract_download_attachment(request, contract_id, attachment_id):
     try:
         contract_attachment = ContractAttachment.objects.get(
             contract_id=contract_id, id=attachment_id)
-        MONGO_DB_INSTANCE = project_settings.MONGO_CLIENT.contract_attachments
-        GRID_FS_INSTANCE = gridfs.GridFS(MONGO_DB_INSTANCE)
-        f = GRID_FS_INSTANCE.get(ObjectId(contract_attachment.file_id))
-        return HttpResponse(f.read(), content_type=f.content_type)
+        return HttpResponseRedirect(contract_attachment.get_download_url())
     except:
         return HttpResponse('Attachment could not be found.')
