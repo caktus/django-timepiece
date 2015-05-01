@@ -1294,9 +1294,9 @@ def get_employee_backlog_chart_data(user_id):
     """
 
     def new_empty_date():
-        return {'Holiday': 0.0,
-                'Approved Paid Time Off': 0.0,
-                'Approved Unpaid Time Off': 0.0}
+        # return {'Holiday': 0.0,
+        #         'Approved Time Off': 0.0}
+        return {}
 
     employee = User.objects.get(id=int(user_id))
     avg_hours_per_day = employee.profile.hours_per_week / Decimal('5.0')
