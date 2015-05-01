@@ -222,15 +222,16 @@ class HourlyReport(ReportMixin, CSVViewMixin, TemplateView):
 
         date_headers = context['date_headers']
 
-        headers = ['Name']
+        if self.export_projects:
+            key = 'By Project (All Projects)'
+            headers = ['Project Code', 'Project Name']
+        elif self.export_users:
+            key = 'By User'
+            headers = ['Name']
+
         headers.extend([date.strftime('%m/%d/%Y') for date in date_headers])
         headers.append('Total')
         content.append(headers)
-        
-        if self.export_projects:
-            key = 'By Project (All Projects)'
-        elif self.export_users:
-            key = 'By User'
 
         summaries = context['summaries']
         try:
@@ -239,10 +240,16 @@ class HourlyReport(ReportMixin, CSVViewMixin, TemplateView):
             summary = []
         for rows, totals in summary:
             for name, user_id, hours in rows:
-                data = [name]
+                if self.export_projects:
+                    data = name.split(': ')
+                elif self.export_users:
+                    data = [name]
                 data.extend(hours)
                 content.append(data)
-            total = ['Totals']
+            if self.export_projects:
+                total = ['', 'Totals']
+            elif self.export_users:
+                total = ['Totals']
             total.extend(totals)
             content.append(total)
         return content

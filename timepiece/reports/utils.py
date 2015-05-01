@@ -20,8 +20,8 @@ def date_totals(entries, by):
         d_entries = list(date_entries)
 
         if by == 'user':
-            name = ' '.join((d_entries[0]['user__first_name'],
-                    d_entries[0]['user__last_name']))
+            name = ', '.join((d_entries[0]['user__last_name'],
+                    d_entries[0]['user__first_name']))
         elif by == 'project':
             name = '%s: %s' % (d_entries[0]['project__code'], d_entries[0]['project__name'])
         else:
@@ -132,7 +132,7 @@ def get_payroll_totals(month_work_entries, month_leave_entries):
         """Helper for getting the associated user's first and last name."""
         fname = entries[0].get('user__first_name', '') if entries else ''
         lname = entries[0].get('user__last_name', '') if entries else ''
-        name = '{0} {1}'.format(fname, lname).strip()
+        name = '{1}, {0}'.format(fname, lname).strip()
         user_id = entries[0].get('user', None) if entries else None
         return {'name': name, 'user_id': user_id}
 
@@ -184,8 +184,11 @@ def get_payroll_totals(month_work_entries, month_leave_entries):
     labels = dict([(status, []) for status in work_statuses + leave_statuses])
     rows = []
     totals = _construct_row('Totals')
-    users = set([e['user'] for e in month_work_entries] + [e['user'] for e in month_leave_entries])
-    print 'users', users
+    user_ids = set([e['user'] for e in month_work_entries] + 
+        [e['user'] for e in month_leave_entries])
+    users = [u.id for u in User.objects.filter(id__in=user_ids
+        ).order_by('last_name', 'first_name', 'id')]
+    
     # for user, work_entries in groupby(month_work_entries, lambda e: e['user']):
     for user in users:
         work_entries = list(month_work_entries.filter(user=user))
