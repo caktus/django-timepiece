@@ -41,7 +41,7 @@
                 {% if dvc %}
                 <div class="tab-pane{% if dvc %} active{% endif%}" id="active-dvc">                    
                     <div class="span7">                        
-                      <form action="{% url 'update_distinguishing_value_challenge' object.id dvc.id %}" method="post">
+                      <form id="dvc_form" action="{% url 'update_distinguishing_value_challenge' object.id dvc.id %}" method="post">
                         {% csrf_token %}
                         <div class="control-group">
                             <span class="help-inline">{{ dvc_form.probing_question.help_text }}</span>
@@ -278,3 +278,14 @@
     </div>
 
 {% endblock lead_content %}
+
+{% block extrajs %}
+{{ block.super }}
+<script>
+    $(document).ready(
+        function () {
+            $('#dvc_form').areYouSure( {'message': 'You have unsaved changes!  To save the changes select "Stay on this Page" below and then click one of the "Save" buttons.'} );        
+        }
+    );
+</script>
+{% endblock extrajs %}
