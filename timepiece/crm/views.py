@@ -1860,6 +1860,7 @@ class ListLeads(SearchListView, CSVViewMixin):
 
     def get(self, request, *args, **kwargs):
         self.export_lead_list = request.GET.get('export_lead_list', False)
+        self.export_lead_list_general_tasks = request.GET.get('export_lead_list_general_tasks', False)
         if self.export_lead_list:
             kls = CSVViewMixin
 
@@ -1876,6 +1877,28 @@ class ListLeads(SearchListView, CSVViewMixin):
                 object_list=self.object_list)
 
             return kls.render_to_response(self, context)
+
+        elif self.export_lead_list_general_tasks:
+            kls = CSVViewMixin
+
+            form_class = self.get_form_class()
+            self.form = self.get_form(form_class)
+            self.object_list = self.get_queryset()
+            self.object_list = self.filter_results(self.form, self.object_list)
+
+            self.object_list = GeneralTask.objects.filter(
+                lead__in=self.object_list).order_by('lead__status',
+                'lead__title', 'lead', 'form_id')
+
+            allow_empty = self.get_allow_empty()
+            if not allow_empty and len(self.object_list) == 0:
+                raise Http404("No results found.")
+
+            context = self.get_context_data(form=self.form,
+                object_list=self.object_list)
+
+            return kls.render_to_response(self, context)
+
         else:
             return super(ListLeads, self).get(request, *args, **kwargs)
     
@@ -1887,16 +1910,23 @@ class ListLeads(SearchListView, CSVViewMixin):
     #     return queryset
 
     def get_filename(self, context):
-        request = self.request.GET.copy()
-        search = request.get('search', '(empty)')
-        return 'lead_search_{0}.csv'.format(search)
+        if self.export_lead_list:
+            request = self.request.GET.copy()
+            search = request.get('search', '(empty)')
+            return 'lead_search_{0}'.format(search)
+        elif self.export_lead_list_general_tasks:
+            request = self.request.GET.copy()
+            search = request.get('search', '(empty)')
+            return 'lead_search_{0}_general_tasks'.format(search)
 
     def convert_context_to_csv(self, context):
         """Convert the context dictionary into a CSV file."""
         content = []
-        lead_list = context['lead_list']
+        lead_list = context['lead_list'] if 'lead_list' in context else []
+        general_task_list = context['generaltask_list'] if 'generaltask_list' in context else []
         if self.export_lead_list:
-            headers = ['Title',
+            headers = ['ID',
+                       'Title',
                        'Status',
                        'AAC Primary',
                        'Primary Contact Salutaton', 
@@ -1938,7 +1968,8 @@ class ListLeads(SearchListView, CSVViewMixin):
             content.append(headers)
             for lead in lead_list:
                 if lead.primary_contact:
-                    row = [lead.title,
+                    row = [lead.id,
+                           lead.title,
                            lead.get_status_display(),
                            lead.aac_poc.email,
                            lead.primary_contact.salutation, 
@@ -1978,7 +2009,8 @@ class ListLeads(SearchListView, CSVViewMixin):
                            lead.primary_contact.birthday, 
                            lead.lead_source.email]
                 else:
-                    row = [lead.title,
+                    row = [lead.id,
+                           lead.title,
                            lead.get_status_display(),
                            lead.aac_poc.email,
                            'n/a', 
@@ -2021,6 +2053,22 @@ class ListLeads(SearchListView, CSVViewMixin):
                     row.append(tag)
 
                 content.append(row)
+        elif self.export_lead_list_general_tasks:
+            headers = ['Lead ID', 'Lead', 'Lead Status', 'General Task ID', 'GT Status',
+                'GT Priority', 'GT Due Date', 'GT Assignee', 'GT Description']
+            content.append(headers)
+            for gt in general_task_list:
+                row = [ gt.lead.id,
+                        gt.lead.title,
+                        gt.lead.get_status_display(),
+                        gt.form_id,
+                        gt.status,
+                        gt.get_priority_display(),
+                        gt.requested_date,
+                        str(gt.assignee),
+                        gt.description ]
+                content.append(row)
+
         return content
 
 @cbv_decorator(permission_required('crm.view_lead'))
