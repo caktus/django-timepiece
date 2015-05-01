@@ -253,7 +253,7 @@
                     <input type="radio" name="ag-progress-filter" value="active" checked>
                     Only Active Employees
                 </label>
-                {% comment %}|
+                |
                 <label class="radio inline">
                     <input type="radio" name="ag-progress-current" value="all" checked>
                     All Goals
@@ -261,7 +261,7 @@
                 <label class="radio inline">
                     <input type="radio" name="ag-progress-current" value="current">
                     Only Current/Future Goals
-                </label>{% endcomment %}
+                </label>
             </div>
             <table class="table">
                 <tr>
@@ -274,11 +274,11 @@
                     {% for ag in employee_ags.activity_goals %}
                     <tr class="ag-progress-active-{{ ag.employee.is_active }}">
                         {% if forloop.first %}
-                        <td rowspan="{{ employee_ags.activity_goals|length }}" class="ag-progress-active-{{ ag.employee.is_active }}  ag-progress-current-{{ ag.current }}">
+                        <td rowspan="{{ employee_ags.activity_goals|length }}" class="ag-progress-active-{{ ag.employee.is_active }}">
                           {{ ag.employee.last_name }}, {{ ag.employee.first_name }}
                         </td>
                         {% endif %}
-                        <td class="ag-progress-active-{{ ag.employee.is_active }}  ag-progress-current-{{ ag.current }}">
+                        <td class="ag-progress-active-{{ ag.employee.is_active }} ag-progress-current-{{ ag.current }}">
                             {% if ag.id %}
                             <a href="{% url 'edit_activity_goal' ag.project.id ag.id %}"><i class="icon-edit" title="Edit Activity Goal for {{ ag.employee.first_name }} on {{ ag.project.code }} for {{ ag.activity_name }}."> </i></a>
                             {% else %}
@@ -286,13 +286,13 @@
                             {% endif %}
                             {{ ag.activity.name }}<br/>{{ ag.date }} - {{ ag.end_date }}
                         </td>
-                        <td class="ag-progress-active-{{ ag.employee.is_active }}  ag-progress-current-{{ ag.current }}">
+                        <td class="ag-progress-active-{{ ag.employee.is_active }} ag-progress-current-{{ ag.current }}">
                             <div class="progress{% if ag.goal_hours == 0.0 %} progress-danger progress-striped{% endif %}{% if ag.get_remaining_hours < 0 %} progress-danger{% endif %}">
                                 <div class="bar{% if ag.get_percent_complete == 100 %} bar-success{% endif %}" style="width: {{ ag.get_percent_complete }}%;"></div>
                             </div>
                         </td>
-                        <td class="ag-progress-active-{{ ag.employee.is_active }}  ag-progress-current-{{ ag.current }}">{{ ag.charged_hours }} / {{ ag.hours }}</td>
-                        <td class="ag-progress-active-{{ ag.employee.is_active }}  ag-progress-current-{{ ag.current }}"><span class="label{% if ag.get_remaining_hours < 0 %} label-important{% endif %}">{{ ag.get_remaining_hours }} remaining</span></td>
+                        <td class="ag-progress-active-{{ ag.employee.is_active }} ag-progress-current-{{ ag.current }}">{{ ag.charged_hours }} / {{ ag.hours }}</td>
+                        <td class="ag-progress-active-{{ ag.employee.is_active }} ag-progress-current-{{ ag.current }}"><span class="label{% if ag.get_remaining_hours < 0 %} label-important{% endif %}">{{ ag.get_remaining_hours }} remaining</span></td>
                     </tr>
                     {% endfor %}
                 {% endfor %}
