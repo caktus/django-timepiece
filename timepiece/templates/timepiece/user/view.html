@@ -41,6 +41,54 @@
                             <span class="label label-important"><i class="icon-white icon-remove"></i></span>
                         {% endif %}
                     </td>
+                </tr>
+                <tr>
+                    <th style="white-space: nowrap;">Weekly Schedule</th>
+                    <td>
+                        <span class="label label-success">{{ object.profile.hours_per_week }} hrs/week</span><p/>
+                        <table class="table table-bordered table-condensed">
+                            <thead><tr>
+                                <th>Sunday</th>
+                                <th>Monday</th>
+                                <th>Tuesday</th>
+                                <th>Wednesday</th>
+                                <th>Thursday</th>
+                                <th>Friday</th>
+                                <th>Saturday</th>
+                            </tr></thead>
+                            <tbody><tr>
+                                <td style="white-space: nowrap;">{{ object.profile.get_sunday_schedule }} hrs</td>
+                                <td style="white-space: nowrap;">{{ object.profile.get_monday_schedule }} hrs</td>
+                                <td style="white-space: nowrap;">{{ object.profile.get_tuesday_schedule }} hrs</td>
+                                <td style="white-space: nowrap;">{{ object.profile.get_wednesday_schedule }} hrs</td>
+                                <td style="white-space: nowrap;">{{ object.profile.get_thursday_schedule }} hrs</td>
+                                <td style="white-space: nowrap;">{{ object.profile.get_friday_schedule }} hrs</td>
+                                <td style="white-space: nowrap;">{{ object.profile.get_saturday_schedule }} hrs</td>
+                            </tr></tbody>
+                        </table>
+                    </td>
+                </tr>
+                <tr>
+                    <th>Earns PTO</th>
+                    <td>
+                        {% if object.profile.earns_pto %}
+                            <span class="label label-success"><i class="icon-white icon-ok"></i></span>
+                            {{ object.profile.pto_accrual }} hours per pay period
+                        {% else %}
+                            <span class="label label-important"><i class="icon-white icon-remove"></i></span>
+                        {% endif %}
+                    </td>
+                </tr>
+                <tr>
+                    <th>Paid Holidays</th>
+                    <td>
+                        {% if object.profile.earns_holiday_pay %}
+                            <span class="label label-success"><i class="icon-white icon-ok"></i></span>
+                        {% else %}
+                            <span class="label label-important"><i class="icon-white icon-remove"></i></span>
+                        {% endif %}
+                    </td>
+                </tr>
             </table>
         </div>
 

@@ -16,6 +16,7 @@ from timepiece.crm.models import (Attribute, Business, Project,
         BusinessDepartment, Contact, ContactNote, Lead, LeadNote,
         DistinguishingValueChallenge, TemplateDifferentiatingValue,
         DVCostItem, Opportunity, LeadAttachment)
+from timepiece.fields import WeeklyScheduleWidget
 
 import datetime
 
@@ -163,11 +164,12 @@ class EditUserForm(UserChangeForm):
             widget=forms.PasswordInput(render_value=False))
     business = forms.ModelChoiceField(Business.objects.all())
     hire_date = forms.DateField()
-    hours_per_week = forms.DecimalField(max_digits=4, decimal_places=2)
     earns_pto = forms.BooleanField(required=False, label='Earns PTO')
     earns_holiday_pay = forms.BooleanField(required=False, label='Earns Holiday Pay')
     pto_accrual = forms.FloatField(initial=0.0, label='PTO Accrual Amount', help_text='Number of PTO hours earned per pay period for the employee.')
     employee_type = forms.ChoiceField(choices=UserProfile.EMPLOYEE_TYPES.items())
+
+    weekly_schedule = forms.CharField(widget=WeeklyScheduleWidget)
 
     class Meta:
         model = User
@@ -181,11 +183,11 @@ class EditUserForm(UserChangeForm):
         up = UserProfile.objects.get(user=kwargs['instance'])
         self.fields['business'].initial = up.business
         self.fields['hire_date'].initial = up.hire_date
-        self.fields['hours_per_week'].initial = up.hours_per_week
         self.fields['earns_pto'].initial = up.earns_pto
         self.fields['earns_holiday_pay'].initial = up.earns_holiday_pay
         self.fields['pto_accrual'].initial = up.pto_accrual
         self.fields['employee_type'].initial = up.employee_type
+        self.fields['weekly_schedule'].initial = up.weekly_schedule
         # In 1.4 this field is created even if it is excluded in Meta.
         if 'password' in self.fields:
             del(self.fields['password'])
@@ -205,11 +207,11 @@ class EditUserForm(UserChangeForm):
         up = UserProfile.objects.get(user=instance)
         up.business = self.cleaned_data.get('business')
         up.hire_date = self.cleaned_data['hire_date']
-        up.hours_per_week = self.cleaned_data['hours_per_week']
         up.earns_pto = self.cleaned_data['earns_pto']
         up.earns_holiday_pay = self.cleaned_data['earns_holiday_pay']
         up.pto_accrual = self.cleaned_data['pto_accrual']
         up.employee_type = self.cleaned_data['employee_type']
+        up.weekly_schedule = self.cleaned_data.get('weekly_schedule')
 
         if password1:
             instance.set_password(password1)

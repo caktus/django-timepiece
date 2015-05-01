@@ -58,8 +58,6 @@ class UserProfile(models.Model):
     }
 
     user = models.OneToOneField(User, unique=True, related_name='profile')
-    hours_per_week = models.DecimalField(max_digits=8, decimal_places=2,
-            default=40)
     business = models.ForeignKey('Business')
     employee_type = models.CharField(max_length=24, choices=EMPLOYEE_TYPES.items(), default=INACTIVE)
     earns_pto = models.BooleanField(default=False, help_text='Does the employee earn Paid Time Off?')
@@ -67,11 +65,49 @@ class UserProfile(models.Model):
     pto_accrual = models.FloatField(default=0.0, verbose_name='PTO Accrual Amount', help_text='Number of PTO hours earned per pay period for the employee.')
     hire_date = models.DateField(blank=True, null=True)
 
+    weekly_schedule = models.CharField(max_length=128)
+
     class Meta:
         db_table = 'timepiece_userprofile'  # Using legacy table name.
 
     def __unicode__(self):
         return unicode(self.user)
+
+    @property
+    def week_schedule(self):
+        return [float(val) for val in self.weekly_schedule.split(',')]
+
+    @property
+    def hours_per_week(self):
+        return sum(self.week_schedule)
+
+    @property
+    def get_sunday_schedule(self):
+        return self.week_schedule[0]
+
+    @property
+    def get_monday_schedule(self):
+        return self.week_schedule[1]
+
+    @property
+    def get_tuesday_schedule(self):
+        return self.week_schedule[2]
+
+    @property
+    def get_wednesday_schedule(self):
+        return self.week_schedule[3]
+
+    @property
+    def get_thursday_schedule(self):
+        return self.week_schedule[4]
+
+    @property
+    def get_friday_schedule(self):
+        return self.week_schedule[5]
+
+    @property
+    def get_saturday_schedule(self):
+        return self.week_schedule[6]
 
     @property
     def get_pto(self):

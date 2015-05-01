@@ -20,7 +20,8 @@ from django.views.generic import (CreateView, DeleteView, DetailView,
 from django.forms import widgets
 
 from timepiece import utils
-from timepiece.forms import YearMonthForm, UserYearMonthForm, DateForm, UserDateForm, StatusUserDateForm, StatusDateForm
+from timepiece.forms import (YearMonthForm, UserYearMonthForm, DateForm,
+    UserDateForm, StatusUserDateForm, StatusDateForm)
 from timepiece.templatetags.timepiece_tags import seconds_to_hours
 from timepiece.utils.csv import CSVViewMixin
 from timepiece.utils.search import SearchListView
