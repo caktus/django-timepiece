@@ -5,7 +5,7 @@ from django.contrib.auth.models import User
 from django.core import validators
 from django.core.exceptions import ValidationError
 from django.db import models
-from django.db.models import Q, Sum, Max, Min
+from django.db.models import F, Q, Sum, Max, Min
 from django.utils import timezone
 from django.utils.encoding import python_2_unicode_compatible
 
@@ -115,8 +115,17 @@ class EntryManager(models.Manager):
         # in other words: do not remove!
         str(qs.query)
 
-        qs = qs.extra({'billable': 'timepiece_activity.billable AND '
-                                   'timepiece_attribute.billable'})
+        # See ticket #24431.
+        # This can be updated when support for Django 1.7 is dropped.
+        import django
+        if django.VERSION >= (1, 8):
+            billable = F('project__type__billable').bitand(F('activity__billable'))
+            qs = qs.annotate(billable=billable)
+        else:
+            qs = qs.extra({
+                'billable': 'timepiece_activity.billable AND '
+                            'timepiece_attribute.billable',
+            })
         return qs
 
     def date_trunc(self, key='month', extra_values=()):
