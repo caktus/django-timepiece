@@ -2,49 +2,56 @@ from django.contrib.auth.models import User
 from django.core.urlresolvers import reverse
 from django.db import models
 from django.db.models import get_model
+from django.utils.encoding import python_2_unicode_compatible
+
+from timepiece.utils import get_active_entry
 
 
 # Add a utility method to the User class that will tell whether or not a
 # particular user has any unclosed entries
-User.clocked_in = property(lambda user: user.timepiece_entries.filter(
-    end_time__isnull=True).count() > 0)
+_clocked_in = lambda user: bool(get_active_entry(user))
+User.add_to_class('clocked_in', property(_clocked_in))
 
 
 # Utility method to get user's name, falling back to username.
-User.get_name_or_username = lambda user: user.get_full_name() or user.username
+_get_name_or_username = lambda user: user.get_full_name() or user.username
+User.add_to_class('get_name_or_username', _get_name_or_username)
 
 
-User.get_absolute_url = lambda user: reverse('view_user', args=(user.pk,))
+_get_absolute_url = lambda user: reverse('view_user', args=(user.pk,))
+User.add_to_class('get_absolute_url', _get_absolute_url)
 
 
+@python_2_unicode_compatible
 class UserProfile(models.Model):
     user = models.OneToOneField(User, unique=True, related_name='profile')
-    hours_per_week = models.DecimalField(max_digits=8, decimal_places=2,
-                                         default=40)
+    hours_per_week = models.DecimalField(
+        max_digits=8, decimal_places=2, default=40)
 
     class Meta:
         db_table = 'timepiece_userprofile'  # Using legacy table name.
 
-    def __unicode__(self):
-        return unicode(self.user)
+    def __str__(self):
+        return self.user
 
 
 class TypeAttributeManager(models.Manager):
     """Object manager for type attributes."""
 
-    def get_query_set(self):
-        qs = super(TypeAttributeManager, self).get_query_set()
+    def get_queryset(self):
+        qs = super(TypeAttributeManager, self).get_queryset()
         return qs.filter(type=Attribute.PROJECT_TYPE)
 
 
 class StatusAttributeManager(models.Manager):
     """Object manager for status attributes."""
 
-    def get_query_set(self):
-        qs = super(StatusAttributeManager, self).get_query_set()
+    def get_queryset(self):
+        qs = super(StatusAttributeManager, self).get_queryset()
         return qs.filter(type=Attribute.PROJECT_STATUS)
 
 
+@python_2_unicode_compatible
 class Attribute(models.Model):
     PROJECT_TYPE = 'project-type'
     PROJECT_STATUS = 'project-status'
@@ -52,19 +59,16 @@ class Attribute(models.Model):
         PROJECT_TYPE: 'Project Type',
         PROJECT_STATUS: 'Project Status',
     }
-    SORT_ORDER_CHOICES = [(x, x) for x in xrange(-20, 21)]
+    SORT_ORDER_CHOICES = [(x, x) for x in range(-20, 21)]
 
     type = models.CharField(max_length=32, choices=ATTRIBUTE_TYPES.items())
     label = models.CharField(max_length=255)
     sort_order = models.SmallIntegerField(
-        null=True,
-        blank=True,
-        choices=SORT_ORDER_CHOICES,
-    )
-    enable_timetracking = models.BooleanField(default=False,
-        help_text='Enable time tracking functionality for projects with this '
-                  'type or status.',
-    )
+        null=True, blank=True, choices=SORT_ORDER_CHOICES)
+    enable_timetracking = models.BooleanField(
+        default=False,
+        help_text=('Enable time tracking functionality for projects '
+                   'with this type or status.'))
     billable = models.BooleanField(default=False)
 
     objects = models.Manager()
@@ -76,10 +80,11 @@ class Attribute(models.Model):
         unique_together = ('type', 'label')
         ordering = ('sort_order',)
 
-    def __unicode__(self):
+    def __str__(self):
         return self.label
 
 
+@python_2_unicode_compatible
 class Business(models.Model):
     name = models.CharField(max_length=255)
     short_name = models.CharField(max_length=255, blank=True)
@@ -96,7 +101,7 @@ class Business(models.Model):
             ('view_business', 'Can view businesses'),
         )
 
-    def __unicode__(self):
+    def __str__(self):
         return self.get_display_name()
 
     def get_absolute_url(self):
@@ -108,41 +113,32 @@ class Business(models.Model):
 
 class TrackableProjectManager(models.Manager):
 
-    def get_query_set(self):
-        return super(TrackableProjectManager, self).get_query_set().filter(
+    def get_queryset(self):
+        return super(TrackableProjectManager, self).get_queryset().filter(
             status__enable_timetracking=True,
             type__enable_timetracking=True,
         )
 
 
+@python_2_unicode_compatible
 class Project(models.Model):
     name = models.CharField(max_length=255)
-    tracker_url = models.CharField(max_length=255, blank=True, null=False,
-            default="")
+    tracker_url = models.CharField(
+        max_length=255, blank=True, null=False, default="")
     business = models.ForeignKey(
-        Business,
-        related_name='new_business_projects',
-    )
+        Business, related_name='new_business_projects')
     point_person = models.ForeignKey(User, limit_choices_to={'is_staff': True})
     users = models.ManyToManyField(
-        User,
-        related_name='user_projects',
-        through='ProjectRelationship',
-    )
-    activity_group = models.ForeignKey('entries.ActivityGroup',
-        related_name='activity_group', null=True, blank=True,
-        verbose_name='restrict activities to',
-    )
+        User, related_name='user_projects', through='ProjectRelationship')
+    activity_group = models.ForeignKey(
+        'entries.ActivityGroup', related_name='activity_group', null=True,
+        blank=True, verbose_name='restrict activities to')
     type = models.ForeignKey(
-        Attribute,
-        limit_choices_to={'type': 'project-type'},
-        related_name='projects_with_type',
-    )
+        Attribute, limit_choices_to={'type': 'project-type'},
+        related_name='projects_with_type')
     status = models.ForeignKey(
-        Attribute,
-        limit_choices_to={'type': 'project-status'},
-        related_name='projects_with_status',
-    )
+        Attribute, limit_choices_to={'type': 'project-status'},
+        related_name='projects_with_status')
     description = models.TextField()
 
     objects = models.Manager()
@@ -159,7 +155,7 @@ class Project(models.Model):
             ('generate_project_invoice', 'Can generate project invoice'),
         )
 
-    def __unicode__(self):
+    def __str__(self):
         return '{0} ({1})'.format(self.name, self.business.get_display_name())
 
     @property
@@ -175,6 +171,7 @@ class Project(models.Model):
         return self.contracts.exclude(status=ProjectContract.STATUS_COMPLETE)
 
 
+@python_2_unicode_compatible
 class RelationshipType(models.Model):
     name = models.CharField(max_length=255, unique=True)
     slug = models.SlugField(max_length=255)
@@ -182,13 +179,14 @@ class RelationshipType(models.Model):
     class Meta:
         db_table = 'timepiece_relationshiptype'  # Using legacy table name.
 
-    def __unicode__(self):
+    def __str__(self):
         return self.name
 
 
+@python_2_unicode_compatible
 class ProjectRelationship(models.Model):
-    types = models.ManyToManyField(RelationshipType, blank=True,
-        related_name='project_relationships')
+    types = models.ManyToManyField(
+        RelationshipType, blank=True, related_name='project_relationships')
     user = models.ForeignKey(User, related_name='project_relationships')
     project = models.ForeignKey(Project, related_name='project_relationships')
 
@@ -196,8 +194,8 @@ class ProjectRelationship(models.Model):
         db_table = 'timepiece_projectrelationship'  # Using legacy table name.
         unique_together = ('user', 'project')
 
-    def __unicode__(self):
-        return "%s's relationship to %s" % (
-            self.project.name,
-            self.user.get_name_or_username(),
+    def __str__(self):
+        return "{project}'s relationship to {user}".format(
+            project=self.project.name,
+            user=self.user.get_name_or_username(),
         )

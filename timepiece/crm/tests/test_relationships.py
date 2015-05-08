@@ -7,23 +7,20 @@ from timepiece.tests.base import ViewTestMixin
 from timepiece.crm.models import ProjectRelationship
 
 
-__all__ = ['AddProjectToUserTestCase', 'AddUserToProjectTestCase',
-        'EditRelationshipTestCase', 'DeleteRelationshipTestCase']
-
-
 class RelationshipTestBase(TestCase):
 
     def setUp(self):
+        super(RelationshipTestBase, self).setUp()
         self.user = factories.User()
-        self.permissions = [Permission.objects.get(codename=n) for n in
-                self.perm_names]
+        self.permissions = [Permission.objects.get(codename=n)
+                            for n in self.perm_names]
         self.user.user_permissions.add(*self.permissions)
         self.login_user(self.user)
 
         self.project = factories.Project()
 
 
-class AddProjectToUserTestCase(ViewTestMixin, RelationshipTestBase):
+class TestAddProjectToUser(ViewTestMixin, RelationshipTestBase):
     url_name = 'create_relationship'
     perm_names = ['add_projectrelationship']
 
@@ -36,10 +33,13 @@ class AddProjectToUserTestCase(ViewTestMixin, RelationshipTestBase):
 
     def test_other_methods(self):
         """Add Project Relationship requires POST."""
-        for method in (self.client.get, self.client.head, self.client.options,
-                self.client.put, self.client.delete):
+        for method in (self.client.get, self.client.head, self.client.put,
+                       self.client.delete):
             response = method(self._url())
-            self.assertEquals(response.status_code, 405)
+            self.assertEquals(
+                response.status_code, 405, '{method} request '
+                'did not have expected code: {actual} instead of '
+                '{expected}'.format(method=method, actual=response.status_code, expected=405))
             self.assertEquals(ProjectRelationship.objects.count(), 0)
 
     def test_permission(self):
@@ -64,8 +64,7 @@ class AddProjectToUserTestCase(ViewTestMixin, RelationshipTestBase):
 
     def test_add_again(self):
         """Adding project again should have no effect."""
-        rel = factories.ProjectRelationship(project=self.project,
-                user=self.user)
+        rel = factories.ProjectRelationship(project=self.project, user=self.user)
 
         response = self._post(data=self._data())
         self.assertEquals(response.status_code, 302)
@@ -73,12 +72,10 @@ class AddProjectToUserTestCase(ViewTestMixin, RelationshipTestBase):
         self.assertEquals(rel.project, self.project)
         self.assertEquals(rel.user, self.user)
 
-    def test_redirect_to_user_page(self):
-        """Adding a relationship should redirect to user page by default."""
-        user_url = reverse('view_user', args=(self.user.pk,))
-
+    def test_redirect_to_dashboard(self):
+        """Adding a relationship should redirect to the dashboard by default."""
         response = self._post(data=self._data())
-        self.assertRedirectsNoFollow(response, user_url)
+        self.assertRedirectsNoFollow(response, reverse('dashboard'))
         rel = ProjectRelationship.objects.get()
         self.assertEquals(rel.project, self.project)
         self.assertEquals(rel.user, self.user)
@@ -94,7 +91,7 @@ class AddProjectToUserTestCase(ViewTestMixin, RelationshipTestBase):
         self.assertEquals(rel.user, self.user)
 
 
-class AddUserToProjectTestCase(ViewTestMixin, RelationshipTestBase):
+class TestAddUserToProject(ViewTestMixin, RelationshipTestBase):
     url_name = 'create_relationship'
     perm_names = ['change_projectrelationship', 'add_projectrelationship']
 
@@ -107,10 +104,13 @@ class AddUserToProjectTestCase(ViewTestMixin, RelationshipTestBase):
 
     def test_other_methods(self):
         """Add Project Relationship requires POST."""
-        for method in (self.client.get, self.client.head, self.client.options,
-                self.client.put, self.client.delete):
+        for method in (self.client.get, self.client.head, self.client.put,
+                       self.client.delete):
             response = method(self._url())
-            self.assertEquals(response.status_code, 405)
+            self.assertEquals(
+                response.status_code, 405, '{method} request did not have '
+                'expected code: {actual} instead of '
+                '{expected}'.format(method=method, actual=response.status_code, expected=405))
             self.assertEquals(ProjectRelationship.objects.count(), 0)
 
     def test_permission(self):
@@ -135,8 +135,8 @@ class AddUserToProjectTestCase(ViewTestMixin, RelationshipTestBase):
 
     def test_add_again(self):
         """Adding user again should have no effect."""
-        rel = factories.ProjectRelationship(project=self.project,
-                user=self.user)
+        rel = factories.ProjectRelationship(
+            project=self.project, user=self.user)
 
         response = self._post(data=self._data())
         self.assertEquals(response.status_code, 302)
@@ -144,12 +144,10 @@ class AddUserToProjectTestCase(ViewTestMixin, RelationshipTestBase):
         self.assertEquals(rel.project, self.project)
         self.assertEquals(rel.user, self.user)
 
-    def test_redirect_to_project_page(self):
-        """Adding a relationship hould redirect to user page by default."""
-        project_url = reverse('view_project', args=(self.project.pk,))
-
+    def test_redirect_to_dashboard(self):
+        """Adding a relationship hould redirect to the dashboard by default."""
         response = self._post(data=self._data())
-        self.assertRedirectsNoFollow(response, project_url)
+        self.assertRedirectsNoFollow(response, reverse('dashboard'))
         rel = ProjectRelationship.objects.get()
         self.assertEquals(rel.project, self.project)
         self.assertEquals(rel.user, self.user)
@@ -165,7 +163,7 @@ class AddUserToProjectTestCase(ViewTestMixin, RelationshipTestBase):
         self.assertEquals(rel.user, self.user)
 
 
-class EditRelationshipTestCase(ViewTestMixin, RelationshipTestBase):
+class TestEditRelationship(ViewTestMixin, RelationshipTestBase):
     url_name = 'edit_relationship'
     perm_names = ['change_projectrelationship']
 
@@ -177,9 +175,9 @@ class EditRelationshipTestCase(ViewTestMixin, RelationshipTestBase):
         return {'types': [self.rel_type1.pk, self.rel_type2.pk]}
 
     def setUp(self):
-        super(EditRelationshipTestCase, self).setUp()
+        super(TestEditRelationship, self).setUp()
         self.relationship = factories.ProjectRelationship(
-                project=self.project, user=self.user)
+            project=self.project, user=self.user)
         self.rel_type1 = factories.RelationshipType()
         self.rel_type2 = factories.RelationshipType()
 
@@ -258,14 +256,14 @@ class EditRelationshipTestCase(ViewTestMixin, RelationshipTestBase):
         self.assertTrue(self.rel_type2 in rel.types.all())
 
 
-class DeleteRelationshipTestCase(ViewTestMixin, RelationshipTestBase):
+class TestDeleteRelationship(ViewTestMixin, RelationshipTestBase):
     url_name = 'delete_relationship'
     perm_names = ['delete_projectrelationship']
 
     def setUp(self):
-        super(DeleteRelationshipTestCase, self).setUp()
+        super(TestDeleteRelationship, self).setUp()
         self.relationship = factories.ProjectRelationship(
-                project=self.project, user=self.user)
+            project=self.project, user=self.user)
 
     @property
     def get_kwargs(self):

@@ -2,11 +2,6 @@
 @import "../../bootstrap/less/bootstrap.less";
 @import "../../bootstrap/less/responsive.less";
 
-// Replace the 2.0.4 mixin with the 2.1.0 WIP mixin
-// This gives us an offset for fluid layouts
-// ref: https://github.com/twitter/bootstrap/pull/3764/
-@import "fluidoffsetmixin.less";
-
 /*
 Change default sprite paths to point inside of static/bootstrap instead of
 static/timepiece.
@@ -22,7 +17,7 @@ static/timepiece.
 @lightblue: lighten(@blue, 20%);
 @red: #DA4F49;
 
-@tableBackgroundAccent: #EEEEEE;
+@tableBackgroundAccent: rgba(0, 0, 0, 0.05);
 @tableBackgroundHover: #D0D0EC;
 @tableBorder: #DDDDDD;
 
@@ -144,8 +139,13 @@ body {
                 .hide;
             }
         }
+        thead{
+            background-color:#ede9da;
+        }
+        tbody tr > :first-child{
+            background-color:#ede9da !important;
+        }
         tr {
-
             td {
                 &.break {
                     .word-wrap(true);
@@ -697,6 +697,38 @@ body {
         /*****************************************
          * End general content
          *****************************************/
+    }
+
+    blockquote{
+        font-style:italic;
+        margin-bottom: 0;
+    }
+
+    .scroll-x-axis{
+        overflow-x:auto;
+        -webkit-overflow-scrolling:touch;
+        background:
+            /* Shadow covers */
+            linear-gradient(90deg, white 30%, rgba(255,255,255,0)),
+            linear-gradient(90deg, rgba(255,255,255,0), white 70%) 100% 0,
+
+            /* Shadows */
+            radial-gradient(0 50%, farthest-side, rgba(0,0,0,.2), rgba(0,0,0,0)),
+            radial-gradient(100% 50%,farthest-side, rgba(0,0,0,.2), rgba(0,0,0,0)) 100% 0;
+        background:
+            /* Shadow covers */
+            linear-gradient(90deg, white 30%, rgba(255,255,255,0)),
+            linear-gradient(90deg, rgba(255,255,255,0), white 70%) 100% 0,
+
+            /* Shadows */
+            radial-gradient(farthest-side at 0 50%, rgba(0,0,0,.2), rgba(0,0,0,0)),
+            radial-gradient(farthest-side at 100% 50%, rgba(0,0,0,.2), rgba(0,0,0,0)) 100% 0;
+        background-repeat: no-repeat;
+        background-color: white;
+        background-size: 40px 100%, 40px 100%, 14px 100%, 14px 100%;
+
+        /* Opera doesn't support this in the shorthand */
+        background-attachment: local, local, scroll, scroll;
     }
 
     /*****************************************

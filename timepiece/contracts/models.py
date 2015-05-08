@@ -10,11 +10,13 @@ from django.db import models
 from django.db.models import Sum
 from django.template import Context
 from django.template.loader import get_template
+from django.utils.encoding import python_2_unicode_compatible
 
 from timepiece import utils
 from timepiece.entries.models import Entry
 
 
+@python_2_unicode_compatible
 class ProjectContract(models.Model):
     STATUS_UPCOMING = 'upcoming'
     STATUS_CURRENT = 'current'
@@ -39,8 +41,8 @@ class ProjectContract(models.Model):
     projects = models.ManyToManyField('crm.Project', related_name='contracts')
     start_date = models.DateField()
     end_date = models.DateField()
-    status = models.CharField(choices=CONTRACT_STATUS.items(),
-            default=STATUS_UPCOMING, max_length=32)
+    status = models.CharField(
+        choices=CONTRACT_STATUS.items(), default=STATUS_UPCOMING, max_length=32)
     type = models.IntegerField(choices=PROJECT_TYPE.items())
 
     class Meta:
@@ -48,8 +50,8 @@ class ProjectContract(models.Model):
         verbose_name = 'contract'
         db_table = 'timepiece_projectcontract'  # Using legacy table name.
 
-    def __unicode__(self):
-        return unicode(self.name)
+    def __str__(self):
+        return self.name
 
     def get_admin_url(self):
         return reverse('admin:contracts_projectcontract_change', args=[self.pk])
@@ -63,9 +65,10 @@ class ProjectContract(models.Model):
         All Entries worked on projects in this contract during the contract
         period.
         """
-        return Entry.objects.filter(project__in=self.projects.all(),
-                start_time__gte=self.start_date,
-                end_time__lt=self.end_date + relativedelta(days=1))
+        return Entry.objects.filter(
+            project__in=self.projects.all(),
+            start_time__gte=self.start_date,
+            end_time__lt=self.end_date + relativedelta(days=1))
 
     def contracted_hours(self, approved_only=True):
         """Compute the hours contracted for this contract.
@@ -140,10 +143,10 @@ class ProjectContract(models.Model):
         If the contract status is not current, or either the start or end
         date is not set, returns 0.0
         """
-        if self.status != ProjectContract.STATUS_CURRENT or \
-            not self.start_date or \
-            not self.end_date:
-                return 0.0
+        if not all([self.status == ProjectContract.STATUS_CURRENT,
+                    bool(self.start_date),
+                    bool(self.end_date)]):
+            return 0.0
         contract_period = (self.end_date - self.start_date).days
         if contract_period <= 0.0:
             return 0.0
@@ -153,28 +156,33 @@ class ProjectContract(models.Model):
         return float(days_elapsed) / contract_period
 
 
+@python_2_unicode_compatible
 class ContractHour(models.Model):
     PENDING_STATUS = 1
     APPROVED_STATUS = 2
     CONTRACT_HOUR_STATUS = (
-        (PENDING_STATUS, 'Pending'), # default
+        (PENDING_STATUS, 'Pending'),  # default
         (APPROVED_STATUS, 'Approved')
         )
 
-    hours = models.DecimalField(max_digits=8, decimal_places=2,
-            default=0)
-    contract = models.ForeignKey(ProjectContract,
-            related_name='contract_hours')
+    hours = models.DecimalField(
+        max_digits=8, decimal_places=2, default=0)
+    contract = models.ForeignKey(
+        ProjectContract, related_name='contract_hours')
     date_requested = models.DateField()
     date_approved = models.DateField(blank=True, null=True)
-    status = models.IntegerField(choices=CONTRACT_HOUR_STATUS,
-            default=PENDING_STATUS)
+    status = models.IntegerField(
+        choices=CONTRACT_HOUR_STATUS, default=PENDING_STATUS)
     notes = models.TextField(blank=True)
 
     class Meta(object):
         verbose_name = 'contracted hours'
         verbose_name_plural = verbose_name
         db_table = 'timepiece_contracthour'  # Using legacy table name.
+
+    def __str__(self):
+        return "{} on {} ({})".format(
+            self.hours, self.contract, self.get_status_display())
 
     def __init__(self, *args, **kwargs):
         super(ContractHour, self).__init__(*args, **kwargs)
@@ -187,7 +195,7 @@ class ContractHour(models.Model):
             'date_requested': self.date_requested,
             'date_approved': self.date_approved,
             'contract': self.contract if self.contract_id else None,
-            }
+        }
 
     def get_absolute_url(self):
         return reverse('admin:contracts_contracthour_change', args=[self.pk])
@@ -271,6 +279,7 @@ class ContractHour(models.Model):
             self._send_mail(subject, ctx)
 
 
+@python_2_unicode_compatible
 class ContractAssignment(models.Model):
     contract = models.ForeignKey(ProjectContract, related_name='assignments')
     user = models.ForeignKey(User, related_name='assignments')
@@ -283,14 +292,15 @@ class ContractAssignment(models.Model):
         unique_together = (('contract', 'user'),)
         db_table = 'timepiece_contractassignment'  # Using legacy table name.
 
-    def __unicode__(self):
+    def __str__(self):
         return u'{0} / {1}'.format(self.user, self.contract)
 
     @property
     def entries(self):
-        return Entry.objects.filter(project__in=self.contract.projects.all(),
-                user=self.user, start_time__gte=self.start_date,
-                end_time__lt=self.end_date + relativedelta(days=1))
+        return Entry.objects.filter(
+            project__in=self.contract.projects.all(),
+            user=self.user, start_time__gte=self.start_date,
+            end_time__lt=self.end_date + relativedelta(days=1))
 
     @property
     def hours_remaining(self):
@@ -306,29 +316,27 @@ class ContractAssignment(models.Model):
 class HourGroupManager(models.Manager):
 
     def summaries(self, entries):
-        #Get the list of bundle names and hour sums
+        # Get the list of bundle names and hour sums
         bundled_entries = entries.values('activity__activity_bundle',
                                          'activity__activity_bundle__name')
         bundled_entries = bundled_entries.annotate(Sum('hours'))
         bundled_entries = bundled_entries.order_by(
-                                            'activity__activity_bundle__order',
-                                            'activity__activity_bundle__name'
-        )
+            'activity__activity_bundle__order', 'activity__activity_bundle__name')
         bundled_totals = list(bundled_entries.values_list(
-                                             'activity__activity_bundle__name',
-                                             'activity__activity_bundle',
-                                             'hours__sum')
-        )
-        #Get the list of activity names and hour sums
+            'activity__activity_bundle__name',
+            'activity__activity_bundle',
+            'hours__sum',
+        ))
+        # Get the list of activity names and hour sums
         activity_entries = entries.values('activity', 'activity__name',
                                           'activity__activity_bundle')
         activity_entries = activity_entries.annotate(Sum('hours'))
         activity_entries = activity_entries.order_by('activity')
         activity_totals = list(activity_entries.values_list(
-                                                   'activity__name',
-                                                   'activity__activity_bundle',
-                                                   'hours__sum')
-        )
+            'activity__name',
+            'activity__activity_bundle',
+            'hours__sum',
+        ))
         totals = {}
         other_values = ()
         for bundle in bundled_totals:
@@ -347,11 +355,12 @@ class HourGroupManager(models.Manager):
         return totals
 
 
+@python_2_unicode_compatible
 class HourGroup(models.Model):
     """Activities that are bundled together for billing"""
     name = models.CharField(max_length=255, unique=True)
-    activities = models.ManyToManyField('entries.Activity',
-            related_name='activity_bundle')
+    activities = models.ManyToManyField(
+        'entries.Activity', related_name='activity_bundle')
     order = models.PositiveIntegerField(unique=True, blank=True, null=True)
 
     objects = HourGroupManager()
@@ -359,10 +368,11 @@ class HourGroup(models.Model):
     class Meta:
         db_table = 'timepiece_hourgroup'  # Using legacy table name.
 
-    def __unicode__(self):
+    def __str__(self):
         return self.name
 
 
+@python_2_unicode_compatible
 class EntryGroup(models.Model):
     INVOICED = Entry.INVOICED
     NOT_INVOICED = Entry.NOT_INVOICED
@@ -390,7 +400,7 @@ class EntryGroup(models.Model):
         self.entries.update(status=Entry.APPROVED)
         super(EntryGroup, self).delete()
 
-    def __unicode__(self):
+    def __str__(self):
         invoice_data = {
             'number': self.number,
             'status': self.status,

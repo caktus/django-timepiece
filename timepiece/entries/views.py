@@ -4,7 +4,8 @@ from dateutil.relativedelta import relativedelta
 from decimal import Decimal
 from itertools import groupby
 import json
-import urllib
+
+from six.moves.urllib.parse import urlencode
 
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required, permission_required
@@ -22,10 +23,12 @@ from django.views.generic import TemplateView, View
 from timepiece import utils
 from timepiece.forms import DATE_FORM_FORMAT
 from timepiece.utils.csv import DecimalEncoder
+from timepiece.utils.views import cbv_decorator
 
 from timepiece.crm.models import Project, UserProfile
-from timepiece.entries.forms import ClockInForm, ClockOutForm, \
-        AddUpdateEntryForm, ProjectHoursForm, ProjectHoursSearchForm
+from timepiece.entries.forms import (
+    ClockInForm, ClockOutForm, AddUpdateEntryForm, ProjectHoursForm,
+    ProjectHoursSearchForm)
 from timepiece.entries.models import Entry, ProjectHours
 
 
@@ -66,11 +69,11 @@ class Dashboard(TemplateView):
         active_entry = utils.get_active_entry(self.user)
 
         # Process this week's entries to determine assignment progress.
-        week_entries = Entry.objects.filter(user=self.user) \
-                .timespan(week_start, span='week', current=True) \
-                .select_related('project')
-        assignments = ProjectHours.objects.filter(user=self.user,
-                week_start=week_start.date())
+        week_entries = Entry.objects.filter(user=self.user)
+        week_entries = week_entries.timespan(week_start, span='week', current=True)
+        week_entries = week_entries.select_related('project')
+        assignments = ProjectHours.objects.filter(
+            user=self.user, week_start=week_start.date())
         project_progress = self.process_progress(week_entries, assignments)
 
         # Total hours that the user is expected to clock this week.
@@ -78,9 +81,9 @@ class Dashboard(TemplateView):
         total_worked = sum([p['worked'] for p in project_progress])
 
         # Others' active entries.
-        others_active_entries = Entry.objects.filter(end_time__isnull=True) \
-                .exclude(user=self.user).select_related('user', 'project',
-                'activity')
+        others_active_entries = Entry.objects.filter(end_time__isnull=True)
+        others_active_entries = others_active_entries.exclude(user=self.user)
+        others_active_entries = others_active_entries.select_related('user', 'project', 'activity')
 
         return {
             'active_tab': self.active_tab,
@@ -132,7 +135,7 @@ class Dashboard(TemplateView):
 
 
 @permission_required('entries.can_clock_in')
-@transaction.commit_on_success
+@transaction.atomic
 def clock_in(request):
     """For clocking the user into a project."""
     user = request.user
@@ -146,7 +149,7 @@ def clock_in(request):
     if form.is_valid():
         entry = form.save()
         message = 'You have clocked into {0} on {1}.'.format(
-                entry.activity.name, entry.project)
+            entry.activity.name, entry.project)
         messages.info(request, message)
         return HttpResponseRedirect(reverse('dashboard'))
 
@@ -168,7 +171,7 @@ def clock_out(request):
         if form.is_valid():
             entry = form.save()
             message = 'You have clocked out of {0} on {1}.'.format(
-                    entry.activity.name, entry.project)
+                entry.activity.name, entry.project)
             messages.info(request, message)
             return HttpResponseRedirect(reverse('dashboard'))
         else:
@@ -196,7 +199,7 @@ def toggle_pause(request):
     # create a message that can be displayed to the user
     action = 'paused' if entry.is_paused else 'resumed'
     message = 'Your entry, {0} on {1}, has been {2}.'.format(
-            entry.activity.name, entry.project, action)
+        entry.activity.name, entry.project, action)
     messages.info(request, message)
 
     # redirect to the log entry list
@@ -210,16 +213,15 @@ def create_edit_entry(request, entry_id=None):
             entry = Entry.no_join.get(pk=entry_id)
         except Entry.DoesNotExist:
             entry = None
-        if not entry or not (entry.is_editable or
-                request.user.has_perm('entries.view_payroll_summary')):
-            raise Http404
+        else:
+            if not (entry.is_editable or request.user.has_perm('entries.view_payroll_summary')):
+                raise Http404
     else:
         entry = None
 
     entry_user = entry.user if entry else request.user
     if request.method == 'POST':
-        form = AddUpdateEntryForm(data=request.POST, instance=entry,
-                user=entry_user)
+        form = AddUpdateEntryForm(data=request.POST, instance=entry, user=entry_user)
         if form.is_valid():
             entry = form.save()
             if entry_id:
@@ -234,8 +236,7 @@ def create_edit_entry(request, entry_id=None):
             messages.error(request, message)
     else:
         initial = dict([(k, request.GET[k]) for k in request.GET.keys()])
-        form = AddUpdateEntryForm(instance=entry, user=entry_user,
-                initial=initial)
+        form = AddUpdateEntryForm(instance=entry, user=entry_user, initial=initial)
 
     return render(request, 'timepiece/entry/create_edit.html', {
         'form': form,
@@ -294,8 +295,7 @@ def delete_entry(request, entry_id):
         key = request.POST.get('key', None)
         if key and key == entry.delete_key:
             entry.delete()
-            message = 'Deleted {0} for {1}.'.format(entry.activity.name,
-                    entry.project)
+            message = 'Deleted {0} for {1}.'.format(entry.activity.name, entry.project)
             messages.info(request, message)
             url = request.REQUEST.get('next', reverse('dashboard'))
             return HttpResponseRedirect(url)
@@ -324,8 +324,7 @@ class ScheduleMixin(object):
             else utils.get_week_start(datetime.datetime.strptime(
                 week_start_str, '%Y-%m-%d').date())
 
-        return super(ScheduleMixin, self).dispatch(request, *args,
-                **kwargs)
+        return super(ScheduleMixin, self).dispatch(request, *args, **kwargs)
 
     def get_hours_for_week(self, week_start=None):
         """
@@ -365,11 +364,11 @@ class ScheduleView(ScheduleMixin, TemplateView):
         form = ProjectHoursSearchForm(initial=initial)
 
         project_hours = self.get_hours_for_week()
-        project_hours = project_hours.values('project__id', 'project__name',
-                'user__id', 'user__first_name', 'user__last_name', 'hours',
-                'published')
-        project_hours = project_hours.order_by('-project__type__billable',
-                'project__name')
+        project_hours = project_hours.values(
+            'project__id', 'project__name', 'user__id', 'user__first_name',
+            'user__last_name', 'hours', 'published')
+        project_hours = project_hours.order_by(
+            '-project__type__billable', 'project__name')
         if not self.request.user.has_perm('entries.add_projecthours'):
             project_hours = project_hours.filter(published=True)
         users = self.get_users_from_project_hours(project_hours)
@@ -408,8 +407,7 @@ class EditScheduleView(ScheduleMixin, TemplateView):
         if not request.user.has_perm('entries.add_projecthours'):
             return HttpResponseRedirect(reverse('view_schedule'))
 
-        return super(EditScheduleView, self).dispatch(request, *args,
-                **kwargs)
+        return super(EditScheduleView, self).dispatch(request, *args, **kwargs)
 
     def get_context_data(self, **kwargs):
         context = super(EditScheduleView, self).get_context_data(**kwargs)
@@ -439,31 +437,28 @@ class EditScheduleView(ScheduleMixin, TemplateView):
         param = {
             'week_start': self.week_start.strftime(DATE_FORM_FORMAT)
         }
-        url = '?'.join((reverse('edit_schedule'), urllib.urlencode(param),))
+        url = '?'.join((reverse('edit_schedule'), urlencode(param),))
 
         return HttpResponseRedirect(url)
 
 
+@cbv_decorator(permission_required('entries.add_projecthours'))
 class ScheduleAjaxView(ScheduleMixin, View):
-    permissions = ('entries.add_projecthours',)
 
     def dispatch(self, request, *args, **kwargs):
         if not request.user.has_perm('entries.add_projecthours'):
             return HttpResponseRedirect(reverse('auth_login'))
 
-        return super(ScheduleAjaxView, self).dispatch(request, *args,
-                **kwargs)
+        return super(ScheduleAjaxView, self).dispatch(request, *args, **kwargs)
 
     def get_instance(self, data, week_start):
         try:
             user = User.objects.get(pk=data.get('user', None))
             project = Project.objects.get(pk=data.get('project', None))
             hours = data.get('hours', None)
-            week = datetime.datetime.strptime(week_start,
-                    DATE_FORM_FORMAT).date()
+            week = datetime.datetime.strptime(week_start, DATE_FORM_FORMAT).date()
 
-            ph = ProjectHours.objects.get(user=user, project=project,
-                    week_start=week)
+            ph = ProjectHours.objects.get(user=user, project=project, week_start=week)
             ph.hours = Decimal(hours)
         except (exceptions.ObjectDoesNotExist):
             ph = None
@@ -483,10 +478,12 @@ class ScheduleAjaxView(ScheduleMixin, View):
             content_type=ContentType.objects.get_for_model(Entry),
             codename='can_clock_in'
         )
-        project_hours = self.get_hours_for_week().values(
+        project_hours = self.get_hours_for_week()
+        project_hours = project_hours.values(
             'id', 'user', 'user__first_name', 'user__last_name',
-            'project', 'hours', 'published'
-        ).order_by('-project__type__billable', 'project__name',
+            'project', 'hours', 'published')
+        project_hours = project_hours.order_by(
+            '-project__type__billable', 'project__name',
             'user__first_name', 'user__last_name')
         inner_qs = project_hours.values_list('project', flat=True)
         projects = Project.objects.filter(pk__in=inner_qs).values() \
@@ -505,7 +502,7 @@ class ScheduleAjaxView(ScheduleMixin, View):
             'ajax_url': reverse('ajax_schedule'),
         }
         return HttpResponse(json.dumps(data, cls=DecimalEncoder),
-            mimetype='application/json')
+                            content_type='application/json')
 
     def duplicate_entries(self, duplicate, week_update):
         def duplicate_builder(queryset, new_date):
@@ -527,8 +524,7 @@ class ScheduleAjaxView(ScheduleMixin, View):
             msg = 'Project hours were copied'
             messages.info(self.request, msg)
 
-        this_week = datetime.datetime.strptime(week_update,
-                DATE_FORM_FORMAT).date()
+        this_week = datetime.datetime.strptime(week_update, DATE_FORM_FORMAT).date()
         prev_week = this_week - relativedelta(days=7)
         prev_week_qs = self.get_hours_for_week(prev_week)
         this_week_qs = self.get_hours_for_week(this_week)
@@ -536,8 +532,7 @@ class ScheduleAjaxView(ScheduleMixin, View):
         param = {
             'week_start': week_update
         }
-        url = '?'.join((reverse('edit_schedule'),
-            urllib.urlencode(param),))
+        url = '?'.join((reverse('edit_schedule'), urlencode(param),))
 
         if not prev_week_qs.exists():
             msg = 'There are no hours to copy'
@@ -559,7 +554,7 @@ class ScheduleAjaxView(ScheduleMixin, View):
 
         if form.is_valid():
             ph = form.save()
-            return HttpResponse(str(ph.pk), mimetype='text/plain')
+            return HttpResponse(str(ph.pk), content_type='text/plain')
 
         msg = 'The request must contain values for user, project, and hours'
         return HttpResponse(msg, status=500)
@@ -586,8 +581,8 @@ class ScheduleAjaxView(ScheduleMixin, View):
         return self.update_week(week_start)
 
 
+@cbv_decorator(permission_required('entries.add_projecthours'))
 class ScheduleDetailView(ScheduleMixin, View):
-    permissions = ('entries.add_projecthours',)
 
     def delete(self, request, *args, **kwargs):
         """Remove a project from the database."""
@@ -595,6 +590,6 @@ class ScheduleDetailView(ScheduleMixin, View):
 
         if assignment_id:
             ProjectHours.objects.filter(pk=assignment_id).delete()
-            return HttpResponse('ok', mimetype='text/plain')
+            return HttpResponse('ok', content_type='text/plain')
 
         return HttpResponse('', status=500)

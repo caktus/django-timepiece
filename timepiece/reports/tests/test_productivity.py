@@ -194,15 +194,15 @@ class TestProductivityReport(ViewTestMixin, TestCase):
         data = dict(response.items())
         self.assertEqual(data['Content-Type'], 'text/csv')
         disposition = 'attachment; filename={0}_productivity.csv'.format(
-                self.project.name)
+            self.project.name)
         self.assertTrue(data['Content-Disposition'].startswith(disposition))
-        report = response.content.splitlines()
+        report = response.content.decode('utf-8').splitlines()
         self.assertEqual(len(report), 1 + 4)  # Include header row
 
         def parse_csv_row(s):
             """Given a string in CSV format, return a list of strings that
             represent the fields from the CSV line, with e.g. quotes removed"""
-            return csv.reader([s]).next()
+            return next(csv.reader([s]))
 
         self._check_row(parse_csv_row(report[1]), [u'Sep 24, 2012', 0.0, 4.0])
         self._check_row(parse_csv_row(report[2]), [u'Oct 1, 2012', 4.0, 4.0])

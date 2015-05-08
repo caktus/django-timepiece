@@ -13,20 +13,20 @@ from django.views.generic import ListView, DetailView
 from timepiece import utils
 from timepiece.templatetags.timepiece_tags import seconds_to_hours
 from timepiece.utils.csv import CSVViewMixin
-from timepiece.utils.mixins import PermissionsRequiredMixin
 from timepiece.utils.search import SearchListView
+from timepiece.utils.views import cbv_decorator
 
 from timepiece.contracts.forms import InvoiceForm, OutstandingHoursFilterForm
 from timepiece.contracts.models import ProjectContract, HourGroup, EntryGroup
 from timepiece.entries.models import Project, Entry
 
 
-class ContractDetail(PermissionsRequiredMixin, DetailView):
+@cbv_decorator(permission_required('contracts.add_projectcontract'))
+class ContractDetail(DetailView):
     template_name = 'timepiece/contract/view.html'
     model = ProjectContract
     context_object_name = 'contract'
     pk_url_kwarg = 'contract_id'
-    permissions = ('contracts.add_projectcontract',)
 
     def get_context_data(self, *args, **kwargs):
         if 'today' not in kwargs:
@@ -36,13 +36,13 @@ class ContractDetail(PermissionsRequiredMixin, DetailView):
         return super(ContractDetail, self).get_context_data(*args, **kwargs)
 
 
-class ContractList(PermissionsRequiredMixin, ListView):
+@cbv_decorator(permission_required('contracts.add_projectcontract'))
+class ContractList(ListView):
     template_name = 'timepiece/contract/list.html'
     model = ProjectContract
     context_object_name = 'contracts'
     queryset = ProjectContract.objects.filter(
-            status=ProjectContract.STATUS_CURRENT).order_by('name')
-    permissions = ('contracts.add_projectcontract',)
+        status=ProjectContract.STATUS_CURRENT).order_by('name')
 
     def get_context_data(self, *args, **kwargs):
         if 'today' not in kwargs:
@@ -57,7 +57,7 @@ class ContractList(PermissionsRequiredMixin, ListView):
 
 
 @login_required
-@transaction.commit_on_success
+@transaction.atomic
 def create_invoice(request):
     pk = request.GET.get('project', None)
     to_date = request.GET.get('to_date', None)
@@ -133,10 +133,8 @@ def create_invoice(request):
         'billable_entries': billable_entries,
         'nonbillable_entries': nonbillable_entries,
         'project': project,
-        'billable_totals': HourGroup.objects
-            .summaries(billable_entries),
-        'nonbillable_totals': HourGroup.objects
-            .summaries(nonbillable_entries),
+        'billable_totals': HourGroup.objects.summaries(billable_entries),
+        'nonbillable_totals': HourGroup.objects.summaries(nonbillable_entries),
         'from_date': from_date,
         'to_date': to_date,
     })
@@ -157,20 +155,19 @@ def list_outstanding_invoices(request):
         dates &= Q(end_time__lt=to_date) if to_date else Q()
         billable = Q(project__type__billable=True, project__status__billable=True)
         entry_status = Q(status=Entry.APPROVED)
-        project_status = Q(project__status__in=statuses)\
-                if statuses is not None else Q()
+        project_status = Q(project__status__in=statuses) if statuses is not None else Q()
         # Calculate hours for each project
         ordering = ('project__type__label', 'project__status__label',
-                'project__business__name', 'project__name', 'status')
+                    'project__business__name', 'project__name', 'status')
         project_totals = Entry.objects.filter(
             dates, billable, entry_status, project_status).order_by(*ordering)
         # Find users with unverified/unapproved entries to warn invoice creator
         date_range_entries = Entry.objects.filter(dates)
         user_values = ['user__pk', 'user__first_name', 'user__last_name']
-        unverified = date_range_entries.filter(
-            status=Entry.UNVERIFIED).values_list(*user_values).order_by('user__first_name').distinct()
-        unapproved = date_range_entries.filter(
-            status=Entry.VERIFIED).values_list(*user_values).order_by('user__first_name').distinct()
+        unverified = date_range_entries.filter(status=Entry.UNVERIFIED)
+        unverified = unverified.values_list(*user_values).order_by('user__first_name').distinct()
+        unapproved = date_range_entries.filter(status=Entry.VERIFIED)
+        unapproved = unapproved.values_list(*user_values).order_by('user__first_name').distinct()
     else:
         project_totals = unverified = unapproved = Entry.objects.none()
     return render(request, 'timepiece/invoice/outstanding.html', {
@@ -183,20 +180,25 @@ def list_outstanding_invoices(request):
     })
 
 
-class ListInvoices(PermissionsRequiredMixin, SearchListView):
+@cbv_decorator(permission_required('contracts.add_entrygroup'))
+class ListInvoices(SearchListView):
     model = EntryGroup
-    permissions = ('contracts.add_entrygroup',)
+    paginate_by = 20
     search_fields = ['user__username__icontains', 'project__name__icontains',
-            'comments__icontains', 'number__icontains']
+                     'comments__icontains', 'number__icontains']
     template_name = 'timepiece/invoice/list.html'
 
+    def get_queryset(self):
+        qs = super(ListInvoices, self).get_queryset()
+        return qs.order_by('-end', '-id')
 
-class InvoiceDetail(PermissionsRequiredMixin, DetailView):
+
+@cbv_decorator(permission_required('contracts.change_entrygroup'))
+class InvoiceDetail(DetailView):
     template_name = 'timepiece/invoice/view.html'
     model = EntryGroup
     context_object_name = 'invoice'
     pk_url_kwarg = 'invoice_id'
-    permissions = ('contracts.change_entrygroup',)
 
     def get_context_data(self, **kwargs):
         context = super(InvoiceDetail, self).get_context_data(**kwargs)
@@ -229,10 +231,8 @@ class InvoiceEntriesDetail(InvoiceDetail):
         billable_entries = context['billable_entries']
         nonbillable_entries = context['nonbillable_entries']
         context.update({
-            'billable_total': billable_entries \
-                              .aggregate(hours=Sum('hours'))['hours'],
-            'nonbillable_total': nonbillable_entries\
-                                 .aggregate(hours=Sum('hours'))['hours'],
+            'billable_total': billable_entries.aggregate(hours=Sum('hours'))['hours'],
+            'nonbillable_total': nonbillable_entries.aggregate(hours=Sum('hours'))['hours'],
         })
         return context
 

@@ -68,11 +68,13 @@ def get_month_start(day=None):
 
 
 defaults = TimepieceDefaults()
+
+
 def get_setting(name, **kwargs):
     """Returns the user-defined value for the setting, or a default value."""
     if hasattr(settings, name):  # Try user-defined settings first.
         return getattr(settings, name)
-    if hasattr(kwargs, 'default'):  # Fall back to a specified default value.
+    if 'default' in kwargs:  # Fall back to a specified default value.
         return kwargs['default']
     if hasattr(defaults, name):  # If that's not given, look in defaults file.
         return getattr(defaults, name)

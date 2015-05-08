@@ -1,4 +1,4 @@
-from django.contrib.auth.models import Permission
+from django.core.urlresolvers import reverse_lazy
 from django.test import TestCase
 
 from timepiece.tests import factories
@@ -7,19 +7,17 @@ from timepiece.tests.base import ViewTestMixin
 from ..models import Business
 
 
-__all__ = ['TestCreateBusinessView', 'TestDeleteBusinessView',
-        'TestListBusinessesView']
-
-
-class TestCreateBusinessView(ViewTestMixin, TestCase):
+class TestCreateBusiness(ViewTestMixin, TestCase):
     url_name = 'create_business'
     template_name = 'timepiece/business/create_edit.html'
+    factory = factories.Business
+    model = Business
+    permissions = ('crm.add_business',)
 
     def setUp(self):
-        self.permissions = [Permission.objects.get(codename='add_business')]
+        super(TestCreateBusiness, self).setUp()
         self.user = factories.User(permissions=self.permissions)
         self.login_user(self.user)
-
         self.post_data = {
             'name': 'Business',
             'email': 'email@email.com',
@@ -28,101 +26,200 @@ class TestCreateBusinessView(ViewTestMixin, TestCase):
         }
 
     def test_get_no_permission(self):
-        """Permission is required to create a business."""
+        """Permission is required for this view."""
         self.user.user_permissions.clear()
         response = self._get()
         self.assertRedirectsToLogin(response)
-        self.assertEquals(Business.objects.count(), 0)
+        self.assertEquals(self.model.objects.count(), 0)
 
     def test_post_no_permission(self):
-        """Permission is required to create a business."""
+        """Permission is required for this view."""
         self.user.user_permissions.clear()
         response = self._post()
         self.assertRedirectsToLogin(response)
-        self.assertEquals(Business.objects.count(), 0)
+        self.assertEquals(self.model.objects.count(), 0)
 
     def test_get(self):
         """GET should return the page with an unbound form."""
         response = self._get()
         self.assertEquals(response.status_code, 200)
         self.assertTemplateUsed(response, self.template_name)
+        self.assertTrue('form' in response.context)
+        self.assertFalse(response.context['form'].is_bound)
+        self.assertEquals(self.model.objects.count(), 0)
 
     def test_post_valid(self):
-        """POST should create a new business."""
+        """POST should create a new object and redirect."""
         response = self._post()
-        self.assertEquals(Business.objects.count(), 1)
-        business = Business.objects.get()
-        self.assertRedirectsNoFollow(response, business.get_absolute_url())
-        self.assertEquals(business.name, self.post_data['name'])
-        self.assertEquals(business.email, self.post_data['email'])
-        self.assertEquals(business.description, self.post_data['description'])
-        self.assertEquals(business.notes, self.post_data['notes'])
+        self.assertEquals(self.model.objects.count(), 1)
+        obj = self.model.objects.get()
+        self.assertRedirectsNoFollow(response, obj.get_absolute_url())
+        self.assertEquals(obj.name, self.post_data['name'])
+        self.assertEquals(obj.email, self.post_data['email'])
+        self.assertEquals(obj.description, self.post_data['description'])
+        self.assertEquals(obj.notes, self.post_data['notes'])
 
     def test_post_invalid(self):
-        """Invalid POST should not create a new business."""
+        """Invalid POST should not create a new object."""
         self.post_data['name'] = ''
         response = self._post()
-        self.assertEquals(Business.objects.count(), 0)
+        self.assertEquals(self.model.objects.count(), 0)
         self.assertEquals(response.status_code, 200)
+        self.assertTemplateUsed(response, self.template_name)
         self.assertTrue('form' in response.context)
         self.assertTrue(response.context['form'].is_bound)
         self.assertFalse(response.context['form'].is_valid())
 
 
-class TestDeleteBusinessView(ViewTestMixin, TestCase):
+class TestDeleteBusiness(ViewTestMixin, TestCase):
     url_name = 'delete_business'
     template_name = 'timepiece/delete_object.html'
+    model = Business
+    factory = factories.Business
+    success_url = reverse_lazy('list_businesses')
+    permissions = ('crm.delete_business',)
+    pk_url_kwarg = 'business_id'
 
     def setUp(self):
-        self.permissions = [Permission.objects.get(codename='delete_business')]
+        super(TestDeleteBusiness, self).setUp()
         self.user = factories.User(permissions=self.permissions)
         self.login_user(self.user)
-
-        self.obj = factories.Business()
-
-        self.url_kwargs = {'business_id': self.obj.pk}
+        self.obj = self.factory.create()
+        self.url_kwargs = {self.pk_url_kwarg: self.obj.pk}
 
     def test_get_no_permission(self):
-        """Permission is required to delete a business."""
+        """Permission is required for this view."""
         self.user.user_permissions.clear()
         response = self._get()
         self.assertRedirectsToLogin(response)
-        self.assertEquals(Business.objects.count(), 1)
+        self.assertEquals(self.model.objects.count(), 1)
 
     def test_post_no_permission(self):
-        """Permission is required to delete a business."""
+        """Permission is required for this view."""
         self.user.user_permissions.clear()
         response = self._post()
         self.assertRedirectsToLogin(response)
-        self.assertEquals(Business.objects.count(), 1)
+        self.assertEquals(self.model.objects.count(), 1)
+
+    def test_bad_pk(self):
+        """View should return 404 response if no object is found."""
+        self.url_kwargs[self.pk_url_kwarg] = 1234
+        response = self._get()
+        self.assertEquals(response.status_code, 404)
 
     def test_get(self):
         """GET should return a confirmation page."""
         response = self._get()
         self.assertEquals(response.status_code, 200)
-        self.assertEquals(response.context['object'], self.obj)
         self.assertTemplateUsed(response, self.template_name)
-        self.assertEquals(Business.objects.count(), 1)
+        self.assertTrue('object' in response.context)
+        self.assertEquals(response.context['object'], self.obj)
+        self.assertEquals(self.model.objects.count(), 1)
 
     def test_post(self):
-        """POST should delete the business."""
+        """POST should delete the object."""
         response = self._post()
-        self.assertEquals(Business.objects.count(), 0)
+        self.assertRedirectsNoFollow(response, self.success_url)
+        self.assertEquals(self.model.objects.count(), 0)
 
 
-class TestEditBusinessView(ViewTestMixin, TestCase):
+class TestEditBusiness(ViewTestMixin, TestCase):
     url_name = 'edit_business'
     template_name = 'timepiece/business/create_edit.html'
+    model = Business
+    factory = factories.Business
+    permissions = ('crm.change_business',)
+    pk_url_kwarg = 'business_id'
+
+    def setUp(self):
+        super(TestEditBusiness, self).setUp()
+        self.user = factories.User(permissions=self.permissions)
+        self.login_user(self.user)
+        self.obj = self.factory.create()
+        self.url_kwargs = {self.pk_url_kwarg: self.obj.pk}
+        self.post_data = {
+            'name': 'Business',
+            'email': 'email@email.com',
+            'description': 'Described',
+            'notes': 'Notes',
+        }
+
+    def _assert_no_change(self):
+        self.assertEquals(self.model.objects.count(), 1)
+        obj = self.model.objects.get()
+        self.assertEquals(obj.name, self.obj.name)
+        self.assertEquals(obj.email, self.obj.email)
+        self.assertEquals(obj.description, self.obj.description)
+        self.assertEquals(obj.notes, self.obj.notes)
+
+    def test_get_no_permission(self):
+        """Permission is required for this view."""
+        self.user.user_permissions.clear()
+        response = self._get()
+        self.assertRedirectsToLogin(response)
+        self._assert_no_change()
+
+    def test_post_no_permission(self):
+        """Permission is required for this view."""
+        self.user.user_permissions.clear()
+        response = self._post()
+        self.assertRedirectsToLogin(response)
+        self._assert_no_change()
+
+    def test_bad_pk(self):
+        """View should return 404 response if no object is found."""
+        self.url_kwargs[self.pk_url_kwarg] = 1234
+        response = self._get()
+        self.assertEquals(response.status_code, 404)
+
+    def test_get(self):
+        """GET should return the page with an unbound form."""
+        response = self._get()
+        self.assertEquals(response.status_code, 200)
+        self.assertTemplateUsed(response, self.template_name)
+        self.assertTrue('object' in response.context)
+        self.assertEquals(response.context['object'], self.obj)
+        self.assertTrue('form' in response.context)
+        self.assertFalse(response.context['form'].is_bound)
+        self.assertEquals(response.context['form'].instance, self.obj)
+        self._assert_no_change()
+
+    def test_post_valid(self):
+        """POST should edit the object."""
+        response = self._post()
+        self.assertEquals(self.model.objects.count(), 1)
+        obj = self.model.objects.get()
+        self.assertEquals(obj.pk, self.obj.pk)
+        self.assertRedirectsNoFollow(response, obj.get_absolute_url())
+        self.assertEquals(obj.name, self.post_data['name'])
+        self.assertEquals(obj.email, self.post_data['email'])
+        self.assertEquals(obj.description, self.post_data['description'])
+        self.assertEquals(obj.notes, self.post_data['notes'])
+
+    def test_post_invalid(self):
+        """Invalid POST should not edit the object."""
+        self.post_data['name'] = ''
+        response = self._post()
+        self.assertEquals(response.status_code, 200)
+        self.assertTemplateUsed(response, self.template_name)
+        self.assertTrue('object' in response.context)
+        self.assertEquals(response.context['object'], self.obj)
+        self.assertTrue('form' in response.context)
+        self.assertTrue(response.context['form'].is_bound)
+        self.assertFalse(response.context['form'].is_valid())
+        self.assertEquals(response.context['form'].instance, self.obj)
+        self._assert_no_change()
 
 
-class TestListBusinessesView(ViewTestMixin, TestCase):
+class TestListBusinesses(ViewTestMixin, TestCase):
     url_name = 'list_businesses'
     template_name = 'timepiece/business/list.html'
     factory = factories.Business
     model = Business
+    permissions = ('crm.view_business',)
 
     def setUp(self):
-        self.permissions = [Permission.objects.get(codename='view_business')]
+        super(TestListBusinesses, self).setUp()
         self.user = factories.User(permissions=self.permissions)
         self.login_user(self.user)
 
@@ -161,7 +258,7 @@ class TestListBusinessesView(ViewTestMixin, TestCase):
 
     def test_no_results(self):
         """Page should render if there are no search results."""
-        obj = self.factory.create()
+        self.factory.create()
         response = self._get(get_kwargs={'search': 'hello'})
         self.assertEquals(response.status_code, 200)
         self.assertTemplateUsed(response, self.template_name)
@@ -185,14 +282,55 @@ class TestListBusinessesView(ViewTestMixin, TestCase):
 
     def test_filter_name(self):
         """User should be able to filter by search query."""
+        self.factory.create()
         obj = self.factory.create(name='hello')
-        other_obj = self.factory.create()
         response = self._get(get_kwargs={'search': 'hello'})
         self.assertRedirectsNoFollow(response, obj.get_absolute_url())
 
     def test_filter_description(self):
         """User should be able to filter by search query."""
+        self.factory.create()
         obj = self.factory.create(description='hello')
-        other_obj = self.factory.create()
         response = self._get(get_kwargs={'search': 'hello'})
         self.assertRedirectsNoFollow(response, obj.get_absolute_url())
+
+
+class TestViewBusiness(ViewTestMixin, TestCase):
+    url_name = 'view_business'
+    template_name = 'timepiece/business/view.html'
+    model = Business
+    factory = factories.Business
+    permissions = ('crm.view_business',)
+    pk_url_kwarg = 'business_id'
+
+    def setUp(self):
+        super(TestViewBusiness, self).setUp()
+        self.user = factories.User(permissions=self.permissions)
+        self.login_user(self.user)
+        self.obj = self.factory.create()
+        self.url_kwargs = {self.pk_url_kwarg: self.obj.pk}
+
+    def test_get_no_permission(self):
+        """Permission is required for this view."""
+        self.user.user_permissions.clear()
+        response = self._get()
+        self.assertRedirectsToLogin(response)
+
+    def test_post(self):
+        """This is a GET-only view."""
+        response = self._post()
+        self.assertEquals(response.status_code, 405)
+
+    def test_bad_pk(self):
+        """View should return 404 response if no object is found."""
+        self.url_kwargs[self.pk_url_kwarg] = 1234
+        response = self._get()
+        self.assertEquals(response.status_code, 404)
+
+    def test_get(self):
+        """User should be able to view the object detail."""
+        response = self._get()
+        self.assertEquals(response.status_code, 200)
+        self.assertTemplateUsed(response, self.template_name)
+        self.assertTrue('object' in response.context)
+        self.assertEquals(response.context['object'], self.obj)

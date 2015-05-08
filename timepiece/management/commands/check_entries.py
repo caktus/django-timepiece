@@ -1,3 +1,4 @@
+from functools import reduce
 from optparse import OptionParser, make_option
 
 from dateutil.relativedelta import relativedelta
@@ -16,7 +17,7 @@ class Command(BaseCommand):
     Management command to check entries for overlapping times.
     Use ./manage.py check_entries --help for more details
     """
-    #boiler plate for console programs using optparse
+    # boiler plate for console programs using optparse
     args = '<user\'s first or last name or user.id> <user\'s first...>...'
     help = """Check the database for entries that overlap.
     Use --help for options"""
@@ -33,48 +34,42 @@ For options type:
         Define the arguments that can be used with this command
         """
         return (
-        #Jenkins arguments to ignore
-        make_option('--pep8-exclude',
-            dest='ignore_pep8',
-            type='str',
-            default='',
-            help='Jenkins only'),
-        ) + (
-        make_option('--coverage-exclude',
-            dest='ignore_coverage',
-            type='str',
-            default='',
-            help='Jenkins only'),
-        ) + (
-        make_option('--thisweek',
-            action='store_true',
-            dest='week',
-            default=False,
-            help='Show entries from this week only'),
-        ) + (
-        make_option('--thismonth',
-            action='store_true',
-            dest='month',
-            default=False,
-            help='Show entries from this month only'),
-        ) + (
-        make_option('-y', '--thisyear',
-            action='store_true',
-            dest='year',
-            default=False,
-            help='Show entries from this year only'),
-        ) + (
-        make_option('-a', '--all', '--forever',
-            action='store_true',
-            dest='all',
-            default=False,
-            help='Show entries from all recorded history'),
-        ) + (
-        make_option('-d', '--days',
-            dest='days',
-            type='int',
-            default=0,
-            help='Show entries for the last n days only'),
+            # Jenkins arguments to ignore
+            make_option('--pep8-exclude',
+                        dest='ignore_pep8',
+                        type='str',
+                        default='',
+                        help='Jenkins only'),
+            make_option('--coverage-exclude',
+                        dest='ignore_coverage',
+                        type='str',
+                        default='',
+                        help='Jenkins only'),
+            make_option('--thisweek',
+                        action='store_true',
+                        dest='week',
+                        default=False,
+                        help='Show entries from this week only'),
+            make_option('--thismonth',
+                        action='store_true',
+                        dest='month',
+                        default=False,
+                        help='Show entries from this month only'),
+            make_option('-y', '--thisyear',
+                        action='store_true',
+                        dest='year',
+                        default=False,
+                        help='Show entries from this year only'),
+            make_option('-a', '--all', '--forever',
+                        action='store_true',
+                        dest='all',
+                        default=False,
+                        help='Show entries from all recorded history'),
+            make_option('-d', '--days',
+                        dest='days',
+                        type='int',
+                        default=0,
+                        help='Show entries for the last n days only'),
         )
 
     option_list = BaseCommand.option_list + make_options(*args)
@@ -92,7 +87,7 @@ For options type:
         all_entries = self.find_entries(users, start, *args, **kwargs)
         all_overlaps = self.check_all(all_entries, *args, **kwargs)
         if verbosity >= 1:
-            print 'Total overlapping entries: %d' % all_overlaps
+            self.stdout.write('Total overlapping entries: %d' % all_overlaps)
 
     def check_all(self, all_entries, *args, **kwargs):
         """
@@ -117,7 +112,7 @@ For options type:
         user_total_overlaps = 0
         user = ''
         for index_a, entry_a in enumerate(entries):
-            #Show the name the first time through
+            # Show the name the first time through
             if index_a == 0:
                 if args and verbosity >= 1 or verbosity >= 2:
                     self.show_name(entry_a.user)
@@ -133,8 +128,8 @@ For options type:
                 'last': user.last_name,
                 'total': user_total_overlaps,
             }
-            print 'Total overlapping entries for user ' + \
-                '%(first)s %(last)s: %(total)d' % overlap_data
+            self.stdout.write('Total overlapping entries for user ' +
+                              '%(first)s %(last)s: %(total)d' % overlap_data)
         return user_total_overlaps
 
     def find_start(self, **kwargs):
@@ -145,10 +140,10 @@ For options type:
         month = kwargs.get('month', False)
         year = kwargs.get('year', False)
         days = kwargs.get('days', 0)
-        #If no flags are True, set to the beginning of last billing window
-        #to assure we catch all recent violations
+        # If no flags are True, set to the beginning of last billing window
+        # to assure we catch all recent violations
         start = timezone.now() - relativedelta(months=1, day=1)
-        #Set the start date based on arguments provided through options
+        # Set the start date based on arguments provided through options
         if week:
             start = utils.get_week_start()
         if month:
@@ -168,20 +163,18 @@ For options type:
         if args:
             names = reduce(lambda query, arg: query |
                 (Q(first_name__icontains=arg) | Q(last_name__icontains=arg)),
-                args, Q())
+                args, Q())  # noqa
             users = User.objects.filter(names)
-        #If no args given, check every user
+        # If no args given, check every user
         else:
             users = User.objects.all()
-        #Display errors if no user was found
+        # Display errors if no user was found
         if not users.count() and args:
             if len(args) == 1:
-                raise CommandError('No user was found with the name %s' \
-                % args[0])
+                raise CommandError('No user was found with the name %s' % args[0])
             else:
                 arg_list = ', '.join(args)
-                raise CommandError('No users found with the names: %s' \
-                % arg_list)
+                raise CommandError('No users found with the names: %s' % arg_list)
         return users
 
     def find_entries(self, users, start, *args, **kwargs):
@@ -199,22 +192,21 @@ For options type:
                     'start_time')
             yield entries
 
-    #output methods
+    # output methods
     def show_init(self, start, *args, **kwargs):
         forever = kwargs.get('all', False)
         verbosity = kwargs.get('verbosity', 1)
         if forever:
             if verbosity >= 1:
-                print 'Checking overlaps from the beginning ' + \
-                    'of time'
+                self.stdout.write(
+                    'Checking overlaps from the beginning of time')
         else:
             if verbosity >= 1:
-                print 'Checking overlap starting on: ' + \
-                    start.strftime('%m/%d/%Y')
+                self.stdout.write(
+                    'Checking overlap starting on: ' + start.strftime('%m/%d/%Y'))
 
     def show_name(self, user):
-        print 'Checking %s %s...' % \
-        (user.first_name, user.last_name)
+        self.stdout.write('Checking %s %s...' % (user.first_name, user.last_name))
 
     def show_overlap(self, entry_a, entry_b=None, **kwargs):
         def make_output_data(entry):
@@ -229,13 +221,13 @@ For options type:
         data_a = make_output_data(entry_a)
         if entry_b:
             data_b = make_output_data(entry_b)
-            output = 'Entry %(entry)d for %(first_name)s %(last_name)s from ' \
-            % data_a + '%(start)s to %(end)s on %(project)s overlaps ' \
-            % data_a + 'entry %(entry)d from %(start)s to %(end)s on ' \
-            % data_b + '%(project)s.' % data_b
+            output = ('Entry %(entry)d for %(first_name)s %(last_name)s from '
+                      '%(start)s to %(end)s on %(project)s overlaps ' % data_a +
+                      'entry %(entry)d from %(start)s to %(end)s on '
+                      '%(project)s.' % data_b)
         else:
-            output = 'Entry %(entry)d for %(first_name)s %(last_name)s from ' \
-            % data_a + '%(start)s to %(end)s on %(project)s overlaps ' \
-            % data_a + 'with another entry.'
+            output = ('Entry %(entry)d for %(first_name)s %(last_name)s from '
+                      '%(start)s to %(end)s on %(project)s overlaps '
+                      'with another entry.' % data_a)
         if kwargs.get('verbosity', 1):
-            print output
+            self.stdout.write(output)

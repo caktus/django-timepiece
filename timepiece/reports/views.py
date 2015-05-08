@@ -15,11 +15,13 @@ from django.views.generic import TemplateView
 from timepiece import utils
 from timepiece.utils.csv import CSVViewMixin, DecimalEncoder
 
+from timepiece.contracts.models import ProjectContract
 from timepiece.entries.models import Entry, ProjectHours
-from timepiece.reports.forms import BillableHoursReportForm, HourlyReportForm,\
-        ProductivityReportForm, PayrollSummaryReportForm
-from timepiece.reports.utils import get_project_totals, get_payroll_totals,\
-        generate_dates, get_week_window
+from timepiece.reports.forms import (
+    BillableHoursReportForm, HourlyReportForm, ProductivityReportForm,
+    PayrollSummaryReportForm)
+from timepiece.reports.utils import (
+    get_project_totals, get_payroll_totals, generate_dates, get_week_window)
 
 
 class ReportMixin(object):
@@ -42,8 +44,8 @@ class ReportMixin(object):
             if entryQ:
                 vals = ('pk', 'activity', 'project', 'project__name',
                         'project__status', 'project__type__label')
-                entries = Entry.objects.date_trunc(trunc,
-                        extra_values=vals).filter(entryQ)
+                entries = Entry.objects.date_trunc(
+                    trunc, extra_values=vals).filter(entryQ)
             else:
                 entries = Entry.objects.none()
 
@@ -102,11 +104,9 @@ class ReportMixin(object):
         # Filter by whether a project is billable or non-billable.
         billableQ = None
         if incl_billable and not incl_nonbillable:
-            billableQ = Q(activity__billable=True,
-                    project__type__billable=True)
+            billableQ = Q(activity__billable=True, project__type__billable=True)
         if incl_nonbillable and not incl_billable:
-            billableQ = Q(activity__billable=False) |\
-                    Q(project__type__billable=False)
+            billableQ = Q(activity__billable=False) | Q(project__type__billable=False)
 
         # Filter by whether the entry is paid leave.
         leave_ids = utils.get_setting('TIMEPIECE_PAID_LEAVE_PROJECTS').values()
@@ -132,8 +132,8 @@ class ReportMixin(object):
             count = len(date_headers)
             range_headers = [0] * count
             for i in range(count - 1):
-                range_headers[i] = (date_headers[i], date_headers[i + 1] -
-                        relativedelta(days=1))
+                range_headers[i] = (
+                    date_headers[i], date_headers[i + 1] - relativedelta(days=1))
             range_headers[count - 1] = (date_headers[count - 1], to_date)
         else:
             range_headers = date_headers
@@ -212,16 +212,24 @@ class HourlyReport(ReportMixin, CSVViewMixin, TemplateView):
         summaries = []
         if context['entries']:
             summaries.append(('By User', get_project_totals(
-                    entries.order_by('user__last_name', 'user__id', 'date'),
-                    date_headers, 'total', total_column=True, by='user')))
+                entries.order_by('user__last_name', 'user__id', 'date'),
+                date_headers, 'total', total_column=True, by='user')))
 
             entries = entries.order_by('project__type__label', 'project__name',
-                    'project__id', 'date')
+                                       'project__id', 'date')
             func = lambda x: x['project__type__label']
             for label, group in groupby(entries, func):
                 title = label + ' Projects'
-                summaries.append((title, get_project_totals(list(group),
-                        date_headers, 'total', total_column=True, by='project')))
+                summaries.append((
+                    title,
+                    get_project_totals(
+                        list(group),
+                        date_headers,
+                        'total',
+                        total_column=True,
+                        by='project',
+                    ),
+                ))
 
         # Adjust date headers & create range headers.
         from_date = context['from_date']
@@ -229,12 +237,12 @@ class HourlyReport(ReportMixin, CSVViewMixin, TemplateView):
         to_date = context['to_date']
         to_date = utils.add_timezone(to_date) if to_date else None
         trunc = context['trunc']
-        date_headers, range_headers = self.get_headers(date_headers,
-                from_date, to_date, trunc)
+        date_headers, range_headers = self.get_headers(
+            date_headers, from_date, to_date, trunc)
 
         context.update({
             'date_headers': date_headers,
-            'summaries': summaries,
+            'summaries': dict(summaries),
             'range_headers': range_headers,
         })
         return context
@@ -243,17 +251,15 @@ class HourlyReport(ReportMixin, CSVViewMixin, TemplateView):
         request = self.request.GET.copy()
         from_date = request.get('from_date')
         to_date = request.get('to_date')
-        return 'hours_{0}_to_{1}_by_{2}.csv'.format(from_date, to_date,
-            context.get('trunc', ''))
+        return 'hours_{0}_to_{1}_by_{2}.csv'.format(
+            from_date, to_date, context.get('trunc', ''))
 
     def get_form(self):
         data = self.request.GET or self.defaults
         data = data.copy()  # make mutable
         # Fix booleans - the strings "0" and "false" are True in Python
         for key in ['billable', 'non_billable', 'paid_leave']:
-            data[key] = key in data and \
-                        str(data[key]).lower() in ('on', 'true', '1')
-
+            data[key] = key in data and str(data[key]).lower() in ('on', 'true', '1')
         return HourlyReportForm(data)
 
 
@@ -308,13 +314,12 @@ class BillableHours(ReportMixin, TemplateView):
             return BillableHoursReportForm(self.request.GET)
         else:
             # Select all available users, activities, and project types.
-            return BillableHoursReportForm(self.defaults,
-                    select_all=True)
+            return BillableHoursReportForm(self.defaults, select_all=True)
 
     def get_hours_data(self, entries, date_headers):
         """Sum billable and non-billable hours across all users."""
-        project_totals = get_project_totals(entries, date_headers,
-                total_column=False) if entries else []
+        project_totals = get_project_totals(
+            entries, date_headers, total_column=False) if entries else []
 
         data_map = {}
         for rows, totals in project_totals:
@@ -335,8 +340,10 @@ def report_payroll_summary(request):
     from_date = utils.get_month_start(date).date()
     to_date = from_date + relativedelta(months=1)
 
-    year_month_form = PayrollSummaryReportForm(request.GET or None,
-        initial={'month': from_date.month, 'year': from_date.year})
+    year_month_form = PayrollSummaryReportForm(request.GET or None, initial={
+        'month': from_date.month,
+        'year': from_date.year,
+    })
 
     if year_month_form.is_valid():
         from_date, to_date = year_month_form.save()
@@ -353,10 +360,10 @@ def report_payroll_summary(request):
     )
     date_headers = generate_dates(from_date, last_billable, by='week')
     weekly_totals = list(get_project_totals(week_entries, date_headers,
-                                              'total', overtime=True))
+                                            'total', overtime=True))
     # Monthly totals
-    leave = Entry.objects.filter(monthQ, ~workQ
-                                  ).values('user', 'hours', 'project__name')
+    leave = Entry.objects.filter(monthQ, ~workQ)
+    leave = leave.values('user', 'hours', 'project__name')
     extra_values = ('project__type__label',)
     month_entries = Entry.objects.date_trunc('month', extra_values)
     month_entries_valid = month_entries.filter(monthQ, statusQ, workQ)
@@ -400,27 +407,26 @@ def report_productivity(request):
             # Determine the project's time range.
             amin, amax, pmin, pmax = (None, None, None, None)
             if actuals.count() > 0:
-                amin = actuals.aggregate(Min('start_time')).values()[0]
+                amin = list(actuals.aggregate(Min('start_time')).values())[0]
                 amin = utils.get_week_start(amin).date()
-                amax = actuals.aggregate(Max('start_time')).values()[0]
+                amax = list(actuals.aggregate(Max('start_time')).values())[0]
                 amax = utils.get_week_start(amax).date()
             if projections.count() > 0:
-                pmin = projections.aggregate(Min('week_start')).values()[0]
-                pmax = projections.aggregate(Max('week_start')).values()[0]
+                pmin = list(projections.aggregate(Min('week_start')).values())[0]
+                pmax = list(projections.aggregate(Max('week_start')).values())[0]
             current = min(amin, pmin) if (amin and pmin) else (amin or pmin)
             latest = max(amax, pmax) if (amax and pmax) else (amax or pmax)
 
             # Report for each week during the project's time range.
             while current <= latest:
                 next_week = current + relativedelta(days=7)
-                actual_hours = actuals.filter(start_time__gte=current,
-                        start_time__lt=next_week).aggregate(
-                        Sum('hours')).values()[0]
-                projected_hours = projections.filter(week_start__gte=current,
-                        week_start__lt=next_week).aggregate(
-                        Sum('hours')).values()[0]
+                actual_hours = actuals.filter(start_time__gte=current, start_time__lt=next_week)
+                actual_hours = list(actual_hours.aggregate(Sum('hours')).values())[0]
+                projected_hours = projections.filter(
+                    week_start__gte=current, week_start__lt=next_week)
+                projected_hours = list(projected_hours.aggregate(Sum('hours')).values())[0]
                 report.append([date_format_filter(current, 'M j, Y'),
-                        actual_hours or 0, projected_hours or 0])
+                              actual_hours or 0, projected_hours or 0])
                 current = next_week
 
         elif organize_by == 'user' and entry_count > 0:
@@ -435,10 +441,10 @@ def report_productivity(request):
             # Report for each user.
             for user in users:
                 name = '{0} {1}'.format(user[1], user[2])
-                actual_hours = actuals.filter(user=user[0]) \
-                        .aggregate(Sum('hours')).values()[0]
-                projected_hours = projections.filter(user=user[0]) \
-                        .aggregate(Sum('hours')).values()[0]
+                actual_hours = actuals.filter(user=user[0])
+                actual_hours = list(actual_hours.aggregate(Sum('hours')).values())[0]
+                projected_hours = projections.filter(user=user[0])
+                projected_hours = list(projected_hours.aggregate(Sum('hours')).values())[0]
                 report.append([name, actual_hours or 0, projected_hours or 0])
 
         col_headers = [organize_by.title(), 'Worked Hours', 'Assigned Hours']
@@ -460,4 +466,27 @@ def report_productivity(request):
         'type': organize_by or '',
         'total_worked': sum([r[1] for r in report[1:]]),
         'total_assigned': sum([r[2] for r in report[1:]]),
+    })
+
+
+@permission_required('contracts.view_estimation_accuracy')
+def report_estimation_accuracy(request):
+    """
+    Idea from Software Estimation, Demystifying the Black Art, McConnel 2006 Fig 3-3.
+    """
+    contracts = ProjectContract.objects.filter(
+        status=ProjectContract.STATUS_COMPLETE,
+        type=ProjectContract.PROJECT_FIXED
+    )
+    data = [('Target (hrs)', 'Actual (hrs)', 'Point Label')]
+    for c in contracts:
+        if c.contracted_hours() == 0:
+            continue
+        pt_label = "%s (%.2f%%)" % (c.name,
+                                    c.hours_worked / c.contracted_hours() * 100)
+        data.append((c.contracted_hours(), c.hours_worked, pt_label))
+        chart_max = max([max(x[0], x[1]) for x in data[1:]])  # max of all targets & actuals
+    return render(request, 'timepiece/reports/estimation_accuracy.html', {
+        'data': json.dumps(data, cls=DecimalEncoder),
+        'chart_max': chart_max,
     })

@@ -1,0 +1,44 @@
+{% extends "timepiece/reports/base.html" %}
+{% load timepiece_tags bootstrap_toolkit %}
+{% load url from future %}
+
+{% block title %}Estimation Accuracy Report{% endblock title %}
+
+{% block bodyid %}estimation-accuracy{% endblock bodyid %}
+
+{% block crumbs %}
+    {{ block.super }}
+    <li>
+        <span class="divider">/</span>
+        <a href="{% url 'report_estimation_accuracy' %}">Estimation Accuracy Report</a>
+    </li>
+{% endblock crumbs %}
+
+{% block report_nav %}
+    {% with 'estimation_accuracy' as active %}
+        {{ block.super }}
+    {% endwith %}
+{% endblock report_nav %}
+
+{% block extrajs %}
+    {{ block.super }}
+    <script charset="utf-8" src="https://www.google.com/jsapi"></script>
+    <script charset="utf-8" src="{{ STATIC_URL }}timepiece/js/chart/estimation_accuracy_chart.js"
+	    data="{{ data }}" chart_max="{{ chart_max }}"></script>
+{% endblock extrajs %}
+
+{% block report_content %}
+
+    <div class="row-fluid">
+        <div class="span12">
+            <div id="chart-container">
+                {% if data %}
+                    <div id="chart" style="width: 900px; height: 900px;"></div>
+                {% else %}
+                    <p>There are no entries which match your query.</p>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+
+{% endblock report_content %}

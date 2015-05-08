@@ -5,6 +5,8 @@ import factory
 from factory.fuzzy import FuzzyDate, FuzzyInteger
 import random
 
+import six
+
 from django.contrib.auth import models as auth
 from django.contrib.auth.hashers import make_password
 
@@ -15,7 +17,9 @@ from timepiece import utils
 
 
 class User(factory.DjangoModelFactory):
-    FACTORY_FOR = auth.User
+
+    class Meta:
+        model = auth.User
 
     # FIXME: Some tests depend on first_name/last_name being unique.
     first_name = factory.Sequence(lambda n: 'Sam{0}'.format(n))
@@ -27,7 +31,14 @@ class User(factory.DjangoModelFactory):
     @factory.post_generation
     def permissions(self, create, extracted, **kwargs):
         if create and extracted:
-            self.user_permissions.add(*extracted)
+            for perm in extracted:
+                if isinstance(perm, six.string_types):
+                    app_label, codename = perm.split('.')
+                    perm = auth.Permission.objects.get(
+                        content_type__app_label=app_label,
+                        codename=codename,
+                    )
+                self.user_permissions.add(perm)
 
 
 class Superuser(User):
@@ -36,13 +47,17 @@ class Superuser(User):
 
 
 class Group(factory.DjangoModelFactory):
-    FACTORY_FOR = auth.Group
+
+    class Meta:
+        model = auth.Group
 
     name = factory.Sequence(lambda n: 'group{0}'.format(n))
 
 
 class ProjectContract(factory.DjangoModelFactory):
-    FACTORY_FOR = contracts.ProjectContract
+
+    class Meta:
+        model = contracts.ProjectContract
 
     name = factory.Sequence(lambda n: 'contract{0}'.format(n))
     start_date = datetime.date.today()
@@ -55,8 +70,7 @@ class ProjectContract(factory.DjangoModelFactory):
         if create:
             num_hours = extracted or random.randint(10, 400)
             for i in range(2):
-                ContractHour(contract=self,
-                        hours=Decimal(str(num_hours/2.0)))
+                ContractHour(contract=self, hours=Decimal(str(num_hours/2.0)))
 
     @factory.post_generation
     def projects(self, create, extracted, **kwargs):
@@ -65,7 +79,9 @@ class ProjectContract(factory.DjangoModelFactory):
 
 
 class ContractHour(factory.DjangoModelFactory):
-    FACTORY_FOR = contracts.ContractHour
+
+    class Meta:
+        model = contracts.ContractHour
 
     date_requested = datetime.date.today()
     status = contracts.ContractHour.APPROVED_STATUS
@@ -73,7 +89,9 @@ class ContractHour(factory.DjangoModelFactory):
 
 
 class ContractAssignment(factory.DjangoModelFactory):
-    FACTORY_FOR = contracts.ContractAssignment
+
+    class Meta:
+        model = contracts.ContractAssignment
 
     user = factory.SubFactory('timepiece.tests.factories.User')
     contract = factory.SubFactory('timepiece.tests.factories.ProjectContract')
@@ -82,40 +100,53 @@ class ContractAssignment(factory.DjangoModelFactory):
 
 
 class HourGroup(factory.DjangoModelFactory):
-    FACTORY_FOR = contracts.HourGroup
+
+    class Meta:
+        model = contracts.HourGroup
 
     name = factory.Sequence(lambda n: 'hourgroup{0}'.format(n))
 
 
 class EntryGroup(factory.DjangoModelFactory):
-    FACTORY_FOR = contracts.EntryGroup
+
+    class Meta:
+        model = contracts.EntryGroup
 
     user = factory.SubFactory('timepiece.tests.factories.User')
     project = factory.SubFactory('timepiece.tests.factories.Project')
     end = FuzzyDate(datetime.date.today() - relativedelta(months=1))
 
+
 class TypeAttribute(factory.DjangoModelFactory):
-    FACTORY_FOR = crm.Attribute
+
+    class Meta:
+        model = crm.Attribute
 
     label = factory.Sequence(lambda n: 'type{0}'.format(n))
     type = crm.Attribute.PROJECT_TYPE
 
 
 class StatusAttribute(factory.DjangoModelFactory):
-    FACTORY_FOR = crm.Attribute
+
+    class Meta:
+        model = crm.Attribute
 
     label = factory.Sequence(lambda n: 'status{0}'.format(n))
     type = crm.Attribute.PROJECT_STATUS
 
 
 class Business(factory.DjangoModelFactory):
-    FACTORY_FOR = crm.Business
+
+    class Meta:
+        model = crm.Business
 
     name = factory.Sequence(lambda n: 'business{0}'.format(n))
 
 
 class Project(factory.DjangoModelFactory):
-    FACTORY_FOR = crm.Project
+
+    class Meta:
+        model = crm.Project
 
     name = factory.Sequence(lambda n: 'project{0}'.format(n))
     business = factory.SubFactory('timepiece.tests.factories.Business')
@@ -135,26 +166,34 @@ class NonbillableProject(Project):
 
 
 class RelationshipType(factory.DjangoModelFactory):
-    FACTORY_FOR = crm.RelationshipType
+
+    class Meta:
+        model = crm.RelationshipType
 
     name = factory.Sequence(lambda n: 'reltype{0}'.format(n))
 
 
 class ProjectRelationship(factory.DjangoModelFactory):
-    FACTORY_FOR = crm.ProjectRelationship
+
+    class Meta:
+        model = crm.ProjectRelationship
 
     user = factory.SubFactory('timepiece.tests.factories.User')
     project = factory.SubFactory('timepiece.tests.factories.Project')
 
 
 class UserProfile(factory.DjangoModelFactory):
-    FACTORY_FOR = crm.UserProfile
+
+    class Meta:
+        model = crm.UserProfile
 
     user = factory.SubFactory('timepiece.tests.factories.User')
 
 
 class Activity(factory.DjangoModelFactory):
-    FACTORY_FOR = entries.Activity
+
+    class Meta:
+        model = entries.Activity
 
     code = factory.Sequence(lambda n: 'a{0}'.format(n))
     name = factory.Sequence(lambda n: 'activity{0}'.format(n))
@@ -169,20 +208,26 @@ class NonbillableActivityFactory(Activity):
 
 
 class ActivityGroup(factory.DjangoModelFactory):
-    FACTORY_FOR = entries.ActivityGroup
+
+    class Meta:
+        model = entries.ActivityGroup
 
     name = factory.Sequence(lambda n: 'activitygroup{0}'.format(n))
 
 
 class Location(factory.DjangoModelFactory):
-    FACTORY_FOR = entries.Location
+
+    class Meta:
+        model = entries.Location
 
     name = factory.Sequence(lambda n: 'location{0}'.format(n))
     slug = factory.Sequence(lambda n: 'location{0}'.format(n))
 
 
 class Entry(factory.DjangoModelFactory):
-    FACTORY_FOR = entries.Entry
+
+    class Meta:
+        model = entries.Entry
 
     status = entries.Entry.UNVERIFIED
     user = factory.SubFactory('timepiece.tests.factories.User')
@@ -192,7 +237,9 @@ class Entry(factory.DjangoModelFactory):
 
 
 class ProjectHours(factory.DjangoModelFactory):
-    FACTORY_FOR = entries.ProjectHours
+
+    class Meta:
+        model = entries.ProjectHours
 
     week_start = utils.get_week_start()
     project = factory.SubFactory('timepiece.tests.factories.Project')
