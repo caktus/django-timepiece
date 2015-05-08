@@ -4,7 +4,7 @@ python:
 env:
   - TOXENV=py3.4-django1.8
   - TOXENV=py2.7-django1.8
-  - TOXENV=py3.3-django1.7
+  - TOXENV=py3.4-django1.7
   - TOXENV=py2.7-django1.7
 install:
   - pip install -q --use-mirrors tox==1.9.2
