@@ -2,12 +2,12 @@ language: python
 python:
   - "3.4"
 env:
-  - TOXENV=py3.4-django1.7
+  - TOXENV=py3.4-django1.8
+  - TOXENV=py2.7-django1.8
+  - TOXENV=py3.3-django1.7
   - TOXENV=py2.7-django1.7
-  - TOXENV=py3.3-django1.6
-  - TOXENV=py2.7-django1.6
 install:
-  - pip install -q --use-mirrors tox==1.8.1
+  - pip install -q --use-mirrors tox==1.9.2
 before_script:
   - psql -c 'create database timepiece;' -U postgres
 script:
