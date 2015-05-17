@@ -3,12 +3,18 @@ from dateutil import rrule
 from dateutil.relativedelta import relativedelta
 from decimal import Decimal
 from itertools import groupby
+import workdays
 
 from timepiece.utils import get_hours_summary, add_timezone, get_week_start,\
-        get_month_start, get_year_start, get_setting
+        get_month_start, get_year_start, get_setting, get_bimonthly_dates
 from timepiece.entries.models import Entry
 
-from django.contrib.auth.models import User
+from django.contrib.auth.models import User, Group
+from django.db.models import Sum, Q, Min, Max
+
+from timepiece.crm.models import ActivityGoal, PaidTimeOffRequest
+
+from holidays.models import Holiday
 
 
 def date_totals(entries, by):
@@ -262,3 +268,148 @@ def multikeysort(items, columns):
             return 0
     return sorted(items, cmp=comparer)
 
+def get_company_backlog_chart_data():
+    """
+    Creates the data objects required by the c3 frond-end visualization
+    """
+
+    def new_empty_date():
+        # return {'Holiday': 0.0,
+        #         'Approved Time Off': 0.0}
+        return {}
+
+    employees = Group.objects.get(id=1).user_set.filter(is_active=True).order_by('last_name', 'first_name')
+    hours_per_week = Decimal('0.0')
+    for employee in employees:
+        print 'hours', employee.profile.hours_per_week, hours_per_week
+        hours_per_week += Decimal(employee.profile.hours_per_week)
+    
+    coverage = {}
+
+    # start_week = get_week_start(datetime.date.today()).date()
+    start_week = datetime.date.today()
+    activity_goals = ActivityGoal.objects.filter(
+        employee__in=employees, end_date__gte=start_week, 
+        project__status=get_setting(
+            'TIMEPIECE_DEFAULT_PROJECT_STATUS'))
+
+    if activity_goals.count() == 0:
+         return {}
+
+    # determine the end date and add one more week to show clearly that
+    # the company has no coverage then
+    end_date = max(
+        get_bimonthly_dates(datetime.date.today())[1].date(),
+        activity_goals.aggregate(end_date=Max('end_date'))['end_date'])
+    end_week = get_week_start(end_date).date() \
+              + datetime.timedelta(days=7)
+
+    # get total number of weeks shown on plot; this equals the
+    # length of the arrays
+    num_weeks = (end_week - start_week).days / 7.0 + 1
+
+    # determine holidays and add time (whether paid or not)
+    holidays = [h['date'] for h in Holiday.holidays_between_dates(
+        start_week, end_week, {'paid_holiday': True})]
+    for holiday in holidays:
+        if str(holiday) not in coverage:
+            coverage[str(holiday)] = new_empty_date()
+        coverage[str(holiday)]['Holiday'] = float(hours_per_week / Decimal('5.0'))
+
+    # add Time Off requests as holidays
+    # TODO: should make this smarter so that if it is a partial day it
+    #       does not count as a full day
+    userprofiles = [employee.profile for employee in employees]
+    for ptor in PaidTimeOffRequest.objects.filter(
+        Q(user_profile__in=userprofiles),
+        Q(pto_start_date__gte=start_week)|Q(pto_end_date__gte=end_week),
+        Q(status='approved')|Q(status='processed')):
+    # for ptor in employee.profile.paidtimeoffrequest_set.filter(
+    #     Q(pto_start_date__gte=start_week)|Q(pto_end_date__gte=end_week),
+    #     Q(status='approved')|Q(status='processed')):
+        
+        num_workdays = max(workdays.networkdays(ptor.pto_start_date, 
+            ptor.pto_end_date, holidays), 1)
+        ptor_hours_per_day = ptor.amount / Decimal(num_workdays)
+
+        for i in range((ptor.pto_end_date-ptor.pto_start_date).days + 1):
+            date = ptor.pto_start_date + datetime.timedelta(days=i)
+            if date.weekday() < 5:
+                holidays.append(date)
+                if str(date) not in coverage:
+                    coverage[str(date)] = \
+                        new_empty_date()
+                coverage[str(date)]['Approved Time Off'] = \
+                    float(ptor_hours_per_day)
+
+    y_axes = {'Holiday': ['data1'],
+              'Approved Time Off': ['data2']}
+    data_counter = 3
+    for activity_goal in activity_goals:
+        if activity_goal.project.code not in y_axes.keys():
+            y_axes[activity_goal.project.code] = ['data%s'%data_counter]
+            data_counter += 1
+
+        start_date = start_week if activity_goal.date < start_week \
+            else activity_goal.date
+        
+        end_date = activity_goal.end_date
+        num_workdays = max(workdays.networkdays(start_date, end_date, 
+            holidays), 1)
+        ag_hours_per_workday = activity_goal.get_remaining_hours / Decimal(num_workdays)
+
+        for i in range((end_date-start_date).days + 1):
+            date = start_date + datetime.timedelta(days=i)
+            if workdays.networkdays(date, date, holidays):
+                if str(date) not in coverage:
+                    coverage[str(date)] = new_empty_date()
+                if activity_goal.project.code not in coverage[str(date)]:
+                    coverage[str(date)][activity_goal.project.code] = 0.0
+                coverage[str(date)][activity_goal.project.code] += \
+                    float(ag_hours_per_workday)
+
+    # x_axis = ['x']
+
+    # for i in range((end_week - start_week).days + 1):
+    #     date = start_week + datetime.timedelta(days=i)
+    #     x_axis.append(str(date))
+        
+    #     for project in y_axes.keys():
+    #         pass
+
+    # sorted_coverage = []
+    # for k in sorted(coverage.keys()):
+    #     sorted_coverage = coverage[k]
+    columns = {'x': []}
+    for date in sorted(coverage.keys()):
+        columns['x'].append(date)
+        for proj, hours in coverage[date].items():
+            if proj not in columns:
+                columns[proj] = [0.0] * (len(columns['x']) - 1)
+            columns[proj].append(hours)
+        
+        expected_len = len(columns['x'])
+        for check_key, vals in columns.items():
+            while len(vals) != expected_len:
+                columns[check_key].append(0.0)
+
+    c3_columns = []
+    for proj, vals in columns.items():
+        if proj != 'x':
+            c3_columns.append([proj] + vals)
+        else:
+            c3_columns.insert(0, [proj] + vals)
+    schedule = ['Avg Hours']
+    week_dict = employee.profile.week_dict()
+    for date_str in sorted(coverage.keys()):
+        date = datetime.datetime.strptime(date_str, '%Y-%m-%d', ).date()
+        schedule.append(float(hours_per_week / Decimal('5.0')))
+    
+    # c3_columns.append(['Regular Schedule'] + [float(avg_hours_per_day)]*len(columns['x']))
+    c3_columns.append(schedule)
+    keys = columns.keys()
+    keys.remove('x')
+    data = {'columns': c3_columns,
+            'keys': keys,
+            'avg_hours': float(hours_per_week / Decimal('5.0'))}
+    return data
