@@ -14,6 +14,8 @@
     <div class="row">
         <div class="span12">
             <h4>Here are the challenges (or pains, problems, concerns) I heard. Is that everything?</h4>
+            <h6>Refer to the following link for additional details related to the AAC Sales Process:
+                <a href="https://firmbase.aacengineering.com/wiki/StandardOperatingProcedures/SalesAndMarketing/">SalesAndMarketing</a></h6>
             <h5>In what order should we address these?  (set the Priority/Order on each DV tab)</h5>
             <ul class="nav nav-tabs">
                 {% url "view_lead_distinguishing_value" object.id as link %}
@@ -39,8 +41,8 @@
                     <h5>You have no Differentiating Values.  Click the <i class="icon-plus"></i> button above to add one.</h5>
                 </div>
                 {% if dvc %}
-                <div class="tab-pane{% if dvc %} active{% endif%}" id="active-dvc">                    
-                    <div class="span7">                        
+                <div class="tab-pane{% if dvc %} active{% endif%}" id="active-dvc">
+                    <div class="span7">
                       <form id="dvc_form" action="{% url 'update_distinguishing_value_challenge' object.id dvc.id %}" method="post">
                         {% csrf_token %}
                         <div class="control-group">
@@ -243,7 +245,7 @@
 
                         <h3>Attachments</h3>
                         <div id="file-uploader" name="File" class="controls">
-                          <noscript>          
+                          <noscript>
                             <p>Please enable JavaScript to use file uploader.</p>
                           </noscript>
                         </div>
@@ -284,7 +286,7 @@
 <script>
     $(document).ready(
         function () {
-            $('#dvc_form').areYouSure( {'message': 'You have unsaved changes!  To save the changes select "Stay on this Page" below and then click one of the "Save" buttons.'} );        
+            $('#dvc_form').areYouSure( {'message': 'You have unsaved changes!  To save the changes select "Stay on this Page" below and then click one of the "Save" buttons.'} );
         }
     );
 </script>
