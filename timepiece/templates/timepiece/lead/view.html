@@ -214,7 +214,7 @@
 
     <div class="row-fluid">
         <div class="span12">
-            <h3>General Tasks</h3>
+            <h3>Open General Tasks</h3>
             {% if perms.crm.change_lead %}
                 <form class="form-inline" action="{% url 'lead_add_general_task' object.id %}?next={{ next_url|add_parameters:request.GET|urlencode }}" method="post" accept-charset="utf-8">
                     {% csrf_token %}
@@ -241,7 +241,7 @@
                     </tr>
                 </thead>
                 <tbody>
-                    {% for general_task in object.generaltask_set.all %}
+                    {% for general_task in object.open_general_tasks %}
                         <tr>
                             <td>
                                 <a href="{% url 'lead_remove_general_task' object.id %}?general_task_id={{ general_task.id }}&next={{ next_url }}"><i class="icon-remove-circle" title="Remove {{ general_task }} from this Lead."> </i></a>

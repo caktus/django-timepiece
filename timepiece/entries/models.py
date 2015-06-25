@@ -189,14 +189,20 @@ class Entry(models.Model):
 
     hours = models.DecimalField(max_digits=8, decimal_places=2, default=0)
 
-    pto_log = models.ForeignKey(PaidTimeOffLog, blank=True, null=True)
+    pto_log = models.ForeignKey(PaidTimeOffLog, blank=True, null=True,
+        on_delete=models.CASCADE)
 
     mechanism = models.CharField(max_length=24, choices=MECHANISMS.items(),
             default=MANUAL)
 
-    writedown_user = models.ForeignKey(User, related_name='writedown_user', null=True, blank=True)
-    writedown = models.BooleanField(default=False, help_text='Select this if the entry is a writedown for another entry.')
-    writedown_entry = models.ForeignKey('self', blank=True, null=True, help_text='If this is a writedown, select the entry being written-down.')
+    writedown_user = models.ForeignKey(
+        User, related_name='writedown_user', null=True, blank=True,
+        on_delete=models.SET_NULL)
+    writedown = models.BooleanField(default=False, 
+        help_text='Select this if the entry is a writedown for another entry.')
+    writedown_entry = models.ForeignKey('self', blank=True, null=True, 
+        help_text='If this is a writedown, select the entry being written-down.',
+        on_delete=models.SET_NULL)
 
     objects = EntryManager()
     worked = EntryWorkedManager()
@@ -388,8 +394,29 @@ class Entry(models.Model):
         self.hours = Decimal('%.2f' % round(self.total_hours, 2))
         if self.writedown:
             self.hours = -1 * self.hours
+
+        if self.pto_log:
+            original_amount = self.pto_log.amount
+            self.pto_log.amount = -1 * self.hours
+            if original_amount != self.pto_log.amount:
+                self.pto_log.save()
+                if self.pto_log.pto_request.status == 'approved' or self.pto_log.pto_request.status == 'processed':
+                    self.pto_log.pto_request.status = 'modified'
+                    self.pto_log.pto_request.save()
+            # if abs(self.pto_log.amount) > abs(orignal_amount) and self.user.get_pto < Decimal('0.0'):
+            #     self.pto_log = original_amount
+            #     self.pto_log.save()
+            #     msg = 'You cannot '
+            #     raise ValidationError(msg)
+
         
         super(Entry, self).save(*args, **kwargs)
+
+    def delete(self, *args, **kwargs):
+        # if it exists, delete the associated PTO Log
+        if self.pto_log:
+            self.pto_log.delete()
+        super(Entry, self).delete(*args, **kwargs) # Call the "real" delete() method.
 
     def get_total_seconds(self):
         """

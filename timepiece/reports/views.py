@@ -23,15 +23,17 @@ from django.views.generic import TemplateView
 from timepiece import utils
 from timepiece.utils.csv import CSVViewMixin, DecimalEncoder
 
-from timepiece.contracts.models import ProjectContract
+from timepiece.contracts.models import ProjectContract, ContractRate
 from timepiece.entries.models import Entry, ProjectHours, Activity
 from timepiece.crm.models import Project, PaidTimeOffRequest, Attribute
 from timepiece.reports.forms import BillableHoursReportForm, HourlyReportForm,\
-        ProductivityReportForm, PayrollSummaryReportForm
+        ProductivityReportForm, PayrollSummaryReportForm, RevenueReportForm,\
+        BacklogFilterForm
 from timepiece.reports.utils import get_project_totals, get_payroll_totals,\
-        generate_dates, get_week_window
+        generate_dates, get_week_window, get_company_backlog_chart_data
 
 from timepiece.reports.utils import get_week_trunc_sunday, multikeysort
+from timepiece.utils.views import cbv_decorator
 
 from holidays.models import Holiday
 
@@ -591,6 +593,187 @@ class BillableHours(ReportMixin, TemplateView):
         return data_map
 
 
+class RevenueReport(CSVViewMixin, TemplateView):
+    template_name = 'timepiece/reports/revenue.html'
+
+    def convert_context_to_csv(self, context):
+        """Convert the context dictionary into a CSV file."""
+        content = []
+        if self.export_revenue_report:
+            headers = ['Employee'] + context['project_headers'] + ['Employee Totals']
+            content.append(headers)
+
+            for row in context['rows']:
+                content.append([row[0]] + row[2])
+
+            content.append(['Totals'] + context['totals'])
+            
+        return content
+
+    @property
+    def defaults(self):
+        """Default filter form data when no GET data is provided."""
+        start = timezone.now() - relativedelta(months=1)
+        start = start.replace(day=1, hour=0, minute=0, second=0, microsecond=0)
+        end = start + relativedelta(months=1)
+        return {
+            'from_date': start,
+            'to_date': end,
+            'trunc': 'day',
+            'projects': [],
+            'contracts': [],
+            'employees': [],
+        }
+
+    def get(self, request, *args, **kwargs):
+        self.export_revenue_report = request.GET.get(
+            'export_revenue_report', False)
+        
+        context = self.get_context_data()
+        if self.export_revenue_report:
+            kls = CSVViewMixin
+        else:
+            kls = TemplateView
+        return kls.render_to_response(self, context)
+
+    def get_context_data(self, **kwargs):
+        """Processes form data to get relevant entries & date_headers."""
+        context = super(RevenueReport, self).get_context_data(**kwargs)
+
+        form = self.get_form()
+        if form.is_valid():
+            data = form.cleaned_data
+            start, end = form.save()
+            
+            # All entries must meet time period requirements.
+            entryQ = Q(end_time__gte=start, end_time__lt=end)
+            # for revenue, we only care about Bilalble
+            entryQ &= Q(activity__billable=True, project__type__billable=True)
+
+            # Filter by user, activity, and project type for BillableReport.
+            employees = data.get('employees', [])
+            projects = data.get('projects', [])
+            contracts = data.get('contracts', [])
+            projects_without_rates = []
+            missing_rates = []
+            if len(employees):
+                entryQ &= Q(user__in=employees)
+            if len(projects):
+                entryQ &= Q(project__in=projects)
+            if len(contracts):
+                entryQ &= Q(project__contracts__in=contracts)
+            
+            if entryQ:
+                entries = Entry.objects.filter(entryQ).order_by(
+                    'user__last_name', 'user__first_name', 'user',
+                    'project__code', 'activity__name', 'activity__id')
+            else:
+                entries = Entry.objects.none()
+            
+            revenue_totals = {}
+            for user, user_entries in groupby(entries, lambda x: x.user):
+                for project, user_project_entries in groupby(user_entries, lambda y: y.project):
+                    # add missing project
+                    if project.code not in revenue_totals:
+                        revenue_totals[project.code] = {}
+                    
+                    # add missing user
+                    if user.id not in revenue_totals[project.code]:
+                        revenue_totals[project.code][user.id] = Decimal('0.0')
+
+                    # get the correct contract based on the time entry
+                    contract = None
+                    if project.contracts.count() == 1:
+                        contract = project.contracts.all()[0]
+
+                    elif project.contracts.count() > 1:
+                        print 'THERE ARE MULTIPLE CONTRACTS', project.code
+                        contract = project.contracts.filter(start_date__lt=end).order_by('-start_date')[0]
+
+                    elif project.contracts.count() == 0:
+                        print 'THERE ARE NO CONTRACTS', project.code
+                        projects_without_rates.append(project)
+                        # skip the aggregation part below because the rate is zero
+                        continue
+
+                    for activity, user_project_activity_entries in groupby(user_project_entries, lambda z: z.activity):
+                        total_hours = Decimal('0.0')
+                        for entry in user_project_activity_entries:
+                            total_hours += entry.hours
+                        try:
+                            rate = ContractRate.objects.get(contract=contract, activity=activity).rate
+                        except:
+                            print 'contract', contract, 'activity', activity
+                            missing_rates.append((contract, activity))
+                            rate = Decimal('0.0')
+                        total_revenue = total_hours * rate
+                        revenue_totals[project.code][user.id] += total_revenue
+
+            project_headers = sorted(revenue_totals.keys())
+
+            rows = []
+            report_columns = []
+            axes = []
+            project_totals = {}
+            for project_code in project_headers:
+                project_totals[project_code] = Decimal('0.0')
+                report_columns.append([project_code])
+
+            for user, user_entries in groupby(entries, lambda x: x.user):
+                user_totals = []
+                axes.append('%s, %s' % (user.last_name, user.first_name))
+                for index, project_code in enumerate(project_headers):
+                    user_totals.append(float(revenue_totals[project_code].get(user.id, Decimal('0.0'))))
+                    project_totals[project_code] += revenue_totals[project_code].get(user.id, Decimal('0.0'))
+                    report_columns[index].append(float(revenue_totals[project_code].get(user.id, Decimal('0.0'))))
+                user_totals.append(sum(user_totals))
+                rows.append(('%s, %s' % (user.last_name, user.first_name), user.id, user_totals))
+
+            totals = [float(project_totals[code]) for code in sorted(project_totals.keys())]
+            totals.append(sum(totals))
+
+            report_data = {'columns': report_columns,
+                           'type': 'bar',
+                           'groups': [project_headers]}
+
+            end = end - relativedelta(days=1)
+            context.update({
+                'from_date': start,
+                'to_date': end,
+                'project_headers': project_headers,
+                'rows': rows,
+                'totals': totals,
+                'entries': entries,
+                'filter_form': form,
+                'projects_with_no_contracts': projects_without_rates,
+                'missing_rates': missing_rates,
+                'report_data': json.dumps(report_data),
+                'axis_titles': json.dumps({'names': axes})
+            })
+        else:
+            context.update({
+                'from_date': None,
+                'to_date': None,
+                'project_headers': [],
+                'entries': Entry.objects.none(),
+                'filter_form': form,
+                'report_data': '',
+                'axis_titles': ''
+            })
+
+        return context
+
+    def get_filename(self, context):
+        request = self.request.GET.copy()
+        from_date = request.get('from_date')
+        to_date = request.get('to_date')
+        return 'revenue_{0}_to_{1}.csv'.format(from_date, to_date)
+
+    def get_form(self):
+        data = self.request.GET or self.defaults
+        data = data.copy()  # make mutable
+        return RevenueReportForm(data)
+
 @permission_required('entries.view_payroll_summary')
 def report_payroll_summary(request):
     # date = timezone.now() - relativedelta(months=1)
@@ -877,7 +1060,12 @@ def report_productivity(request):
 
         if export:
             response = HttpResponse(content_type='text/csv')
-            filename = '{0}_productivity'.format(project.name if project else business.short_name) 
+            if project:
+                filename = '{0}_productivity'.format(project.name)
+            elif business:
+                filename = '{0}_productivity'.format(business.short_name)
+            else:
+                filename = 'productivity'
             content_disp = 'attachment; filename={0}.csv'.format(filename)
             response['Content-Disposition'] = content_disp
             writer = csv.writer(response)
@@ -921,12 +1109,55 @@ def report_estimation_accuracy(request):
 from django.contrib.auth.models import Group
 from timepiece.crm.models import ActivityGoal, Project
 from django.db.models import Sum, Q
-@permission_required('crm.view_employee_backlog')
-def report_backlog(request, active_tab='company'):
-    """
-    Determines company-wide backlog and displays
-    """
-    if request.user.has_perm('crm.view_backlog'):
+
+@cbv_decorator(permission_required('crm.view_employee_backlog'))
+class BacklogReport(CSVViewMixin, TemplateView):
+    template_name = 'timepiece/reports/backlog.html'
+    
+    def get(self, request, *args, **kwargs):
+        # if user cannot see backlog, direct them to their personal backlog
+        if not request.user.has_perm('crm.view_backlog'):
+            return HttpResponseRedirect( reverse('report_employee_backlog', args=(request.user.id,)) )
+
+        self.active_tab = kwargs.get('active_tab', 'company') or 'company'
+        self.export_data = request.GET.get('export_data', False)
+        self.export_company_data = request.GET.get('export_company_data', False)
+        
+        context = self.get_context_data()
+        if self.export_data or self.export_company_data:
+            kls = CSVViewMixin
+        else:
+            kls = TemplateView
+        return kls.render_to_response(self, context)
+
+    def get_context_data(self, **kwargs):
+        context = super(BacklogReport, self).get_context_data(**kwargs)
+
+        form = self.get_form()
+
+        if form.is_valid():
+            activity_goalQ = Q(project__status__in=form.cleaned_data['project_statuses'])
+            activity_goalQ &= Q(project__type__in=form.cleaned_data['project_types'])
+            if form.cleaned_data['projects']:
+                activity_goalQ &= Q(project__in=form.cleaned_data['projects'])
+            if form.cleaned_data['activities']:
+                activity_goalQ &= Q(activity__in=form.cleaned_data['activities'])
+            if form.cleaned_data['clients']:
+                activity_goalQ &= Q(project__business__in=form.cleaned_data['clients'])
+
+            billable = form.cleaned_data['billable']
+            non_billable = form.cleaned_data['non_billable']
+            if billable and not non_billable:
+                activity_goalQ &= Q(project__type__billable=True, activity__billable=True)
+            elif not billable and non_billable:
+                activity_goalQ &= (Q(project__type__billable=False)|Q(activity__billable=False))
+            elif not billable and not non_billable:
+                # ensure no results are returned
+                activity_goalQ &= Q(project__type__billable=True) & Q(project__type__billable=False)
+        else:
+            messages.warning(request, 'There was an error applying your selected filter.')
+            activity_goalQ = Q(project__status=4)
+
         backlog = {}
         backlog_summary = {}
         company_total_hours = {}
@@ -934,7 +1165,10 @@ def report_backlog(request, active_tab='company'):
             backlog[employee.id] = []
             backlog_summary[employee.id] = {'total_available_hours': 0,
                                             'drop_dead_date': None}
-            for employee, activity_goals in groupby(ActivityGoal.objects.filter(employee=employee, project__status=4).order_by('activity'), lambda x: x.employee):
+            for employee, activity_goals in groupby(
+                ActivityGoal.objects.filter(activity_goalQ, employee=employee
+                    ).order_by('activity'), lambda x: x.employee):
+
                 for activity, activity_goals in groupby(activity_goals, lambda x: x.activity):
                     total_activity_hours = 0.0
                     total_charged_hours = 0.0
@@ -970,7 +1204,7 @@ def report_backlog(request, active_tab='company'):
             backlog_summary[employee_id]['employee'] = employee
             if float(employee.profile.hours_per_week) <= 0:
                 backlog_summary[employee_id]['drop_dead_date'] = datetime.date.today()
-                backlog_summary[employee_id]['no_hours_per_week'] = True
+                backlog_summary[employee_id]['no_hours_per_week'] = True # why is this true?
                 continue
 
             num_weeks = values['total_available_hours'] / float(employee.profile.hours_per_week)
@@ -993,7 +1227,7 @@ def report_backlog(request, active_tab='company'):
                 drop_dead_date, {'paid_holiday': True})
             for holiday in holidays:
                 future_holiday_time_off += Decimal('8.0') * \
-                employee.profile.hours_per_week / Decimal('40.0')
+                Decimal(employee.profile.hours_per_week) / Decimal('40.0')
             backlog_summary[employee_id]['future_holiday_time_off'] = \
                 future_holiday_time_off
 
@@ -1012,9 +1246,9 @@ def report_backlog(request, active_tab='company'):
 
         backlog_summary_sorted = sorted(backlog_summary.values(), key=lambda x: x['drop_dead_date'])
 
-        company_hours_per_week = Group.objects.get(id=1).user_set.filter(
-            is_active=True).aggregate(hours=Sum('profile__hours_per_week')
-            )['hours']
+        company_hours_per_week = Decimal('0.0')
+        for u in Group.objects.get(id=1).user_set.filter(is_active=True): #.aggregate(hours=Sum('profile__hours_per_week'))['hours']
+            company_hours_per_week += Decimal(u.profile.hours_per_week)
         company_hours = 0.0
         for activity_id, values in company_total_hours.items():
             company_hours += values['remaining_hours']
@@ -1068,13 +1302,289 @@ def report_backlog(request, active_tab='company'):
             'chart_data': json.dumps(chart_data)
         }
 
-        return render(request, 'timepiece/reports/backlog.html', 
-            {'backlog': backlog,
-             'backlog_summary': backlog_summary_sorted,
-             'company_backlog': company_backlog,
-             'active_tab': active_tab or 'company'})
-    else:
-        return HttpResponseRedirect( reverse('report_employee_backlog', args=(request.user.id,)) )
+        total_company_hours = 0.0
+        for activity_hours in company_backlog['company_total_hours']:
+            total_company_hours += activity_hours['remaining_hours']
+
+        company_backlog_data, export_filters = get_company_backlog_chart_data(activity_goalQ)
+        no_data = True
+        filters = {}
+        if 'filters' in company_backlog_data:
+            filters = company_backlog_data['filters']
+            no_data = False
+
+        context.update({
+            'backlog': backlog,
+            'backlogfilter_form': form,
+            'backlog_summary': backlog_summary_sorted,
+            'company_backlog': company_backlog,
+            'total_company_hours': total_company_hours,
+            'active_tab': self.active_tab,
+            'company_backlog_data': company_backlog_data,
+            'export_filters': export_filters,
+            'chart_data': json.dumps(company_backlog_data),
+            'filters': filters,
+            'no_data': no_data})
+        
+        return context
+
+    def convert_context_to_csv(self, context):
+        """Convert the context dictionary into a CSV file."""
+        content = []
+        if self.export_data:
+            headers = ['Activity Code', 'Activity Name', 'Remaining Hours']
+            content.append(headers)
+            total_hours = 0.0
+            for activity_hours in context['company_backlog']['company_total_hours']:
+                row = [activity_hours['activity'].code, 
+                       activity_hours['activity'].name,
+                       activity_hours['remaining_hours']]
+                content.append(row)
+                total_hours += activity_hours['remaining_hours']
+            row = ['', 'TOTAL', total_hours]
+            content.append(row)
+        elif self.export_company_data:
+            data = context['company_backlog_data']
+            export_filters = context['export_filters']
+            headers = ['Activity Code', 'Activity Name', 'Project Code',
+                'Project Name', 'Project Status', 'Project Type', 'Billable',
+                'Business Short Name', 'Business Name', 'Remaining Hours']
+            headers.extend(data['columns'][0][1:])
+            content.append(headers)
+            for col in data['columns'][1:]:
+                key = col[0]
+                if key == 'Total Avg Hours':
+                    continue
+                if key == 'Utilization Avg Hours':
+                    continue
+                hours = sum(col[1:])
+                row_data = export_filters[key]
+                row = [row_data['activity'].code, 
+                       row_data['activity'].name,
+                       row_data['project'].code,
+                       row_data['project'].name,
+                       row_data['project'].status.label,
+                       row_data['project'].type.label,
+                       row_data['billable'],
+                       row_data['client'].short_name,
+                       row_data['client'].name,
+                       hours]
+                for hours in col[1:]:
+                    row.append(hours)
+                content.append(row)
+        return content
+
+    @property
+    def defaults(self):
+        """Default filter form data when no GET data is provided."""
+        return {'billable': True,
+                'non_billable': True,
+                'project_statuses': [4],
+                'project_types': [a.id for a in Attribute.objects.filter(
+                    type='project-type')],
+                'projects': None,
+                'activities': None}
+
+    def get_form(self):
+        data = self.request.GET or self.defaults
+        data = data.copy()  # make mutable
+        # Fix booleans - the strings "0" and "false" are True in Python
+        # for key in ['billable', 'non_billable', 'paid_time_off', 'unpaid_time_off', 'writedown']:
+        #     data[key] = key in data and \
+        #                 str(data[key]).lower() in ('on', 'true', '1')
+
+        return BacklogFilterForm(data)
+
+    def get_filename(self, context):
+        return 'backlog_totals_by_activity.csv'.format()
+
+# @permission_required('crm.view_employee_backlog')
+# def report_backlog(request, active_tab='company'):
+#     """
+#     Determines company-wide backlog and displays
+#     """
+#     if request.user.has_perm('crm.view_backlog'):
+#         defaults = {'billable': True,
+#                     'non_billable': True,
+#                     'project_statuses': [4],
+#                     'project_types': [a.id for a in Attribute.objects.filter(
+#                         type='project-type')],
+#                     'projects': None,
+#                     'activities': None}
+#         form = BacklogFilterForm(request.GET or defaults)
+#         if form.is_valid():
+#             activity_goalQ = Q(project__status__in=form.cleaned_data['project_statuses'])
+#             activity_goalQ &= Q(project__type__in=form.cleaned_data['project_types'])
+#             if form.cleaned_data['projects']:
+#                 activity_goalQ &= Q(project__in=form.cleaned_data['projects'])
+#             if form.cleaned_data['activities']:
+#                 activity_goalQ &= Q(activity__in=form.cleaned_data['activities'])
+            
+#             billable = form.cleaned_data['billable']
+#             non_billable = form.cleaned_data['non_billable']
+#             if billable and not non_billable:
+#                 activity_goalQ &= Q(project__billable=True, activity__billable=True)
+#             elif not billable and non_billable:
+#                 activity_goalQ &= (Q(project__billable=False)|Q(activity__billable=False))
+#             elif not billable and not non_billable:
+#                 # ensure no results are returned
+#                 activity_goalQ &= Q(project__billable=True) & Q(project__billable=False)
+#         else:
+#             messages.warning(request, 'There was an error applying your selected filter.')
+#             activity_goalQ = Q(project__status=4)
+
+#         backlog = {}
+#         backlog_summary = {}
+#         company_total_hours = {}
+#         for employee in Group.objects.get(id=1).user_set.filter(is_active=True).order_by('last_name', 'first_name'):
+#             backlog[employee.id] = []
+#             backlog_summary[employee.id] = {'total_available_hours': 0,
+#                                             'drop_dead_date': None}
+#             for employee, activity_goals in groupby(
+#                 ActivityGoal.objects.filter(activity_goalQ, employee=employee
+#                     ).order_by('activity'), lambda x: x.employee):
+
+#                 for activity, activity_goals in groupby(activity_goals, lambda x: x.activity):
+#                     total_activity_hours = 0.0
+#                     total_charged_hours = 0.0
+#                     if activity is None:
+#                         raise Exception('Activity Goal with no Activity.')
+                    
+#                     activity_name = activity.name
+#                     if activity_name not in company_total_hours.keys():
+#                         company_total_hours[activity_name] = \
+#                             {'activity': activity,
+#                              'remaining_hours': 0.0}
+
+#                     for activity_goal in activity_goals:
+#                         total_activity_hours += float(activity_goal.goal_hours)
+#                         total_charged_hours += float(activity_goal.get_charged_hours)
+
+#                         backlog_summary[employee.id]['total_available_hours'] += float(activity_goal.get_remaining_hours)
+#                         company_total_hours[activity_name]['remaining_hours'] += float(activity_goal.get_remaining_hours)
+
+#                     percentage = 100.*(float(total_charged_hours)/float(total_activity_hours)) if float(total_activity_hours) > 0 else 0
+#                     percentage = 100 if float(total_activity_hours)==0.0 else percentage
+#                     remaining_hours = total_activity_hours - total_charged_hours
+#                     backlog[employee.id].append({'activity': activity,
+#                                                  'activity_name': activity_name,
+#                                                  'employee': employee,
+#                                                  'hours': total_activity_hours,
+#                                                  'charged_hours': total_charged_hours,
+#                                                  'remaining_hours': remaining_hours,
+#                                                  'percentage': percentage})
+        
+#         for employee_id, values in backlog_summary.items():
+#             employee = User.objects.get(id=employee_id)
+#             backlog_summary[employee_id]['employee'] = employee
+#             if float(employee.profile.hours_per_week) <= 0:
+#                 backlog_summary[employee_id]['drop_dead_date'] = datetime.date.today()
+#                 backlog_summary[employee_id]['no_hours_per_week'] = True
+#                 continue
+
+#             num_weeks = values['total_available_hours'] / float(employee.profile.hours_per_week)
+#             approx_days = 7 * num_weeks
+#             drop_dead_date = datetime.date.today() + relativedelta(days=int(approx_days))
+#             # backlog_summary[employee_id]['drop_dead_date'] = drop_dead_date
+            
+#             future_approved_time_off = PaidTimeOffRequest.objects.filter(
+#                 Q(status=PaidTimeOffRequest.APPROVED
+#                     )|Q(status=PaidTimeOffRequest.PROCESSED),
+#                 user_profile=employee.profile,
+#                 pto_start_date__gte=datetime.date.today(),
+#                 pto_end_date__lte=drop_dead_date,
+#                 ).aggregate(s=Sum('amount'))['s'] or Decimal('0.0')
+#             backlog_summary[employee_id]['future_approved_time_off'] = \
+#                 future_approved_time_off
+
+#             future_holiday_time_off = Decimal('0.0')
+#             holidays = Holiday.holidays_between_dates(datetime.date.today(),
+#                 drop_dead_date, {'paid_holiday': True})
+#             for holiday in holidays:
+#                 future_holiday_time_off += Decimal('8.0') * \
+#                 Decimal(employee.profile.hours_per_week) / Decimal('40.0')
+#             backlog_summary[employee_id]['future_holiday_time_off'] = \
+#                 future_holiday_time_off
+
+#             total_hours = values['total_available_hours'] \
+#                         + float(future_holiday_time_off) \
+#                         + float(future_approved_time_off)
+
+#             num_weeks = total_hours / float(employee.profile.hours_per_week)
+#             # subtract 1 for 
+#             approx_days = 7.0 * num_weeks - 1.0
+#             drop_dead_date = datetime.date.today() \
+#                            + relativedelta(days=int(approx_days))
+#             while drop_dead_date.weekday() >= 5:
+#                 drop_dead_date -= relativedelta(days=1)
+#             backlog_summary[employee_id]['drop_dead_date'] = drop_dead_date
+
+#         backlog_summary_sorted = sorted(backlog_summary.values(), key=lambda x: x['drop_dead_date'])
+
+#         company_hours_per_week = Decimal('0.0')
+#         for u in Group.objects.get(id=1).user_set.filter(is_active=True): #.aggregate(hours=Sum('profile__hours_per_week'))['hours']
+#             company_hours_per_week += Decimal(u.profile.hours_per_week)
+#         company_hours = 0.0
+#         for activity_id, values in company_total_hours.items():
+#             company_hours += values['remaining_hours']
+#         num_weeks = company_hours / float(company_hours_per_week)
+#         approx_days = 7 * num_weeks
+#         drop_dead_date = datetime.date.today() + relativedelta(days=int(approx_days))
+        
+#         future_approved_time_off = PaidTimeOffRequest.objects.filter(
+#                 Q(status=PaidTimeOffRequest.APPROVED
+#                     )|Q(status=PaidTimeOffRequest.PROCESSED),
+#                 pto_start_date__gte=datetime.date.today(),
+#                 pto_end_date__lte=drop_dead_date,
+#                 ).aggregate(s=Sum('amount'))['s'] or Decimal('0.0')
+
+#         future_holiday_time_off = Decimal('0.0')
+#         holidays = Holiday.holidays_between_dates(datetime.date.today(),
+#             drop_dead_date, {'paid_holiday': True})
+#         for holiday in holidays:
+#             future_holiday_time_off += Decimal('8.0') * (
+#                 company_hours_per_week / (Group.objects.get(id=1
+#                     ).user_set.filter(is_active=True).count() * \
+#                 Decimal('40.0')))
+
+#         total_hours = company_hours \
+#                     + float(future_holiday_time_off) \
+#                     + float(future_approved_time_off)
+
+#         num_weeks = total_hours / float(company_hours_per_week)
+#         approx_days = 7 * num_weeks
+#         drop_dead_date = datetime.date.today() + relativedelta(days=int(approx_days))
+#         while drop_dead_date.weekday() >= 5:
+#             drop_dead_date -= relativedelta(days=1)
+#             backlog_summary[employee_id]['drop_dead_date'] = drop_dead_date
+
+#         chart_data = []
+#         # chart_data = {'activities': [], 'values': []}
+#         for activity_name, values in company_total_hours.items():
+#             chart_data.append([activity_name, values['remaining_hours']])
+#             # chart_data['activities'].append(activity_name)
+#             # chart_data['values'].append(values['remaining_hours'])
+
+#         company_total_hours_sorted = sorted(company_total_hours.values(), key=lambda x: -1*x['remaining_hours'])
+#         company_backlog = {
+#             'company_total_hours': company_total_hours_sorted,
+#             'company_work_hours': company_hours,
+#             'company_total_hours_with_time_off': total_hours,
+#             'drop_dead_date': drop_dead_date,
+#             'company_hours': company_hours,
+#             'future_approved_time_off': future_approved_time_off,
+#             'future_holiday_time_off': future_holiday_time_off,
+#             'chart_data': json.dumps(chart_data)
+#         }
+
+#         return render(request, 'timepiece/reports/backlog.html', 
+#             {'backlog': backlog,
+#              'backlogfilter_form': form,
+#              'backlog_summary': backlog_summary_sorted,
+#              'company_backlog': company_backlog,
+#              'active_tab': active_tab or 'company'})
+#     else:
+#         return HttpResponseRedirect( reverse('report_employee_backlog', args=(request.user.id,)) )
 
 @permission_required('crm.view_backlog')
 def report_activity_backlog(request, activity_id):
@@ -1288,6 +1798,7 @@ def report_employee_backlog(request, user_id):
     else:
         return HttpResponseRedirect( reverse('report_employee_backlog', args=(request.user.id,)) )
 
+
 def get_employee_backlog_chart_data(user_id):
     """
     Creates the data objects required by the c3 frond-end visualization
@@ -1299,8 +1810,9 @@ def get_employee_backlog_chart_data(user_id):
         return {}
 
     employee = User.objects.get(id=int(user_id))
-    avg_hours_per_day = employee.profile.hours_per_week / Decimal('5.0')
+    avg_hours_per_day = Decimal(employee.profile.hours_per_week) / Decimal('5.0')
     coverage = {}
+    billable_coverage = {}
 
     start_week = utils.get_week_start(datetime.date.today()).date()
     start_week = datetime.date.today()
@@ -1374,23 +1886,14 @@ def get_employee_backlog_chart_data(user_id):
             if workdays.networkdays(date, date, holidays):
                 if str(date) not in coverage:
                     coverage[str(date)] = new_empty_date()
+                    billable_coverage[str(date)] = 0.0
                 if activity_goal.project.code not in coverage[str(date)]:
                     coverage[str(date)][activity_goal.project.code] = 0.0
                 coverage[str(date)][activity_goal.project.code] += \
                     float(ag_hours_per_workday)
+                if activity_goal.project.type.billable and activity_goal.activity.billable:
+                    billable_coverage[str(date)] += float(ag_hours_per_workday)
 
-    # x_axis = ['x']
-
-    # for i in range((end_week - start_week).days + 1):
-    #     date = start_week + datetime.timedelta(days=i)
-    #     x_axis.append(str(date))
-        
-    #     for project in y_axes.keys():
-    #         pass
-
-    # sorted_coverage = []
-    # for k in sorted(coverage.keys()):
-    #     sorted_coverage = coverage[k]
     columns = {'x': []}
     for date in sorted(coverage.keys()):
         columns['x'].append(date)
@@ -1410,7 +1913,17 @@ def get_employee_backlog_chart_data(user_id):
             c3_columns.append([proj] + vals)
         else:
             c3_columns.insert(0, [proj] + vals)
-    c3_columns.append(['Avg Hours'] + [float(avg_hours_per_day)]*len(columns['x']))
+    schedule = ['Total Avg Hours']
+    utilization = ['Utilization Avg Hours']
+    week_dict = employee.profile.week_dict()
+    for date_str in sorted(coverage.keys()):
+        date = datetime.datetime.strptime(date_str, '%Y-%m-%d', ).date()
+        schedule.append(week_dict[date.weekday()])
+        utilization.append(week_dict[date.weekday()]*employee.profile.get_utilization)
+    
+    # c3_columns.append(['Regular Schedule'] + [float(avg_hours_per_day)]*len(columns['x']))
+    c3_columns.append(schedule)
+    c3_columns.append(utilization)
     keys = columns.keys()
     keys.remove('x')
     data = {'columns': c3_columns,

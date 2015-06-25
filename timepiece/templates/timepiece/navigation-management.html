@@ -17,10 +17,16 @@
                 <li><a href="{% url 'report_backlog' %}">Backlog</a></li>
                 <li><a href="{% url 'report_active_projects_burnup_charts' %}">Active Projects Burnup Charts</a></li>
                 {% endif %}
+                
+                {% if perms.crm.view_user_revenue_report %}
+                <li><a href="{% url 'report_revenue' %}">Revenue Report</a></li>
+                {% endif %}
+                
                 {% if user.is_staff or perms.contracts.change_entrygroup or perms.entries.can_clock_in %}
                     <li class="divider"></li>
                 {% endif %}
             {% endif %}
+            
             {% if user.is_staff %}
                 <li><a href="{% url 'admin:index' %}">Admin</a></li>
             {% endif %}

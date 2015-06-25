@@ -82,7 +82,8 @@
                 columns: chart_data['columns'],
                 type: 'bar',
                 types: {
-                    'Avg Hours': 'line'
+                    'Total Avg Hours': 'scatter',
+                    'Utilization Avg Hours': 'scatter',
                 },
                 groups: [chart_data['keys']],
             },
@@ -101,7 +102,7 @@
                 show: false,
             },
             point: {
-                show: false
+                show: true
             }
         });
     });

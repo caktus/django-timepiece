@@ -34,6 +34,12 @@ from timepiece.entries.models import Project, Entry, Activity
 from ajaxuploader.views import AjaxFileUploader
 from ajaxuploader.backends.mongodb import MongoDBUploadBackend
 
+try:
+    from workflow.general_task.forms import SelectGeneralTaskForm
+    from workflow.models import GeneralTask
+except:
+    pass
+
 @cbv_decorator(permission_required('contracts.add_projectcontract'))
 class CreateContract(CreateView):
     model = ProjectContract
@@ -68,6 +74,12 @@ class ContractDetail(DetailView):
             kwargs['warning_date'] = datetime.date.today() + relativedelta(weeks=2)
         context = super(ContractDetail, self).get_context_data(*args, **kwargs)
         context['add_contract_note_form'] = AddContractNoteForm()
+
+        try:
+            context['add_general_task_form'] = SelectGeneralTaskForm()
+        except:
+            pass
+
         return context
 
 
@@ -158,6 +170,48 @@ class ContractList(SearchListView, CSVViewMixin):
                     row.append(str(project))
                 content.append(row)
         return content
+
+@cbv_decorator(permission_required('contracts.change_projectcontract'))
+class AddContractGeneralTask(View):
+
+    def get(self, request, *args, **kwargs):
+        return HttpResponse(status=501)
+
+    def post(self, request, *args, **kwargs):
+        try:
+            contract = ProjectContract.objects.get(id=int(kwargs['contract_id']))
+            general_task = SelectGeneralTaskForm(request.POST).get_general_task()
+            if general_task.contract is None:
+                general_task.contract = contract
+                general_task.save()
+            else:
+                msg = '%s already belongs to Contract <a href="' + \
+                reverse('view_contract', args=(general_task.contract.id,)) + \
+                '">%s.  Please remove it from that Contract before ' + \
+                'associating with this one.' % (
+                    general_task.form_id, general_task.contract.code)
+                messages.error(request, msg)
+        except:
+            print sys.exc_info(), traceback.format_exc()
+        finally:
+            return HttpResponseRedirect(request.GET.get('next', None) 
+                or reverse_lazy('view_project', args=(contract.id,)))
+
+@cbv_decorator(permission_required('contracts.change_projectcontract'))
+class RemoveContractGeneralTask(View):
+
+    def get(self, request, *args, **kwargs):
+        try:
+            contract = ProjectContract.objects.get(id=int(kwargs['contract_id']))
+            general_task_id = request.GET.get('general_task_id')
+            general_task = GeneralTask.objects.get(id=int(general_task_id))
+            general_task.contract = None
+            general_task.save()
+        except:
+            print sys.exc_info(), traceback.format_exc()
+        finally:
+            return HttpResponseRedirect(request.GET.get('next', None) 
+                or reverse_lazy('view_contract', args=(contract.id,)))
 
 @permission_required('contracts.add_contractincrement')
 def add_contract_increment(request, contract_id):
@@ -708,9 +762,13 @@ def contract_upload_attachment(request, contract_id):
 
 @permission_required('contracts.view_contractattachment')
 def contract_download_attachment(request, contract_id, attachment_id):
+    print 'download contract attachment?', contract_id, attachment_id
     try:
+        print 'hello world 1'
         contract_attachment = ContractAttachment.objects.get(
             contract_id=contract_id, id=attachment_id)
+        print 'ca', contract_attachment
         return HttpResponseRedirect(contract_attachment.get_download_url())
     except:
-        return HttpResponse('Attachment could not be found.')
+        print sys.exc_info(), traceback.format_exc()
+        return HttpResponse('Contract attachment could not be found.')

@@ -7,6 +7,7 @@
 {% block extracss %}
 <link rel="stylesheet" type="text/css" href="{{ STATIC_URL }}timepiece/js/burnup_charts/c3.min.css" />
 <link rel="stylesheet" type="text/css" href="{{ STATIC_URL }}timepiece/js/burnup_charts/burnup_charts.css" />
+<link href="{{ STATIC_URL }}s3.jquery.fine-uploader/fine-uploader-new.min.css" rel="stylesheet" type="text/css" />
 {% endblock extracss %}
 
 {% block crumbs %}
@@ -103,28 +104,6 @@
 
         <div class="span4 offset2">
             {% url 'view_project' object.id as next_url %}
-            <h3>Tags</h3>
-            <div id="tags">
-            {% if object.tags.all|length %}
-            {% for tag in object.tags.all %}
-            <span class="label label-info">
-                <a href="{% url 'similar_items' tag.id %}"> <i class="icon-magnet icon-white icon-small"> </i></a>
-                {{ tag }}
-                {% if perms.crm.change_project %}
-                <a class="remove_tag"> <i class="icon-remove icon-white icon-small"> </i></a>
-                {% endif %}
-            </span>
-            {% endfor %}
-            {% else %}
-            <br/><em>There are no tags for this project yet.</em>
-            {% endif %}
-            </div>
-            <form id="add_tag_form">
-                <div style="margin-top: 12px;">
-                    <input id="new_tag" type="text" />
-                    <input id="add_tag_button" class="btn btn-primary" type="submit" value="Add" />
-                </div>
-            </form>
 
             <h3>Users</h3>
             <ul class="users">
@@ -151,6 +130,115 @@
                     <input class="btn" type="submit" value="Add" />
                 </form>
             {% endif %}
+
+            <h3>Attachments</h3>
+            <div id="fine-uploader">
+              <noscript>          
+                <p>Please enable JavaScript to use file uploader.</p>
+              </noscript>
+            </div>
+            <small>Drag and drop a file above to attach it.</small>
+            {% if object.get_attachments|length %}
+            {% for attachment in object.get_attachments %}
+            <blockquote>
+            <p><a href="{% url 'download_project_attachment' object.id attachment.id %}" target="_blank">{{ attachment.filename }}</a></p>
+            <small>{{ attachment.uploader }} @ {{ attachment.upload_datetime }}</small>
+            </blockquote>
+            {% endfor %}
+            {% else %}
+            <br/><em>There are no attachments for this ticket yet.</em>
+            {% endif %}
+
+            <h3>Tags</h3>
+            <div id="tags">
+            {% if object.tags.all|length %}
+            {% for tag in object.tags.all %}
+            <span class="label label-info">
+                <a href="{% url 'similar_items' tag.id %}"> <i class="icon-magnet icon-white icon-small"> </i></a>
+                {{ tag }}
+                {% if perms.crm.change_project %}
+                <a class="remove_tag"> <i class="icon-remove icon-white icon-small"> </i></a>
+                {% endif %}
+            </span>
+            {% endfor %}
+            {% else %}
+            <br/><em>There are no tags for this project yet.</em>
+            {% endif %}
+            </div>
+            <form id="add_tag_form">
+                <div style="margin-top: 12px;">
+                    <input id="new_tag" type="text" />
+                    <input id="add_tag_button" class="btn btn-primary" type="submit" value="Add" />
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <div class="row-fluid">
+        <div class="span12">
+            <h3>Open General Tasks</h3>
+            {% if perms.crm.add_projectrelationship %}
+                <form class="form-inline" action="{% url 'project_add_general_task' object.id %}?next={{ next_url|add_parameters:request.GET|urlencode }}" method="post" accept-charset="utf-8">
+                    {% csrf_token %}
+                    {{ add_general_task_form|as_bootstrap:"inline" }}
+                    <input class="btn btn-primary" type="submit" value="Add" />
+
+                    {% if perms.workflow.add_generaltask %}
+                    <a class="btn btn-success" href="{% url 'create_general_task' %}?project={{ object.id }}&next={{ next_url|add_parameters:request.GET|urlencode }}">Create New General Task for {{ object.code }}</a>
+                    {% endif %}
+                </form>
+            {% endif %}
+            <table class='table table-bordered table-striped table-condensed'>
+                <thead>
+                    <tr>
+                        <th></th>
+                        <th>Ticket ID</th>
+                        <th>Priority</th>
+                        <th>Status</th>
+                        <th>Create</th>
+                        <th>Due Date /<br/>Scheduled</th>
+                        <th>Assigned To</th>
+                        <th>Last Activity</th>
+                        <th>Description</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for general_task in object.open_general_tasks %}
+                        <tr>
+                            <td>
+                                <a href="{% url 'project_remove_general_task' object.id %}?general_task_id={{ general_task.id }}&next={{ next_url }}"><i class="icon-remove-circle" title="Remove {{ general_task }} from this Project."> </i></a>
+                            </td>
+                            <td style="white-space: nowrap">
+                                <a href="{% url 'view_general_task' general_task.id %}" target="_blank">{{ general_task.form_id }}
+                            </td>
+                            <td style="white-space: nowrap ;text-align: center;">
+                                <span class="label label-{{ general_task.priority }}">{{ general_task.get_priority_display }}</span>
+                            </td>
+                            <td style="white-space: nowrap">
+                                <span class="label {{ general_task.status.label_style}}">{{ general_task.status }}</span>
+                            </td>
+                            <td style="white-space: nowrap">
+                                {{ general_task.created_by }} @<br/>
+                                {{ general_task.created_at|date:"N j, P" }}
+                            </td>
+                            <td style="white-space: nowrap">
+                                {{ general_task.requested_date }}<br/>
+                                {{ general_task.scheduled|date }}
+                            </td>
+                            <td style="white-space: nowrap">
+                                {{ general_task.assignee }}
+                                {% if not general_task.status.terminal and perms.workflow.assign_general_task %}
+                                    <a href='{% url "assign_general_task" general_task.pk %}?next={{ next_url }}' title="Change assigned user"><i class="icon-pencil"></i> </a>
+                                {% endif %}
+                            </td>
+                            <td>{{ general_task.last_user }} @ {{ general_task.last_activity|date:"N j, P" }}</td>
+                            <td>{{ general_task.description|truncatewords:12 }}</td>
+                        </tr>
+                    {% empty %}
+                    <tr><td colspan=9>There are no General Tasks associated with this Project.</td></tr>
+                    {% endfor %}
+                </tbody>
+            </table>
         </div>
     </div>
 
@@ -381,7 +469,105 @@ $(document).ready( function () {
     filter_activity_goals();
     filter_activity_goals_progress();
 });
+</script>
 
+<script src="{{ STATIC_URL }}s3.jquery.fine-uploader/s3.jquery.fine-uploader.min.js" ></script>
+<script type="text/template" id="qq-template">
+    <div class="qq-uploader-selector qq-uploader" qq-drop-area-text="Drop files here">
+        <div class="qq-total-progress-bar-container-selector qq-total-progress-bar-container">
+            <div role="progressbar" aria-valuenow="0" aria-valuemin="0" aria-valuemax="100" class="qq-total-progress-bar-selector qq-progress-bar qq-total-progress-bar"></div>
+        </div>
+        <div class="qq-upload-drop-area-selector qq-upload-drop-area" qq-hide-dropzone>
+            <span class="qq-upload-drop-area-text-selector"></span>
+        </div>
+        <div class="qq-upload-button-selector qq-upload-button">
+            <div>Upload a file</div>
+        </div>
+        <span class="qq-drop-processing-selector qq-drop-processing">
+            <span>Processing dropped files...</span>
+            <span class="qq-drop-processing-spinner-selector qq-drop-processing-spinner"></span>
+        </span>
+        <ul class="qq-upload-list-selector qq-upload-list" aria-live="polite" aria-relevant="additions removals">
+            <li>
+                <div class="qq-progress-bar-container-selector">
+                    <div role="progressbar" aria-valuenow="0" aria-valuemin="0" aria-valuemax="100" class="qq-progress-bar-selector qq-progress-bar"></div>
+                </div>
+                <span class="qq-upload-spinner-selector qq-upload-spinner"></span>
+                <img class="qq-thumbnail-selector" qq-max-size="100" qq-server-scale>
+                <span class="qq-upload-file-selector qq-upload-file"></span>
+                <span class="qq-edit-filename-icon-selector qq-edit-filename-icon" aria-label="Edit filename"></span>
+                <input class="qq-edit-filename-selector qq-edit-filename" tabindex="0" type="text">
+                <span class="qq-upload-size-selector qq-upload-size"></span>
+                <button class="qq-btn qq-upload-cancel-selector qq-upload-cancel">Cancel</button>
+                <button class="qq-btn qq-upload-retry-selector qq-upload-retry">Retry</button>
+                <button class="qq-btn qq-upload-delete-selector qq-upload-delete">Delete</button>
+                <span role="status" class="qq-upload-status-text-selector qq-upload-status-text"></span>
+            </li>
+        </ul>
 
+        <dialog class="qq-alert-dialog-selector">
+            <div class="qq-dialog-message-selector"></div>
+            <div class="qq-dialog-buttons">
+                <button class="qq-cancel-button-selector">Close</button>
+            </div>
+        </dialog>
+
+        <dialog class="qq-confirm-dialog-selector">
+            <div class="qq-dialog-message-selector"></div>
+            <div class="qq-dialog-buttons">
+                <button class="qq-cancel-button-selector">No</button>
+                <button class="qq-ok-button-selector">Yes</button>
+            </div>
+        </dialog>
+
+        <dialog class="qq-prompt-dialog-selector">
+            <div class="qq-dialog-message-selector"></div>
+            <input type="text">
+            <div class="qq-dialog-buttons">
+                <button class="qq-cancel-button-selector">Cancel</button>
+                <button class="qq-ok-button-selector">Ok</button>
+            </div>
+        </dialog>
+    </div>
+</script>
+<script>
+var uploader = new qq.s3.FineUploader({
+    debug: true,
+    element: document.getElementById('fine-uploader'),
+    request: {
+        endpoint: 'https://{{ AWS_UPLOAD_BUCKET_NAME }}.s3.amazonaws.com',
+        accessKey: '{{ AWS_CLIENT_ACCESS_KEY }}',
+        params: {
+            'user': '{{ request.user }}',
+            'username': '{{ request.user.username }}',
+            'firmbase-userid': '{{ request.user.id }}',
+            'user-email': '{{ request.user.email }}'
+        }
+    },
+    objectProperties: {
+        serverSideEncryption: true
+    },
+    signature: {
+        endpoint: '{% url "ajaxuploader:s3_signature" %}'
+    },
+    uploadSuccess: {
+        endpoint: '{% url "s3_project_attachment" object.id %}'
+    },
+    iframeSupport: {
+        localBlankPagePath: '/success.html'
+    },
+    deleteFile: {
+        enabled: true,
+        endpoint: '{% url "ajaxuploader:s3_delete" %}'
+    },
+    callbacks: {
+        onUpload: function (id, name) {
+            console.log('onUpload', id, name);
+        },
+        onSubmitted: function (id, name) {
+            console.log('onSubmitted', id, name);
+        }
+    }
+});
 </script>
 {% endblock extrajs %}

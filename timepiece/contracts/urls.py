@@ -22,6 +22,16 @@ urlpatterns = patterns('',
         views.DeleteContract.as_view(),
         name='delete_contract'),
 
+    # General Tasks
+    # Add General Task
+    url(r'^contract/(?P<contract_id>\d+)/add-general-task$',
+        views.AddContractGeneralTask.as_view(),
+        name='contract_add_general_task'),
+    # Remove General Task
+    url(r'^contract/(?P<contract_id>\d+)/remove-general-task$',
+        views.RemoveContractGeneralTask.as_view(),
+        name='contract_remove_general_task'),
+
     # Get Tags / Add Tag
     url(r'^contract/(?P<contract_id>\d+)/tags/$',
         views.ContractTags.as_view(),

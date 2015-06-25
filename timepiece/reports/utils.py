@@ -12,7 +12,8 @@ from timepiece.entries.models import Entry
 from django.contrib.auth.models import User, Group
 from django.db.models import Sum, Q, Min, Max
 
-from timepiece.crm.models import ActivityGoal, PaidTimeOffRequest
+from timepiece.crm.models import ActivityGoal, PaidTimeOffRequest, Project, Attribute, Business, UserProfile
+from timepiece.entries.models import Activity, Entry
 
 from holidays.models import Holiday
 
@@ -268,33 +269,40 @@ def multikeysort(items, columns):
             return 0
     return sorted(items, cmp=comparer)
 
-def get_company_backlog_chart_data():
+def get_company_backlog_chart_data(activity_goalQ):
     """
     Creates the data objects required by the c3 frond-end visualization
     """
 
-    def new_empty_date():
-        # return {'Holiday': 0.0,
-        #         'Approved Time Off': 0.0}
-        return {}
-
     employees = Group.objects.get(id=1).user_set.filter(is_active=True).order_by('last_name', 'first_name')
     hours_per_week = Decimal('0.0')
     for employee in employees:
-        print 'hours', employee.profile.hours_per_week, hours_per_week
         hours_per_week += Decimal(employee.profile.hours_per_week)
     
     coverage = {}
 
     # start_week = get_week_start(datetime.date.today()).date()
     start_week = datetime.date.today()
-    activity_goals = ActivityGoal.objects.filter(
-        employee__in=employees, end_date__gte=start_week, 
-        project__status=get_setting(
-            'TIMEPIECE_DEFAULT_PROJECT_STATUS'))
+    activity_goals = ActivityGoal.objects.filter(activity_goalQ,
+        employee__in=employees, end_date__gte=start_week
+        ).order_by('project__code', 'activity__name')
 
     if activity_goals.count() == 0:
-         return {}
+         return {}, {}
+
+    include_timeoff = True
+    try:
+        pto_project = get_setting('TIMEPIECE_PTO_PROJECT')
+        upto_project = get_setting('TIMEPIECE_UPTO_PROJECT')
+        holiday_project = get_setting('TIMEPIECE_HOLIDAY_PROJECT')
+        projects = [ag.project.id for ag in activity_goals]
+        if pto_project in pojects and upto_project in projects and holiday_project in projects:
+            include_timeoff = True
+        else:
+            include_timeoff = False
+    except:
+        include_timeoff = False
+
 
     # determine the end date and add one more week to show clearly that
     # the company has no coverage then
@@ -308,47 +316,98 @@ def get_company_backlog_chart_data():
     # length of the arrays
     num_weeks = (end_week - start_week).days / 7.0 + 1
 
-    # determine holidays and add time (whether paid or not)
-    holidays = [h['date'] for h in Holiday.holidays_between_dates(
-        start_week, end_week, {'paid_holiday': True})]
-    for holiday in holidays:
-        if str(holiday) not in coverage:
-            coverage[str(holiday)] = new_empty_date()
-        coverage[str(holiday)]['Holiday'] = float(hours_per_week / Decimal('5.0'))
+    if include_timeoff:
+        # determine holidays and add time (whether paid or not)
+        holidays = [h['date'] for h in Holiday.holidays_between_dates(
+            start_week, end_week, {'paid_holiday': True})]
+        for holiday in holidays:
+            if str(holiday) not in coverage:
+                coverage[str(holiday)] = {}
+            coverage[str(holiday)]['Holiday'] = float(hours_per_week / Decimal('5.0'))
 
-    # add Time Off requests as holidays
-    # TODO: should make this smarter so that if it is a partial day it
-    #       does not count as a full day
-    userprofiles = [employee.profile for employee in employees]
-    for ptor in PaidTimeOffRequest.objects.filter(
-        Q(user_profile__in=userprofiles),
-        Q(pto_start_date__gte=start_week)|Q(pto_end_date__gte=end_week),
-        Q(status='approved')|Q(status='processed')):
-    # for ptor in employee.profile.paidtimeoffrequest_set.filter(
-    #     Q(pto_start_date__gte=start_week)|Q(pto_end_date__gte=end_week),
-    #     Q(status='approved')|Q(status='processed')):
-        
-        num_workdays = max(workdays.networkdays(ptor.pto_start_date, 
-            ptor.pto_end_date, holidays), 1)
-        ptor_hours_per_day = ptor.amount / Decimal(num_workdays)
+        # add Time Off requests as holidays
+        # TODO: should make this smarter so that if it is a partial day it
+        #       does not count as a full day
+        userprofiles = [employee.profile for employee in employees]
+        for ptor in PaidTimeOffRequest.objects.filter(
+            Q(user_profile__in=userprofiles),
+            Q(pto_start_date__gte=start_week)|Q(pto_end_date__gte=end_week),
+            Q(status='approved')|Q(status='processed')):
+            
+            num_workdays = max(workdays.networkdays(ptor.pto_start_date, 
+                ptor.pto_end_date, holidays), 1)
+            ptor_hours_per_day = ptor.amount / Decimal(num_workdays)
 
-        for i in range((ptor.pto_end_date-ptor.pto_start_date).days + 1):
-            date = ptor.pto_start_date + datetime.timedelta(days=i)
-            if date.weekday() < 5:
-                holidays.append(date)
-                if str(date) not in coverage:
-                    coverage[str(date)] = \
-                        new_empty_date()
-                coverage[str(date)]['Approved Time Off'] = \
-                    float(ptor_hours_per_day)
+            for i in range((ptor.pto_end_date-ptor.pto_start_date).days + 1):
+                date = ptor.pto_start_date + datetime.timedelta(days=i)
+                if date.weekday() < 5:
+                    # holidays.append(date) # this is causing issues by not counting as
+                    if str(date) not in coverage:
+                        coverage[str(date)] = {}
+                    coverage[str(date)]['Approved Time Off'] = \
+                        float(ptor_hours_per_day)
 
-    y_axes = {'Holiday': ['data1'],
-              'Approved Time Off': ['data2']}
-    data_counter = 3
+        y_axes = {'Holiday': ['data1'],
+                  'Approved Time Off': ['data2']}
+        data_counter = 3
+    
+        chart_filters = {'Holiday': {
+                            'project-type': 8,
+                            'project-status': 4,
+                            'billable': False,
+                            'client': 6},
+                         'Approved Time Off': {
+                            'project-type': 8,
+                            'project-status': 4,
+                            'billable': False,
+                            'client': 6}
+                        }
+        export_filters = {'Holiday': {
+                            'project-type': Attribute.objects.get(id=8),
+                            'project-status': Attribute.objects.get(id=4),
+                            'billable': False,
+                            'client': Business.objects.get(id=6),
+                            'activity': Activity.objects.get(id=25),
+                            'project': Project.objects.get(id=354)},
+                         'Approved Time Off': {
+                            'project-type': Attribute.objects.get(id=8),
+                            'project-status': Attribute.objects.get(id=4),
+                            'billable': False,
+                            'client': Business.objects.get(id=6),
+                            'activity': Activity.objects.get(id=24),
+                            'project': Project.objects.get(id=245)}
+                        }
+    else:
+        y_axes = {}
+        data_counter = 1
+        chart_filters = {}
+        export_filters = {}
+        holidays = [h['date'] for h in Holiday.holidays_between_dates(
+            start_week, end_week, {'paid_holiday': True})]
+    
+    project_statuses = []
+    project_types = []
+    clients = []
+    billable = []
     for activity_goal in activity_goals:
-        if activity_goal.project.code not in y_axes.keys():
-            y_axes[activity_goal.project.code] = ['data%s'%data_counter]
-            data_counter += 1
+        key = '%s - %s' % (activity_goal.project.code, activity_goal.activity.name)
+        if key not in chart_filters:
+            project_types.append(activity_goal.project.type)
+            project_statuses.append(activity_goal.project.status)
+            clients.append(activity_goal.project.business)
+            billable.append(activity_goal.project.type.billable and activity_goal.activity.billable)
+            chart_filters[key] = {
+                'project-type': activity_goal.project.type.id,
+                'project-status': activity_goal.project.status.id,
+                'billable': activity_goal.project.type.billable and activity_goal.activity.billable,
+                'client': activity_goal.project.business.id}
+            export_filters[key] = {
+                'project-type': activity_goal.project.type,
+                'project-status': activity_goal.project.status,
+                'billable': activity_goal.project.type.billable and activity_goal.activity.billable,
+                'client': activity_goal.project.business,
+                'activity': activity_goal.activity,
+                'project': activity_goal.project}
 
         start_date = start_week if activity_goal.date < start_week \
             else activity_goal.date
@@ -362,24 +421,11 @@ def get_company_backlog_chart_data():
             date = start_date + datetime.timedelta(days=i)
             if workdays.networkdays(date, date, holidays):
                 if str(date) not in coverage:
-                    coverage[str(date)] = new_empty_date()
-                if activity_goal.project.code not in coverage[str(date)]:
-                    coverage[str(date)][activity_goal.project.code] = 0.0
-                coverage[str(date)][activity_goal.project.code] += \
-                    float(ag_hours_per_workday)
+                    coverage[str(date)] = {}
+                if key not in coverage[str(date)]:
+                    coverage[str(date)][key] = 0.0
+                coverage[str(date)][key] += float(ag_hours_per_workday)
 
-    # x_axis = ['x']
-
-    # for i in range((end_week - start_week).days + 1):
-    #     date = start_week + datetime.timedelta(days=i)
-    #     x_axis.append(str(date))
-        
-    #     for project in y_axes.keys():
-    #         pass
-
-    # sorted_coverage = []
-    # for k in sorted(coverage.keys()):
-    #     sorted_coverage = coverage[k]
     columns = {'x': []}
     for date in sorted(coverage.keys()):
         columns['x'].append(date)
@@ -399,17 +445,163 @@ def get_company_backlog_chart_data():
             c3_columns.append([proj] + vals)
         else:
             c3_columns.insert(0, [proj] + vals)
-    schedule = ['Avg Hours']
-    week_dict = employee.profile.week_dict()
-    for date_str in sorted(coverage.keys()):
-        date = datetime.datetime.strptime(date_str, '%Y-%m-%d', ).date()
-        schedule.append(float(hours_per_week / Decimal('5.0')))
+
+    total_hours = 0.0
+    total_utilization_hours = 0.0
+    for user in Group.objects.get(id=1).user_set.filter(is_active=True):
+        total_hours += user.profile.hours_per_week
+        total_utilization_hours += user.profile.hours_per_week * user.profile.get_utilization
+
+    c3_columns_by_week = []
+    i = -1
+    j = 1
+    for date_str in c3_columns[0][1:]:
+        i += 1
+        date = datetime.datetime.strptime(date_str, '%Y-%m-%d').date()
+        if i == 0:
+            sun_date = date
+            while sun_date.weekday() != 6:
+                sun_date -= datetime.timedelta(days=1)
+            c3_columns_by_week.append(['x', str(sun_date)])
+            i += 1
+            for cols in c3_columns[1:]:
+                c3_columns_by_week.append([cols[0], cols[i]])
+        else:
+            index = 1
+            if date.weekday() == 0:
+                j += 1
+                sun_date = date - datetime.timedelta(days=1)
+                c3_columns_by_week[0].append(str(sun_date))
+            for cols in c3_columns[1:]:
+                if date.weekday() == 0:
+                    c3_columns_by_week[index].append(0.0)
+                c3_columns_by_week[index][j] += c3_columns[index][i]
+                index += 1
+
+    # another reformat to get dictionary... again...
+    future_data = {}
+    future_dates = c3_columns_by_week[0][1:]
+    for i, proj_act in enumerate(c3_columns_by_week[1:]):
+        future_data[proj_act[0]] = {}
+        for j, val in enumerate(proj_act[1:]):
+            future_data[proj_act[0]][future_dates[j]] = val
+
+    # get last ~3 months data
+    start_time = datetime.datetime.now()
+    start_time.replace(hour=0, minute=0, second=0, microsecond=0)
+    start_time -= datetime.timedelta(days=90)
+    while start_time.weekday() != 6:
+        start_time -= datetime.timedelta(days=1)
+
+    past_data, past_dates, past_project_types, past_project_statuses, \
+    past_clients, past_billable, past_chart_filters, past_export_filters = \
+    get_company_summary_by_week(activity_goalQ, start_time, datetime.datetime.now())
+
+    chart_filters.update(past_chart_filters)
+    export_filters.update(past_export_filters)
+
+    project_statuses = [{'id':ps.id, 'label':ps.label} for ps in list(set(project_statuses + past_project_statuses))]
+    # project_types = sorted([{'id':pt.id, 'label':pt.label} for pt in list(set(project_types))], lambda pt:pt.label)
+    project_types = [{'id':pt.id, 'label':pt.label} for pt in list(set(project_types + past_project_types))]
+    # clients = sorted([{'id':c.id, 'label':c.name} for c in list(set(clients))], lambda c:c.name)
+    clients = [{'id':c.id, 'label':c.name} for c in list(set(clients + past_clients))]
     
-    # c3_columns.append(['Regular Schedule'] + [float(avg_hours_per_day)]*len(columns['x']))
-    c3_columns.append(schedule)
-    keys = columns.keys()
-    keys.remove('x')
-    data = {'columns': c3_columns,
+    billable = list(set(billable + past_billable))
+    if len(billable) == 2:
+        billable = [{'id': 'true', 'label': 'Billable'}, {'id': 'false', 'label':'Non-billable'}]
+    elif len(billable) == 0:
+        billable = []
+    elif billable[0] == True:
+        billable = [{'id': 'true', 'label': 'Billable'}]
+    elif billable[0] == False:
+        billable = [{'id': 'false', 'label':'Non-billable'}]
+
+    # combine past and future
+    all_data = past_data
+    for proj_act, hours in future_data.items():
+        if proj_act in all_data:
+            for week, hour in hours.items():
+                if week in all_data[proj_act]:
+                    all_data[proj_act][week] += Decimal(hour)
+                else:
+                    all_data[proj_act][week] = Decimal(hour)
+        else:
+            all_data[proj_act] = hours
+
+    # combine into c3 data structure
+    c3_columns_by_week_with_past = []
+    dates = sorted(list(set(past_dates + future_dates)))
+    dates_col = ['x'] + dates
+    c3_columns_by_week_with_past.append(dates_col)
+    for proj_act, hours in all_data.items():
+        col = [proj_act]
+        for week in dates:
+            if week in hours:
+                col.append(float(hours[week]))
+            else:
+                col.append(0.0)
+        c3_columns_by_week_with_past.append(col)
+
+    total_avg = ['Total Avg Hours']
+    util_avg = ['Utilization Avg Hours']
+    for i in range(1, len(c3_columns_by_week)):
+        total_avg.append(total_hours)
+        util_avg.append(total_utilization_hours)
+    c3_columns_by_week_with_past.append(total_avg)
+    c3_columns_by_week_with_past.append(util_avg)
+
+    keys = all_data.keys()
+    # keys.remove('x')
+    data = {'columns': c3_columns_by_week_with_past,
             'keys': keys,
-            'avg_hours': float(hours_per_week / Decimal('5.0'))}
-    return data
+            'avg_hours': float(hours_per_week / Decimal('5.0')),
+            'filters': {'chart_filters': chart_filters,
+                        'project_statuses': project_statuses,
+                        'project_types': project_types,
+                        'clients': clients,
+                        'billable': billable}}
+    return data, export_filters
+
+def get_company_summary_by_week(entryQ, start_time, end_time):
+    data = {}
+    chart_filters = {}
+    export_filters = {}
+    project_types = []
+    project_statuses = []
+    clients = []
+    billable = []
+    dates = []
+    for entry in Entry.objects.filter(entryQ, start_time__gte=start_time,
+        end_time__lte=end_time):
+
+        key = '%s - %s' % (entry.project.code, entry.activity.name)
+        if key not in data:
+            data[key] = {}
+            
+            project_types.append(entry.project.type)
+            project_statuses.append(entry.project.status)
+            clients.append(entry.project.business)
+            billable.append(entry.project.type.billable and entry.activity.billable)
+            chart_filters[key] = {
+                'project-type': entry.project.type.id,
+                'project-status': entry.project.status.id,
+                'billable': entry.project.type.billable and entry.activity.billable,
+                'client': entry.project.business.id}
+            export_filters[key] = {
+                'project-type': entry.project.type,
+                'project-status': entry.project.status,
+                'billable': entry.project.type.billable and entry.activity.billable,
+                'client': entry.project.business,
+                'activity': entry.activity,
+                'project': entry.project}
+
+        date = entry.start_time.date()
+        while date.weekday() != 6:
+            date -= datetime.timedelta(days=1)
+        if str(date) not in data[key]:
+            data[key][str(date)] = Decimal('0.0')
+            dates.append(str(date))
+        data[key][str(date)] += entry.hours
+
+    return data, dates, project_types, project_statuses, \
+        clients, billable, chart_filters, export_filters

@@ -27,12 +27,38 @@
 
 {% block report_content %}
 <div class="row-fluid">
+    <div class="span12">
+        <div class="accordion" id="filter-accordion">
+            <div class="accordion-group">
+                <div class="accordion-heading">
+                    <a class="accordion-toggle" data-toggle="collapse" data-parent="#filter-accordion" href="#filters">
+                    Apply Filters + Export CSV
+                    </a>
+                </div>
+                <div id="filters" class="accordion-body collapse">
+                    <div class="accordion-inner">
+                     <form class="span10 form-horizontal" method="get" action="" id="report-filters" accept-charset="utf-8">
+                        {{ backlogfilter_form|as_bootstrap:"horizontal" }}
+                        <button type="submit" class="btn btn-primary" name="ok" id="filterbutton">Update Filters</button>
+                        <button type="submit" class="btn btn-success" name="export_data" value="True">Export Activity Totals</button>
+                        <button type="submit" class="btn btn-success" name="export_company_data" value="True">Export Detailed Data</button>
+                    </form>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <div class="span12" name="backlog-container">
 
         <ul class="nav nav-tabs">
             <li{% if active_tab == 'company' %} class="active"{% endif %}>
                 {% url "report_backlog" "company" as link %}
                 <a class="tab-link" to="company" href="{{ link|add_parameters:request.GET }}">Company Summary</a>
+            </li>
+            <li{% if active_tab == 'company-coverage' %} class="active"{% endif %}>
+                {% url "report_backlog" "company-coverage" as link %}
+                <a class="tab-link" to="company-coverage" href="{{ link|add_parameters:request.GET }}">Company Coverage</a>
             </li>
             <li{% if active_tab == 'individual-summary' %} class="active"{% endif %}>
                 {% url "report_backlog" "individual-summary" as link %}
@@ -68,11 +94,80 @@
                                 <td>{{ activity_hours.remaining_hours|floatformat:2|intcomma }}</td>
                             </tr>
                         {% endfor %}
+                        <tr>
+                            <th>TOTAL</th>
+                            <th>{{ total_company_hours|floatformat:2|intcomma }}</th>
+                        </tr>
                     </table>
                 </div>
                 <div class="span6 offset1">
                     <h3>Backlog by Activity</h3>
                     <div id="activity-breakdown-chart" data="{{ company_backlog.chart_data }}"></div>
+                </div>
+            </div>
+
+            <div class="tab-pane{% if active_tab == 'company-coverage' %} active{% endif %}" id="company-coverage">
+                {% if no_data %}
+                <div class="row-fluid"><div class="span4"><div class="alert alert-danger">Your selected filter resulted in no data.</div></div></div>
+                {% endif %}
+                <div id="company-coverage-area-chart" style="overflow: none;" data="{{ chart_data }}">
+                </div>
+                <div id="company-chart-filters" class="row-fluid">
+                    <h3>Filters <a class="btn btn-primary" href="#" onclick="apply_filters();return false;">Apply Filters</a></h3>
+                    <div class="row-fluid"><div class="span4"><div class="alert alert-info">Filters can take a few moments to apply.</div></div></div>
+                    <div class="span2">
+                        <h4>Project Statuses</h4>
+                        <div class="control-group">
+                        <div class="controls">
+                            {% for status in filters.project_statuses %}
+                            <label class="checkbox">
+                            <input type="checkbox" class="filters" name="project_statuses" value="{{ status.id }}" checked="checked">
+                                {{ status.label }}
+                            </label>
+                            {% endfor %}
+                        </div>
+                        </div>
+                    </div>
+                    <div class="span2">
+                        <h4>Project Types</h4>
+                        <div class="control-group">
+                        <div class="controls">
+                            {% for type in filters.project_types %}
+                            <label class="checkbox">
+                            <input type="checkbox" class="filters" name="project_types" value="{{ type.id }}" checked="checked">
+                                {{ type.label }}
+                            </label>
+                            {% endfor %}
+                        </div>
+                        </div>
+                    </div>
+                    <div class="span3">
+                        <h4>Clients</h4>
+                        <div class="control-group">
+                        <div class="controls">
+                            {% for client in filters.clients %}
+                            <label class="checkbox">
+                            <input type="checkbox" class="filters" name="clients" value="{{ client.id }}" checked="checked">
+                                {{ client.label }}
+                            </label>
+                            {% endfor %}
+                        </div>
+                        </div>
+                    </div>
+                    <div class="span2">
+                        <h4>Other</h4>
+                        <div class="control-group">
+                        <div class="controls">
+                        {% for billable in filters.billable %}
+                            <label class="checkbox">
+                            <input type="checkbox" class="filters" name="billable" value="{{ billable.id }}" checked="checked">
+                                {{ billable.label }}
+                            </label>
+                            {% endfor %}
+                        </div>
+                        </div>
+                    </div>
+
                 </div>
             </div>
 
@@ -86,7 +181,7 @@
                         <th title="The number of holiday hours included in reaching the Drop Dead Date.">Included Holidays</th>
                     </tr>
                     {% for employee in backlog_summary %}
-                        <tr>
+                        <tr{% if employee.employee.profile.exceeds_utilization %} class="error"{% endif %}>
                             <td><a href="{% url 'report_employee_backlog' employee.employee.id %}">{{ employee.employee.first_name }} {{ employee.employee.last_name }}</a></td>
                             <td>{{ employee.drop_dead_date }}</td>
                             <td>{{ employee.total_available_hours }}</td>
@@ -129,14 +224,17 @@
 {% endblock report_content %}
 
 {% block extrajs %}
+{{ pj_filters.media }}
+
 <script charset="utf-8" src="{{ STATIC_URL }}timepiece/js/burnup_charts/c3.min.js"></script>
 <script charset="utf-8" src="{{ STATIC_URL }}timepiece/js/burnup_charts/d3.min.js"></script>
 <script charset="utf-8" src="{{ STATIC_URL }}timepiece/js/burnup_charts/burnup_charts.js"></script>
 <script>
+    var pie_chart;
+    var bar_chart;
     $(document).ready( function () {
         var data = $.parseJSON($('#activity-breakdown-chart').attr('data'))
-        console.log('data', data);
-        var chart = c3.generate({
+        pie_chart = c3.generate({
             bindto: '#activity-breakdown-chart',
             data: {
                 columns: data,
@@ -160,6 +258,110 @@
                 }
             }
         });
+        var chart_data = $.parseJSON($('#company-coverage-area-chart').attr('data'))
+        var bar_chart = c3.generate({
+            bindto: '#company-coverage-area-chart',
+            data: {
+                x: 'x',
+                columns: chart_data['columns'],
+                type: 'bar',
+                types: {
+                    'Total Avg Hours': 'scatter',
+                    'Utilization Avg Hours': 'scatter'
+                },
+                groups: [chart_data['keys']],
+            },
+            axis: {
+                x: {
+                    type: 'timeseries',
+                    tick: {
+                        format: '%Y-%m-%d'
+                    }
+                }
+            },
+            size: {
+                height: 500 + 8*Math.ceil(chart_data.keys.length/4),
+            },
+            tooltip: {
+                show: false,
+            },
+            point: {
+                show: true
+            }
+        });
     });
+
+    function apply_filters() {
+        var chart_data = $.parseJSON($('#company-coverage-area-chart').attr('data'));
+        var bar_chart = c3.generate({
+            bindto: '#company-coverage-area-chart',
+            data: {
+                x: 'x',
+                columns: chart_data['columns'],
+                type: 'bar',
+                types: {
+                    'Total Avg Hours': 'scatter',
+                    'Utilization Avg Hours': 'scatter'
+                },
+                groups: [chart_data['keys']],
+            },
+            axis: {
+                x: {
+                    type: 'timeseries',
+                    tick: {
+                        format: '%Y-%m-%d'
+                    }
+                }
+            },
+            size: {
+                height: 500 + 8*Math.ceil(chart_data.keys.length/4),
+            },
+            tooltip: {
+                show: false,
+            },
+            point: {
+                show: true
+            }
+        });
+        var filters = chart_data['filters'];
+        var project_types = $.map($('input:checked[name="project_types').filter('.filters'),
+                function (option) {return $(option).attr('value');}),
+            project_statuses = $.map($('input:checked[name="project_statuses').filter('.filters'),
+                function (option) {return $(option).attr('value');}),
+            billable = $.map($('input:checked[name="billable').filter('.filters'),
+                function (option) {return $(option).attr('value');}),
+            clients = $.map($('input:checked[name="clients').filter('.filters'),
+                function (option) {return $(option).attr('value');});
+
+        // toggle everything off
+        bar_chart.toggle();
+        bar_chart.toggle('Avg Hours');
+
+        if (project_types.length == 0 || project_statuses.length == 0 || billable.length == 0 || clients.length == 0) {
+            return;
+        }
+
+        var data, load,
+            to_toggle = [];
+        $.each(chart_data['keys'], 
+            function( index, key ) {
+                data = chart_data.filters.chart_filters[key];
+                load = true;
+                load &= project_statuses.indexOf(data['project-status'].toString()) >= 0;
+                load &= project_types.indexOf(data['project-type'].toString()) >= 0;
+                load &= clients.indexOf(data['client'].toString()) >= 0;
+                load &= billable.indexOf(data['billable'].toString()) >= 0;
+                if (load) {
+                    // bar_chart.toggle(key);
+                    to_toggle.push(key);
+                }
+            }
+        );
+        $.each(to_toggle,
+            function (index, key) {
+                bar_chart.toggle(key);
+            }
+        );
+    }
 </script>
 {% endblock extrajs %}

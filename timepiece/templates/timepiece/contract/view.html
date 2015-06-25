@@ -222,6 +222,74 @@
 
     <div class="row-fluid">
         <div class="span12">
+            <h3>Open General Tasks</h3>
+            {% if perms.contracts.change_projectcontract %}
+                <form class="form-inline" action="{% url 'contract_add_general_task' object.id %}?next={{ next_url|add_parameters:request.GET|urlencode }}" method="post" accept-charset="utf-8">
+                    {% csrf_token %}
+                    {{ add_general_task_form|as_bootstrap:"inline" }}
+                    <input class="btn btn-primary" type="submit" value="Add" />
+
+                    {% if perms.workflow.add_generaltask %}
+                    <a class="btn btn-success" href="{% url 'create_general_task' %}?contract={{ object.id }}&next={{ next_url|add_parameters:request.GET|urlencode }}">Create New General Task for this Contract</a>
+                    {% endif %}
+                </form>
+            {% endif %}
+            <table class='table table-bordered table-striped table-condensed'>
+                <thead>
+                    <tr>
+                        <th></th>
+                        <th>Ticket ID</th>
+                        <th>Priority</th>
+                        <th>Status</th>
+                        <th>Create</th>
+                        <th>Due Date /<br/>Scheduled</th>
+                        <th>Assigned To</th>
+                        <th>Last Activity</th>
+                        <th>Description</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for general_task in object.open_general_tasks %}
+                        <tr>
+                            <td>
+                                <a href="{% url 'contract_remove_general_task' object.id %}?general_task_id={{ general_task.id }}&next={{ next_url }}"><i class="icon-remove-circle" title="Remove {{ general_task }} from this Contract."> </i></a>
+                            </td>
+                            <td style="white-space: nowrap">
+                                <a href="{% url 'view_general_task' general_task.id %}" target="_blank">{{ general_task.form_id }}
+                            </td>
+                            <td style="white-space: nowrap ;text-align: center;">
+                                <span class="label label-{{ general_task.priority }}">{{ general_task.get_priority_display }}</span>
+                            </td>
+                            <td style="white-space: nowrap">
+                                <span class="label {{ general_task.status.label_style}}">{{ general_task.status }}</span>
+                            </td>
+                            <td style="white-space: nowrap">
+                                {{ general_task.created_by }} @<br/>
+                                {{ general_task.created_at|date:"N j, P" }}
+                            </td>
+                            <td style="white-space: nowrap">
+                                {{ general_task.requested_date }}<br/>
+                                {{ general_task.scheduled|date }}
+                            </td>
+                            <td style="white-space: nowrap">
+                                {{ general_task.assignee }}
+                                {% if not general_task.status.terminal and perms.workflow.assign_general_task %}
+                                    <a href='{% url "assign_general_task" general_task.pk %}?next={{ next_url }}' title="Change assigned user"><i class="icon-pencil"></i> </a>
+                                {% endif %}
+                            </td>
+                            <td>{{ general_task.last_user }} @ {{ general_task.last_activity|date:"N j, P" }}</td>
+                            <td>{{ general_task.description|truncatewords:12 }}</td>
+                        </tr>
+                    {% empty %}
+                    <tr><td colspan=9>There are no General Tasks associated with this Contract.</td></tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <div class="row-fluid">
+        <div class="span12">
             <h3>Projects</h3>
             {% if contract.projects.exists %}
                 <table class="table table-bordered">

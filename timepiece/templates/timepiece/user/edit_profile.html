@@ -1,0 +1,36 @@
+{% extends "timepiece/user/base.html" %}
+{% load url from future %}
+{% load bootstrap_toolkit %}
+
+{% block title %}
+    {% if not object %}Create Profile{% else %}Edit {{ object.profile.user.first_name }}'s Profile{% endif %}
+{% endblock title %}
+
+{% block crumbs %}
+    {{ block.super }}
+    <li>
+        <span class="divider">/</span>
+        {% if not object %}
+            <a href="#">Create User</a>
+        {% else %}
+            <a href="#">Edit {{ object }}</a>
+        {% endif %}
+    </li>
+{% endblock crumbs %}
+
+{% block content %}
+    <div class="row-fluid">
+        <div class="span11">
+            <h2>{% if not object %}Create Limited Access Profile for {{ profile }}{% else %}Edit {{ object }}{% endif %}</h2>
+
+            <form class="form-horizontal" action="" method="post" accept-charset="utf-8">
+                {% csrf_token %}
+                {{ form|as_bootstrap:"horizontal" }}
+                <div class="form-actions">
+                    <input class="btn btn-primary" type="submit" value="Save" name="submit" />
+                    <input class="btn" type="button" onclick="history.go(-1)" value="Cancel" />
+                </div>
+            </form>
+        </div>
+    </div>
+{% endblock content %}

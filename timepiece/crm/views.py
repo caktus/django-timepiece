@@ -37,12 +37,12 @@ from timepiece.crm.forms import (CreateEditBusinessForm, CreateEditProjectForm,
         AddContactNoteForm, CreateEditLeadForm, AddLeadNoteForm,
         SelectContactForm, AddDistinguishingValueChallenegeForm,
         AddTemplateDifferentiatingValuesForm, CreateEditTemplateDVForm,
-        CreateEditDVCostItem, CreateEditOpportunity)
+        CreateEditDVCostItem, CreateEditOpportunity, EditLimitedUserProfileForm)
 from timepiece.crm.models import (Business, Project, ProjectRelationship, UserProfile,
     PaidTimeOffLog, PaidTimeOffRequest, Milestone, ActivityGoal, BusinessNote,
     BusinessDepartment, Contact, ContactNote, BusinessAttachment, Lead, LeadNote,
     DistinguishingValueChallenge, TemplateDifferentiatingValue, LeadAttachment,
-    DVCostItem, Opportunity)
+    DVCostItem, Opportunity, ProjectAttachment, LimitedAccessUserProfile)
 from timepiece.crm.utils import grouped_totals, project_activity_goals_with_progress
 from timepiece.entries.models import Entry, Activity, Location
 from timepiece.reports.forms import HourlyReportForm
@@ -646,7 +646,7 @@ def business_download_attachment(request, business_id, attachment_id):
         f = GRID_FS_INSTANCE.get(ObjectId(business_attachment.file_id))
         return HttpResponse(f.read(), content_type=f.content_type)
     except:
-        return HttpResponse("Attachment could not be found.")
+        return HttpResponse("Business attachment could not be found.")
 
 
 @cbv_decorator(permission_required('crm.add_business'))
@@ -805,7 +805,8 @@ class ViewUser(DetailView):
     template_name = 'timepiece/user/view.html'
 
     def get_context_data(self, **kwargs):
-        kwargs.update({'add_project_form': SelectProjectForm()})
+        kwargs.update({'add_project_form': SelectProjectForm(),
+                       'user_id': int(self.kwargs['user_id'])})
         return super(ViewUser, self).get_context_data(**kwargs)
 
 
@@ -825,6 +826,8 @@ class DeleteUser(DeleteView):
 
     def delete(self, request, *args, **kwargs):
         up = UserProfile.objects.get(user__id=int(kwargs['user_id']))
+        if up.limited:
+            up.limited.delete()
         up.delete()
         return super(DeleteUser, self).delete(request, *args, **kwargs)
 
@@ -836,6 +839,36 @@ class EditUser(UpdateView):
     template_name = 'timepiece/user/create_edit.html'
     pk_url_kwarg = 'user_id'
 
+@cbv_decorator(permission_required('crm.change_limitedaccessuserprofile'))
+class CreateLimitedAccessUserProfile(CreateView):
+    model = LimitedAccessUserProfile
+    form_class = EditLimitedUserProfileForm
+    template_name = 'timepiece/user/edit_profile.html'
+
+    def get_context_data(self, **kwargs):
+        context = super(CreateLimitedAccessUserProfile, self).get_context_data(**kwargs)
+        context['profile'] = User.objects.get(id=int(self.kwargs['user_id'])).profile
+        return context
+
+    def get_form(self, *args, **kwargs):
+        form = super(CreateLimitedAccessUserProfile, self).get_form(*args, **kwargs)
+        form.fields['profile'].initial = User.objects.get(id=int(self.kwargs['user_id'])).profile.id
+        form.fields['profile'].widget = widgets.HiddenInput()
+        return form
+
+    def get_success_url(self):
+        return reverse_lazy('view_user', args=(int(self.kwargs['user_id']),))
+
+
+@cbv_decorator(permission_required('crm.change_limitedaccessuserprofile'))
+class EditLimitedAccessUserProfile(UpdateView):
+    model = LimitedAccessUserProfile
+    form_class = EditLimitedUserProfileForm
+    template_name = 'timepiece/user/edit_profile.html'
+    pk_url_kwarg = 'profile_id'
+
+    def get_success_url(self):
+        return reverse_lazy('view_user', args=(int(self.kwargs['user_id']),))
 
 # Projects
 
@@ -917,7 +950,14 @@ class ViewProject(DetailView):
     def get_context_data(self, **kwargs):
         kwargs.update({'add_user_form': SelectUserForm(),
                        'activity_goals': project_activity_goals_with_progress(self.object)})
-        return super(ViewProject, self).get_context_data(**kwargs)
+
+        context = super(ViewProject, self).get_context_data(**kwargs)
+        try:
+            context['add_general_task_form'] = SelectGeneralTaskForm()
+        except:
+            pass
+
+        return context
 
 
 @cbv_decorator(permission_required('crm.add_project'))
@@ -941,6 +981,48 @@ class EditProject(UpdateView):
     form_class = CreateEditProjectForm
     template_name = 'timepiece/project/create_edit.html'
     pk_url_kwarg = 'project_id'
+
+@cbv_decorator(permission_required('crm.add_projectrelationship'))
+class AddProjectGeneralTask(View):
+
+    def get(self, request, *args, **kwargs):
+        return HttpResponse(status=501)
+
+    def post(self, request, *args, **kwargs):
+        try:
+            project = Project.objects.get(id=int(kwargs['project_id']))
+            general_task = SelectGeneralTaskForm(request.POST).get_general_task()
+            if general_task.project is None:
+                general_task.project = project
+                general_task.save()
+            else:
+                msg = '%s already belongs to Project <a href="' + \
+                reverse('view_project', args=(general_task.project.id,)) + \
+                '">%s.  Please remove it from that Project before ' + \
+                'associating with this one.' % (
+                    general_task.form_id, general_task.project.code)
+                messages.error(request, msg)
+        except:
+            print sys.exc_info(), traceback.format_exc()
+        finally:
+            return HttpResponseRedirect(request.GET.get('next', None) 
+                or reverse_lazy('view_project', args=(project.id,)))
+
+@cbv_decorator(permission_required('crm.add_projectrelationship'))
+class RemoveProjectGeneralTask(View):
+
+    def get(self, request, *args, **kwargs):
+        try:
+            project = Project.objects.get(id=int(kwargs['project_id']))
+            general_task_id = request.GET.get('general_task_id')
+            general_task = GeneralTask.objects.get(id=int(general_task_id))
+            general_task.project = None
+            general_task.save()
+        except:
+            print sys.exc_info(), traceback.format_exc()
+        finally:
+            return HttpResponseRedirect(request.GET.get('next', None) 
+                or reverse_lazy('view_project', args=(project.id,)))
 
 @cbv_decorator(permission_required('crm.change_project'))
 class ProjectTags(View):
@@ -1077,7 +1159,7 @@ def pto_home(request, active_tab='summary'):
     data['pto_requests'] = PaidTimeOffRequest.objects.filter(user_profile=data['user_profile']).order_by('-pto_start_date')
     data['pto_log'] = PaidTimeOffLog.objects.filter(user_profile=data['user_profile'])
     if request.user.has_perm('crm.can_approve_pto_requests') or request.user.has_perm('crm.can_process_pto_requests'):
-        data['pto_approvals'] = PaidTimeOffRequest.objects.filter(Q(status=PaidTimeOffRequest.PENDING) | Q(status=PaidTimeOffRequest.APPROVED))
+        data['pto_approvals'] = PaidTimeOffRequest.objects.filter(Q(status=PaidTimeOffRequest.PENDING) | Q(status=PaidTimeOffRequest.APPROVED) | Q(status=PaidTimeOffRequest.MODIFIED))
         data['pto_all_history'] = PaidTimeOffLog.objects.filter(pto=True).order_by('user_profile', '-date')
         data['upto_all_history'] = PaidTimeOffLog.objects.filter(pto=False).order_by('user_profile', '-date')
         data['all_pto_requests'] = PaidTimeOffRequest.objects.all().order_by('-request_date')
@@ -1180,6 +1262,7 @@ class ApprovePTORequest(UpdateView):
         num_workdays = workdays.networkdays(form.instance.pto_start_date,
                                             form.instance.pto_end_date,
                                             holidays)
+        num_workdays = max(num_workdays, 1)
         
         # add PTO log entries
         # if form.instance.pto:
@@ -1268,6 +1351,28 @@ class CreatePTOLogEntry(CreateView):
     model = PaidTimeOffLog
     form_class = CreateEditPaidTimeOffLog
     template_name = 'timepiece/pto/create-edit-log.html'
+
+    def get_success_url(self):
+        return reverse('pto', args=('all_history',))
+
+@cbv_decorator(permission_required('crm.change_paidtimeofflog'))
+class EditPTOLogEntry(UpdateView):
+    model = PaidTimeOffLog
+    form_class = CreateEditPaidTimeOffLog
+    pk_url_kwarg = 'pto_log_id'
+    template_name = 'timepiece/pto/create-edit-log.html'
+
+    def get_success_url(self):
+        return reverse('pto', args=('all_history',))
+
+@cbv_decorator(permission_required('crm.delete_paidtimeofflog'))
+class DeletePTOLogEntry(DeleteView):
+    model = PaidTimeOffLog
+    pk_url_kwarg = 'pto_log_id'
+    template_name = 'timepiece/delete_object.html'
+
+    def get_success_url(self):
+        return '/timepiece/project/%d' % int(self.kwargs['project_id'])
 
     def get_success_url(self):
         return reverse('pto', args=('all_history',))
@@ -1972,7 +2077,7 @@ class ListLeads(SearchListView, CSVViewMixin):
                     row = [lead.id,
                            lead.title,
                            lead.get_status_display(),
-                           lead.aac_poc.email,
+                           '%s %s' % (lead.aac_poc.first_name, lead.aac_poc.last_name),
                            lead.primary_contact.salutation, 
                            lead.primary_contact.first_name, 
                            lead.primary_contact.last_name, 
@@ -2013,7 +2118,7 @@ class ListLeads(SearchListView, CSVViewMixin):
                     row = [lead.id,
                            lead.title,
                            lead.get_status_display(),
-                           lead.aac_poc.email,
+                           '%s %s' % (lead.aac_poc.first_name, lead.aac_poc.last_name),
                            'n/a', 
                            'n/a', 
                            'n/a', 
@@ -2220,7 +2325,7 @@ def lead_download_attachment(request, lead_id, attachment_id):
         f = GRID_FS_INSTANCE.get(ObjectId(lead_attachment.file_id))
         return HttpResponse(f.read(), content_type=f.content_type)
     except:
-        return HttpResponse("Attachment could not be found.")
+        return HttpResponse("Lead attachment could not be found.")
 
 @cbv_decorator(permission_required('crm.add_lead'))
 class CreateLead(CreateView):
@@ -2667,3 +2772,31 @@ class DeleteOpportunity(DeleteView):
     def get_success_url(self):
         return reverse('view_lead_opportunities',
             args=(int(self.kwargs['lead_id']),))
+
+
+@csrf_exempt
+# @permission_required('project.add_projectattachment')
+def project_s3_attachment(request, project_id):
+    bucket = request.POST.get('bucket', None)
+    uuid = request.POST.get('key', None)
+    userid = int(request.POST.get('firmbase-userid', 4))
+    filename = request.POST.get('name', '')
+
+    attachment = ProjectAttachment(
+        project=Project.objects.get(id=int(project_id)),
+        bucket=bucket,
+        uuid=uuid,
+        filename=filename,
+        uploader=User.objects.get(id=userid))
+    attachment.save()
+
+    return HttpResponse(status=200)
+
+@permission_required('crm.view_projectattachment')
+def project_download_attachment(request, project_id, attachment_id):
+    try:
+        project_attachment = ProjectAttachment.objects.get(
+            project_id=project_id, id=attachment_id)
+        return HttpResponseRedirect(project_attachment.get_download_url())
+    except:
+        return HttpResponse('Project attachment could not be found.')

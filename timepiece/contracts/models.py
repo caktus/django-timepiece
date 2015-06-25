@@ -379,6 +379,10 @@ class ProjectContract(models.Model):
     def get_notes(self):
         return ContractNote.objects.filter(contract=self).order_by('-created_at')
 
+    @property
+    def open_general_tasks(self):
+        return self.generaltask_set.filter() # status__terminal=False
+
 class ContractNote(models.Model):
     contract = models.ForeignKey(ProjectContract)
     author = models.ForeignKey(User)
