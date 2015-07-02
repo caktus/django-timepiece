@@ -57,7 +57,7 @@ class ReportMixin(object):
             trunc = data['trunc']
             if entryQ:
                 vals = ('pk', 'activity', 'activity__name', 'project', 'project__code',
-                        'project__name', 'project__status', 'project__type__label', 
+                        'project__name', 'project__status', 'project__type__label',
                         'user__email', 'project__business__id', 'project__business__name',
                         'comments', 'writedown')
                 # EXTRA LOGIC FOR SUN-SAT WEEK
@@ -124,7 +124,7 @@ class ReportMixin(object):
             basicQ &= Q(activity__in=data.get('activities'))
         if 'project_types' in data:
             basicQ &= Q(project__type__in=data.get('project_types'))
-        
+
         # if we do not want to include writedown, set that here.
         if not incl_writedown:
             basicQ &= Q(writedown=False)
@@ -137,7 +137,7 @@ class ReportMixin(object):
         if incl_writedown and not any((incl_billable, incl_nonbillable, incl_leave, incl_unpaid)):
             basicQ &= Q(writedown=True)
             return basicQ
-        
+
         # If all but unpaid types are selected, little filtering is required.
         unpaid_ids = utils.get_setting('TIMEPIECE_UNPAID_LEAVE_PROJECTS').values()
         unpaidQ = Q(project__in=unpaid_ids)
@@ -165,7 +165,7 @@ class ReportMixin(object):
             extraQ = (extraQ | unpaidQ) if billableQ or incl_leave else unpaidQ
         else:
             extraQ &= ~unpaidQ
-        
+
         return basicQ & extraQ
 
     def get_headers(self, date_headers, from_date, to_date, trunc):
@@ -278,7 +278,7 @@ class HourlyReport(ReportMixin, CSVViewMixin, TemplateView):
         self.export_users = request.GET.get('export_users', False)
         self.export_projects = request.GET.get('export_projects', False)
         self.export_users_details = request.GET.get('export_users_details', False)
-        
+
         context = self.get_context_data()
         if self.export_users or self.export_projects or self.export_users_details:
             kls = CSVViewMixin
@@ -310,7 +310,7 @@ class HourlyReport(ReportMixin, CSVViewMixin, TemplateView):
             else:
                 ordered_entries = entries.order_by('project__type__label', 'project__name',
                     'project__code', 'date')
-            
+
             summaries.append(('By Project (All Projects)', get_project_totals(
                 ordered_entries, date_headers, 'total', total_column=True, by='project')))
             func = lambda x: x['project__type__label']
@@ -321,7 +321,7 @@ class HourlyReport(ReportMixin, CSVViewMixin, TemplateView):
 
             summaries.append(('Writedowns By Project (All Projects)', get_project_totals(
                 ordered_entries, date_headers, 'total', total_column=True, by='project', writedown=True)))
-            
+
 
         # Adjust date headers & create range headers.
         from_date = context['from_date']
@@ -388,7 +388,7 @@ class WritedownReport(ReportMixin, CSVViewMixin, TemplateView):
         headers.extend([date.strftime('%m/%d/%Y') for date in date_headers])
         headers.append('Total')
         content.append(headers)
-        
+
         if self.export_projects:
             key = 'By Project (All Projects)'
         elif self.export_users:
@@ -430,7 +430,7 @@ class WritedownReport(ReportMixin, CSVViewMixin, TemplateView):
         self.export_users = request.GET.get('export_users', False)
         self.export_projects = request.GET.get('export_projects', False)
         self.export_users_details = request.GET.get('export_users_details', False)
-        
+
         context = self.get_context_data()
         if self.export_users or self.export_projects or self.export_users_details:
             kls = CSVViewMixin
@@ -463,10 +463,10 @@ class WritedownReport(ReportMixin, CSVViewMixin, TemplateView):
             else:
                 ordered_entries = entries.order_by('project__type__label', 'project__name',
                     'project__code', 'date')
-            
+
             summaries.append(('By Project (All Projects)', get_project_totals(
                 ordered_entries, date_headers, 'total', total_column=True, by='project')))
-            
+
 
         # Adjust date headers & create range headers.
         from_date = context['from_date']
@@ -563,7 +563,7 @@ class BillableHours(ReportMixin, TemplateView):
         """
         writedowns_only = [e for e in entries if e['writedown']]
         print 'writedowns_only', writedowns_only
-        project_totals = get_project_totals(entries, date_headers, 
+        project_totals = get_project_totals(entries, date_headers,
             total_column=False) if entries else []
         project_writedown_totals = get_project_totals(writedowns_only,
             date_headers, total_column=False
@@ -607,7 +607,7 @@ class RevenueReport(CSVViewMixin, TemplateView):
                 content.append([row[0]] + row[2])
 
             content.append(['Totals'] + context['totals'])
-            
+
         return content
 
     @property
@@ -628,7 +628,7 @@ class RevenueReport(CSVViewMixin, TemplateView):
     def get(self, request, *args, **kwargs):
         self.export_revenue_report = request.GET.get(
             'export_revenue_report', False)
-        
+
         context = self.get_context_data()
         if self.export_revenue_report:
             kls = CSVViewMixin
@@ -644,7 +644,7 @@ class RevenueReport(CSVViewMixin, TemplateView):
         if form.is_valid():
             data = form.cleaned_data
             start, end = form.save()
-            
+
             # All entries must meet time period requirements.
             entryQ = Q(end_time__gte=start, end_time__lt=end)
             # for revenue, we only care about Bilalble
@@ -662,21 +662,21 @@ class RevenueReport(CSVViewMixin, TemplateView):
                 entryQ &= Q(project__in=projects)
             if len(contracts):
                 entryQ &= Q(project__contracts__in=contracts)
-            
+
             if entryQ:
                 entries = Entry.objects.filter(entryQ).order_by(
                     'user__last_name', 'user__first_name', 'user',
                     'project__code', 'activity__name', 'activity__id')
             else:
                 entries = Entry.objects.none()
-            
+
             revenue_totals = {}
             for user, user_entries in groupby(entries, lambda x: x.user):
                 for project, user_project_entries in groupby(user_entries, lambda y: y.project):
                     # add missing project
                     if project.code not in revenue_totals:
                         revenue_totals[project.code] = {}
-                    
+
                     # add missing user
                     if user.id not in revenue_totals[project.code]:
                         revenue_totals[project.code][user.id] = Decimal('0.0')
@@ -862,7 +862,7 @@ def report_productivity(request):
                 'billable': True,
                 'project_statuses': [a.id for a in Attribute.objects.filter(
                     type='project-status')],
-                'non_billable': False, 
+                'non_billable': False,
                 # 'paid_time_off': False,
                 'organize_by': 'project'}
     form = ProductivityReportForm(request.GET or defaults)
@@ -888,7 +888,7 @@ def report_productivity(request):
         if business:
             actualsQ &= Q(project__business=business)
             actualsQ &= Q(project__status__in=project_statuses)
-        
+
         elif project:
             actualsQ &= Q(project=project)
 
@@ -900,9 +900,9 @@ def report_productivity(request):
                           Q(activity__billable=True))
 
         elif non_billable and not billable:
-            billableQ &= (Q(project__type__billable=False) | 
+            billableQ &= (Q(project__type__billable=False) |
                           Q(activity__billable=False))
-        
+
         actualsQ &= billableQ
 
         # exclude writedowns if it is not selected
@@ -952,7 +952,7 @@ def report_productivity(request):
 
             if business:
                 activity_goals = ActivityGoal.objects.filter(billableQ,
-                    project__business=business, 
+                    project__business=business,
                     project__status__in=project_statuses
                     ).order_by('activity')
             elif project:
@@ -977,7 +977,7 @@ def report_productivity(request):
                         ).aggregate(hours=Sum('hours')
                         )['hours'] or Decimal('0.0')
 
-                report.append([activity.name, actual_hours, 
+                report.append([activity.name, actual_hours,
                     projected_hours, projected_hours - actual_hours])
                 report_table.append(
                     {'label':activity.name,
@@ -991,10 +991,10 @@ def report_productivity(request):
 
             if business:
                 activity_goals = ActivityGoal.objects.filter(billableQ,
-                    project__business=business, 
+                    project__business=business,
                     project__status__in=project_statuses,
                     ).order_by('project__code')
-            
+
             elif project:
                 # this is not an option
                 activity_goals = ActivityGoal.objects.filter(
@@ -1019,7 +1019,7 @@ def report_productivity(request):
 
                 label = '%s: %s' % (activity_goal.project.code,
                     activity_goal.project.name)
-                report.append([label, actual_hours, 
+                report.append([label, actual_hours,
                     projected_hours, projected_hours - actual_hours])
                 report_table.append(
                     {'label':label,
@@ -1096,7 +1096,7 @@ def report_estimation_accuracy(request):
     for c in contracts:
         if c.contracted_hours() == 0:
             continue
-        pt_label = "%s (%.2f%%)" % (c.name, 
+        pt_label = "%s (%.2f%%)" % (c.name,
                                     c.hours_worked / c.contracted_hours() * 100)
         data.append((c.contracted_hours(), c.hours_worked, pt_label))
         chart_max = max([max(x[0], x[1]) for x in data[1:]]) #max of all targets & actuals
@@ -1113,7 +1113,7 @@ from django.db.models import Sum, Q
 @cbv_decorator(permission_required('crm.view_employee_backlog'))
 class BacklogReport(CSVViewMixin, TemplateView):
     template_name = 'timepiece/reports/backlog.html'
-    
+
     def get(self, request, *args, **kwargs):
         # if user cannot see backlog, direct them to their personal backlog
         if not request.user.has_perm('crm.view_backlog'):
@@ -1122,7 +1122,7 @@ class BacklogReport(CSVViewMixin, TemplateView):
         self.active_tab = kwargs.get('active_tab', 'company') or 'company'
         self.export_data = request.GET.get('export_data', False)
         self.export_company_data = request.GET.get('export_company_data', False)
-        
+
         context = self.get_context_data()
         if self.export_data or self.export_company_data:
             kls = CSVViewMixin
@@ -1174,7 +1174,7 @@ class BacklogReport(CSVViewMixin, TemplateView):
                     total_charged_hours = 0.0
                     if activity is None:
                         raise Exception('Activity Goal with no Activity.')
-                    
+
                     activity_name = activity.name
                     if activity_name not in company_total_hours.keys():
                         company_total_hours[activity_name] = \
@@ -1198,7 +1198,7 @@ class BacklogReport(CSVViewMixin, TemplateView):
                                                  'charged_hours': total_charged_hours,
                                                  'remaining_hours': remaining_hours,
                                                  'percentage': percentage})
-        
+
         for employee_id, values in backlog_summary.items():
             employee = User.objects.get(id=employee_id)
             backlog_summary[employee_id]['employee'] = employee
@@ -1211,7 +1211,7 @@ class BacklogReport(CSVViewMixin, TemplateView):
             approx_days = 7 * num_weeks
             drop_dead_date = datetime.date.today() + relativedelta(days=int(approx_days))
             # backlog_summary[employee_id]['drop_dead_date'] = drop_dead_date
-            
+
             future_approved_time_off = PaidTimeOffRequest.objects.filter(
                 Q(status=PaidTimeOffRequest.APPROVED
                     )|Q(status=PaidTimeOffRequest.PROCESSED),
@@ -1236,7 +1236,7 @@ class BacklogReport(CSVViewMixin, TemplateView):
                         + float(future_approved_time_off)
 
             num_weeks = total_hours / float(employee.profile.hours_per_week)
-            # subtract 1 for 
+            # subtract 1 for
             approx_days = 7.0 * num_weeks - 1.0
             drop_dead_date = datetime.date.today() \
                            + relativedelta(days=int(approx_days))
@@ -1255,7 +1255,7 @@ class BacklogReport(CSVViewMixin, TemplateView):
         num_weeks = company_hours / float(company_hours_per_week)
         approx_days = 7 * num_weeks
         drop_dead_date = datetime.date.today() + relativedelta(days=int(approx_days))
-        
+
         future_approved_time_off = PaidTimeOffRequest.objects.filter(
                 Q(status=PaidTimeOffRequest.APPROVED
                     )|Q(status=PaidTimeOffRequest.PROCESSED),
@@ -1325,7 +1325,7 @@ class BacklogReport(CSVViewMixin, TemplateView):
             'chart_data': json.dumps(company_backlog_data),
             'filters': filters,
             'no_data': no_data})
-        
+
         return context
 
     def convert_context_to_csv(self, context):
@@ -1336,7 +1336,7 @@ class BacklogReport(CSVViewMixin, TemplateView):
             content.append(headers)
             total_hours = 0.0
             for activity_hours in context['company_backlog']['company_total_hours']:
-                row = [activity_hours['activity'].code, 
+                row = [activity_hours['activity'].code,
                        activity_hours['activity'].name,
                        activity_hours['remaining_hours']]
                 content.append(row)
@@ -1349,6 +1349,7 @@ class BacklogReport(CSVViewMixin, TemplateView):
             headers = ['Activity Code', 'Activity Name', 'Project Code',
                 'Project Name', 'Project Status', 'Project Type', 'Billable',
                 'Business Short Name', 'Business Name', 'Remaining Hours']
+            text_col_count=len(headers)-1
             headers.extend(data['columns'][0][1:])
             content.append(headers)
             for col in data['columns'][1:]:
@@ -1359,7 +1360,7 @@ class BacklogReport(CSVViewMixin, TemplateView):
                     continue
                 hours = sum(col[1:])
                 row_data = export_filters[key]
-                row = [row_data['activity'].code, 
+                row = [row_data['activity'].code,
                        row_data['activity'].name,
                        row_data['project'].code,
                        row_data['project'].name,
@@ -1372,6 +1373,9 @@ class BacklogReport(CSVViewMixin, TemplateView):
                 for hours in col[1:]:
                     row.append(hours)
                 content.append(row)
+            totals_row=['-']*text_col_count
+            totals_row.extend([sum(x) for x in zip(*content[1:])[text_col_count:]])
+            content.append(totals_row)
         return content
 
     @property
@@ -1419,7 +1423,7 @@ class BacklogReport(CSVViewMixin, TemplateView):
 #                 activity_goalQ &= Q(project__in=form.cleaned_data['projects'])
 #             if form.cleaned_data['activities']:
 #                 activity_goalQ &= Q(activity__in=form.cleaned_data['activities'])
-            
+
 #             billable = form.cleaned_data['billable']
 #             non_billable = form.cleaned_data['non_billable']
 #             if billable and not non_billable:
@@ -1449,7 +1453,7 @@ class BacklogReport(CSVViewMixin, TemplateView):
 #                     total_charged_hours = 0.0
 #                     if activity is None:
 #                         raise Exception('Activity Goal with no Activity.')
-                    
+
 #                     activity_name = activity.name
 #                     if activity_name not in company_total_hours.keys():
 #                         company_total_hours[activity_name] = \
@@ -1473,7 +1477,7 @@ class BacklogReport(CSVViewMixin, TemplateView):
 #                                                  'charged_hours': total_charged_hours,
 #                                                  'remaining_hours': remaining_hours,
 #                                                  'percentage': percentage})
-        
+
 #         for employee_id, values in backlog_summary.items():
 #             employee = User.objects.get(id=employee_id)
 #             backlog_summary[employee_id]['employee'] = employee
@@ -1486,7 +1490,7 @@ class BacklogReport(CSVViewMixin, TemplateView):
 #             approx_days = 7 * num_weeks
 #             drop_dead_date = datetime.date.today() + relativedelta(days=int(approx_days))
 #             # backlog_summary[employee_id]['drop_dead_date'] = drop_dead_date
-            
+
 #             future_approved_time_off = PaidTimeOffRequest.objects.filter(
 #                 Q(status=PaidTimeOffRequest.APPROVED
 #                     )|Q(status=PaidTimeOffRequest.PROCESSED),
@@ -1511,7 +1515,7 @@ class BacklogReport(CSVViewMixin, TemplateView):
 #                         + float(future_approved_time_off)
 
 #             num_weeks = total_hours / float(employee.profile.hours_per_week)
-#             # subtract 1 for 
+#             # subtract 1 for
 #             approx_days = 7.0 * num_weeks - 1.0
 #             drop_dead_date = datetime.date.today() \
 #                            + relativedelta(days=int(approx_days))
@@ -1530,7 +1534,7 @@ class BacklogReport(CSVViewMixin, TemplateView):
 #         num_weeks = company_hours / float(company_hours_per_week)
 #         approx_days = 7 * num_weeks
 #         drop_dead_date = datetime.date.today() + relativedelta(days=int(approx_days))
-        
+
 #         future_approved_time_off = PaidTimeOffRequest.objects.filter(
 #                 Q(status=PaidTimeOffRequest.APPROVED
 #                     )|Q(status=PaidTimeOffRequest.PROCESSED),
@@ -1577,7 +1581,7 @@ class BacklogReport(CSVViewMixin, TemplateView):
 #             'chart_data': json.dumps(chart_data)
 #         }
 
-#         return render(request, 'timepiece/reports/backlog.html', 
+#         return render(request, 'timepiece/reports/backlog.html',
 #             {'backlog': backlog,
 #              'backlogfilter_form': form,
 #              'backlog_summary': backlog_summary_sorted,
@@ -1595,7 +1599,7 @@ def report_activity_backlog(request, activity_id):
         activity = Activity.objects.get(id=int(activity_id))
         project_list = list(set([ag.project for ag in ActivityGoal.objects.filter(project__status=4, activity=activity)]))
         backlog = []
-        
+
         for project in project_list:
             employees = list(set([ag.employee for ag in ActivityGoal.objects.filter(project=project, activity=activity)]))
             if None in employees:
@@ -1609,7 +1613,7 @@ def report_activity_backlog(request, activity_id):
             activity_hours = ActivityGoal.objects.filter(
                 project=project, activity=activity
                 ).aggregate(hours=Sum('goal_hours'))['hours']
-            
+
             percentage = 100.*(float(charged_hours)/float(activity_hours)) if float(activity_hours) > 0 else 0
             percentage = 100 if float(activity_hours)==0.0 else percentage
             backlog.append({'activity': activity,
@@ -1632,7 +1636,7 @@ def report_activity_backlog(request, activity_id):
     for project, activity_goals in groupby(ActivityGoal.objects.filter(
         activity=activity, project__status=4).order_by(
         'project__code'), lambda x: x.milestone.project):
-        
+
         for activity, activity_goals in groupby(activity_goals, lambda x: x.activity):
             activity_hours = 0.0
             charged_hours = 0.0
@@ -1702,7 +1706,7 @@ def report_employee_backlog(request, user_id):
                 dates_exclude_Q = Q()
                 for activity_goal in activity_goals:
                     backlog[counter]['activity_goals'].append(activity_goal)
-                    dates_exclude_Q |= Q(start_time__gte=datetime.datetime.combine(activity_goal.date, datetime.time.min), 
+                    dates_exclude_Q |= Q(start_time__gte=datetime.datetime.combine(activity_goal.date, datetime.time.min),
                                          start_time__lt=datetime.datetime.combine(activity_goal.end_date, datetime.time.max))
 
                 # add missing date ranges for existing Project+Employee+Activity
@@ -1763,7 +1767,7 @@ def report_employee_backlog(request, user_id):
             ).exclude(project__in=activitygoal_projects
             ).values('project__code').order_by('project__code'
             ).distinct('project__code'):
-            
+
             counter += 1
             project = Project.objects.get(code=entry['project__code'])
             backlog.append({'project': project,
@@ -1773,9 +1777,9 @@ def report_employee_backlog(request, user_id):
                 ).order_by('activity__id').distinct('activity__id'):
 
                 activity = Activity.objects.get(id=entry2['activity__id'])
-                entries_summary = Entry.objects.filter(project=project, 
+                entries_summary = Entry.objects.filter(project=project,
                     activity=activity, user=employee
-                    ).aggregate(hours=Sum('hours'), 
+                    ).aggregate(hours=Sum('hours'),
                     start_date=Min('start_time'), end_date=Max('end_time'))
                 if entries_summary['end_date'] is None:
                     print 'got here', entries_summary
@@ -1817,7 +1821,7 @@ def get_employee_backlog_chart_data(user_id):
     start_week = utils.get_week_start(datetime.date.today()).date()
     start_week = datetime.date.today()
     activity_goals = ActivityGoal.objects.filter(
-        employee=employee, end_date__gte=start_week, 
+        employee=employee, end_date__gte=start_week,
         project__status=utils.get_setting(
             'TIMEPIECE_DEFAULT_PROJECT_STATUS'))
 
@@ -1850,8 +1854,8 @@ def get_employee_backlog_chart_data(user_id):
     for ptor in employee.profile.paidtimeoffrequest_set.filter(
         Q(pto_start_date__gte=start_week)|Q(pto_end_date__gte=end_week),
         Q(status='approved')|Q(status='processed')):
-        
-        num_workdays = max(workdays.networkdays(ptor.pto_start_date, 
+
+        num_workdays = max(workdays.networkdays(ptor.pto_start_date,
             ptor.pto_end_date, holidays), 1)
         ptor_hours_per_day = ptor.amount / Decimal(num_workdays)
 
@@ -1875,9 +1879,9 @@ def get_employee_backlog_chart_data(user_id):
 
         start_date = start_week if activity_goal.date < start_week \
             else activity_goal.date
-        
+
         end_date = activity_goal.end_date
-        num_workdays = max(workdays.networkdays(start_date, end_date, 
+        num_workdays = max(workdays.networkdays(start_date, end_date,
             holidays), 1)
         ag_hours_per_workday = activity_goal.get_remaining_hours / Decimal(num_workdays)
 
@@ -1901,7 +1905,7 @@ def get_employee_backlog_chart_data(user_id):
             if proj not in columns:
                 columns[proj] = [0.0] * (len(columns['x']) - 1)
             columns[proj].append(hours)
-        
+
         expected_len = len(columns['x'])
         for check_key, vals in columns.items():
             while len(vals) != expected_len:
@@ -1920,7 +1924,7 @@ def get_employee_backlog_chart_data(user_id):
         date = datetime.datetime.strptime(date_str, '%Y-%m-%d', ).date()
         schedule.append(week_dict[date.weekday()])
         utilization.append(week_dict[date.weekday()]*employee.profile.get_utilization)
-    
+
     # c3_columns.append(['Regular Schedule'] + [float(avg_hours_per_day)]*len(columns['x']))
     c3_columns.append(schedule)
     c3_columns.append(utilization)
@@ -1942,7 +1946,7 @@ def active_projects_burnup_charts(request, minder_id=-1):
     active_projects = Project.objects.filter(status__id=4
         ).order_by('point_person__last_name', 'point_person__first_name',
         'point_person__id', 'code')
-    
+
     minders = []
     project_ids = []
     for minder, projects in groupby(active_projects, lambda x: x.point_person.id):
@@ -1954,7 +1958,7 @@ def active_projects_burnup_charts(request, minder_id=-1):
         project_ids = [p.id for p in minders[0]['projects']]
     else:
         project_ids = [p.id for p in active_projects.filter(point_person__id=int(minder_id))]
-    
+
     context = {'minders': minders,
                'project_ids': project_ids}
     return render(request, 'timepiece/reports/active_projects_burnup_charts.html', context)
