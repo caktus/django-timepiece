@@ -71,7 +71,7 @@ class UserProfile(models.Model):
     pto_accrual = models.FloatField(default=0.0, verbose_name='PTO Accrual Amount', help_text='Number of PTO hours earned per pay period for the employee.')
     hire_date = models.DateField(blank=True, null=True)
 
-    weekly_schedule = models.CharField(max_length=128)
+    weekly_schedule = models.CharField(max_length=128, default='0,0,0,0,0,0,0')
     utilization = models.FloatField(default=80,
         help_text='The percentage of time the employee should spend on billable work as opposed to non-billable work.',
         validators=[MinValueValidator(0.0), MaxValueValidator(100.0)])
@@ -446,7 +446,7 @@ class Business(models.Model):
     active = models.BooleanField(default=False)
     status = models.CharField(max_length=16, null=True, blank=True, choices=BIZ_STATUS)
     account_owner = models.ForeignKey(User, blank=True, null=True, related_name='biz_account_holder')
-    
+
     billing_street = models.CharField(max_length=255, blank=True)
     billing_city = models.CharField(max_length=255, blank=True)
     billing_state = models.CharField(max_length=2, blank=True, choices=STATES)
@@ -511,12 +511,12 @@ class Business(models.Model):
     @property
     def get_notes(self):
         return BusinessNote.objects.filter(business=self).order_by('-created_at')
-    
+
     @property
     def get_attachments(self):
         return BusinessAttachment.objects.filter(
             business=self).order_by('upload_time')
-    
+
     @property
     def get_departments(self):
         return BusinessDepartment.objects.filter(business=self).order_by('short_name')
@@ -527,15 +527,15 @@ class Business(models.Model):
                 key=settings.GOOGLE_SERVER_API_KEY,
                 client_id=settings.GOOGLE_CLIENT_ID,
                 client_secret=settings.GOOGLE_CLIENT_SECRET)
-            
+
             try:
                 # geocode billing address
-                if (self.billing_street and self.billing_city and 
-                    self.billing_state and self.billing_postalcode and 
+                if (self.billing_street and self.billing_city and
+                    self.billing_state and self.billing_postalcode and
                     self.billing_country):
                     gc = gmaps.geocode('%s, %s, %s %s-%s, %s' % (
-                        self.billing_street, self.billing_city, 
-                        self.billing_state, self.billing_postalcode, 
+                        self.billing_street, self.billing_city,
+                        self.billing_state, self.billing_postalcode,
                         self.billing_postalcode, self.billing_country))
                     if len(gc) == 1:
                         self.billing_lat = float(
@@ -548,12 +548,12 @@ class Business(models.Model):
 
             try:
                 # geocode shipping address
-                if (self.shipping_street and self.shipping_city and 
-                    self.shipping_state and self.shipping_postalcode and 
+                if (self.shipping_street and self.shipping_city and
+                    self.shipping_state and self.shipping_postalcode and
                     self.shipping_country):
                     gc = gmaps.geocode('%s, %s, %s %s-%s, %s' % (
-                        self.shipping_street, self.shipping_city, 
-                        self.shipping_state, self.shipping_postalcode, 
+                        self.shipping_street, self.shipping_city,
+                        self.shipping_state, self.shipping_postalcode,
                         self.shipping_postalcode, self.shipping_country))
                     if len(gc) == 1:
                         self.shipping_lat = float(
@@ -599,112 +599,112 @@ class BusinessDepartment(models.Model):
 
     def __unicode__(self):
         return '%s - %s' % (self.business.short_name, self.name)
-    
+
     @property
     def billing_street(self):
         if self.bd_billing_street:
             return bd_billing_street
         else:
             return self.business.billing_street
-    
+
     @property
     def billing_city(self):
         if self.bd_billing_city:
             return bd_billing_city
         else:
             return self.business.billing_city
-    
+
     @property
     def billing_state(self):
         if self.bd_billing_state:
             return bd_billing_state
         else:
             return self.business.billing_state
-    
+
     @property
     def billing_postalcode(self):
         if self.bd_billing_postalcode:
             return bd_billing_postalcode
         else:
             return self.business.billing_postalcode
-    
+
     @property
     def billing_mailstop(self):
         if self.bd_billing_mailstop:
             return bd_billing_mailstop
         else:
             return self.business.billing_mailstop
-    
+
     @property
     def billing_country(self):
         if self.bd_billing_country:
             return bd_billing_country
         else:
             return self.business.billing_country
-    
+
     @property
     def billing_lat(self):
         if self.bd_billing_lat:
             return bd_billing_lat
         else:
             return self.business.billing_lat
-    
+
     @property
     def billing_lon(self):
         if self.bd_billing_lon:
             return bd_billing_lon
         else:
             return self.business.billing_lon
-    
+
     @property
     def shipping_street(self):
         if self.bd_shipping_street:
             return bd_shipping_street
         else:
             return self.business.shipping_street
-    
+
     @property
     def shipping_city(self):
         if self.bd_shipping_city:
             return bd_shipping_city
         else:
             return self.business.shipping_city
-    
+
     @property
     def shipping_state(self):
         if self.bd_shipping_state:
             return bd_shipping_state
         else:
             return self.business.shipping_state
-    
+
     @property
     def shipping_postalcode(self):
         if self.bd_shipping_postalcode:
             return bd_shipping_postalcode
         else:
             return self.business.shipping_postalcode
-    
+
     @property
     def shipping_mailstop(self):
         if self.bd_shipping_mailstop:
             return bd_shipping_mailstop
         else:
             return self.business.shipping_mailstop
-    
+
     @property
     def shipping_country(self):
         if self.bd_shipping_country:
             return bd_shipping_country
         else:
             return self.business.shipping_country
-    
+
     @property
     def shipping_lat(self):
         if self.bd_shipping_lat:
             return bd_shipping_lat
         else:
             return self.business.shipping_lat
-    
+
     @property
     def shipping_lon(self):
         if self.bd_shipping_lon:
@@ -718,15 +718,15 @@ class BusinessDepartment(models.Model):
                 key=settings.GOOGLE_SERVER_API_KEY,
                 client_id=settings.GOOGLE_CLIENT_ID,
                 client_secret=settings.GOOGLE_CLIENT_SECRET)
-            
+
             try:
                 # geocode billing address
-                if (self.bd_billing_street and self.bd_billing_city and 
-                    self.bd_billing_state and self.bd_billing_postalcode and 
+                if (self.bd_billing_street and self.bd_billing_city and
+                    self.bd_billing_state and self.bd_billing_postalcode and
                     self.bd_billing_country):
                     gc = gmaps.geocode('%s, %s, %s %s-%s, %s' % (
-                        self.bd_billing_street, self.bd_billing_city, 
-                        self.bd_billing_state, self.bd_billing_postalcode, 
+                        self.bd_billing_street, self.bd_billing_city,
+                        self.bd_billing_state, self.bd_billing_postalcode,
                         self.bd_billing_postalcode, self.bd_billing_country))
                     if len(gc) == 1:
                         self.bd_billing_lat = float(
@@ -739,12 +739,12 @@ class BusinessDepartment(models.Model):
 
             try:
                 # geocode shipping address
-                if (self.bd_shipping_street and self.bd_shipping_city and 
-                    self.bd_shipping_state and self.bd_shipping_postalcode and 
+                if (self.bd_shipping_street and self.bd_shipping_city and
+                    self.bd_shipping_state and self.bd_shipping_postalcode and
                     self.bd_shipping_country):
                     gc = gmaps.geocode('%s, %s, %s %s-%s, %s' % (
-                        self.bd_shipping_street, self.bd_shipping_city, 
-                        self.bd_shipping_state, self.bd_shipping_postalcode, 
+                        self.bd_shipping_street, self.bd_shipping_city,
+                        self.bd_shipping_state, self.bd_shipping_postalcode,
                         self.bd_shipping_postalcode, self.bd_shipping_country))
                     if len(gc) == 1:
                         self.bd_shipping_lat = float(
@@ -805,7 +805,7 @@ class Contact(models.Model):
     home_phone = models.CharField(max_length=24, blank=True)
     other_phone = models.CharField(max_length=24, blank=True)
     fax = models.CharField(max_length=24, blank=True)
-    
+
     business = models.ForeignKey(Business, null=True, blank=True)
     business_department = models.ForeignKey(BusinessDepartment, null=True, blank=True)
     assistant = models.ForeignKey('self', null=True, blank=True, help_text='If the assistant is another contact, you can set that here.')
@@ -856,15 +856,15 @@ class Contact(models.Model):
                 key=settings.GOOGLE_SERVER_API_KEY,
                 client_id=settings.GOOGLE_CLIENT_ID,
                 client_secret=settings.GOOGLE_CLIENT_SECRET)
-            
+
             try:
                 # geocode mailing address
-                if (self.mailing_street and self.mailing_city and 
-                    self.mailing_state and self.mailing_postalcode and 
+                if (self.mailing_street and self.mailing_city and
+                    self.mailing_state and self.mailing_postalcode and
                     self.mailing_country):
                     gc = gmaps.geocode('%s, %s, %s %s-%s, %s' % (
-                        self.mailing_street, self.mailing_city, 
-                        self.mailing_state, self.mailing_postalcode, 
+                        self.mailing_street, self.mailing_city,
+                        self.mailing_state, self.mailing_postalcode,
                         self.mailing_postalcode, self.mailing_country))
                     if len(gc) == 1:
                         self.mailing_lat = float(
@@ -877,12 +877,12 @@ class Contact(models.Model):
 
             try:
                 # geocode other address
-                if (self.other_street and self.other_city and 
-                    self.other_state and self.other_postalcode and 
+                if (self.other_street and self.other_city and
+                    self.other_state and self.other_postalcode and
                     self.other_country):
                     gc = gmaps.geocode('%s, %s, %s %s-%s, %s' % (
-                        self.other_street, self.other_city, 
-                        self.other_state, self.other_postalcode, 
+                        self.other_street, self.other_city,
+                        self.other_state, self.other_postalcode,
                         self.other_postalcode, self.other_country))
                     if len(gc) == 1:
                         self.other_lat = float(
@@ -1014,7 +1014,7 @@ class Project(models.Model):
             related_name='projects_with_status')
     description = models.TextField()
     year = models.SmallIntegerField(blank=True, null=True) # this field is required, but is taken care of in code
-    
+
     tags = TaggableManager()
 
     objects = models.Manager()
@@ -1033,7 +1033,7 @@ class Project(models.Model):
 
     def __unicode__(self):
         return '{0}: {1}'.format(self.code, self.name)
-    
+
     def delete(self, *args, **kwargs):
         try:
             # we need to delete the associate wiki to free up the slug
@@ -1072,7 +1072,7 @@ class Project(models.Model):
             except:
                 print sys.exc_info(), traceback.format_exc()
                 pass
-            
+
         super(Project, self).save(*args, **kwargs)
         minders = Group.objects.get(id=self.MINDERS_GROUP_ID)
         for u in User.objects.filter(id__in=Project.objects.all().values('point_person')):
@@ -1180,7 +1180,7 @@ class ActivityGoal(models.Model):
     end_date = models.DateField(verbose_name='End Date')
 
     def __unicode__(self):
-        return '%s: %s - %s (%s)' % (self.project.code, 
+        return '%s: %s - %s (%s)' % (self.project.code,
             self.activity, self.employee, self.goal_hours)
 
     class Meta:
@@ -1239,7 +1239,7 @@ class Lead(models.Model):
 
     title = models.CharField(max_length=64,
         help_text='Provide a name or title to identify the lead.')
-    status = models.CharField(max_length=16, 
+    status = models.CharField(max_length=16,
         default=STATUS_OPEN, choices=STATUSES)
     lead_source = models.ForeignKey(User, related_name='lead_source',
         limit_choices_to={'groups':1})
@@ -1262,7 +1262,7 @@ class Lead(models.Model):
         'target="_blank">add</a> it first.'))
     contacts = models.ManyToManyField(Contact, null=True, blank=True,
         related_name='lead_contacts', verbose_name='Other Contacts')
-    
+
     created_by = models.ForeignKey(User, related_name='lead_created_by')
     last_editor = models.ForeignKey(User, related_name='lead_edited_by')
     created_at = models.DateTimeField(auto_now_add=True)
@@ -1360,7 +1360,7 @@ class DistinguishingValueChallenge(models.Model):
             self.order = self.lead.distinguishingvaluechallenge_set.count() + 1
         if len(self.short_name) == 0:
             self.short_name = 'DV %d' % self.order
-        
+
         return super(DistinguishingValueChallenge, self).save(*args, **kwargs)
 
     def tab_name(self):
@@ -1380,14 +1380,14 @@ class DistinguishingValueChallenge(models.Model):
 
 class DVCostItem(models.Model):
     dv = models.ForeignKey(DistinguishingValueChallenge)
-    description = models.CharField(max_length=64, 
+    description = models.CharField(max_length=64,
         help_text='Provide a summary description of the cost line item.')
-    details = models.TextField(blank=True, 
+    details = models.TextField(blank=True,
         help_text='Optionally add more details about this cost item.  You can reference an attachmen here as well.')
-    cost = models.DecimalField(max_digits=11, decimal_places=2, 
+    cost = models.DecimalField(max_digits=11, decimal_places=2,
         null=True, blank=True,
         help_text='Either set a cost or define man hours and rate below.')
-    man_hours = models.DecimalField(max_digits=11, decimal_places=2, 
+    man_hours = models.DecimalField(max_digits=11, decimal_places=2,
         null=True, blank=True, verbose_name='Man Hours')
     rate = models.DecimalField(max_digits=6, decimal_places=2,
         verbose_name='Houlry Rate', null=True, blank=True)
@@ -1396,7 +1396,7 @@ class DVCostItem(models.Model):
         ordering = ['description']
 
     def __unicode__(self):
-        return '%s - %s - %f' % (self.dv, self.description, 
+        return '%s - %s - %f' % (self.dv, self.description,
             float(self.get_cost))
 
     @property
@@ -1422,7 +1422,7 @@ class DVCostItem(models.Model):
                     'or both Man Hours and Hourly Rate.')
         else:
             if self.man_hours or self.rate:
-                raise ValidationError('If you set a direct Cost, you ' 
+                raise ValidationError('If you set a direct Cost, you '
                     'cannot also set both Man Hours and an Hourly Rate.')
 
 class TemplateDifferentiatingValue(models.Model):
@@ -1431,7 +1431,7 @@ class TemplateDifferentiatingValue(models.Model):
 
     class Meta:
         ordering = ['short_name']
-    
+
     def __unicode__(self):
         return self.short_name
 
