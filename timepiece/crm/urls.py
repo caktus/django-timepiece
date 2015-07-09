@@ -25,6 +25,12 @@ urlpatterns = patterns('',
     url(r'^user/(?P<user_id>\d+)/edit/$',
         views.EditUser.as_view(),
         name='edit_user'),
+    url(r'^user/(?P<user_id>\d+)/limited-profile/create/$',
+        views.CreateLimitedAccessUserProfile.as_view(),
+        name='create_limited_profile'),
+    url(r'^user/(?P<user_id>\d+)/limited-profile/(?P<profile_id>\d+)/edit/$',
+        views.EditLimitedAccessUserProfile.as_view(),
+        name='edit_limited_profile'),
     url(r'^user/(?P<user_id>\d+)/delete/$',
         views.DeleteUser.as_view(),
         name='delete_user'),
@@ -68,11 +74,28 @@ urlpatterns = patterns('',
     url(r'^project/(?P<project_id>\d+)/tags/remove$',
         views.RemoveProjectTag.as_view(),
         name='remove_project_tag'),
+    # Project Atachments
+    url(r'^project/(?P<project_id>\d+)/attachment/s3/$',
+        views.project_s3_attachment,
+        name='s3_project_attachment'),
+    url(r'^project/(?P<project_id>\d+)/attachment/(?P<attachment_id>\d+)/$',
+        views.project_download_attachment,
+        name='download_project_attachment'),
 
     # Project timesheets
     url(r'^project/(?P<project_id>\d+)/timesheet/$',
         views.ProjectTimesheet.as_view(),
         name='view_project_timesheet'),
+
+    # Project General Tasks
+    # Add General Task
+    url(r'^project/(?P<project_id>\d+)/add-general-task$',
+        views.AddProjectGeneralTask.as_view(),
+        name='project_add_general_task'),
+    # Remove General Task
+    url(r'^project/(?P<project_id>\d+)/remove-general-task$',
+        views.RemoveProjectGeneralTask.as_view(),
+        name='project_remove_general_task'),
 
     # Businesses
     url(r'^business/$',
@@ -174,8 +197,11 @@ urlpatterns = patterns('',
         views.CreatePTOLogEntry.as_view(),
         name='create_pto_log'),
     url(r'^pto/log/(?P<pto_log_id>\d+)/edit/$',
-        views.CreatePTOLogEntry.as_view(),
+        views.EditPTOLogEntry.as_view(),
         name='edit_pto_log'),
+    url(r'^pto/log/(?P<pto_log_id>\d+)/delete/$',
+        views.DeletePTOLogEntry.as_view(),
+        name='delete_pto_log'),
 
     
     # Milestones

@@ -1,6 +1,7 @@
 from django.contrib.auth.models import User, Group
 from django.contrib.sites.models import Site
 from django.core.exceptions import ValidationError
+from django.core.validators import MaxValueValidator, MinValueValidator
 from django.core.urlresolvers import reverse
 from django.db import models
 from django.db.models import get_model, Sum, Q
@@ -8,10 +9,15 @@ import datetime
 import sys, traceback
 from decimal import Decimal
 from itertools import groupby
-from timepiece.utils import get_active_entry
+from timepiece.utils import get_active_entry, get_setting
 from timepiece.models import MongoAttachment
 
+from holidays.models import Holiday
+
 from taggit.managers import TaggableManager
+
+import boto
+import workdays
 
 try:
     from wiki.models.urlpath import URLPath
@@ -65,7 +71,10 @@ class UserProfile(models.Model):
     pto_accrual = models.FloatField(default=0.0, verbose_name='PTO Accrual Amount', help_text='Number of PTO hours earned per pay period for the employee.')
     hire_date = models.DateField(blank=True, null=True)
 
-    weekly_schedule = models.CharField(max_length=128,default='0,0,0,0,0,0,0')
+    weekly_schedule = models.CharField(max_length=128, default='0,0,0,0,0,0,0')
+    utilization = models.FloatField(default=80,
+        help_text='The percentage of time the employee should spend on billable work as opposed to non-billable work.',
+        validators=[MinValueValidator(0.0), MaxValueValidator(100.0)])
 
     class Meta:
         db_table = 'timepiece_userprofile'  # Using legacy table name.
@@ -77,9 +86,62 @@ class UserProfile(models.Model):
     def week_schedule(self):
         return [float(val) for val in self.weekly_schedule.split(',')]
 
+    def week_dict(self):
+        return {0: self.get_monday_schedule,
+                1: self.get_tuesday_schedule,
+                2: self.get_wednesday_schedule,
+                3: self.get_thursday_schedule,
+                4: self.get_friday_schedule,
+                5: self.get_saturday_schedule,
+                6: self.get_sunday_schedule}
+
+    @property
+    def get_utilization(self):
+        return self.utilization / 100.0
+
+    @property
+    def exceeds_utilization(self):
+        start_week = datetime.date.today()
+        activity_goals = ActivityGoal.objects.filter(
+            employee=self.user, end_date__gte=start_week, 
+            project__status=get_setting('TIMEPIECE_DEFAULT_PROJECT_STATUS'))
+
+        # determine holidays and add time (whether employee is paid or not)
+        holidays = [h['date'] for h in Holiday.holidays_between_dates(
+            start_week, start_week + datetime.timedelta(days=700),
+            {'paid_holiday': True})]
+
+        billable_coverage = {}
+
+        for activity_goal in activity_goals:
+            start_date = start_week if activity_goal.date < start_week \
+                else activity_goal.date
+            
+            end_date = activity_goal.end_date
+            num_workdays = max(workdays.networkdays(start_date, end_date, 
+                holidays), 1)
+            ag_hours_per_workday = activity_goal.get_remaining_hours / Decimal(num_workdays)
+
+            for i in range((end_date-start_date).days + 1):
+                date = start_date + datetime.timedelta(days=i)
+                if workdays.networkdays(date, date, holidays):
+                    if str(date) not in billable_coverage:
+                        billable_coverage[str(date)] = 0.0
+                    if activity_goal.project.type.billable and activity_goal.activity.billable:
+                        billable_coverage[str(date)] += float(ag_hours_per_workday)
+                        if billable_coverage[str(date)] > self.utilization_per_week:
+                            return True
+        
+        # if we have not exited with a True already, then it is False
+        return False
+
     @property
     def hours_per_week(self):
         return sum(self.week_schedule)
+
+    @property
+    def utilization_per_week(self):
+        return (float(self.hours_per_week)/5.0) * self.get_utilization
 
     @property
     def get_sunday_schedule(self):
@@ -129,16 +191,79 @@ class UserProfile(models.Model):
             pto_log.save()
 
 
+class LimitedAccessUserProfile(models.Model):
+    profile = models.OneToOneField(UserProfile, unique=True, related_name='limited')
+    seating = models.CharField(max_length=8, blank=True,
+        verbose_name='Airplane Seating Preference',
+        choices=(('window', 'Window'), ('aisle', 'Aisle')))
+    ground_transportation = models.TextField(
+        verbose_name='Rental Car / Shuttle / Taxi', blank=True)
+    hotel_brand = models.CharField(max_length=16, blank=True,
+        choices=(('Hilton', 'Hilton'),
+                 ('Marriott', 'Marriott'),
+                 ('IGH', 'IGH')))
+    hotel_accommodatations = models.TextField(
+        verbose_name='Hotel Accommodations', blank=True)
+    frequent_flyer = models.TextField(blank=True,
+        verbose_name='Frequeny Flyer #s')
+    rental_car = models.TextField(blank=True,
+        verbose_name='Rental Car Loyalty #s')
+    hotel = models.TextField(blank=True,
+        verbose_name='Hotel Loyalty #s')
+    gift_card = models.TextField(blank=True,
+        verbose_name='Preferred Gift Card')
+    coffee_shops = models.TextField(blank=True,
+        verbose_name='Preferred Coffee Shops')
+    other_gift = models.TextField(blank=True,
+        verbose_name='Other Gift Preferences')
+    coffees = models.TextField(blank=True,
+        verbose_name='In Office Coffees')
+    teas = models.TextField(blank=True,
+        verbose_name='In Office Teas')
+    snacks = models.TextField(blank=True,
+        verbose_name='In Office Snacks')
+    sandwich = models.TextField(blank=True,
+        verbose_name='Sandwich & Condiments')
+    soup = models.TextField(blank=True)
+    salad = models.TextField(blank=True,
+        verbose_name='Salad Type and Dressing')
+    pizza = models.TextField(blank=True)
+    pasts = models.TextField(blank=True)
+    chipotle = models.TextField(blank=True)
+    other = models.TextField(blank=True)
+    birthday_celebration = models.BooleanField(default=True)
+    birthday_month = models.IntegerField(null=True, blank=True,
+        choices=((1,  'January'),
+                 (2,  'February'),
+                 (3,  'March'),
+                 (4,  'April'),
+                 (5,  'May'),
+                 (6,  'June'),
+                 (7,  'July'),
+                 (8,  'August'),
+                 (9,  'September'),
+                 (10, 'October'),
+                 (11, 'November'),
+                 (12, 'December'))
+    )
+    hobbies = models.TextField(blank=True)
+
+    class Meta:
+        permissions = (('can_view_limited_profile', 'Can view limited user profile'))
+
+
 class PaidTimeOffRequest(models.Model):
     PENDING = 'pending'
     APPROVED = 'approved'
     DENIED = 'denied'
     PROCESSED = 'processed'
+    MODIFIED = 'modified'
     STATUSES = {
         PENDING: 'Pending',
         APPROVED: 'Approved',
         DENIED: 'Denied',
         PROCESSED: 'Processed',
+        MODIFIED: 'Modified',
     }
     user_profile = models.ForeignKey(UserProfile, verbose_name='Employee')
     request_date = models.DateTimeField(auto_now_add=True)
@@ -148,9 +273,11 @@ class PaidTimeOffRequest(models.Model):
     amount = models.DecimalField(verbose_name='Number of Hours', max_digits=7, decimal_places=2)
     comment = models.TextField(verbose_name='Reason / Description', blank=True)
     approval_date = models.DateTimeField(blank=True, null=True)
-    approver = models.ForeignKey(User, related_name='pto_approver', blank=True, null=True)
+    approver = models.ForeignKey(User, related_name='pto_approver', blank=True, null=True,
+      on_delete=models.SET_NULL)
     process_date = models.DateTimeField(blank=True, null=True)
-    processor = models.ForeignKey(User, related_name='pto_processor', blank=True, null=True)
+    processor = models.ForeignKey(User, related_name='pto_processor', blank=True, null=True,
+      on_delete=models.SET_NULL)
     status = models.CharField(max_length=24, choices=STATUSES.items(), default=PENDING)
     approver_comment = models.TextField(verbose_name='Reason / Note', blank=True)
 
@@ -171,7 +298,8 @@ class PaidTimeOffLog(models.Model):
     date = models.DateField()
     amount = models.DecimalField(max_digits=7, decimal_places=2)
     comment = models.TextField(blank=True)
-    pto_request = models.ForeignKey(PaidTimeOffRequest, blank=True, null=True)
+    pto_request = models.ForeignKey(PaidTimeOffRequest, blank=True, null=True,
+      on_delete=models.CASCADE)
     pto = models.BooleanField(default=True, help_text='Select for Paid Time Off (Unselect for Unpaid Time Off)')
 
     class Meta:
@@ -179,6 +307,12 @@ class PaidTimeOffLog(models.Model):
 
     def __unicode__(self):
         return '%s %s %f' % (self.user_profile, str(self.date), float(self.amount))
+
+    def get_time_entry(self):
+        try:
+            return self.entry_set.get()
+        except:
+            return None
 
 
 class TypeAttributeManager(models.Manager):
@@ -946,6 +1080,10 @@ class Project(models.Model):
             u.groups.add(minders)
 
     @property
+    def get_attachments(self):
+        return ProjectAttachment.objects.filter(project=self).order_by('filename')
+
+    @property
     def billable(self):
         return self.type.billable
 
@@ -965,6 +1103,10 @@ class Project(models.Model):
     def activity_goals(self):
         return ActivityGoal.objects.filter(project=self).order_by(
           'employee__last_name', 'employee__first_name', 'goal_hours',)
+
+    @property
+    def open_general_tasks(self):
+        return self.generaltask_set.all() # status__terminal=False
 
 
 class RelationshipType(models.Model):
@@ -994,6 +1136,25 @@ class ProjectRelationship(models.Model):
             user=self.user.get_name_or_username(),
         )
 
+class ProjectAttachment(models.Model):
+    project = models.ForeignKey(Project)
+    bucket = models.CharField(max_length=64)
+    uuid = models.TextField() # AWS S3 uuid
+    filename = models.CharField(max_length=128)
+    upload_datetime = models.DateTimeField(auto_now_add=True)
+    uploader = models.ForeignKey(User)
+    description = models.TextField(blank=True, null=True)
+
+    def __unicode__(self):
+        return "%s: %s" % (self.project, self.filename)
+
+    def get_download_url(self):
+        conn = boto.connect_s3(settings.AWS_UPLOAD_CLIENT_KEY,
+            settings.AWS_UPLOAD_CLIENT_SECRET_KEY)
+        bucket = conn.get_bucket(self.bucket)
+        s3_file_path = bucket.get_key(self.uuid)
+        url = s3_file_path.generate_url(expires_in=15) # expiry time is in seconds
+        return url
 
 class Milestone(models.Model):
     project = models.ForeignKey(Project)
@@ -1129,6 +1290,10 @@ class Lead(models.Model):
     @property
     def get_opportunities(self):
         return self.opportunity_set.all().order_by('title')
+
+    @property
+    def open_general_tasks(self):
+        return self.generaltask_set.all() # status__terminal=False
 
 class LeadAttachment(MongoAttachment):
     lead = models.ForeignKey(Lead)

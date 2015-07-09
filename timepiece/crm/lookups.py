@@ -8,6 +8,7 @@ from selectable.base import ModelLookup
 from selectable.registry import registry
 
 from timepiece.crm.models import Project, Business, Contact
+from timepiece.entries.models import Activity
 
 
 class ProjectLookup(ModelLookup):
@@ -20,7 +21,8 @@ class ProjectLookup(ModelLookup):
                 self.get_item_value(project))
 
     def get_item_value(self, project):
-        return str(project) if project else ''
+        # return str(project) if project else ''
+        return '%s: %s' % (project.code, project.name) if project else ''
 
 class ProjectCodeLookup(ModelLookup):
     model = Project
@@ -59,6 +61,19 @@ class UserLookup(ModelLookup):
 
     def get_item_value(self, user):
         return user.get_name_or_username() if user else ''
+
+
+class ActivityLookup(ModelLookup):
+    model = Activity
+    search_fields = ('name__icontains', 'code__icontains')
+
+    def get_item_label(self, activity):
+        return mark_safe(u'<span class="project">%s</span>' %
+                self.get_item_value(activity))
+
+    def get_item_value(self, activity):
+        # return str(project) if project else ''
+        return '%s: %s' % (activity.code, activity.name) if activity else ''
 
 
 class QuickLookup(LookupBase):
@@ -122,3 +137,4 @@ registry.register(ProjectCodeLookup)
 registry.register(UserLookup)
 registry.register(QuickLookup)
 registry.register(ContactLookup)
+registry.register(ActivityLookup)

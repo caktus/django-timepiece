@@ -15,7 +15,7 @@ from timepiece.crm.models import (Attribute, Business, Project,
         PaidTimeOffLog, Milestone, ActivityGoal, BusinessNote,
         BusinessDepartment, Contact, ContactNote, Lead, LeadNote,
         DistinguishingValueChallenge, TemplateDifferentiatingValue,
-        DVCostItem, Opportunity, LeadAttachment)
+        DVCostItem, Opportunity, LeadAttachment, LimitedAccessUserProfile)
 from timepiece.fields import WeeklyScheduleWidget
 
 import datetime
@@ -119,6 +119,9 @@ class CreateUserForm(UserCreationForm):
     pto_accrual = forms.FloatField(initial=0.0, label='PTO Accrual Amount', help_text='Number of PTO hours earned per pay period for the employee.')
     employee_type = forms.ChoiceField(choices=UserProfile.EMPLOYEE_TYPES.items())
 
+    utilization = forms.FloatField(help_text='The percentage of time the employee should spend on billable work as opposed to non-billable work.')
+    weekly_schedule = forms.CharField(widget=WeeklyScheduleWidget)
+
     class Meta:
         model = User
         fields = ('username', 'first_name', 'last_name', 'email', 'is_active',
@@ -137,6 +140,8 @@ class CreateUserForm(UserCreationForm):
                          earns_pto=self.cleaned_data['earns_pto'],
                          earns_holiday_pay=self.cleaned_data['earns_holiday_pay'],
                          pto_accrual=self.cleaned_data['pto_accrual'],
+                         utilization=self.cleaned_data['utilization'],
+                         weekly_schedule=self.cleaned_data.get('weekly_schedule'),
                          employee_type=self.cleaned_data['employee_type'])
         if commit:
             self.save_m2m()
@@ -169,6 +174,7 @@ class EditUserForm(UserChangeForm):
     pto_accrual = forms.FloatField(initial=0.0, label='PTO Accrual Amount', help_text='Number of PTO hours earned per pay period for the employee.')
     employee_type = forms.ChoiceField(choices=UserProfile.EMPLOYEE_TYPES.items())
 
+    utilization = forms.FloatField(help_text='The percentage of time the employee should spend on billable work as opposed to non-billable work.')
     weekly_schedule = forms.CharField(widget=WeeklyScheduleWidget)
 
     class Meta:
@@ -178,8 +184,10 @@ class EditUserForm(UserChangeForm):
 
     def __init__(self, *args, **kwargs):
         super(EditUserForm, self).__init__(*args, **kwargs)
-        self.fields['groups'].widget = forms.CheckboxSelectMultiple()
-        self.fields['groups'].help_text = None
+        # self.fields['groups'].widget = forms.CheckboxSelectMultiple()
+        # for some reason, when we use the CheckboxSelectMultiple it
+        # will check some groups whih the user does not belong to
+        # self.fields['groups'].help_text = None
         up = UserProfile.objects.get(user=kwargs['instance'])
         self.fields['business'].initial = up.business
         self.fields['hire_date'].initial = up.hire_date
@@ -187,6 +195,7 @@ class EditUserForm(UserChangeForm):
         self.fields['earns_holiday_pay'].initial = up.earns_holiday_pay
         self.fields['pto_accrual'].initial = up.pto_accrual
         self.fields['employee_type'].initial = up.employee_type
+        self.fields['utilization'].initial = up.utilization
         self.fields['weekly_schedule'].initial = up.weekly_schedule
         # In 1.4 this field is created even if it is excluded in Meta.
         if 'password' in self.fields:
@@ -211,6 +220,7 @@ class EditUserForm(UserChangeForm):
         up.earns_holiday_pay = self.cleaned_data['earns_holiday_pay']
         up.pto_accrual = self.cleaned_data['pto_accrual']
         up.employee_type = self.cleaned_data['employee_type']
+        up.utilization = self.cleaned_data['utilization']
         up.weekly_schedule = self.cleaned_data.get('weekly_schedule')
 
         if password1:
@@ -221,6 +231,23 @@ class EditUserForm(UserChangeForm):
             self.save_m2m()
         return instance
 
+
+class EditLimitedUserProfileForm(forms.ModelForm):
+
+    class Meta:
+        model = LimitedAccessUserProfile
+
+    def clean(self):
+        cleaned_data = super(EditLimitedUserProfileForm, self).clean()
+        
+        bday = cleaned_data.get('birthday_celebration', False)
+        bday_month = cleaned_data.get('birthday_month', None)
+        
+        if bday and bday_month is None:
+            self._errors['birthday_month'] = self.error_class(
+                ['You must select a birthday month if you select the Birthday Celebration checkbox.'])
+
+        return cleaned_data
 
 class EditUserSettingsForm(forms.ModelForm):
 
@@ -302,12 +329,13 @@ class CreateEditPaidTimeOffLog(forms.ModelForm):
 
     class Meta:
         model = PaidTimeOffLog
-        fields = ('user_profile', 'date', 'amount', 'comment', )
+        fields = ('user_profile', 'date', 'amount', 'comment', 'pto')
 
     def __init__(self, *args, **kwargs):
         super(CreateEditPaidTimeOffLog, self).__init__(*args, **kwargs)
         self.fields['user_profile'].label = 'Employee'
-        up_choices = [(u.id, '%s, %s'%(u.last_name, u.first_name)) for u in Group.objects.get(id=1
+        self.fields['pto'].label = 'PTO'
+        up_choices = [(u.profile.id, '%s, %s'%(u.last_name, u.first_name)) for u in Group.objects.get(id=1
             ).user_set.filter(is_active=True).order_by('last_name', 'first_name')]
         # up_choices.insert(0, ('', '-'))
         self.fields['user_profile'].choices = up_choices

@@ -6,7 +6,9 @@ from selectable import forms as selectable
 from timepiece.fields import UserModelMultipleChoiceField
 from timepiece.forms import DateForm, YearMonthForm
 
-from timepiece.crm.lookups import ProjectLookup, ProjectCodeLookup, BusinessLookup
+from timepiece.crm.lookups import ProjectLookup, ProjectCodeLookup, \
+    BusinessLookup, UserLookup, ActivityLookup
+from timepiece.contracts.lookups import ContractLookup
 from timepiece.crm.models import Attribute
 from timepiece.entries.models import Entry, Activity
 
@@ -110,6 +112,39 @@ class HourlyReportForm(DateForm):
         self.fields['from_date'].required = True
         self.fields['to_date'].required = True
 
+class RevenueReportForm(DateForm):
+
+    projects = selectable.AutoCompleteSelectMultipleField(ProjectLookup,
+            label='Project', required=False)
+    contracts = selectable.AutoCompleteSelectMultipleField(ContractLookup,
+            label='Contract', required=False)
+    employees = selectable.AutoCompleteSelectMultipleField(UserLookup,
+            label='Employee', required=False)
+
+    def __init__(self, *args, **kwargs):
+        super(RevenueReportForm, self).__init__(*args, **kwargs)
+        self.fields['from_date'].required = True
+        self.fields['to_date'].required = True
 
 class PayrollSummaryReportForm(YearMonthForm):
     pass
+
+class BacklogFilterForm(forms.Form):
+    project_statuses = forms.ModelMultipleChoiceField(required=False,
+        label='Project Status',
+        queryset=Attribute.objects.filter(type='project-status'),
+        widget=forms.CheckboxSelectMultiple)
+    project_types = forms.ModelMultipleChoiceField(required=False,
+        label='Project Type',
+        queryset=Attribute.objects.filter(type='project-type'),
+        widget=forms.CheckboxSelectMultiple)
+
+    projects = selectable.AutoCompleteSelectMultipleField(ProjectCodeLookup,
+        label="Project(s)", required=False)
+    activities = selectable.AutoCompleteSelectMultipleField(ActivityLookup,
+        label="Activitie(s)", required=False)
+    clients = selectable.AutoCompleteSelectMultipleField(BusinessLookup,
+        label="Client(s)", required=False)
+
+    billable = forms.BooleanField(required=False)
+    non_billable = forms.BooleanField(label='Non-billable', required=False)

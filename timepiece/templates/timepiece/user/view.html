@@ -14,6 +14,13 @@
         <div class="span12">
             <h2>{{ object.get_name_or_username }}</h2>
             <ul class="nav nav-pills">
+                {% if perms.crm.change_limitedaccessuserprofile %}
+                    {% if object.profile.limited %}
+                    <li><a href="{% url 'edit_limited_profile' object.pk object.profile.limited.id %}">Edit Limited Profile</a></li>
+                    {% else %}
+                    <li><a href="{% url 'create_limited_profile' object.pk %}">Create Limited Profile</a></li>
+                    {% endif %}
+                {% endif %}
                 {% if perms.auth.change_user %}
                     <li><a href="{% url 'edit_user' object.pk %}">Edit</a></li>
                     <li><a href="{% url 'delete_user' object.pk %}">Delete</a></li>
@@ -42,6 +49,7 @@
                         {% endif %}
                     </td>
                 </tr>
+                <tr><th>Utilization</th><td>{{ object.profile.utilization|floatformat:2 }} %</td></tr>
                 <tr>
                     <th style="white-space: nowrap;">Weekly Schedule</th>
                     <td>
@@ -89,6 +97,44 @@
                         {% endif %}
                     </td>
                 </tr>
+                {% if request.user.id == user_id or perms.crm.can_view_limited_profile %}
+                <tr class="info"><td colspan=2><p class="text-center"><strong>Travel Preferences</strong></p></td></tr>
+                <tr><th>Seating</th><td>{{ object.profile.limited.seating }}</td></tr>
+                <tr><th>Rental Car / Shuttle / Taxi</th><td>{{ object.profile.limited.ground_transportation }}</td></tr>
+                <tr><th>Hotel Accommodations</th><td>{{ object.profile.limited.hotel_accommodatations }}</td></tr>
+                <tr><th>Hotel Brand</th><td>{{ object.profile.limited.hotel_brand }}</td></tr>
+                <tr><th>Frequent Flyer Programs</th><td>{{ object.profile.limited.frequent_flyer }}</td></tr>
+                <tr><th>Rental Car Loyalty Programs</th><td>{{ object.profile.limited.rental_car }}</td></tr>
+                <tr><th>Hotel Loyalty Programs</th><td>{{ object.profile.limited.hotel }}</td></tr>
+
+                <tr class="info"><td colspan=2><p class="text-center"><strong>Gift Preferences</strong></p></td></tr>
+                <tr><th>Preferred Gift Cards</th><td>{{ object.profile.limited.gift_card }}</td></tr>
+                <tr><th>Preferred Coffee Shops</th><td>{{ object.profile.limited.coffee_shops }}</td></tr>
+                <tr><th>Other Gift Card Preferences</th><td>{{ object.profile.limited.other_gift }}</td></tr>
+
+                <tr class="info"><td colspan=2><p class="text-center"><strong>In Office Refreshments</strong></p></td></tr>
+                <tr><th>Coffees</th><td>{{ object.profile.limited.coffees }}</td></tr>
+                <tr><th>Teas</th><td>{{ object.profile.limited.teas }}</td></tr>
+                <tr><th>Snacks</th><td>{{ object.profile.limited.snacks }}</td></tr>
+
+                <tr class="info"><td colspan=2><p class="text-center"><strong>Catering Preferences</strong></p></td></tr>
+                <tr><th>Sandwich type & condiments</th><td>{{ object.profile.limited.sandwich }}</td></tr>
+                <tr><th>Soup</th><td>{{ object.profile.limited.soup }}</td></tr>
+                <tr><th>Salad</th><td>{{ object.profile.limited.salad }}</td></tr>
+                <tr><th>Pizza</th><td>{{ object.profile.limited.pizza }}</td></tr>
+                <tr><th>Pasta</th><td>{{ object.profile.limited.pasta }}</td></tr>
+                <tr><th>Chipotle</th><td>{{ object.profile.limited.chipotle }}</td></tr>
+                <tr><th>Other</th><td>{{ object.profile.limited.other }}</td></tr>
+
+                <tr class="info"><td colspan=2><p class="text-center"><strong>Birthday</strong></p></td></tr>
+                <tr><th>Celebration?</th><td>{{ object.profile.limited.birthday_celebration|yesno:"Yes,No,No" }}</td></tr>
+                {% if object.profile.limited.birthday_celebration %}
+                <tr><th>Birthday Month</th><td>{{ object.profile.limited.get_birthday_month_display }}</td></tr>
+                {% endif %}
+
+                <tr class="info"><td colspan=2><p class="text-center"><strong>Hobbies</strong></p></td></tr>
+                <tr><td colspan=2>{{ object.profile.limited.hobbies }}</td></tr>
+                {% endif %}
             </table>
         </div>
 
