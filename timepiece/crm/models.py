@@ -972,6 +972,14 @@ class TrackableProjectManager(models.Manager):
 
 class Project(models.Model):
     MINDERS_GROUP_ID = 3
+    PROJECT_DEPARTMENTS = (
+        ('elec-avionics', 'Electrical/Avionics'),
+        ('integration', 'Integration'),
+        ('mech', 'Mechanical Systems'),
+        ('struct', 'Structures'),
+        ('tech-serv', 'Technical Services'),
+        ('other', 'Other')
+    )
 
     name = models.CharField(max_length=255)
     code = models.CharField(max_length=12,
@@ -987,7 +995,10 @@ class Project(models.Model):
     business_department = models.ForeignKey(BusinessDepartment,
             null=True, blank=True,
             verbose_name="Company Department",
-            related_name='new_business_department_projects')
+            related_name='new_business_department_projects',
+            on_delete=models.SET_NULL)
+    client_primary_poc = models.ForeignKey(Contact, blank=True, null=True,
+            on_delete=models.SET_NULL)
     point_person = models.ForeignKey(User,
         verbose_name="Minder",
         related_name="minder",
@@ -1005,13 +1016,17 @@ class Project(models.Model):
             through='ProjectRelationship')
     activity_group = models.ForeignKey('entries.ActivityGroup',
             related_name='activity_group', null=True, blank=True,
-            verbose_name='restrict activities to')
+            verbose_name='restrict activities to',
+            on_delete=models.SET_NULL)
     type = models.ForeignKey(Attribute,
             limit_choices_to={'type': 'project-type'},
             related_name='projects_with_type')
     status = models.ForeignKey(Attribute,
             limit_choices_to={'type': 'project-status'},
             related_name='projects_with_status')
+    project_department = models.CharField(max_length=16,
+      choices=PROJECT_DEPARTMENTS,
+      default='other')
     description = models.TextField()
     year = models.SmallIntegerField(blank=True, null=True) # this field is required, but is taken care of in code
 

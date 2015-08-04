@@ -2,6 +2,7 @@ from django import forms
 from django.forms import widgets
 from django.contrib.auth.forms import UserCreationForm, UserChangeForm
 from django.contrib.auth.models import User, Group
+from django.db.models import Q
 
 from selectable import forms as selectable
 
@@ -79,28 +80,133 @@ class AddBusinessNoteForm(forms.ModelForm):
         self.fields['author'].widget = widgets.HiddenInput()
         self.fields['business'].widget = widgets.HiddenInput()
 
-class CreateEditProjectForm(forms.ModelForm):
-    # business = selectable.AutoCompleteSelectField(BusinessLookup)
-    # business.widget.attrs['placeholder'] = 'Search'
-    EMPLOYEE_CHOICES = [(u.pk, '%s, %s'%(u.last_name, u.first_name)) \
-        for u in Group.objects.get(id=1).user_set.filter(
-            is_active=True).order_by('last_name')]
+
+class CreateProjectForm(forms.ModelForm):
+    target_internal_completion_date = forms.DateField()
+    target_internal_completion_description = forms.CharField(widget=forms.Textarea)
+    required_completion_date = forms.DateField()
+    required_completion_description = forms.CharField(widget=forms.Textarea)
+    target_open_date = forms.DateField()
+    target_open_description = forms.CharField(widget=forms.Textarea)
+    start_date = forms.DateField()
+    start_description = forms.CharField(widget=forms.Textarea)
+    turn_in_date = forms.DateField(required=False)
+    turn_in_description = forms.CharField(required=False, widget=forms.Textarea)
 
     class Meta:
         model = Project
-        fields = ('name', 'business', 'business_department', 'finder', 
-                'point_person', 'binder', 'type', 
-                'status', 'activity_group', 'description')
+        fields = ('name', 'business', 'business_department',
+            'client_primary_poc', 'finder', 'point_person', 'binder', 'type',
+            'status', 'project_department', 'activity_group', 'description')
 
     def __init__(self, *args, **kwargs):
-        super(CreateEditProjectForm, self).__init__(*args, **kwargs)
+        super(CreateProjectForm, self).__init__(*args, **kwargs)
         self.fields['point_person'].label = 'Minder'
-        self.EMPLOYEE_CHOICES.insert(0, ('', '-'))
+        EMPLOYEE_CHOICES = [(0, '-')] + [(u.pk, '%s, %s'%(
+            u.last_name, u.first_name)) for u in Group.objects.get(id=1
+            ).user_set.filter(is_active=True).order_by('last_name')]
         for f in ['point_person', 'finder', 'binder']:
-            self.fields[f].choices = self.EMPLOYEE_CHOICES
+            self.fields[f].choices = EMPLOYEE_CHOICES
+
+        # TODO: seems there must be a better way to do this
+        if kwargs.get('data', {}).get('business', None):
+            business = Business.objects.get(id=int(kwargs.get('data', {}).get('business', None)))
+            if business:
+                self.fields['business_department'].queryset = BusinessDepartment.objects.filter(business=business).order_by('name')
+                self.fields['client_primary_poc'].queryset = Contact.objects.filter(
+                    Q(user__isnull=False, user__profile__business=business) | 
+                    Q(user__isnull=True, business=business)).order_by('last_name',
+                    'first_name')
 
     def clean(self):
-            cleaned_data = super(CreateEditProjectForm, self).clean()
+            cleaned_data = super(CreateProjectForm, self).clean()
+            
+            biz = cleaned_data.get('business', None)
+            biz_dept = cleaned_data.get('business_department', None)
+            client_contact = cleaned_data.get('client_primary_poc', None)
+            
+            if biz_dept and biz_dept.business != biz:
+                self._errors['business_department'] = self.error_class(
+                    ['Selected Company Department does not belong to selected Company.'])
+
+            if client_contact:
+                client_biz = client_contact.user.profile.business if client_contact.user else client_contact.business
+                if client_biz != biz:
+                    self._errors['client_primary_poc'] = self.error_class(
+                        ['You must select a Contact that belongs to the selected Company.'])
+
+            return cleaned_data
+
+    def save(self):
+        project = super(CreateProjectForm, self).save()
+
+        # Target Internal Completion Date Milestone
+        tic_ms = Milestone(
+            project=project,
+            name='Target Internal Completion',
+            due_date=self.cleaned_data['target_internal_completion_date'],
+            description=self.cleaned_data['target_internal_completion_description']
+        )
+        tic_ms.save()
+
+        # Required Completion Date Milestone
+        required_ms = Milestone(
+            project=project,
+            name='Required Completion',
+            due_date=self.cleaned_data['required_completion_date'],
+            description=self.cleaned_data['required_completion_description']
+        )
+        required_ms.save()
+
+        # Target Open Date Milestone
+        target_open_ms = Milestone(
+            project=project,
+            name='Target Open',
+            due_date=self.cleaned_data['target_open_date'],
+            description=self.cleaned_data['target_open_description']
+        )
+        target_open_ms.save()
+
+        # Start Date Milestone
+        start_ms = Milestone(
+            project=project,
+            name='Start',
+            due_date=self.cleaned_data['start_date'],
+            description=self.cleaned_data['start_description']
+        )
+        start_ms.save()
+
+        # Turn-in Milestone
+        if self.cleaned_data.get('turn_in_date', None):
+            turn_in_ms = Milestone(
+                project=project,
+                name='Turn-In',
+                due_date=self.cleaned_data['turn_in_date'],
+                description=self.cleaned_data.get('turn_in_description', '')
+            )
+            turn_in_ms.save()
+
+        return project
+
+class EditProjectForm(forms.ModelForm):
+
+    class Meta:
+        model = Project
+        fields = ('name', 'business', 'business_department',
+            'client_primary_poc', 'finder', 'point_person', 'binder', 'type',
+            'status', 'project_department', 'activity_group', 'description')
+
+    def __init__(self, *args, **kwargs):
+        super(EditProjectForm, self).__init__(*args, **kwargs)
+        self.fields['point_person'].label = 'Minder'
+        EMPLOYEE_CHOICES = [(0, '-')] + [(u.pk, '%s, %s'%(
+            u.last_name, u.first_name)) for u in Group.objects.get(id=1
+            ).user_set.filter(is_active=True).order_by('last_name')]
+        for f in ['point_person', 'finder', 'binder']:
+            self.fields[f].choices = EMPLOYEE_CHOICES
+
+    def clean(self):
+            cleaned_data = super(EditProjectForm, self).clean()
             
             biz = cleaned_data.get('business', None)
             biz_dept = cleaned_data.get('business_department', None)
@@ -110,6 +216,7 @@ class CreateEditProjectForm(forms.ModelForm):
                     ['Selected Company Department does not belong to selected Company.'])
 
             return cleaned_data
+
 
 class CreateUserForm(UserCreationForm):
     business = forms.ModelChoiceField(Business.objects.all())

@@ -27,7 +27,7 @@ from timepiece.utils.csv import CSVViewMixin
 from timepiece.utils.search import SearchListView
 from timepiece.utils.views import cbv_decorator
 
-from timepiece.crm.forms import (CreateEditBusinessForm, CreateEditProjectForm,
+from timepiece.crm.forms import (CreateEditBusinessForm, CreateProjectForm, EditProjectForm,
         EditUserSettingsForm, EditProjectRelationshipForm, SelectProjectForm,
         EditUserForm, CreateUserForm, SelectUserForm, ProjectSearchForm,
         QuickSearchForm, CreateEditPTORequestForm, CreateEditMilestoneForm,
@@ -639,6 +639,7 @@ def business_upload_attachment(request, business_id):
 @permission_required('workflow.view_business')
 def business_download_attachment(request, business_id, attachment_id):
     MONGO_DB_INSTANCE = project_settings.MONGO_CLIENT.business_attachments
+    MONGO_DB_INSTANCE.authenticate( project_settings.MONGO_User,  project_settings.MONGO_PW)
     GRID_FS_INSTANCE = gridfs.GridFS(MONGO_DB_INSTANCE)
     try:
         business_attachment = BusinessAttachment.objects.get(
@@ -670,6 +671,36 @@ class EditBusiness(UpdateView):
     form_class = CreateEditBusinessForm
     template_name = 'timepiece/business/create_edit.html'
     pk_url_kwarg = 'business_id'
+
+@login_required
+def get_business_departments(request, business_id):
+    data = []
+    try:
+        business = Business.objects.get(id=int(business_id))
+        for department in business.businessdepartment_set.all().order_by('name'):
+            data.append({'id': department.id,
+                         'name': department.name})
+    except:
+        pass
+    return HttpResponse(json.dumps(data),
+                        content_type='application/json')
+
+@login_required
+def get_business_contacts(request, business_id):
+    data = []
+    try:
+        business = Business.objects.get(id=int(business_id))
+        for contact in Contact.objects.filter(user__isnull=True, business=business):
+            data.append({'id': contact.id,
+                         'name': '%s, %s' % (contact.last_name, contact.first_name)})
+        for contact in Contact.objects.filter(user__profile__business=business):
+            data.append({'id': contact.id,
+                         'name': '%s, %s' % (contact.last_name, contact.first_name)})
+        sorted_data = sorted(data, key=lambda k: k['name'])
+    except:
+        pass
+    return HttpResponse(json.dumps(data),
+                        content_type='application/json')    
 
 @cbv_decorator(permission_required('crm.change_business'))
 class BusinessTags(View):
@@ -963,7 +994,7 @@ class ViewProject(DetailView):
 @cbv_decorator(permission_required('crm.add_project'))
 class CreateProject(CreateView):
     model = Project
-    form_class = CreateEditProjectForm
+    form_class = CreateProjectForm
     template_name = 'timepiece/project/create_edit.html'
 
 
@@ -978,7 +1009,7 @@ class DeleteProject(DeleteView):
 @cbv_decorator(permission_required('crm.change_project'))
 class EditProject(UpdateView):
     model = Project
-    form_class = CreateEditProjectForm
+    form_class = EditProjectForm
     template_name = 'timepiece/project/create_edit.html'
     pk_url_kwarg = 'project_id'
 
@@ -2318,6 +2349,7 @@ def lead_upload_attachment(request, lead_id):
 @permission_required('crm.view_lead')
 def lead_download_attachment(request, lead_id, attachment_id):
     MONGO_DB_INSTANCE = project_settings.MONGO_CLIENT.lead_attachments
+    MONGO_DB_INSTANCE.authenticate(project_settings.MONGO_USER, project_settings.MONGO_PW)
     GRID_FS_INSTANCE = gridfs.GridFS(MONGO_DB_INSTANCE)
     try:
         lead_attachment = LeadAttachment.objects.get(
