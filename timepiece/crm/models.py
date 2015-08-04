@@ -1201,6 +1201,12 @@ class ActivityGoal(models.Model):
     class Meta:
         ordering = ('project__code', 'employee__last_name', 'employee__first_name', 'goal_hours',)
 
+    def clean(self):
+        # ensure that the end_date is after the date
+        if self.date > self.end_date:
+            raise ValidationError('The Start Date cannot come after the '
+                'End Date.')
+
     @property
     def get_charged_hours(self):
         return Entry.objects.filter(
