@@ -11,7 +11,7 @@ from timepiece.utils import get_setting
 from timepiece.crm.lookups import (BusinessLookup, ProjectLookup, UserLookup,
         QuickLookup, ContactLookup)
 from timepiece.crm.models import (Attribute, Business, Project,
-        ProjectRelationship, UserProfile, PaidTimeOffRequest, 
+        ProjectRelationship, UserProfile, PaidTimeOffRequest,
         PaidTimeOffLog, Milestone, ActivityGoal, BusinessNote,
         BusinessDepartment, Contact, ContactNote, Lead, LeadNote,
         DistinguishingValueChallenge, TemplateDifferentiatingValue,
@@ -29,16 +29,16 @@ class CreateEditBusinessForm(forms.ModelForm):
     class Meta:
         model = Business
         fields = ('name', 'short_name', 'active', 'description', 'primary_contact',
-            'phone', 'fax', 'website', 'industry', 
+            'phone', 'fax', 'website', 'industry',
             'classification', 'status', 'account_owner',
-            'billing_street',  'billing_city', 'billing_state',  
-            'billing_postalcode',  'billing_mailstop',  'billing_country', 
-            'shipping_street',  'shipping_city', 'shipping_state',  
+            'billing_street',  'billing_city', 'billing_state',
+            'billing_postalcode',  'billing_mailstop',  'billing_country',
+            'shipping_street',  'shipping_city', 'shipping_state',
             'shipping_postalcode',  'shipping_mailstop',  'shipping_country',
             'account_number', 'ownership', 'annual_revenue',
             'num_of_employees', 'ticker_symbol')
 
-    def __init__(self, *args, **kwargs):        
+    def __init__(self, *args, **kwargs):
         super(CreateEditBusinessForm, self).__init__(*args, **kwargs)
         self.fields['account_owner'].choices = self.EMPLOYEE_CHOICES
 
@@ -53,11 +53,11 @@ class CreateEditBusinessDepartmentForm(forms.ModelForm):
 
     class Meta:
         model = BusinessDepartment
-        fields = ('name', 'short_name', 'active', 'business', 'poc', 
+        fields = ('name', 'short_name', 'active', 'business', 'poc',
             'bd_billing_street', 'bd_billing_city', 'bd_billing_state',
             'bd_billing_postalcode', 'bd_billing_mailstop',
-            'bd_billing_country', 'bd_shipping_street', 'bd_shipping_city', 
-            'bd_shipping_state', 'bd_shipping_postalcode', 
+            'bd_billing_country', 'bd_shipping_street', 'bd_shipping_city',
+            'bd_shipping_state', 'bd_shipping_postalcode',
             'bd_shipping_mailstop', 'bd_shipping_country')
 
     def __init__(self, *args, **kwargs):
@@ -88,8 +88,8 @@ class CreateEditProjectForm(forms.ModelForm):
 
     class Meta:
         model = Project
-        fields = ('name', 'business', 'business_department', 'finder', 
-                'point_person', 'binder', 'type', 
+        fields = ('name', 'business', 'business_department', 'finder',
+                'point_person', 'binder', 'type',
                 'status', 'activity_group', 'description')
 
     def __init__(self, *args, **kwargs):
@@ -101,10 +101,10 @@ class CreateEditProjectForm(forms.ModelForm):
 
     def clean(self):
             cleaned_data = super(CreateEditProjectForm, self).clean()
-            
+
             biz = cleaned_data.get('business', None)
             biz_dept = cleaned_data.get('business_department', None)
-            
+
             if biz_dept and biz_dept.business != biz:
                 self._errors['business_department'] = self.error_class(
                     ['Selected Company Department does not belong to selected Company.'])
@@ -239,10 +239,10 @@ class EditLimitedUserProfileForm(forms.ModelForm):
 
     def clean(self):
         cleaned_data = super(EditLimitedUserProfileForm, self).clean()
-        
+
         bday = cleaned_data.get('birthday_celebration', False)
         bday_month = cleaned_data.get('birthday_month', None)
-        
+
         if bday and bday_month is None:
             self._errors['birthday_month'] = self.error_class(
                 ['You must select a birthday month if you select the Birthday Celebration checkbox.'])
@@ -320,7 +320,7 @@ class ApproveDenyPTORequestForm(forms.ModelForm):
         fields = ('approver_comment', )
 
 class CreateEditPTORequestForm(forms.ModelForm):
-    
+
     class Meta:
         model = PaidTimeOffRequest
         fields = ('pto', 'pto_start_date', 'pto_end_date', 'amount', 'comment')
@@ -341,7 +341,7 @@ class CreateEditPaidTimeOffLog(forms.ModelForm):
         self.fields['user_profile'].choices = up_choices
 
 class CreateEditMilestoneForm(forms.ModelForm):
-    
+
     class Meta:
         model = Milestone
         fields = ('name', 'due_date', 'description')
@@ -371,21 +371,25 @@ class CreateEditContactForm(forms.ModelForm):
 
     class Meta:
         model = Contact
-        fields = ('lead_source', 'first_name', 'last_name',
-            'salutation', 'first_name', 'last_name', 'title', 
+        fields = ('lead_source', 'user','first_name', 'last_name',
+            'salutation', 'first_name', 'last_name', 'title',
             'business', 'business_department', 'assistant',
             'assistant_name', 'assistant_phone', 'assistant_email',
-            'email', 'office_phone', 'mobile_phone', 'home_phone', 
+            'email', 'office_phone', 'mobile_phone', 'home_phone',
             'other_phone', 'fax', 'mailing_street', 'mailing_city',
             'mailing_state', 'mailing_postalcode', 'mailing_mailstop',
-            'mailing_country', 'other_street', 'other_city', 
+            'mailing_country', 'other_street', 'other_city',
             'other_state', 'other_postalcode', 'other_mailstop',
-            'other_country', 'has_opted_out_of_email', 
+            'other_country', 'has_opted_out_of_email',
             'has_opted_out_of_fax', 'do_not_call')
 
-    def __init__(self, *args, **kwargs):        
+    def __init__(self, *args, **kwargs):
         super(CreateEditContactForm, self).__init__(*args, **kwargs)
         self.fields['lead_source'].choices = self.EMPLOYEE_CHOICES
+
+        # Check if Contact is User and edit underlying info if so
+
+
 
 class AddContactNoteForm(forms.ModelForm):
 
@@ -411,7 +415,7 @@ class CreateEditLeadForm(forms.ModelForm):
             'primary_contact', 'business_placeholder',
             'created_by', 'last_editor')
 
-    def __init__(self, *args, **kwargs):        
+    def __init__(self, *args, **kwargs):
         super(CreateEditLeadForm, self).__init__(*args, **kwargs)
         self.fields['aac_poc'].choices = self.EMPLOYEE_CHOICES
         self.fields['lead_source'].choices = self.EMPLOYEE_CHOICES
@@ -448,10 +452,10 @@ class AddDistinguishingValueChallenegeForm(forms.ModelForm):
 
     class Meta:
         model = DistinguishingValueChallenge
-        fields = ('probing_question', 'order', 'short_name', 'description', 
-            'longevity', 'start_date', 'steps', 'results', 'due', 
-            'due_date', 'cost', 'confirm_resources', 'resources_notes', 
-            'benefits_begin', 'date_benefits_begin', 'confirm', 
+        fields = ('probing_question', 'order', 'short_name', 'description',
+            'longevity', 'start_date', 'steps', 'results', 'due',
+            'due_date', 'cost', 'confirm_resources', 'resources_notes',
+            'benefits_begin', 'date_benefits_begin', 'confirm',
             'confirm_notes', 'commitment', 'commitment_notes', 'closed')
 
 
@@ -462,8 +466,8 @@ class AddTemplateDifferentiatingValuesForm(forms.Form):
 
     def __init__(self, *args, **kwargs):
         super(AddTemplateDifferentiatingValuesForm, self).__init__(*args, **kwargs)
-        TEMPLATE_DV_CHOICES = [(tdv.id, '%s: %s' % (tdv.short_name, 
-            tdv.probing_question)) for tdv in 
+        TEMPLATE_DV_CHOICES = [(tdv.id, '%s: %s' % (tdv.short_name,
+            tdv.probing_question)) for tdv in
             TemplateDifferentiatingValue.objects.all()]
         self.fields['template_dvs'].choices = TEMPLATE_DV_CHOICES
 

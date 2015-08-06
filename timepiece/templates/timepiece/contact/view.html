@@ -50,7 +50,7 @@
                 {% else %}
                 <tr><th>Email</th><td><a href="mailto:{{ object.email }}">{{ object.email }}</a></td></tr>
                 {% endif %}
-                
+
                 {% if object.do_not_call %}
                 <tr class="error"><th colspan=2>This contact is on the Do Not Call list.</th></tr>
                 <tr class="error"><th>Office</th><td>{% format_phone_number object.office_phone %}</td></tr>
@@ -63,13 +63,13 @@
                 <tr><th>Home</th><td>{% format_phone_number object.home_phone %}</td></tr>
                 <tr><th>Other</th><td>{% format_phone_number object.other_phone %}</td></tr>
                 {% endif %}
-                
+
                 {% if object.has_opted_out_of_fax %}
                 <tr class="error"><th colspan=2>This contact has opted out of fax.</th></tr>
                 <tr class="error"><th>Fax</th><td>{% format_phone_number object.fax %}</td></tr>
                 {% else %}
                 <tr><th>Fax</th><td>{% format_phone_number object.fax %}</td></tr>
-                {% endif %}                
+                {% endif %}
             </table>
 
             {% if object.assistant or object.assistant_name or object.assistant_phone or object.assistant_email %}
@@ -120,6 +120,12 @@
             <table class="table table-bordered">
                 <tr><th>Lead Source</th>
                     <td><a href="{% url 'view_user' object.lead_source.id%}">{{ object.lead_source }}</a></td>
+                </tr>
+                <tr>
+                    {% if object.user %}
+                    <th>Internal User</th>
+                    <td><a href="{% url 'view_user' object.user.id%}">{{ object.lead_source }}</a></td>
+                    {% endif %}
                 </tr>
             </table>
 
