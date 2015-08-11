@@ -796,7 +796,7 @@ class Contact(models.Model):
                    ('mrs', 'Mrs.'),
                    ('dr',  'Dr.'),
                    ('ms',  'Ms.'),)
-    user = models.OneToOneField(User, null=True, blank=True, related_name='contact')
+    user = models.OneToOneField(User, null=True, blank=True, related_name='contact', on_delete=models.SET_NULL)
     salutation = models.CharField(max_length=8, choices=SALUTATIONS, blank=True)
     first_name = models.CharField(max_length=255, blank=True)
     last_name = models.CharField(max_length=255, blank=True)
@@ -1292,6 +1292,11 @@ class Lead(models.Model):
     @property
     def get_opportunities(self):
         return self.opportunity_set.all().order_by('title')
+
+    @property
+    def get_projects(self):
+       pl = [proj for opps in self.get_opportunities for proj in opps.project.all()]
+       return set(pl)
 
     @property
     def open_general_tasks(self):
