@@ -103,7 +103,7 @@ class UserProfile(models.Model):
     def exceeds_utilization(self):
         start_week = datetime.date.today()
         activity_goals = ActivityGoal.objects.filter(
-            employee=self.user, end_date__gte=start_week, 
+            employee=self.user, end_date__gte=start_week,
             project__status=get_setting('TIMEPIECE_DEFAULT_PROJECT_STATUS'))
 
         # determine holidays and add time (whether employee is paid or not)
@@ -116,9 +116,9 @@ class UserProfile(models.Model):
         for activity_goal in activity_goals:
             start_date = start_week if activity_goal.date < start_week \
                 else activity_goal.date
-            
+
             end_date = activity_goal.end_date
-            num_workdays = max(workdays.networkdays(start_date, end_date, 
+            num_workdays = max(workdays.networkdays(start_date, end_date,
                 holidays), 1)
             ag_hours_per_workday = activity_goal.get_remaining_hours / Decimal(num_workdays)
 
@@ -131,7 +131,7 @@ class UserProfile(models.Model):
                         billable_coverage[str(date)] += float(ag_hours_per_workday)
                         if billable_coverage[str(date)] > self.utilization_per_week:
                             return True
-        
+
         # if we have not exited with a True already, then it is False
         return False
 
@@ -448,19 +448,21 @@ class Business(models.Model):
     account_owner = models.ForeignKey(User, blank=True, null=True, related_name='biz_account_holder')
 
     billing_street = models.CharField(max_length=255, blank=True)
+    billing_street_2=models.CharField(max_length=255, blank = True)
     billing_city = models.CharField(max_length=255, blank=True)
     billing_state = models.CharField(max_length=2, blank=True, choices=STATES)
     billing_postalcode = models.CharField(max_length=32, blank=True)
-    billing_mailstop = models.CharField(max_length=16, blank=True)
+    billing_mailstop = models.CharField(max_length=16, blank=True, verbose_name='Billing Zip+4')
     billing_country = models.CharField(max_length=128, blank=True)
     billing_lat = models.FloatField(blank=True, null=True, verbose_name='Billing Latitude', help_text='This is automatically set using the Google Maps Geocode API on save.')
     billing_lon = models.FloatField(blank=True, null=True, verbose_name='Billing Longitude', help_text='This is automatically set using the Google Maps Geocode API on save.')
 
     shipping_street = models.CharField(max_length=255, blank=True)
+    shipping_street_2= models.CharField(max_length=255, blank=True)
     shipping_city = models.CharField(max_length=255, blank=True)
     shipping_state = models.CharField(max_length=2, blank=True, choices=STATES)
     shipping_postalcode = models.CharField(max_length=32, blank=True)
-    shipping_mailstop = models.CharField(max_length=16, blank=True)
+    shipping_mailstop = models.CharField(max_length=16, blank=True, verbose_name='Shipping Zip+4')
     shipping_country = models.CharField(max_length=128, blank=True)
     shipping_lat = models.FloatField(blank=True, null=True, verbose_name='Shipping Latitude', help_text='This is automatically set using the Google Maps Geocode API on save.')
     shipping_lon = models.FloatField(blank=True, null=True, verbose_name='Shipping Longitude', help_text='This is automatically set using the Google Maps Geocode API on save.')
@@ -794,7 +796,7 @@ class Contact(models.Model):
                    ('mrs', 'Mrs.'),
                    ('dr',  'Dr.'),
                    ('ms',  'Ms.'),)
-    user = models.OneToOneField(User, null=True, blank=True, related_name='contact')
+    user = models.OneToOneField(User, null=True, blank=True, related_name='contact', on_delete=models.SET_NULL)
     salutation = models.CharField(max_length=8, choices=SALUTATIONS, blank=True)
     first_name = models.CharField(max_length=255, blank=True)
     last_name = models.CharField(max_length=255, blank=True)
@@ -1311,6 +1313,11 @@ class Lead(models.Model):
     @property
     def get_opportunities(self):
         return self.opportunity_set.all().order_by('title')
+
+    @property
+    def get_projects(self):
+       pl = [proj for opps in self.get_opportunities for proj in opps.project.all()]
+       return set(pl)
 
     @property
     def open_general_tasks(self):
