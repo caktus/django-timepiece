@@ -954,18 +954,41 @@ class ListProjects(SearchListView, CSVViewMixin):
         if self.export_project_list:
             # this is a special csv export, different than stock Timepiece,
             # requested by AAC Engineering for their detailed reporting reqs
-            headers = ['Project Code', 'Project Name', 'Type', 'Business', 'Business Department',
-                       'Status', 'Billable', 'Finder', 'Minder', 'Binder',
-                       'Description', 'Tags', 'Contracts -->']
+            headers = ['Project Code', 'Project Name', 'Type',
+                'Project Department', 'Business', 'Business Department',
+                'Client Primary', 'Status', 'Billable', 'Finder', 'Minder',
+                'Binder', 'Target Internal Completion', 'Required Completion',
+                'Target Open', 'Start', 'Turn-In', 'Description', 'Tags',
+                'Contracts -->']
             content.append(headers)
             for project in project_list:
+                # collect milestones
+                # when we upgrae Django, we can do a .filter().first() instead of this business
+                tic_ms = Milestone.objects.filter(project=project, name='Target Internal Completion')
+                tic_ms = tic_ms[0] if len(tic_ms) else None
+                required_ms = Milestone.objects.filter(project=project, name='Required Completion')
+                required_ms = required_ms[0] if len(required_ms) else None
+                target_open_ms = Milestone.objects.filter(project=project, name='Target Open')
+                target_open_ms = target_open_ms[0] if len(target_open_ms) else None
+                start_ms = Milestone.objects.filter(project=project, name='Start')
+                start_ms = start_ms[0] if len(start_ms) else None
+                turn_in_ms = Milestone.objects.filter(project=project, name='Turn-In')
+                turn_in_ms = turn_in_ms[0] if len(turn_in_ms) else None
+
                 row = [project.code, project.name, str(project.type),
-                       '%s:%s'%(project.business.short_name, project.business.name),
-                       project.business_department.name if project.business_department else '',
-                       project.status, project.billable, str(project.finder),
-                       str(project.point_person), str(project.binder),
-                       project.description, ', '.join(
-                        [t.name.strip() for t in project.tags.all()])]
+                    project.get_project_department_display(), 
+                    '%s:%s'%(project.business.short_name, project.business.name),
+                    project.business_department.name if project.business_department else '',
+                    '%s - %s - %s' % (project.client_primary_poc.name, project.client_primary_poc.email, project.client_primary_poc.office_phone) if project.client_primary_poc else '',
+                    project.status, project.billable, str(project.finder),
+                    str(project.point_person), str(project.binder),
+                    tic_ms.due_date if tic_ms else '',
+                    required_ms.due_date if required_ms else '',
+                    target_open_ms.due_date if target_open_ms else '',
+                    start_ms.due_date if start_ms else '',
+                    turn_in_ms.due_date if turn_in_ms else '',
+                    project.description, ', '.join([t.name.strip() for t in project.tags.all()])]
+                
                 for contract in project.contracts.all():
                     row.append(str(contract))
                 content.append(row)

@@ -83,13 +83,13 @@ class AddBusinessNoteForm(forms.ModelForm):
 
 class CreateProjectForm(forms.ModelForm):
     target_internal_completion_date = forms.DateField()
-    target_internal_completion_description = forms.CharField(widget=forms.Textarea)
+    target_internal_completion_description = forms.CharField(widget=forms.Textarea, required=False)
     required_completion_date = forms.DateField()
-    required_completion_description = forms.CharField(widget=forms.Textarea)
+    required_completion_description = forms.CharField(widget=forms.Textarea, required=False)
     target_open_date = forms.DateField()
-    target_open_description = forms.CharField(widget=forms.Textarea)
+    target_open_description = forms.CharField(widget=forms.Textarea, required=False)
     start_date = forms.DateField()
-    start_description = forms.CharField(widget=forms.Textarea)
+    start_description = forms.CharField(widget=forms.Textarea, required=False)
     turn_in_date = forms.DateField(required=False)
     turn_in_description = forms.CharField(required=False, widget=forms.Textarea)
 
@@ -145,7 +145,7 @@ class CreateProjectForm(forms.ModelForm):
             project=project,
             name='Target Internal Completion',
             due_date=self.cleaned_data['target_internal_completion_date'],
-            description=self.cleaned_data['target_internal_completion_description']
+            description=self.cleaned_data.get('target_internal_completion_description', '')
         )
         tic_ms.save()
 
@@ -154,7 +154,7 @@ class CreateProjectForm(forms.ModelForm):
             project=project,
             name='Required Completion',
             due_date=self.cleaned_data['required_completion_date'],
-            description=self.cleaned_data['required_completion_description']
+            description=self.cleaned_data.get('required_completion_description', '')
         )
         required_ms.save()
 
@@ -163,7 +163,7 @@ class CreateProjectForm(forms.ModelForm):
             project=project,
             name='Target Open',
             due_date=self.cleaned_data['target_open_date'],
-            description=self.cleaned_data['target_open_description']
+            description=self.cleaned_data.get('target_open_description', '')
         )
         target_open_ms.save()
 
@@ -172,7 +172,7 @@ class CreateProjectForm(forms.ModelForm):
             project=project,
             name='Start',
             due_date=self.cleaned_data['start_date'],
-            description=self.cleaned_data['start_description']
+            description=self.cleaned_data.get('start_description', '')
         )
         start_ms.save()
 
