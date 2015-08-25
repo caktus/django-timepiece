@@ -16,6 +16,18 @@
 
 {% block title %}{% if not object %}Create Project{% else %}Edit {{ object }}{% endif %}{% endblock title %}
 
+{% block extrajs %}
+    <script charset="utf-8" src="{{ STATIC_URL }}timepiece/js/filter_by_business.js"></script>
+    <script>
+        $('#id_business').change( 
+            function () {
+                set_business_department_list_options($(this), $('#id_business_department'));
+                set_business_contact_list_options($(this), $('#id_client_primary_poc'));
+            }
+        );
+    </script>
+{% endblock extrajs %}
+
 {% block content %}
     <div class="row-fluid">
         <div class="span12">

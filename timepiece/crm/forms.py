@@ -2,6 +2,7 @@ from django import forms
 from django.forms import widgets
 from django.contrib.auth.forms import UserCreationForm, UserChangeForm
 from django.contrib.auth.models import User, Group
+from django.db.models import Q
 
 from selectable import forms as selectable
 
@@ -11,7 +12,7 @@ from timepiece.utils import get_setting
 from timepiece.crm.lookups import (BusinessLookup, ProjectLookup, UserLookup,
         QuickLookup, ContactLookup)
 from timepiece.crm.models import (Attribute, Business, Project,
-        ProjectRelationship, UserProfile, PaidTimeOffRequest, 
+        ProjectRelationship, UserProfile, PaidTimeOffRequest,
         PaidTimeOffLog, Milestone, ActivityGoal, BusinessNote,
         BusinessDepartment, Contact, ContactNote, Lead, LeadNote,
         DistinguishingValueChallenge, TemplateDifferentiatingValue,
@@ -29,16 +30,16 @@ class CreateEditBusinessForm(forms.ModelForm):
     class Meta:
         model = Business
         fields = ('name', 'short_name', 'active', 'description', 'primary_contact',
-            'phone', 'fax', 'website', 'industry', 
+            'phone', 'fax', 'website', 'industry',
             'classification', 'status', 'account_owner',
-            'billing_street',  'billing_city', 'billing_state',  
-            'billing_postalcode',  'billing_mailstop',  'billing_country', 
-            'shipping_street',  'shipping_city', 'shipping_state',  
+            'billing_street','billing_street_2','billing_city', 'billing_state',
+            'billing_postalcode',  'billing_mailstop',  'billing_country',
+            'shipping_street','shipping_street_2','shipping_city', 'shipping_state',
             'shipping_postalcode',  'shipping_mailstop',  'shipping_country',
             'account_number', 'ownership', 'annual_revenue',
             'num_of_employees', 'ticker_symbol')
 
-    def __init__(self, *args, **kwargs):        
+    def __init__(self, *args, **kwargs):
         super(CreateEditBusinessForm, self).__init__(*args, **kwargs)
         self.fields['account_owner'].choices = self.EMPLOYEE_CHOICES
 
@@ -53,11 +54,11 @@ class CreateEditBusinessDepartmentForm(forms.ModelForm):
 
     class Meta:
         model = BusinessDepartment
-        fields = ('name', 'short_name', 'active', 'business', 'poc', 
+        fields = ('name', 'short_name', 'active', 'business', 'poc',
             'bd_billing_street', 'bd_billing_city', 'bd_billing_state',
             'bd_billing_postalcode', 'bd_billing_mailstop',
-            'bd_billing_country', 'bd_shipping_street', 'bd_shipping_city', 
-            'bd_shipping_state', 'bd_shipping_postalcode', 
+            'bd_billing_country', 'bd_shipping_street', 'bd_shipping_city',
+            'bd_shipping_state', 'bd_shipping_postalcode',
             'bd_shipping_mailstop', 'bd_shipping_country')
 
     def __init__(self, *args, **kwargs):
@@ -79,28 +80,133 @@ class AddBusinessNoteForm(forms.ModelForm):
         self.fields['author'].widget = widgets.HiddenInput()
         self.fields['business'].widget = widgets.HiddenInput()
 
-class CreateEditProjectForm(forms.ModelForm):
-    # business = selectable.AutoCompleteSelectField(BusinessLookup)
-    # business.widget.attrs['placeholder'] = 'Search'
-    EMPLOYEE_CHOICES = [(u.pk, '%s, %s'%(u.last_name, u.first_name)) \
-        for u in Group.objects.get(id=1).user_set.filter(
-            is_active=True).order_by('last_name')]
+
+class CreateProjectForm(forms.ModelForm):
+    target_internal_completion_date = forms.DateField()
+    target_internal_completion_description = forms.CharField(widget=forms.Textarea, required=False)
+    required_completion_date = forms.DateField()
+    required_completion_description = forms.CharField(widget=forms.Textarea, required=False)
+    target_open_date = forms.DateField()
+    target_open_description = forms.CharField(widget=forms.Textarea, required=False)
+    start_date = forms.DateField()
+    start_description = forms.CharField(widget=forms.Textarea, required=False)
+    turn_in_date = forms.DateField(required=False)
+    turn_in_description = forms.CharField(required=False, widget=forms.Textarea)
 
     class Meta:
         model = Project
-        fields = ('name', 'business', 'business_department', 'finder', 
-                'point_person', 'binder', 'type', 
-                'status', 'activity_group', 'description')
+        fields = ('name', 'business', 'business_department',
+            'client_primary_poc', 'finder', 'point_person', 'binder', 'type',
+            'status', 'project_department', 'activity_group', 'description')
 
     def __init__(self, *args, **kwargs):
-        super(CreateEditProjectForm, self).__init__(*args, **kwargs)
+        super(CreateProjectForm, self).__init__(*args, **kwargs)
         self.fields['point_person'].label = 'Minder'
-        self.EMPLOYEE_CHOICES.insert(0, ('', '-'))
+        EMPLOYEE_CHOICES = [(0, '-')] + [(u.pk, '%s, %s'%(
+            u.last_name, u.first_name)) for u in Group.objects.get(id=1
+            ).user_set.filter(is_active=True).order_by('last_name')]
         for f in ['point_person', 'finder', 'binder']:
-            self.fields[f].choices = self.EMPLOYEE_CHOICES
+            self.fields[f].choices = EMPLOYEE_CHOICES
+
+        # TODO: seems there must be a better way to do this
+        if kwargs.get('data', {}).get('business', None):
+            business = Business.objects.get(id=int(kwargs.get('data', {}).get('business', None)))
+            if business:
+                self.fields['business_department'].queryset = BusinessDepartment.objects.filter(business=business).order_by('name')
+                self.fields['client_primary_poc'].queryset = Contact.objects.filter(
+                    Q(user__isnull=False, user__profile__business=business) | 
+                    Q(user__isnull=True, business=business)).order_by('last_name',
+                    'first_name')
 
     def clean(self):
-            cleaned_data = super(CreateEditProjectForm, self).clean()
+            cleaned_data = super(CreateProjectForm, self).clean()
+            
+            biz = cleaned_data.get('business', None)
+            biz_dept = cleaned_data.get('business_department', None)
+            client_contact = cleaned_data.get('client_primary_poc', None)
+
+            if biz_dept and biz_dept.business != biz:
+                self._errors['business_department'] = self.error_class(
+                    ['Selected Company Department does not belong to selected Company.'])
+
+            if client_contact:
+                client_biz = client_contact.user.profile.business if client_contact.user else client_contact.business
+                if client_biz != biz:
+                    self._errors['client_primary_poc'] = self.error_class(
+                        ['You must select a Contact that belongs to the selected Company.'])
+
+            return cleaned_data
+
+    def save(self):
+        project = super(CreateProjectForm, self).save()
+
+        # Target Internal Completion Date Milestone
+        tic_ms = Milestone(
+            project=project,
+            name='Target Internal Completion',
+            due_date=self.cleaned_data['target_internal_completion_date'],
+            description=self.cleaned_data.get('target_internal_completion_description', '')
+        )
+        tic_ms.save()
+
+        # Required Completion Date Milestone
+        required_ms = Milestone(
+            project=project,
+            name='Required Completion',
+            due_date=self.cleaned_data['required_completion_date'],
+            description=self.cleaned_data.get('required_completion_description', '')
+        )
+        required_ms.save()
+
+        # Target Open Date Milestone
+        target_open_ms = Milestone(
+            project=project,
+            name='Target Open',
+            due_date=self.cleaned_data['target_open_date'],
+            description=self.cleaned_data.get('target_open_description', '')
+        )
+        target_open_ms.save()
+
+        # Start Date Milestone
+        start_ms = Milestone(
+            project=project,
+            name='Start',
+            due_date=self.cleaned_data['start_date'],
+            description=self.cleaned_data.get('start_description', '')
+        )
+        start_ms.save()
+
+        # Turn-in Milestone
+        if self.cleaned_data.get('turn_in_date', None):
+            turn_in_ms = Milestone(
+                project=project,
+                name='Turn-In',
+                due_date=self.cleaned_data['turn_in_date'],
+                description=self.cleaned_data.get('turn_in_description', '')
+            )
+            turn_in_ms.save()
+
+        return project
+
+class EditProjectForm(forms.ModelForm):
+
+    class Meta:
+        model = Project
+        fields = ('name', 'business', 'business_department',
+            'client_primary_poc', 'finder', 'point_person', 'binder', 'type',
+            'status', 'project_department', 'activity_group', 'description')
+
+    def __init__(self, *args, **kwargs):
+        super(EditProjectForm, self).__init__(*args, **kwargs)
+        self.fields['point_person'].label = 'Minder'
+        EMPLOYEE_CHOICES = [(0, '-')] + [(u.pk, '%s, %s'%(
+            u.last_name, u.first_name)) for u in Group.objects.get(id=1
+            ).user_set.filter(is_active=True).order_by('last_name')]
+        for f in ['point_person', 'finder', 'binder']:
+            self.fields[f].choices = EMPLOYEE_CHOICES
+
+    def clean(self):
+            cleaned_data = super(EditProjectForm, self).clean()
             
             biz = cleaned_data.get('business', None)
             biz_dept = cleaned_data.get('business_department', None)
@@ -110,6 +216,7 @@ class CreateEditProjectForm(forms.ModelForm):
                     ['Selected Company Department does not belong to selected Company.'])
 
             return cleaned_data
+
 
 class CreateUserForm(UserCreationForm):
     business = forms.ModelChoiceField(Business.objects.all())
@@ -239,10 +346,10 @@ class EditLimitedUserProfileForm(forms.ModelForm):
 
     def clean(self):
         cleaned_data = super(EditLimitedUserProfileForm, self).clean()
-        
+
         bday = cleaned_data.get('birthday_celebration', False)
         bday_month = cleaned_data.get('birthday_month', None)
-        
+
         if bday and bday_month is None:
             self._errors['birthday_month'] = self.error_class(
                 ['You must select a birthday month if you select the Birthday Celebration checkbox.'])
@@ -320,7 +427,7 @@ class ApproveDenyPTORequestForm(forms.ModelForm):
         fields = ('approver_comment', )
 
 class CreateEditPTORequestForm(forms.ModelForm):
-    
+
     class Meta:
         model = PaidTimeOffRequest
         fields = ('pto', 'pto_start_date', 'pto_end_date', 'amount', 'comment')
@@ -341,7 +448,7 @@ class CreateEditPaidTimeOffLog(forms.ModelForm):
         self.fields['user_profile'].choices = up_choices
 
 class CreateEditMilestoneForm(forms.ModelForm):
-    
+
     class Meta:
         model = Milestone
         fields = ('name', 'due_date', 'description')
@@ -372,18 +479,18 @@ class CreateEditContactForm(forms.ModelForm):
     class Meta:
         model = Contact
         fields = ('lead_source', 'first_name', 'last_name',
-            'salutation', 'first_name', 'last_name', 'title', 
+            'salutation', 'first_name', 'last_name', 'title',
             'business', 'business_department', 'assistant',
             'assistant_name', 'assistant_phone', 'assistant_email',
-            'email', 'office_phone', 'mobile_phone', 'home_phone', 
+            'email', 'office_phone', 'mobile_phone', 'home_phone',
             'other_phone', 'fax', 'mailing_street', 'mailing_city',
             'mailing_state', 'mailing_postalcode', 'mailing_mailstop',
-            'mailing_country', 'other_street', 'other_city', 
+            'mailing_country', 'other_street', 'other_city',
             'other_state', 'other_postalcode', 'other_mailstop',
-            'other_country', 'has_opted_out_of_email', 
+            'other_country', 'has_opted_out_of_email',
             'has_opted_out_of_fax', 'do_not_call')
 
-    def __init__(self, *args, **kwargs):        
+    def __init__(self, *args, **kwargs):
         super(CreateEditContactForm, self).__init__(*args, **kwargs)
         self.fields['lead_source'].choices = self.EMPLOYEE_CHOICES
 
@@ -411,7 +518,7 @@ class CreateEditLeadForm(forms.ModelForm):
             'primary_contact', 'business_placeholder',
             'created_by', 'last_editor')
 
-    def __init__(self, *args, **kwargs):        
+    def __init__(self, *args, **kwargs):
         super(CreateEditLeadForm, self).__init__(*args, **kwargs)
         self.fields['aac_poc'].choices = self.EMPLOYEE_CHOICES
         self.fields['lead_source'].choices = self.EMPLOYEE_CHOICES
@@ -448,10 +555,10 @@ class AddDistinguishingValueChallenegeForm(forms.ModelForm):
 
     class Meta:
         model = DistinguishingValueChallenge
-        fields = ('probing_question', 'order', 'short_name', 'description', 
-            'longevity', 'start_date', 'steps', 'results', 'due', 
-            'due_date', 'cost', 'confirm_resources', 'resources_notes', 
-            'benefits_begin', 'date_benefits_begin', 'confirm', 
+        fields = ('probing_question', 'order', 'short_name', 'description',
+            'longevity', 'start_date', 'steps', 'results', 'due',
+            'due_date', 'cost', 'confirm_resources', 'resources_notes',
+            'benefits_begin', 'date_benefits_begin', 'confirm',
             'confirm_notes', 'commitment', 'commitment_notes', 'closed')
 
 
@@ -462,8 +569,8 @@ class AddTemplateDifferentiatingValuesForm(forms.Form):
 
     def __init__(self, *args, **kwargs):
         super(AddTemplateDifferentiatingValuesForm, self).__init__(*args, **kwargs)
-        TEMPLATE_DV_CHOICES = [(tdv.id, '%s: %s' % (tdv.short_name, 
-            tdv.probing_question)) for tdv in 
+        TEMPLATE_DV_CHOICES = [(tdv.id, '%s: %s' % (tdv.short_name,
+            tdv.probing_question)) for tdv in
             TemplateDifferentiatingValue.objects.all()]
         self.fields['template_dvs'].choices = TEMPLATE_DV_CHOICES
 

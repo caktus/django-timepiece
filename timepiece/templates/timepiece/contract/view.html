@@ -431,9 +431,8 @@ var uploader = new qq.s3.FineUploader({
 </script>
 <script>
 $(document).ready( function () {
-    $(function(){
-        create_remove_tag_handler("{% url 'remove_contract_tag' object.id %}");
-        create_add_tag_handler("{% url 'contract_tags' object.id %}");
-    });
+    create_remove_tag_handler("{% url 'remove_contract_tag' object.id %}");
+    create_add_tag_handler("{% url 'contract_tags' object.id %}");
+});
 </script>
 {% endblock extrajs %}

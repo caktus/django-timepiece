@@ -27,7 +27,7 @@ from timepiece.utils.csv import CSVViewMixin
 from timepiece.utils.search import SearchListView
 from timepiece.utils.views import cbv_decorator
 
-from timepiece.crm.forms import (CreateEditBusinessForm, CreateEditProjectForm,
+from timepiece.crm.forms import (CreateEditBusinessForm, CreateProjectForm, EditProjectForm,
         EditUserSettingsForm, EditProjectRelationshipForm, SelectProjectForm,
         EditUserForm, CreateUserForm, SelectUserForm, ProjectSearchForm,
         QuickSearchForm, CreateEditPTORequestForm, CreateEditMilestoneForm,
@@ -549,7 +549,7 @@ class ListBusinesses(SearchListView, CSVViewMixin):
                        business.annual_revenue, business.num_of_employees,
                        business.ticker_symbol,
                        ', '.join([str(t) for t in business.tags.all()]),
-                       business.billing_street, business.billing_city,
+                       business.billing_street, business.billing_street_2, business.billing_city,
                        business.billing_state, business.billing_postalcode,
                        business.billing_mailstop, business.billing_country,
                        business.billing_lat, business.billing_lon,
@@ -639,6 +639,7 @@ def business_upload_attachment(request, business_id):
 @permission_required('workflow.view_business')
 def business_download_attachment(request, business_id, attachment_id):
     MONGO_DB_INSTANCE = project_settings.MONGO_CLIENT.business_attachments
+    MONGO_DB_INSTANCE.authenticate( project_settings.MONGO_User,  project_settings.MONGO_PW)
     GRID_FS_INSTANCE = gridfs.GridFS(MONGO_DB_INSTANCE)
     try:
         business_attachment = BusinessAttachment.objects.get(
@@ -670,6 +671,36 @@ class EditBusiness(UpdateView):
     form_class = CreateEditBusinessForm
     template_name = 'timepiece/business/create_edit.html'
     pk_url_kwarg = 'business_id'
+
+@login_required
+def get_business_departments(request, business_id):
+    data = []
+    try:
+        business = Business.objects.get(id=int(business_id))
+        for department in business.businessdepartment_set.all().order_by('name'):
+            data.append({'id': department.id,
+                         'name': department.name})
+    except:
+        pass
+    return HttpResponse(json.dumps(data),
+                        content_type='application/json')
+
+@login_required
+def get_business_contacts(request, business_id):
+    data = []
+    try:
+        business = Business.objects.get(id=int(business_id))
+        for contact in Contact.objects.filter(user__isnull=True, business=business):
+            data.append({'id': contact.id,
+                         'name': '%s, %s' % (contact.last_name, contact.first_name)})
+        for contact in Contact.objects.filter(user__profile__business=business):
+            data.append({'id': contact.id,
+                         'name': '%s, %s' % (contact.last_name, contact.first_name)})
+        sorted_data = sorted(data, key=lambda k: k['name'])
+    except:
+        pass
+    return HttpResponse(json.dumps(data),
+                        content_type='application/json')    
 
 @cbv_decorator(permission_required('crm.change_business'))
 class BusinessTags(View):
@@ -931,22 +962,47 @@ class ListProjects(SearchListView, CSVViewMixin):
                 max_contracts = max(max_contracts,len(project.contracts.all()))
                 max_milestones = max(max_milestones,len(project.milestones.all()))
 
-            headers = ['Project Code', 'Project Name', 'Type', 'Business', 'Business Department',
-                       'Status', 'Billable', 'Finder', 'Minder', 'Binder',
-                       'Description', 'Tags', 'Contracts --> '+str(max_contracts)]+['']*(max_contracts-1)+['Milestones --> '+str(max_milestones)]
+            headers = ['Project Code', 'Project Name', 'Type',
+                'Project Department', 'Business', 'Business Department',
+                'Client Primary', 'Status', 'Billable', 'Finder', 'Minder',
+                'Binder', 'Target Internal Completion', 'Required Completion',
+                'Target Open', 'Start', 'Turn-In', 'Description', 'Tags',
+                'Contracts --> '+str(max_contracts)]+['']*(max_contracts-1)+['Milestones --> '+str(max_milestones)]
             content.append(headers)
+
             for project in project_list:
+                # collect milestones
+                # when we upgrae Django, we can do a .filter().first() instead of this business
+                tic_ms = Milestone.objects.filter(project=project, name='Target Internal Completion')
+                tic_ms = tic_ms[0] if len(tic_ms) else None
+                required_ms = Milestone.objects.filter(project=project, name='Required Completion')
+                required_ms = required_ms[0] if len(required_ms) else None
+                target_open_ms = Milestone.objects.filter(project=project, name='Target Open')
+                target_open_ms = target_open_ms[0] if len(target_open_ms) else None
+                start_ms = Milestone.objects.filter(project=project, name='Start')
+                start_ms = start_ms[0] if len(start_ms) else None
+                turn_in_ms = Milestone.objects.filter(project=project, name='Turn-In')
+                turn_in_ms = turn_in_ms[0] if len(turn_in_ms) else None
+
                 row = [project.code, project.name, str(project.type),
-                       '%s:%s'%(project.business.short_name, project.business.name),
-                       project.business_department.name if project.business_department else '',
-                       project.status, project.billable, str(project.finder),
-                       str(project.point_person), str(project.binder),
-                       project.description, ', '.join(
-                        [t.name.strip() for t in project.tags.all()])]
+                    project.get_project_department_display(), 
+                    '%s:%s'%(project.business.short_name, project.business.name),
+                    project.business_department.name if project.business_department else '',
+                    '%s - %s - %s' % (project.client_primary_poc.name, project.client_primary_poc.email, project.client_primary_poc.office_phone) if project.client_primary_poc else '',
+                    project.status, project.billable, str(project.finder),
+                    str(project.point_person), str(project.binder),
+                    tic_ms.due_date if tic_ms else '',
+                    required_ms.due_date if required_ms else '',
+                    target_open_ms.due_date if target_open_ms else '',
+                    start_ms.due_date if start_ms else '',
+                    turn_in_ms.due_date if turn_in_ms else '',
+                    project.description, ', '.join([t.name.strip() for t in project.tags.all()])]
+                
                 project_contract_count=len(project.contracts.all())
+                
                 for contract in project.contracts.all():
                     row.append(str(contract))
-                for blank_space in range(max_contracts-project_contract_count):
+                for blank_space in range(max_contracts - project_contract_count):
                     row.append('')
                 for milestone in project.milestones.all():
                     row.append(str(milestone))
@@ -976,7 +1032,7 @@ class ViewProject(DetailView):
 @cbv_decorator(permission_required('crm.add_project'))
 class CreateProject(CreateView):
     model = Project
-    form_class = CreateEditProjectForm
+    form_class = CreateProjectForm
     template_name = 'timepiece/project/create_edit.html'
 
 
@@ -991,7 +1047,7 @@ class DeleteProject(DeleteView):
 @cbv_decorator(permission_required('crm.change_project'))
 class EditProject(UpdateView):
     model = Project
-    form_class = CreateEditProjectForm
+    form_class = EditProjectForm
     template_name = 'timepiece/project/create_edit.html'
     pk_url_kwarg = 'project_id'
 
@@ -2047,6 +2103,7 @@ class ListLeads(SearchListView, CSVViewMixin):
             headers = ['ID',
                        'Title',
                        'Status',
+                       'Project Count',
                        'AAC Primary',
                        'Primary Contact Salutaton',
                        'Primary Contact First Name',
@@ -2090,6 +2147,7 @@ class ListLeads(SearchListView, CSVViewMixin):
                     row = [lead.id,
                            lead.title,
                            lead.get_status_display(),
+                           str(len(lead.get_projects)),
                            '%s %s' % (lead.aac_poc.first_name, lead.aac_poc.last_name),
                            lead.primary_contact.salutation,
                            lead.primary_contact.first_name,
@@ -2131,6 +2189,7 @@ class ListLeads(SearchListView, CSVViewMixin):
                     row = [lead.id,
                            lead.title,
                            lead.get_status_display(),
+                           str(len(lead.get_projects)),
                            '%s %s' % (lead.aac_poc.first_name, lead.aac_poc.last_name),
                            'n/a',
                            'n/a',
@@ -2331,6 +2390,7 @@ def lead_upload_attachment(request, lead_id):
 @permission_required('crm.view_lead')
 def lead_download_attachment(request, lead_id, attachment_id):
     MONGO_DB_INSTANCE = project_settings.MONGO_CLIENT.lead_attachments
+    MONGO_DB_INSTANCE.authenticate(project_settings.MONGO_USER, project_settings.MONGO_PW)
     GRID_FS_INSTANCE = gridfs.GridFS(MONGO_DB_INSTANCE)
     try:
         lead_attachment = LeadAttachment.objects.get(
