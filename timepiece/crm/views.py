@@ -32,8 +32,8 @@ from timepiece.crm.forms import (CreateEditBusinessForm, CreateEditProjectForm,
         EditUserForm, CreateUserForm, SelectUserForm, ProjectSearchForm,
         QuickSearchForm, CreateEditPTORequestForm, CreateEditMilestoneForm,
         CreateEditActivityGoalForm, ApproveDenyPTORequestForm,
-        CreateEditPaidTimeOffLog, AddBusinessNoteForm, 
-        CreateEditBusinessDepartmentForm, CreateEditContactForm, 
+        CreateEditPaidTimeOffLog, AddBusinessNoteForm,
+        CreateEditBusinessDepartmentForm, CreateEditContactForm,
         AddContactNoteForm, CreateEditLeadForm, AddLeadNoteForm,
         SelectContactForm, AddDistinguishingValueChallenegeForm,
         AddTemplateDifferentiatingValuesForm, CreateEditTemplateDVForm,
@@ -129,7 +129,7 @@ def view_user_timesheet(request, user_id, active_tab):
     if not (has_perm or user.pk == request.user.pk):
         return HttpResponseForbidden('Forbidden')
 
-    
+
     from_date, to_date = utils.get_bimonthly_dates(datetime.date.today())
     FormClass = StatusUserDateForm if has_perm else StatusDateForm
     form = FormClass(request.GET or {'from_date': from_date, 'to_date': (to_date - relativedelta(days=1))})
@@ -204,7 +204,7 @@ def view_user_timesheet(request, user_id, active_tab):
     if can_approve:
         show_approve = verified_count + approved_count == total_statuses \
                 and verified_count > 0 and total_statuses != 0
-    
+
     # # TODO: for some reason I have to loop over this in order to
     # # remedy an error... does not make any sense
     # for gt in totals:
@@ -247,14 +247,14 @@ def change_user_timesheet(request, user_id, action):
         from_date = request.GET.get('from_date', start.strftime('%Y-%m-%d'))
         from_date = utils.add_timezone(
             datetime.datetime.strptime(from_date, '%Y-%m-%d'))
-        to_date = request.GET.get('to_date', 
+        to_date = request.GET.get('to_date',
             (end - relativedelta(days=1)).strftime('%Y-%m-%d'))
         to_date = utils.add_timezone(
             datetime.datetime.strptime(to_date, '%Y-%m-%d')) + relativedelta(days=1)
         project_id = request.GET.get('project', None)
     except (ValueError, OverflowError, KeyError):
         raise Http404
-    
+
     entries = Entry.no_join.filter(user=user_id,
                                    end_time__gte=from_date,
                                    end_time__lt=to_date,
@@ -327,14 +327,14 @@ class ProjectTimesheet(CSVViewMixin, DetailView):
         else:
             kls = DetailView
         return kls.render_to_response(self, context)
-        
+
 
     def get_context_data(self, **kwargs):
         context = super(ProjectTimesheet, self).get_context_data(**kwargs)
         project = self.object
         #year_month_form = YearMonthForm(self.request.GET or None)
         filter_form = HourlyReportForm(self.request.GET or None)
-        
+
         if self.request.GET and filter_form.is_valid():
             from_date, to_date = filter_form.save()
             incl_billable = filter_form.cleaned_data['billable']
@@ -348,8 +348,8 @@ class ProjectTimesheet(CSVViewMixin, DetailView):
             incl_billable = True
             incl_non_billable = True
             incl_writedowns = True
-        
-        from_datetime = datetime.datetime.combine(from_date, 
+
+        from_datetime = datetime.datetime.combine(from_date,
             datetime.datetime.min.time())
         to_datetime = datetime.datetime.combine(to_date,
             datetime.datetime.min.time())
@@ -365,7 +365,7 @@ class ProjectTimesheet(CSVViewMixin, DetailView):
             pass
         else:
             entries_qs = entries_qs.filter(activity__billable=False).filter(activity__billable=True) # should return nothing
-        
+
         if not incl_writedowns:
             entries_qs = entries_qs.filter(writedown=False)
         # entries_qs = entries_qs.timespan(from_date, span='month').filter(
@@ -501,7 +501,7 @@ class ListBusinesses(SearchListView, CSVViewMixin):
             return kls.render_to_response(self, context)
         else:
             return super(ListBusinesses, self).get(request, *args, **kwargs)
-    
+
     # def filter_form_valid(self, form, queryset):
     #     queryset = super(ListBusinesses, self).filter_form_valid(form, queryset)
     #     status = form.cleaned_data['status']
@@ -541,7 +541,7 @@ class ListBusinesses(SearchListView, CSVViewMixin):
                         business.primary_contact.office_phone,
                         business.primary_contact.email)
                 row = [business.short_name, business.name, business.active,
-                       primary_contact, business.description, 
+                       primary_contact, business.description,
                        business.get_classification_display(),
                        business.get_status_display(), business.phone,
                        business.fax, business.website, business.account_number,
@@ -683,7 +683,7 @@ class BusinessTags(View):
         for t in tag.split(','):
             if len(t):
                 business.tags.add(t)
-        tags = [{'id': t.id, 
+        tags = [{'id': t.id,
                  'url': reverse('similar_items', args=(t.id,)),
                  'name':t.name} for t in business.tags.all()]
         return HttpResponse(json.dumps({'tags': tags}),
@@ -701,7 +701,7 @@ class RemoveBusinessTag(View):
             tag = request.POST.get('tag')
             if len(tag):
                 business.tags.remove(tag)
-        tags = [{'id': t.id, 
+        tags = [{'id': t.id,
                  'url': reverse('similar_items', args=(t.id,)),
                  'name':t.name} for t in business.tags.all()]
         return HttpResponse(json.dumps({'tags': tags}),
@@ -902,7 +902,7 @@ class ListProjects(SearchListView, CSVViewMixin):
             return kls.render_to_response(self, context)
         else:
             return super(ListProjects, self).get(request, *args, **kwargs)
-    
+
     def filter_form_valid(self, form, queryset):
         queryset = super(ListProjects, self).filter_form_valid(form, queryset)
         status = form.cleaned_data['status']
@@ -923,20 +923,33 @@ class ListProjects(SearchListView, CSVViewMixin):
         if self.export_project_list:
             # this is a special csv export, different than stock Timepiece,
             # requested by AAC Engineering for their detailed reporting reqs
+
+            # milestones added.  m miles stones and n contracts, so have to shift headers dynamically. maybe this should be a separate export
+            max_contracts = 1
+            max_milestones = 1
+            for project in project_list:
+                max_contracts = max(max_contracts,len(project.contracts.all()))
+                max_milestones = max(max_milestones,len(project.milestones.all()))
+
             headers = ['Project Code', 'Project Name', 'Type', 'Business', 'Business Department',
                        'Status', 'Billable', 'Finder', 'Minder', 'Binder',
-                       'Description', 'Tags', 'Contracts -->']
+                       'Description', 'Tags', 'Contracts --> '+str(max_contracts)]+['']*(max_contracts-1)+['Milestones --> '+str(max_milestones)]
             content.append(headers)
             for project in project_list:
                 row = [project.code, project.name, str(project.type),
                        '%s:%s'%(project.business.short_name, project.business.name),
                        project.business_department.name if project.business_department else '',
                        project.status, project.billable, str(project.finder),
-                       str(project.point_person), str(project.binder), 
+                       str(project.point_person), str(project.binder),
                        project.description, ', '.join(
                         [t.name.strip() for t in project.tags.all()])]
+                project_contract_count=len(project.contracts.all())
                 for contract in project.contracts.all():
                     row.append(str(contract))
+                for blank_space in range(max_contracts-project_contract_count):
+                    row.append('')
+                for milestone in project.milestones.all():
+                    row.append(str(milestone))
                 content.append(row)
         return content
 
@@ -1005,7 +1018,7 @@ class AddProjectGeneralTask(View):
         except:
             print sys.exc_info(), traceback.format_exc()
         finally:
-            return HttpResponseRedirect(request.GET.get('next', None) 
+            return HttpResponseRedirect(request.GET.get('next', None)
                 or reverse_lazy('view_project', args=(project.id,)))
 
 @cbv_decorator(permission_required('crm.add_projectrelationship'))
@@ -1021,7 +1034,7 @@ class RemoveProjectGeneralTask(View):
         except:
             print sys.exc_info(), traceback.format_exc()
         finally:
-            return HttpResponseRedirect(request.GET.get('next', None) 
+            return HttpResponseRedirect(request.GET.get('next', None)
                 or reverse_lazy('view_project', args=(project.id,)))
 
 @cbv_decorator(permission_required('crm.change_project'))
@@ -1036,7 +1049,7 @@ class ProjectTags(View):
         for t in tag.split(','):
             if len(t):
                 project.tags.add(t)
-        tags = [{'id': t.id, 
+        tags = [{'id': t.id,
                  'url': reverse('similar_items', args=(t.id,)),
                  'name':t.name} for t in project.tags.all()]
         return HttpResponse(json.dumps({'tags': tags}),
@@ -1055,7 +1068,7 @@ class RemoveProjectTag(View):
             tag = request.POST.get('tag')
             if len(tag):
                 project.tags.remove(tag)
-        tags = [{'id': t.id, 
+        tags = [{'id': t.id,
                  'url': reverse('similar_items', args=(t.id,)),
                  'name':t.name} for t in project.tags.all()]
         return HttpResponse(json.dumps({'tags': tags}),
@@ -1263,7 +1276,7 @@ class ApprovePTORequest(UpdateView):
                                             form.instance.pto_end_date,
                                             holidays)
         num_workdays = max(num_workdays, 1)
-        
+
         # add PTO log entries
         # if form.instance.pto:
         delta = form.instance.pto_end_date - form.instance.pto_start_date
@@ -1271,18 +1284,18 @@ class ApprovePTORequest(UpdateView):
         days_delta = delta.days + 1
         for i in range(days_delta):
             date = form.instance.pto_start_date + datetime.timedelta(days=i)
-            
+
             # if the date is weekend or holiday, skip it
             if (date.weekday() >= 5) or (date in holidays):
                 continue
 
             start_time = datetime.datetime.combine(date, datetime.time(8))
             end_time = start_time + datetime.timedelta(hours=hours)
-            
+
             # add pto log entry
-            pto_log = PaidTimeOffLog(user_profile=up, 
+            pto_log = PaidTimeOffLog(user_profile=up,
                                      date=date,
-                                     amount=-1*(float(form.instance.amount) / float(num_workdays)), 
+                                     amount=-1*(float(form.instance.amount) / float(num_workdays)),
                                      comment=form.instance.comment,
                                      pto_request=form.instance,
                                      pto=form.instance.pto)
@@ -1467,13 +1480,13 @@ class CreateActivityGoal(CreateView):
         if employee and activity and project and start_date==datetime.date.today():
             # find the initial date of charging
             try:
-                e = Entry.objects.filter(user__id=employee, 
+                e = Entry.objects.filter(user__id=employee,
                     activity__id=activity, project=project
                     ).order_by('-start_time')[0:1].get()
                 initial['date'] = e.start_time.date()
             except ObjectDoesNotExist:
                 pass
-        
+
         return initial
 
     def get_form(self, *args, **kwargs):
@@ -1487,24 +1500,24 @@ class CreateActivityGoal(CreateView):
         exclude = []
         for u in Group.objects.get(id=1).user_set.filter(
             is_active=True).order_by('last_name', 'first_name'):
-            
+
             employee_choices.append((u.pk, '%s, %s'%(u.last_name, u.first_name)))
             exclude.append(u.pk)
 
         employee_choices.append((None, '--- EXTERNAL USERS ---'))
         for u in User.objects.filter(is_active=True).exclude(id__in=exclude
             ).order_by('last_name', 'first_name'):
-            
+
             employee_choices.append((u.pk, '%s, %s'%(u.last_name, u.first_name)))
             # exclude.append(u.pk)
 
         employee_choices.append((None, '--- INACTIVE USERS ---'))
         for u in User.objects.all().exclude(id__in=exclude
             ).order_by('last_name', 'first_name'):
-            
+
             employee_choices.append((u.pk, '%s, %s'%(u.last_name, u.first_name)))
-        
-        form.fields['employee'].choices = employee_choices 
+
+        form.fields['employee'].choices = employee_choices
         return form
 
     def form_valid(self, form):
@@ -1540,25 +1553,25 @@ class EditActivityGoal(UpdateView):
         exclude = []
         for u in Group.objects.get(id=1).user_set.filter(
             is_active=True).order_by('last_name', 'first_name'):
-            
+
             employee_choices.append((u.pk, '%s, %s'%(u.last_name, u.first_name)))
             exclude.append(u.pk)
 
         employee_choices.append((None, '--- EXTERNAL USERS ---'))
         for u in User.objects.filter(is_active=True).exclude(id__in=exclude
             ).order_by('last_name', 'first_name'):
-            
+
             employee_choices.append((u.pk, '%s, %s'%(u.last_name, u.first_name)))
             exclude.append(u.pk)
 
         employee_choices.append((None, '--- INACTIVE USERS ---'))
         for u in User.objects.all().exclude(id__in=exclude
             ).order_by('last_name', 'first_name'):
-            
+
             employee_choices.append((u.pk, '%s, %s'%(u.last_name, u.first_name)))
-        
-        form.fields['employee'].choices = employee_choices 
-        
+
+        form.fields['employee'].choices = employee_choices
+
         return form
 
     def get_success_url(self):
@@ -1693,7 +1706,7 @@ def burnup_chart_data(request, project_id):
             #     elif ag.activity.id == TECH_WRITING_ACTIVITY_ID:
             #         for i in range((ms.due_date - start_date).days + 1):
             #             activity_goals[2].append(gh)
-        
+
         # get ActivityGoals and group by Activity
         ag_temp = [[], [], [], []]
         for ag in ActivityGoal.objects.filter(project=project).order_by('employee__last_name', 'employee__first_name', 'goal_hours'):
@@ -1726,7 +1739,7 @@ def burnup_chart_data(request, project_id):
             # print numpy.cumsum(day_totals)
 
             activity_goals[i].extend(list(numpy.cumsum(day_totals)))
-        
+
         # for i in range(len(ag_temp)):
         #     if len(ag_temp[i]) == 0:
         #         continue
@@ -1740,7 +1753,7 @@ def burnup_chart_data(request, project_id):
         #                 vals.append(gh)
         #             last_date = ag.end_date
         #         ag_hours.append(vals)
-            
+
         #     max_len = len(ag_hours[0])
         #     for ag_hours_employee in ag_hours:
         #         max_len = max(max_len, len(ag_hours_employee))
@@ -1787,7 +1800,7 @@ class ListContacts(SearchListView, CSVViewMixin):
     model = Contact
     redirect_if_one_result = True
     search_fields = ['first_name__icontains', 'last_name__icontains',
-                     'email__icontains', 'business__name__icontains', 
+                     'email__icontains', 'business__name__icontains',
                      'business_department__name__icontains']
     template_name = 'timepiece/contact/list.html'
 
@@ -1811,7 +1824,7 @@ class ListContacts(SearchListView, CSVViewMixin):
             return kls.render_to_response(self, context)
         else:
             return super(ListContacts, self).get(request, *args, **kwargs)
-    
+
     # def filter_form_valid(self, form, queryset):
     #     queryset = super(ListContacts, self).filter_form_valid(form, queryset)
     #     status = form.cleaned_data['status']
@@ -1832,20 +1845,20 @@ class ListContacts(SearchListView, CSVViewMixin):
             # this is a special csv export, different than stock Timepiece,
             # requested by AAC Engineering for their detailed reporting reqs
             headers = ['Salutaton', 'First Name', 'Last Name', 'Title', 'Email',
-                       'Office Phone', 'Mobile Phone', 'Home Phone', 
+                       'Office Phone', 'Mobile Phone', 'Home Phone',
                        'Other Phone', 'Fax', 'Business Name',
                        'Business Department Name', 'Assistant Name',
                        'Assistant Phone', 'Assistant Email', 'Mailing Street',
                        'Mailing City', 'Mailing State', 'Mailing Postal Code',
                        'Mailing Mailstop', 'Mailing Country', 'Mailing Latitude',
-                       'Mailing Longitude', 'Other Street', 'Other City', 
-                       'Other State', 'Other Postal Code', 'Other Mailstop', 
-                       'Other Country', 'Other Latitude', 'Other Longitude', 
+                       'Mailing Longitude', 'Other Street', 'Other City',
+                       'Other State', 'Other Postal Code', 'Other Mailstop',
+                       'Other Country', 'Other Latitude', 'Other Longitude',
                        'Opted Out of Email', 'Opted Out of Fax', 'DO NOT CALL',
                        'Birthday', 'Lead Source Email', 'Tags -->']
             content.append(headers)
             for contact in contact_list:
-                row = [contact.salutation, contact.first_name, contact.last_name, 
+                row = [contact.salutation, contact.first_name, contact.last_name,
                        contact.title, contact.email, contact.office_phone,
                        contact.mobile_phone, contact.home_phone,
                        contact.other_phone, contact.fax, contact.business,
@@ -1902,7 +1915,7 @@ class ContactTags(View):
         for t in tag.split(','):
             if len(t):
                 contact.tags.add(t)
-        tags = [{'id': t.id, 
+        tags = [{'id': t.id,
                  'url': reverse('similar_items', args=(t.id,)),
                  'name':t.name} for t in contact.tags.all()]
         return HttpResponse(json.dumps({'tags': tags}),
@@ -1921,7 +1934,7 @@ class RemoveContactTag(View):
             tag = request.POST.get('tag')
             if len(tag):
                 contact.tags.remove(tag)
-        tags = [{'id': t.id, 
+        tags = [{'id': t.id,
                  'url': reverse('similar_items', args=(t.id,)),
                  'name':t.name} for t in contact.tags.all()]
         return HttpResponse(json.dumps({'tags': tags}),
@@ -1957,7 +1970,7 @@ class EditContact(UpdateView):
 class ListLeads(SearchListView, CSVViewMixin):
     model = Lead
     redirect_if_one_result = True
-    search_fields = ['title__icontains', 
+    search_fields = ['title__icontains',
                      'primary_contact__first_name__icontains',
                      'primary_contact__last_name__icontains',
                      'primary_contact__email__icontains',
@@ -2007,7 +2020,7 @@ class ListLeads(SearchListView, CSVViewMixin):
 
         else:
             return super(ListLeads, self).get(request, *args, **kwargs)
-    
+
     # def filter_form_valid(self, form, queryset):
     #     queryset = super(ListContacts, self).filter_form_valid(form, queryset)
     #     status = form.cleaned_data['status']
@@ -2035,41 +2048,41 @@ class ListLeads(SearchListView, CSVViewMixin):
                        'Title',
                        'Status',
                        'AAC Primary',
-                       'Primary Contact Salutaton', 
-                       'Primary Contact First Name', 
-                       'Primary Contact Last Name', 
-                       'Primary Contact Title', 
+                       'Primary Contact Salutaton',
+                       'Primary Contact First Name',
+                       'Primary Contact Last Name',
+                       'Primary Contact Title',
                        'Primary Contact Email',
-                       'Primary Contact Office Phone', 
-                       'Primary Contact Mobile Phone', 
-                       'Primary Contact Home Phone', 
-                       'Primary Contact Other Phone', 
-                       'Primary Contact Fax', 
+                       'Primary Contact Office Phone',
+                       'Primary Contact Mobile Phone',
+                       'Primary Contact Home Phone',
+                       'Primary Contact Other Phone',
+                       'Primary Contact Fax',
                        'Primary Contact Business Name',
-                       'Primary Contact Business Department Name', 
+                       'Primary Contact Business Department Name',
                        'Primary Contact Assistant Name',
-                       'Primary Contact Assistant Phone', 
-                       'Primary Contact Assistant Email', 
+                       'Primary Contact Assistant Phone',
+                       'Primary Contact Assistant Email',
                        'Primary Contact Mailing Street',
-                       'Primary Contact Mailing City', 
-                       'Primary Contact Mailing State', 
+                       'Primary Contact Mailing City',
+                       'Primary Contact Mailing State',
                        'Primary Contact Mailing Postal Code',
-                       'Primary Contact Mailing Mailstop', 
-                       'Primary Contact Mailing Country', 
+                       'Primary Contact Mailing Mailstop',
+                       'Primary Contact Mailing Country',
                        'Primary Contact Mailing Latitude',
-                       'Primary Contact Mailing Longitude', 
-                       'Primary Contact Other Street', 
-                       'Primary Contact Other City', 
-                       'Primary Contact Other State', 
-                       'Primary Contact Other Postal Code', 
-                       'Primary Contact Other Mailstop', 
-                       'Primary Contact Other Country', 
-                       'Primary Contact Other Latitude', 
-                       'Primary Contact Other Longitude', 
-                       'Primary Contact Opted Out of Email', 
-                       'Primary Contact Opted Out of Fax', 
+                       'Primary Contact Mailing Longitude',
+                       'Primary Contact Other Street',
+                       'Primary Contact Other City',
+                       'Primary Contact Other State',
+                       'Primary Contact Other Postal Code',
+                       'Primary Contact Other Mailstop',
+                       'Primary Contact Other Country',
+                       'Primary Contact Other Latitude',
+                       'Primary Contact Other Longitude',
+                       'Primary Contact Opted Out of Email',
+                       'Primary Contact Opted Out of Fax',
                        'Primary Contact DO NOT CALL',
-                       'Primary Contact Birthday', 
+                       'Primary Contact Birthday',
                        'Lead Source Email', 'Tags -->']
             content.append(headers)
             for lead in lead_list:
@@ -2078,82 +2091,82 @@ class ListLeads(SearchListView, CSVViewMixin):
                            lead.title,
                            lead.get_status_display(),
                            '%s %s' % (lead.aac_poc.first_name, lead.aac_poc.last_name),
-                           lead.primary_contact.salutation, 
-                           lead.primary_contact.first_name, 
-                           lead.primary_contact.last_name, 
-                           lead.primary_contact.title, 
-                           lead.primary_contact.email, 
+                           lead.primary_contact.salutation,
+                           lead.primary_contact.first_name,
+                           lead.primary_contact.last_name,
+                           lead.primary_contact.title,
+                           lead.primary_contact.email,
                            lead.primary_contact.office_phone,
-                           lead.primary_contact.mobile_phone, 
+                           lead.primary_contact.mobile_phone,
                            lead.primary_contact.home_phone,
-                           lead.primary_contact.other_phone, 
-                           lead.primary_contact.fax, 
+                           lead.primary_contact.other_phone,
+                           lead.primary_contact.fax,
                            lead.primary_contact.business,
-                           lead.primary_contact.business_department, 
+                           lead.primary_contact.business_department,
                            lead.primary_contact.assistant_name,
-                           lead.primary_contact.assistant_phone, 
+                           lead.primary_contact.assistant_phone,
                            lead.primary_contact.assistant_email,
-                           lead.primary_contact.mailing_street, 
+                           lead.primary_contact.mailing_street,
                            lead.primary_contact.mailing_city,
-                           lead.primary_contact.mailing_state, 
+                           lead.primary_contact.mailing_state,
                            lead.primary_contact.mailing_postalcode,
-                           lead.primary_contact.mailing_mailstop, 
+                           lead.primary_contact.mailing_mailstop,
                            lead.primary_contact.mailing_country,
-                           lead.primary_contact.mailing_lat, 
-                           lead.primary_contact.mailing_lon, 
+                           lead.primary_contact.mailing_lat,
+                           lead.primary_contact.mailing_lon,
                            lead.primary_contact.other_street,
-                           lead.primary_contact.other_city, 
+                           lead.primary_contact.other_city,
                            lead.primary_contact.other_state,
-                           lead.primary_contact.other_postalcode, 
+                           lead.primary_contact.other_postalcode,
                            lead.primary_contact.other_mailstop,
-                           lead.primary_contact.other_country, 
-                           lead.primary_contact.other_lat, 
+                           lead.primary_contact.other_country,
+                           lead.primary_contact.other_lat,
                            lead.primary_contact.other_lon,
-                           lead.primary_contact.has_opted_out_of_email, 
+                           lead.primary_contact.has_opted_out_of_email,
                            lead.primary_contact.has_opted_out_of_fax,
-                           lead.primary_contact.do_not_call, 
-                           lead.primary_contact.birthday, 
+                           lead.primary_contact.do_not_call,
+                           lead.primary_contact.birthday,
                            lead.lead_source.email]
                 else:
                     row = [lead.id,
                            lead.title,
                            lead.get_status_display(),
                            '%s %s' % (lead.aac_poc.first_name, lead.aac_poc.last_name),
-                           'n/a', 
-                           'n/a', 
-                           'n/a', 
-                           'n/a', 
-                           'n/a', 
                            'n/a',
-                           'n/a', 
                            'n/a',
-                           'n/a', 
-                           'n/a', 
                            'n/a',
-                           'n/a', 
                            'n/a',
-                           'n/a', 
                            'n/a',
-                           'n/a', 
                            'n/a',
-                           'n/a', 
                            'n/a',
-                           'n/a', 
                            'n/a',
-                           'n/a', 
-                           'n/a', 
                            'n/a',
-                           'n/a', 
                            'n/a',
-                           'n/a', 
                            'n/a',
-                           'n/a', 
-                           'n/a', 
                            'n/a',
-                           'n/a', 
                            'n/a',
-                           'n/a', 
-                           'n/a', 
+                           'n/a',
+                           'n/a',
+                           'n/a',
+                           'n/a',
+                           'n/a',
+                           'n/a',
+                           'n/a',
+                           'n/a',
+                           'n/a',
+                           'n/a',
+                           'n/a',
+                           'n/a',
+                           'n/a',
+                           'n/a',
+                           'n/a',
+                           'n/a',
+                           'n/a',
+                           'n/a',
+                           'n/a',
+                           'n/a',
+                           'n/a',
+                           'n/a',
                            lead.lead_source.email]
                 for tag in lead.tags.all():
                     row.append(tag)
@@ -2195,7 +2208,7 @@ class ViewLead(DetailView):
 
 class ViewLeadGeneralInfo(ViewLead):
     template_name = 'timepiece/lead/view.html'
-    
+
     def get_context_data(self, **kwargs):
         context = super(ViewLeadGeneralInfo, self).get_context_data(**kwargs)
         context['add_user_form'] = SelectContactForm()
@@ -2247,7 +2260,7 @@ class AddLeadNote(View):
                            text=request.POST.get('text', ''))
         if len(note.text):
             note.save()
-        return HttpResponseRedirect(request.GET.get('next', None) 
+        return HttpResponseRedirect(request.GET.get('next', None)
             or reverse('view_lead', args=(lead.id,)))
 
 @cbv_decorator(permission_required('crm.add_leadnote'))
@@ -2262,7 +2275,7 @@ class LeadTags(View):
         for t in tag.split(','):
             if len(t):
                 lead.tags.add(t)
-        tags = [{'id': t.id, 
+        tags = [{'id': t.id,
                  'url': reverse('similar_items', args=(t.id,)),
                  'name':t.name} for t in lead.tags.all()]
         return HttpResponse(json.dumps({'tags': tags}),
@@ -2282,7 +2295,7 @@ class RemoveLeadTag(View):
             tag = request.POST.get('tag')
             if len(tag):
                 lead.tags.remove(tag)
-        tags = [{'id': t.id, 
+        tags = [{'id': t.id,
                  'url': reverse('similar_items', args=(t.id,)),
                  'name':t.name} for t in lead.tags.all()]
         return HttpResponse(json.dumps({'tags': tags}),
@@ -2375,10 +2388,10 @@ class AddLeadContact(View):
             contact = SelectContactForm(request.POST).get_contact()
             if contact:
                 lead.contacts.add(contact)
-            return HttpResponseRedirect(request.GET.get('next', None) 
+            return HttpResponseRedirect(request.GET.get('next', None)
                 or reverse_lazy('view_lead', args=(lead.id,)))
         except:
-            return HttpResponseRedirect(request.GET.get('next', None) 
+            return HttpResponseRedirect(request.GET.get('next', None)
                 or reverse_lazy('view_lead', args=(lead.id,)))
 
 @cbv_decorator(permission_required('crm.change_lead'))
@@ -2389,7 +2402,7 @@ class RemoveLeadContact(View):
         contact_id = request.GET.get('contact_id')
         contact = Contact.objects.get(id=int(contact_id))
         lead.contacts.remove(contact)
-        return HttpResponseRedirect(request.GET.get('next', None) 
+        return HttpResponseRedirect(request.GET.get('next', None)
             or reverse_lazy('view_lead', args=(lead.id,)))
 
 @cbv_decorator(permission_required('crm.change_lead'))
@@ -2415,7 +2428,7 @@ class AddLeadGeneralTask(View):
         except:
             pass
         finally:
-            return HttpResponseRedirect(request.GET.get('next', None) 
+            return HttpResponseRedirect(request.GET.get('next', None)
                 or reverse_lazy('view_lead', args=(lead.id,)))
 
 @cbv_decorator(permission_required('crm.change_lead'))
@@ -2432,7 +2445,7 @@ class RemoveLeadGeneralTask(View):
             print sys.exc_info(), traceback.format_exc()
             pass
         finally:
-            return HttpResponseRedirect(request.GET.get('next', None) 
+            return HttpResponseRedirect(request.GET.get('next', None)
                 or reverse_lazy('view_lead', args=(lead.id,)))
 
 
@@ -2453,7 +2466,7 @@ class AddDistinguishingValueChallenge(View):
 class UpdateDistinguishingValueChallenge(View):
 
     def post(self, request, *args, **kwargs):
-        
+
         dvc = DistinguishingValueChallenge.objects.get(id=int(request.POST.get('dvc', None)))
         dvc.probing_question = request.POST.get('probing_question', '')
         dvc.short_name = request.POST.get('short_name', '')
@@ -2500,7 +2513,7 @@ class UpdateDistinguishingValueChallenge(View):
                         counter += 1
         except:
             pass
-        
+
         url = '%s?tab=%d' % (
             reverse('view_lead_distinguishing_value', args=(dvc.lead.id,)),
             list(dvc.lead.distinguishingvaluechallenge_set.all()
@@ -2514,7 +2527,7 @@ class DeleteDistinguishingValueChallenge(DeleteView):
     template_name = 'timepiece/delete_object.html'
 
     def get_success_url(self):
-        return reverse('view_lead_distinguishing_value', 
+        return reverse('view_lead_distinguishing_value',
             args=(int(self.kwargs['lead_id']),))
 
 @cbv_decorator(permission_required('crm.add_distinguishingvaluechallenge'))
@@ -2545,7 +2558,7 @@ class AddTemplateDifferentiatingValues(FormView):
         return context
 
     def get_success_url(self):
-        return reverse('view_lead_distinguishing_value', 
+        return reverse('view_lead_distinguishing_value',
             args=(int(self.kwargs['lead_id']),))
 
 
