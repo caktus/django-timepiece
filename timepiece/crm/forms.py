@@ -114,13 +114,13 @@ class CreateProjectForm(forms.ModelForm):
             if business:
                 self.fields['business_department'].queryset = BusinessDepartment.objects.filter(business=business).order_by('name')
                 self.fields['client_primary_poc'].queryset = Contact.objects.filter(
-                    Q(user__isnull=False, user__profile__business=business) | 
+                    Q(user__isnull=False, user__profile__business=business) |
                     Q(user__isnull=True, business=business)).order_by('last_name',
                     'first_name')
 
     def clean(self):
             cleaned_data = super(CreateProjectForm, self).clean()
-            
+
             biz = cleaned_data.get('business', None)
             biz_dept = cleaned_data.get('business_department', None)
             client_contact = cleaned_data.get('client_primary_poc', None)
@@ -207,10 +207,10 @@ class EditProjectForm(forms.ModelForm):
 
     def clean(self):
             cleaned_data = super(EditProjectForm, self).clean()
-            
+
             biz = cleaned_data.get('business', None)
             biz_dept = cleaned_data.get('business_department', None)
-            
+
             if biz_dept and biz_dept.business != biz:
                 self._errors['business_department'] = self.error_class(
                     ['Selected Company Department does not belong to selected Company.'])
@@ -381,6 +381,15 @@ class ProjectSearchForm(SearchForm):
         self.fields['status'].choices = choices
         if get_setting('TIMEPIECE_DEFAULT_PROJECT_STATUS') and kwargs.get('data', None) is None:
             self.fields['status'].initial = get_setting('TIMEPIECE_DEFAULT_PROJECT_STATUS')
+
+class BusinessSearchForm(SearchForm):
+    status = forms.ChoiceField(required=False, choices=[], label='')
+    classification = forms.ChoiceField(required=False,choices=[],label='')
+
+    def __init__(self, *args, **kwargs):
+        super(BusinessSearchForm, self).__init__(*args, **kwargs)
+        self.fields['status'].choices = [('', 'Any Status')] + [x for x in Business.BIZ_STATUS]
+        self.fields['classification'].choices = [('', 'Any Classification')] + [y for y in Business.BIZ_CLASS]
 
 
 class QuickSearchForm(forms.Form):
