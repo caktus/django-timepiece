@@ -10,7 +10,7 @@ def business_new_note(note, url):
         note.author, note.business.name, note.created_at, note.text, url)
     html_content = '%s added a new note to <a href="%s">%s</a> at %s:<p><em>%s</em>' % (
         note.author, url, note.business.name, note.created_at, note.text)
-    msg = EmailMultiAlternatives(subject, text_content, 'firmbase@project-toolbox.com', to_addys)
+    msg = EmailMultiAlternatives(subject, text_content, 'firmbase@firmbase.aacengineering.com', to_addys)
     msg.attach_alternative(html_content, "text/html")
     msg.send()
 
@@ -23,7 +23,7 @@ def contact_new_note(note, url):
         note.author, note.contact.name, note.created_at, note.text, url)
     html_content = '%s added a new note to <a href="%s">%s</a> at %s:<p><em>%s</em>' % (
         note.author, url, note.contact.name, note.created_at, note.text)
-    msg = EmailMultiAlternatives(subject, text_content, 'firmbase@project-toolbox.com', to_addys)
+    msg = EmailMultiAlternatives(subject, text_content, 'firmbase@firmbase.aacengineering.com', to_addys)
     msg.attach_alternative(html_content, "text/html")
     msg.send()
 
@@ -34,7 +34,7 @@ def contract_new_note(note, url):
         note.author, note.contract.name, note.created_at, note.text, url)
     html_content = '%s added a new note to <a href="%s">%s</a> at %s:<p><em>%s</em>' % (
         note.author, url, note.contract.name, note.created_at, note.text)
-    msg = EmailMultiAlternatives(subject, text_content, 'firmbase@project-toolbox.com', to_addys)
+    msg = EmailMultiAlternatives(subject, text_content, 'firmbase@firmbase.aacengineering.com', to_addys)
     msg.attach_alternative(html_content, "text/html")
     
     # msg.send()
@@ -51,6 +51,6 @@ def lead_new_note(note, url):
         note.author, note.lead.title, note.created_at, note.text, url)
     html_content = '%s added a new note to <a href="%s">%s</a> at %s:<p><em>%s</em>' % (
         note.author, url, note.lead.title, note.created_at, note.text)
-    msg = EmailMultiAlternatives(subject, text_content, 'firmbase@project-toolbox.com', to_addys)
+    msg = EmailMultiAlternatives(subject, text_content, 'firmbase@firmbase.aacengineering.com', to_addys)
     msg.attach_alternative(html_content, "text/html")
     msg.send()
