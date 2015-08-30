@@ -954,13 +954,22 @@ class ListProjects(SearchListView, CSVViewMixin):
         if self.export_project_list:
             # this is a special csv export, different than stock Timepiece,
             # requested by AAC Engineering for their detailed reporting reqs
+
+            # milestones added.  m miles stones and n contracts, so have to shift headers dynamically. maybe this should be a separate export
+            max_contracts = 1
+            max_milestones = 1
+            for project in project_list:
+                max_contracts = max(max_contracts,len(project.contracts.all()))
+                max_milestones = max(max_milestones,len(project.milestones.all()))
+
             headers = ['Project Code', 'Project Name', 'Type',
                 'Project Department', 'Business', 'Business Department',
                 'Client Primary', 'Status', 'Billable', 'Finder', 'Minder',
                 'Binder', 'Target Internal Completion', 'Required Completion',
                 'Target Open', 'Start', 'Turn-In', 'Description', 'Tags',
-                'Contracts -->']
+                'Contracts --> '+str(max_contracts)]+['']*(max_contracts-1)+['Milestones --> '+str(max_milestones)]
             content.append(headers)
+
             for project in project_list:
                 # collect milestones
                 # when we upgrae Django, we can do a .filter().first() instead of this business
@@ -989,8 +998,14 @@ class ListProjects(SearchListView, CSVViewMixin):
                     turn_in_ms.due_date if turn_in_ms else '',
                     project.description, ', '.join([t.name.strip() for t in project.tags.all()])]
                 
+                project_contract_count=len(project.contracts.all())
+                
                 for contract in project.contracts.all():
                     row.append(str(contract))
+                for blank_space in range(max_contracts - project_contract_count):
+                    row.append('')
+                for milestone in project.milestones.all():
+                    row.append(str(milestone))
                 content.append(row)
         return content
 
