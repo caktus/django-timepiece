@@ -1814,7 +1814,19 @@ def get_employee_backlog_chart_data(user_id):
         return {}
 
     employee = User.objects.get(id=int(user_id))
-    avg_hours_per_day = Decimal(employee.profile.hours_per_week) / Decimal('5.0')
+    
+    # get weekly schedule, starting Monday
+    week_schedule = employee.profile.week_schedule
+    week_schedule.append(week_schedule.pop(0))
+    # create a tuple of the weekend day indices
+    weekends = []
+    for dow, hours in enumerate(week_schedule):
+        if hours == 0.0:
+            weekends.append(dow)
+    weekends = tuple(weekends)
+
+    avg_hours_per_day = Decimal(employee.profile.hours_per_week) / \
+        (Decimal('7.0') - Decimal(len(weekends)))
     coverage = {}
     billable_coverage = {}
 
@@ -1856,18 +1868,25 @@ def get_employee_backlog_chart_data(user_id):
         Q(status='approved')|Q(status='processed')):
 
         num_workdays = max(workdays.networkdays(ptor.pto_start_date,
-            ptor.pto_end_date, holidays), 1)
+            ptor.pto_end_date, holidays=holidays, weekends=weekends), 1)
         ptor_hours_per_day = ptor.amount / Decimal(num_workdays)
 
         for i in range((ptor.pto_end_date-ptor.pto_start_date).days + 1):
             date = ptor.pto_start_date + datetime.timedelta(days=i)
-            if date.weekday() < 5:
+            if date.weekday() not in weekends:
                 holidays.append(date)
                 if str(date) not in coverage:
                     coverage[str(date)] = \
                         new_empty_date()
                 coverage[str(date)]['Approved Time Off'] = \
                     float(ptor_hours_per_day)
+
+            # elif date.weekday() < 5:
+            #     holidays.append(date)
+            #     if str(date) not in coverage:
+            #         coverage[str(date)] = \
+            #             new_empty_date()
+
 
     y_axes = {'Holiday': ['data1'],
               'Approved Time Off': ['data2']}
@@ -1882,12 +1901,14 @@ def get_employee_backlog_chart_data(user_id):
 
         end_date = activity_goal.end_date
         num_workdays = max(workdays.networkdays(start_date, end_date,
-            holidays), 1)
+            holidays=holidays, weekends=weekends), 1)
         ag_hours_per_workday = activity_goal.get_remaining_hours / Decimal(num_workdays)
 
         for i in range((end_date-start_date).days + 1):
             date = start_date + datetime.timedelta(days=i)
-            if workdays.networkdays(date, date, holidays):
+            if workdays.networkdays(date, date, holidays=holidays,
+                weekends=weekends):
+
                 if str(date) not in coverage:
                     coverage[str(date)] = new_empty_date()
                     billable_coverage[str(date)] = 0.0
@@ -1897,6 +1918,15 @@ def get_employee_backlog_chart_data(user_id):
                     float(ag_hours_per_workday)
                 if activity_goal.project.type.billable and activity_goal.activity.billable:
                     billable_coverage[str(date)] += float(ag_hours_per_workday)
+
+            elif workdays.networkdays(date, date, holidays=holidays,
+                weekends=(5,6)):
+
+                if str(date) not in coverage:
+                    coverage[str(date)] = new_empty_date()
+                    billable_coverage[str(date)] = 0.0
+                if activity_goal.project.code not in coverage[str(date)]:
+                    coverage[str(date)][activity_goal.project.code] = 0.0
 
     columns = {'x': []}
     for date in sorted(coverage.keys()):

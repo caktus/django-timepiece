@@ -1001,9 +1001,8 @@ class ListProjects(SearchListView, CSVViewMixin):
                     start_ms.due_date if start_ms else '',
                     turn_in_ms.due_date if turn_in_ms else '',
                     project.description, ', '.join([t.name.strip() for t in project.tags.all()])]
-
+                
                 project_contract_count=len(project.contracts.all())
-
                 for contract in project.contracts.all():
                     row.append(str(contract))
                 for blank_space in range(max_contracts - project_contract_count):
@@ -1389,6 +1388,9 @@ class ApprovePTORequest(UpdateView):
                                   #status=Entry.APPROVED)
                     entry.save()
 
+        emails.approved_pto(form.instance,
+            reverse('pto_request_details', args=(form.instance.id,)))
+
         return super(ApprovePTORequest, self).form_valid(form)
 
 
@@ -1403,6 +1405,10 @@ class DenyPTORequest(UpdateView):
         form.instance.approver = self.request.user
         form.instance.approval_date = datetime.datetime.now()
         form.instance.status = PaidTimeOffRequest.DENIED
+        
+        emails.denied_pto(form.instance,
+            reverse('pto_request_details', args=(form.instance.id,)))
+
         return super(DenyPTORequest, self).form_valid(form)
 
 
