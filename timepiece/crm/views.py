@@ -30,7 +30,7 @@ from timepiece.utils.views import cbv_decorator
 from timepiece.crm.forms import (CreateEditBusinessForm, CreateProjectForm, EditProjectForm,
         EditUserSettingsForm, EditProjectRelationshipForm, SelectProjectForm,
         EditUserForm, CreateUserForm, SelectUserForm, ProjectSearchForm,
-        QuickSearchForm, CreateEditPTORequestForm, CreateEditMilestoneForm,
+        BusinessSearchForm, QuickSearchForm, CreateEditPTORequestForm, CreateEditMilestoneForm,
         CreateEditActivityGoalForm, ApproveDenyPTORequestForm,
         CreateEditPaidTimeOffLog, AddBusinessNoteForm,
         CreateEditBusinessDepartmentForm, CreateEditContactForm,
@@ -477,6 +477,7 @@ class ProjectTimesheet(CSVViewMixin, DetailView):
 @cbv_decorator(permission_required('crm.view_business'))
 class ListBusinesses(SearchListView, CSVViewMixin):
     model = Business
+    form_class = BusinessSearchForm
     redirect_if_one_result = True
     search_fields = ['name__icontains', 'description__icontains']
     template_name = 'timepiece/business/list.html'
@@ -502,12 +503,15 @@ class ListBusinesses(SearchListView, CSVViewMixin):
         else:
             return super(ListBusinesses, self).get(request, *args, **kwargs)
 
-    # def filter_form_valid(self, form, queryset):
-    #     queryset = super(ListBusinesses, self).filter_form_valid(form, queryset)
-    #     status = form.cleaned_data['status']
-    #     if status:
-    #         queryset = queryset.filter(status=status)
-    #     return queryset
+    def filter_form_valid(self, form, queryset):
+        queryset = super(ListBusinesses, self).filter_form_valid(form, queryset)
+        status = form.cleaned_data['status']
+        classification = form.cleaned_data['classification']
+        if status:
+            queryset = queryset.filter(status=status)
+        if classification:
+            queryset = queryset.filter(classification=classification)
+        return queryset
 
     def get_filename(self, context):
         request = self.request.GET.copy()
@@ -700,7 +704,7 @@ def get_business_contacts(request, business_id):
     except:
         pass
     return HttpResponse(json.dumps(data),
-                        content_type='application/json')    
+                        content_type='application/json')
 
 @cbv_decorator(permission_required('crm.change_business'))
 class BusinessTags(View):
@@ -985,7 +989,7 @@ class ListProjects(SearchListView, CSVViewMixin):
                 turn_in_ms = turn_in_ms[0] if len(turn_in_ms) else None
 
                 row = [project.code, project.name, str(project.type),
-                    project.get_project_department_display(), 
+                    project.get_project_department_display(),
                     '%s:%s'%(project.business.short_name, project.business.name),
                     project.business_department.name if project.business_department else '',
                     '%s - %s - %s' % (project.client_primary_poc.name, project.client_primary_poc.email, project.client_primary_poc.office_phone) if project.client_primary_poc else '',
@@ -999,7 +1003,6 @@ class ListProjects(SearchListView, CSVViewMixin):
                     project.description, ', '.join([t.name.strip() for t in project.tags.all()])]
                 
                 project_contract_count=len(project.contracts.all())
-                
                 for contract in project.contracts.all():
                     row.append(str(contract))
                 for blank_space in range(max_contracts - project_contract_count):
