@@ -1385,8 +1385,8 @@ class ApprovePTORequest(UpdateView):
                                   #status=Entry.APPROVED)
                     entry.save()
 
-        emails.approved_pto(instance,
-            reverse('pto_request_details', args=(instance.id,)))
+        emails.approved_pto(form.instance,
+            reverse('pto_request_details', args=(form.instance.id,)))
 
         return super(ApprovePTORequest, self).form_valid(form)
 
@@ -1403,8 +1403,8 @@ class DenyPTORequest(UpdateView):
         form.instance.approval_date = datetime.datetime.now()
         form.instance.status = PaidTimeOffRequest.DENIED
         
-        emails.denied_pto(instance,
-            reverse('pto_request_details', args=(instance.id,)))
+        emails.denied_pto(form.instance,
+            reverse('pto_request_details', args=(form.instance.id,)))
 
         return super(DenyPTORequest, self).form_valid(form)
 
