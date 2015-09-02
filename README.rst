@@ -30,14 +30,9 @@ Features
 Requirements
 ------------
 
-django-timepiece is compatible with Django 1.6 (on Python 2.7 and Python 3.3),
-and Django 1.7 (on Python 2.7 and Python 3.4). PostgreSQL is the only
-officially supported backend. For a full list of required libraries, see
-the `requirements/base.txt` from the project source on `GitHub`_.
+django-timepiece is compatible with Django 1.6 (on Python 2.7 and Python 3.3), and Django 1.7 (on Python 2.7 and Python 3.4), and Django 1.8 (on Python 2.7 and Python 3.4). PostgreSQL is the only officially supported backend, however SQLite does work. For a full list of required libraries, see the `requirements/base.txt` from the project source on `GitHub`_.
 
-We actively support desktop versions of Chrome and Firefox, as well as common
-mobile platforms. We do not support most versions of Internet Explorer. We
-welcome pull requests to fix bugs on unsupported browsers.
+We actively support desktop versions of Chrome and Firefox, as well as common mobile platforms. We do not support most versions of Internet Explorer. We welcome pull requests to fix bugs on unsupported browsers.
 
 Documentation
 -------------
