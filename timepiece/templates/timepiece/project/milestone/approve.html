@@ -1,0 +1,46 @@
+{% extends "timepiece/project/milestone/base.html" %}
+{% load url from future %}
+{% load bootstrap_toolkit %}
+
+{% block crumbs %}
+    {{ block.super }}
+    <li>
+        <span class="divider">/</span>
+        <a href="{% url 'view_project' project.id %}">{{ project.code }}</a>
+        
+        <span class="divider">/</span>
+        {% if not object %}
+            <a href="{% url 'create_project' %}">Create Project</a>
+        {% else %}
+            <a href="{% url 'edit_project' object.pk %}">Edit Project</a>
+        {% endif %}
+    </li>
+{% endblock crumbs %}
+
+{% block title %}Approve Milestone{% endblock title %}
+
+{% block content %}
+    <div class="row-fluid">
+        <div class="span8">
+            <h2>Approve Milestone {{ object }}</h2>
+
+            <br style="clear: both;" />
+
+            <form id="approve-milestone" class="form-horizontal" action="" method="post" accept-charset="utf-8">
+                <table class="table table-bordered">
+                    <tr><th>Project</th><td>{{ object.project }}</td></tr>
+                    <tr><th>Name</th><td>{{ object.name }}</td></tr>
+                    <tr><th>Due Date</th><td>{{ object.due_date|date:"M j, Y" }}</td></tr>
+                    <tr><th>Description</th><td>{{ object.description|linebreaks }}</td></tr>
+                </table>
+
+                {% csrf_token %}
+                {{ form|as_bootstrap:"horizontal" }}
+                <div class="form-actions">
+                    <input class="btn btn-success" type='submit' name='submit' value='Approve' />
+                    <input class="btn" type='button' value='Cancel' onclick='history.go(-1)' />
+                </div>
+            </form>
+        </div>
+    </div>
+{% endblock content %}

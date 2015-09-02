@@ -462,6 +462,12 @@ class CreateEditMilestoneForm(forms.ModelForm):
         model = Milestone
         fields = ('name', 'due_date', 'description')
 
+class ApproveMilestoneForm(forms.ModelForm):
+
+    class Meta:
+        model = Milestone
+        fields = ()
+
 class CreateEditActivityGoalForm(forms.ModelForm):
 
     class Meta:

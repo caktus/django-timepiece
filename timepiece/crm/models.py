@@ -1174,16 +1174,36 @@ class ProjectAttachment(models.Model):
         return url
 
 class Milestone(models.Model):
+    NEW = 'new'
+    MODIFIED = 'modified'
+    APPROVED = 'approved'
+    STATUSES = ((NEW, 'New'),
+                (MODIFIED, 'Modified'),
+                (APPROVED, 'Approved'))
+
     project = models.ForeignKey(Project)
     name = models.CharField(max_length=255)
     description = models.TextField(blank=True)
     due_date = models.DateField()
+    author = models.ForeignKey(User, related_name='milestone_author')
+    created = models.DateTimeField(auto_now_add=True)
+    editor = models.ForeignKey(User, related_name='milestone_editor')
+    modified = models.DateTimeField(auto_now=True)
+    status = models.CharField(max_length=8, choices=STATUSES, default=NEW)
+    approver = models.ForeignKey(User, related_name='milestone_approver',
+        null=True, blank=True)
+    approval_date = models.DateTimeField(null=True, blank=True)
 
     def __unicode__(self):
         return '%s: %s' % (self.project.code, self.name)
 
     class Meta:
         ordering = ('due_date',)
+        permissions = (('approve_milestone', 'Can approve milestone'),)
+
+    @property
+    def approved(self):
+        return self.status == self.APPROVED
 
 
 from timepiece.entries.models import Entry, Activity

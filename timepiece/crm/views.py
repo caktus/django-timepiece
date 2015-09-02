@@ -31,6 +31,7 @@ from timepiece.crm.forms import (CreateEditBusinessForm, CreateProjectForm, Edit
         EditUserSettingsForm, EditProjectRelationshipForm, SelectProjectForm,
         EditUserForm, CreateUserForm, SelectUserForm, ProjectSearchForm,
         BusinessSearchForm, QuickSearchForm, CreateEditPTORequestForm, CreateEditMilestoneForm,
+        ApproveMilestoneForm,
         CreateEditActivityGoalForm, ApproveDenyPTORequestForm,
         CreateEditPaidTimeOffLog, AddBusinessNoteForm,
         CreateEditBusinessDepartmentForm, CreateEditContactForm,
@@ -1484,6 +1485,8 @@ class CreateMilestone(CreateView):
 
     def form_valid(self, form):
         form.instance.project = Project.objects.get(id=int(self.kwargs['project_id']))
+        form.instance.author = self.request.user
+        form.instance.editor = self.request.user
         return super(CreateMilestone, self).form_valid(form)
 
     def get_success_url(self):
@@ -1501,6 +1504,36 @@ class EditMilestone(UpdateView):
         context = super(EditMilestone, self).get_context_data(**kwargs)
         context['project'] = Project.objects.get(id=int(self.kwargs['project_id']))
         return context
+
+    def form_valid(self, form):
+        form.instance.editor = self.request.user
+        if form.has_changed():
+            form.instance.status = Milestone.MODIFIED
+            form.instance.approver = None
+            form.instance.approval_date = None
+        return super(EditMilestone, self).form_valid(form)
+
+    def get_success_url(self):
+        return '/timepiece/project/%d' % int(self.kwargs['project_id'])
+
+
+@cbv_decorator(permission_required('crm.approve_milestone'))
+class ApproveMilestone(UpdateView):
+    model = Milestone
+    form_class = ApproveMilestoneForm
+    template_name = 'timepiece/project/milestone/approve.html'
+    pk_url_kwarg = 'milestone_id'
+
+    def get_context_data(self, **kwargs):
+        context = super(ApproveMilestone, self).get_context_data(**kwargs)
+        context['project'] = Project.objects.get(id=int(self.kwargs['project_id']))
+        return context
+
+    def form_valid(self, form):
+        form.instance.approver = self.request.user
+        form.instance.status = Milestone.APPROVED
+        form.instance.approval_date = datetime.datetime.now()
+        return super(ApproveMilestone, self).form_valid(form)
 
     def get_success_url(self):
         return '/timepiece/project/%d' % int(self.kwargs['project_id'])
