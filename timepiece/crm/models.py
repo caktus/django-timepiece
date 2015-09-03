@@ -1206,6 +1206,31 @@ class Milestone(models.Model):
         return self.status == self.APPROVED
 
 
+class ApprovedMilestone(models.Model):
+    milestone = models.ForeignKey(Milestone, related_name="approved")
+    project = models.ForeignKey(Project)
+    name = models.CharField(max_length=255)
+    description = models.TextField(blank=True)
+    due_date = models.DateField()
+    author = models.ForeignKey(User, related_name='milestone_author')
+    created = models.DateTimeField()
+    editor = models.ForeignKey(User, related_name='milestone_editor')
+    modified = models.DateTimeField()
+    status = models.CharField(max_length=8, choices=STATUSES, default=NEW)
+    approver = models.ForeignKey(User, related_name='approveD_milestone_approver',
+        null=True, blank=True)
+    approval_date = models.DateTimeField(null=True, blank=True) 
+
+    class Meta:
+        ordering = ('project__code', 'milestone', 'approval_date')
+
+
+class MilestoneNote(models.Model):
+    milestone = models.ForeignKey(Milestone)
+    author = models.ForeignKey(User, related_name='authored_milestone_notes')
+    created_at = models.DateTimeField(auto_now_add=True)
+
+
 from timepiece.entries.models import Entry, Activity
 class ActivityGoal(models.Model):
     milestone = models.ForeignKey(Milestone, null=True, blank=True)

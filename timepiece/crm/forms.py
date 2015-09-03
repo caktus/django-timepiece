@@ -100,6 +100,7 @@ class CreateProjectForm(forms.ModelForm):
             'status', 'project_department', 'activity_group', 'description')
 
     def __init__(self, *args, **kwargs):
+        self.user = kwargs.pop('user')
         super(CreateProjectForm, self).__init__(*args, **kwargs)
         self.fields['point_person'].label = 'Minder'
         EMPLOYEE_CHOICES = [(0, '-')] + [(u.pk, '%s, %s'%(
@@ -145,7 +146,9 @@ class CreateProjectForm(forms.ModelForm):
             project=project,
             name='Target Internal Completion',
             due_date=self.cleaned_data['target_internal_completion_date'],
-            description=self.cleaned_data.get('target_internal_completion_description', '')
+            description=self.cleaned_data.get('target_internal_completion_description', ''),
+            author=self.user,
+            editor=self.user
         )
         tic_ms.save()
 
@@ -154,7 +157,9 @@ class CreateProjectForm(forms.ModelForm):
             project=project,
             name='Required Completion',
             due_date=self.cleaned_data['required_completion_date'],
-            description=self.cleaned_data.get('required_completion_description', '')
+            description=self.cleaned_data.get('required_completion_description', ''),
+            author=self.user,
+            editor=self.user
         )
         required_ms.save()
 
@@ -163,7 +168,9 @@ class CreateProjectForm(forms.ModelForm):
             project=project,
             name='Target Open',
             due_date=self.cleaned_data['target_open_date'],
-            description=self.cleaned_data.get('target_open_description', '')
+            description=self.cleaned_data.get('target_open_description', ''),
+            author=self.user,
+            editor=self.user
         )
         target_open_ms.save()
 
@@ -172,7 +179,9 @@ class CreateProjectForm(forms.ModelForm):
             project=project,
             name='Start',
             due_date=self.cleaned_data['start_date'],
-            description=self.cleaned_data.get('start_description', '')
+            description=self.cleaned_data.get('start_description', ''),
+            author=self.user,
+            editor=self.user
         )
         start_ms.save()
 
@@ -182,7 +191,9 @@ class CreateProjectForm(forms.ModelForm):
                 project=project,
                 name='Turn-In',
                 due_date=self.cleaned_data['turn_in_date'],
-                description=self.cleaned_data.get('turn_in_description', '')
+                description=self.cleaned_data.get('turn_in_description', ''),
+                author=self.user,
+                editor=self.user
             )
             turn_in_ms.save()
 

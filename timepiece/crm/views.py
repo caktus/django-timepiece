@@ -40,7 +40,7 @@ from timepiece.crm.forms import (CreateEditBusinessForm, CreateProjectForm, Edit
         AddTemplateDifferentiatingValuesForm, CreateEditTemplateDVForm,
         CreateEditDVCostItem, CreateEditOpportunity, EditLimitedUserProfileForm)
 from timepiece.crm.models import (Business, Project, ProjectRelationship, UserProfile,
-    PaidTimeOffLog, PaidTimeOffRequest, Milestone, ActivityGoal, BusinessNote,
+    PaidTimeOffLog, PaidTimeOffRequest, Milestone, ApprovedMilestone, ActivityGoal, BusinessNote,
     BusinessDepartment, Contact, ContactNote, BusinessAttachment, Lead, LeadNote,
     DistinguishingValueChallenge, TemplateDifferentiatingValue, LeadAttachment,
     DVCostItem, Opportunity, ProjectAttachment, LimitedAccessUserProfile)
@@ -1039,6 +1039,11 @@ class CreateProject(CreateView):
     form_class = CreateProjectForm
     template_name = 'timepiece/project/create_edit.html'
 
+    def get_form_kwargs(self):
+        kwargs = super(CreateProject, self).get_form_kwargs()
+        kwargs.update({'user': self.request.user})
+        return kwargs
+
 
 @cbv_decorator(permission_required('crm.delete_project'))
 class DeleteProject(DeleteView):
@@ -1533,6 +1538,23 @@ class ApproveMilestone(UpdateView):
         form.instance.approver = self.request.user
         form.instance.status = Milestone.APPROVED
         form.instance.approval_date = datetime.datetime.now()
+
+        # record keeping
+        ApprovedMilestone.objects.create(
+            milestone=form.instance,
+            project=form.instance.project,
+            name=form.instance.name,
+            description=form.instance.description,
+            due_date=form.instance.due_date,
+            author=form.instance.author,
+            created=form.instance.created,
+            editor=form.instance.editor,
+            modified=form.instance.modified,
+            status=form.instance.status,
+            approver=form.instance.approver,
+            approval_date=form.instance.approval_date
+        )
+
         return super(ApproveMilestone, self).form_valid(form)
 
     def get_success_url(self):
