@@ -479,7 +479,7 @@ class ListBusinesses(SearchListView, CSVViewMixin):
     model = Business
     form_class = BusinessSearchForm
     redirect_if_one_result = True
-    search_fields = ['name__icontains', 'description__icontains']
+    search_fields = ['name__icontains', 'description__icontains','businessnote__text__icontains']
     template_name = 'timepiece/business/list.html'
 
     def get(self, request, *args, **kwargs):
@@ -1001,7 +1001,7 @@ class ListProjects(SearchListView, CSVViewMixin):
                     start_ms.due_date if start_ms else '',
                     turn_in_ms.due_date if turn_in_ms else '',
                     project.description, ', '.join([t.name.strip() for t in project.tags.all()])]
-                
+
                 project_contract_count=len(project.contracts.all())
                 for contract in project.contracts.all():
                     row.append(str(contract))
@@ -1405,7 +1405,7 @@ class DenyPTORequest(UpdateView):
         form.instance.approver = self.request.user
         form.instance.approval_date = datetime.datetime.now()
         form.instance.status = PaidTimeOffRequest.DENIED
-        
+
         emails.denied_pto(form.instance,
             reverse('pto_request_details', args=(form.instance.id,)))
 
@@ -1867,7 +1867,7 @@ class ListContacts(SearchListView, CSVViewMixin):
     redirect_if_one_result = True
     search_fields = ['first_name__icontains', 'last_name__icontains',
                      'email__icontains', 'business__name__icontains',
-                     'business_department__name__icontains']
+                     'business_department__name__icontains','contactnote__text__icontains']
     template_name = 'timepiece/contact/list.html'
 
     def get(self, request, *args, **kwargs):
@@ -2040,7 +2040,7 @@ class ListLeads(SearchListView, CSVViewMixin):
                      'primary_contact__first_name__icontains',
                      'primary_contact__last_name__icontains',
                      'primary_contact__email__icontains',
-                     'primary_contact__business__name__icontains']
+                     'primary_contact__business__name__icontains','leadnote__text__icontains']
     template_name = 'timepiece/lead/list.html'
 
     def get(self, request, *args, **kwargs):
