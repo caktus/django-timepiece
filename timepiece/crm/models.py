@@ -32,7 +32,7 @@ class UserProfile(models.Model):
         db_table = 'timepiece_userprofile'  # Using legacy table name.
 
     def __str__(self):
-        return self.user
+        return self.user.get_username()
 
 
 class TypeAttributeManager(models.Manager):
@@ -197,5 +197,5 @@ class ProjectRelationship(models.Model):
     def __str__(self):
         return "{project}'s relationship to {user}".format(
             project=self.project.name,
-            user=self.user.get_name_or_username(),
+            user=self.user.get_username(),
         )
