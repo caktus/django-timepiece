@@ -19,26 +19,65 @@
                     <li><a href="{% url 'edit_milestone' object.project.id object.id %}">Edit</a></li>
                     <li><a href="{% url 'delete_milestone' object.project.id object.id %}">Delete</a></li>
                 {% endif %}
-                {% if perms.crm.view_project_time_sheet %}
-                    <li><a href="{% url 'view_project_timesheet' object.project.id %}">View Project Time Sheet</a></li>
-                {% endif %}
             </ul>
         </div>
     </div>
 
     <div class="row-fluid">
         <div class="span6">
+            <h3>Details</h3>
             <table class="table table-bordered">
                 <tr><th>Project</th><td>{{ object.project }}</td></tr>
                 <tr><th>Name</th><td>{{ object.name }}</td></tr>
                 <tr><th>Due Date</th><td>{{ object.due_date|date:"M j, Y" }}</td></tr>
+                <tr>
+                    <th>Status</th>
+                    <td>
+                        {% if object.approved %}
+                        <span class="label label-success" title="Approved by {{object.approver }} @ {{ object.approval_date }}.">Approved</span>
+                        {% elif object.denied %}
+                        <span class="label label-important" title="This milestone edit has been rejected.">{{ object.get_status_display }}</span>
+                        <a type="button" class="btn btn-primary btn-mini" href="{% url 'edit_milestone' object.project.id object.id %}">Update</a>
+                        {% else %}
+                        <span class="label label-warning" title="This milestone has not yet been approved.">{{ object.get_status_display }}</span>
+                        {% if perms.crm.approve_milestone %}
+                        <a type="button" class="btn btn-mini btn-success" href="{% url 'approve_milestone' object.project.id object.id %}">Approve</a>
+                        {% endif %}
+                        {% endif %}
+                    </td>
+                </tr>
                 <tr><th>Description</th><td>{{ object.description|linebreaks }}</td></tr>
-            </table>
+            </table>            
         </div>
 
-        <div class="span4 offset2">
-            <h3>Other Project Milestones</h3>
-            <label>In progress</label>
+        <div class="span4">
+            {% url 'view_milestone' object.project.id object.pk as next_url %}
+            <h3>Notes</h3>
+            <form class="form-inline" action="{% url 'add_milestone_note' object.project.id object.id %}?next={{ next_url }}" method="post" accept-charset="utf-8">
+                {% csrf_token %}
+                {{ add_milestone_note_form|as_bootstrap }}
+                <input class="btn btn-primary" type="submit" value="Add" />
+            </form>
+            <ul>
+                {% for note in object.get_notes %}
+                <li><strong>{{ note.author }} @ {{ note.created_at }}</strong><br/>{{ note.text|linebreaks }}</li>
+                {% endfor %}
+            </ul>
+        </div>
+    </div>
+    <div class="row-fluid">
+        <div class="span6">
+            <h3>Past Approvals</h3>
+            {% for past_approval in object.approvals.all %}
+            <table class="table table-bordered">
+                <tr><th>Project</th><td>{{ past_approval.project }}</td></tr>
+                <tr><th>Name</th><td>{{ past_approval.name }}</td></tr>
+                <tr><th>Due Date</th><td>{{ past_approval.due_date|date:"M j, Y" }}</td></tr>
+                <tr><th>Status</th><td><span class="label label-success" title="Approved by {{past_approval.approver }} @ {{ past_approval.approval_date }}.">Approved</span></td></tr>
+                <tr><th>Description</th><td>{{ past_approval.description|linebreaks }}</td></tr>
+                <tr><th>Approval</th><td>{{ past_approval.approver }} @ {{ past_approval.approval_date }}</td>
+            </table>
+            {% endfor %}
         </div>
     </div>
 {% endblock content %}

@@ -258,10 +258,13 @@
                 <tbody>
                     {% for ms in object.milestones %}
                     <tr id="{{ ms.id }}">
-                        <td>{{ ms.name }}</td>
+                        <td><a href="{% url 'view_milestone' object.pk ms.id %}">{{ ms.name }}</a></td>
                         <td>
                             {% if ms.approved %}
                             <span class="label label-success" title="Approved by {{ms.approver }} @ {{ ms.approval_date }}.">Approved</span>
+                            {% elif ms.denied %}
+                            <span class="label label-important" title="This milestone edit has been rejected.">{{ ms.get_status_display }}</span>
+                            <a type="button" class="btn btn-primary btn-mini" href="{% url 'view_milestone' object.pk ms.id %}">View</a>
                             {% else %}
                             <span class="label label-warning" title="This milestone has not yet been approved.">{{ ms.get_status_display }}</span>
                             {% if perms.crm.approve_milestone %}

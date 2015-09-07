@@ -16,7 +16,8 @@ from timepiece.crm.models import (Attribute, Business, Project,
         PaidTimeOffLog, Milestone, ActivityGoal, BusinessNote,
         BusinessDepartment, Contact, ContactNote, Lead, LeadNote,
         DistinguishingValueChallenge, TemplateDifferentiatingValue,
-        DVCostItem, Opportunity, LeadAttachment, LimitedAccessUserProfile)
+        DVCostItem, Opportunity, LeadAttachment, LimitedAccessUserProfile,
+        MilestoneNote)
 from timepiece.fields import WeeklyScheduleWidget
 
 import datetime
@@ -478,6 +479,19 @@ class ApproveMilestoneForm(forms.ModelForm):
     class Meta:
         model = Milestone
         fields = ()
+
+class AddMilestoneNoteForm(forms.ModelForm):
+
+    class Meta:
+        model = MilestoneNote
+        fields = ('text', 'milestone', 'author')
+
+    def __init__(self, *args, **kwargs):
+        super(AddMilestoneNoteForm, self).__init__(*args, **kwargs)
+        self.fields['text'].label = ''
+        self.fields['text'].widget.attrs['rows'] = 4
+        self.fields['author'].widget = widgets.HiddenInput()
+        self.fields['milestone'].widget = widgets.HiddenInput()
 
 class CreateEditActivityGoalForm(forms.ModelForm):
 

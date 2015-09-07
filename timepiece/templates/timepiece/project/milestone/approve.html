@@ -6,14 +6,10 @@
     {{ block.super }}
     <li>
         <span class="divider">/</span>
-        <a href="{% url 'view_project' project.id %}">{{ project.code }}</a>
+        <a href="{% url 'view_project' object.project.id %}">{{ object.project.code }}</a>
         
         <span class="divider">/</span>
-        {% if not object %}
-            <a href="{% url 'create_project' %}">Create Project</a>
-        {% else %}
-            <a href="{% url 'edit_project' object.pk %}">Edit Project</a>
-        {% endif %}
+        <a href="{% url 'view_milestone' object.project.id object.id %}">{{ object }}</a>
     </li>
 {% endblock crumbs %}
 
@@ -21,26 +17,61 @@
 
 {% block content %}
     <div class="row-fluid">
-        <div class="span8">
+        <div class="span12">
             <h2>Approve Milestone {{ object }}</h2>
 
             <br style="clear: both;" />
 
-            <form id="approve-milestone" class="form-horizontal" action="" method="post" accept-charset="utf-8">
-                <table class="table table-bordered">
-                    <tr><th>Project</th><td>{{ object.project }}</td></tr>
-                    <tr><th>Name</th><td>{{ object.name }}</td></tr>
-                    <tr><th>Due Date</th><td>{{ object.due_date|date:"M j, Y" }}</td></tr>
-                    <tr><th>Description</th><td>{{ object.description|linebreaks }}</td></tr>
-                </table>
+            <div class="span6">
+                <form id="approve-milestone" class="form-horizontal" action="" method="post" accept-charset="utf-8">
+                    <h3>Requested Update</h3>
+                    <table class="table table-bordered">
+                        <tr><th>Project</th><td>{{ object.project }}</td></tr>
+                        <tr><th>Name</th><td>{{ object.name }}</td></tr>
+                        <tr><th>Due Date</th><td>{{ object.due_date|date:"M j, Y" }}</td></tr>
+                        <tr><th>Description</th><td>{{ object.description|linebreaks }}</td></tr>
+                    </table>
 
-                {% csrf_token %}
-                {{ form|as_bootstrap:"horizontal" }}
-                <div class="form-actions">
-                    <input class="btn btn-success" type='submit' name='submit' value='Approve' />
-                    <input class="btn" type='button' value='Cancel' onclick='history.go(-1)' />
-                </div>
-            </form>
+                    <h3>Previous Approvals</h3>
+                    {% if object.previous_approval %}
+                    {% for previous in object.approvals.all %}
+                    <table class="table table-bordered">
+                        <tr><th>Name</th><td>{{ previous.name }}</td></tr>
+                        <tr><th>Due Date</th><td>{{ previous.due_date|date:"M j, Y" }}</td></tr>
+                        <tr><th>Description</th><td>{{ previous.description|linebreaks }}</td></tr>
+                        <tr><th>Approval</th><td>{{ previous.approver }} @ {{ previous.approval_date }}</td>
+                    </table>
+                    {% endfor %}
+                    {% else %}
+                    <span class="alert alert-info">There was no previous approval for this milestone.</span>
+                    {% endif %}
+                    
+                    {% csrf_token %}
+                    {{ form|as_bootstrap:"horizontal" }}
+                    <div class="form-actions">
+                        <textarea name="note" placeholder="Add a note"></textarea>
+                        <input class="btn btn-success" type='submit' name='approve' value='Approve' />
+                        <input class="btn btn-warning" type='submit' name='deny' value='Return to Minder' />
+                        <input class="btn" type='button' value='Cancel' onclick='history.go(-1)' />
+                    </div>
+                </form>
+            </div>
+
+            <div class="span4">
+                {% url 'approve_milestone' object.project.id object.pk as next_url %}
+                <h3>Notes</h3>
+                <form class="form-inline" action="{% url 'add_milestone_note' object.project.id object.id %}?next={{ next_url }}" method="post" accept-charset="utf-8">
+                    {% csrf_token %}
+                    {{ add_milestone_note_form|as_bootstrap }}
+                    <input class="btn btn-primary" type="submit" value="Add" />
+                </form>
+                <ul>
+                    {% for note in object.get_notes %}
+                    <li><strong>{{ note.author }} @ {{ note.created_at }}</strong><br/>{{ note.text|linebreaks }}</li>
+                    {% endfor %}
+                </ul>
+            </div>
+
         </div>
     </div>
 {% endblock content %}

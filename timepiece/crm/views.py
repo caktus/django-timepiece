@@ -31,7 +31,7 @@ from timepiece.crm.forms import (CreateEditBusinessForm, CreateProjectForm, Edit
         EditUserSettingsForm, EditProjectRelationshipForm, SelectProjectForm,
         EditUserForm, CreateUserForm, SelectUserForm, ProjectSearchForm,
         BusinessSearchForm, QuickSearchForm, CreateEditPTORequestForm, CreateEditMilestoneForm,
-        ApproveMilestoneForm,
+        ApproveMilestoneForm, AddMilestoneNoteForm,
         CreateEditActivityGoalForm, ApproveDenyPTORequestForm,
         CreateEditPaidTimeOffLog, AddBusinessNoteForm,
         CreateEditBusinessDepartmentForm, CreateEditContactForm,
@@ -39,11 +39,13 @@ from timepiece.crm.forms import (CreateEditBusinessForm, CreateProjectForm, Edit
         SelectContactForm, AddDistinguishingValueChallenegeForm,
         AddTemplateDifferentiatingValuesForm, CreateEditTemplateDVForm,
         CreateEditDVCostItem, CreateEditOpportunity, EditLimitedUserProfileForm)
-from timepiece.crm.models import (Business, Project, ProjectRelationship, UserProfile,
-    PaidTimeOffLog, PaidTimeOffRequest, Milestone, ApprovedMilestone, ActivityGoal, BusinessNote,
-    BusinessDepartment, Contact, ContactNote, BusinessAttachment, Lead, LeadNote,
-    DistinguishingValueChallenge, TemplateDifferentiatingValue, LeadAttachment,
-    DVCostItem, Opportunity, ProjectAttachment, LimitedAccessUserProfile)
+from timepiece.crm.models import (Business, Project, ProjectRelationship,
+    UserProfile, PaidTimeOffLog, PaidTimeOffRequest, Milestone,
+    ApprovedMilestone, MilestoneNote, ActivityGoal, BusinessNote,
+    BusinessDepartment, Contact, ContactNote, BusinessAttachment, Lead,
+    LeadNote, DistinguishingValueChallenge, TemplateDifferentiatingValue,
+    LeadAttachment, DVCostItem, Opportunity, ProjectAttachment,
+    LimitedAccessUserProfile)
 from timepiece.crm.utils import grouped_totals, project_activity_goals_with_progress
 from timepiece.entries.models import Entry, Activity, Location
 from timepiece.reports.forms import HourlyReportForm
@@ -1477,6 +1479,12 @@ class ViewMilestone(DetailView):
     pk_url_kwarg = 'milestone_id'
     template_name = 'timepiece/project/milestone/view.html'
 
+    def get_context_data(self, **kwargs):
+        context = super(ViewMilestone, self).get_context_data(**kwargs)
+        # context['project'] = Project.objects.get(id=int(self.kwargs['project_id']))
+        context['add_milestone_note_form'] = AddMilestoneNoteForm()
+        return context
+
 @cbv_decorator(permission_required('crm.add_milestone'))
 class CreateMilestone(CreateView):
     model = Milestone
@@ -1522,6 +1530,21 @@ class EditMilestone(UpdateView):
         return '/timepiece/project/%d' % int(self.kwargs['project_id'])
 
 
+@cbv_decorator(permission_required('crm.add_milestonenote'))
+class AddMilestoneNote(View):
+
+    def post(self, request, *args, **kwargs):
+        user = self.request.user
+        milestone = Milestone.objects.get(id=int(kwargs['milestone_id']))
+        note = MilestoneNote(milestone=milestone,
+                             author=user,
+                             text=request.POST.get('text', ''))
+        if len(note.text):
+            note.save()
+        return HttpResponseRedirect(request.GET.get('next', None) or
+            reverse('view_milestone', args=(milestone.id,)))
+
+
 @cbv_decorator(permission_required('crm.approve_milestone'))
 class ApproveMilestone(UpdateView):
     model = Milestone
@@ -1532,28 +1555,45 @@ class ApproveMilestone(UpdateView):
     def get_context_data(self, **kwargs):
         context = super(ApproveMilestone, self).get_context_data(**kwargs)
         context['project'] = Project.objects.get(id=int(self.kwargs['project_id']))
+        context['add_milestone_note_form'] = AddMilestoneNoteForm()
         return context
 
     def form_valid(self, form):
-        form.instance.approver = self.request.user
-        form.instance.status = Milestone.APPROVED
-        form.instance.approval_date = datetime.datetime.now()
+        # if the user added a note, save it here
+        text = self.request.POST.get('note', '')
+        if text:
+            note = MilestoneNote(
+                milestone=form.instance,
+                text=text,
+                author=self.request.user)
+            note.save()
 
-        # record keeping
-        ApprovedMilestone.objects.create(
-            milestone=form.instance,
-            project=form.instance.project,
-            name=form.instance.name,
-            description=form.instance.description,
-            due_date=form.instance.due_date,
-            author=form.instance.author,
-            created=form.instance.created,
-            editor=form.instance.editor,
-            modified=form.instance.modified,
-            status=form.instance.status,
-            approver=form.instance.approver,
-            approval_date=form.instance.approval_date
-        )
+        # set status as approved or pending
+        if self.request.POST.get('approve', False):
+            form.instance.approver = self.request.user
+            form.instance.status = Milestone.APPROVED
+            form.instance.approval_date = datetime.datetime.now()
+
+            # record keeping
+            ApprovedMilestone.objects.create(
+                milestone=form.instance,
+                project=form.instance.project,
+                name=form.instance.name,
+                description=form.instance.description,
+                due_date=form.instance.due_date,
+                author=form.instance.author,
+                created=form.instance.created,
+                editor=form.instance.editor,
+                modified=form.instance.modified,
+                status=form.instance.status,
+                approver=form.instance.approver,
+                approval_date=form.instance.approval_date
+            )
+
+        elif self.request.POST.get('deny', False):
+            form.instance.approver = self.request.user
+            form.instance.status = Milestone.DENIED
+            form.instance.approval_date = datetime.datetime.now()
 
         return super(ApproveMilestone, self).form_valid(form)
 
