@@ -226,6 +226,9 @@ urlpatterns = patterns('',
     url(r'^project/(?P<project_id>\d+)/milestone/(?P<milestone_id>\d+)/delete/$',
         views.DeleteMilestone.as_view(),
         name='delete_milestone'),
+    url(r'^project/(?P<project_id>\d+)/milestone/(?P<milestone_id>\d+)/add-note$',
+        views.AddMilestoneNote.as_view(),
+        name='add_milestone_note'),
 
     
     # Activity Goals
