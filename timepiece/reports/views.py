@@ -1119,6 +1119,8 @@ class BacklogReport(CSVViewMixin, TemplateView):
         if not request.user.has_perm('crm.view_backlog'):
             return HttpResponseRedirect( reverse('report_employee_backlog', args=(request.user.id,)) )
 
+        self.request = request
+        
         self.active_tab = kwargs.get('active_tab', 'company') or 'company'
         self.export_data = request.GET.get('export_data', False)
         self.export_company_data = request.GET.get('export_company_data', False)
@@ -1155,7 +1157,7 @@ class BacklogReport(CSVViewMixin, TemplateView):
                 # ensure no results are returned
                 activity_goalQ &= Q(project__type__billable=True) & Q(project__type__billable=False)
         else:
-            messages.warning(request, 'There was an error applying your selected filter.')
+            messages.warning(self.request, 'There was an error applying your selected filter.')
             activity_goalQ = Q(project__status=4)
 
         backlog = {}
