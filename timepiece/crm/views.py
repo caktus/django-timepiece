@@ -995,7 +995,7 @@ class ListProjects(SearchListView, CSVViewMixin):
                     project.get_project_department_display(),
                     '%s:%s'%(project.business.short_name, project.business.name),
                     project.business_department.name if project.business_department else '',
-                    '%s - %s - %s' % (project.client_primary_poc.name, project.client_primary_poc.email, project.client_primary_poc.office_phone) if project.client_primary_poc else '',
+                    '%s %s' % (project.client_primary_poc.first_name, project.client_primary_poc.last_name) if project.client_primary_poc else '',
                     project.status, project.billable, str(project.finder),
                     str(project.point_person), str(project.binder),
                     tic_ms.due_date if tic_ms else '',
