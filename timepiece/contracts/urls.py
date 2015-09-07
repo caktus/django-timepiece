@@ -56,6 +56,9 @@ urlpatterns = patterns('',
     url(r'^contract/(?P<contract_id>\d+)/attachment/(?P<attachment_id>\d+)/$',
         views.contract_download_attachment,
         name='download_contract_attachment'),
+    url(r'^contract/(?P<contract_id>\d+)/attachment/(?P<attachment_id>[\w\-\.]+)/delete$',
+        views.contract_delete_attachment,
+        name='delete_contract_attachment'),
     
 
     # Contract Increment (Budget and Hours)

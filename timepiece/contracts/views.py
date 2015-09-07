@@ -772,3 +772,13 @@ def contract_download_attachment(request, contract_id, attachment_id):
     except:
         print sys.exc_info(), traceback.format_exc()
         return HttpResponse('Contract attachment could not be found.')
+
+@permission_required('contracts.delete_contractattachment')
+def contract_delete_attachment(request, contract_id, attachment_id):
+    try:
+        contract_attachment = ContractAttachment.objects.get(
+            contract_id=int(contract_id), uuid=attachment_id)
+        contract_attachment.delete()
+        return HttpResponse(status=204)
+    except:
+        return HttpResponse('Attachment could not be found.')
