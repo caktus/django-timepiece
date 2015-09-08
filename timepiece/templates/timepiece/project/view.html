@@ -245,7 +245,9 @@
     <div class="row-fluid">
         <div class="span12" name="milestones">
             <h3>Milestones</h3>
-            <a type="button" class="btn btn-primary" href="{% url 'create_milestone' object.pk %}">Add Milestone</a><p/>
+            <a type="button" class="btn btn-primary" href="{% url 'create_milestone' object.pk %}">Add Milestone</a>
+            <a type="button" class="btn btn-success" href="{% url 'approve_all_project_milestones' object.pk %}">Approve All Pending Milestones</a>
+            <p/>
             {% if object.milestones|length %}
             <table id="milestones_table" class="table table-striped table-bordered table-hover table-condensed">
                 <thead><tr>

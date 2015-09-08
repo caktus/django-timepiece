@@ -46,7 +46,11 @@
                             <a href="{% ifequal active 'revenue_report' %}#{% else %}{% url 'report_revenue' %}{% endifequal %}">Revenue Report</a>
                         </li>
                     {% endif %}
-
+                    {% if perms.crm.approve_milestone %}
+                        <li{% ifequal active 'pending_milestones' %} class="active"{% endifequal %}>
+                            <a href="{% ifequal active 'pending_milestones' %}#{% else %}{% url 'report_pending_milestones' %}{% endifequal %}">Pending Milestones</a>
+                        </li>
+                    {% endif %}
                 </ul>
             </div>
         </div>

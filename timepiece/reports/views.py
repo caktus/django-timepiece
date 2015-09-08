@@ -25,7 +25,7 @@ from timepiece.utils.csv import CSVViewMixin, DecimalEncoder
 
 from timepiece.contracts.models import ProjectContract, ContractRate
 from timepiece.entries.models import Entry, ProjectHours, Activity
-from timepiece.crm.models import Project, PaidTimeOffRequest, Attribute
+from timepiece.crm.models import Project, PaidTimeOffRequest, Attribute, Milestone
 from timepiece.reports.forms import BillableHoursReportForm, HourlyReportForm,\
         ProductivityReportForm, PayrollSummaryReportForm, RevenueReportForm,\
         BacklogFilterForm
@@ -1994,3 +1994,17 @@ def active_projects_burnup_charts(request, minder_id=-1):
     context = {'minders': minders,
                'project_ids': project_ids}
     return render(request, 'timepiece/reports/active_projects_burnup_charts.html', context)
+
+
+class PendingMilestonesReport(TemplateView):
+    template_name = 'timepiece/reports/milestones.html'
+
+    def get_context_data(self, **kwargs):
+        context = super(PendingMilestonesReport, self).get_context_data(**kwargs)
+
+        pending_milestones = []
+        for project, milestones in groupby(Milestone.objects.filter(status__in=[Milestone.NEW, Milestone.MODIFIED]), lambda m:m.project):
+            pending_milestones.append((project, list(milestones)))
+
+        context['pending_milestones'] = pending_milestones
+        return context

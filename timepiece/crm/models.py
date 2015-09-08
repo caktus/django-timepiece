@@ -1125,6 +1125,11 @@ class Project(models.Model):
     def open_general_tasks(self):
         return self.generaltask_set.all() # status__terminal=False
 
+    @property
+    def pending_milestones(self):
+        return self.milestone_set.filter(
+            status__in=[Milestone.NEW, Milestone.MODIFIED])
+
 
 class RelationshipType(models.Model):
     name = models.CharField(max_length=255, unique=True)

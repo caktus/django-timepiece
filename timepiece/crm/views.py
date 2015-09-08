@@ -1600,6 +1600,42 @@ class ApproveMilestone(UpdateView):
     def get_success_url(self):
         return '/timepiece/project/%d' % int(self.kwargs['project_id'])
 
+@cbv_decorator(permission_required('crm.approve_milestone'))
+class ApproveAllProjectMilestones(UpdateView):
+    model = Project
+    form_class = ApproveMilestoneForm
+    template_name = 'timepiece/project/approve_milestones.html'
+    pk_url_kwarg = 'project_id'
+
+    def form_valid(self, form):
+        project = self.object
+        for milestone in project.milestone_set.filter(status__in=[Milestone.NEW, Milestone.MODIFIED]):
+            milestone.approver = self.request.user
+            milestone.status = Milestone.APPROVED
+            milestone.approval_date = datetime.datetime.now()
+            milestone.save()
+
+            # record keeping
+            ApprovedMilestone.objects.create(
+                milestone=milestone,
+                project=milestone.project,
+                name=milestone.name,
+                description=milestone.description,
+                due_date=milestone.due_date,
+                author=milestone.author,
+                created=milestone.created,
+                editor=milestone.editor,
+                modified=milestone.modified,
+                status=milestone.status,
+                approver=milestone.approver,
+                approval_date=milestone.approval_date
+            )
+
+        return super(ApproveAllProjectMilestones, self).form_valid(form)
+    
+    def get_success_url(self):
+        return '/timepiece/project/%d' % int(self.object.id)
+
 
 @cbv_decorator(permission_required('crm.delete_milestone'))
 class DeleteMilestone(DeleteView):
