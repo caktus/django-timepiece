@@ -2003,7 +2003,10 @@ class PendingMilestonesReport(TemplateView):
         context = super(PendingMilestonesReport, self).get_context_data(**kwargs)
 
         pending_milestones = []
-        for project, milestones in groupby(Milestone.objects.filter(status__in=[Milestone.NEW, Milestone.MODIFIED]), lambda m:m.project):
+        for project, milestones in groupby(
+            Milestone.objects.filter(status__in=[Milestone.NEW, Milestone.MODIFIED],
+                project__status=4), lambda m:m.project):
+            
             pending_milestones.append((project, list(milestones)))
 
         context['pending_milestones'] = pending_milestones
