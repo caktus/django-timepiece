@@ -43,6 +43,11 @@
             {% if perms.entries.can_clock_in %}
                 <li><a href="{% url 'view_schedule' %}">Weekly Schedule</a></li>
             {% endif %}
+
+            {% if perms.crm.approve_milestone %}
+                <li class="divider"></li>
+                <li><a href="{% url 'report_pending_milestones' %}">Pending Milestones</a></li>
+            {% endif %}
         </ul>
     </li>
 {% endif %}

@@ -16,7 +16,8 @@ from timepiece.crm.models import (Attribute, Business, Project,
         PaidTimeOffLog, Milestone, ActivityGoal, BusinessNote,
         BusinessDepartment, Contact, ContactNote, Lead, LeadNote,
         DistinguishingValueChallenge, TemplateDifferentiatingValue,
-        DVCostItem, Opportunity, LeadAttachment, LimitedAccessUserProfile)
+        DVCostItem, Opportunity, LeadAttachment, LimitedAccessUserProfile,
+        MilestoneNote)
 from timepiece.fields import WeeklyScheduleWidget
 
 import datetime
@@ -100,6 +101,7 @@ class CreateProjectForm(forms.ModelForm):
             'status', 'project_department', 'activity_group', 'description')
 
     def __init__(self, *args, **kwargs):
+        self.user = kwargs.pop('user')
         super(CreateProjectForm, self).__init__(*args, **kwargs)
         self.fields['point_person'].label = 'Minder'
         EMPLOYEE_CHOICES = [(0, '-')] + [(u.pk, '%s, %s'%(
@@ -145,7 +147,9 @@ class CreateProjectForm(forms.ModelForm):
             project=project,
             name='Target Internal Completion',
             due_date=self.cleaned_data['target_internal_completion_date'],
-            description=self.cleaned_data.get('target_internal_completion_description', '')
+            description=self.cleaned_data.get('target_internal_completion_description', ''),
+            author=self.user,
+            editor=self.user
         )
         tic_ms.save()
 
@@ -154,7 +158,9 @@ class CreateProjectForm(forms.ModelForm):
             project=project,
             name='Required Completion',
             due_date=self.cleaned_data['required_completion_date'],
-            description=self.cleaned_data.get('required_completion_description', '')
+            description=self.cleaned_data.get('required_completion_description', ''),
+            author=self.user,
+            editor=self.user
         )
         required_ms.save()
 
@@ -163,7 +169,9 @@ class CreateProjectForm(forms.ModelForm):
             project=project,
             name='Target Open',
             due_date=self.cleaned_data['target_open_date'],
-            description=self.cleaned_data.get('target_open_description', '')
+            description=self.cleaned_data.get('target_open_description', ''),
+            author=self.user,
+            editor=self.user
         )
         target_open_ms.save()
 
@@ -172,7 +180,9 @@ class CreateProjectForm(forms.ModelForm):
             project=project,
             name='Start',
             due_date=self.cleaned_data['start_date'],
-            description=self.cleaned_data.get('start_description', '')
+            description=self.cleaned_data.get('start_description', ''),
+            author=self.user,
+            editor=self.user
         )
         start_ms.save()
 
@@ -182,7 +192,9 @@ class CreateProjectForm(forms.ModelForm):
                 project=project,
                 name='Turn-In',
                 due_date=self.cleaned_data['turn_in_date'],
-                description=self.cleaned_data.get('turn_in_description', '')
+                description=self.cleaned_data.get('turn_in_description', ''),
+                author=self.user,
+                editor=self.user
             )
             turn_in_ms.save()
 
@@ -462,6 +474,25 @@ class CreateEditMilestoneForm(forms.ModelForm):
         model = Milestone
         fields = ('name', 'due_date', 'description')
 
+class ApproveMilestoneForm(forms.ModelForm):
+
+    class Meta:
+        model = Milestone
+        fields = ()
+
+class AddMilestoneNoteForm(forms.ModelForm):
+
+    class Meta:
+        model = MilestoneNote
+        fields = ('text', 'milestone', 'author')
+
+    def __init__(self, *args, **kwargs):
+        super(AddMilestoneNoteForm, self).__init__(*args, **kwargs)
+        self.fields['text'].label = ''
+        self.fields['text'].widget.attrs['rows'] = 4
+        self.fields['author'].widget = widgets.HiddenInput()
+        self.fields['milestone'].widget = widgets.HiddenInput()
+
 class CreateEditActivityGoalForm(forms.ModelForm):
 
     class Meta:
@@ -487,7 +518,7 @@ class CreateEditContactForm(forms.ModelForm):
 
     class Meta:
         model = Contact
-        fields = ('lead_source', 'first_name', 'last_name',
+        fields = ('lead_source', 'user','first_name', 'last_name',
             'salutation', 'first_name', 'last_name', 'title',
             'business', 'business_department', 'assistant',
             'assistant_name', 'assistant_phone', 'assistant_email',
@@ -502,6 +533,27 @@ class CreateEditContactForm(forms.ModelForm):
     def __init__(self, *args, **kwargs):
         super(CreateEditContactForm, self).__init__(*args, **kwargs)
         self.fields['lead_source'].choices = self.EMPLOYEE_CHOICES
+
+
+        # Check if Contact is User and edit underlying info if so
+
+    def save(self, commit=True):
+        instance_contact = super(CreateEditContactForm, self).save(commit=False)
+        instance_user=instance_contact.user
+
+        if instance_user is not None:
+            instance_user.first_name = instance_contact.first_name
+            instance_user.last_name = instance_contact.last_name
+            instance_user.email = instance_contact.email
+
+            if commit:
+                instance_user.save()
+
+        if commit:
+            instance_contact.save()
+            #self.save_m2m()
+        return instance_contact
+
 
 class AddContactNoteForm(forms.ModelForm):
 

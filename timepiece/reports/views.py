@@ -25,7 +25,7 @@ from timepiece.utils.csv import CSVViewMixin, DecimalEncoder
 
 from timepiece.contracts.models import ProjectContract, ContractRate
 from timepiece.entries.models import Entry, ProjectHours, Activity
-from timepiece.crm.models import Project, PaidTimeOffRequest, Attribute
+from timepiece.crm.models import Project, PaidTimeOffRequest, Attribute, Milestone
 from timepiece.reports.forms import BillableHoursReportForm, HourlyReportForm,\
         ProductivityReportForm, PayrollSummaryReportForm, RevenueReportForm,\
         BacklogFilterForm
@@ -969,13 +969,7 @@ def report_productivity(request):
                 projected_hours = Decimal('0.0')
                 for activity_goal in activity_goals:
                     projected_hours += activity_goal.goal_hours
-                    actual_hours += Entry.objects.filter(
-                        billableQ,
-                        user=activity_goal.employee,
-                        project=activity_goal.project,
-                        activity=activity_goal.activity,
-                        ).aggregate(hours=Sum('hours')
-                        )['hours'] or Decimal('0.0')
+                actual_hours = actuals.filter(activity=activity).aggregate(hours=Sum('hours'))['hours']
 
                 report.append([activity.name, actual_hours,
                     projected_hours, projected_hours - actual_hours])
@@ -1009,13 +1003,7 @@ def report_productivity(request):
                 projected_hours = Decimal('0.0')
                 for activity_goal in activity_goals:
                     projected_hours += activity_goal.goal_hours
-                    actual_hours += Entry.objects.filter(
-                        billableQ,
-                        user=activity_goal.employee,
-                        project=activity_goal.project,
-                        activity=activity_goal.activity,
-                        ).aggregate(hours=Sum('hours')
-                        )['hours'] or Decimal('0.0')
+                actual_hours = actuals.aggregate(hours=Sum('hours'))['hours']
 
                 label = '%s: %s' % (activity_goal.project.code,
                     activity_goal.project.name)
@@ -1119,6 +1107,8 @@ class BacklogReport(CSVViewMixin, TemplateView):
         if not request.user.has_perm('crm.view_backlog'):
             return HttpResponseRedirect( reverse('report_employee_backlog', args=(request.user.id,)) )
 
+        self.request = request
+        
         self.active_tab = kwargs.get('active_tab', 'company') or 'company'
         self.export_data = request.GET.get('export_data', False)
         self.export_company_data = request.GET.get('export_company_data', False)
@@ -1155,7 +1145,7 @@ class BacklogReport(CSVViewMixin, TemplateView):
                 # ensure no results are returned
                 activity_goalQ &= Q(project__type__billable=True) & Q(project__type__billable=False)
         else:
-            messages.warning(request, 'There was an error applying your selected filter.')
+            messages.warning(self.request, 'There was an error applying your selected filter.')
             activity_goalQ = Q(project__status=4)
 
         backlog = {}
@@ -1992,3 +1982,20 @@ def active_projects_burnup_charts(request, minder_id=-1):
     context = {'minders': minders,
                'project_ids': project_ids}
     return render(request, 'timepiece/reports/active_projects_burnup_charts.html', context)
+
+
+class PendingMilestonesReport(TemplateView):
+    template_name = 'timepiece/reports/milestones.html'
+
+    def get_context_data(self, **kwargs):
+        context = super(PendingMilestonesReport, self).get_context_data(**kwargs)
+
+        pending_milestones = []
+        for project, milestones in groupby(
+            Milestone.objects.filter(status__in=[Milestone.NEW, Milestone.MODIFIED],
+                project__status=4), lambda m:m.project):
+            
+            pending_milestones.append((project, list(milestones)))
+
+        context['pending_milestones'] = pending_milestones
+        return context

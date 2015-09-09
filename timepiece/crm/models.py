@@ -937,6 +937,12 @@ class Contact(models.Model):
             return self.user.last_name
         else:
             return self.last_name
+    @property
+    def get_email(self):
+        if self.user:
+            return self.user.email
+        else:
+            return self.email
 
     @property
     def do_not_call_class(self):
@@ -1125,6 +1131,11 @@ class Project(models.Model):
     def open_general_tasks(self):
         return self.generaltask_set.all() # status__terminal=False
 
+    @property
+    def pending_milestones(self):
+        return self.milestone_set.filter(
+            status__in=[Milestone.NEW, Milestone.MODIFIED])
+
 
 class RelationshipType(models.Model):
     name = models.CharField(max_length=255, unique=True)
@@ -1174,16 +1185,90 @@ class ProjectAttachment(models.Model):
         return url
 
 class Milestone(models.Model):
+    NEW = 'new'
+    MODIFIED = 'modified'
+    APPROVED = 'approved'
+    DENIED = 'denied'
+    STATUSES = ((NEW, 'New'),
+                (MODIFIED, 'Modified'),
+                (APPROVED, 'Approved'),
+                (DENIED, 'Denied'))
+
     project = models.ForeignKey(Project)
     name = models.CharField(max_length=255)
     description = models.TextField(blank=True)
     due_date = models.DateField()
+    author = models.ForeignKey(User, related_name='milestone_author')
+    created = models.DateTimeField(auto_now_add=True)
+    editor = models.ForeignKey(User, related_name='milestone_editor')
+    modified = models.DateTimeField(auto_now=True)
+    status = models.CharField(max_length=8, choices=STATUSES, default=NEW)
+    approver = models.ForeignKey(User, related_name='milestone_approver',
+        null=True, blank=True)
+    approval_date = models.DateTimeField(null=True, blank=True)
 
     def __unicode__(self):
         return '%s: %s' % (self.project.code, self.name)
 
     class Meta:
-        ordering = ('due_date',)
+        ordering = ('due_date', 'name')
+        permissions = (('approve_milestone', 'Can approve milestone'),)
+
+    @property
+    def approved(self):
+        return self.status == self.APPROVED
+
+    @property
+    def denied(self):
+        return self.status == self.DENIED
+
+    @property
+    def get_notes(self):
+        return self.milestonenote_set.all()
+
+    @property
+    def previous_approval(self):
+        if len(self.approvals.all()):
+            return self.approvals.all().order_by('-approval_date')[0]
+        else:
+            return None
+
+
+class ApprovedMilestone(models.Model):
+    milestone = models.ForeignKey(Milestone, related_name="approvals")
+    project = models.ForeignKey(Project)
+    name = models.CharField(max_length=255)
+    description = models.TextField(blank=True)
+    due_date = models.DateField()
+    author = models.ForeignKey(User, related_name='approved_milestone_author')
+    created = models.DateTimeField()
+    editor = models.ForeignKey(User, related_name='approved_milestone_editor')
+    modified = models.DateTimeField()
+    status = models.CharField(max_length=8, choices=Milestone.STATUSES,
+        default=Milestone.APPROVED)
+    approver = models.ForeignKey(User,
+        related_name='approved_milestone_approver',
+        null=True, blank=True)
+    approval_date = models.DateTimeField(null=True, blank=True) 
+
+    class Meta:
+        ordering = ('project__code', 'milestone', '-approval_date')
+
+    def __unicode__(self):
+        return '%s approval' % (str(self.milestone))
+
+
+class MilestoneNote(models.Model):
+    milestone = models.ForeignKey(Milestone)
+    text = models.TextField()
+    author = models.ForeignKey(User, related_name='authored_milestone_notes')
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ['milestone', '-created_at']
+
+    def __unicode__(self):
+        return '%s note' % (str(self.milestone))
 
 
 from timepiece.entries.models import Entry, Activity

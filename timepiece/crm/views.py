@@ -31,6 +31,7 @@ from timepiece.crm.forms import (CreateEditBusinessForm, CreateProjectForm, Edit
         EditUserSettingsForm, EditProjectRelationshipForm, SelectProjectForm,
         EditUserForm, CreateUserForm, SelectUserForm, ProjectSearchForm,
         BusinessSearchForm, QuickSearchForm, CreateEditPTORequestForm, CreateEditMilestoneForm,
+        ApproveMilestoneForm, AddMilestoneNoteForm,
         CreateEditActivityGoalForm, ApproveDenyPTORequestForm,
         CreateEditPaidTimeOffLog, AddBusinessNoteForm,
         CreateEditBusinessDepartmentForm, CreateEditContactForm,
@@ -38,11 +39,13 @@ from timepiece.crm.forms import (CreateEditBusinessForm, CreateProjectForm, Edit
         SelectContactForm, AddDistinguishingValueChallenegeForm,
         AddTemplateDifferentiatingValuesForm, CreateEditTemplateDVForm,
         CreateEditDVCostItem, CreateEditOpportunity, EditLimitedUserProfileForm)
-from timepiece.crm.models import (Business, Project, ProjectRelationship, UserProfile,
-    PaidTimeOffLog, PaidTimeOffRequest, Milestone, ActivityGoal, BusinessNote,
-    BusinessDepartment, Contact, ContactNote, BusinessAttachment, Lead, LeadNote,
-    DistinguishingValueChallenge, TemplateDifferentiatingValue, LeadAttachment,
-    DVCostItem, Opportunity, ProjectAttachment, LimitedAccessUserProfile)
+from timepiece.crm.models import (Business, Project, ProjectRelationship,
+    UserProfile, PaidTimeOffLog, PaidTimeOffRequest, Milestone,
+    ApprovedMilestone, MilestoneNote, ActivityGoal, BusinessNote,
+    BusinessDepartment, Contact, ContactNote, BusinessAttachment, Lead,
+    LeadNote, DistinguishingValueChallenge, TemplateDifferentiatingValue,
+    LeadAttachment, DVCostItem, Opportunity, ProjectAttachment,
+    LimitedAccessUserProfile)
 from timepiece.crm.utils import grouped_totals, project_activity_goals_with_progress
 from timepiece.entries.models import Entry, Activity, Location
 from timepiece.reports.forms import HourlyReportForm
@@ -992,7 +995,7 @@ class ListProjects(SearchListView, CSVViewMixin):
                     project.get_project_department_display(),
                     '%s:%s'%(project.business.short_name, project.business.name),
                     project.business_department.name if project.business_department else '',
-                    '%s - %s - %s' % (project.client_primary_poc.name, project.client_primary_poc.email, project.client_primary_poc.office_phone) if project.client_primary_poc else '',
+                    '%s %s' % (project.client_primary_poc.first_name, project.client_primary_poc.last_name) if project.client_primary_poc else '',
                     project.status, project.billable, str(project.finder),
                     str(project.point_person), str(project.binder),
                     tic_ms.due_date if tic_ms else '',
@@ -1037,6 +1040,11 @@ class CreateProject(CreateView):
     model = Project
     form_class = CreateProjectForm
     template_name = 'timepiece/project/create_edit.html'
+
+    def get_form_kwargs(self):
+        kwargs = super(CreateProject, self).get_form_kwargs()
+        kwargs.update({'user': self.request.user})
+        return kwargs
 
 
 @cbv_decorator(permission_required('crm.delete_project'))
@@ -1471,6 +1479,12 @@ class ViewMilestone(DetailView):
     pk_url_kwarg = 'milestone_id'
     template_name = 'timepiece/project/milestone/view.html'
 
+    def get_context_data(self, **kwargs):
+        context = super(ViewMilestone, self).get_context_data(**kwargs)
+        # context['project'] = Project.objects.get(id=int(self.kwargs['project_id']))
+        context['add_milestone_note_form'] = AddMilestoneNoteForm()
+        return context
+
 @cbv_decorator(permission_required('crm.add_milestone'))
 class CreateMilestone(CreateView):
     model = Milestone
@@ -1484,6 +1498,8 @@ class CreateMilestone(CreateView):
 
     def form_valid(self, form):
         form.instance.project = Project.objects.get(id=int(self.kwargs['project_id']))
+        form.instance.author = self.request.user
+        form.instance.editor = self.request.user
         return super(CreateMilestone, self).form_valid(form)
 
     def get_success_url(self):
@@ -1502,8 +1518,123 @@ class EditMilestone(UpdateView):
         context['project'] = Project.objects.get(id=int(self.kwargs['project_id']))
         return context
 
+    def form_valid(self, form):
+        form.instance.editor = self.request.user
+        if form.has_changed():
+            form.instance.status = Milestone.MODIFIED
+            form.instance.approver = None
+            form.instance.approval_date = None
+        return super(EditMilestone, self).form_valid(form)
+
     def get_success_url(self):
         return '/timepiece/project/%d' % int(self.kwargs['project_id'])
+
+
+@cbv_decorator(permission_required('crm.add_milestonenote'))
+class AddMilestoneNote(View):
+
+    def post(self, request, *args, **kwargs):
+        user = self.request.user
+        milestone = Milestone.objects.get(id=int(kwargs['milestone_id']))
+        note = MilestoneNote(milestone=milestone,
+                             author=user,
+                             text=request.POST.get('text', ''))
+        if len(note.text):
+            note.save()
+        return HttpResponseRedirect(request.GET.get('next', None) or
+            reverse('view_milestone', args=(milestone.id,)))
+
+
+@cbv_decorator(permission_required('crm.approve_milestone'))
+class ApproveMilestone(UpdateView):
+    model = Milestone
+    form_class = ApproveMilestoneForm
+    template_name = 'timepiece/project/milestone/approve.html'
+    pk_url_kwarg = 'milestone_id'
+
+    def get_context_data(self, **kwargs):
+        context = super(ApproveMilestone, self).get_context_data(**kwargs)
+        context['project'] = Project.objects.get(id=int(self.kwargs['project_id']))
+        context['add_milestone_note_form'] = AddMilestoneNoteForm()
+        return context
+
+    def form_valid(self, form):
+        # if the user added a note, save it here
+        text = self.request.POST.get('note', '')
+        if text:
+            note = MilestoneNote(
+                milestone=form.instance,
+                text=text,
+                author=self.request.user)
+            note.save()
+
+        # set status as approved or pending
+        if self.request.POST.get('approve', False):
+            form.instance.approver = self.request.user
+            form.instance.status = Milestone.APPROVED
+            form.instance.approval_date = datetime.datetime.now()
+
+            # record keeping
+            ApprovedMilestone.objects.create(
+                milestone=form.instance,
+                project=form.instance.project,
+                name=form.instance.name,
+                description=form.instance.description,
+                due_date=form.instance.due_date,
+                author=form.instance.author,
+                created=form.instance.created,
+                editor=form.instance.editor,
+                modified=form.instance.modified,
+                status=form.instance.status,
+                approver=form.instance.approver,
+                approval_date=form.instance.approval_date
+            )
+
+        elif self.request.POST.get('deny', False):
+            form.instance.approver = self.request.user
+            form.instance.status = Milestone.DENIED
+            form.instance.approval_date = datetime.datetime.now()
+
+        return super(ApproveMilestone, self).form_valid(form)
+
+    def get_success_url(self):
+        return '/timepiece/project/%d' % int(self.kwargs['project_id'])
+
+@cbv_decorator(permission_required('crm.approve_milestone'))
+class ApproveAllProjectMilestones(UpdateView):
+    model = Project
+    form_class = ApproveMilestoneForm
+    template_name = 'timepiece/project/approve_milestones.html'
+    pk_url_kwarg = 'project_id'
+
+    def form_valid(self, form):
+        project = self.object
+        for milestone in project.milestone_set.filter(status__in=[Milestone.NEW, Milestone.MODIFIED]):
+            milestone.approver = self.request.user
+            milestone.status = Milestone.APPROVED
+            milestone.approval_date = datetime.datetime.now()
+            milestone.save()
+
+            # record keeping
+            ApprovedMilestone.objects.create(
+                milestone=milestone,
+                project=milestone.project,
+                name=milestone.name,
+                description=milestone.description,
+                due_date=milestone.due_date,
+                author=milestone.author,
+                created=milestone.created,
+                editor=milestone.editor,
+                modified=milestone.modified,
+                status=milestone.status,
+                approver=milestone.approver,
+                approval_date=milestone.approval_date
+            )
+
+        return super(ApproveAllProjectMilestones, self).form_valid(form)
+    
+    def get_success_url(self):
+        return '/timepiece/project/%d' % int(self.object.id)
 
 
 @cbv_decorator(permission_required('crm.delete_milestone'))

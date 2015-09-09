@@ -28,9 +28,9 @@
         <div class="span4">
             <h3>Contact Info</h3>
             <table class="table table-bordered">
-                <tr><th>Name</th><td>{{ object.get_salutation_display }} {{ object.first_name }} {{ object.last_name }}</td></tr>
-                <tr><th>First Name</th><td>{{ object.first_name }}</td></tr>
-                <tr><th>Last Name</th><td>{{ object.last_name }}</td></tr>
+                <tr><th>Name</th><td>{{ object.get_salutation_display }} {{ object.get_first_name }} {{ object.get_last_name }}</td></tr>
+                <tr><th>First Name</th><td>{{ object.get_first_name }}</td></tr>
+                <tr><th>Last Name</th><td>{{ object.get_last_name }}</td></tr>
                 <tr><th>Title</th><td>{{ object.title }}</td></tr>
                 <tr><th>Department</th><td>{{ object.business_department }}</td></tr>
                 <tr>
@@ -46,11 +46,11 @@
 
                 {% if object.has_opted_out_of_email %}
                 <tr class="error"><th colspan=2>This contact has opted out of email.</th></tr>
-                <tr class="error"><th>Email</th><td>{{ object.email }}</td></tr>
+                <tr class="error"><th>Email</th><td>{{ object.get_email }}</td></tr>
                 {% else %}
-                <tr><th>Email</th><td><a href="mailto:{{ object.email }}">{{ object.email }}</a></td></tr>
+                <tr><th>Email</th><td><a href="mailto:{{ object.email }}">{{ object.get_email }}</a></td></tr>
                 {% endif %}
-                
+
                 {% if object.do_not_call %}
                 <tr class="error"><th colspan=2>This contact is on the Do Not Call list.</th></tr>
                 <tr class="error"><th>Office</th><td>{% format_phone_number object.office_phone %}</td></tr>
@@ -63,13 +63,13 @@
                 <tr><th>Home</th><td>{% format_phone_number object.home_phone %}</td></tr>
                 <tr><th>Other</th><td>{% format_phone_number object.other_phone %}</td></tr>
                 {% endif %}
-                
+
                 {% if object.has_opted_out_of_fax %}
                 <tr class="error"><th colspan=2>This contact has opted out of fax.</th></tr>
                 <tr class="error"><th>Fax</th><td>{% format_phone_number object.fax %}</td></tr>
                 {% else %}
                 <tr><th>Fax</th><td>{% format_phone_number object.fax %}</td></tr>
-                {% endif %}                
+                {% endif %}
             </table>
 
             {% if object.assistant or object.assistant_name or object.assistant_phone or object.assistant_email %}
@@ -120,6 +120,12 @@
             <table class="table table-bordered">
                 <tr><th>Lead Source</th>
                     <td><a href="{% url 'view_user' object.lead_source.id%}">{{ object.lead_source }}</a></td>
+                </tr>
+                <tr>
+                    {% if object.user %}
+                    <th>Internal User</th>
+                    <td><a href="{% url 'view_user' object.user.id%}">{{ object.lead_source }}</a></td>
+                    {% endif %}
                 </tr>
             </table>
 

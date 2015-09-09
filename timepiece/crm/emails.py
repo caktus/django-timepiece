@@ -44,6 +44,7 @@ def new_pto(pto, url, approve_url, deny_url):
 
 def approved_pto(pto, url):
     to_addys = ['browne.danielc@gmail.com']
+    to_addys.append(pto.user_profile.user.email)
 
     subject = '[FirmBase] Time Off Request Approved'
     text_content = 'Time Off request (' +  url + ') approved.'
@@ -70,6 +71,7 @@ def approved_pto(pto, url):
 
 def denied_pto(pto, url):
     to_addys = ['browne.danielc@gmail.com']
+    to_addys.append(pto.user_profile.user.email)
 
     subject = '[FirmBase] Time Off Request Denied'
     text_content = 'Time Off request (' +  url + ') denied.'

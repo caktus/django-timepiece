@@ -460,6 +460,7 @@ def get_company_backlog_chart_data(activity_goalQ):
         date = datetime.datetime.strptime(date_str, '%Y-%m-%d').date()
         if i == 0:
             sun_date = date
+            print '1 date', date, ' --> ', sun_date
             while sun_date.weekday() != 6:
                 sun_date -= datetime.timedelta(days=1)
             c3_columns_by_week.append(['x', str(sun_date)])
@@ -468,12 +469,19 @@ def get_company_backlog_chart_data(activity_goalQ):
                 c3_columns_by_week.append([cols[0], cols[i]])
         else:
             index = 1
-            if date.weekday() == 0:
+            
+            last_sun_date = sun_date
+            sun_date = date
+            while sun_date.weekday() != 6:
+                sun_date -= datetime.timedelta(days=1)
+
+            new_week = last_sun_date != sun_date
+            if new_week:
                 j += 1
-                sun_date = date - datetime.timedelta(days=1)
                 c3_columns_by_week[0].append(str(sun_date))
+            
             for cols in c3_columns[1:]:
-                if date.weekday() == 0:
+                if new_week:
                     c3_columns_by_week[index].append(0.0)
                 c3_columns_by_week[index][j] += c3_columns[index][i]
                 index += 1

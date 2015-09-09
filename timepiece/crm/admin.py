@@ -5,7 +5,8 @@ from timepiece.crm.models import (Attribute, Business, Project,
         PaidTimeOffLog, Milestone, ActivityGoal,
         Contact, ContactNote, BusinessNote, BusinessAttachment,
         Lead, LeadNote, DistinguishingValueChallenge, 
-        TemplateDifferentiatingValue, DVCostItem)
+        TemplateDifferentiatingValue, DVCostItem,
+        MilestoneNote)
 
 
 class AttributeAdmin(admin.ModelAdmin):
@@ -75,6 +76,7 @@ admin.site.register(UserProfile, UserProfileAdmin)
 admin.site.register(PaidTimeOffRequest, PTORequestAdmin)
 admin.site.register(PaidTimeOffLog, PTOLogAdmin)
 admin.site.register(Milestone, MilestoneAdmin)
+admin.site.register(MilestoneNote)
 admin.site.register(ActivityGoal, ActivityGoalAdmin)
 admin.site.register(Contact, ContactAdmin)
 admin.site.register(ContactNote, ContactNoteAdmin)
