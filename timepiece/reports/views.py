@@ -969,13 +969,7 @@ def report_productivity(request):
                 projected_hours = Decimal('0.0')
                 for activity_goal in activity_goals:
                     projected_hours += activity_goal.goal_hours
-                    actual_hours += Entry.objects.filter(
-                        billableQ,
-                        user=activity_goal.employee,
-                        project=activity_goal.project,
-                        activity=activity_goal.activity,
-                        ).aggregate(hours=Sum('hours')
-                        )['hours'] or Decimal('0.0')
+                actual_hours = actuals.filter(activity=activity).aggregate(hours=Sum('hours'))['hours']
 
                 report.append([activity.name, actual_hours,
                     projected_hours, projected_hours - actual_hours])
@@ -1009,13 +1003,7 @@ def report_productivity(request):
                 projected_hours = Decimal('0.0')
                 for activity_goal in activity_goals:
                     projected_hours += activity_goal.goal_hours
-                    actual_hours += Entry.objects.filter(
-                        billableQ,
-                        user=activity_goal.employee,
-                        project=activity_goal.project,
-                        activity=activity_goal.activity,
-                        ).aggregate(hours=Sum('hours')
-                        )['hours'] or Decimal('0.0')
+                actual_hours = actuals.aggregate(hours=Sum('hours'))['hours']
 
                 label = '%s: %s' % (activity_goal.project.code,
                     activity_goal.project.name)
