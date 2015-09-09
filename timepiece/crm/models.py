@@ -937,6 +937,12 @@ class Contact(models.Model):
             return self.user.last_name
         else:
             return self.last_name
+    @property
+    def get_email(self):
+        if self.user:
+            return self.user.email
+        else:
+            return self.email
 
     @property
     def do_not_call_class(self):

@@ -518,7 +518,7 @@ class CreateEditContactForm(forms.ModelForm):
 
     class Meta:
         model = Contact
-        fields = ('lead_source', 'first_name', 'last_name',
+        fields = ('lead_source', 'user','first_name', 'last_name',
             'salutation', 'first_name', 'last_name', 'title',
             'business', 'business_department', 'assistant',
             'assistant_name', 'assistant_phone', 'assistant_email',
@@ -533,6 +533,27 @@ class CreateEditContactForm(forms.ModelForm):
     def __init__(self, *args, **kwargs):
         super(CreateEditContactForm, self).__init__(*args, **kwargs)
         self.fields['lead_source'].choices = self.EMPLOYEE_CHOICES
+
+
+        # Check if Contact is User and edit underlying info if so
+
+    def save(self, commit=True):
+        instance_contact = super(CreateEditContactForm, self).save(commit=False)
+        instance_user=instance_contact.user
+
+        if instance_user is not None:
+            instance_user.first_name = instance_contact.first_name
+            instance_user.last_name = instance_contact.last_name
+            instance_user.email = instance_contact.email
+
+            if commit:
+                instance_user.save()
+
+        if commit:
+            instance_contact.save()
+            #self.save_m2m()
+        return instance_contact
+
 
 class AddContactNoteForm(forms.ModelForm):
 
