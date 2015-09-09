@@ -448,19 +448,21 @@ class Business(models.Model):
     account_owner = models.ForeignKey(User, blank=True, null=True, related_name='biz_account_holder')
 
     billing_street = models.CharField(max_length=255, blank=True)
+    billing_street_2=models.CharField(max_length=255, blank = True)
     billing_city = models.CharField(max_length=255, blank=True)
     billing_state = models.CharField(max_length=2, blank=True, choices=STATES)
     billing_postalcode = models.CharField(max_length=32, blank=True)
-    billing_mailstop = models.CharField(max_length=16, blank=True)
+    billing_mailstop = models.CharField(max_length=16, blank=True, verbose_name='Billing Zip+4')
     billing_country = models.CharField(max_length=128, blank=True)
     billing_lat = models.FloatField(blank=True, null=True, verbose_name='Billing Latitude', help_text='This is automatically set using the Google Maps Geocode API on save.')
     billing_lon = models.FloatField(blank=True, null=True, verbose_name='Billing Longitude', help_text='This is automatically set using the Google Maps Geocode API on save.')
 
     shipping_street = models.CharField(max_length=255, blank=True)
+    shipping_street_2= models.CharField(max_length=255, blank=True)
     shipping_city = models.CharField(max_length=255, blank=True)
     shipping_state = models.CharField(max_length=2, blank=True, choices=STATES)
     shipping_postalcode = models.CharField(max_length=32, blank=True)
-    shipping_mailstop = models.CharField(max_length=16, blank=True)
+    shipping_mailstop = models.CharField(max_length=16, blank=True, verbose_name='Shipping Zip+4')
     shipping_country = models.CharField(max_length=128, blank=True)
     shipping_lat = models.FloatField(blank=True, null=True, verbose_name='Shipping Latitude', help_text='This is automatically set using the Google Maps Geocode API on save.')
     shipping_lon = models.FloatField(blank=True, null=True, verbose_name='Shipping Longitude', help_text='This is automatically set using the Google Maps Geocode API on save.')
@@ -978,6 +980,14 @@ class TrackableProjectManager(models.Manager):
 
 class Project(models.Model):
     MINDERS_GROUP_ID = 3
+    PROJECT_DEPARTMENTS = (
+        ('elec-avionics', 'Electrical/Avionics'),
+        ('integration', 'Integration'),
+        ('mech', 'Mechanical Systems'),
+        ('struct', 'Structures'),
+        ('tech-serv', 'Technical Services'),
+        ('other', 'Other')
+    )
 
     name = models.CharField(max_length=255)
     code = models.CharField(max_length=12,
@@ -993,7 +1003,10 @@ class Project(models.Model):
     business_department = models.ForeignKey(BusinessDepartment,
             null=True, blank=True,
             verbose_name="Company Department",
-            related_name='new_business_department_projects')
+            related_name='new_business_department_projects',
+            on_delete=models.SET_NULL)
+    client_primary_poc = models.ForeignKey(Contact, blank=True, null=True,
+            on_delete=models.SET_NULL)
     point_person = models.ForeignKey(User,
         verbose_name="Minder",
         related_name="minder",
@@ -1011,13 +1024,17 @@ class Project(models.Model):
             through='ProjectRelationship')
     activity_group = models.ForeignKey('entries.ActivityGroup',
             related_name='activity_group', null=True, blank=True,
-            verbose_name='restrict activities to')
+            verbose_name='restrict activities to',
+            on_delete=models.SET_NULL)
     type = models.ForeignKey(Attribute,
             limit_choices_to={'type': 'project-type'},
             related_name='projects_with_type')
     status = models.ForeignKey(Attribute,
             limit_choices_to={'type': 'project-status'},
             related_name='projects_with_status')
+    project_department = models.CharField(max_length=16,
+      choices=PROJECT_DEPARTMENTS,
+      default='other')
     description = models.TextField()
     year = models.SmallIntegerField(blank=True, null=True) # this field is required, but is taken care of in code
 
@@ -1114,6 +1131,11 @@ class Project(models.Model):
     def open_general_tasks(self):
         return self.generaltask_set.all() # status__terminal=False
 
+    @property
+    def pending_milestones(self):
+        return self.milestone_set.filter(
+            status__in=[Milestone.NEW, Milestone.MODIFIED])
+
 
 class RelationshipType(models.Model):
     name = models.CharField(max_length=255, unique=True)
@@ -1163,16 +1185,90 @@ class ProjectAttachment(models.Model):
         return url
 
 class Milestone(models.Model):
+    NEW = 'new'
+    MODIFIED = 'modified'
+    APPROVED = 'approved'
+    DENIED = 'denied'
+    STATUSES = ((NEW, 'New'),
+                (MODIFIED, 'Modified'),
+                (APPROVED, 'Approved'),
+                (DENIED, 'Denied'))
+
     project = models.ForeignKey(Project)
     name = models.CharField(max_length=255)
     description = models.TextField(blank=True)
     due_date = models.DateField()
+    author = models.ForeignKey(User, related_name='milestone_author')
+    created = models.DateTimeField(auto_now_add=True)
+    editor = models.ForeignKey(User, related_name='milestone_editor')
+    modified = models.DateTimeField(auto_now=True)
+    status = models.CharField(max_length=8, choices=STATUSES, default=NEW)
+    approver = models.ForeignKey(User, related_name='milestone_approver',
+        null=True, blank=True)
+    approval_date = models.DateTimeField(null=True, blank=True)
 
     def __unicode__(self):
         return '%s: %s' % (self.project.code, self.name)
 
     class Meta:
-        ordering = ('due_date',)
+        ordering = ('due_date', 'name')
+        permissions = (('approve_milestone', 'Can approve milestone'),)
+
+    @property
+    def approved(self):
+        return self.status == self.APPROVED
+
+    @property
+    def denied(self):
+        return self.status == self.DENIED
+
+    @property
+    def get_notes(self):
+        return self.milestonenote_set.all()
+
+    @property
+    def previous_approval(self):
+        if len(self.approvals.all()):
+            return self.approvals.all().order_by('-approval_date')[0]
+        else:
+            return None
+
+
+class ApprovedMilestone(models.Model):
+    milestone = models.ForeignKey(Milestone, related_name="approvals")
+    project = models.ForeignKey(Project)
+    name = models.CharField(max_length=255)
+    description = models.TextField(blank=True)
+    due_date = models.DateField()
+    author = models.ForeignKey(User, related_name='approved_milestone_author')
+    created = models.DateTimeField()
+    editor = models.ForeignKey(User, related_name='approved_milestone_editor')
+    modified = models.DateTimeField()
+    status = models.CharField(max_length=8, choices=Milestone.STATUSES,
+        default=Milestone.APPROVED)
+    approver = models.ForeignKey(User,
+        related_name='approved_milestone_approver',
+        null=True, blank=True)
+    approval_date = models.DateTimeField(null=True, blank=True) 
+
+    class Meta:
+        ordering = ('project__code', 'milestone', '-approval_date')
+
+    def __unicode__(self):
+        return '%s approval' % (str(self.milestone))
+
+
+class MilestoneNote(models.Model):
+    milestone = models.ForeignKey(Milestone)
+    text = models.TextField()
+    author = models.ForeignKey(User, related_name='authored_milestone_notes')
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ['milestone', '-created_at']
+
+    def __unicode__(self):
+        return '%s note' % (str(self.milestone))
 
 
 from timepiece.entries.models import Entry, Activity
@@ -1191,6 +1287,12 @@ class ActivityGoal(models.Model):
 
     class Meta:
         ordering = ('project__code', 'employee__last_name', 'employee__first_name', 'goal_hours',)
+
+    def clean(self):
+        # ensure that the end_date is after the date
+        if self.date > self.end_date:
+            raise ValidationError('The Start Date cannot come after the '
+                'End Date.')
 
     @property
     def get_charged_hours(self):
@@ -1296,6 +1398,11 @@ class Lead(models.Model):
     @property
     def get_opportunities(self):
         return self.opportunity_set.all().order_by('title')
+
+    @property
+    def get_projects(self):
+       pl = [proj for opps in self.get_opportunities for proj in opps.project.all()]
+       return set(pl)
 
     @property
     def open_general_tasks(self):

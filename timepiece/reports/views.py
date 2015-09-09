@@ -25,7 +25,7 @@ from timepiece.utils.csv import CSVViewMixin, DecimalEncoder
 
 from timepiece.contracts.models import ProjectContract, ContractRate
 from timepiece.entries.models import Entry, ProjectHours, Activity
-from timepiece.crm.models import Project, PaidTimeOffRequest, Attribute
+from timepiece.crm.models import Project, PaidTimeOffRequest, Attribute, Milestone
 from timepiece.reports.forms import BillableHoursReportForm, HourlyReportForm,\
         ProductivityReportForm, PayrollSummaryReportForm, RevenueReportForm,\
         BacklogFilterForm
@@ -969,13 +969,7 @@ def report_productivity(request):
                 projected_hours = Decimal('0.0')
                 for activity_goal in activity_goals:
                     projected_hours += activity_goal.goal_hours
-                    actual_hours += Entry.objects.filter(
-                        billableQ,
-                        user=activity_goal.employee,
-                        project=activity_goal.project,
-                        activity=activity_goal.activity,
-                        ).aggregate(hours=Sum('hours')
-                        )['hours'] or Decimal('0.0')
+                actual_hours = actuals.filter(activity=activity).aggregate(hours=Sum('hours'))['hours']
 
                 report.append([activity.name, actual_hours,
                     projected_hours, projected_hours - actual_hours])
@@ -1009,13 +1003,7 @@ def report_productivity(request):
                 projected_hours = Decimal('0.0')
                 for activity_goal in activity_goals:
                     projected_hours += activity_goal.goal_hours
-                    actual_hours += Entry.objects.filter(
-                        billableQ,
-                        user=activity_goal.employee,
-                        project=activity_goal.project,
-                        activity=activity_goal.activity,
-                        ).aggregate(hours=Sum('hours')
-                        )['hours'] or Decimal('0.0')
+                actual_hours = actuals.aggregate(hours=Sum('hours'))['hours']
 
                 label = '%s: %s' % (activity_goal.project.code,
                     activity_goal.project.name)
@@ -1119,6 +1107,8 @@ class BacklogReport(CSVViewMixin, TemplateView):
         if not request.user.has_perm('crm.view_backlog'):
             return HttpResponseRedirect( reverse('report_employee_backlog', args=(request.user.id,)) )
 
+        self.request = request
+        
         self.active_tab = kwargs.get('active_tab', 'company') or 'company'
         self.export_data = request.GET.get('export_data', False)
         self.export_company_data = request.GET.get('export_company_data', False)
@@ -1155,7 +1145,7 @@ class BacklogReport(CSVViewMixin, TemplateView):
                 # ensure no results are returned
                 activity_goalQ &= Q(project__type__billable=True) & Q(project__type__billable=False)
         else:
-            messages.warning(request, 'There was an error applying your selected filter.')
+            messages.warning(self.request, 'There was an error applying your selected filter.')
             activity_goalQ = Q(project__status=4)
 
         backlog = {}
@@ -1814,7 +1804,19 @@ def get_employee_backlog_chart_data(user_id):
         return {}
 
     employee = User.objects.get(id=int(user_id))
-    avg_hours_per_day = Decimal(employee.profile.hours_per_week) / Decimal('5.0')
+    
+    # get weekly schedule, starting Monday
+    week_schedule = employee.profile.week_schedule
+    week_schedule.append(week_schedule.pop(0))
+    # create a tuple of the weekend day indices
+    weekends = []
+    for dow, hours in enumerate(week_schedule):
+        if hours == 0.0:
+            weekends.append(dow)
+    weekends = tuple(weekends)
+
+    avg_hours_per_day = Decimal(employee.profile.hours_per_week) / \
+        (Decimal('7.0') - Decimal(len(weekends)))
     coverage = {}
     billable_coverage = {}
 
@@ -1856,18 +1858,25 @@ def get_employee_backlog_chart_data(user_id):
         Q(status='approved')|Q(status='processed')):
 
         num_workdays = max(workdays.networkdays(ptor.pto_start_date,
-            ptor.pto_end_date, holidays), 1)
+            ptor.pto_end_date, holidays=holidays, weekends=weekends), 1)
         ptor_hours_per_day = ptor.amount / Decimal(num_workdays)
 
         for i in range((ptor.pto_end_date-ptor.pto_start_date).days + 1):
             date = ptor.pto_start_date + datetime.timedelta(days=i)
-            if date.weekday() < 5:
+            if date.weekday() not in weekends:
                 holidays.append(date)
                 if str(date) not in coverage:
                     coverage[str(date)] = \
                         new_empty_date()
                 coverage[str(date)]['Approved Time Off'] = \
                     float(ptor_hours_per_day)
+
+            # elif date.weekday() < 5:
+            #     holidays.append(date)
+            #     if str(date) not in coverage:
+            #         coverage[str(date)] = \
+            #             new_empty_date()
+
 
     y_axes = {'Holiday': ['data1'],
               'Approved Time Off': ['data2']}
@@ -1882,12 +1891,14 @@ def get_employee_backlog_chart_data(user_id):
 
         end_date = activity_goal.end_date
         num_workdays = max(workdays.networkdays(start_date, end_date,
-            holidays), 1)
+            holidays=holidays, weekends=weekends), 1)
         ag_hours_per_workday = activity_goal.get_remaining_hours / Decimal(num_workdays)
 
         for i in range((end_date-start_date).days + 1):
             date = start_date + datetime.timedelta(days=i)
-            if workdays.networkdays(date, date, holidays):
+            if workdays.networkdays(date, date, holidays=holidays,
+                weekends=weekends):
+
                 if str(date) not in coverage:
                     coverage[str(date)] = new_empty_date()
                     billable_coverage[str(date)] = 0.0
@@ -1897,6 +1908,15 @@ def get_employee_backlog_chart_data(user_id):
                     float(ag_hours_per_workday)
                 if activity_goal.project.type.billable and activity_goal.activity.billable:
                     billable_coverage[str(date)] += float(ag_hours_per_workday)
+
+            elif workdays.networkdays(date, date, holidays=holidays,
+                weekends=(5,6)):
+
+                if str(date) not in coverage:
+                    coverage[str(date)] = new_empty_date()
+                    billable_coverage[str(date)] = 0.0
+                if activity_goal.project.code not in coverage[str(date)]:
+                    coverage[str(date)][activity_goal.project.code] = 0.0
 
     columns = {'x': []}
     for date in sorted(coverage.keys()):
@@ -1962,3 +1982,20 @@ def active_projects_burnup_charts(request, minder_id=-1):
     context = {'minders': minders,
                'project_ids': project_ids}
     return render(request, 'timepiece/reports/active_projects_burnup_charts.html', context)
+
+
+class PendingMilestonesReport(TemplateView):
+    template_name = 'timepiece/reports/milestones.html'
+
+    def get_context_data(self, **kwargs):
+        context = super(PendingMilestonesReport, self).get_context_data(**kwargs)
+
+        pending_milestones = []
+        for project, milestones in groupby(
+            Milestone.objects.filter(status__in=[Milestone.NEW, Milestone.MODIFIED],
+                project__status=4), lambda m:m.project):
+            
+            pending_milestones.append((project, list(milestones)))
+
+        context['pending_milestones'] = pending_milestones
+        return context

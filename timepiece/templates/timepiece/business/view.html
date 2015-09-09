@@ -108,7 +108,7 @@
         <div class="span4">
             <h3>Business Address</h3>
             <table class="table table-bordered">
-                <tr><th>Street Address</th><td>{{ object.billing_street }}</td></tr>
+                <tr><th>Street Address</th><td>{{ object.billing_street }} {{ object.billing_street_2}}</td></tr>
                 <tr><th>City</th><td>{{ object.billing_city }}</td></tr>
                 <tr><th>State</th><td>{{ object.get_billing_state_display }}</td></tr>
                 <tr><th>Postal Code</th><td>{{ object.billing_postalcode }}{% if object.billing_mailstop %}-{{ object.billing_mailstop }}{% endif %}</td></tr>
@@ -117,7 +117,7 @@
             </table>
             <h3>Shipping Address</h3>
             <table class="table table-bordered">
-                <tr><th>Street Address</th><td>{{ object.shipping_street }}</td></tr>
+                <tr><th>Street Address</th><td>{{ object.shipping_street }} {{object.shipping_street_2}}</td></tr>
                 <tr><th>City</th><td>{{ object.shipping_city }}</td></tr>
                 <tr><th>State</th><td>{{ object.get_shipping_state_display }}</td></tr>
                 <tr><th>Postal Code</th><td>{{ object.shipping_postalcode }}{% if object.shipping_mailstop %}-{{ object.shipping_mailstop }}{% endif %}</td></tr>
@@ -173,7 +173,7 @@
 
             <h3>Attachments</h3>
             <div id="file-uploader" name="File" class="controls">
-              <noscript>          
+              <noscript>
                 <p>Please enable JavaScript to use file uploader.</p>
               </noscript>
             </div>
@@ -228,6 +228,6 @@
         },
     });
     });
-    
+
 </script>
 {% endblock extrajs %}

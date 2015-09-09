@@ -188,6 +188,7 @@
             </form>
 
             <h3>Attachments</h3>
+            <div id="attachment-list">
             <div id="fine-uploader">
               <noscript>          
                 <p>Please enable JavaScript to use file uploader.</p>
@@ -204,6 +205,7 @@
             {% else %}
             <br/><em>There are no attachments for this ticket yet.</em>
             {% endif %}
+            </div>
 
             {% url 'view_contract' object.pk as next_url %}
             <h3>Notes</h3>
@@ -390,6 +392,7 @@
 </script>
 
 <script>
+ATTACHMENT_COUNT = {% if object %}{{ object.get_attachments|length }}{% elif attachments %}{{ attachments|length }}{% else %}0{% endif %};
 var uploader = new qq.s3.FineUploader({
     debug: true,
     element: document.getElementById('fine-uploader'),
@@ -425,15 +428,35 @@ var uploader = new qq.s3.FineUploader({
         },
         onSubmitted: function (id, name) {
             console.log('onSubmitted', id, name);
+        },
+        onDeleteComplete: function (id, xhr, isError) {
+            var regex = new RegExp("[\\?&]key=([^&#]*)");
+            var delete_url = xhr['responseURL'];
+            var results = regex.exec(delete_url);
+            var uuid = results[1];
+            $('#att-' + id).remove();
+            $.ajax('/timepiece/contract/{{ object.id }}/attachment/' + uuid + '/delete');
+        },
+        onComplete: function (id, name, response, xhr) {
+            if(response.success) {
+                ATTACHMENT_COUNT += 1;
+                html = '<blockquote id="att-' + id + '">' +
+                           '<p>' + name + '</p>' +
+                           '<small>{{ user }} @ now</small>' +
+                        '</blockquote>';
+                $('#attachment-list').append(html);
+                $("#no-attachments").remove();
+            } else {
+                console.log('fail', id, name, response);
+            }
         }
     }
 });
 </script>
 <script>
 $(document).ready( function () {
-    $(function(){
-        create_remove_tag_handler("{% url 'remove_contract_tag' object.id %}");
-        create_add_tag_handler("{% url 'contract_tags' object.id %}");
-    });
+    create_remove_tag_handler("{% url 'remove_contract_tag' object.id %}");
+    create_add_tag_handler("{% url 'contract_tags' object.id %}");
+});
 </script>
 {% endblock extrajs %}

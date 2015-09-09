@@ -57,4 +57,8 @@ urlpatterns = patterns('',
     url(r'^reports/active_project_burnup_charts/(?P<minder_id>\d+)/$',
         views.active_projects_burnup_charts,
         name='report_active_projects_burnup_charts_minder'),
+
+    url(r'^reports/pending_milestones/$',
+        views.PendingMilestonesReport.as_view(),
+        name='report_pending_milestones'),
 )
