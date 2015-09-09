@@ -80,4 +80,4 @@ class SearchListView(SearchMixin, ListView):
         query = Q()
         for field in self.search_fields:
             query |= Q(**{field: search})
-        return queryset.filter(query)
+        return queryset.filter(query).distinct()
