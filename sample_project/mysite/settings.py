@@ -128,13 +128,6 @@ TEMPLATES = [
 
 WSGI_APPLICATION = 'mysite.wsgi.application'
 
-COMPRESS_PRECOMPILERS = (
-    ('text/less', 'lessc {infile} {outfile}'),
-)
-COMPRESS_ROOT = '%s/static/' % BASE_DIR
-INTERNAL_IPS = ('127.0.0.1',)
-
-
 
 # Database
 # https://docs.djangoproject.com/en/1.8/ref/settings/#databases
@@ -183,6 +176,17 @@ ADMIN_MEDIA_PREFIX = '/public/admin/'
 STATICFILES_DIRS = (
     '{0}/public'.format(BASE_DIR),
 )
+
+
+# === Third-party app settings. === #
+
+COMPRESS_PRECOMPILERS = [
+    ('text/less', 'lessc {infile} {outfile}'),
+]
+
+COMPRESS_ROOT = '%s/static/' % BASE_DIR
+INTERNAL_IPS = ('127.0.0.1',)
+
 
 # === Timepiece settings. === #
 
