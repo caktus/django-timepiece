@@ -1632,7 +1632,7 @@ class ApproveAllProjectMilestones(UpdateView):
             )
 
         return super(ApproveAllProjectMilestones, self).form_valid(form)
-    
+
     def get_success_url(self):
         return '/timepiece/project/%d' % int(self.object.id)
 
@@ -2241,7 +2241,7 @@ class ListLeads(SearchListView, CSVViewMixin):
         lead_list = context['lead_list'] if 'lead_list' in context else []
         general_task_list = context['generaltask_list'] if 'generaltask_list' in context else []
         if self.export_lead_list:
-            headers = ['ID',
+            headers = ['Lead ID',
                        'Title',
                        'Status',
                        'Project Count',
