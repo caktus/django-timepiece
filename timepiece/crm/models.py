@@ -435,6 +435,8 @@ class Business(models.Model):
 
     name = models.CharField(max_length=255)
     short_name = models.CharField(max_length=3, blank=True, unique=True)
+    part_number_id = models.CharField(max_length=3, blank=True,
+        verbose_name='Part Number ID')
     #email = models.EmailField(blank=True)
     poc = models.ForeignKey(User, related_name='business_poc_old', verbose_name='Old Primary Contact (User)', blank=True, null=True)
     primary_contact = models.ForeignKey('Contact', related_name='business_poc', verbose_name='Primary Contact', blank=True, null=True)
@@ -522,6 +524,17 @@ class Business(models.Model):
     @property
     def get_departments(self):
         return BusinessDepartment.objects.filter(business=self).order_by('short_name')
+
+    def clean(self):
+        # check for uniqueness of part_number_id
+        if self.part_number_id:
+            if Business.objects.filter(part_number_id=self.part_number_id
+                ).exclude(id=self.id).count():
+                b = Business.objects.filter(part_number_id=self.part_number_id
+                ).exclude(id=self.id)[0]
+                raise ValidationError('If you set a Part Number ID, it must '
+                    'be unique. %s is using the %s Part Number ID' % (
+                        str(b), self.part_number_id))
 
     def save(self):
         try:

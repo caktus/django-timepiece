@@ -30,9 +30,9 @@ class CreateEditBusinessForm(forms.ModelForm):
 
     class Meta:
         model = Business
-        fields = ('name', 'short_name', 'active', 'description', 'primary_contact',
-            'phone', 'fax', 'website', 'industry',
-            'classification', 'status', 'account_owner',
+        fields = ('name', 'short_name', 'part_number_id', 'active',
+            'description', 'primary_contact', 'phone', 'fax', 'website',
+            'industry', 'classification', 'status', 'account_owner',
             'billing_street','billing_street_2','billing_city', 'billing_state',
             'billing_postalcode',  'billing_mailstop',  'billing_country',
             'shipping_street','shipping_street_2','shipping_city', 'shipping_state',
