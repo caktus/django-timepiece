@@ -10,7 +10,7 @@
     </li>
 {% endblock crumbs %}
 
-{% block title %}Time OFf Request Details{% endblock title %}
+{% block title %}Time Off Request Details{% endblock title %}
 
 {% block content %}
     <div class="row-fluid">
@@ -19,6 +19,18 @@
 
             <br style="clear: both;" />
             <dl class="dl-horizontal">
+                <dt>Employee</dt>
+                <dd>{{ pto_request.user_profile.user }}</dd>
+
+                <dt>Type</dt>
+                <dd>
+                    {% if pto_request.pto %}
+                    Paid Time Off
+                    {% else %}
+                    Unpaid Time Off
+                    {% endif %}
+                </dd>
+
                 <dt>Status</dt>
                 <dd>{{ pto_request.status|capfirst }}</dd>
 
@@ -35,7 +47,7 @@
                 <dd>{{ pto_request.amount }}</dd>
 
                 <dt>Time Off Reason/Comment</dt>
-                <dd>{{ pto_request.comment }}</dt>
+                <dd>{% if pto_request.comment %}{{ pto_request.comment }}{% else %}n/a{% endif %}</dt>
 
                 {% if pto_request.status == 'approved' %}
                 <dt>Approval</dt>
@@ -46,7 +58,7 @@
                 <dd>{{ pto_request.approver }} on {{ pto_request.approval_date|date:"F d" }}</dd>
 
                 <dt>Reviewer Comment</dt>
-                <dd>{{ pto_request.approver_comment }}<dt/>
+                <dd>{% if pto_request.approver_comment %}{{ pto_request.approver_comment }}{% else %}n/a{% endif %}</dt>
                 {% endif %}
             </dl>
             
