@@ -435,8 +435,6 @@ class Business(models.Model):
 
     name = models.CharField(max_length=255)
     short_name = models.CharField(max_length=3, blank=True, unique=True)
-    part_number_id = models.CharField(max_length=3, blank=True,
-        verbose_name='Part Number ID')
     #email = models.EmailField(blank=True)
     poc = models.ForeignKey(User, related_name='business_poc_old', verbose_name='Old Primary Contact (User)', blank=True, null=True)
     primary_contact = models.ForeignKey('Contact', related_name='business_poc', verbose_name='Primary Contact', blank=True, null=True)
