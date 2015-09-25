@@ -992,9 +992,16 @@ class TrackableProjectManager(models.Manager):
 class Project(models.Model):
     MINDERS_GROUP_ID = 3
     PROJECT_DEPARTMENTS = (
+        ('admin','Admin'),
         ('elec-avionics', 'Electrical/Avionics'),
+        ('finance','Finance'),
+        ('hr','Human Resources'),
         ('integration', 'Integration'),
+        ('it','Information Technology'),
+        ('marketing','Marketing'),
         ('mech', 'Mechanical Systems'),
+        ('ops','Operations'),
+        ('sales','Sales'),
         ('struct', 'Structures'),
         ('tech-serv', 'Technical Services'),
         ('other', 'Other')
@@ -1260,7 +1267,7 @@ class ApprovedMilestone(models.Model):
     approver = models.ForeignKey(User,
         related_name='approved_milestone_approver',
         null=True, blank=True)
-    approval_date = models.DateTimeField(null=True, blank=True) 
+    approval_date = models.DateTimeField(null=True, blank=True)
 
     class Meta:
         ordering = ('project__code', 'milestone', '-approval_date')
