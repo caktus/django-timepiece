@@ -37,6 +37,11 @@
                         </li>
                     {% endif %}
                     {% if perms.crm.view_backlog %}
+                        <li{% ifequal active 'activity_goals_overrun' %} class="active"{% endifequal %}>
+                            <a href="{% url 'report_overrun_backlog' %}">Activity Goals Overrun</a>
+                        </li>
+                    {% endif %}
+                    {% if perms.crm.view_backlog %}
                         <li{% ifequal active 'active_projects_burnup_charts' %} class="active"{% endifequal %}>
                             <a href="{% ifequal active 'active_projects_burnup_charts' %}#{% else %}{% url 'report_active_projects_burnup_charts' %}{% endifequal %}">Active Project Burnup Charts</a>
                         </li>

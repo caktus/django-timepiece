@@ -50,6 +50,10 @@ urlpatterns = patterns('',
         views.employee_backlog_chart_data,
         name='employee_backlog_chart_data'),
 
+    url(r'^reports/backlog/overrun/$',
+        views.report_overrun_backlog,
+        name='report_overrun_backlog'),
+
     url(r'^reports/active_project_burnup_charts/$',
         views.active_projects_burnup_charts,
         name='report_active_projects_burnup_charts'),

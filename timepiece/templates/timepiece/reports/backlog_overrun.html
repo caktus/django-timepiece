@@ -1,0 +1,59 @@
+{% extends "timepiece/reports/base.html" %}
+{% load timepiece_tags bootstrap_toolkit %}
+{% load url from future %}
+
+{% block title %}Overrun Backlog Report{% endblock title %}
+
+{% block bodyid %}backlog-report{% endblock bodyid %}
+
+{% block crumbs %}
+    {{ block.super }}
+    <li>
+        <span class="divider">/</span>
+        <a href="{% url 'report_backlog' %}">Backlog Report</a>
+        <span class="divider">/</span>
+        <a href="{% url 'report_overrun_backlog' %}">Overrun Activity Goals Report</a>
+    </li>
+{% endblock crumbs %}
+
+{% block report_nav %}
+    {% with 'activity_goals_overrun' as active %}
+        {{ block.super }}
+    {% endwith %}
+{% endblock report_nav %}
+
+
+{% block report_content %}
+<div class="row-fluid">
+    <div class="span12" name="backlog-container">
+        <h3>Overrun Activity Goals</h3>
+        <table class="table">
+            <tr>
+                <th>Employee</th>
+                <th>Project</th>
+                <th>Activity</th>
+                <th style="width: 40%">Progress</th>
+                <th colspan="2">Hours</th>
+            </tr>
+            {% for employee in backlog %}
+                {% for project in employee.projects %}
+                    {% for activity_goal in project.activity_goals %}
+                    <tr>
+                        <td><a href="{% url 'report_employee_backlog' employee.employee.id %}">{{ employee.employee.last_name }}, {{ employee.employee.first_name }}</a></td>
+                        <td><a href="{% url 'view_project' project.project.id %}">{{ project.project.code }}</a><br><small>{{ project.project.name }}</small></td>
+                        <td><a href="{% url 'report_activity_backlog' activity_goal.activity.id %}">{{ activity_goal.activity.name }}</a></td>
+                        <td>
+                            <div class="progress progress-danger{% if activity_goal.goal_hours == 0.0 %} progress-striped{% endif %}">
+                                <div class="bar{% if activity_goal.get_percent_complete == 100 %} bar-success{% endif %}" style="width: {{ activity_goal.get_percent_complete }}%;"></div>
+                            </div>
+                        </td>
+                        <td>{{ activity_goal.charged_hours }} / {{ activity_goal.hours }}</td>
+                        <td><span class="label label-important">{{ activity_goal.get_remaining_hours }} remaining</span></td>
+                    </tr>                
+                    {% endfor %}
+                {% endfor %}
+            {% endfor %}
+        </table>
+    </div>
+</div>
+{% endblock report_content %}

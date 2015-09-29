@@ -9,7 +9,7 @@ import pprint
 pp = pprint.PrettyPrinter(indent=4)
 
 from django.contrib.auth.decorators import permission_required
-from django.contrib.auth.models import User
+from django.contrib.auth.models import User, Group
 from django.contrib import messages
 from django.core.urlresolvers import reverse
 from django.db.models import Sum, Q, Min, Max
@@ -1962,6 +1962,147 @@ def employee_backlog_chart_data(request, user_id):
             status=200, mimetype='application/json')
 
 @permission_required('crm.view_backlog')
+def report_overrun_backlog(request):
+    """
+    Finds all activity goals that are overrun
+    """
+    project_status = request.GET.get('project_status',
+        utils.get_setting('TIMEPIECE_DEFAULT_PROJECT_STATUS'))
+    backlog = []
+    employee_counter = -1
+    # for activity_goal in ActivityGoal.objects.filter(
+    #     project__status=project_status):
+
+    #     if not activity_goal.goal_overrun:
+    #         continue
+
+    #     backlog.append(activity_goal)
+    for employee in Group.objects.get(id=1).user_set.filter(is_active=True
+        ).order_by('last_name', 'first_name'):
+
+        employee_counter += 1
+        backlog.append({'employee': employee,
+                        'projects': []})
+        activitygoal_projects = list(Project.objects.filter(
+            id__in=utils.get_setting('TIMEPIECE_PAID_LEAVE_PROJECTS').values() + \
+            utils.get_setting('TIMEPIECE_UNPAID_LEAVE_PROJECTS').values()))
+        # activitygoal_projects = []
+        project_counter = -1
+
+        for project, activity_goals in groupby(ActivityGoal.objects.filter(
+            employee=employee, project__status=project_status
+            ).order_by('project__code', 'activity__name', 'activity__id'
+            ), lambda x: x.project):
+
+            activitygoal_projects.append(project)
+            project_counter += 1
+            backlog[employee_counter]['projects'].append(
+                {'project': project,
+                 'activity_goals': []})
+
+            activity_exclude_Q = Q()
+            for activity, activity_goals in groupby(activity_goals, lambda x: x.activity):
+                activity_exclude_Q |= Q(activity=activity)
+                dates_exclude_Q = Q()
+                for activity_goal in activity_goals:
+                    if activity_goal.goal_overrun:
+                        print activity_goal
+                        backlog[employee_counter]['projects'][project_counter
+                            ]['activity_goals'].append(activity_goal)
+                    dates_exclude_Q |= Q(start_time__gte=datetime.datetime.combine(activity_goal.date, datetime.time.min),
+                                         start_time__lt=datetime.datetime.combine(activity_goal.end_date, datetime.time.max))
+
+                # add missing date ranges for existing Project+Employee+Activity
+                missing_entries = Entry.objects.filter(
+                    project=project, user=employee, activity=activity
+                    ).exclude(dates_exclude_Q
+                    ).aggregate(hours=Sum('hours'), earliest=Min('start_time'), latest=Max('start_time'))
+                if missing_entries['hours']:
+                    backlog[employee_counter]['projects'][project_counter][
+                        'activity_goals'].append(
+                            {'id': None,
+                             'activity': activity,
+                             'project': project,
+                             'employee': employee,
+                             'goal_hours': 0.0,
+                             'date': missing_entries['earliest'].date(),
+                             'end_date': missing_entries['latest'].date(),
+                             'get_charged_hours': missing_entries['hours'],
+                             'get_remaining_hours': -1*missing_entries['hours'],
+                             'get_percent_complete': 100.0})
+
+            # add missing activity goals for this Project+Employee+Activity
+            for activity_sum in Entry.objects.filter(project=project, user=employee
+                ).exclude(activity_exclude_Q).values('activity'
+                ).annotate(hours=Sum('hours')).order_by('-hours'):
+
+                activity = Activity.objects.get(id=activity_sum['activity'])
+                start_date = Entry.objects.filter(
+                    project=project, user=employee, activity=activity
+                    ).values('start_time').order_by('start_time'
+                    )[0]['start_time'].date()
+                try:
+                    end_date = Entry.objects.filter(
+                        project=project, user=employee, activity=activity
+                        ).values('end_time').order_by('-end_time'
+                        )[0]['end_time'].date()
+                except:
+                    end_date = datetime.date.today()
+
+                backlog[employee_counter]['projects'][project_counter][
+                    'activity_goals'].append(
+                        {'id': None,
+                         'activity': activity,
+                         'project': project,
+                         'employee': employee,
+                         'goal_hours': 0.0,
+                         'date': start_date,
+                         'end_date': end_date,
+                         'get_charged_hours': activity_sum['hours'],
+                         'get_remaining_hours': -1*activity_sum['hours'],
+                         'get_percent_complete': 100.0})
+
+        # add missing projects
+        for entry in Entry.objects.filter(
+            project__status=utils.get_setting(
+                'TIMEPIECE_DEFAULT_PROJECT_STATUS'),
+            user=employee
+            ).exclude(project__in=activitygoal_projects
+            ).values('project__code').order_by('project__code'
+            ).distinct('project__code'):
+
+            project_counter += 1
+            project = Project.objects.get(code=entry['project__code'])
+            backlog[employee_counter]['projects'].append(
+                {'project': project,
+                 'activity_goals': []})
+            for entry2 in Entry.objects.filter(
+                project=project, user=employee).values('activity__id'
+                ).order_by('activity__id').distinct('activity__id'):
+
+                activity = Activity.objects.get(id=entry2['activity__id'])
+                entries_summary = Entry.objects.filter(project=project,
+                    activity=activity, user=employee
+                    ).aggregate(hours=Sum('hours'),
+                    start_date=Min('start_time'), end_date=Max('end_time'))
+                if entries_summary['end_date'] is None:
+                    entries_summary['end_date'] = datetime.datetime.now()
+                activity_hours = Decimal('0.0')
+                backlog[employee_counter]['projects'][project_counter][
+                    'activity_goals'].append(
+                        {'activity': activity,
+                         'project': project,
+                         'date': entries_summary['start_date'].date(),
+                         'end_date': entries_summary['end_date'].date(),
+                         'goal_hours': activity_hours,
+                         'get_charged_hours': entries_summary['hours'],
+                         'get_remaining_hours': activity_hours - entries_summary['hours'],
+                         'get_percent_complete': 100})
+
+    context = {'backlog': backlog}
+    return render(request, 'timepiece/reports/backlog_overrun.html', context)
+
+@permission_required('crm.view_backlog')
 def active_projects_burnup_charts(request, minder_id=-1):
     active_projects = Project.objects.filter(status__id=4
         ).order_by('point_person__last_name', 'point_person__first_name',
@@ -1989,7 +2130,6 @@ class PendingMilestonesReport(TemplateView):
 
     def get_context_data(self, **kwargs):
         context = super(PendingMilestonesReport, self).get_context_data(**kwargs)
-
         pending_milestones = []
         for project, milestones in groupby(
             Milestone.objects.filter(status__in=[Milestone.NEW, Milestone.MODIFIED],

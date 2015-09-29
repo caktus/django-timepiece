@@ -9,6 +9,7 @@
             {% if perms.entries.view_payroll_summary %}
                 {% if perms.crm.view_backlog %}
                 <li><a href="{% url 'report_active_projects_burnup_charts' %}">Active Projects Burnup Charts</a></li>
+                <li><a href="{% url 'report_overrun_backlog' %}">Activity Goals Overrun</a></li>
                 <li><a href="{% url 'report_backlog' %}">Backlog</a></li>
                 {% endif %}
             {% endif %}
