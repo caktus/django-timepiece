@@ -1108,7 +1108,7 @@ class BacklogReport(CSVViewMixin, TemplateView):
             return HttpResponseRedirect( reverse('report_employee_backlog', args=(request.user.id,)) )
 
         self.request = request
-        
+
         self.active_tab = kwargs.get('active_tab', 'company') or 'company'
         self.export_data = request.GET.get('export_data', False)
         self.export_company_data = request.GET.get('export_company_data', False)
@@ -1128,6 +1128,8 @@ class BacklogReport(CSVViewMixin, TemplateView):
         if form.is_valid():
             activity_goalQ = Q(project__status__in=form.cleaned_data['project_statuses'])
             activity_goalQ &= Q(project__type__in=form.cleaned_data['project_types'])
+            if form.cleaned_data['project_department']:
+                activity_goalQ &= Q(project__project_department=form.cleaned_data['project_department'])
             if form.cleaned_data['projects']:
                 activity_goalQ &= Q(project__in=form.cleaned_data['projects'])
             if form.cleaned_data['activities']:
@@ -1376,6 +1378,7 @@ class BacklogReport(CSVViewMixin, TemplateView):
                 'project_statuses': [4],
                 'project_types': [a.id for a in Attribute.objects.filter(
                     type='project-type')],
+                'project_department': None,
                 'projects': None,
                 'activities': None}
 
@@ -1804,7 +1807,7 @@ def get_employee_backlog_chart_data(user_id):
         return {}
 
     employee = User.objects.get(id=int(user_id))
-    
+
     # get weekly schedule, starting Monday
     week_schedule = employee.profile.week_schedule
     week_schedule.append(week_schedule.pop(0))
@@ -1994,7 +1997,7 @@ class PendingMilestonesReport(TemplateView):
         for project, milestones in groupby(
             Milestone.objects.filter(status__in=[Milestone.NEW, Milestone.MODIFIED],
                 project__status=4), lambda m:m.project):
-            
+
             pending_milestones.append((project, list(milestones)))
 
         context['pending_milestones'] = pending_milestones
