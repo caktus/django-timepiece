@@ -1147,7 +1147,7 @@ class Project(models.Model):
 
     @property
     def open_general_tasks(self):
-        return self.generaltask_set.all() # status__terminal=False
+        return self.generaltask_set.filter(status__terminal=False)
 
     @property
     def pending_milestones(self):
