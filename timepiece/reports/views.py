@@ -1128,7 +1128,7 @@ class BacklogReport(CSVViewMixin, TemplateView):
         if form.is_valid():
             activity_goalQ = Q(project__status__in=form.cleaned_data['project_statuses'])
             activity_goalQ &= Q(project__type__in=form.cleaned_data['project_types'])
-            if form.cleaned_data['project_department'] and (form.cleaned_data['project_department'] != 'any'):
+            if form.cleaned_data['project_department']:
                 activity_goalQ &= Q(project__project_department=form.cleaned_data['project_department'])
             if form.cleaned_data['projects']:
                 activity_goalQ &= Q(project__in=form.cleaned_data['projects'])
@@ -1378,6 +1378,7 @@ class BacklogReport(CSVViewMixin, TemplateView):
                 'project_statuses': [4],
                 'project_types': [a.id for a in Attribute.objects.filter(
                     type='project-type')],
+                'project_department': None,
                 'projects': None,
                 'activities': None}
 

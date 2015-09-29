@@ -9,7 +9,7 @@ from timepiece.forms import DateForm, YearMonthForm
 from timepiece.crm.lookups import ProjectLookup, ProjectCodeLookup, \
     BusinessLookup, UserLookup, ActivityLookup
 from timepiece.contracts.lookups import ContractLookup
-from timepiece.crm.models import Attribute,Project
+from timepiece.crm.models import Attribute, Project
 from timepiece.entries.models import Entry, Activity
 
 
@@ -138,12 +138,9 @@ class BacklogFilterForm(forms.Form):
         label='Project Type',
         queryset=Attribute.objects.filter(type='project-type'),
         widget=forms.CheckboxSelectMultiple)
-
     project_department = forms.ChoiceField(required=False,
         label='Project Department',
-        choices=(('any','ANY'),)+Project.PROJECT_DEPARTMENTS,
-        initial='any'
-        )
+        choices=((None, 'Any'),) + Project.PROJECT_DEPARTMENTS)
 
     projects = selectable.AutoCompleteSelectMultipleField(ProjectCodeLookup,
         label="Project(s)", required=False)
