@@ -2695,6 +2695,24 @@ class UpdateDistinguishingValueChallenge(View):
         else:
             dvc.due_date = None
         dvc.cost = request.POST.get('cost', '')
+        
+        dvc.confirm_resources = bool(request.POST.get('confirm_resources', False))
+        dvc.resources_notes = request.POST.get('resources_notes', '')
+        dvc.benefits_begin = request.POST.get('benefits_begin', '')
+        if request.POST.get('date_benefits_begin', None):
+            try:
+                date_benefits_begin = datetime.datetime.strptime(
+                    request.POST.get('date_benefits_begin'), '%Y-%m-%d').date()
+                dvc.date_benefits_begin = date_benefits_begin
+            except:
+                dvc.date_benefits_begin = None
+        else:
+            dvc.date_benefits_begin = None
+        dvc.confirm = bool(request.POST.get('confirm', False))
+        dvc.confirm_notes = request.POST.get('confirm_notes', '')
+        dvc.commitment = bool(request.POST.get('commitment', False))
+        dvc.commitment_notes = request.POST.get('commitment_notes', '')
+
         dvc.closed = True if request.POST.get('closed', 'off') == 'on' else False
         dvc.save()
 
