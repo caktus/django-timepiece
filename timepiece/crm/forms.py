@@ -96,7 +96,7 @@ class CreateProjectForm(forms.ModelForm):
 
     class Meta:
         model = Project
-        fields = ('name', 'business', 'business_department',
+        fields = ('name', 'business', 'ext_code','business_department',
             'client_primary_poc', 'finder', 'point_person', 'binder', 'type',
             'status', 'project_department', 'activity_group', 'description')
 
@@ -204,7 +204,7 @@ class EditProjectForm(forms.ModelForm):
 
     class Meta:
         model = Project
-        fields = ('name', 'business', 'business_department',
+        fields = ('name', 'business', 'business_department','ext_code',
             'client_primary_poc', 'finder', 'point_person', 'binder', 'type',
             'status', 'project_department', 'activity_group', 'description')
 

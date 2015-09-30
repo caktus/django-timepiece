@@ -970,7 +970,7 @@ class ListProjects(SearchListView, CSVViewMixin):
                 max_milestones = max(max_milestones,len(project.milestones.all()))
 
             headers = ['Project Code', 'Project Name', 'Type',
-                'Project Department', 'Business', 'Business Department',
+                'Project Department', 'Business', 'Business Department','External ID Code',
                 'Client Primary', 'Status', 'Billable', 'Finder', 'Minder',
                 'Binder', 'Target Internal Completion', 'Required Completion',
                 'Target Open', 'Start', 'Turn-In', 'Description', 'Tags',
@@ -995,6 +995,7 @@ class ListProjects(SearchListView, CSVViewMixin):
                     project.get_project_department_display(),
                     '%s:%s'%(project.business.short_name, project.business.name),
                     project.business_department.name if project.business_department else '',
+                    project.ext_code if project.ext_code else '',
                     '%s %s' % (project.client_primary_poc.first_name, project.client_primary_poc.last_name) if project.client_primary_poc else '',
                     project.status, project.billable, str(project.finder),
                     str(project.point_person), str(project.binder),
@@ -1632,7 +1633,7 @@ class ApproveAllProjectMilestones(UpdateView):
             )
 
         return super(ApproveAllProjectMilestones, self).form_valid(form)
-    
+
     def get_success_url(self):
         return '/timepiece/project/%d' % int(self.object.id)
 
