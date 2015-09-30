@@ -228,7 +228,7 @@ class LimitedAccessUserProfile(models.Model):
     salad = models.TextField(blank=True,
         verbose_name='Salad Type and Dressing')
     pizza = models.TextField(blank=True)
-    pasts = models.TextField(blank=True)
+    pasts = models.TextField(blank=True, verbose_name='Pasta')
     chipotle = models.TextField(blank=True)
     other = models.TextField(blank=True)
     birthday_celebration = models.BooleanField(default=True)
@@ -394,7 +394,7 @@ class Business(models.Model):
               ('GA', 'Georgia'),
               ('HI', 'Hawaii'),
               ('ID', 'Idaho'),
-              ('IL', 'Illinoi'),
+              ('IL', 'Illinois'),
               ('IN', 'Indiana'),
               ('IA', 'Iowa'),
               ('KS', 'Kansas'),

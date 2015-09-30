@@ -172,6 +172,10 @@
             </div>
 
             <div class="tab-pane{% if active_tab == 'individual-summary' %} active{% endif %}" id="individual-summary">
+                <div class="alert alert-warning">
+                    <a class="close" data-dismiss="alert" href="#">x</a>
+                    Employees highlighted in yellow have exceeded their BHCe.
+                </div>
                 <table class="table">
                     <tr>
                         <th>Employee</th>
@@ -181,7 +185,7 @@
                         <th title="The number of holiday hours included in reaching the Drop Dead Date.">Included Holidays</th>
                     </tr>
                     {% for employee in backlog_summary %}
-                        <tr{% if employee.employee.profile.exceeds_utilization %} class="error"{% endif %}>
+                        <tr{% if employee.employee.profile.exceeds_utilization %} class="warning"{% endif %}>
                             <td><a href="{% url 'report_employee_backlog' employee.employee.id %}">{{ employee.employee.first_name }} {{ employee.employee.last_name }}</a></td>
                             <td>{{ employee.drop_dead_date }}</td>
                             <td>{{ employee.total_available_hours }}</td>
