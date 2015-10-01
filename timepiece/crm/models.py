@@ -525,14 +525,7 @@ class Business(models.Model):
 
     def clean(self):
         # check for uniqueness of part_number_id
-        if self.part_number_id:
-            if Business.objects.filter(part_number_id=self.part_number_id
-                ).exclude(id=self.id).count():
-                b = Business.objects.filter(part_number_id=self.part_number_id
-                ).exclude(id=self.id)[0]
-                raise ValidationError('If you set a Part Number ID, it must '
-                    'be unique. %s is using the %s Part Number ID' % (
-                        str(b), self.part_number_id))
+        pass
 
     def save(self):
         try:
