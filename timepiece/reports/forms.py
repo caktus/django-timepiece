@@ -140,7 +140,7 @@ class BacklogFilterForm(forms.Form):
         widget=forms.CheckboxSelectMultiple)
     project_department = forms.ChoiceField(required=False,
         label='Project Department',
-        choices=((None, 'Any'),) + Project.PROJECT_DEPARTMENTS)
+        choices=(('', 'Any'),) + Project.PROJECT_DEPARTMENTS)
 
     projects = selectable.AutoCompleteSelectMultipleField(ProjectCodeLookup,
         label="Project(s)", required=False)
