@@ -35,6 +35,9 @@
         <div class="span6">
             <table class="table table-bordered">
                 <tr><th>Code</th><td>{{ object.code }}</td></tr>
+                {% if object.ext_code %}
+                <tr><th>External ID Code</th><td>{{ object.ext_code }}</td></tr>
+                {% endif %}
                 <tr><th>Name</th><td>{{ object.name }}</td></tr>
                 <tr><th>Type</th><td>{{ object.type }}</td></tr>
                 <tr>
@@ -133,7 +136,7 @@
 
             <h3>Attachments</h3>
             <div id="fine-uploader">
-              <noscript>          
+              <noscript>
                 <p>Please enable JavaScript to use file uploader.</p>
               </noscript>
             </div>
