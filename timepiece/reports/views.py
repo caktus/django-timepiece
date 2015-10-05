@@ -1342,6 +1342,9 @@ class BacklogReport(CSVViewMixin, TemplateView):
                 'Project Name', 'Project Status', 'Project Type', 'Billable',
                 'Business Short Name', 'Business Name', 'Remaining Hours']
             text_col_count=len(headers)-1
+            if not data:
+                content.append(headers)
+                return content
             headers.extend(data['columns'][0][1:])
             content.append(headers)
             for col in data['columns'][1:]:
