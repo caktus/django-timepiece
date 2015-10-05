@@ -1006,6 +1006,11 @@ class Project(models.Model):
         unique=False,
         blank=True, # this field is required but is manually enforced in the code
         help_text="Auto-generated project code for tracking.")
+    ext_code = models.CharField(max_length=255,
+        verbose_name="External Project ID",
+        unique=False,
+        blank=True,
+        null=True)
     tracker_url = models.CharField(max_length=255, blank=True, null=False,
             default="", verbose_name="Wiki Url")
     business = models.ForeignKey(Business,
