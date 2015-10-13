@@ -289,6 +289,17 @@ class Entry(models.Model):
             raise ValidationError('An unexpected error has occured')
         if not self.start_time:
             raise ValidationError('Please enter a valid start time')
+        
+        try:
+            if not self.project:
+                raise ValidationError('Please select a Project')
+            if not self.activity:
+                raise ValidationError('Please select an Activity')
+            if not self.location:
+                raise ValidationError('Please select a Location')
+        except:
+            return False
+
         start = self.start_time
         if self.end_time:
             end = self.end_time
