@@ -180,6 +180,9 @@
     <div class="row-fluid">
         <div class="span12">
             <h3>Open General Tasks</h3>
+            {% if perms.workflow.view_generaltask %}
+            <a class="btn btn-info" href="{% url 'list_project_general_tasks' object.id %}" target="_blank">View All General Tasks for {{ object.code }} <i class="icon-share-alt icon-white"></i></a><p/>
+            {% endif %}
             {% if perms.crm.add_projectrelationship %}
                 <form class="form-inline" action="{% url 'project_add_general_task' object.id %}?next={{ next_url|add_parameters:request.GET|urlencode }}" method="post" accept-charset="utf-8">
                     {% csrf_token %}

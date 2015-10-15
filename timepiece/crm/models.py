@@ -1145,7 +1145,8 @@ class Project(models.Model):
 
     @property
     def open_general_tasks(self):
-        return self.generaltask_set.filter(status__terminal=False)
+        return self.generaltask_set.filter(status__terminal=False).order_by(
+          'status__terminal', '-created_at')
 
     @property
     def pending_milestones(self):
