@@ -1907,6 +1907,7 @@ def get_employee_backlog_chart_data(user_id):
 
                 if str(date) not in coverage:
                     coverage[str(date)] = new_empty_date()
+                if str(date) not in billable_coverage:
                     billable_coverage[str(date)] = 0.0
                 if activity_goal.project.code not in coverage[str(date)]:
                     coverage[str(date)][activity_goal.project.code] = 0.0
