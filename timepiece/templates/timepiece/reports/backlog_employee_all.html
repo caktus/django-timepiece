@@ -1,0 +1,88 @@
+{% extends "timepiece/reports/base.html" %}
+{% load timepiece_tags bootstrap_toolkit %}
+{% load url from future %}
+
+{% block title %}Backlog Report{% endblock title %}
+
+{% block bodyid %}backlog-report{% endblock bodyid %}
+
+{% block crumbs %}
+    {{ block.super }}
+    <li>
+        <span class="divider">/</span>
+        <a href="{% url 'report_backlog' %}">Backlog Report</a>
+    </li>
+{% endblock crumbs %}
+
+{% block report_nav %}
+    {% with 'backlog' as active %}
+        {{ block.super }}
+    {% endwith %}
+{% endblock report_nav %}
+
+
+{% block report_content %}
+{% for employee,chart_data in charts.items %}
+<div class="row-fluid">
+    <div class="span12" name="backlog-container">
+        <h3>{{ employee }} Backlog</h3>
+
+        <h4>Summary</h4>
+        <div class="coverage-area-chart" id= "chart_{{ employee.first_name }}_{{ employee.last_name}}" data="{{ chart_data }}">
+        </div>
+    </div>
+</div>
+{% endfor %}
+{% endblock report_content %}
+
+{% block extrajs %}
+<script charset="utf-8" src="{{ STATIC_URL }}timepiece/js/burnup_charts/c3.min.js"></script>
+<script charset="utf-8" src="{{ STATIC_URL }}timepiece/js/burnup_charts/d3.min.js"></script>
+<script>
+    $(document).ready( function () {
+        $('.coverage-area-chart').each(function() {
+          var my_chart_area = $(this);
+          var my_id = my_chart_area.attr('id');
+          console.log(my_id);
+          var chart_data = $.parseJSON(my_chart_area.attr('data'));
+
+          console.log('data', chart_data);
+          console.log('data_empty',$.isEmptyObject(chart_data));
+
+          if (!($.isEmptyObject(chart_data))){
+          var chart = c3.generate({
+              bindto: '#'+my_id,
+              data: {
+                  x: 'x',
+                  columns: chart_data['columns'],
+                  type: 'bar',
+                  types: {
+                      'Total Avg Hours': 'scatter',
+                      'Utilization Avg Hours': 'scatter',
+                  },
+                  groups: [chart_data['keys']],
+              },
+              axis: {
+                  x: {
+                      type: 'timeseries',
+                      tick: {
+                          format: '%Y-%m-%d'
+                      }
+                  }
+              },
+              size: {
+                  height: 250,
+              },
+              tooltip: {
+                  show: false,
+              },
+              point: {
+                  show: true
+              }
+
+        });
+      }
+      });
+    });
+</script>
+{% endblock extrajs %}
