@@ -1791,6 +1791,11 @@ def report_employee_backlog(request, user_id):
                      'get_remaining_hours': activity_hours - entries_summary['hours'],
                      'get_percent_complete': 100})
 
+        if employee.profile.hours_per_week == 0:
+            message = '{0} {1} has no schedule set in their profile.  Set their expected hours for each day of the week for an accurate backlog.'.format(
+                    employee.first_name, employee.last_name)
+            messages.error(request, message)
+
         context = {'backlog': backlog,
                    'employee': employee,
                    'chart_data': json.dumps(get_employee_backlog_chart_data(user_id))}
@@ -1821,8 +1826,12 @@ def get_employee_backlog_chart_data(user_id):
             weekends.append(dow)
     weekends = tuple(weekends)
 
-    avg_hours_per_day = Decimal(employee.profile.hours_per_week) / \
-        (Decimal('7.0') - Decimal(len(weekends)))
+    days_per_week = (Decimal('7.0') - Decimal(len(weekends)))
+    if days_per_week == Decimal('0.0'):
+        avg_hours_per_day = Decimal('8.0')
+    else:
+        avg_hours_per_day = Decimal(employee.profile.hours_per_week) / \
+            (Decimal('7.0') - Decimal(len(weekends)))
     coverage = {}
     billable_coverage = {}
 
@@ -1859,10 +1868,13 @@ def get_employee_backlog_chart_data(user_id):
     # add Time Off requests as holidays
     # TODO: should make this smarter so that if it is a partial day it
     #       does not count as a full day
+    print 'start week', start_week
+    print 'end week', end_week
     for ptor in employee.profile.paidtimeoffrequest_set.filter(
         Q(pto_start_date__gte=start_week)|Q(pto_end_date__gte=end_week),
         Q(status='approved')|Q(status='processed')):
 
+        print 'ptor', ptor
         num_workdays = max(workdays.networkdays(ptor.pto_start_date,
             ptor.pto_end_date, holidays=holidays, weekends=weekends), 1)
         ptor_hours_per_day = ptor.amount / Decimal(num_workdays)
