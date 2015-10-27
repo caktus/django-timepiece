@@ -329,12 +329,12 @@
         });
         var filters = chart_data['filters'];
         var project_types = $.map($('input:checked[name="project_types').filter('.filters'),
-                function (option) {return $(option).attr('value');}),
-            project_statuses = $.map($('input:checked[name="project_statuses').filter('.filters'),
-                function (option) {return $(option).attr('value');}),
-            billable = $.map($('input:checked[name="billable').filter('.filters'),
-                function (option) {return $(option).attr('value');}),
-            clients = $.map($('input:checked[name="clients').filter('.filters'),
+                function (option) {return $(option).attr('value');});
+        var project_statuses = $.map($('input:checked[name="project_statuses').filter('.filters'),
+                function (option) {return $(option).attr('value');});
+        var billable = $.map($('input:checked[name="billable').filter('.filters'),
+                function (option) {return $(option).attr('value');});
+        var clients = $.map($('input:checked[name="clients').filter('.filters'),
                 function (option) {return $(option).attr('value');});
 
         // toggle everything off
@@ -347,7 +347,7 @@
 
         var data, load,
             to_toggle = [];
-        $.each(chart_data['keys'], 
+        $.each(chart_data['keys'],
             function( index, key ) {
                 data = chart_data.filters.chart_filters[key];
                 load = true;

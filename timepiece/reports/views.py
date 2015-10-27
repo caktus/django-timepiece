@@ -1153,7 +1153,14 @@ class BacklogReport(CSVViewMixin, TemplateView):
         backlog = {}
         backlog_summary = {}
         company_total_hours = {}
-        for employee in Group.objects.get(id=1).user_set.filter(is_active=True).order_by('last_name', 'first_name'):
+
+        employeeQ = Q(is_active=True)
+        if form.cleaned_data['project_department']:
+            employeeQ &= Q(profile__department=form.cleaned_data['project_department'])
+
+        employee_list = Group.objects.get(id=1).user_set.filter(employeeQ).order_by('last_name', 'first_name')
+
+        for employee in employee_list:
             backlog[employee.id] = []
             backlog_summary[employee.id] = {'total_available_hours': 0,
                                             'drop_dead_date': None}
@@ -1239,7 +1246,7 @@ class BacklogReport(CSVViewMixin, TemplateView):
         backlog_summary_sorted = sorted(backlog_summary.values(), key=lambda x: x['drop_dead_date'])
 
         company_hours_per_week = Decimal('0.0')
-        for u in Group.objects.get(id=1).user_set.filter(is_active=True): #.aggregate(hours=Sum('profile__hours_per_week'))['hours']
+        for u in employee_list: #.aggregate(hours=Sum('profile__hours_per_week'))['hours']
             company_hours_per_week += Decimal(u.profile.hours_per_week)
         company_hours = 0.0
         for activity_id, values in company_total_hours.items():
@@ -1248,12 +1255,13 @@ class BacklogReport(CSVViewMixin, TemplateView):
         approx_days = 7 * num_weeks
         drop_dead_date = datetime.date.today() + relativedelta(days=int(approx_days))
 
-        future_approved_time_off = PaidTimeOffRequest.objects.filter(
-                Q(status=PaidTimeOffRequest.APPROVED
-                    )|Q(status=PaidTimeOffRequest.PROCESSED),
-                pto_start_date__gte=datetime.date.today(),
-                pto_end_date__lte=drop_dead_date,
-                ).aggregate(s=Sum('amount'))['s'] or Decimal('0.0')
+        ptoQ = Q(pto_start_date__gte=datetime.date.today(),pto_end_date__lte=drop_dead_date)
+        ptoQ &= Q(status=PaidTimeOffRequest.APPROVED)|Q(status=PaidTimeOffRequest.PROCESSED)
+
+        if form.cleaned_data['project_department']:
+            ptoQ &= Q(user_profile__department=form.cleaned_data['project_department'])
+
+        future_approved_time_off = PaidTimeOffRequest.objects.filter(ptoQ).aggregate(s=Sum('amount'))['s'] or Decimal('0.0')
 
         future_holiday_time_off = Decimal('0.0')
         holidays = Holiday.holidays_between_dates(datetime.date.today(),
