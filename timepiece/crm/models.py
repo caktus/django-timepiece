@@ -1351,6 +1351,7 @@ class Lead(models.Model):
     STATUS_QUALIFIED = '5-qualified'
     STATUS_GARDEN = '6-garden'
     STATUS_UNQUALIFIED = '7-unqualified'
+    STATUS_COMPLETE = '8-complete'
     STATUSES = [
         (STATUS_OPEN, 'Open'),
         (STATUS_CONTACTING, 'Contacting'),
@@ -1360,6 +1361,7 @@ class Lead(models.Model):
         (STATUS_QUALIFIED, 'Qualified'),
         (STATUS_GARDEN, 'Garden'),
         (STATUS_UNQUALIFIED, 'Unqualified'),
+        (STATUS_COMPLETE, 'Complete'),
     ]
 
     title = models.CharField(max_length=64,
