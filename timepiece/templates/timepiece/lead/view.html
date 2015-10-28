@@ -58,7 +58,7 @@
                     </td>
                 </tr>
                 {% endif %}
-                
+
                 {% with tr_class=object.primary_contact.do_not_call_class %}
                 {% if object.primary_contact.do_not_call %}
                 <tr class="{{ tr_class }}"><th colspan=2>This contact is on the Do Not Call list.</th></tr>
@@ -88,7 +88,7 @@
                 </tr>
                 {% endif %}
                 {% endwith %}
-                
+
                 {% if object.primary_contact.has_opted_out_of_fax %}
                 <tr class="error"><th colspan=2>This contact has opted out of fax.</th></tr>
                 <tr class="error"><th>Fax</th><td>{% format_phone_number object.primary_contact.fax %}</td></tr>
@@ -169,6 +169,24 @@
                 </tr>
             </table>
 
+            <h3>Status</h3>
+            <table class="table table-bordered">
+                <tr><th>Current</th>
+                    <td>
+                        <b>{{ object.get_status_display }}</b>
+                    </td>
+                </tr>
+                {% for hist in object.leadhistory_set.all %}
+                <tr><th>{{ hist.created_at }}</th>
+                    <td>
+                        {{ hist.get_status_display }}
+                    </td>
+                </tr>
+                {% endfor %}
+            </table>
+
+
+
             <h3>Tags</h3>
             <div id="tags">
             {% if object.tags.all|length %}
@@ -194,7 +212,7 @@
 
             <h3>Attachments</h3>
             <div id="file-uploader" name="File" class="controls">
-              <noscript>          
+              <noscript>
                 <p>Please enable JavaScript to use file uploader.</p>
               </noscript>
             </div>
