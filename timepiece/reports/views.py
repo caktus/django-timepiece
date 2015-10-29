@@ -1812,6 +1812,23 @@ def report_employee_backlog(request, user_id):
         return HttpResponseRedirect( reverse('report_employee_backlog', args=(request.user.id,)) )
 
 
+@permission_required('crm.view_employee_backlog')
+def report_all_employee_backlog(request):
+
+    employees=Group.objects.get(id=1).user_set.filter(is_active=True).order_by('last_name', 'first_name')
+
+    charts={}
+    for e in employees:
+        charts[e]=json.dumps(get_employee_backlog_chart_data(e.id))
+
+    context = {'employees': employees,
+                'charts': charts}
+
+    return render(request, 'timepiece/reports/backlog_employee_all.html', context)
+
+
+
+
 def get_employee_backlog_chart_data(user_id):
     """
     Creates the data objects required by the c3 frond-end visualization
