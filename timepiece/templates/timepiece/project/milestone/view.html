@@ -47,7 +47,18 @@
                     </td>
                 </tr>
                 <tr><th>Description</th><td>{{ object.description|linebreaks }}</td></tr>
-            </table>            
+                <tr><th>Approval</th>
+                  <td>
+                    {% if object.approved %}
+                    {{object.approver }} @ {{ object.approval_date }}
+                    {% elif object.denied %}
+                    This milestone edit has been rejected.
+                    {% else %}
+                    This milestone has not yet been approved.
+                    {% endif %}
+                  </td>
+                </tr>
+            </table>
         </div>
 
         <div class="span4">
