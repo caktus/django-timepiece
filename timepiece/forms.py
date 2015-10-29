@@ -113,12 +113,10 @@ class YearMonthForm(forms.Form):
         years = [(year, year) for year in xrange(first_year, this_year + 1)]
         self.fields['year'].choices = years
         initial = kwargs.get('initial')
-        print 'initial', initial
         if initial:
             this_year = initial.get('year', this_year)
             this_month = initial.get('month', this_month)
             this_half = initial.get('half', this_half)
-            print 'this_month', this_month
         self.fields['year'].initial = this_year
         self.fields['month'].initial = this_month
         self.fields['half'].initial = this_half
@@ -128,7 +126,6 @@ class YearMonthForm(forms.Form):
         this_year = now.year
         this_month = now.month
         this_half = 1 if datetime.datetime.now().day <= 15 else 2
-        print 'self.cleaned_data', self.cleaned_data
         month = int(self.cleaned_data.get('month', this_month))
         year = int(self.cleaned_data.get('year', this_year))
         half = int(self.cleaned_data.get('half', this_half))

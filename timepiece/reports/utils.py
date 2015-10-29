@@ -48,6 +48,30 @@ def find_overtime(dates):
     """Given a list of weekly summaries, return the overtime for each week"""
     return sum([day - 40 for day in dates if day > 40])
 
+def find_correct_overtime(from_date, to_date, user, weeks):
+    """For pay periods that do not align with weeks, need more complicated
+    logic for determining overtime."""
+    paid_leave = get_setting('TIMEPIECE_PAID_LEAVE_PROJECTS')
+    unpaid_leave = get_setting('TIMEPIECE_UNPAID_LEAVE_PROJECTS')
+    total_overtime = 0.0
+    for week in weeks:
+        end_of_week = week + relativedelta(days=7)
+        if end_of_week >= from_date and end_of_week < to_date:
+            entries = Entry.objects.filter(user=user, end_time__gte=week,
+                end_time__lt=end_of_week
+                ).exclude(project__in=paid_leave.values()
+                ).exclude(project__in=unpaid_leave.values())
+            if entries.count() == 0:
+                continue
+            
+            week_total = float(entries.aggregate(
+                hours=Sum('hours'))['hours'])
+            print user.email, week_total
+            if week_total > 40.0:
+                total_overtime += (week_total - 40.0)
+
+    return total_overtime
+
 
 def generate_dates(start=None, end=None, by='week'):
     if start:
@@ -69,7 +93,8 @@ def generate_dates(start=None, end=None, by='week'):
 
 
 def get_project_totals(entries, date_headers, hour_type=None, overtime=False,
-                   total_column=False, by='user', writedown=None):
+                   total_column=False, by='user', writedown=None,
+                   from_date=None, to_date=None):
     """
     Yield hour totals grouped by user and date. Optionally including overtime.
     """
@@ -109,6 +134,13 @@ def get_project_totals(entries, date_headers, hour_type=None, overtime=False,
             dates.append(sum(dates))
         if overtime:
             dates.append(find_overtime(dates))
+            if by == 'user' and from_date is not None and to_date is not None:
+                user = User.objects.get(id=thing)
+                weeks = [date for date in date_headers]
+                dates.append(find_correct_overtime(
+                    add_timezone(from_date), add_timezone(to_date),
+                    user, weeks)
+                )
         dates = [date or '' for date in dates]
         rows.append((name, thing_id, dates))
     if total_column:
@@ -460,7 +492,6 @@ def get_company_backlog_chart_data(activity_goalQ):
         date = datetime.datetime.strptime(date_str, '%Y-%m-%d').date()
         if i == 0:
             sun_date = date
-            print '1 date', date, ' --> ', sun_date
             while sun_date.weekday() != 6:
                 sun_date -= datetime.timedelta(days=1)
             c3_columns_by_week.append(['x', str(sun_date)])

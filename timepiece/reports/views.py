@@ -819,7 +819,7 @@ def report_payroll_summary(request):
     #date_headers = generate_dates(from_date, last_billable, by='week')
     date_headers = generate_dates(from_date, to_date, by='week')
     weekly_totals = list(get_project_totals(week_entries, date_headers,
-                                              'total', overtime=True))
+        'total', overtime=True, from_date=from_date, to_date=to_date))
     # Monthly totals
     # not filter on writedown here since there should never be a writedown
     # against a PAID LEAVE project.

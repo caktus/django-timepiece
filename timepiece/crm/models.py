@@ -1319,6 +1319,12 @@ class ActivityGoal(models.Model):
 
     def clean(self):
         # ensure that the end_date is after the date
+        if type(self.date) is not datetime.date:
+          raise ValidationError('Select a Start Date.')
+
+        if type(self.end_date) is not datetime.date:
+          raise ValidationError('Select an End Date.')
+
         if self.date > self.end_date:
             raise ValidationError('The Start Date cannot come after the '
                 'End Date.')

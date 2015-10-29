@@ -115,6 +115,8 @@
                         <span class="label label-important">Denied</span>
                         {% elif ptor.status == 'modified' %}
                         <span class="label label-warning">Modified</span>
+                        {% elif ptor.status == 'processed' %}
+                        <span class="label label-info">Processed</span>
                         {% endif %}
                     </td>
                     <td>
@@ -122,8 +124,11 @@
                         <a type="button" class="btn btn-primary btn-small" href="{% url 'edit_pto_request' ptor.id %}">Edit</a>
                         <a type="button" class="btn btn-danger btn-small" href="{% url 'delete_pto_request' ptor.id %}">Delete</a>
                         {% else %}
+                        {% if ptor.status == 'approved' or ptor.status == 'processed' %}
                         {{ ptor.approver }} @ {{ ptor.approval_date }}<br/>
-                        <em>{{ ptor.approver_comment }}</em>
+                        <em>{{ ptor.approver_comment }}</em></br>
+                        {% endif %}
+                        <a type="button" class="btn btn-warning btn-small" href="{% url 'edit_pto_request' ptor.id %}">Modify</a>
                         {% endif %}
                     </td>
                 </tr>
@@ -217,10 +222,13 @@
                         {% endif %}
                     </td>
                     <td>
-                        {% if ptor.user_profile.user != request.user and ptor.status == "pending" %}
-                        <a type="button" class="btn btn-success btn-small" href="{% url 'approve_pto_request' ptor.id %}">Approve</a>
-                        <a type="button" class="btn btn-danger btn-small" href="{% url 'deny_pto_request' ptor.id %}">Deny</a>
-                        {% elif ptor.status == "approved" or ptor.status == 'modified' %}
+                        {% if ptor.user_profile.user != request.user %}
+                            {% if ptor.status == "pending" or ptor.status == 'modified' %}
+                            <a type="button" class="btn btn-success btn-small" href="{% url 'approve_pto_request' ptor.id %}">Approve</a>
+                            <a type="button" class="btn btn-danger btn-small" href="{% url 'deny_pto_request' ptor.id %}">Deny</a>
+                            {% endif %}
+                        {% endif %}
+                        {% if ptor.status == "approved" %}
                         <a type="button" class="btn btn-primary btn-small" href="{% url 'process_pto_request' ptor.id %}">Process</a>
                         {% endif %}
                     </td>

@@ -1306,10 +1306,37 @@ class EditPTORequest(UpdateView):
         return form
 
     def form_valid(self, form):
-        form.instance.approver = None
-        form.instance.approval_date = None
-        if not form.instance.user_profile.earns_pto:
-            form.instance.pto = False
+        instance = form.instance
+        instance.approver = None
+        instance.approval_date = None
+        instance.approver_comment = ''
+        instance.process_date = None
+        instance.processor = None
+        
+        if not instance.user_profile.earns_pto:
+            instance.pto = False
+        
+        if instance.status in [PaidTimeOffRequest.APPROVED,
+            PaidTimeOffRequest.PROCESSED, PaidTimeOffRequest.MODIFIED]:
+            
+            # delete existing references to this Time Off Request
+            for ptol in PaidTimeOffLog.objects.filter(
+                pto_request=instance):
+                
+                Entry.objects.filter(pto_log=ptol).delete()
+                ptol.delete()
+
+            instance.status = PaidTimeOffRequest.MODIFIED
+
+            emails.updated_pto(instance,
+                reverse('pto_request_details', args=(instance.id,)),
+                reverse('approve_pto_request', args=(instance.id,)),
+                reverse('deny_pto_request', args=(instance.id,)),
+            )
+
+        else:
+            instance.status = PaidTimeOffRequest.PENDING
+
         return super(EditPTORequest, self).form_valid(form)
 
 
