@@ -51,6 +51,28 @@ _get_absolute_url = lambda user: reverse('view_user', args=(user.pk,))
 User.add_to_class('get_absolute_url', _get_absolute_url)
 
 
+class Department(models.Model):
+    DEPARTMENTS = (
+        ('admin','Admin'),
+        ('construction','Construction'),
+        ('elec-avionics', 'Electrical/Avionics'),
+        ('finance','Finance'),
+        ('hr','Human Resources'),
+        ('integration', 'Integration'),
+        ('it','Information Technology'),
+        ('marketing','Marketing'),
+        ('mech', 'Mechanical Systems'),
+        ('ops','Operations'),
+        ('sales','Sales'),
+        ('struct', 'Structures'),
+        ('tech-serv', 'Technical Services'),
+        ('other', 'Other'),
+    )
+    name=models.CharField(max_length=16,
+      choices=DEPARTMENTS,
+      default='other')
+      ## TODO Actually make the department class with options and not a static, hardcoded list.
+
 class UserProfile(models.Model):
     SALARY = 'salary'
     HOURLY = 'hourly'
@@ -70,6 +92,9 @@ class UserProfile(models.Model):
     earns_holiday_pay = models.BooleanField(default=False, help_text='Does the employee earn Holiday Pay?')
     pto_accrual = models.FloatField(default=0.0, verbose_name='PTO Accrual Amount', help_text='Number of PTO hours earned per pay period for the employee.')
     hire_date = models.DateField(blank=True, null=True)
+    department = models.CharField(max_length=16,
+      choices=Department.DEPARTMENTS,
+      default='other')
 
     weekly_schedule = models.CharField(max_length=128, default='0,0,0,0,0,0,0')
     utilization = models.FloatField(default=80,
@@ -984,21 +1009,8 @@ class TrackableProjectManager(models.Manager):
 
 class Project(models.Model):
     MINDERS_GROUP_ID = 3
-    PROJECT_DEPARTMENTS = (
-        ('admin','Admin'),
-        ('elec-avionics', 'Electrical/Avionics'),
-        ('finance','Finance'),
-        ('hr','Human Resources'),
-        ('integration', 'Integration'),
-        ('it','Information Technology'),
-        ('marketing','Marketing'),
-        ('mech', 'Mechanical Systems'),
-        ('ops','Operations'),
-        ('sales','Sales'),
-        ('struct', 'Structures'),
-        ('tech-serv', 'Technical Services'),
-        ('other', 'Other')
-    )
+
+    PROJECT_DEPARTMENTS = Department.DEPARTMENTS
 
     name = models.CharField(max_length=255)
     code = models.CharField(max_length=12,

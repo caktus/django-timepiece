@@ -49,6 +49,7 @@
                         {% endif %}
                     </td>
                 </tr>
+                <tr><th>Department</th><td>{{ object.profile.get_department_display }}</td></tr>
                 <tr><th>Utilization</th><td>{{ object.profile.utilization|floatformat:2 }} %</td></tr>
                 <tr>
                     <th style="white-space: nowrap;">Weekly Schedule</th>
