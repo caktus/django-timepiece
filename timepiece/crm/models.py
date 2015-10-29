@@ -51,6 +51,28 @@ _get_absolute_url = lambda user: reverse('view_user', args=(user.pk,))
 User.add_to_class('get_absolute_url', _get_absolute_url)
 
 
+class Department(models.Model):
+    DEPARTMENTS = (
+        ('admin','Admin'),
+        ('construction','Construction'),
+        ('elec-avionics', 'Electrical/Avionics'),
+        ('finance','Finance'),
+        ('hr','Human Resources'),
+        ('integration', 'Integration'),
+        ('it','Information Technology'),
+        ('marketing','Marketing'),
+        ('mech', 'Mechanical Systems'),
+        ('ops','Operations'),
+        ('sales','Sales'),
+        ('struct', 'Structures'),
+        ('tech-serv', 'Technical Services'),
+        ('other', 'Other'),
+    )
+    name=models.CharField(max_length=16,
+      choices=DEPARTMENTS,
+      default='other')
+      ## TODO Actually make the department class with options and not a static, hardcoded list.
+
 class UserProfile(models.Model):
     SALARY = 'salary'
     HOURLY = 'hourly'
@@ -70,6 +92,9 @@ class UserProfile(models.Model):
     earns_holiday_pay = models.BooleanField(default=False, help_text='Does the employee earn Holiday Pay?')
     pto_accrual = models.FloatField(default=0.0, verbose_name='PTO Accrual Amount', help_text='Number of PTO hours earned per pay period for the employee.')
     hire_date = models.DateField(blank=True, null=True)
+    department = models.CharField(max_length=16,
+      choices=Department.DEPARTMENTS,
+      default='other')
 
     weekly_schedule = models.CharField(max_length=128, default='0,0,0,0,0,0,0')
     utilization = models.FloatField(default=80,
@@ -984,21 +1009,8 @@ class TrackableProjectManager(models.Manager):
 
 class Project(models.Model):
     MINDERS_GROUP_ID = 3
-    PROJECT_DEPARTMENTS = (
-        ('admin','Admin'),
-        ('elec-avionics', 'Electrical/Avionics'),
-        ('finance','Finance'),
-        ('hr','Human Resources'),
-        ('integration', 'Integration'),
-        ('it','Information Technology'),
-        ('marketing','Marketing'),
-        ('mech', 'Mechanical Systems'),
-        ('ops','Operations'),
-        ('sales','Sales'),
-        ('struct', 'Structures'),
-        ('tech-serv', 'Technical Services'),
-        ('other', 'Other')
-    )
+
+    PROJECT_DEPARTMENTS = Department.DEPARTMENTS
 
     name = models.CharField(max_length=255)
     code = models.CharField(max_length=12,
@@ -1348,6 +1360,9 @@ class ActivityGoal(models.Model):
     def current(self):
         return self.end_date >= datetime.date.today()
 
+
+
+
 class Lead(models.Model):
     STATUS_OPEN = '0-open'
     STATUS_CONTACTING = '1-contacting'
@@ -1357,6 +1372,7 @@ class Lead(models.Model):
     STATUS_QUALIFIED = '5-qualified'
     STATUS_GARDEN = '6-garden'
     STATUS_UNQUALIFIED = '7-unqualified'
+    STATUS_COMPLETE = '8-complete'
     STATUSES = [
         (STATUS_OPEN, 'Open'),
         (STATUS_CONTACTING, 'Contacting'),
@@ -1366,6 +1382,7 @@ class Lead(models.Model):
         (STATUS_QUALIFIED, 'Qualified'),
         (STATUS_GARDEN, 'Garden'),
         (STATUS_UNQUALIFIED, 'Unqualified'),
+        (STATUS_COMPLETE, 'Complete'),
     ]
 
     title = models.CharField(max_length=64,
@@ -1431,6 +1448,19 @@ class Lead(models.Model):
     def open_general_tasks(self):
         return self.generaltask_set.all() # status__terminal=False
 
+    def save(self, *args, **kwargs):
+        make_history = True
+        if self.pk is not None:
+            orig = Lead.objects.get(pk=self.pk)
+            if orig.status == self.status:
+                make_history = False
+
+        super(Lead, self).save(*args, **kwargs)
+
+        if make_history:
+            history = LeadHistory(lead=self,status=self.status)
+            history.save()
+
 class LeadAttachment(MongoAttachment):
     lead = models.ForeignKey(Lead)
 
@@ -1456,6 +1486,14 @@ class LeadNote(models.Model):
         url = '%s%s' % (settings.DOMAIN, reverse('view_lead', args=(self.lead.id,)))
         # send email to lead aac primary poc
         timepiece_emails.lead_new_note(self, url)
+
+class LeadHistory(models.Model):
+    lead = models.ForeignKey(Lead)
+    status = models.CharField(max_length=16,choices=Lead.STATUSES)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    def __unicode__(self):
+        return '%s - %s (%s)' % (self.lead, self.status, self.created_at)
 
 
 class DistinguishingValueChallenge(models.Model):

@@ -11,7 +11,7 @@ from timepiece.utils import get_setting
 
 from timepiece.crm.lookups import (BusinessLookup, ProjectLookup, UserLookup,
         QuickLookup, ContactLookup)
-from timepiece.crm.models import (Attribute, Business, Project,
+from timepiece.crm.models import (Attribute, Business, Project, Department,
         ProjectRelationship, UserProfile, PaidTimeOffRequest,
         PaidTimeOffLog, Milestone, ActivityGoal, BusinessNote,
         BusinessDepartment, Contact, ContactNote, Lead, LeadNote,
@@ -232,6 +232,7 @@ class EditProjectForm(forms.ModelForm):
 
 class CreateUserForm(UserCreationForm):
     business = forms.ModelChoiceField(Business.objects.all())
+    department = forms.ChoiceField(choices=Department.DEPARTMENTS)
     hire_date = forms.DateField()
     earns_pto = forms.BooleanField(required=False, label='Earns PTO')
     earns_holiday_pay = forms.BooleanField(required=False, label='Earns Holiday Pay')
@@ -255,6 +256,7 @@ class CreateUserForm(UserCreationForm):
         user = super(CreateUserForm, self).save(commit)
         up = UserProfile(user=user,
                          business=self.cleaned_data['business'],
+                         department=self.cleaned_data['department'],
                          hire_date=self.cleaned_data['hire_date'],
                          earns_pto=self.cleaned_data['earns_pto'],
                          earns_holiday_pay=self.cleaned_data['earns_holiday_pay'],
@@ -287,6 +289,7 @@ class EditUserForm(UserChangeForm):
             label='Repeat Password',
             widget=forms.PasswordInput(render_value=False))
     business = forms.ModelChoiceField(Business.objects.all())
+    department = forms.ChoiceField(choices=Department.DEPARTMENTS)
     hire_date = forms.DateField()
     earns_pto = forms.BooleanField(required=False, label='Earns PTO')
     earns_holiday_pay = forms.BooleanField(required=False, label='Earns Holiday Pay')
@@ -309,6 +312,7 @@ class EditUserForm(UserChangeForm):
         # self.fields['groups'].help_text = None
         up = UserProfile.objects.get(user=kwargs['instance'])
         self.fields['business'].initial = up.business
+        self.fields['department'].initial = up.department
         self.fields['hire_date'].initial = up.hire_date
         self.fields['earns_pto'].initial = up.earns_pto
         self.fields['earns_holiday_pay'].initial = up.earns_holiday_pay
@@ -334,6 +338,7 @@ class EditUserForm(UserChangeForm):
         # set the user's business in UserProfile
         up = UserProfile.objects.get(user=instance)
         up.business = self.cleaned_data.get('business')
+        up.department = self.cleaned_data.get('department')
         up.hire_date = self.cleaned_data['hire_date']
         up.earns_pto = self.cleaned_data['earns_pto']
         up.earns_holiday_pay = self.cleaned_data['earns_holiday_pay']

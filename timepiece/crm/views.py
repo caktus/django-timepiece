@@ -4,6 +4,7 @@ import urllib
 import json
 import os
 
+from datetime import datetime, timedelta
 from django.conf import settings
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required, permission_required
@@ -2272,6 +2273,7 @@ class ListLeads(SearchListView, CSVViewMixin):
             headers = ['Lead ID',
                        'Title',
                        'Status',
+                       '7 Day Status Changes',
                        'Project Count',
                        'AAC Primary',
                        'Primary Contact Salutaton',
@@ -2316,6 +2318,7 @@ class ListLeads(SearchListView, CSVViewMixin):
                     row = [lead.id,
                            lead.title,
                            lead.get_status_display(),
+                           str(len(lead.leadhistory_set.filter(created_at__gte=datetime.now()-timedelta(days=7)))),
                            str(len(lead.get_projects)),
                            '%s %s' % (lead.aac_poc.first_name, lead.aac_poc.last_name),
                            lead.primary_contact.salutation,
@@ -2358,6 +2361,7 @@ class ListLeads(SearchListView, CSVViewMixin):
                     row = [lead.id,
                            lead.title,
                            lead.get_status_display(),
+                           str(len(lead.leadhistory_set.filter(created_at__gte=datetime.now()-timedelta(days=7)))),
                            str(len(lead.get_projects)),
                            '%s %s' % (lead.aac_poc.first_name, lead.aac_poc.last_name),
                            'n/a',
@@ -2723,7 +2727,7 @@ class UpdateDistinguishingValueChallenge(View):
         else:
             dvc.due_date = None
         dvc.cost = request.POST.get('cost', '')
-        
+
         dvc.confirm_resources = bool(request.POST.get('confirm_resources', False))
         dvc.resources_notes = request.POST.get('resources_notes', '')
         dvc.benefits_begin = request.POST.get('benefits_begin', '')
