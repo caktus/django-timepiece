@@ -25,7 +25,7 @@ from timepiece.utils.csv import CSVViewMixin, DecimalEncoder
 
 from timepiece.contracts.models import ProjectContract, ContractRate
 from timepiece.entries.models import Entry, ProjectHours, Activity
-from timepiece.crm.models import Project, PaidTimeOffRequest, Attribute, Milestone
+from timepiece.crm.models import Project, PaidTimeOffRequest, Attribute, Milestone, Department
 from timepiece.reports.forms import BillableHoursReportForm, HourlyReportForm,\
         ProductivityReportForm, PayrollSummaryReportForm, RevenueReportForm,\
         BacklogFilterForm
@@ -1815,14 +1815,26 @@ def report_employee_backlog(request, user_id):
 @permission_required('crm.view_employee_backlog')
 def report_all_employee_backlog(request):
 
-    employees=Group.objects.get(id=1).user_set.filter(is_active=True).order_by('last_name', 'first_name')
 
-    charts={}
-    for e in employees:
-        charts[e]=json.dumps(get_employee_backlog_chart_data(e.id))
+    departments = {}
+    for d,d_pretty in Department.DEPARTMENTS: #TODO update with department as a model
+        dept_emps = Group.objects.get(id=1).user_set.filter(is_active=True,profile__department=d).order_by('last_name', 'first_name')
+        charts={}
+        for e in dept_emps:
+            charts[e]=json.dumps(get_employee_backlog_chart_data(e.id))
+        if len(dept_emps) > 0:
+            departments[d_pretty] = charts
 
-    context = {'employees': employees,
-                'charts': charts}
+
+    #
+    #
+    # employees=Group.objects.get(id=1).user_set.filter(is_active=True).order_by('last_name', 'first_name')
+    #
+    # charts={}
+    # for e in employees:
+    #     charts[e]=json.dumps(get_employee_backlog_chart_data(e.id))
+
+    context = {'departments':departments}
 
     return render(request, 'timepiece/reports/backlog_employee_all.html', context)
 
