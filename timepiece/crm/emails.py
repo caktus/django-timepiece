@@ -40,7 +40,45 @@ def new_pto(pto, url, approve_url, deny_url):
     msg2 = EmailMultiAlternatives(subject, text_content, 'firmbase@firmbase.aacengineering.com', to_addys2)
     msg2.attach_alternative(html_content2, "text/html")
     msg2.send()
+
+def updated_pto(pto, url, approve_url, deny_url):
+    to_addys1 = ['browne.danielc@gmail.com',
+                User.objects.get(id=5).email]
+
+    to_addys2 = ['browne.danielc@gmail.com',
+                pto.user_profile.user.email]
+
+    subject = '[FirmBase] Updated Time Off Request for %s' % (pto.user_profile.user)
+    text_content = 'Updated Time Off request. ' +  url
+    html_content = '<dl>' + \
+                      '<dt>Requested by</dt><dd>' + str(pto.user_profile.user) + '</dd>' + \
+                      '<dt>Type</dt><dd>' + ('Paid Time Off' if pto.pto else 'Unpaid Time Off') + '</dd>' + \
+                      '<dt>Date Submitted</dt><dd>' + pto.request_date.strftime('%F') + '</dd>' + \
+                      '<dt>Time Off Start Date</dt><dd>' + pto.pto_start_date.strftime('%F') + '</dd>' + \
+                      '<dt>Time Off End Date</dt><dd>' + pto.pto_end_date.strftime('%F') + '</dd>' + \
+                      '<dt>Number of Hours</dt><dd>' + str(pto.amount) + '</dd>' + \
+                      '<dt>Reasons</dt><dd>' + pto.comment + '</dd>' + \
+                      '<dt>Links</dt>' + \
+                        '<dd>' + \
+                          '<a href="https://firmbase.aacengineering.com' + url + '">PTO Request</a>'
     
+    html_content1 = html_content + \
+                        ' | <a href="https://firmbase.aacengineering.com' + approve_url + '">Approve</a>' + \
+                        ' | <a href="https://firmbase.aacengineering.com' + deny_url + '">Deny</a>' + \
+                      '</dd>' + \
+                    '</dl>'
+    html_content2 = html_content + \
+                      '</dd>' + \
+                    '</dl>'
+
+        
+    msg1 = EmailMultiAlternatives(subject, text_content, 'firmbase@firmbase.aacengineering.com', to_addys1)
+    msg1.attach_alternative(html_content1, "text/html")
+    msg1.send()
+
+    msg2 = EmailMultiAlternatives(subject, text_content, 'firmbase@firmbase.aacengineering.com', to_addys2)
+    msg2.attach_alternative(html_content2, "text/html")
+    msg2.send()
 
 def approved_pto(pto, url):
     to_addys = ['browne.danielc@gmail.com']
