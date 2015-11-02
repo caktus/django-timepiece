@@ -190,7 +190,7 @@
             <h3>Attachments</h3>
             <div id="attachment-list">
             <div id="fine-uploader">
-              <noscript>          
+              <noscript>
                 <p>Please enable JavaScript to use file uploader.</p>
               </noscript>
             </div>
@@ -298,6 +298,7 @@
                     <thead>
                     <tr>
                         <th rowspan="2">Name</th>
+                        <th rowspan="2">Status</th>
                         <th colspan="2">Hours Worked</th>
                         <th rowspan="2">Time Sheet</th>
                         <th rowspan="2">Hours Report</th>
@@ -313,6 +314,7 @@
                         {% project_hours_for_contract contract project 'nonbillable' as nonbillable_hours %}
                         <tr>
                             <td><a href="{% url 'view_project' project.pk %}">{{ project.code }}: {{ project.name }}</a></td>
+                            <td>{{ project.status }}</td>
                             <td class="hours">{{ project_hours|floatformat:'2' }}</td>
                             <td class="hours">{{ nonbillable_hours|floatformat:'2' }}</td>
                             <td><a href="{% url 'view_project_timesheet' project.id %}">Time Sheet</a></td>
