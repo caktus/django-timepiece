@@ -21,6 +21,7 @@ from django.views.generic import (CreateView, DeleteView, DetailView,
 from django.forms import widgets
 
 from timepiece import utils
+from timepiece.utils import get_setting
 from timepiece.forms import (YearMonthForm, UserYearMonthForm, DateForm,
     UserDateForm, StatusUserDateForm, StatusDateForm)
 from timepiece.templatetags.timepiece_tags import seconds_to_hours
@@ -922,6 +923,9 @@ class ListProjects(SearchListView, CSVViewMixin):
     template_name = 'timepiece/project/list.html'
 
     def get(self, request, *args, **kwargs):
+        if len(request.GET.keys()) == 0:
+            return HttpResponseRedirect(reverse('list_projects') \
+                + '?status=' + str(get_setting('TIMEPIECE_DEFAULT_PROJECT_STATUS')))
         self.export_project_list = request.GET.get('export_project_list', False)
         if self.export_project_list:
             kls = CSVViewMixin
@@ -1312,17 +1316,17 @@ class EditPTORequest(UpdateView):
         instance.approver_comment = ''
         instance.process_date = None
         instance.processor = None
-        
+
         if not instance.user_profile.earns_pto:
             instance.pto = False
-        
+
         if instance.status in [PaidTimeOffRequest.APPROVED,
             PaidTimeOffRequest.PROCESSED, PaidTimeOffRequest.MODIFIED]:
-            
+
             # delete existing references to this Time Off Request
             for ptol in PaidTimeOffLog.objects.filter(
                 pto_request=instance):
-                
+
                 Entry.objects.filter(pto_log=ptol).delete()
                 ptol.delete()
 
