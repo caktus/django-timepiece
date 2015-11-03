@@ -950,7 +950,7 @@ class ListProjects(SearchListView, CSVViewMixin):
         queryset = super(ListProjects, self).filter_form_valid(form, queryset)
         status = form.cleaned_data['status']
         if status:
-            queryset = queryset.filter(status=status)
+            queryset = queryset.filter(status__in=status)
         return queryset
 
     def get_filename(self, context):

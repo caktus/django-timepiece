@@ -386,7 +386,7 @@ class EditUserSettingsForm(forms.ModelForm):
 
 
 class ProjectSearchForm(SearchForm):
-    status = forms.ChoiceField(required=False, choices=[], label='')
+    status = forms.MultipleChoiceField(widget=forms.CheckboxSelectMultiple(),required=False, choices=[], label='')
 
     def __init__(self, *args, **kwargs):
         print 'kwargs', kwargs.get('data', None)
@@ -394,7 +394,7 @@ class ProjectSearchForm(SearchForm):
             kwargs['data'] = {'status': get_setting('TIMEPIECE_DEFAULT_PROJECT_STATUS')}
         super(ProjectSearchForm, self).__init__(*args, **kwargs)
         statuses = Attribute.statuses.all()
-        choices = [('', 'Any Status')] + [(a.pk, a.label) for a in statuses]
+        choices = [(a.pk, a.label) for a in statuses]
         self.fields['status'].choices = choices
         if get_setting('TIMEPIECE_DEFAULT_PROJECT_STATUS') and kwargs.get('data', None) is None:
             self.fields['status'].initial = get_setting('TIMEPIECE_DEFAULT_PROJECT_STATUS')
