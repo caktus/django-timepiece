@@ -1312,17 +1312,17 @@ class EditPTORequest(UpdateView):
         instance.approver_comment = ''
         instance.process_date = None
         instance.processor = None
-        
+
         if not instance.user_profile.earns_pto:
             instance.pto = False
-        
+
         if instance.status in [PaidTimeOffRequest.APPROVED,
             PaidTimeOffRequest.PROCESSED, PaidTimeOffRequest.MODIFIED]:
-            
+
             # delete existing references to this Time Off Request
             for ptol in PaidTimeOffLog.objects.filter(
                 pto_request=instance):
-                
+
                 Entry.objects.filter(pto_log=ptol).delete()
                 ptol.delete()
 
@@ -1364,9 +1364,12 @@ class ApprovePTORequest(UpdateView):
         # get holidays in years covered by PTO to make sure that they are not
         # included as days to use PTO hours
         holidays = []
-        for year in range(form.instance.pto_start_date.year, form.instance.pto_end_date.year+1):
-            holiday_dates = [h['date'] for h in Holiday.get_holidays_for_year(year, {'paid_holiday':True})]
-            holidays.extend(holiday_dates)
+
+        # check to see if user earns holiday pay, if not, they can take use it for pto
+        if up.earns_holiday_pay:
+            for year in range(form.instance.pto_start_date.year, form.instance.pto_end_date.year+1):
+                holiday_dates = [h['date'] for h in Holiday.get_holidays_for_year(year, {'paid_holiday':True})]
+                holidays.extend(holiday_dates)
         # get number of workdays found in between the start and stop dates
         num_workdays = workdays.networkdays(form.instance.pto_start_date,
                                             form.instance.pto_end_date,
