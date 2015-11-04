@@ -45,7 +45,7 @@ from timepiece.crm.models import (Business, Project, ProjectRelationship,
     ApprovedMilestone, MilestoneNote, ActivityGoal, BusinessNote,
     BusinessDepartment, Contact, ContactNote, BusinessAttachment, Lead,
     LeadNote, DistinguishingValueChallenge, TemplateDifferentiatingValue,
-    LeadAttachment, DVCostItem, Opportunity, ProjectAttachment,
+    LeadAttachment, DVCostItem, Opportunity, ProjectAttachment, Attribute,
     LimitedAccessUserProfile)
 from timepiece.crm.utils import grouped_totals, project_activity_goals_with_progress
 from timepiece.entries.models import Entry, Activity, Location
@@ -1056,6 +1056,14 @@ class DeleteProject(DeleteView):
     pk_url_kwarg = 'project_id'
     template_name = 'timepiece/delete_object.html'
 
+@permission_required('crm.delete_project')
+def archive_project(request,project_id):
+    project=Project.objects.get(id=project_id)
+    if project:
+        archived_status = Attribute.objects.get(label='Archived')
+        project.status=archived_status
+        project.save()
+    return HttpResponseRedirect(reverse('list_projects'))
 
 @cbv_decorator(permission_required('crm.change_project'))
 class EditProject(UpdateView):

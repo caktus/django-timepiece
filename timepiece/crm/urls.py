@@ -60,9 +60,12 @@ urlpatterns = patterns('',
     url(r'^project/(?P<project_id>\d+)/edit/$',
         views.EditProject.as_view(),
         name='edit_project'),
-    url(r'^project/(?P<project_id>\d+)/delete/$',
-        views.DeleteProject.as_view(),
-        name='delete_project'),
+    # url(r'^project/(?P<project_id>\d+)/delete/$',
+    #     views.DeleteProject.as_view(),
+    #     name='delete_project'),
+    url(r'^project/(?P<project_id>\d+)/archive/$',
+        views.archive_project,
+        name='archive_project'),
     url(r'^project/(?P<project_id>\d+)/activities/$',
         views.get_project_activities,
         name='project_activities'),
@@ -142,7 +145,7 @@ urlpatterns = patterns('',
     url(r'^business/(?P<business_id>\d+)/add_note$', # expects querystring of transition_id=<int>
         views.AddBusinessNote.as_view(),
         name='add_business_note'),
-    
+
     # Business Attachments
     url(r'^business/(?P<business_id>\d+)/add-attachment$', # expects querystring of transition_id=<int>
         views.business_upload_attachment,
@@ -172,7 +175,7 @@ urlpatterns = patterns('',
     url(r'^relationship/delete/$',
         views.DeleteRelationship.as_view(),
         name='delete_relationship'),
-    
+
 
     # Paid Time Off
     url(r'^pto/(?:(?P<active_tab>summary|requests|history|current_pto|approvals|all_history|all_request_history)/)?$',
@@ -209,7 +212,7 @@ urlpatterns = patterns('',
         views.DeletePTOLogEntry.as_view(),
         name='delete_pto_log'),
 
-    
+
     # Milestones
     url(r'^project/(?P<project_id>\d+)/milestone/(?P<milestone_id>\d+)/$',
         views.ViewMilestone.as_view(),
@@ -233,7 +236,7 @@ urlpatterns = patterns('',
         views.AddMilestoneNote.as_view(),
         name='add_milestone_note'),
 
-    
+
     # Activity Goals
     url(r'^project/(?P<project_id>\d+)/activity_goal/create/$',
         views.CreateActivityGoal.as_view(),

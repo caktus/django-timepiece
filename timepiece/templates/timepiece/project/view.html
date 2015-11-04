@@ -22,7 +22,7 @@
             <ul class="nav nav-pills">
                 {% if perms.crm.change_project %}
                     <li><a href="{% url 'edit_project' object.id %}">Edit</a></li>
-                    <li><a href="{% url 'delete_project' object.id %}">Delete</a></li>
+                    <li><a href="{% url 'archive_project' object.id %}">Archive</a></li>
                 {% endif %}
                 {% if perms.crm.view_project_time_sheet %}
                     <li><a href="{% url 'view_project_timesheet' object.id %}">View Time Sheet</a></li>
