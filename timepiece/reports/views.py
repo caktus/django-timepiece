@@ -2183,3 +2183,30 @@ class PendingMilestonesReport(TemplateView):
 
         context['pending_milestones'] = pending_milestones
         return context
+
+#TODO
+class ThroughputReport(TemplateView):
+    template_name = 'timepiece/reports/throughput.html'
+
+    def get_context_data(self, **kwargs):
+        context = super(ThroughputReport, self).get_context_data(**kwargs)
+        projects = []
+        for project in Project.objects.filter(status__label='Archived'):
+            try:
+                milestones=Milestone.objects.filter(project=project)
+                start_date=milestones.get(name='Start')
+                turn_in_date=milestones.get(name='Turn-In')
+                required_completion_date = milestones.get(name='Required Completion')
+                required_time = required_completion_date.due_date - start_date.due_date
+                spent_time =  turn_in_date.due_date - start_date.due_date
+                throughput = "%.2f" % (spent_time.days / (1.0*required_time.days))
+                minder = project.point_person.get_full_name()
+
+                # if start_date and turn_in_date and required_completion_date:
+                projects.append((project, start_date, turn_in_date, required_completion_date, throughput,minder))
+            except Milestone.DoesNotExist:
+                continue
+
+        projects.sort(key = lambda x: (x[5],x[2].due_date-datetime.date(2000,1,1)))
+        context['projects'] = projects
+        return context

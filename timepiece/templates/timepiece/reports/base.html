@@ -56,6 +56,9 @@
                             <a href="{% ifequal active 'pending_milestones' %}#{% else %}{% url 'report_pending_milestones' %}{% endifequal %}">Pending Milestones</a>
                         </li>
                     {% endif %}
+                    <li{% ifequal active 'throughput' %} class="active"{% endifequal %}>
+                        <a href="{% ifequal active 'throughput' %}#{% else %}{% url 'report_throughput' %}{% endifequal %}">Throughput</a>
+                    </li>
                 </ul>
             </div>
         </div>
