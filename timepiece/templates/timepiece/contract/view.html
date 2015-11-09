@@ -70,6 +70,10 @@
                     <th>Client Expense Category</th>
                     <td>{{ contract.get_client_expense_category_display }}</td>
                 </tr>
+                <tr>
+                    <th>Primary Contact</th>
+                    <td><a href="{% url 'view_contact' contract.primary_contact.pk %}">{{ contract.primary_contact }}</a></td>
+                </tr>
             </table>
         </div>
 
@@ -190,7 +194,7 @@
             <h3>Attachments</h3>
             <div id="attachment-list">
             <div id="fine-uploader">
-              <noscript>          
+              <noscript>
                 <p>Please enable JavaScript to use file uploader.</p>
               </noscript>
             </div>
