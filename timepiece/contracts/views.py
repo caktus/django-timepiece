@@ -12,7 +12,7 @@ from django.db.models import Sum, Q
 from django.forms import widgets
 from django.http import HttpResponseRedirect, Http404, HttpResponseForbidden, HttpResponse
 from django.shortcuts import get_object_or_404, redirect, render
-from django.views.generic import (ListView, DetailView, CreateView, 
+from django.views.generic import (ListView, DetailView, CreateView,
     UpdateView, DeleteView, View)
 
 from timepiece import utils
@@ -194,7 +194,7 @@ class AddContractGeneralTask(View):
         except:
             print sys.exc_info(), traceback.format_exc()
         finally:
-            return HttpResponseRedirect(request.GET.get('next', None) 
+            return HttpResponseRedirect(request.GET.get('next', None)
                 or reverse_lazy('view_project', args=(contract.id,)))
 
 @cbv_decorator(permission_required('contracts.change_projectcontract'))
@@ -210,7 +210,7 @@ class RemoveContractGeneralTask(View):
         except:
             print sys.exc_info(), traceback.format_exc()
         finally:
-            return HttpResponseRedirect(request.GET.get('next', None) 
+            return HttpResponseRedirect(request.GET.get('next', None)
                 or reverse_lazy('view_contract', args=(contract.id,)))
 
 @permission_required('contracts.add_contractincrement')
@@ -235,7 +235,7 @@ class ContractTags(View):
         for t in tag.split(','):
             if len(t):
                 contract.tags.add(t)
-        tags = [{'id': t.id, 
+        tags = [{'id': t.id,
                  'url': reverse('similar_items', args=(t.id,)),
                  'name':t.name} for t in contract.tags.all()]
         return HttpResponse(json.dumps({'tags': tags}),
@@ -256,7 +256,7 @@ class RemoveContractTag(View):
             tag = request.POST.get('tag')
             if len(tag):
                 contract.tags.remove(tag)
-        tags = [{'id': t.id, 
+        tags = [{'id': t.id,
                  'url': reverse('similar_items', args=(t.id,)),
                  'name':t.name} for t in contract.tags.all()]
         return HttpResponse(json.dumps({'tags': tags}),
@@ -373,14 +373,14 @@ class AddContractRate(CreateView):
         contract = ProjectContract.objects.get(
             id=int(self.kwargs['contract_id']))
         form.fields['contract'].initial = contract
-        
+
         activity_id = self.request.GET.get('activity', None)
         if activity_id:
             form.fields['activity'].initial = Activity.objects.get(
                 id=activity_id)
 
         form.fields['rate'].initial = contract.min_rate
-        
+
         return form
 
     def get_context_data(self, *args, **kwargs):
@@ -437,6 +437,11 @@ class AddContractNote(View):
 @transaction.commit_on_success
 def create_invoice(request):
     pk = request.GET.get('project', None)
+    single_project=True
+    if not pk:
+        single_project=False
+        pk = request.GET.get('contract', None)
+
     to_date = request.GET.get('to_date', None)
     if not (pk and to_date):
         raise Http404
@@ -451,9 +456,9 @@ def create_invoice(request):
                 datetime.datetime.strptime(from_date, '%Y-%m-%d'))
     except (ValueError, OverflowError):
         raise Http404
-    project = get_object_or_404(Project, pk=pk)
+
+
     initial = {
-        'project': project,
         'user': request.user,
         'from_date': from_date,
         'to_date': to_date,
@@ -461,8 +466,17 @@ def create_invoice(request):
     entries_query = {
         'status': Entry.APPROVED,
         'end_time__lt': to_date + relativedelta(days=1),
-        'project__id': project.id
     }
+
+    if single_project:
+        project = get_object_or_404(Project, pk=pk)
+        initial.update({'project': project,'single_project': single_project})
+        entries_query.update({'project__id': project.id})
+    else:
+        contract = get_object_or_404(ProjectContract, pk=pk)
+        initial.update({'contract': contract,'single_project': single_project})
+        entries_query.update({'project__in': contract.projects.all})
+
     if from_date:
         entries_query.update({'end_time__gte': from_date})
     invoice_form = InvoiceForm(request.POST or None, initial=initial)
@@ -505,18 +519,25 @@ def create_invoice(request):
         .select_related()
     nonbillable_entries = entries.filter(activity__billable=False) \
         .select_related()
-    return render(request, 'timepiece/invoice/create.html', {
+
+    context = {
         'invoice_form': invoice_form,
         'billable_entries': billable_entries,
         'nonbillable_entries': nonbillable_entries,
-        'project': project,
         'billable_totals': HourGroup.objects
             .summaries(billable_entries),
         'nonbillable_totals': HourGroup.objects
             .summaries(nonbillable_entries),
         'from_date': from_date,
         'to_date': to_date,
-    })
+    }
+
+    if single_project:
+        context.update({'single_project':True,'project': project})
+    else:
+        context.update({'single_project':False,'contract':contract})
+
+    return render(request, 'timepiece/invoice/create.html', context)
 
 
 @permission_required('contracts.change_entrygroup')
@@ -529,16 +550,22 @@ def list_outstanding_invoices(request):
         to_date = form_data['to_date'] + relativedelta(days=1)
         from_date = form_data['from_date']
         statuses = form_data['statuses']
+        grouping = form_data['invoice_grouping']
         dates = Q()
         dates &= Q(end_time__gte=from_date) if from_date else Q()
         dates &= Q(end_time__lt=to_date) if to_date else Q()
+
         billable = Q(project__type__billable=True, project__status__billable=True)
         entry_status = Q(status=Entry.APPROVED)
         project_status = Q(project__status__in=statuses)\
                 if statuses is not None else Q()
         # Calculate hours for each project
-        ordering = ('project__type__label', 'project__status__label',
-                'project__business__name', 'project__name', 'status')
+        if grouping == 'by_project':
+            ordering = ('project__type__label', 'project__status__label',
+                    'project__business__name', 'project__name', 'status')
+        else:
+            ordering = ('project__type__label', 'project__business__name',
+                    'project__contracts__name', 'project__name', 'status')
         project_totals = Entry.objects.filter(
             dates, billable, entry_status, project_status).order_by(*ordering)
         # Find users with unverified/unapproved entries to warn invoice creator
@@ -557,6 +584,7 @@ def list_outstanding_invoices(request):
         'unapproved': unapproved,
         'to_date': form.get_to_date(),
         'from_date': form.get_from_date(),
+        'invoice_grouping':form.get_invoice_grouping(),
     })
 
 
@@ -564,7 +592,7 @@ def list_outstanding_invoices(request):
 class ListInvoices(SearchListView):
     model = EntryGroup
     search_fields = ['user__username__icontains', 'project__name__icontains',
-            'comments__icontains', 'number__icontains']
+            'comments__icontains', 'number__icontains','contract__name__icontains']
     template_name = 'timepiece/invoice/list.html'
 
 
@@ -595,6 +623,8 @@ class InvoiceDetail(DetailView):
             'from_date': invoice.start,
             'to_date': invoice.end,
             'project': invoice.project,
+            'contract': invoice.contract,
+            'single_project': invoice.single_project,
         }
 
 
@@ -667,11 +697,17 @@ class InvoiceEdit(InvoiceDetail):
         invoice = get_object_or_404(EntryGroup, pk=pk)
         self.object = invoice
         initial = {
-            'project': invoice.project,
+            'single_project':invoice.single_project,
             'user': request.user,
             'from_date': invoice.start,
             'to_date': invoice.end,
         }
+
+        if invoice.single_project:
+            initial.update({'project': invoice.project})
+        else:
+            inital.update({'contract': invoice.contract})
+
         invoice_form = InvoiceForm(request.POST,
                                    initial=initial,
                                    instance=invoice)
@@ -744,7 +780,7 @@ def contract_upload_attachment(request, contract_id):
                 'upload_time': str(datetime.datetime.now()),
                 'filename': content['filename']}
         memo.update(content)
-        
+
         # save attachment to ticket
         attachment = ContractAttachment(
             contract=ProjectContract.objects.get(id=int(contract_id)),

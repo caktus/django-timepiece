@@ -9,8 +9,13 @@
         </tr>
     {% endif %}
     <tr>
+        {% if invoice.single_project == True %}
         <th>Project:</th>
         <td>{{ invoice.project.name }}</td>
+        {% else %}
+        <th>Contract:</th>
+        <td>{{ invoice.contract.name }}</td>
+        {% endif %}
     </tr>
     <tr>
         <th>Status:</th>

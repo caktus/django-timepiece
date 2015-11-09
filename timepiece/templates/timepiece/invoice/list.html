@@ -40,7 +40,8 @@
                         <tr>
                             <th>Invoice</th>
                             <th>Reference</th>
-                            <th>Project</th>
+                            <th>Type</th>
+                            <th>Name</th>
                             <th>Status</th>
                             <th>Invoiced by</th>
                             <th>Created on</th>
@@ -54,7 +55,8 @@
                             <tr>
                                 <td><a href="{% url 'view_invoice' invoice.pk %}">{{ invoice.pk }}</a></td>
                                 <td>{{ invoice.number|default:'' }}</td>
-                                <td>{{ invoice.project }}</td>
+                                <td>{% if invoice.single_project %}<span class="label label-info"> Project</span>{% else %} <span class="label label-success"> Contract</span>{% endif %}</td>
+                                <td>{% if invoice.single_project %}{{ invoice.project }}{% else %} {{ invoice.contract }} {% endif %}</td>
                                 <td>{{ invoice.status|capfirst }}</td>
                                 <td>{{ invoice.user.get_name_or_username }}</td>
                                 <td>{{ invoice.created|date:'M j, Y P' }}</td>

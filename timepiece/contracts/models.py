@@ -85,7 +85,7 @@ class ProjectContract(models.Model):
     status = models.CharField(choices=CONTRACT_STATUS.items(),
             default=STATUS_UPCOMING, max_length=32)
     type = models.IntegerField(choices=PROJECT_TYPE.items())
-    payment_terms = models.CharField(max_length=32, 
+    payment_terms = models.CharField(max_length=32,
         choices=CONTRACT_PYMT_TERMS.items(), default=PYMT_NET30)
     ceiling_type = models.IntegerField(
         default=BUDGET,
@@ -158,7 +158,7 @@ class ProjectContract(models.Model):
         elif self.ceiling_type == self.BUDGET:
             return '$ {:,.2f}'.format(self.contract_value())
         else:
-            return None        
+            return None
 
     def contracted_hours(self, approved_only=True):
         """Compute the hours contracted for this contract.
@@ -264,12 +264,12 @@ class ProjectContract(models.Model):
     def activity_totals(self):
         activity_totals = {}
         sorted_entries = sorted(list(self.entries.filter(
-            activity__billable=True)), 
+            activity__billable=True)),
             key=lambda e: e.activity.id)
         """
         an alternate approach was tried:
 
-        for activity, group in groupby(sorted_entries, 
+        for activity, group in groupby(sorted_entries,
             lambda se: se.activity.id):
             activity_totals[activity] = self.entries.filter(
                 activity__id=activity).aggregate(s=Sum('hours'))['s']
@@ -363,7 +363,7 @@ class ProjectContract(models.Model):
         activity_totals = self.activity_totals
         missing_rates = []
         for activity_id, hours in self.activity_totals.items():
-            if ContractRate.objects.filter(contract=self, 
+            if ContractRate.objects.filter(contract=self,
                 activity__id=activity_id).count()==0:
                 activity = Activity.objects.get(id=activity_id)
                 missing_rates.append({'activity': activity,
@@ -530,12 +530,12 @@ class ContractHour(ContractIncrement):
 
     @property
     def edit_url(self):
-        return reverse('edit_contract_hours', 
+        return reverse('edit_contract_hours',
             args=(self.contract.id, self.id))
 
     @property
     def delete_url(self):
-        return reverse('delete_contract_hours', 
+        return reverse('delete_contract_hours',
             args=(self.contract.id, self.id))
 
 class ContractBudget(ContractIncrement):
@@ -570,7 +570,7 @@ class ContractBudget(ContractIncrement):
 
     @property
     def edit_url(self):
-        return reverse('edit_contract_budget', 
+        return reverse('edit_contract_budget',
             args=(self.contract.id, self.id))
 
     @property
@@ -697,7 +697,9 @@ class EntryGroup(models.Model):
     }
 
     user = models.ForeignKey(User, related_name='entry_group')
-    project = models.ForeignKey('crm.Project', related_name='entry_group')
+    project = models.ForeignKey('crm.Project', related_name='entry_group', blank=True, null=True)
+    single_project = models.BooleanField(default=True)
+    contract = models.ForeignKey(ProjectContract, blank=True, null=True)
     status = models.CharField(max_length=24, choices=STATUSES.items(),
                               default=INVOICED)
     number = models.CharField("Reference #", max_length=50, blank=True,
@@ -716,14 +718,23 @@ class EntryGroup(models.Model):
         super(EntryGroup, self).delete()
 
     def __unicode__(self):
-        invoice_data = {
-            'number': self.number,
-            'status': self.status,
-            'project': self.project,
-            'end': self.end.strftime('%b %Y'),
-        }
+        if self.single_project:
+            invoice_data = {
+                'number': self.number,
+                'status': self.status,
+                'project': self.project,
+                'end': self.end.strftime('%b %Y'),
+            }
+        else:
+            invoice_data = {
+                'number': self.number,
+                'status': self.status,
+                'project': self.contract,
+                'end': self.end.strftime('%b %Y'),
+            }
         return u'Entry Group ' + \
                u'%(number)s: %(status)s - %(project)s - %(end)s' % invoice_data
+
 
 class ContractAttachment(models.Model):
     contract = models.ForeignKey(ProjectContract)

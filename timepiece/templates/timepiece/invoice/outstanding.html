@@ -87,8 +87,13 @@
                 <table class="table table-bordered table-condensed table-striped">
                     <thead>
                         <tr>
+                            {% if invoice_grouping == 'by_contract' %}
+                            <th rowspan="2">Contract</th>
+                            <th rowspan="2">Active Projects</th>
+                            {% else %}
                             <th rowspan="2">Project</th>
                             <th rowspan="2">Active Contracts</th>
+                            {% endif %}
                             <th rowspan="2">Business</th>
                             <th rowspan="2">Status</th>
                             <th colspan="2">Uninvoiced Hours</th>
@@ -100,8 +105,47 @@
                         </tr>
                     </thead>
                     <tbody>
-                        {% regroup type.list by project.name as project_list %}
-                        {% for project in project_list %}
+                        {% if invoice_grouping == 'by_contract' %}
+                          {% regroup type.list by project.get_active_contracts.0.name as contract_list %}
+                          {% for contract in contract_list %}
+                          {% if contract.grouper %}
+                          <tr>
+                              <td>{{ contract.grouper }}</td>
+                              <td>
+                                <ul>
+                                  {% regroup contract.list by project.name as project_list %}
+                                  {% for project in project_list %}
+                                  <li><a href="{{ project.get_absolute_url }}">{{ project.list.0.project.name }}</a></li>
+
+                                  {% endfor %}
+                                </ul>
+                              </td>
+                              <td>
+                              {{ contract.list.0.project.business.get_display_name }}</td>
+                              <td>{{ contract.list.0.project.get_active_contracts.0.status|title }}</td>
+                              <td class="hours">{% get_uninvoiced_hours contract.list 'billable' %}</td>
+                              <td class="hours">{% get_uninvoiced_hours contract.list 'nonbillable' %}</td>
+                              <td>
+                                  {% if from_date %}
+                                      <a href="{% url 'create_invoice' %}?contract= {{ contract.list.0.project.get_active_contracts.0.pk }}&to_date={{ to_date|date:'Y-m-d' }}&from_date={{ from_date|date:'Y-m-d' }}">Make Invoice</a>
+                                  {% else %}
+                                      <a href="{% url 'create_invoice' %}?contract={{ contract.list.0.project.get_active_contracts.0.pk }}&to_date={{ to_date|date:'Y-m-d' }}">Make Invoice</a>
+                                  {% endif %}
+                              </td>
+                          </tr>
+                          {% endif %}
+
+
+                      {% endfor %}
+
+
+
+
+                        {% else %}
+                          {% regroup type.list by project.name as project_list %}
+                          {% for project in project_list %}
+
+
                             <tr>
                                 <td><a href="{% project_timesheet_url project.list.0.project.pk to_date %}">{{ project.grouper }}</a></td>
                                 <td>
@@ -124,7 +168,12 @@
                                     {% endif %}
                                 </td>
                             </tr>
+
+
                         {% endfor %}
+
+
+                        {% endif %}
                     </tbody>
                 </table>
             {% empty %}
