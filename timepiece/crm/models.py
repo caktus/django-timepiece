@@ -72,6 +72,9 @@ class Department(models.Model):
       default='other')
       ## TODO Actually make the department class with options and not a static, hardcoded list.
 
+
+
+
 class UserProfile(models.Model):
     SALARY = 'salary'
     HOURLY = 'hourly'
