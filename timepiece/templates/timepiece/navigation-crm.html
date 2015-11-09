@@ -19,7 +19,7 @@
                 <li><a href="{% url 'list_leads' %}">Leads</a></li>
             {% endif %}
             {% if perms.crm.view_project %}
-                <li><a href="{% url 'list_projects' %}?search=&status={{ TIMEPIECE_DEFAULT_PROJECT_STATUS }}&submit=">Projects</a></li>
+                <li><a href="{% url 'list_projects' %}">Projects</a></li>
             {% endif %}
             {% if perms.auth.view_user %}
                 <li><a href="{% url 'list_users' %}">Users</a></li>

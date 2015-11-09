@@ -69,4 +69,8 @@ urlpatterns = patterns('',
     url(r'^reports/pending_milestones/$',
         views.PendingMilestonesReport.as_view(),
         name='report_pending_milestones'),
+
+    url(r'^reports/throughput/$',
+        views.ThroughputReport.as_view(),
+        name='report_throughput'),
 )
