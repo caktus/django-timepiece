@@ -1896,7 +1896,7 @@ def get_employee_backlog_chart_data(user_id):
     print 'start week', start_week
     print 'end week', end_week
     for ptor in employee.profile.paidtimeoffrequest_set.filter(
-        Q(pto_start_date__gte=start_week)|Q(pto_end_date__gte=end_week),
+        Q(pto_start_date__gte=start_week)|Q(pto_end_date__gte=start_week),
         Q(status='approved')|Q(status='processed')):
 
         print 'ptor', ptor
