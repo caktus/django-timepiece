@@ -45,7 +45,7 @@ from timepiece.crm.models import (Business, Project, ProjectRelationship,
     ApprovedMilestone, MilestoneNote, ActivityGoal, BusinessNote,
     BusinessDepartment, Contact, ContactNote, BusinessAttachment, Lead,
     LeadNote, DistinguishingValueChallenge, TemplateDifferentiatingValue,
-    LeadAttachment, DVCostItem, Opportunity, ProjectAttachment,
+    LeadAttachment, DVCostItem, Opportunity, ProjectAttachment, Attribute,
     LimitedAccessUserProfile)
 from timepiece.crm.utils import grouped_totals, project_activity_goals_with_progress
 from timepiece.entries.models import Entry, Activity, Location
@@ -1056,6 +1056,14 @@ class DeleteProject(DeleteView):
     pk_url_kwarg = 'project_id'
     template_name = 'timepiece/delete_object.html'
 
+@permission_required('crm.delete_project')
+def archive_project(request,project_id):
+    project=Project.objects.get(id=project_id)
+    if project:
+        archived_status = Attribute.objects.get(label='Archived')
+        project.status=archived_status
+        project.save()
+    return HttpResponseRedirect(reverse('list_projects'))
 
 @cbv_decorator(permission_required('crm.change_project'))
 class EditProject(UpdateView):
@@ -1312,17 +1320,17 @@ class EditPTORequest(UpdateView):
         instance.approver_comment = ''
         instance.process_date = None
         instance.processor = None
-        
+
         if not instance.user_profile.earns_pto:
             instance.pto = False
-        
+
         if instance.status in [PaidTimeOffRequest.APPROVED,
             PaidTimeOffRequest.PROCESSED, PaidTimeOffRequest.MODIFIED]:
-            
+
             # delete existing references to this Time Off Request
             for ptol in PaidTimeOffLog.objects.filter(
                 pto_request=instance):
-                
+
                 Entry.objects.filter(pto_log=ptol).delete()
                 ptol.delete()
 
@@ -1364,9 +1372,12 @@ class ApprovePTORequest(UpdateView):
         # get holidays in years covered by PTO to make sure that they are not
         # included as days to use PTO hours
         holidays = []
-        for year in range(form.instance.pto_start_date.year, form.instance.pto_end_date.year+1):
-            holiday_dates = [h['date'] for h in Holiday.get_holidays_for_year(year, {'paid_holiday':True})]
-            holidays.extend(holiday_dates)
+
+        # check to see if user earns holiday pay, if not, they can take use it for pto
+        if up.earns_holiday_pay:
+            for year in range(form.instance.pto_start_date.year, form.instance.pto_end_date.year+1):
+                holiday_dates = [h['date'] for h in Holiday.get_holidays_for_year(year, {'paid_holiday':True})]
+                holidays.extend(holiday_dates)
         # get number of workdays found in between the start and stop dates
         num_workdays = workdays.networkdays(form.instance.pto_start_date,
                                             form.instance.pto_end_date,
