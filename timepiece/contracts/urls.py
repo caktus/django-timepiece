@@ -59,7 +59,7 @@ urlpatterns = patterns('',
     url(r'^contract/(?P<contract_id>\d+)/attachment/(?P<attachment_id>[\w\-\.]+)/delete$',
         views.contract_delete_attachment,
         name='delete_contract_attachment'),
-    
+
 
     # Contract Increment (Budget and Hours)
     url(r'^contract/(?P<contract_id>\d+)/increment/$',
@@ -114,6 +114,9 @@ urlpatterns = patterns('',
     url(r'invoice/(?P<invoice_id>\d+)/csv/$',
         views.InvoiceDetailCSV.as_view(),
         name='view_invoice_csv'),
+    url(r'invoice/(?P<invoice_id>\d+)/pdf/$',
+        views.view_invoice_pdf,
+        name='view_invoice_pdf'),
     url(r'invoice/(?P<invoice_id>\d+)/entries/$',
         views.InvoiceEntriesDetail.as_view(),
         name='view_invoice_entries'),
