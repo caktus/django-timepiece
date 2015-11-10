@@ -458,7 +458,7 @@ def view_invoice_pdf(request, invoice_id):
     contract = invoice.contract
     project_0 = contract.projects.all()[0]
     client = project_0.business
-    client_dept =
+    client_dept = project_0.business_department
     aac = Business.objects.get(short_name = 'AAC')
 
     ## find arial font ## todo file location static?
