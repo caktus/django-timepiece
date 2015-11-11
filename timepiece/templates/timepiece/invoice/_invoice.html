@@ -56,4 +56,11 @@
             <td>{{ invoice.comments }}</td>
         </tr>
     {% endif %}
+    {% if invoice.override_invoice_date %}
+    <tr>
+        <th>Override Invoice Date:</th>
+        <td>{{ invoice.override_invoice_date }}</td>
+    </tr>
+    {% endif %}
+
 </table>

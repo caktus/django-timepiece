@@ -19,7 +19,7 @@ class InvoiceForm(forms.ModelForm):
 
     class Meta:
         model = EntryGroup
-        fields = ('status', 'number', 'comments')
+        fields = ('status', 'number', 'override_invoice_date','comments')
 
     def save(self, commit=True):
         instance = super(InvoiceForm, self).save(commit=False)

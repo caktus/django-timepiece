@@ -1043,7 +1043,7 @@ class InvoiceEdit(InvoiceDetail):
         if invoice.single_project:
             initial.update({'project': invoice.project})
         else:
-            inital.update({'contract': invoice.contract})
+            initial.update({'contract': invoice.contract})
 
         invoice_form = InvoiceForm(request.POST,
                                    initial=initial,
