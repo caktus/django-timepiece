@@ -54,7 +54,6 @@ User.add_to_class('get_absolute_url', _get_absolute_url)
 class Department(models.Model):
     DEPARTMENTS = (
         ('admin','Admin'),
-        ('construction','Construction'),
         ('elec-avionics', 'Electrical/Avionics'),
         ('finance','Finance'),
         ('hr','Human Resources'),
@@ -402,6 +401,7 @@ class Business(models.Model):
     BIZ_INDUSTRIES = (('aerospace', 'Aerospace'),
                       ('airlines', 'Airlines'),
                       ('avionics', 'Avionics'),
+                      ('construct','Construction'),
                       ('engineering', 'Engineering'),
                       ('shippping', 'Shipping'),
                       ('transportation', 'Transportation'),
