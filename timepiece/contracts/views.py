@@ -864,7 +864,7 @@ def list_outstanding_invoices(request):
 class ListInvoices(SearchListView):
     model = EntryGroup
     search_fields = ['user__username__icontains', 'project__name__icontains',
-            'comments__icontains', 'number__icontains','contract__name__icontains']
+            'comments__icontains', 'number__icontains','contract__name__icontains','auto_number__icontains']
     template_name = 'timepiece/invoice/list.html'
 
 
