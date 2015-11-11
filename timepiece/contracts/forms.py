@@ -108,7 +108,7 @@ class CreateEditInvoiceAdjustmentForm(forms.ModelForm):
 
     class Meta:
         model = InvoiceAdjustment
-        fields = ('invoice','date','line_item','description','quantity','rate')
+        fields = ('invoice','is_payment','date','line_item','description','quantity','rate')
 
 class CreateEditContractBudgetForm(forms.ModelForm):
 

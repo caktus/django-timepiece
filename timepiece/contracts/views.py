@@ -551,7 +551,11 @@ def view_invoice_pdf(request, invoice_id):
         fd=formats.date_format(ex.date, "SHORT_DATE_FORMAT")
         new_item = [fd,ex.line_item, ex.description,"{0:,.2f}".format(ex.quantity),"${0:,.2f}".format(ex.rate),"${0:,.2f}".format(ex.quantity*ex.rate)]
         all_items.append(new_item)
-        total_adjust += float(ex.quantity*ex.rate)
+
+        if ex.is_payment:
+            total_adjust += float(ex.quantity*ex.rate)
+        else:
+            total_bill += float(ex.quantity*ex.rate)
 
     split_items=utils.chunk_list(all_items,9)
 

@@ -29,6 +29,7 @@
                 <tr>
                     <th></th>
                     <th>Date</th>
+                    <th>Type</th>
                     <th>Line Item</th>
                     <th>Description</th>
                     <th>Quantity</th>
@@ -41,6 +42,7 @@
                         <a href="{% url 'delete_invoice_adjustment' invoice.id ia.id %}" title="Delete Invoice Adjustment"><i class="icon-trash"> </i></a>
                     </th>
                     <th>{{ ia.date }}</th>
+                    <td>{{ ia.is_payment|yesno:"Payment/Credit,Adjustment"}}
                     <td>{{ ia.line_item }}</td>
                     <td>{{ ia.description }}</td>
                     <td>{{ ia.quantity }}</td>

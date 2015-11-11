@@ -774,11 +774,12 @@ class EntryGroup(models.Model):
 
 class InvoiceAdjustment(models.Model):
     invoice = models.ForeignKey(EntryGroup)
+    is_payment = models.BooleanField(verbose_name="Is a Payment/Credit", help_text="By unchecking this box, the adjustment is added in with the rest of the time entries.")
     date = models.DateField(null=True, blank=True)
     line_item = models.CharField(max_length=10, null=True, blank = True)
     description = models.CharField(max_length=50,null=True, blank = True)
     quantity = models.DecimalField(max_digits=10, decimal_places=2)
-    rate = models.DecimalField(max_digits=10,decimal_places=2)
+    rate = models.DecimalField(max_digits=10,decimal_places=2, help_text='Make negative to credit the client.')
 
 
 
