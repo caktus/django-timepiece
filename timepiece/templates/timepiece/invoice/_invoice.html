@@ -11,10 +11,10 @@
     <tr>
         {% if invoice.single_project == True %}
         <th>Project:</th>
-        <td>{{ invoice.project.name }}</td>
+        <td><a href="{% url 'view_project' invoice.project.pk %}">{{ invoice.project.name }}</a></td>
         {% else %}
         <th>Contract:</th>
-        <td>{{ invoice.contract.name }}</td>
+        <td><a href="{% url 'view_contract' invoice.contract.pk %}">{{ invoice.contract.name }}</a></td>
         {% endif %}
     </tr>
     <tr>

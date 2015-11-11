@@ -453,13 +453,39 @@ class AddContractNote(View):
 def view_invoice_pdf(request, invoice_id):
     response = HttpResponse(content_type='application/pdf')
     response['Content-Disposition'] = 'attachment; filename="invoice.pdf"'
+    styles = getSampleStyleSheet()
 
     invoice = EntryGroup.objects.get(pk=invoice_id)
+    entries = invoice.entries
     contract = invoice.contract
-    project_0 = contract.projects.all()[0]
+    projects = contract.projects.all()
+    project_0 = projects[0]
     client = project_0.business
-    client_dept = project_0.business_department
+    client_dept = project_0.business_department.name
+    if not client_dept:
+        client_dept=''
     aac = Business.objects.get(short_name = 'AAC')
+    invoice_date = formats.date_format(invoice.created, "SHORT_DATE_FORMAT")
+
+    billable_entries = invoice.entries.filter(activity__billable=True)\
+                                      .order_by('start_time')\
+                                      .select_related()
+    dummy_items = []
+
+    total_bill = 0.00
+
+    for p in projects:
+        for r in contract.get_rates:
+            hours=entries.filter(activity=r.activity, project=p).aggregate(tot_hours=Sum('hours'))['tot_hours'] #TODO this is dumb / ugly
+            if not hours:
+                continue
+            rate=r.rate
+            item_bill = hours*rate
+            total_bill += float(item_bill)
+            new_item = [invoice_date,contract.po_line_item, p.name+"\n"+r.activity.name,"{0:,.2f}".format(hours),"${0:,.2f}".format(rate),"${0:,.2f}".format(item_bill)]
+            dummy_items.append(new_item)
+
+
 
     ## find arial font ## todo file location static?
     font_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'Arial.ttf')
@@ -471,7 +497,7 @@ def view_invoice_pdf(request, invoice_id):
     width = width - margin
     height = height - margin
 
-    styles = getSampleStyleSheet()
+
 
     #upper left logo
     img_w=2.27*inch
@@ -491,7 +517,7 @@ def view_invoice_pdf(request, invoice_id):
     c.drawRightString(invoice_x,invoice_y,"INVOICE")
 
     #table upper right
-    ur_table_data = [["INVOICE", invoice.number],["DATE",formats.date_format(invoice.created, "SHORT_DATE_FORMAT")],["TERMS",contract.payment_terms],["PURCHASE ORDER",'***NOT MADE YET***']]
+    ur_table_data = [["INVOICE", invoice.number],["DATE",invoice_date],["TERMS",contract.payment_terms],["PURCHASE ORDER",contract.po_number]]
     ur_table_font_size = 12
 
     ur_table = Table(data=ur_table_data)
@@ -538,7 +564,7 @@ def view_invoice_pdf(request, invoice_id):
 
 
     # client address
-    add_client_table_data = [[""],[client.name],["Client Department**not made yet"],[client.billing_street],[client.billing_street_2],[client.billing_city+", "+client.billing_state+" "+client.billing_postalcode],[" "]]
+    add_client_table_data = [[""],[client.name],[client_dept],[client.billing_street],[client.billing_street_2],[client.billing_city+", "+client.billing_state+" "+client.billing_postalcode],[" "]]
     add_client_table_font_size = 12
 
     add_client_table = Table(data=add_client_table_data)
@@ -558,7 +584,7 @@ def view_invoice_pdf(request, invoice_id):
 
 
     #table lowerright
-    lr_table_data = [["TOTAL", "$9,999,999.99"],["PAYMENTS/CREDITS","-"],["BALANCE DUE","$9,999,999.99"]]
+    lr_table_data = [["TOTAL", "${0:,.2f}".format(total_bill)],["PAYMENTS/CREDITS","-"],["BALANCE DUE","${0:,.2f}".format(total_bill)]]
     lr_table_font_size = 12
 
     lr_table = Table(data=lr_table_data)
@@ -599,8 +625,11 @@ def view_invoice_pdf(request, invoice_id):
     # invoice items
     invoice_items_table_data = [["Date","Line Item","Description","Quantity","Rate","Amount"]]
 
-    dummy_items = [["12/12/12","1",Paragraph("We did lots! Something Great That you should pay lots of money for",styles['Normal']),"999999","$125.00","$9,999,999.99"],
-                    ["12/12/12","2",Paragraph("We Did more!. Something Great That you should pay lots of money for",styles['Normal']),"999999","$125.00","$9,999,999.99"]]
+    # dummy_items = [["12/12/12","1",Paragraph("We did lots! Something Great That you should pay lots of money for",styles['Normal']),"999999","$125.00","$9,999,999.99"],
+    #                 ["12/12/12","2",Paragraph("We Did more!. Something Great That you should pay lots of money for",styles['Normal']),"999999","$125.00","$9,999,999.99"]]
+
+
+
 
     for item in dummy_items:
         invoice_items_table_data.append(item)
@@ -611,7 +640,7 @@ def view_invoice_pdf(request, invoice_id):
 
     space_h = (add_table_y) - (margin + lr_table_h + 0.25*inch)
     cww=width-margin
-    it_cw_ratio=[3,1,9,3,3,4]
+    it_cw_ratio=[3,3,11,4,3,4]
     it_cw_d=sum(it_cw_ratio)*1.0
 
     it_cw = []
@@ -632,7 +661,7 @@ def view_invoice_pdf(request, invoice_id):
     invoice_items_table.setStyle(TableStyle([
             ('BOX', (0,0), (-1,0), 0.25, colors.black),
             ('BOX', (0,0), (-1,-1), 0.25, colors.black),
-            ('ALIGN',(0,0),(-1,-1),'CENTER')
+            ('ALIGN',(0,0),(-1,-1),'RIGHT')
         ]))
 
     invoice_items_table.wrap(width, height)
