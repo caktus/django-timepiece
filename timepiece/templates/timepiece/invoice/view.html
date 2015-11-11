@@ -19,6 +19,37 @@
     <div class="row-fluid">
         <div class="span6">
             {% include 'timepiece/invoice/_invoice.html' %}
+
+            <h3>Invoice Adjustments</h3>
+            <ul class="nav nav-pills">
+                    <li><a href="{% url 'add_invoice_adjustment' invoice.id %}">Add Adjustment</a></li>
+            </ul>
+
+            <table class="table table-bordered">
+                <tr>
+                    <th></th>
+                    <th>Date</th>
+                    <th>Line Item</th>
+                    <th>Description</th>
+                    <th>Quantity</th>
+                    <th>Rate</th>
+                </tr>
+                {% for ia in invoice.get_adjustments %}
+                <tr>
+                    <th class="nowrap">
+                        <a href="{% url 'edit_invoice_adjustment' invoice.id ia.id %}" title="Edit Invoice Adjustment"><i class="icon-pencil"> </i></a>
+                        <a href="{% url 'delete_invoice_adjustment' invoice.id ia.id %}" title="Delete Invoice Adjustment"><i class="icon-trash"> </i></a>
+                    </th>
+                    <th>{{ ia.date }}</th>
+                    <td>{{ ia.line_item }}</td>
+                    <td>{{ ia.description }}</td>
+                    <td>{{ ia.quantity }}</td>
+                    <td>{{ ia.rate }}</td>
+                </tr>
+                {% empty %}
+                <tr><th colspan=6>There are no adjustments for this invoice</th></tr>
+                {% endfor %}
+            </table>
         </div>
 
         <div class="span6">

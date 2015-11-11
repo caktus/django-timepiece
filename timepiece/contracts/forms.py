@@ -7,7 +7,7 @@ from selectable import forms as selectable
 
 from timepiece import utils
 from timepiece.utils.search import SearchForm
-from timepiece.contracts.models import (EntryGroup, ContractRate, ProjectContract,
+from timepiece.contracts.models import (EntryGroup, ContractRate, ProjectContract, InvoiceAdjustment,
     ContractBudget, ContractHour, ContractNote)
 from timepiece.crm.models import Attribute
 from timepiece.crm.lookups import ProjectLookup, ProjectCodeLookup
@@ -103,6 +103,12 @@ class CreateEditContractRateForm(forms.ModelForm):
         super(CreateEditContractRateForm, self).__init__(*args, **kwargs)
         self.fields['activity'].choices = [(a.id, a.name) for a in
             Activity.objects.filter(billable=True).order_by('name')]
+
+class CreateEditInvoiceAdjustmentForm(forms.ModelForm):
+
+    class Meta:
+        model = InvoiceAdjustment
+        fields = ('invoice','date','line_item','description','quantity','rate')
 
 class CreateEditContractBudgetForm(forms.ModelForm):
 

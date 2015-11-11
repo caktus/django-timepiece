@@ -708,6 +708,7 @@ class EntryGroup(models.Model):
     status = models.CharField(max_length=24, choices=STATUSES.items(),
                               default=INVOICED)
 
+    override_invoice_date = models.DateField(blank=True, null=True)
     auto_number= models.CharField(max_length=17,
         verbose_name="Project Code",
         null=True,
@@ -724,6 +725,12 @@ class EntryGroup(models.Model):
 
     class Meta:
         db_table = 'timepiece_entrygroup'  # Using legacy table name.
+
+
+    @property
+    def get_adjustments(self):
+        return InvoiceAdjustment.objects.filter(invoice=self
+            ).order_by('date')
 
     def delete(self):
         self.entries.update(status=Entry.APPROVED)
@@ -763,6 +770,17 @@ class EntryGroup(models.Model):
             }
         return u'Entry Group ' + \
                u'%(number)s: %(status)s - %(project)s - %(end)s' % invoice_data
+
+
+class InvoiceAdjustment(models.Model):
+    invoice = models.ForeignKey(EntryGroup)
+    date = models.DateField(null=True, blank=True)
+    line_item = models.CharField(max_length=10, null=True, blank = True)
+    description = models.CharField(max_length=50,null=True, blank = True)
+    quantity = models.DecimalField(max_digits=10, decimal_places=2)
+    rate = models.DecimalField(max_digits=10,decimal_places=2)
+
+
 
 
 class ContractAttachment(models.Model):

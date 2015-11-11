@@ -40,10 +40,10 @@ from timepiece.utils.views import cbv_decorator
 from timepiece.contracts.forms import (InvoiceForm,
     OutstandingHoursFilterForm, CreateEditContractRateForm,
     CreateEditContractForm, CreateEditContractBudgetForm,
-    CreateEditContractHourForm, ContractSearchForm,
+    CreateEditContractHourForm, ContractSearchForm, CreateEditInvoiceAdjustmentForm,
     AddContractNoteForm)
 from timepiece.contracts.models import (ProjectContract, HourGroup,
-    EntryGroup, ContractRate, ProjectContract, ContractAttachment,
+    EntryGroup, ContractRate, ProjectContract, ContractAttachment,InvoiceAdjustment,
     ContractBudget, ContractHour, ContractNote)
 from timepiece.entries.models import Project, Entry, Activity
 
@@ -450,6 +450,56 @@ class AddContractNote(View):
 
 
 
+@cbv_decorator(permission_required('contracts.change_entrygroup')) #TODO correct permissions
+class AddInvoiceAdjustment(CreateView):
+    model = InvoiceAdjustment
+    form_class = CreateEditInvoiceAdjustmentForm
+    template_name = 'timepiece/invoice/adjustment_create_edit.html'
+
+    def get_form(self, *args, **kwargs):
+        form = super(AddInvoiceAdjustment, self).get_form(*args, **kwargs)
+        form.fields['invoice'].widget = widgets.HiddenInput()
+        invoice = EntryGroup.objects.get(
+            id=int(self.kwargs['invoice_id']))
+        form.fields['invoice'].initial = invoice
+        return form
+
+    def get_context_data(self, *args, **kwargs):
+        kwargs['invoice'] = invoice = EntryGroup.objects.get(id=int(self.kwargs['invoice_id']))
+        return super(AddInvoiceAdjustment, self).get_context_data(*args, **kwargs)
+
+    def get_success_url(self):
+        return reverse('view_invoice', args=(int(self.kwargs['invoice_id']), ))
+
+@cbv_decorator(permission_required('contracts.change_entrygroup')) #TODO correct permissions
+class EditInvoiceAdjustment(UpdateView):
+    model = InvoiceAdjustment
+    form_class = CreateEditInvoiceAdjustmentForm
+    template_name = 'timepiece/invoice/adjustment_create_edit.html'
+    pk_url_kwarg = 'invoice_adjustment_id'
+
+    def get_form(self, *args, **kwargs):
+        form = super(EditInvoiceAdjustment, self).get_form(*args, **kwargs)
+        form.fields['invoice'].widget = widgets.HiddenInput()
+        return form
+
+    def get_context_data(self, *args, **kwargs):
+        kwargs['invoice'] = EntryGroup.objects.get(id=int(self.kwargs['invoice_id']))
+        return super(EditInvoiceAdjustment, self).get_context_data(*args, **kwargs)
+
+    def get_success_url(self):
+        return reverse('view_invoice', args=(int(self.kwargs['invoice_id']), ))
+
+@cbv_decorator(permission_required('contracts.change_entrygroup'))
+class DeleteInvoiceAdjustment(DeleteView):
+    model = InvoiceAdjustment
+    template_name = 'timepiece/delete_object.html'
+    pk_url_kwarg = 'invoice_adjustment_id'
+
+    def get_success_url(self):
+        return reverse('view_invoice', args=(int(self.kwargs['invoice_id']), ))
+
+
 @login_required #TODO correct permissions
 def view_invoice_pdf(request, invoice_id):
     response = HttpResponse(content_type='application/pdf')
@@ -457,6 +507,7 @@ def view_invoice_pdf(request, invoice_id):
     styles = getSampleStyleSheet()
 
     invoice = EntryGroup.objects.get(pk=invoice_id)
+
     entries = invoice.entries
     contract = invoice.contract
     projects = contract.projects.all()
@@ -468,7 +519,11 @@ def view_invoice_pdf(request, invoice_id):
     else:
         client_dept=client_dept.name
     aac = Business.objects.get(short_name = 'AAC')
-    invoice_date = formats.date_format(invoice.created, "SHORT_DATE_FORMAT")
+
+    if invoice.override_invoice_date:
+        invoice_date = formats.date_format(invoice.override_invoice_date, "SHORT_DATE_FORMAT")
+    else:
+        invoice_date = formats.date_format(invoice.end, "SHORT_DATE_FORMAT")
 
     billable_entries = invoice.entries.filter(activity__billable=True)\
                                       .order_by('start_time')\
@@ -479,14 +534,24 @@ def view_invoice_pdf(request, invoice_id):
 
     for p in projects:
         for r in contract.get_rates:
-            hours=entries.filter(activity=r.activity, project=p).aggregate(tot_hours=Sum('hours'))['tot_hours'] #TODO this is dumb / ugly
+            ents = entries.filter(activity=r.activity, project=p)
+            hours=ents.aggregate(tot_hours=Sum('hours'))['tot_hours'] #TODO this is dumb / ugly
             if not hours:
                 continue
+
+            last_ent_date = formats.date_format(ents.latest('end_time').end_time,"SHORT_DATE_FORMAT")
             rate=r.rate
             item_bill = hours*rate
             total_bill += float(item_bill)
-            new_item = [invoice_date,contract.po_line_item, p.name+"\n"+r.activity.name,"{0:,.2f}".format(hours),"${0:,.2f}".format(rate),"${0:,.2f}".format(item_bill)]
+            new_item = [last_ent_date,contract.po_line_item, p.name+"\n"+r.activity.name,"{0:,.2f}".format(hours),"${0:,.2f}".format(rate),"${0:,.2f}".format(item_bill)]
             all_items.append(new_item)
+
+    total_adjust = 0.00
+    for ex in invoice.get_adjustments:
+        fd=formats.date_format(ex.date, "SHORT_DATE_FORMAT")
+        new_item = [fd,ex.line_item, ex.description,"{0:,.2f}".format(ex.quantity),"${0:,.2f}".format(ex.rate),"${0:,.2f}".format(ex.quantity*ex.rate)]
+        all_items.append(new_item)
+        total_adjust += float(ex.quantity*ex.rate)
 
     split_items=utils.chunk_list(all_items,9)
 
@@ -602,7 +667,7 @@ def view_invoice_pdf(request, invoice_id):
 
 
         #table lowerright
-        lr_table_data = [["TOTAL", "${0:,.2f}".format(total_bill)],["PAYMENTS/CREDITS","-"],["BALANCE DUE","${0:,.2f}".format(total_bill)]]
+        lr_table_data = [["TOTAL", "${0:,.2f}".format(total_bill)],["PAYMENTS/CREDITS","${0:,.2f}".format(total_adjust)],["BALANCE DUE","${0:,.2f}".format(total_bill+total_adjust)]]
         lr_table_font_size = 12
 
         lr_table = Table(data=lr_table_data)
