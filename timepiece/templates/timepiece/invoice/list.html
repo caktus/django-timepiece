@@ -39,6 +39,7 @@
                     <thead>
                         <tr>
                             <th>Invoice</th>
+                            <th>Invoice Number</th>
                             <th>Reference</th>
                             <th>Type</th>
                             <th>Name</th>
@@ -54,6 +55,7 @@
                         {% for invoice in object_list %}
                             <tr>
                                 <td><a href="{% url 'view_invoice' invoice.pk %}">{{ invoice.pk }}</a></td>
+                                <td>{{ invoice.auto_number }}</td>
                                 <td>{{ invoice.number|default:'' }}</td>
                                 <td>{% if invoice.single_project %}<span class="label label-info"> Project</span>{% else %} <span class="label label-success"> Contract</span>{% endif %}</td>
                                 <td>{% if invoice.single_project %}{{ invoice.project }}{% else %} {{ invoice.contract }} {% endif %}</td>

@@ -449,6 +449,7 @@ class AddContractNote(View):
             reverse('view_contract', args=(contract.id,)))
 
 
+
 @login_required #TODO correct permissions
 def view_invoice_pdf(request, invoice_id):
     response = HttpResponse(content_type='application/pdf')
@@ -461,16 +462,18 @@ def view_invoice_pdf(request, invoice_id):
     projects = contract.projects.all()
     project_0 = projects[0]
     client = project_0.business
-    client_dept = project_0.business_department.name
+    client_dept = project_0.business_department
     if not client_dept:
         client_dept=''
+    else:
+        client_dept=client_dept.name
     aac = Business.objects.get(short_name = 'AAC')
     invoice_date = formats.date_format(invoice.created, "SHORT_DATE_FORMAT")
 
     billable_entries = invoice.entries.filter(activity__billable=True)\
                                       .order_by('start_time')\
                                       .select_related()
-    dummy_items = []
+    all_items = []
 
     total_bill = 0.00
 
@@ -483,7 +486,10 @@ def view_invoice_pdf(request, invoice_id):
             item_bill = hours*rate
             total_bill += float(item_bill)
             new_item = [invoice_date,contract.po_line_item, p.name+"\n"+r.activity.name,"{0:,.2f}".format(hours),"${0:,.2f}".format(rate),"${0:,.2f}".format(item_bill)]
-            dummy_items.append(new_item)
+            all_items.append(new_item)
+
+    split_items=utils.chunk_list(all_items,9)
+
 
 
 
@@ -499,183 +505,199 @@ def view_invoice_pdf(request, invoice_id):
 
 
 
-    #upper left logo
-    img_w=2.27*inch
-    img_h=1.38*inch
+    pg_num =0
+    for dummy_items in split_items:
+        pg_num += 1
+        #upper left logo
+        img_w=2.27*inch
+        img_h=1.38*inch
 
-    # logo_path = static('images/aac_logo.jpg') # TODO why doesn't this work?
-    logo_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'aac_logo.jpg')
-    c.drawImage(logo_path,margin,height-img_h, width = img_w, height=img_h)
+        # logo_path = static('images/aac_logo.jpg') # TODO why doesn't this work?
+        logo_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'aac_logo.jpg')
+        c.drawImage(logo_path,margin,height-img_h, width = img_w, height=img_h)
 
-    #invoice upper right
-    invoice_font_size=72
-    invoice_x = width
-    invoice_y = height - img_h
+        #invoice upper right
+        invoice_font_size=72
+        invoice_x = width
+        invoice_y = height - img_h
 
-    c.setFont("Arial",invoice_font_size)
-    c.setFillColorRGB(0.5,0.5,0.5)
-    c.drawRightString(invoice_x,invoice_y,"INVOICE")
+        c.setFont("Arial",invoice_font_size)
+        c.setFillColorRGB(0.5,0.5,0.5)
+        c.drawRightString(invoice_x,invoice_y,"INVOICE")
 
-    #table upper right
-    ur_table_data = [["INVOICE", invoice.number],["DATE",invoice_date],["TERMS",contract.payment_terms],["PURCHASE ORDER",contract.po_number]]
-    ur_table_font_size = 12
+        #table upper right
+        ur_table_data = [["INVOICE", invoice.auto_number],["PAGE","%d of %d" % (pg_num,len(split_items))],["DATE",invoice_date],["TERMS",contract.payment_terms],["PURCHASE ORDER",contract.po_number]]
+        ur_table_font_size = 12
 
-    ur_table = Table(data=ur_table_data)
-    ur_table.setStyle(TableStyle([
-            ('INNERGRID', (0,0), (-1,-1), 0.25, colors.black),
-            ('BOX', (0,0), (-1,-1), 0.25, colors.black),
-            ('ALIGN',(0,0),(-1,-1),'RIGHT')
-        ]))
-    ur_table.wrapOn(c,width, height)
-    ur_table_w,ur_table_h = ur_table.wrap(0,0)
+        ur_table = Table(data=ur_table_data)
+        ur_table.setStyle(TableStyle([
+                ('INNERGRID', (0,0), (-1,-1), 0.25, colors.black),
+                ('BOX', (0,0), (-1,-1), 0.25, colors.black),
+                ('ALIGN',(0,0),(-1,-1),'RIGHT')
+            ]))
+        ur_table.wrapOn(c,width, height)
+        ur_table_w,ur_table_h = ur_table.wrap(0,0)
 
-    ur_table_x = width-ur_table_w
-    ur_table_y = invoice_y - ur_table_h - 0.25*inch
+        ur_table_x = width-ur_table_w
+        ur_table_y = invoice_y - ur_table_h - 0.25*inch
 
-    ur_table.drawOn(c,ur_table_x,ur_table_y)
+        ur_table.drawOn(c,ur_table_x,ur_table_y)
 
-    c.setFont("Arial",ur_table_font_size)
-
-
-    # AAC Address TABLE
-    add_table_data = [[aac.name],[aac.billing_street],[aac.billing_city+", "+aac.billing_state+" "+aac.billing_postalcode],["AR@aacengineering.com"],["(888) 290-5878"],[" "],["TAX ID: 27-0673181"]]
-    add_table_font_size = 12
-
-    add_table = Table(data=add_table_data)
-    add_table.setStyle(TableStyle([
-            ('ALIGN',(0,0),(-1,-1),'RIGHT')
-        ]))
-
-    add_table.wrapOn(c,width, height)
-    add_table_w,add_table_h = add_table.wrap(0,0)
-
-    add_table_x = margin
-    add_table_y = invoice_y - add_table_h - 0.25*inch
-
-    add_table.drawOn(c,add_table_x,add_table_y)
-
-    c.setFont("Arial",add_table_font_size)
+        c.setFont("Arial",ur_table_font_size)
 
 
-    # divider line between aac and customer Address
-    div_add_x = add_table_x + add_table_w + 0.25*inch
-    div_shift = 0.125*inch
-    c.line(div_add_x, add_table_y-div_shift, div_add_x, invoice_y-div_shift)
+        # AAC Address TABLE
+        add_table_data = [[aac.name],[aac.billing_street],[aac.billing_city+", "+aac.billing_state+" "+aac.billing_postalcode],["AR@aacengineering.com"],["(888) 290-5878"],[" "],["TAX ID: 27-0673181"]]
+        add_table_font_size = 12
+
+        add_table = Table(data=add_table_data)
+        add_table.setStyle(TableStyle([
+                ('ALIGN',(0,0),(-1,-1),'RIGHT')
+            ]))
+
+        add_table.wrapOn(c,width, height)
+        add_table_w,add_table_h = add_table.wrap(0,0)
+
+        add_table_x = margin
+        add_table_y = invoice_y - add_table_h - 0.25*inch
+
+        add_table.drawOn(c,add_table_x,add_table_y)
+
+        c.setFont("Arial",add_table_font_size)
 
 
-    # client address
-    add_client_table_data = [[""],[client.name],[client_dept],[client.billing_street],[client.billing_street_2],[client.billing_city+", "+client.billing_state+" "+client.billing_postalcode],[" "]]
-    add_client_table_font_size = 12
-
-    add_client_table = Table(data=add_client_table_data)
-    add_client_table.setStyle(TableStyle([
-            ('ALIGN',(0,0),(-1,-1),'LEFT')
-        ]))
-
-    add_client_table.wrapOn(c,width, height)
-    add_client_table_w,add_client_table_h = add_client_table.wrap(0,0)
-
-    add_client_table_x = div_add_x + 0.25*inch
-    add_client_table_y = invoice_y - add_client_table_h - 0.25*inch
-
-    add_client_table.drawOn(c,add_client_table_x,add_client_table_y)
-
-    c.setFont("Arial",add_client_table_font_size)
+        # divider line between aac and customer Address
+        div_add_x = add_table_x + add_table_w + 0.25*inch
+        div_shift = 0.125*inch
+        c.line(div_add_x, add_table_y-div_shift, div_add_x, invoice_y-div_shift)
 
 
-    #table lowerright
-    lr_table_data = [["TOTAL", "${0:,.2f}".format(total_bill)],["PAYMENTS/CREDITS","-"],["BALANCE DUE","${0:,.2f}".format(total_bill)]]
-    lr_table_font_size = 12
+        # client address
+        add_client_table_data = [[""]]
+        add_client_table_data.append([client.name])
+        if client_dept != '':
+            add_client_table_data.append([client_dept])
+        add_client_table_data.append([client.billing_street])
+        if client.billing_street_2:
+            add_client_table_data.append([client.billing_street_2])
+        add_client_table_data.append([client.billing_city+", "+client.billing_state+" "+client.billing_postalcode])
+        add_client_table_data.append([" "])
 
-    lr_table = Table(data=lr_table_data)
-    lr_table.setStyle(TableStyle([
-            ('INNERGRID', (0,0), (-1,-1), 0.25, colors.black),
-            ('BOX', (0,0), (-1,-1), 0.25, colors.black),
-            ('ALIGN',(0,0),(-1,-1),'RIGHT')
-        ]))
-    lr_table.wrapOn(c,width, height)
-    lr_table_w,lr_table_h = lr_table.wrap(0,0)
+        add_client_table_font_size = 12
 
-    lr_table_x = width-lr_table_w
-    lr_table_y = margin
+        add_client_table = Table(data=add_client_table_data)
+        add_client_table.setStyle(TableStyle([
+                ('ALIGN',(0,0),(-1,-1),'LEFT')
+            ]))
 
-    lr_table.drawOn(c,lr_table_x,lr_table_y)
+        add_client_table.wrapOn(c,width, height)
+        add_client_table_w,add_client_table_h = add_client_table.wrap(0,0)
 
-    c.setFont("Arial",lr_table_font_size)
+        add_client_table_x = div_add_x + 0.25*inch
+        add_client_table_y = invoice_y - add_client_table_h - 0.25*inch
 
-    #table lowerleft
-    ll_table_data = [["Please make all checks payable to: AAC Engineering"],["We greatly appreciate your business!"]]
-    ll_table_font_size = 12
+        add_client_table.drawOn(c,add_client_table_x,add_client_table_y)
 
-    ll_table = Table(data=ll_table_data)
-    ll_table.setStyle(TableStyle([
-            ('ALIGN',(0,0),(-1,-1),'LEFT')
-        ]))
-    ll_table.wrapOn(c,width, height)
-    ll_table_w,ll_table_h = ll_table.wrap(0,0)
-
-    ll_table_x = margin
-    ll_table_y = margin
-
-    ll_table.drawOn(c,ll_table_x,ll_table_y)
-
-    c.setFont("Arial",ll_table_font_size)
+        c.setFont("Arial",add_client_table_font_size)
 
 
-    # invoice items
-    invoice_items_table_data = [["Date","Line Item","Description","Quantity","Rate","Amount"]]
+        #table lowerright
+        lr_table_data = [["TOTAL", "${0:,.2f}".format(total_bill)],["PAYMENTS/CREDITS","-"],["BALANCE DUE","${0:,.2f}".format(total_bill)]]
+        lr_table_font_size = 12
 
-    # dummy_items = [["12/12/12","1",Paragraph("We did lots! Something Great That you should pay lots of money for",styles['Normal']),"999999","$125.00","$9,999,999.99"],
-    #                 ["12/12/12","2",Paragraph("We Did more!. Something Great That you should pay lots of money for",styles['Normal']),"999999","$125.00","$9,999,999.99"]]
+        lr_table = Table(data=lr_table_data)
+        lr_table.setStyle(TableStyle([
+                ('INNERGRID', (0,0), (-1,-1), 0.25, colors.black),
+                ('BOX', (0,0), (-1,-1), 0.25, colors.black),
+                ('ALIGN',(0,0),(-1,-1),'RIGHT')
+            ]))
+        lr_table.wrapOn(c,width, height)
+        lr_table_w,lr_table_h = lr_table.wrap(0,0)
+
+        lr_table_x = width-lr_table_w
+        lr_table_y = margin
+
+        lr_table.drawOn(c,lr_table_x,lr_table_y)
+
+        c.setFont("Arial",lr_table_font_size)
+
+        #table lowerleft
+        ll_table_data = [["Please make all checks payable to: AAC Engineering"],["We greatly appreciate your business!"]]
+        ll_table_font_size = 12
+
+        ll_table = Table(data=ll_table_data)
+        ll_table.setStyle(TableStyle([
+                ('ALIGN',(0,0),(-1,-1),'LEFT')
+            ]))
+        ll_table.wrapOn(c,width, height)
+        ll_table_w,ll_table_h = ll_table.wrap(0,0)
+
+        ll_table_x = margin
+        ll_table_y = margin
+
+        ll_table.drawOn(c,ll_table_x,ll_table_y)
+
+        c.setFont("Arial",ll_table_font_size)
+
+
+        # invoice items
+        invoice_items_table_data = [["Date","Line Item","Description","Quantity","Rate","Amount"]]
+
+        # dummy_items = [["12/12/12","1",Paragraph("We did lots! Something Great That you should pay lots of money for",styles['Normal']),"999999","$125.00","$9,999,999.99"],
+        #                 ["12/12/12","2",Paragraph("We Did more!. Something Great That you should pay lots of money for",styles['Normal']),"999999","$125.00","$9,999,999.99"]]
 
 
 
 
-    for item in dummy_items:
-        invoice_items_table_data.append(item)
+        for item in dummy_items:
+            invoice_items_table_data.append(item)
 
 
-    invoice_items_table_font_size = 15
-    c.setFont("Arial",invoice_items_table_font_size)
+        invoice_items_table_font_size = 12
+        c.setFont("Arial",invoice_items_table_font_size)
 
-    space_h = (add_table_y) - (margin + lr_table_h + 0.25*inch)
-    cww=width-margin
-    it_cw_ratio=[3,3,11,4,3,4]
-    it_cw_d=sum(it_cw_ratio)*1.0
+        space_h = (add_table_y) - (margin + lr_table_h + 0.25*inch)
+        cww=width-margin
+        it_cw_ratio=[3,3,11,3,3,4]
+        it_cw_d=sum(it_cw_ratio)*1.0
 
-    it_cw = []
-    for zz in it_cw_ratio:
-        it_cw.append(int(round(cww*zz/it_cw_d)))
+        it_cw = []
+        for zz in it_cw_ratio:
+            it_cw.append(int(round(cww*zz/it_cw_d)))
 
-    # it_cw = [cww*3/25.0,width*1/25.0,width*9/25.0,width*3/25.0,width*3/25.0,width*6/25.0]
-    hh=invoice_items_table_font_size+10
-    rh=invoice_items_table_font_size*2+10
-    rows_to_add = int(math.floor((space_h-hh)/(rh*1.0)))-len(invoice_items_table_data)
-
-
-    invoice_items_table_data.extend([[""]*len(invoice_items_table_data[0])]*rows_to_add)
-    it_rh = [hh]+[rh]*(len(invoice_items_table_data)-1)
+        # it_cw = [cww*3/25.0,width*1/25.0,width*9/25.0,width*3/25.0,width*3/25.0,width*6/25.0]
+        hh=invoice_items_table_font_size+10
+        rh=invoice_items_table_font_size*2+10
+        rows_to_add = int(math.floor((space_h-hh)/(rh*1.0)))-len(invoice_items_table_data)
 
 
-    invoice_items_table = Table(data=invoice_items_table_data,colWidths = it_cw, rowHeights=it_rh)
-    invoice_items_table.setStyle(TableStyle([
-            ('BOX', (0,0), (-1,0), 0.25, colors.black),
-            ('BOX', (0,0), (-1,-1), 0.25, colors.black),
-            ('ALIGN',(0,0),(-1,-1),'RIGHT')
-        ]))
+        invoice_items_table_data.extend([[""]*len(invoice_items_table_data[0])]*rows_to_add)
+        it_rh = [hh]+[rh]*(len(invoice_items_table_data)-1)
 
-    invoice_items_table.wrap(width, height)
-    #invoice_items_table_w,invoice_items_table_h = invoice_items_table.wrap(0,0)
 
-    invoice_items_table_x = margin
-    invoice_items_table_y = margin + lr_table_h + 0.25*inch
+        invoice_items_table = Table(data=invoice_items_table_data,colWidths = it_cw, rowHeights=it_rh)
+        invoice_items_table.setStyle(TableStyle([
+                ('BOX', (0,0), (-1,0), 0.25, colors.black),
+                ('BOX', (0,0), (-1,-1), 0.25, colors.black),
+                ('ALIGN',(0,0),(-1,-1),'RIGHT')
+            ]))
 
-    invoice_items_table.drawOn(c,invoice_items_table_x,invoice_items_table_y)
+        invoice_items_table.wrap(width, height)
+        #invoice_items_table_w,invoice_items_table_h = invoice_items_table.wrap(0,0)
 
-    c.setFont("Arial",invoice_items_table_font_size)
+        invoice_items_table_x = margin
+        invoice_items_table_y = margin + lr_table_h + 0.25*inch
 
-    #generate and save
-    c.showPage()
+        invoice_items_table.drawOn(c,invoice_items_table_x,invoice_items_table_y)
+
+        c.setFont("Arial",invoice_items_table_font_size)
+
+        #generate and save
+        c.showPage()
+
+
+
+
     c.save()
 
     return response

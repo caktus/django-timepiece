@@ -21,6 +21,8 @@ from decimal import Decimal
 from itertools import groupby
 import boto
 
+from random import randint
+
 from taggit.managers import TaggableManager
 
 class ProjectContract(models.Model):
@@ -699,11 +701,19 @@ class EntryGroup(models.Model):
     }
 
     user = models.ForeignKey(User, related_name='entry_group')
+
     project = models.ForeignKey('crm.Project', related_name='entry_group', blank=True, null=True)
     single_project = models.BooleanField(default=True)
     contract = models.ForeignKey(ProjectContract, blank=True, null=True)
     status = models.CharField(max_length=24, choices=STATUSES.items(),
                               default=INVOICED)
+
+    auto_number= models.CharField(max_length=17,
+        verbose_name="Project Code",
+        null=True,
+        blank=True, # this field is required but is manually enforced in the code
+        help_text="Auto-generated number for tracking.")
+
     number = models.CharField("Reference #", max_length=50, blank=True,
                               null=True)
     comments = models.TextField(blank=True, null=True)
@@ -718,6 +728,23 @@ class EntryGroup(models.Model):
     def delete(self):
         self.entries.update(status=Entry.APPROVED)
         super(EntryGroup, self).delete()
+
+    def save(self, *args, **kwargs):
+        # if this is a CREATE, create auto_number
+        if self.id is None:
+            # get the current year, if year not provided
+            self.year = datetime.datetime.now().year
+            # determine the counter incrementer and create unique code
+            if self.single_project:
+                business = self.project.business
+            else:
+                business = self.contract.projects.all()[0].business
+
+            inv_count = EntryGroup.objects.all().count() + 1
+            self.auto_number = '%s%s%s' % (business.short_name, str(self.year+35727)[-5:], str(111619777+inv_count*77+randint(-11,11))[-7:])
+
+        super(EntryGroup, self).save(*args, **kwargs)
+
 
     def __unicode__(self):
         if self.single_project:
