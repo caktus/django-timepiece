@@ -48,7 +48,10 @@
     <li>
         <a href="{% url 'view_invoice_csv' invoice.id %}">Download CSV</a>
     </li>
+    {% if not invoice.single_project %}
     <li>
         <a href="{% url 'view_invoice_pdf' invoice.id %}">Download PDF</a>
     </li>
+    {% endif %}
+
 </ul>
