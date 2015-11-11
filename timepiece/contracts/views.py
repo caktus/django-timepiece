@@ -937,6 +937,11 @@ class ListInvoices(SearchListView):
     template_name = 'timepiece/invoice/list.html'
 
 
+    def get_queryset(self):
+        qs = super(ListInvoices, self).get_queryset().order_by('-id')
+        return qs
+
+
 @cbv_decorator(permission_required('contracts.change_entrygroup'))
 class InvoiceDetail(DetailView):
     template_name = 'timepiece/invoice/view.html'

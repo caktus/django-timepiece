@@ -722,6 +722,7 @@ class EntryGroup(models.Model):
     modified = models.DateTimeField(auto_now=True)
     start = models.DateField(blank=True, null=True)
     end = models.DateField()
+    year = models.SmallIntegerField(blank=True, null=True) # this field is required, but is taken care of in code
 
     class Meta:
         db_table = 'timepiece_entrygroup'  # Using legacy table name.
@@ -740,15 +741,16 @@ class EntryGroup(models.Model):
         # if this is a CREATE, create auto_number
         if self.id is None:
             # get the current year, if year not provided
-            self.year = datetime.datetime.now().year
+            if not self.year:
+                self.year = datetime.datetime.now().year
             # determine the counter incrementer and create unique code
             if self.single_project:
                 business = self.project.business
             else:
                 business = self.contract.projects.all()[0].business
 
-            inv_count = EntryGroup.objects.all().count() + 1
-            self.auto_number = '%s%s%s' % (business.short_name, str(self.year+35727)[-5:], str(111619777+inv_count*77+randint(-11,11))[-7:])
+            inv_count = EntryGroup.objects.filter(entries__project__business=business,year=self.year).distinct().count() + 1
+            self.auto_number = '%s%s%05d' % (business.short_name, str(self.year)[2:], inv_count)
 
         super(EntryGroup, self).save(*args, **kwargs)
 
