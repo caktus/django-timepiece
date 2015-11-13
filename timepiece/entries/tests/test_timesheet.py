@@ -459,7 +459,7 @@ class ClockInTest(ViewTestMixin, TestCase):
         data.update({'start_time_0': None})
         response = self.client.post(self.url, data)
 
-        msg = 'Enter a valid date/time.'
+        msg = 'Enter a valid date.'
         self.assertFormError(response, 'form', 'start_time', msg)
 
         active = Entry.objects.get()
