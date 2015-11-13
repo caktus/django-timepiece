@@ -115,11 +115,13 @@ class EntryManager(models.Manager):
         # in other words: do not remove!
         str(qs.query)
 
-        # See ticket #24431.
-        # This can be updated when support for Django 1.7 is dropped.
         import django
         if django.VERSION >= (1, 8):
-            billable = F('project__type__billable') and F('activity__billable')
+            # An entry is billable if its project and activity are billable.
+            # The query must use the "AND" operator - not bitwise "&".
+            project_billable = F('project__type__billable')
+            activity_billable = F('activity__billable')
+            billable = project_billable._combine(activity_billable, ' AND ', False)
             qs = qs.annotate(billable=billable)
         else:
             qs = qs.extra({
