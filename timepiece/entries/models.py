@@ -119,7 +119,7 @@ class EntryManager(models.Manager):
         # This can be updated when support for Django 1.7 is dropped.
         import django
         if django.VERSION >= (1, 8):
-            billable = F('project__type__billable') and (F('activity__billable'))
+            billable = F('project__type__billable') and F('activity__billable')
             qs = qs.annotate(billable=billable)
         else:
             qs = qs.extra({
