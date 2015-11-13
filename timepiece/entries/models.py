@@ -117,11 +117,13 @@ class EntryManager(models.Manager):
 
         import django
         if django.VERSION >= (1, 8):
-            # An entry is billable if its project and activity are billable.
-            # The query must use the "AND" operator - not bitwise "&".
+            # An entry is billable if both its project and activity are billable.
+            # We make use of a Django internal function to force the
+            # query to use the logical rather than bitwise conjunction operator.
             project_billable = F('project__type__billable')
             activity_billable = F('activity__billable')
-            billable = project_billable._combine(activity_billable, ' AND ', False)
+            logical_and = 'AND'  # bitwise would be '&'
+            billable = project_billable._combine(activity_billable, logical_and, False)
             qs = qs.annotate(billable=billable)
         else:
             qs = qs.extra({
