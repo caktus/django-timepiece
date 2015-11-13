@@ -1,5 +1,4 @@
 {% load timepiece_tags %}
-{% load url from future %}
 
 {# FIXME: Some of those permissions don't exist #}
 {% if perms.entries.can_clock_in or perms.entries.view_entry_summary or perms.entries.view_payroll_summary or perms.contracts.change_entrygroup or user.is_staff %}
