@@ -405,6 +405,7 @@ class Business(models.Model):
     BIZ_INDUSTRIES = (('aerospace', 'Aerospace'),
                       ('airlines', 'Airlines'),
                       ('avionics', 'Avionics'),
+                      ('construct','Construction'),
                       ('engineering', 'Engineering'),
                       ('shippping', 'Shipping'),
                       ('transportation', 'Transportation'),
