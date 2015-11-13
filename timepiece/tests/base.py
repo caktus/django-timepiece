@@ -115,34 +115,33 @@ class ViewTestMixin(object):
         return self.assertRedirectsNoFollow(
             response, login_url, use_params, status_code)
 
-    def login_user(self, user, strict=True):
+    def login_user(self, user):
         """Log in a user without need for a password.
 
         Adapted from
         http://jameswestby.net/weblog/tech/17-directly-logging-in-a-user-in-django-tests.html
         """
+        # Log out the current user.
+        self.client.logout()
+
         user.backend = 'django.contrib.auth.backends.ModelBackend'
         engine = __import__(settings.SESSION_ENGINE, fromlist=['SessionStore'])
 
         # Create a fake request to store login details.
         request = HttpRequest()
-        if self.client.session:
-            request.session = self.client.session
-        else:
-            request.session = engine.SessionStore()
+        request.session = self.client.session or engine.SessionStore()
         login(request, user)
 
         # Set the cookie to represent the session.
         session_cookie = settings.SESSION_COOKIE_NAME
         self.client.cookies[session_cookie] = request.session.session_key
-        cookie_data = {
+        self.client.cookies[session_cookie].update({
             'max-age': None,
             'path': '/',
             'domain': settings.SESSION_COOKIE_DOMAIN,
             'secure': settings.SESSION_COOKIE_SECURE or None,
             'expires': None,
-        }
-        self.client.cookies[session_cookie].update(cookie_data)
+        })
 
         # Save the session values.
         request.session.save()
