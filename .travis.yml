@@ -2,10 +2,10 @@ language: python
 python:
   - "3.4"
 env:
-  - TOXENV=py3.4-django1.8
-  - TOXENV=py2.7-django1.8
-  - TOXENV=py3.4-django1.7
-  - TOXENV=py2.7-django1.7
+  - TOXENV=python3.5-django1.8
+  - TOXENV=python2.7-django1.8
+  - TOXENV=python3.4-django1.7
+  - TOXENV=python2.7-django1.7
 install:
   - pip install -q --use-mirrors tox==1.9.2
 before_script:
