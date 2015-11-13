@@ -29,50 +29,34 @@ For options type:
 ./manage.py check_entries --help
     """
 
-    def make_options(self, *args, **kwargs):
-        """
-        Define the arguments that can be used with this command
-        """
-        return (
-            # Jenkins arguments to ignore
-            make_option('--pep8-exclude',
-                        dest='ignore_pep8',
-                        type='str',
-                        default='',
-                        help='Jenkins only'),
-            make_option('--coverage-exclude',
-                        dest='ignore_coverage',
-                        type='str',
-                        default='',
-                        help='Jenkins only'),
-            make_option('--thisweek',
-                        action='store_true',
-                        dest='week',
-                        default=False,
-                        help='Show entries from this week only'),
-            make_option('--thismonth',
-                        action='store_true',
-                        dest='month',
-                        default=False,
-                        help='Show entries from this month only'),
-            make_option('-y', '--thisyear',
-                        action='store_true',
-                        dest='year',
-                        default=False,
-                        help='Show entries from this year only'),
-            make_option('-a', '--all', '--forever',
-                        action='store_true',
-                        dest='all',
-                        default=False,
-                        help='Show entries from all recorded history'),
-            make_option('-d', '--days',
-                        dest='days',
-                        type='int',
-                        default=0,
-                        help='Show entries for the last n days only'),
-        )
+    option_list = BaseCommand.option_list + (
+        make_option('--thisweek',
+                    action='store_true',
+                    dest='week',
+                    default=False,
+                    help='Show entries from this week only'),
+        make_option('--thismonth',
+                    action='store_true',
+                    dest='month',
+                    default=False,
+                    help='Show entries from this month only'),
+        make_option('-y', '--thisyear',
+                    action='store_true',
+                    dest='year',
+                    default=False,
+                    help='Show entries from this year only'),
+        make_option('-a', '--all', '--forever',
+                    action='store_true',
+                    dest='all',
+                    default=False,
+                    help='Show entries from all recorded history'),
+        make_option('-d', '--days',
+                    dest='days',
+                    type='int',
+                    default=0,
+                    help='Show entries for the last n days only'),
+    )
 
-    option_list = BaseCommand.option_list + make_options(*args)
     parser.add_options(option_list)
     (options, args) = parser.parse_args()
 
