@@ -229,7 +229,7 @@ def create_edit_entry(request, entry_id=None):
             else:
                 message = 'The entry has been created successfully.'
             messages.info(request, message)
-            url = request.REQUEST.get('next', reverse('dashboard'))
+            url = request.GET.get('next', reverse('dashboard'))
             return HttpResponseRedirect(url)
         else:
             message = 'Please fix the errors below.'
@@ -250,7 +250,7 @@ def reject_entry(request, entry_id):
     Admins can reject an entry that has been verified or approved but not
     invoiced to set its status to 'unverified' for the user to fix.
     """
-    return_url = request.REQUEST.get('next', reverse('dashboard'))
+    return_url = request.GET.get('next', reverse('dashboard'))
     try:
         entry = Entry.no_join.get(pk=entry_id)
     except:
@@ -271,7 +271,7 @@ def reject_entry(request, entry_id):
         return redirect(return_url)
     return render(request, 'timepiece/entry/reject.html', {
         'entry': entry,
-        'next': request.REQUEST.get('next'),
+        'next': request.GET.get('next'),
     })
 
 
@@ -288,7 +288,7 @@ def delete_entry(request, entry_id):
     except Entry.DoesNotExist:
         message = 'No such entry found.'
         messages.info(request, message)
-        url = request.REQUEST.get('next', reverse('dashboard'))
+        url = request.GET.get('next', reverse('dashboard'))
         return HttpResponseRedirect(url)
 
     if request.method == 'POST':
@@ -297,7 +297,7 @@ def delete_entry(request, entry_id):
             entry.delete()
             message = 'Deleted {0} for {1}.'.format(entry.activity.name, entry.project)
             messages.info(request, message)
-            url = request.REQUEST.get('next', reverse('dashboard'))
+            url = request.GET.get('next', reverse('dashboard'))
             return HttpResponseRedirect(url)
         else:
             message = 'You are not authorized to delete this entry!'

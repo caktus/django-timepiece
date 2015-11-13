@@ -384,7 +384,7 @@ class EditSettings(UpdateView):
 
     def get_success_url(self):
         messages.info(self.request, 'Your settings have been updated.')
-        return self.request.REQUEST.get('next', None) or reverse('dashboard')
+        return self.request.GET.get('next', None) or reverse('dashboard')
 
 
 @cbv_decorator(permission_required('auth.view_user'))
@@ -501,17 +501,17 @@ class CreateRelationship(View):
         project = self.get_project()
         if user and project:
             ProjectRelationship.objects.get_or_create(user=user, project=project)
-        redirect_to = request.REQUEST.get('next', None) or reverse('dashboard')
+        redirect_to = request.GET.get('next', None) or reverse('dashboard')
         return HttpResponseRedirect(redirect_to)
 
     def get_user(self):
-        user_id = self.request.REQUEST.get('user_id', None)
+        user_id = self.request.GET.get('user_id', None)
         if user_id:
             return get_object_or_404(User, pk=user_id)
         return SelectUserForm(self.request.POST).get_user()
 
     def get_project(self):
-        project_id = self.request.REQUEST.get('project_id', None)
+        project_id = self.request.GET.get('project_id', None)
         if project_id:
             return get_object_or_404(Project, pk=project_id)
         return SelectProjectForm(self.request.POST).get_project()
@@ -522,12 +522,12 @@ class RelationshipObjectMixin(object):
 
     def get_object(self, queryset=None):
         queryset = self.get_queryset() if queryset is None else queryset
-        user_id = self.request.REQUEST.get('user_id', None)
-        project_id = self.request.REQUEST.get('project_id', None)
+        user_id = self.request.GET.get('user_id', None)
+        project_id = self.request.GET.get('project_id', None)
         return get_object_or_404(self.model, user__id=user_id, project__id=project_id)
 
     def get_success_url(self):
-        return self.request.REQUEST.get('next', self.object.project.get_absolute_url())
+        return self.request.GET.get('next', self.object.project.get_absolute_url())
 
 
 @cbv_decorator(permission_required('crm.change_projectrelationship'))
