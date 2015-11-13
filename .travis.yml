@@ -6,7 +6,7 @@ env:
   - TOXENV=python3.4-django1.7
   - TOXENV=python2.7-django1.7
 install:
-  - pip install -q --use-mirrors tox==2.2.1
+  - pip install -q tox==2.2.1
 before_script:
   - psql -c 'create database timepiece;' -U postgres
 script:
