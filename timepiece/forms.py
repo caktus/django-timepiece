@@ -17,8 +17,12 @@ INPUT_FORMATS = [DATE_FORM_FORMAT]
 class TimepieceSplitDateTimeWidget(forms.SplitDateTimeWidget):
 
     def __init__(self, *args, **kwargs):
-        kwargs['date_format'] = kwargs.get('date_format', DATE_FORM_FORMAT)
+        kwargs.setdefault('date_format', DATE_FORM_FORMAT)
         super(TimepieceSplitDateTimeWidget, self).__init__(*args, **kwargs)
+
+
+class TimepieceSplitDateTimeField(forms.SplitDateTimeField):
+    widget = TimepieceSplitDateTimeWidget
 
 
 class TimepieceDateInput(forms.DateInput):
