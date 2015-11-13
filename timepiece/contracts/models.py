@@ -8,8 +8,7 @@ from django.core.mail import send_mail
 from django.core.urlresolvers import reverse
 from django.db import models
 from django.db.models import Sum
-from django.template import Context
-from django.template.loader import get_template
+from django.template.loader import render_to_string
 from django.utils.encoding import python_2_unicode_compatible
 
 from timepiece import utils
@@ -214,9 +213,7 @@ class ContractHour(models.Model):
         if not emails:
             return
         from_email = utils.get_setting('DEFAULT_FROM_EMAIL')
-        template = get_template('timepiece/contract/hours_email.txt')
-        context = Context(ctx)
-        msg = template.render(context)
+        msg = render_to_string('timepiece/contract/hours_email.txt', ctx)
         send_mail(
             subject=subject,
             message=msg,
