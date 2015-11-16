@@ -1,5 +1,5 @@
 from functools import reduce
-from optparse import OptionParser, make_option
+from optparse import make_option
 
 from dateutil.relativedelta import relativedelta
 
