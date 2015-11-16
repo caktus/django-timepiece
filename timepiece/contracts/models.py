@@ -394,7 +394,7 @@ class EntryGroup(models.Model):
         db_table = 'timepiece_entrygroup'  # Using legacy table name.
 
     def delete(self):
-        self.entries.update(status=Entry.APPROVED)
+        Entry.no_join.filter(pk__in=self.entries).update(status=Entry.APPROVED)
         super(EntryGroup, self).delete()
 
     def __str__(self):

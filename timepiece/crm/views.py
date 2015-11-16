@@ -58,7 +58,7 @@ def reject_user_timesheet(request, user_id):
         if request.POST.get('yes'):
             if entries.exists():
                 count = entries.count()
-                entries.update(status=Entry.UNVERIFIED)
+                Entry.no_join.filter(pk__in=entries).update(status=Entry.UNVERIFIED)
                 msg = 'You have rejected %d previously verified entries.' \
                     % count
             else:
@@ -219,7 +219,7 @@ def change_user_timesheet(request, user_id, action):
             'verify': 'verified',
             'approve': 'approved',
         }
-        entries.update(status=update_status[action])
+        Entry.no_join.filter(pk__in=entries).update(status=update_status[action])
         messages.info(request, 'Your entries have been %s' % update_status[action])
         return redirect(return_url)
     hours = entries.all().aggregate(s=Sum('hours'))['s']
