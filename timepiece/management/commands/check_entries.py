@@ -18,16 +18,9 @@ class Command(BaseCommand):
     Use ./manage.py check_entries --help for more details
     """
     # boiler plate for console programs using optparse
-    args = '<user\'s first or last name or user.id> <user\'s first...>...'
-    help = """Check the database for entries that overlap.
-    Use --help for options"""
-    parser = OptionParser()
-    parser.usage += """
-./manage.py check_entries [<first or last name1> <name2>...<name n>] [OPTIONS]
-
-For options type:
-./manage.py check_entries --help
-    """
+    args = '[<first or last name>] [<first or last name>] ...'
+    help = ("Check the database for time entries that overlap.\n"
+            "Use --help for options.")
 
     option_list = BaseCommand.option_list + (
         make_option('--thisweek',
@@ -57,17 +50,17 @@ For options type:
                     help='Show entries for the last n days only'),
     )
 
-    parser.add_options(option_list)
-    (options, args) = parser.parse_args()
+    def usage(self, subcommand):
+        usage = "python manage.py check_entries {} [options]\n\n{}".format(
+            self.args, self.help)
+        return usage
 
     def handle(self, *args, **kwargs):
-        """
-        main()
-        """
         verbosity = kwargs.get('verbosity', 1)
         start = self.find_start(**kwargs)
         users = self.find_users(*args)
         self.show_init(start, *args, **kwargs)
+
         all_entries = self.find_entries(users, start, *args, **kwargs)
         all_overlaps = self.check_all(all_entries, *args, **kwargs)
         if verbosity >= 1:
