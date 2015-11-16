@@ -117,6 +117,8 @@ class EntryManager(models.Manager):
 
         import django
         if django.VERSION >= (1, 8):
+            # extra() is slowly but surely being deprecated.
+            # Newer Django versions have powerful F expressions to replace it.
             # An entry is billable if both its project and activity are billable.
             # We make use of a Django internal function to force the
             # query to use the logical rather than bitwise conjunction operator.
