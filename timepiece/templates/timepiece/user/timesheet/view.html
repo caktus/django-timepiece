@@ -1,5 +1,4 @@
 {% extends "timepiece/base.html" %}
-{% load url from future %}
 {% load timepiece_tags bootstrap_toolkit %}
 
 {% block title %}
@@ -208,7 +207,7 @@
                                     <th>Total</th>
                                 </tr>
                                 {% for day, projects in days %}
-                                    {% for project, totals in projects.1.iteritems %}
+                                    {% for project, totals in projects.1.items %}
                                         <tr class="{% if day|add_timezone < from_date %}before_from_date{% endif %}">
                                             <td>
                                                 {% if forloop.counter == 1 %}

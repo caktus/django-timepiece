@@ -1,6 +1,5 @@
 {% extends "timepiece/business/base.html" %}
 {% load bootstrap_toolkit %}
-{% load url from future %}
 
 {% block title %}Businesses{% endblock title %}
 
@@ -27,10 +26,7 @@
 
     <div class="row-fluid">
         <div class="span12">
-            {% load pagination_tags %}
-            {% autopaginate object_list %}
-
-            {% paginate %}
+            {% include "timepiece/pagination.html" %}
             <table class='table table-bordered table-striped table-condensed'>
                 <thead>
                     <tr>
@@ -47,7 +43,6 @@
                     {% endfor %}
                 </tbody>
             </table>
-            {% paginate %}
         </div>
     </div>
 {% endblock content %}

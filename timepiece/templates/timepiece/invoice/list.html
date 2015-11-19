@@ -1,6 +1,5 @@
 {% extends 'timepiece/invoice/base.html' %}
 {% load timepiece_tags bootstrap_toolkit %}
-{% load url from future %}
 
 {% block title %}Invoices{% endblock title %}
 
@@ -28,13 +27,10 @@
         </div>
     </div>
 
-    {% load pagination_tags %}
-
     <div class="row-fluid">
         <div class="span12">
             {% if object_list %}
-                {% autopaginate object_list %}
-                {% paginate %}
+                {% include "timepiece/pagination.html" %}
                 <table class="table table-bordered table-striped table-condensed">
                     <thead>
                         <tr>
@@ -65,7 +61,6 @@
                         {% endfor %}
                     </tbody>
                 </table>
-                {% paginate %}
             {% else %}
                 <p>There are no invoices.</p>
             {% endif %}

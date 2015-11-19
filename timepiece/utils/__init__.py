@@ -1,8 +1,8 @@
 import datetime
 from dateutil.relativedelta import relativedelta
 
+from django.apps import apps
 from django.conf import settings
-from django.db.models import get_model
 from django.utils import timezone
 
 from timepiece.defaults import TimepieceDefaults
@@ -30,7 +30,7 @@ def add_timezone(value, tz=None):
 
 def get_active_entry(user, select_for_update=False):
     """Returns the user's currently-active entry, or None."""
-    entries = get_model('entries', 'Entry').no_join
+    entries = apps.get_model('entries', 'Entry').no_join
     if select_for_update:
         entries = entries.select_for_update()
     entries = entries.filter(user=user, end_time__isnull=True)
@@ -68,6 +68,8 @@ def get_month_start(day=None):
 
 
 defaults = TimepieceDefaults()
+
+
 def get_setting(name, **kwargs):
     """Returns the user-defined value for the setting, or a default value."""
     if hasattr(settings, name):  # Try user-defined settings first.

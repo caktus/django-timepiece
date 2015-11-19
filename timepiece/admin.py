@@ -4,7 +4,7 @@ from django.contrib.contenttypes.models import ContentType
 
 
 class PermissionAdmin(admin.ModelAdmin):
-    list_display = ['__unicode__', 'codename']
+    list_display = ['content_type', 'codename', 'name']
     list_filter = ['content_type__app_label']
 
 

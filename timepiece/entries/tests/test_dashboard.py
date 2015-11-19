@@ -1,6 +1,7 @@
 import datetime
 from dateutil.relativedelta import relativedelta
-from urllib import urlencode
+
+from six.moves.urllib.parse import urlencode
 
 from django.contrib.auth.models import Permission
 from django.core.urlresolvers import reverse
@@ -91,10 +92,12 @@ class DashboardViewTestCase(ViewTestMixin, TestCase):
         """Get without param gets entries for this week."""
         response = self.client.get(reverse('dashboard'))
         self.assertEqual(response.status_code, 200)
-        self.assertEqual(response.context['week_start'],
-                utils.get_week_start().date())
-        self.assertEqual(response.context['week_end'],
-                utils.get_week_start().date() + relativedelta(days=6))
+        self.assertEqual(
+            response.context['week_start'],
+            utils.get_week_start().date())
+        self.assertEqual(
+            response.context['week_end'],
+            utils.get_week_start().date() + relativedelta(days=6))
 
     def test_active_entry(self):
         """Active entry should be given if it exists."""
@@ -194,21 +197,21 @@ class ProcessProgressTestCase(TestCase):
         """Progress when work has been done for an assigned project."""
         start_time = datetime.datetime(2012, 11, 7, 8, 0)
         end_time = datetime.datetime(2012, 11, 7, 12, 0)
-        entry = self._create_entry(start_time, end_time)
+        self._create_entry(start_time, end_time)
         worked_hours = 4
         assigned_hours = 5
-        assignment = self._create_hours(assigned_hours)
+        self._create_hours(assigned_hours)
 
         progress = self._get_progress()
         self.assertEqual(len(progress), 1)
-        self._check_progress(progress[0], self.project,
-                assigned_hours, worked_hours)
+        self._check_progress(
+            progress[0], self.project, assigned_hours, worked_hours)
 
     def test_work_with_no_assignment(self):
         """Progress when work has been done on an unassigned project."""
         start_time = datetime.datetime(2012, 11, 7, 8, 0)
         end_time = datetime.datetime(2012, 11, 7, 12, 0)
-        entry = self._create_entry(start_time, end_time)
+        self._create_entry(start_time, end_time)
         worked_hours = 4
 
         progress = self._get_progress()
@@ -218,7 +221,7 @@ class ProcessProgressTestCase(TestCase):
     def test_assignment_with_no_work(self):
         """Progress when no work has been done on an assigned project."""
         assigned_hours = 5
-        assignment = self._create_hours(assigned_hours)
+        self._create_hours(assigned_hours)
 
         progress = self._get_progress()
         self.assertEqual(len(progress), 1)
@@ -234,8 +237,8 @@ class ProcessProgressTestCase(TestCase):
         for i in range(3):
             start_time = datetime.datetime(2012, 11, 5 + i, 8, 0)
             end_time = datetime.datetime(2012, 11, 5 + i, 12, 0)
-            entry = self._create_entry(start_time, end_time, projects[i])
-            assignment = self._create_hours(5 + 5 * i, projects[i])
+            self._create_entry(start_time, end_time, projects[i])
+            self._create_hours(5 + 5 * i, projects[i])
 
         progress = self._get_progress()
         self.assertEqual(len(progress), 3)

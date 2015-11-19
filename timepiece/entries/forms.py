@@ -6,18 +6,20 @@ from django import forms
 from timepiece import utils
 from timepiece.crm.models import Project
 from timepiece.entries.models import Entry, Location, ProjectHours
-from timepiece.forms import INPUT_FORMATS, TimepieceSplitDateTimeWidget,\
-        TimepieceDateInput
+from timepiece.forms import (
+    INPUT_FORMATS, TimepieceSplitDateTimeField, TimepieceDateInput)
 
 
 class ClockInForm(forms.ModelForm):
-    active_comment = forms.CharField(label='Notes for the active entry',
-            widget=forms.Textarea, required=False)
+    active_comment = forms.CharField(
+        label='Notes for the active entry', widget=forms.Textarea,
+        required=False)
+    start_time = TimepieceSplitDateTimeField(required=False)
 
     class Meta:
         model = Entry
         fields = ('active_comment', 'location', 'project', 'activity',
-                'start_time', 'comments')
+                  'start_time', 'comments')
 
     def __init__(self, *args, **kwargs):
         self.user = kwargs.pop('user')
@@ -43,11 +45,9 @@ class ClockInForm(forms.ModelForm):
 
         super(ClockInForm, self).__init__(*args, **kwargs)
 
-        self.fields['start_time'].required = False
         self.fields['start_time'].initial = datetime.datetime.now()
-        self.fields['start_time'].widget = TimepieceSplitDateTimeWidget()
         self.fields['project'].queryset = Project.trackable.filter(
-                users=self.user)
+            users=self.user)
         if not self.active:
             self.fields.pop('active_comment')
         else:
@@ -64,9 +64,9 @@ class ClockInForm(forms.ModelForm):
         active_entries = self.user.timepiece_entries.filter(
             start_time__gte=start, end_time__isnull=True)
         for entry in active_entries:
-            output = 'The start time is on or before the current entry: ' + \
-            '%s - %s starting at %s' % (entry.project, entry.activity,
-                entry.start_time.strftime('%H:%M:%S'))
+            output = ('The start time is on or before the current entry: '
+                      '%s - %s starting at %s' % (entry.project, entry.activity,
+                                                  entry.start_time.strftime('%H:%M:%S')))
             raise forms.ValidationError(output)
         return start
 
@@ -92,8 +92,8 @@ class ClockInForm(forms.ModelForm):
 
 
 class ClockOutForm(forms.ModelForm):
-    start_time = forms.DateTimeField(widget=TimepieceSplitDateTimeWidget)
-    end_time = forms.DateTimeField(widget=TimepieceSplitDateTimeWidget)
+    start_time = TimepieceSplitDateTimeField()
+    end_time = TimepieceSplitDateTimeField()
 
     class Meta:
         model = Entry
@@ -113,9 +113,8 @@ class ClockOutForm(forms.ModelForm):
 
 
 class AddUpdateEntryForm(forms.ModelForm):
-    start_time = forms.DateTimeField(widget=TimepieceSplitDateTimeWidget(),
-            required=True)
-    end_time = forms.DateTimeField(widget=TimepieceSplitDateTimeWidget())
+    start_time = TimepieceSplitDateTimeField()
+    end_time = TimepieceSplitDateTimeField()
 
     class Meta:
         model = Entry
@@ -128,7 +127,7 @@ class AddUpdateEntryForm(forms.ModelForm):
         self.instance.user = self.user
 
         self.fields['project'].queryset = Project.trackable.filter(
-                users=self.user)
+            users=self.user)
         # If editing the active entry, remove the end_time field.
         if self.instance.start_time and not self.instance.end_time:
             self.fields.pop('end_time')
@@ -144,13 +143,14 @@ class AddUpdateEntryForm(forms.ModelForm):
             end_time = self.cleaned_data.get('end_time', None)
             if (start_time and start_time > active.start_time) or \
                     (end_time and end_time > active.start_time):
-                raise forms.ValidationError('The start time or end time '
-                        'conflict with the active entry: {activity} on '
-                        '{project} starting at {start_time}.'.format(**{
-                            'project': active.project,
-                            'activity': active.activity,
-                            'start_time': active.start_time.strftime('%H:%M:%S'),
-                        }))
+                raise forms.ValidationError(
+                    'The start time or end time conflict with the active '
+                    'entry: {activity} on {project} starting at '
+                    '{start_time}.'.format(
+                        project=active.project,
+                        activity=active.activity,
+                        start_time=active.start_time.strftime('%H:%M:%S'),
+                    ))
         return self.cleaned_data
 
 
@@ -158,11 +158,13 @@ class ProjectHoursForm(forms.ModelForm):
 
     class Meta:
         model = ProjectHours
+        fields = ['week_start', 'project', 'user', 'hours', 'published']
 
 
 class ProjectHoursSearchForm(forms.Form):
-    week_start = forms.DateField(label='Week of', required=False,
-            input_formats=INPUT_FORMATS, widget=TimepieceDateInput())
+    week_start = forms.DateField(
+        label='Week of', required=False,
+        input_formats=INPUT_FORMATS, widget=TimepieceDateInput())
 
     def clean_week_start(self):
         week_start = self.cleaned_data.get('week_start', None)

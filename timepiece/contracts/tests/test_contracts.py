@@ -16,7 +16,7 @@ class ContractListTestCase(ViewTestMixin, TestCase):
 
     def setUp(self):
         get_perm = lambda ct, n: Permission.objects.get(
-                content_type__app_label=ct, codename=n)
+            content_type__app_label=ct, codename=n)
         self.permissions = [get_perm(*perm) for perm in self.perm_names]
 
         self.user = factories.User()
@@ -48,8 +48,8 @@ class ContractListTestCase(ViewTestMixin, TestCase):
 
     def test_one_contract(self):
         """List should return all current contracts."""
-        correct_contract = factories.ProjectContract(projects=self.projects,
-                status=ProjectContract.STATUS_CURRENT)
+        correct_contract = factories.ProjectContract(
+            projects=self.projects, status=ProjectContract.STATUS_CURRENT)
         response = self._get()
         self.assertEqual(response.status_code, 200)
         contracts = response.context['contracts']
@@ -59,7 +59,7 @@ class ContractListTestCase(ViewTestMixin, TestCase):
     def test_contracts(self):
         """List should return all current contracts."""
         correct_contracts = [factories.ProjectContract(projects=self.projects,
-                status=ProjectContract.STATUS_CURRENT) for i in range(3)]
+                             status=ProjectContract.STATUS_CURRENT) for i in range(3)]
         response = self._get()
         self.assertEqual(response.status_code, 200)
         contracts = response.context['contracts']
@@ -69,10 +69,10 @@ class ContractListTestCase(ViewTestMixin, TestCase):
 
     def test_non_current_contracts(self):
         """List should return all current contracts."""
-        complete_contract = factories.ProjectContract(projects=self.projects,
-                status=ProjectContract.STATUS_COMPLETE)
-        upcoming_contract = factories.ProjectContract(projects=self.projects,
-                status=ProjectContract.STATUS_UPCOMING)
+        factories.ProjectContract(
+            projects=self.projects, status=ProjectContract.STATUS_COMPLETE)
+        factories.ProjectContract(
+            projects=self.projects, status=ProjectContract.STATUS_UPCOMING)
         response = self._get()
         self.assertEqual(response.status_code, 200)
         contracts = response.context['contracts']
@@ -89,7 +89,7 @@ class ContractViewTestCase(ViewTestMixin, TestCase):
 
     def setUp(self):
         get_perm = lambda ct, n: Permission.objects.get(
-                content_type__app_label=ct, codename=n)
+            content_type__app_label=ct, codename=n)
         self.permissions = [get_perm(*perm) for perm in self.perm_names]
 
         self.user = factories.User()
@@ -118,22 +118,22 @@ class ContractViewTestCase(ViewTestMixin, TestCase):
         self.assertEqual(response.status_code, 404)
 
     def test_current_contract(self):
-        contract = factories.ProjectContract(projects=self.projects,
-                status=ProjectContract.STATUS_CURRENT)
+        contract = factories.ProjectContract(
+            projects=self.projects, status=ProjectContract.STATUS_CURRENT)
         response = self._get(url_args=(contract.pk,))
         self.assertEqual(response.status_code, 200)
         self.assertEqual(contract, response.context['contract'])
 
     def test_upcoming_contract(self):
-        contract = factories.ProjectContract(projects=self.projects,
-                status=ProjectContract.STATUS_UPCOMING)
+        contract = factories.ProjectContract(
+            projects=self.projects, status=ProjectContract.STATUS_UPCOMING)
         response = self._get(url_args=(contract.pk,))
         self.assertEqual(response.status_code, 200)
         self.assertEqual(contract, response.context['contract'])
 
     def test_complete_contract(self):
-        contract = factories.ProjectContract(projects=self.projects,
-                status=ProjectContract.STATUS_COMPLETE)
+        contract = factories.ProjectContract(
+            projects=self.projects, status=ProjectContract.STATUS_COMPLETE)
         response = self._get(url_args=(contract.pk,))
         self.assertEqual(response.status_code, 200)
         self.assertEqual(contract, response.context['contract'])
@@ -159,8 +159,8 @@ class ContractHourTestCase(TestCase):
         # project contract and get pending_hours(), it gives the sum
         # of the hours
         pc = factories.ProjectContract(contract_hours=4)
-        ch = factories.ContractHour(contract=pc, hours=27,
-                status=ContractHour.PENDING_STATUS)
+        ch = factories.ContractHour(
+            contract=pc, hours=27, status=ContractHour.PENDING_STATUS)
         self.assertEqual(4, pc.contracted_hours())
         self.assertEqual(27, pc.pending_hours())
         ch.delete()
@@ -170,16 +170,14 @@ class ContractHourTestCase(TestCase):
     def test_validation(self):
         with self.assertRaises(ValidationError):
             ch = factories.ContractHour(
-                    status=ContractHour.PENDING_STATUS,
-                    date_approved=datetime.date.today())
+                status=ContractHour.PENDING_STATUS, date_approved=datetime.date.today())
             ch.clean()
 
     def test_default_date_approved(self):
         # If saved with status approved and no date approved,
         # it sets it to today
         ch = factories.ContractHour(
-                status=ContractHour.APPROVED_STATUS,
-                date_approved=None)
+            status=ContractHour.APPROVED_STATUS, date_approved=None)
         ch = ContractHour.objects.get(pk=ch.pk)
         self.assertEqual(datetime.date.today(), ch.date_approved)
 
@@ -197,7 +195,6 @@ class ContractHourTestCase(TestCase):
         # Now do some work
         pc._worked = 5.0
         self.assertEqual(0.5, pc.fraction_hours)
-
 
     def test_fraction_schedule(self):
         # fraction_schedule returns what fraction of the contract period
