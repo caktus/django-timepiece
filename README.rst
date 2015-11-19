@@ -64,8 +64,8 @@ Installation
 
     $ pip install django-timepiece
 
-#. Ensure that `less <http://lesscss.org>`_ is installed on your machine the
-   version is >=1.4.0::
+#. Ensure that `less <http://lesscss.org>`_ is installed on your machine and
+   the version is <=1.4.0::
 
     # Install node.js and npm:
     $ sudo apt-get install python-software-properties

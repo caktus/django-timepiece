@@ -1,8 +1,8 @@
 {
   "name": "timepiece",
-  "version": "0.9.16",
+  "version": "1.0.0",
   "dependencies": {
-    "less": "==1.4.0"
+    "less": "<=1.4.0"
   },
   "devDependencies": {
   },
