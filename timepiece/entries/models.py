@@ -1,5 +1,7 @@
-from dateutil.relativedelta import relativedelta
+from collections import OrderedDict
 from decimal import Decimal
+
+from dateutil.relativedelta import relativedelta
 
 from django.contrib.auth.models import User
 from django.core import validators
@@ -159,13 +161,13 @@ class Entry(models.Model):
     APPROVED = 'approved'
     INVOICED = 'invoiced'
     NOT_INVOICED = 'not-invoiced'
-    STATUSES = {
-        UNVERIFIED: 'Unverified',
-        VERIFIED: 'Verified',
-        APPROVED: 'Approved',
-        INVOICED: 'Invoiced',
-        NOT_INVOICED: 'Not Invoiced',
-    }
+    STATUSES = OrderedDict((
+        (UNVERIFIED, 'Unverified'),
+        (VERIFIED, 'Verified'),
+        (APPROVED, 'Approved'),
+        (INVOICED, 'Invoiced'),
+        (NOT_INVOICED, 'Not Invoiced'),
+    ))
 
     user = models.ForeignKey(User, related_name='timepiece_entries')
     project = models.ForeignKey('crm.Project', related_name='entries')

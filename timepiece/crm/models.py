@@ -1,3 +1,5 @@
+from collections import OrderedDict
+
 from django.apps import apps
 from django.contrib.auth.models import User
 from django.core.urlresolvers import reverse
@@ -55,10 +57,10 @@ class StatusAttributeManager(models.Manager):
 class Attribute(models.Model):
     PROJECT_TYPE = 'project-type'
     PROJECT_STATUS = 'project-status'
-    ATTRIBUTE_TYPES = {
-        PROJECT_TYPE: 'Project Type',
-        PROJECT_STATUS: 'Project Status',
-    }
+    ATTRIBUTE_TYPES = OrderedDict((
+        (PROJECT_TYPE, 'Project Type'),
+        (PROJECT_STATUS, 'Project Status'),
+    ))
     SORT_ORDER_CHOICES = [(x, x) for x in range(-20, 21)]
 
     type = models.CharField(max_length=32, choices=ATTRIBUTE_TYPES.items())

@@ -1,4 +1,6 @@
+from collections import OrderedDict
 import datetime
+
 from dateutil.relativedelta import relativedelta
 
 from django.contrib.auth.models import User
@@ -20,21 +22,21 @@ class ProjectContract(models.Model):
     STATUS_UPCOMING = 'upcoming'
     STATUS_CURRENT = 'current'
     STATUS_COMPLETE = 'complete'
-    CONTRACT_STATUS = {
-        STATUS_UPCOMING: 'Upcoming',
-        STATUS_CURRENT: 'Current',
-        STATUS_COMPLETE: 'Complete',
-    }
+    CONTRACT_STATUS = OrderedDict((
+        (STATUS_UPCOMING, 'Upcoming'),
+        (STATUS_CURRENT, 'Current'),
+        (STATUS_COMPLETE, 'Complete'),
+    ))
 
     PROJECT_UNSET = 0  # Have to set existing contracts to something...
     PROJECT_FIXED = 1
     PROJECT_PRE_PAID_HOURLY = 2
     PROJECT_POST_PAID_HOURLY = 3
-    PROJECT_TYPE = {   # UNSET is not an option
-        PROJECT_FIXED: 'Fixed',
-        PROJECT_PRE_PAID_HOURLY: 'Pre-paid Hourly',
-        PROJECT_POST_PAID_HOURLY: 'Post-paid Hourly',
-    }
+    PROJECT_TYPE = OrderedDict((   # UNSET is not an option
+        (PROJECT_FIXED, 'Fixed'),
+        (PROJECT_PRE_PAID_HOURLY, 'Pre-paid Hourly'),
+        (PROJECT_POST_PAID_HOURLY, 'Post-paid Hourly'),
+    ))
 
     name = models.CharField(max_length=255)
     projects = models.ManyToManyField('crm.Project', related_name='contracts')
@@ -161,8 +163,8 @@ class ContractHour(models.Model):
     APPROVED_STATUS = 2
     CONTRACT_HOUR_STATUS = (
         (PENDING_STATUS, 'Pending'),  # default
-        (APPROVED_STATUS, 'Approved')
-        )
+        (APPROVED_STATUS, 'Approved'),
+    )
 
     hours = models.DecimalField(
         max_digits=8, decimal_places=2, default=0)
@@ -373,10 +375,10 @@ class HourGroup(models.Model):
 class EntryGroup(models.Model):
     INVOICED = Entry.INVOICED
     NOT_INVOICED = Entry.NOT_INVOICED
-    STATUSES = {
-        INVOICED: 'Invoiced',
-        NOT_INVOICED: 'Not Invoiced',
-    }
+    STATUSES = OrderedDict((
+        (INVOICED, 'Invoiced'),
+        (NOT_INVOICED, 'Not Invoiced'),
+    ))
 
     user = models.ForeignKey(User, related_name='entry_group')
     project = models.ForeignKey('crm.Project', related_name='entry_group')
