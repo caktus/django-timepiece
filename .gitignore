@@ -12,4 +12,5 @@ build/
 *.DS_Store
 htmlcov/
 .coverage
+node_modules
 .project

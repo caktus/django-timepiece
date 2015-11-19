@@ -68,7 +68,7 @@ Installation
 
     $ pip install django-timepiece
 
-#. Ensure that `less`_ is installed on your machine::
+#. Ensure that `less`_ is installed on your machine and the version is <=1.4.0::
 
     # Install node.js and npm:
     $ sudo apt-get install python-software-properties
@@ -76,8 +76,8 @@ Installation
     $ sudo apt-get update
     $ sudo apt-get install nodejs npm
 
-    # Use npm to install less:
-    $ npm install less -g
+    # Use npm to install less from package.json:
+    $ npm install
 
 #. If you are starting from the included example project, copy the example
    local settings file at `example_project/settings/local.py.example` to
