@@ -1,5 +1,8 @@
 {% extends "timepiece/reports/base.html" %}
-{% load timepiece_tags bootstrap_toolkit %}
+
+{% load bootstrap_toolkit %}
+{% load static %}
+{% load timepiece_tags %}
 
 {% block title %}Productivity Report{% endblock title %}
 
@@ -22,7 +25,7 @@
 {% block extrajs %}
     {{ block.super }}
     <script charset="utf-8" src="https://www.google.com/jsapi"></script>
-    <script charset="utf-8" src="{{ STATIC_URL }}timepiece/js/chart/productivity_chart.js"
+    <script charset="utf-8" src="{% static "timepiece/js/chart/productivity_chart.js" %}"
             data-report="{{ report }}" data-type="{{ type }}"></script>
 {% endblock extrajs %}
 

@@ -1,4 +1,6 @@
 {% extends 'timepiece/contract/base.html' %}
+
+{% load static %}
 {% load timepiece_tags %}
 
 {% block title %}Current Contracts{% endblock title %}
@@ -9,7 +11,7 @@
         var max_work_fraction = {{ max_work_fraction }};
         var max_schedule_fraction = {{ max_schedule_fraction }};
     </script>
-    <script charset="utf-8" src="{{ STATIC_URL }}timepiece/js/contract.js"></script>
+    <script charset="utf-8" src="{% static "timepiece/js/contract.js" %}"></script>
 {% endblock extrajs %}
 
 {% block content %}
