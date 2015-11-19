@@ -109,8 +109,8 @@ def create_invoice(request):
             else:
                 # We got the lock, we can carry on
                 invoice = invoice_form.save()
-                entries.update(status=invoice.status,
-                               entry_group=invoice)
+                Entry.no_join.filter(pk__in=entries).update(
+                    status=invoice.status, entry_group=invoice)
                 messages.add_message(request, messages.INFO,
                                      "Invoice created")
                 return HttpResponseRedirect(reverse('view_invoice',

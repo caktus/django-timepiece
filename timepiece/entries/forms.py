@@ -7,13 +7,14 @@ from timepiece import utils
 from timepiece.crm.models import Project
 from timepiece.entries.models import Entry, Location, ProjectHours
 from timepiece.forms import (
-    INPUT_FORMATS, TimepieceSplitDateTimeWidget, TimepieceDateInput)
+    INPUT_FORMATS, TimepieceSplitDateTimeField, TimepieceDateInput)
 
 
 class ClockInForm(forms.ModelForm):
     active_comment = forms.CharField(
         label='Notes for the active entry', widget=forms.Textarea,
         required=False)
+    start_time = TimepieceSplitDateTimeField(required=False)
 
     class Meta:
         model = Entry
@@ -44,9 +45,7 @@ class ClockInForm(forms.ModelForm):
 
         super(ClockInForm, self).__init__(*args, **kwargs)
 
-        self.fields['start_time'].required = False
         self.fields['start_time'].initial = datetime.datetime.now()
-        self.fields['start_time'].widget = TimepieceSplitDateTimeWidget()
         self.fields['project'].queryset = Project.trackable.filter(
             users=self.user)
         if not self.active:
@@ -93,8 +92,8 @@ class ClockInForm(forms.ModelForm):
 
 
 class ClockOutForm(forms.ModelForm):
-    start_time = forms.DateTimeField(widget=TimepieceSplitDateTimeWidget)
-    end_time = forms.DateTimeField(widget=TimepieceSplitDateTimeWidget)
+    start_time = TimepieceSplitDateTimeField()
+    end_time = TimepieceSplitDateTimeField()
 
     class Meta:
         model = Entry
@@ -114,9 +113,8 @@ class ClockOutForm(forms.ModelForm):
 
 
 class AddUpdateEntryForm(forms.ModelForm):
-    start_time = forms.DateTimeField(
-        widget=TimepieceSplitDateTimeWidget(), required=True)
-    end_time = forms.DateTimeField(widget=TimepieceSplitDateTimeWidget())
+    start_time = TimepieceSplitDateTimeField()
+    end_time = TimepieceSplitDateTimeField()
 
     class Meta:
         model = Entry

@@ -1,5 +1,5 @@
 from functools import reduce
-from optparse import OptionParser, make_option
+from optparse import make_option
 
 from dateutil.relativedelta import relativedelta
 
@@ -18,72 +18,49 @@ class Command(BaseCommand):
     Use ./manage.py check_entries --help for more details
     """
     # boiler plate for console programs using optparse
-    args = '<user\'s first or last name or user.id> <user\'s first...>...'
-    help = """Check the database for entries that overlap.
-    Use --help for options"""
-    parser = OptionParser()
-    parser.usage += """
-./manage.py check_entries [<first or last name1> <name2>...<name n>] [OPTIONS]
+    args = '[<first or last name>] [<first or last name>] ...'
+    help = ("Check the database for time entries that overlap.\n"
+            "Use --help for options.")
 
-For options type:
-./manage.py check_entries --help
-    """
+    option_list = BaseCommand.option_list + (
+        make_option('--thisweek',
+                    action='store_true',
+                    dest='week',
+                    default=False,
+                    help='Show entries from this week only'),
+        make_option('--thismonth',
+                    action='store_true',
+                    dest='month',
+                    default=False,
+                    help='Show entries from this month only'),
+        make_option('-y', '--thisyear',
+                    action='store_true',
+                    dest='year',
+                    default=False,
+                    help='Show entries from this year only'),
+        make_option('-a', '--all', '--forever',
+                    action='store_true',
+                    dest='all',
+                    default=False,
+                    help='Show entries from all recorded history'),
+        make_option('-d', '--days',
+                    dest='days',
+                    type='int',
+                    default=0,
+                    help='Show entries for the last n days only'),
+    )
 
-    def make_options(self, *args, **kwargs):
-        """
-        Define the arguments that can be used with this command
-        """
-        return (
-            # Jenkins arguments to ignore
-            make_option('--pep8-exclude',
-                        dest='ignore_pep8',
-                        type='str',
-                        default='',
-                        help='Jenkins only'),
-            make_option('--coverage-exclude',
-                        dest='ignore_coverage',
-                        type='str',
-                        default='',
-                        help='Jenkins only'),
-            make_option('--thisweek',
-                        action='store_true',
-                        dest='week',
-                        default=False,
-                        help='Show entries from this week only'),
-            make_option('--thismonth',
-                        action='store_true',
-                        dest='month',
-                        default=False,
-                        help='Show entries from this month only'),
-            make_option('-y', '--thisyear',
-                        action='store_true',
-                        dest='year',
-                        default=False,
-                        help='Show entries from this year only'),
-            make_option('-a', '--all', '--forever',
-                        action='store_true',
-                        dest='all',
-                        default=False,
-                        help='Show entries from all recorded history'),
-            make_option('-d', '--days',
-                        dest='days',
-                        type='int',
-                        default=0,
-                        help='Show entries for the last n days only'),
-        )
-
-    option_list = BaseCommand.option_list + make_options(*args)
-    parser.add_options(option_list)
-    (options, args) = parser.parse_args()
+    def usage(self, subcommand):
+        usage = "python manage.py check_entries {} [options]\n\n{}".format(
+            self.args, self.help)
+        return usage
 
     def handle(self, *args, **kwargs):
-        """
-        main()
-        """
         verbosity = kwargs.get('verbosity', 1)
         start = self.find_start(**kwargs)
         users = self.find_users(*args)
         self.show_init(start, *args, **kwargs)
+
         all_entries = self.find_entries(users, start, *args, **kwargs)
         all_overlaps = self.check_all(all_entries, *args, **kwargs)
         if verbosity >= 1:

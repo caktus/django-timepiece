@@ -1,11 +1,13 @@
-from dateutil.relativedelta import relativedelta
+from collections import OrderedDict
 from decimal import Decimal
+
+from dateutil.relativedelta import relativedelta
 
 from django.contrib.auth.models import User
 from django.core import validators
 from django.core.exceptions import ValidationError
 from django.db import models
-from django.db.models import Q, Sum, Max, Min
+from django.db.models import F, Q, Sum, Max, Min
 from django.utils import timezone
 from django.utils.encoding import python_2_unicode_compatible
 
@@ -115,8 +117,23 @@ class EntryManager(models.Manager):
         # in other words: do not remove!
         str(qs.query)
 
-        qs = qs.extra({'billable': 'timepiece_activity.billable AND '
-                                   'timepiece_attribute.billable'})
+        import django
+        if django.VERSION >= (1, 8):
+            # extra() is slowly but surely being deprecated.
+            # Newer Django versions have powerful F expressions to replace it.
+            # An entry is billable if both its project and activity are billable.
+            # We make use of a Django internal function to force the
+            # query to use the logical rather than bitwise conjunction operator.
+            project_billable = F('project__type__billable')
+            activity_billable = F('activity__billable')
+            logical_and = 'AND'  # bitwise would be '&'
+            billable = project_billable._combine(activity_billable, logical_and, False)
+            qs = qs.annotate(billable=billable)
+        else:
+            qs = qs.extra({
+                'billable': 'timepiece_activity.billable AND '
+                            'timepiece_attribute.billable',
+            })
         return qs
 
     def date_trunc(self, key='month', extra_values=()):
@@ -144,13 +161,13 @@ class Entry(models.Model):
     APPROVED = 'approved'
     INVOICED = 'invoiced'
     NOT_INVOICED = 'not-invoiced'
-    STATUSES = {
-        UNVERIFIED: 'Unverified',
-        VERIFIED: 'Verified',
-        APPROVED: 'Approved',
-        INVOICED: 'Invoiced',
-        NOT_INVOICED: 'Not Invoiced',
-    }
+    STATUSES = OrderedDict((
+        (UNVERIFIED, 'Unverified'),
+        (VERIFIED, 'Verified'),
+        (APPROVED, 'Approved'),
+        (INVOICED, 'Invoiced'),
+        (NOT_INVOICED, 'Not Invoiced'),
+    ))
 
     user = models.ForeignKey(User, related_name='timepiece_entries')
     project = models.ForeignKey('crm.Project', related_name='entries')

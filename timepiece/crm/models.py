@@ -1,7 +1,9 @@
+from collections import OrderedDict
+
+from django.apps import apps
 from django.contrib.auth.models import User
 from django.core.urlresolvers import reverse
 from django.db import models
-from django.db.models import get_model
 from django.utils.encoding import python_2_unicode_compatible
 
 from timepiece.utils import get_active_entry
@@ -55,10 +57,10 @@ class StatusAttributeManager(models.Manager):
 class Attribute(models.Model):
     PROJECT_TYPE = 'project-type'
     PROJECT_STATUS = 'project-status'
-    ATTRIBUTE_TYPES = {
-        PROJECT_TYPE: 'Project Type',
-        PROJECT_STATUS: 'Project Status',
-    }
+    ATTRIBUTE_TYPES = OrderedDict((
+        (PROJECT_TYPE, 'Project Type'),
+        (PROJECT_STATUS, 'Project Status'),
+    ))
     SORT_ORDER_CHOICES = [(x, x) for x in range(-20, 21)]
 
     type = models.CharField(max_length=32, choices=ATTRIBUTE_TYPES.items())
@@ -167,7 +169,7 @@ class Project(models.Model):
 
     def get_active_contracts(self):
         """Returns all associated contracts which are not marked complete."""
-        ProjectContract = get_model('contracts', 'ProjectContract')
+        ProjectContract = apps.get_model('contracts', 'ProjectContract')
         return self.contracts.exclude(status=ProjectContract.STATUS_COMPLETE)
 
 
