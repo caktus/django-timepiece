@@ -8,7 +8,6 @@ import random
 import six
 
 from django.contrib.auth import models as auth
-from django.contrib.auth.hashers import make_password
 
 from timepiece.contracts import models as contracts
 from timepiece.crm import models as crm
@@ -26,7 +25,10 @@ class User(factory.DjangoModelFactory):
     last_name = factory.Sequence(lambda n: 'Blue{0}'.format(n))
     username = factory.Sequence(lambda n: 'user{0}'.format(n))
     email = factory.Sequence(lambda n: 'user{0}@example.com'.format(n))
-    password = factory.LazyAttribute(lambda n: make_password('password'))
+
+    @factory.post_generation
+    def password(self, create, extracted, **kwargs):
+        self.set_password(extracted or "password")
 
     @factory.post_generation
     def permissions(self, create, extracted, **kwargs):
