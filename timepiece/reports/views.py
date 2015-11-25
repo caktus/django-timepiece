@@ -25,7 +25,7 @@ from timepiece.utils.csv import CSVViewMixin, DecimalEncoder
 
 from timepiece.contracts.models import ProjectContract, ContractRate
 from timepiece.entries.models import Entry, ProjectHours, Activity
-from timepiece.crm.models import Project, PaidTimeOffRequest, Attribute, Milestone
+from timepiece.crm.models import Project, PaidTimeOffRequest, Attribute, Milestone, Department
 from timepiece.reports.forms import BillableHoursReportForm, HourlyReportForm,\
         ProductivityReportForm, PayrollSummaryReportForm, RevenueReportForm,\
         BacklogFilterForm
@@ -1815,14 +1815,26 @@ def report_employee_backlog(request, user_id):
 @permission_required('crm.view_employee_backlog')
 def report_all_employee_backlog(request):
 
-    employees=Group.objects.get(id=1).user_set.filter(is_active=True).order_by('last_name', 'first_name')
 
-    charts={}
-    for e in employees:
-        charts[e]=json.dumps(get_employee_backlog_chart_data(e.id))
+    departments = {}
+    for d,d_pretty in Department.DEPARTMENTS: #TODO update with department as a model
+        dept_emps = Group.objects.get(id=1).user_set.filter(is_active=True,profile__department=d).order_by('last_name', 'first_name')
+        charts={}
+        for e in dept_emps:
+            charts[e]=json.dumps(get_employee_backlog_chart_data(e.id))
+        if len(dept_emps) > 0:
+            departments[d_pretty] = charts
 
-    context = {'employees': employees,
-                'charts': charts}
+
+    #
+    #
+    # employees=Group.objects.get(id=1).user_set.filter(is_active=True).order_by('last_name', 'first_name')
+    #
+    # charts={}
+    # for e in employees:
+    #     charts[e]=json.dumps(get_employee_backlog_chart_data(e.id))
+
+    context = {'departments':departments}
 
     return render(request, 'timepiece/reports/backlog_employee_all.html', context)
 
@@ -1896,7 +1908,7 @@ def get_employee_backlog_chart_data(user_id):
     print 'start week', start_week
     print 'end week', end_week
     for ptor in employee.profile.paidtimeoffrequest_set.filter(
-        Q(pto_start_date__gte=start_week)|Q(pto_end_date__gte=end_week),
+        Q(pto_start_date__gte=start_week)|Q(pto_end_date__gte=start_week),
         Q(status='approved')|Q(status='processed')):
 
         print 'ptor', ptor
@@ -2182,4 +2194,31 @@ class PendingMilestonesReport(TemplateView):
             pending_milestones.append((project, list(milestones)))
 
         context['pending_milestones'] = pending_milestones
+        return context
+
+#TODO
+class ThroughputReport(TemplateView):
+    template_name = 'timepiece/reports/throughput.html'
+
+    def get_context_data(self, **kwargs):
+        context = super(ThroughputReport, self).get_context_data(**kwargs)
+        projects = []
+        for project in Project.objects.filter(status__label='Archived'):
+            try:
+                milestones=Milestone.objects.filter(project=project)
+                start_date=milestones.get(name='Start')
+                turn_in_date=milestones.get(name='Turn-In')
+                required_completion_date = milestones.get(name='Required Completion')
+                required_time = required_completion_date.due_date - start_date.due_date
+                spent_time =  turn_in_date.due_date - start_date.due_date
+                throughput = "%.2f" % (spent_time.days / (1.0*required_time.days))
+                minder = project.point_person.get_full_name()
+
+                # if start_date and turn_in_date and required_completion_date:
+                projects.append((project, start_date, turn_in_date, required_completion_date, throughput,minder))
+            except Milestone.DoesNotExist:
+                continue
+
+        projects.sort(key = lambda x: (x[5],x[2].due_date-datetime.date(2000,1,1)))
+        context['projects'] = projects
         return context

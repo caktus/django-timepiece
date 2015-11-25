@@ -1,0 +1,61 @@
+{% extends "timepiece/reports/base.html" %}
+{% load timepiece_tags bootstrap_toolkit %}
+{% load url from future %}
+
+{% block title %}Throughput{% endblock title %}
+
+{% block extrajs %}
+    {{ pj_filters.media }}
+{% endblock extrajs %}
+
+{% block bodyid %}throughput{% endblock bodyid %}
+
+{% block crumbs %}
+    {{ block.super }}
+    <li><span class="divider">/</span> <a href="{% url 'report_throughput' %}">Throughput</a></li>
+{% endblock crumbs %}
+
+{% block report_nav %}
+    {% with 'throughput' as active %}
+        {{ block.super }}
+    {% endwith %}
+{% endblock report_nav %}
+
+{% block report_content %}
+
+    <div class="row-fluid">
+        <div class="span12">
+            <h3>Throughput Report</h3>
+            <table class="table table-bordered">
+                <tr><th>Name</th>
+                    <th>Minder</th>
+                    <th>Start</th>
+                    <th>Turn In</th>
+                    <th>Required Completion</th>
+                    <th>Throughput<th>
+                </tr>
+              {% for project, start_date, turn_in_date, required_completion_date, throughput, minder in projects %}
+                <tr><td><a href="{% url 'view_project' project.id %}"> <strong>{{ project }} </strong></a></td>
+                    <td> {{ minder }} </td>
+                    <td><a href="{% url 'view_milestone' project.id start_date.id %}"> {{ start_date.due_date }} </a>
+                        {% if start_date.status != 'approved' %}
+                        <span class="label label-warning" title="Status">{{ start_date.get_status_display }}</span>
+                        {% endif %}
+                    </td>
+                    <td><a href="{% url 'view_milestone' project.id turn_in_date.id %}">  {{ turn_in_date.due_date }} </a>
+                      {% if turn_in_date.status != 'approved' %}
+                      <span class="label label-warning" title="Status">{{ turn_in_date.get_status_display }}</span>
+                      {% endif %}
+                    </td>
+                    <td><a href="{% url 'view_milestone' project.id required_completion_date.id %}">  {{ required_completion_date.due_date }} </a>
+                      {% if required_completion_date.status != 'approved' %}
+                      <span class="label label-warning" title="Status">{{ required_completion_date.get_status_display }}</span>
+                      {% endif %}
+                    </td>
+                    <td> {{ throughput }} </td>
+                </tr>
+                {% endfor %}
+              </table>
+        </div>
+    </div>
+{% endblock report_content %}

@@ -55,7 +55,7 @@ def find_correct_overtime(from_date, to_date, user, weeks):
     unpaid_leave = get_setting('TIMEPIECE_UNPAID_LEAVE_PROJECTS')
     total_overtime = 0.0
     for week in weeks:
-        end_of_week = week + relativedelta(days=7)
+        end_of_week = week + relativedelta(days=7, microseconds=-1)
         if end_of_week >= from_date and end_of_week < to_date:
             entries = Entry.objects.filter(user=user, end_time__gte=week,
                 end_time__lt=end_of_week
@@ -66,7 +66,6 @@ def find_correct_overtime(from_date, to_date, user, weeks):
             
             week_total = float(entries.aggregate(
                 hours=Sum('hours'))['hours'])
-            print user.email, week_total
             if week_total > 40.0:
                 total_overtime += (week_total - 40.0)
 
@@ -77,7 +76,9 @@ def generate_dates(start=None, end=None, by='week'):
     if start:
         start = add_timezone(start)
     if end:
+        end -= datetime.timedelta(microseconds=1)
         end = add_timezone(end)
+
     week_start = get_setting('TIMEPIECE_WEEK_START', default=0)
     if by == 'year':
         start = get_year_start(start)
@@ -107,7 +108,6 @@ def get_project_totals(entries, date_headers, hour_type=None, overtime=False,
                 if entry['writedown'] == writedown:
                     filtered_entries.append(entry)
             entries = filtered_entries
-
     totals = [0 for date in date_headers]
     rows = []
     for thing, thing_entries in groupby(entries, lambda x: x[by]):

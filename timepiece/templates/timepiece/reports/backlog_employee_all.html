@@ -22,14 +22,16 @@
 
 
 {% block report_content %}
-{% for employee,chart_data in charts.items %}
+{% for department,charts in departments.items %}
+
 <div class="row-fluid">
     <div class="span12" name="backlog-container">
-        <h3>{{ employee }} Backlog</h3>
-
-        <h4>Summary</h4>
+        <h2>{{ department }}</h2>
+        {% for employee,chart_data in charts.items %}
+        <h4><a href="{% url 'report_employee_backlog' employee.id %}">{{ employee }}</a></h4>
         <div class="coverage-area-chart" id= "chart_{{ employee.first_name }}_{{ employee.last_name}}" data="{{ chart_data }}">
         </div>
+        {% endfor %}
     </div>
 </div>
 {% endfor %}

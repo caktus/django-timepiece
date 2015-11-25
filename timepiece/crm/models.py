@@ -54,7 +54,6 @@ User.add_to_class('get_absolute_url', _get_absolute_url)
 class Department(models.Model):
     DEPARTMENTS = (
         ('admin','Admin'),
-        ('construction','Construction'),
         ('elec-avionics', 'Electrical/Avionics'),
         ('finance','Finance'),
         ('hr','Human Resources'),
@@ -72,6 +71,9 @@ class Department(models.Model):
       choices=DEPARTMENTS,
       default='other')
       ## TODO Actually make the department class with options and not a static, hardcoded list.
+
+
+
 
 class UserProfile(models.Model):
     SALARY = 'salary'
@@ -389,6 +391,7 @@ class Attribute(models.Model):
 
 class Business(models.Model):
     BIZ_CLASS = (('client', 'Client'),
+                 ('construction', 'Construction'),
                  ('vendor', 'Vendor'),
                  ('org', 'Organization'),
                  ('other', 'Other'))
@@ -402,6 +405,7 @@ class Business(models.Model):
     BIZ_INDUSTRIES = (('aerospace', 'Aerospace'),
                       ('airlines', 'Airlines'),
                       ('avionics', 'Avionics'),
+                      ('construct','Construction'),
                       ('engineering', 'Engineering'),
                       ('shippping', 'Shipping'),
                       ('transportation', 'Transportation'),

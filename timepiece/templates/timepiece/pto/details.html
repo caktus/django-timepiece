@@ -51,17 +51,23 @@
 
                 {% if pto_request.status == 'approved' %}
                 <dt>Approval</dt>
+                <dd>{{ pto_request.approver }} on {{ pto_request.approval_date|date:"F d" }}</dd>
+                {% elif pto_request.status == 'processed' %}
+                <dt>Processor</dt>
+                <dd>{{ pto_request.processor }}</dd>
+
                 {% else %}
                 <dt>Denial</dt>
+                <dd>{{ pto_request.approver }} on {{ pto_request.approval_date|date:"F d" }}</dd>
                 {% endif %}
                 {% if pto_request.status != 'pending' %}
-                <dd>{{ pto_request.approver }} on {{ pto_request.approval_date|date:"F d" }}</dd>
+
 
                 <dt>Reviewer Comment</dt>
                 <dd>{% if pto_request.approver_comment %}{{ pto_request.approver_comment }}{% else %}n/a{% endif %}</dt>
                 {% endif %}
             </dl>
-            
+
             <input class="btn" type='button' value='Go Back' onclick='history.go(-1)' />
         </div>
     </div>
