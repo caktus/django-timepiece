@@ -21,6 +21,8 @@ from decimal import Decimal
 from itertools import groupby
 import boto
 
+from random import randint
+
 from taggit.managers import TaggableManager
 
 class ProjectContract(models.Model):
@@ -85,7 +87,7 @@ class ProjectContract(models.Model):
     status = models.CharField(choices=CONTRACT_STATUS.items(),
             default=STATUS_UPCOMING, max_length=32)
     type = models.IntegerField(choices=PROJECT_TYPE.items())
-    payment_terms = models.CharField(max_length=32, 
+    payment_terms = models.CharField(max_length=32,
         choices=CONTRACT_PYMT_TERMS.items(), default=PYMT_NET30)
     ceiling_type = models.IntegerField(
         default=BUDGET,
@@ -94,6 +96,8 @@ class ProjectContract(models.Model):
     client_expense_category = models.CharField(
         choices=CLIENT_EXPENSE_CATEGORIES.items(),
         default=CEC_UNKNOWN, max_length=16)
+    po_number = models.CharField(max_length=100,null=True, blank=True)
+    po_line_item = models.CharField(max_length=10,null=True, blank=True)
 
     tags = TaggableManager()
 
@@ -158,7 +162,7 @@ class ProjectContract(models.Model):
         elif self.ceiling_type == self.BUDGET:
             return '$ {:,.2f}'.format(self.contract_value())
         else:
-            return None        
+            return None
 
     def contracted_hours(self, approved_only=True):
         """Compute the hours contracted for this contract.
@@ -264,12 +268,12 @@ class ProjectContract(models.Model):
     def activity_totals(self):
         activity_totals = {}
         sorted_entries = sorted(list(self.entries.filter(
-            activity__billable=True)), 
+            activity__billable=True)),
             key=lambda e: e.activity.id)
         """
         an alternate approach was tried:
 
-        for activity, group in groupby(sorted_entries, 
+        for activity, group in groupby(sorted_entries,
             lambda se: se.activity.id):
             activity_totals[activity] = self.entries.filter(
                 activity__id=activity).aggregate(s=Sum('hours'))['s']
@@ -363,7 +367,7 @@ class ProjectContract(models.Model):
         activity_totals = self.activity_totals
         missing_rates = []
         for activity_id, hours in self.activity_totals.items():
-            if ContractRate.objects.filter(contract=self, 
+            if ContractRate.objects.filter(contract=self,
                 activity__id=activity_id).count()==0:
                 activity = Activity.objects.get(id=activity_id)
                 missing_rates.append({'activity': activity,
@@ -530,12 +534,12 @@ class ContractHour(ContractIncrement):
 
     @property
     def edit_url(self):
-        return reverse('edit_contract_hours', 
+        return reverse('edit_contract_hours',
             args=(self.contract.id, self.id))
 
     @property
     def delete_url(self):
-        return reverse('delete_contract_hours', 
+        return reverse('delete_contract_hours',
             args=(self.contract.id, self.id))
 
 class ContractBudget(ContractIncrement):
@@ -570,7 +574,7 @@ class ContractBudget(ContractIncrement):
 
     @property
     def edit_url(self):
-        return reverse('edit_contract_budget', 
+        return reverse('edit_contract_budget',
             args=(self.contract.id, self.id))
 
     @property
@@ -697,9 +701,20 @@ class EntryGroup(models.Model):
     }
 
     user = models.ForeignKey(User, related_name='entry_group')
-    project = models.ForeignKey('crm.Project', related_name='entry_group')
+
+    project = models.ForeignKey('crm.Project', related_name='entry_group', blank=True, null=True)
+    single_project = models.BooleanField(default=True)
+    contract = models.ForeignKey(ProjectContract, blank=True, null=True)
     status = models.CharField(max_length=24, choices=STATUSES.items(),
                               default=INVOICED)
+
+    override_invoice_date = models.DateField(blank=True, null=True)
+    auto_number= models.CharField(max_length=17,
+        verbose_name="Project Code",
+        null=True,
+        blank=True, # this field is required but is manually enforced in the code
+        help_text="Auto-generated number for tracking.")
+
     number = models.CharField("Reference #", max_length=50, blank=True,
                               null=True)
     comments = models.TextField(blank=True, null=True)
@@ -707,23 +722,69 @@ class EntryGroup(models.Model):
     modified = models.DateTimeField(auto_now=True)
     start = models.DateField(blank=True, null=True)
     end = models.DateField()
+    year = models.SmallIntegerField(blank=True, null=True) # this field is required, but is taken care of in code
 
     class Meta:
         db_table = 'timepiece_entrygroup'  # Using legacy table name.
+
+
+    @property
+    def get_adjustments(self):
+        return InvoiceAdjustment.objects.filter(invoice=self
+            ).order_by('date')
 
     def delete(self):
         self.entries.update(status=Entry.APPROVED)
         super(EntryGroup, self).delete()
 
+    def save(self, *args, **kwargs):
+        # if this is a CREATE, create auto_number
+        if self.id is None:
+            # get the current year, if year not provided
+            if not self.year:
+                self.year = datetime.datetime.now().year
+            # determine the counter incrementer and create unique code
+            if self.single_project:
+                business = self.project.business
+            else:
+                business = self.contract.projects.all()[0].business
+
+            inv_count = EntryGroup.objects.filter(entries__project__business=business,year=self.year).distinct().count() + 1
+            self.auto_number = '%s%s%05d' % (business.short_name, str(self.year)[2:], inv_count)
+
+        super(EntryGroup, self).save(*args, **kwargs)
+
+
     def __unicode__(self):
-        invoice_data = {
-            'number': self.number,
-            'status': self.status,
-            'project': self.project,
-            'end': self.end.strftime('%b %Y'),
-        }
+        if self.single_project:
+            invoice_data = {
+                'number': self.number,
+                'status': self.status,
+                'project': self.project,
+                'end': self.end.strftime('%b %Y'),
+            }
+        else:
+            invoice_data = {
+                'number': self.number,
+                'status': self.status,
+                'project': self.contract,
+                'end': self.end.strftime('%b %Y'),
+            }
         return u'Entry Group ' + \
                u'%(number)s: %(status)s - %(project)s - %(end)s' % invoice_data
+
+
+class InvoiceAdjustment(models.Model):
+    invoice = models.ForeignKey(EntryGroup)
+    is_payment = models.BooleanField(verbose_name="Is a Payment/Credit", help_text="By unchecking this box, the adjustment is added in with the rest of the time entries.")
+    date = models.DateField(null=True, blank=True)
+    line_item = models.CharField(max_length=10, null=True, blank = True)
+    description = models.CharField(max_length=50,null=True, blank = True)
+    quantity = models.DecimalField(max_digits=10, decimal_places=2)
+    rate = models.DecimalField(max_digits=10,decimal_places=2, help_text='Make negative to credit the client.')
+
+
+
 
 class ContractAttachment(models.Model):
     contract = models.ForeignKey(ProjectContract)

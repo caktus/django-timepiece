@@ -7,7 +7,7 @@ from selectable import forms as selectable
 
 from timepiece import utils
 from timepiece.utils.search import SearchForm
-from timepiece.contracts.models import (EntryGroup, ContractRate, ProjectContract,
+from timepiece.contracts.models import (EntryGroup, ContractRate, ProjectContract, InvoiceAdjustment,
     ContractBudget, ContractHour, ContractNote)
 from timepiece.crm.models import Attribute
 from timepiece.crm.lookups import ProjectLookup, ProjectCodeLookup
@@ -19,11 +19,17 @@ class InvoiceForm(forms.ModelForm):
 
     class Meta:
         model = EntryGroup
-        fields = ('status', 'number', 'comments')
+        fields = ('status', 'number', 'override_invoice_date','comments')
 
     def save(self, commit=True):
         instance = super(InvoiceForm, self).save(commit=False)
-        instance.project = self.initial['project']
+        if self.initial['single_project']:
+            instance.project = self.initial['project']
+            instance.single_project = True
+        else:
+            instance.contract = self.initial['contract']
+            instance.single_project = False
+
         instance.user = self.initial['user']
         from_date = self.initial['from_date']
         to_date = self.initial['to_date']
@@ -34,8 +40,14 @@ class InvoiceForm(forms.ModelForm):
 
 
 class OutstandingHoursFilterForm(DateForm):
+
+    CHOICES=[('by_contract','By Contract'),
+             ('by_project','By Project')]
+
     statuses = forms.ModelMultipleChoiceField(queryset=Attribute.objects.none(),
             required=False, widget=forms.CheckboxSelectMultiple())
+
+    invoice_grouping = forms.ChoiceField(choices=CHOICES,widget=forms.RadioSelect())
 
     def __init__(self, *args, **kwargs):
         super(OutstandingHoursFilterForm, self).__init__(*args, **kwargs)
@@ -49,6 +61,9 @@ class OutstandingHoursFilterForm(DateForm):
         self.fields['to_date'].required = True
         self.fields['to_date'].initial = month_start - relativedelta(days=1)
         self.fields['from_date'].initial = None
+
+        #
+        self.fields['invoice_grouping'].initial = 'by_contract'
 
     def get_from_date(self):
         if self.is_valid():
@@ -65,11 +80,17 @@ class OutstandingHoursFilterForm(DateForm):
             return self.cleaned_data['statuses']
         return self.fields['statuses'].initial
 
+    def get_invoice_grouping(self):
+        if self.is_valid():
+            return self.cleaned_data['invoice_grouping']
+        return self.fields['invoice_grouping'].initial
+
     def get_form_data(self):
         return {
             'to_date': self.get_to_date(),
             'from_date': self.get_from_date(),
-            'statuses': self.get_statuses()
+            'statuses': self.get_statuses(),
+            'invoice_grouping': self.get_invoice_grouping()
         }
 
 class CreateEditContractRateForm(forms.ModelForm):
@@ -78,10 +99,16 @@ class CreateEditContractRateForm(forms.ModelForm):
         model = ContractRate
         fields = ('activity', 'rate', 'contract')
 
-    def __init__(self, *args, **kwargs):        
+    def __init__(self, *args, **kwargs):
         super(CreateEditContractRateForm, self).__init__(*args, **kwargs)
-        self.fields['activity'].choices = [(a.id, a.name) for a in 
+        self.fields['activity'].choices = [(a.id, a.name) for a in
             Activity.objects.filter(billable=True).order_by('name')]
+
+class CreateEditInvoiceAdjustmentForm(forms.ModelForm):
+
+    class Meta:
+        model = InvoiceAdjustment
+        fields = ('invoice','is_payment','date','line_item','description','quantity','rate')
 
 class CreateEditContractBudgetForm(forms.ModelForm):
 

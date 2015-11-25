@@ -49,7 +49,7 @@
                         {% endif %}
                     </td>
                 </tr>
-                <tr><th>Contract {{ contract.get_cieling_type_display }}</th>
+                <tr><th>Contract {{ contract.get_ceiling_type_display }}</th>
                     <td>
                         {{ contract.contracted_hours|floatformat:2 }}
                         {% if contract.pending_hours %}
@@ -74,6 +74,16 @@
                     <th>Primary Contact</th>
                     <td><a href="{% url 'view_contact' contract.primary_contact.pk %}">{{ contract.primary_contact }}</a></td>
                 </tr>
+                <tr>
+                    <th>PO Number</th>
+                    <td>{{ contract.po_number }}</td>
+                </tr>
+                {% if contract.po_line_item %}
+                <tr>
+                    <th>PO Line Item</th>
+                    <td>{{ contract.po_line_item }}</td>
+                </tr>
+                {% endif %}
             </table>
         </div>
 

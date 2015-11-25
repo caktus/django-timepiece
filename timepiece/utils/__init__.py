@@ -8,6 +8,20 @@ from django.utils import timezone
 from timepiece.defaults import TimepieceDefaults
 
 
+
+def chunk_list(seq,max_chunk_size):
+  out = []
+  last = 0
+  if max_chunk_size < 1:
+      return seq
+
+  while last < len(seq):
+    out.append(seq[last:last + max_chunk_size])
+    last += max_chunk_size
+
+  return out
+
+
 class ActiveEntryError(Exception):
     """A user should have no more than one active entry at a given time."""
     pass
@@ -29,7 +43,7 @@ def add_timezone(value, tz=None):
 
 def remove_timezone(value):
     if timezone.is_aware(value):
-        return datetime.datetime(value.year, value.month, value.day, 
+        return datetime.datetime(value.year, value.month, value.day,
             value.hour, value.minute, value.second)
     else:
         return value

@@ -1,6 +1,17 @@
 import datetime
 from dateutil.relativedelta import relativedelta
 import json
+import math
+
+import os.path
+
+from reportlab.pdfgen import canvas
+from reportlab.lib.pagesizes import letter
+from reportlab.lib.units import inch
+from reportlab.lib.styles import getSampleStyleSheet
+from reportlab.pdfbase import pdfmetrics, ttfonts
+from reportlab.platypus import SimpleDocTemplate, Paragraph, Spacer, Image, Frame, Table, TableStyle
+from reportlab.lib import colors
 
 from django.contrib.auth.decorators import login_required, permission_required
 from django.contrib.auth.models import User
@@ -12,10 +23,15 @@ from django.db.models import Sum, Q
 from django.forms import widgets
 from django.http import HttpResponseRedirect, Http404, HttpResponseForbidden, HttpResponse
 from django.shortcuts import get_object_or_404, redirect, render
-from django.views.generic import (ListView, DetailView, CreateView, 
+from django.views.generic import (ListView, DetailView, CreateView,
     UpdateView, DeleteView, View)
 
+from django.contrib.staticfiles.templatetags.staticfiles import static
+
+from django.utils import formats
+
 from timepiece import utils
+from timepiece.crm.models import Business
 from timepiece.templatetags.timepiece_tags import seconds_to_hours
 from timepiece.utils.csv import CSVViewMixin
 from timepiece.utils.search import SearchListView
@@ -24,10 +40,10 @@ from timepiece.utils.views import cbv_decorator
 from timepiece.contracts.forms import (InvoiceForm,
     OutstandingHoursFilterForm, CreateEditContractRateForm,
     CreateEditContractForm, CreateEditContractBudgetForm,
-    CreateEditContractHourForm, ContractSearchForm,
+    CreateEditContractHourForm, ContractSearchForm, CreateEditInvoiceAdjustmentForm,
     AddContractNoteForm)
 from timepiece.contracts.models import (ProjectContract, HourGroup,
-    EntryGroup, ContractRate, ProjectContract, ContractAttachment,
+    EntryGroup, ContractRate, ProjectContract, ContractAttachment,InvoiceAdjustment,
     ContractBudget, ContractHour, ContractNote)
 from timepiece.entries.models import Project, Entry, Activity
 
@@ -194,7 +210,7 @@ class AddContractGeneralTask(View):
         except:
             print sys.exc_info(), traceback.format_exc()
         finally:
-            return HttpResponseRedirect(request.GET.get('next', None) 
+            return HttpResponseRedirect(request.GET.get('next', None)
                 or reverse_lazy('view_project', args=(contract.id,)))
 
 @cbv_decorator(permission_required('contracts.change_projectcontract'))
@@ -210,7 +226,7 @@ class RemoveContractGeneralTask(View):
         except:
             print sys.exc_info(), traceback.format_exc()
         finally:
-            return HttpResponseRedirect(request.GET.get('next', None) 
+            return HttpResponseRedirect(request.GET.get('next', None)
                 or reverse_lazy('view_contract', args=(contract.id,)))
 
 @permission_required('contracts.add_contractincrement')
@@ -235,7 +251,7 @@ class ContractTags(View):
         for t in tag.split(','):
             if len(t):
                 contract.tags.add(t)
-        tags = [{'id': t.id, 
+        tags = [{'id': t.id,
                  'url': reverse('similar_items', args=(t.id,)),
                  'name':t.name} for t in contract.tags.all()]
         return HttpResponse(json.dumps({'tags': tags}),
@@ -256,7 +272,7 @@ class RemoveContractTag(View):
             tag = request.POST.get('tag')
             if len(tag):
                 contract.tags.remove(tag)
-        tags = [{'id': t.id, 
+        tags = [{'id': t.id,
                  'url': reverse('similar_items', args=(t.id,)),
                  'name':t.name} for t in contract.tags.all()]
         return HttpResponse(json.dumps({'tags': tags}),
@@ -373,14 +389,14 @@ class AddContractRate(CreateView):
         contract = ProjectContract.objects.get(
             id=int(self.kwargs['contract_id']))
         form.fields['contract'].initial = contract
-        
+
         activity_id = self.request.GET.get('activity', None)
         if activity_id:
             form.fields['activity'].initial = Activity.objects.get(
                 id=activity_id)
 
         form.fields['rate'].initial = contract.min_rate
-        
+
         return form
 
     def get_context_data(self, *args, **kwargs):
@@ -433,10 +449,340 @@ class AddContractNote(View):
             reverse('view_contract', args=(contract.id,)))
 
 
+
+@cbv_decorator(permission_required('contracts.change_entrygroup')) #TODO correct permissions
+class AddInvoiceAdjustment(CreateView):
+    model = InvoiceAdjustment
+    form_class = CreateEditInvoiceAdjustmentForm
+    template_name = 'timepiece/invoice/adjustment_create_edit.html'
+
+    def get_form(self, *args, **kwargs):
+        form = super(AddInvoiceAdjustment, self).get_form(*args, **kwargs)
+        form.fields['invoice'].widget = widgets.HiddenInput()
+        invoice = EntryGroup.objects.get(
+            id=int(self.kwargs['invoice_id']))
+        form.fields['invoice'].initial = invoice
+        return form
+
+    def get_context_data(self, *args, **kwargs):
+        kwargs['invoice'] = invoice = EntryGroup.objects.get(id=int(self.kwargs['invoice_id']))
+        return super(AddInvoiceAdjustment, self).get_context_data(*args, **kwargs)
+
+    def get_success_url(self):
+        return reverse('view_invoice', args=(int(self.kwargs['invoice_id']), ))
+
+@cbv_decorator(permission_required('contracts.change_entrygroup')) #TODO correct permissions
+class EditInvoiceAdjustment(UpdateView):
+    model = InvoiceAdjustment
+    form_class = CreateEditInvoiceAdjustmentForm
+    template_name = 'timepiece/invoice/adjustment_create_edit.html'
+    pk_url_kwarg = 'invoice_adjustment_id'
+
+    def get_form(self, *args, **kwargs):
+        form = super(EditInvoiceAdjustment, self).get_form(*args, **kwargs)
+        form.fields['invoice'].widget = widgets.HiddenInput()
+        return form
+
+    def get_context_data(self, *args, **kwargs):
+        kwargs['invoice'] = EntryGroup.objects.get(id=int(self.kwargs['invoice_id']))
+        return super(EditInvoiceAdjustment, self).get_context_data(*args, **kwargs)
+
+    def get_success_url(self):
+        return reverse('view_invoice', args=(int(self.kwargs['invoice_id']), ))
+
+@cbv_decorator(permission_required('contracts.change_entrygroup'))
+class DeleteInvoiceAdjustment(DeleteView):
+    model = InvoiceAdjustment
+    template_name = 'timepiece/delete_object.html'
+    pk_url_kwarg = 'invoice_adjustment_id'
+
+    def get_success_url(self):
+        return reverse('view_invoice', args=(int(self.kwargs['invoice_id']), ))
+
+
+@login_required #TODO correct permissions
+def view_invoice_pdf(request, invoice_id):
+    response = HttpResponse(content_type='application/pdf')
+    response['Content-Disposition'] = 'attachment; filename="invoice.pdf"'
+    styles = getSampleStyleSheet()
+
+    invoice = EntryGroup.objects.get(pk=invoice_id)
+
+    entries = invoice.entries
+    contract = invoice.contract
+    projects = contract.projects.all()
+    project_0 = projects[0]
+    client = project_0.business
+    client_dept = project_0.business_department
+    if not client_dept:
+        client_dept=''
+    else:
+        client_dept=client_dept.name
+    aac = Business.objects.get(short_name = 'AAC')
+
+    if invoice.override_invoice_date:
+        invoice_date = formats.date_format(invoice.override_invoice_date, "SHORT_DATE_FORMAT")
+    else:
+        invoice_date = formats.date_format(invoice.end, "SHORT_DATE_FORMAT")
+
+    billable_entries = invoice.entries.filter(activity__billable=True)\
+                                      .order_by('start_time')\
+                                      .select_related()
+    all_items = []
+
+    total_bill = 0.00
+
+    for p in projects:
+        for r in contract.get_rates:
+            ents = entries.filter(activity=r.activity, project=p)
+            hours=ents.aggregate(tot_hours=Sum('hours'))['tot_hours'] #TODO this is dumb / ugly
+            if not hours:
+                continue
+
+            last_ent_date = formats.date_format(ents.latest('end_time').end_time,"SHORT_DATE_FORMAT")
+            rate=r.rate
+            item_bill = hours*rate
+            total_bill += float(item_bill)
+            new_item = [last_ent_date,contract.po_line_item, p.name+"\n"+r.activity.name,"{0:,.2f}".format(hours),"${0:,.2f}".format(rate),"${0:,.2f}".format(item_bill)]
+            all_items.append(new_item)
+
+    total_adjust = 0.00
+    for ex in invoice.get_adjustments:
+        fd=formats.date_format(ex.date, "SHORT_DATE_FORMAT")
+        new_item = [fd,ex.line_item, ex.description,"{0:,.2f}".format(ex.quantity),"${0:,.2f}".format(ex.rate),"${0:,.2f}".format(ex.quantity*ex.rate)]
+        all_items.append(new_item)
+
+        if ex.is_payment:
+            total_adjust += float(ex.quantity*ex.rate)
+        else:
+            total_bill += float(ex.quantity*ex.rate)
+
+    split_items=utils.chunk_list(all_items,9)
+
+
+
+
+    ## find arial font ## todo file location static?
+    font_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'Arial.ttf')
+    pdfmetrics.registerFont(ttfonts.TTFont("Arial", font_path))
+
+    c=canvas.Canvas(response, pagesize=letter)
+    width, height = letter
+    margin=inch/4
+    width = width - margin
+    height = height - margin
+
+
+
+    pg_num =0
+    for dummy_items in split_items:
+        pg_num += 1
+        #upper left logo
+        img_w=2.27*inch
+        img_h=1.38*inch
+
+        # logo_path = static('images/aac_logo.jpg') # TODO why doesn't this work?
+        logo_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'aac_logo.jpg')
+        c.drawImage(logo_path,margin,height-img_h, width = img_w, height=img_h)
+
+        #invoice upper right
+        invoice_font_size=72
+        invoice_x = width
+        invoice_y = height - img_h
+
+        c.setFont("Arial",invoice_font_size)
+        c.setFillColorRGB(0.5,0.5,0.5)
+        c.drawRightString(invoice_x,invoice_y,"INVOICE")
+
+        #table upper right
+        ur_table_data = [["INVOICE", invoice.auto_number],["PAGE","%d of %d" % (pg_num,len(split_items))],["DATE",invoice_date],["TERMS",contract.payment_terms],["PURCHASE ORDER",contract.po_number]]
+        ur_table_font_size = 12
+
+        ur_table = Table(data=ur_table_data)
+        ur_table.setStyle(TableStyle([
+                ('INNERGRID', (0,0), (-1,-1), 0.25, colors.black),
+                ('BOX', (0,0), (-1,-1), 0.25, colors.black),
+                ('ALIGN',(0,0),(-1,-1),'RIGHT')
+            ]))
+        ur_table.wrapOn(c,width, height)
+        ur_table_w,ur_table_h = ur_table.wrap(0,0)
+
+        ur_table_x = width-ur_table_w
+        ur_table_y = invoice_y - ur_table_h - 0.25*inch
+
+        ur_table.drawOn(c,ur_table_x,ur_table_y)
+
+        c.setFont("Arial",ur_table_font_size)
+
+
+        # AAC Address TABLE
+        add_table_data = [[aac.name],[aac.billing_street],[aac.billing_city+", "+aac.billing_state+" "+aac.billing_postalcode],["AR@aacengineering.com"],["(888) 290-5878"],[" "],["TAX ID: 27-0673181"]]
+        add_table_font_size = 12
+
+        add_table = Table(data=add_table_data)
+        add_table.setStyle(TableStyle([
+                ('ALIGN',(0,0),(-1,-1),'RIGHT')
+            ]))
+
+        add_table.wrapOn(c,width, height)
+        add_table_w,add_table_h = add_table.wrap(0,0)
+
+        add_table_x = margin
+        add_table_y = invoice_y - add_table_h - 0.25*inch
+
+        add_table.drawOn(c,add_table_x,add_table_y)
+
+        c.setFont("Arial",add_table_font_size)
+
+
+        # divider line between aac and customer Address
+        div_add_x = add_table_x + add_table_w + 0.25*inch
+        div_shift = 0.125*inch
+        c.line(div_add_x, add_table_y-div_shift, div_add_x, invoice_y-div_shift)
+
+
+        # client address
+        add_client_table_data = [[""]]
+        add_client_table_data.append([client.name])
+        if client_dept != '':
+            add_client_table_data.append([client_dept])
+        add_client_table_data.append([client.billing_street])
+        if client.billing_street_2:
+            add_client_table_data.append([client.billing_street_2])
+        add_client_table_data.append([client.billing_city+", "+client.billing_state+" "+client.billing_postalcode])
+        add_client_table_data.append([" "])
+
+        add_client_table_font_size = 12
+
+        add_client_table = Table(data=add_client_table_data)
+        add_client_table.setStyle(TableStyle([
+                ('ALIGN',(0,0),(-1,-1),'LEFT')
+            ]))
+
+        add_client_table.wrapOn(c,width, height)
+        add_client_table_w,add_client_table_h = add_client_table.wrap(0,0)
+
+        add_client_table_x = div_add_x + 0.25*inch
+        add_client_table_y = invoice_y - add_client_table_h - 0.25*inch
+
+        add_client_table.drawOn(c,add_client_table_x,add_client_table_y)
+
+        c.setFont("Arial",add_client_table_font_size)
+
+
+        #table lowerright
+        lr_table_data = [["TOTAL", "${0:,.2f}".format(total_bill)],["PAYMENTS/CREDITS","${0:,.2f}".format(total_adjust)],["BALANCE DUE","${0:,.2f}".format(total_bill+total_adjust)]]
+        lr_table_font_size = 12
+
+        lr_table = Table(data=lr_table_data)
+        lr_table.setStyle(TableStyle([
+                ('INNERGRID', (0,0), (-1,-1), 0.25, colors.black),
+                ('BOX', (0,0), (-1,-1), 0.25, colors.black),
+                ('ALIGN',(0,0),(-1,-1),'RIGHT')
+            ]))
+        lr_table.wrapOn(c,width, height)
+        lr_table_w,lr_table_h = lr_table.wrap(0,0)
+
+        lr_table_x = width-lr_table_w
+        lr_table_y = margin
+
+        lr_table.drawOn(c,lr_table_x,lr_table_y)
+
+        c.setFont("Arial",lr_table_font_size)
+
+        #table lowerleft
+        ll_table_data = [["Please make all checks payable to: AAC Engineering"],["We greatly appreciate your business!"]]
+        ll_table_font_size = 12
+
+        ll_table = Table(data=ll_table_data)
+        ll_table.setStyle(TableStyle([
+                ('ALIGN',(0,0),(-1,-1),'LEFT')
+            ]))
+        ll_table.wrapOn(c,width, height)
+        ll_table_w,ll_table_h = ll_table.wrap(0,0)
+
+        ll_table_x = margin
+        ll_table_y = margin
+
+        ll_table.drawOn(c,ll_table_x,ll_table_y)
+
+        c.setFont("Arial",ll_table_font_size)
+
+
+        # invoice items
+        invoice_items_table_data = [["Date","Line Item","Description","Quantity","Rate","Amount"]]
+
+        # dummy_items = [["12/12/12","1",Paragraph("We did lots! Something Great That you should pay lots of money for",styles['Normal']),"999999","$125.00","$9,999,999.99"],
+        #                 ["12/12/12","2",Paragraph("We Did more!. Something Great That you should pay lots of money for",styles['Normal']),"999999","$125.00","$9,999,999.99"]]
+
+
+
+
+        for item in dummy_items:
+            invoice_items_table_data.append(item)
+
+
+        invoice_items_table_font_size = 12
+        c.setFont("Arial",invoice_items_table_font_size)
+
+        space_h = (add_table_y) - (margin + lr_table_h + 0.25*inch)
+        cww=width-margin
+        it_cw_ratio=[3,3,11,3,3,4]
+        it_cw_d=sum(it_cw_ratio)*1.0
+
+        it_cw = []
+        for zz in it_cw_ratio:
+            it_cw.append(int(round(cww*zz/it_cw_d)))
+
+        # it_cw = [cww*3/25.0,width*1/25.0,width*9/25.0,width*3/25.0,width*3/25.0,width*6/25.0]
+        hh=invoice_items_table_font_size+10
+        rh=invoice_items_table_font_size*2+10
+        rows_to_add = int(math.floor((space_h-hh)/(rh*1.0)))-len(invoice_items_table_data)
+
+
+        invoice_items_table_data.extend([[""]*len(invoice_items_table_data[0])]*rows_to_add)
+        it_rh = [hh]+[rh]*(len(invoice_items_table_data)-1)
+
+
+        invoice_items_table = Table(data=invoice_items_table_data,colWidths = it_cw, rowHeights=it_rh)
+        invoice_items_table.setStyle(TableStyle([
+                ('BOX', (0,0), (-1,0), 0.25, colors.black),
+                ('BOX', (0,0), (-1,-1), 0.25, colors.black),
+                ('ALIGN',(0,0),(-1,-1),'RIGHT')
+            ]))
+
+        invoice_items_table.wrap(width, height)
+        #invoice_items_table_w,invoice_items_table_h = invoice_items_table.wrap(0,0)
+
+        invoice_items_table_x = margin
+        invoice_items_table_y = margin + lr_table_h + 0.25*inch
+
+        invoice_items_table.drawOn(c,invoice_items_table_x,invoice_items_table_y)
+
+        c.setFont("Arial",invoice_items_table_font_size)
+
+        #generate and save
+        c.showPage()
+
+
+
+
+    c.save()
+
+    return response
+
+
+
+
 @login_required
 @transaction.commit_on_success
 def create_invoice(request):
     pk = request.GET.get('project', None)
+    single_project=True
+    if not pk:
+        single_project=False
+        pk = request.GET.get('contract', None)
+
     to_date = request.GET.get('to_date', None)
     if not (pk and to_date):
         raise Http404
@@ -451,9 +797,9 @@ def create_invoice(request):
                 datetime.datetime.strptime(from_date, '%Y-%m-%d'))
     except (ValueError, OverflowError):
         raise Http404
-    project = get_object_or_404(Project, pk=pk)
+
+
     initial = {
-        'project': project,
         'user': request.user,
         'from_date': from_date,
         'to_date': to_date,
@@ -461,8 +807,17 @@ def create_invoice(request):
     entries_query = {
         'status': Entry.APPROVED,
         'end_time__lt': to_date + relativedelta(days=1),
-        'project__id': project.id
     }
+
+    if single_project:
+        project = get_object_or_404(Project, pk=pk)
+        initial.update({'project': project,'single_project': single_project})
+        entries_query.update({'project__id': project.id})
+    else:
+        contract = get_object_or_404(ProjectContract, pk=pk)
+        initial.update({'contract': contract,'single_project': single_project})
+        entries_query.update({'project__in': contract.projects.all})
+
     if from_date:
         entries_query.update({'end_time__gte': from_date})
     invoice_form = InvoiceForm(request.POST or None, initial=initial)
@@ -505,18 +860,25 @@ def create_invoice(request):
         .select_related()
     nonbillable_entries = entries.filter(activity__billable=False) \
         .select_related()
-    return render(request, 'timepiece/invoice/create.html', {
+
+    context = {
         'invoice_form': invoice_form,
         'billable_entries': billable_entries,
         'nonbillable_entries': nonbillable_entries,
-        'project': project,
         'billable_totals': HourGroup.objects
             .summaries(billable_entries),
         'nonbillable_totals': HourGroup.objects
             .summaries(nonbillable_entries),
         'from_date': from_date,
         'to_date': to_date,
-    })
+    }
+
+    if single_project:
+        context.update({'single_project':True,'project': project})
+    else:
+        context.update({'single_project':False,'contract':contract})
+
+    return render(request, 'timepiece/invoice/create.html', context)
 
 
 @permission_required('contracts.change_entrygroup')
@@ -529,16 +891,22 @@ def list_outstanding_invoices(request):
         to_date = form_data['to_date'] + relativedelta(days=1)
         from_date = form_data['from_date']
         statuses = form_data['statuses']
+        grouping = form_data['invoice_grouping']
         dates = Q()
         dates &= Q(end_time__gte=from_date) if from_date else Q()
         dates &= Q(end_time__lt=to_date) if to_date else Q()
+
         billable = Q(project__type__billable=True, project__status__billable=True)
         entry_status = Q(status=Entry.APPROVED)
         project_status = Q(project__status__in=statuses)\
                 if statuses is not None else Q()
         # Calculate hours for each project
-        ordering = ('project__type__label', 'project__status__label',
-                'project__business__name', 'project__name', 'status')
+        if grouping == 'by_project':
+            ordering = ('project__type__label', 'project__status__label',
+                    'project__business__name', 'project__name', 'status')
+        else:
+            ordering = ('project__type__label', 'project__business__name',
+                    'project__contracts__name', 'project__name', 'status')
         project_totals = Entry.objects.filter(
             dates, billable, entry_status, project_status).order_by(*ordering)
         # Find users with unverified/unapproved entries to warn invoice creator
@@ -557,6 +925,7 @@ def list_outstanding_invoices(request):
         'unapproved': unapproved,
         'to_date': form.get_to_date(),
         'from_date': form.get_from_date(),
+        'invoice_grouping':form.get_invoice_grouping(),
     })
 
 
@@ -564,8 +933,13 @@ def list_outstanding_invoices(request):
 class ListInvoices(SearchListView):
     model = EntryGroup
     search_fields = ['user__username__icontains', 'project__name__icontains',
-            'comments__icontains', 'number__icontains']
+            'comments__icontains', 'number__icontains','contract__name__icontains','auto_number__icontains']
     template_name = 'timepiece/invoice/list.html'
+
+
+    def get_queryset(self):
+        qs = super(ListInvoices, self).get_queryset().order_by('-id')
+        return qs
 
 
 @cbv_decorator(permission_required('contracts.change_entrygroup'))
@@ -595,6 +969,8 @@ class InvoiceDetail(DetailView):
             'from_date': invoice.start,
             'to_date': invoice.end,
             'project': invoice.project,
+            'contract': invoice.contract,
+            'single_project': invoice.single_project,
         }
 
 
@@ -667,11 +1043,17 @@ class InvoiceEdit(InvoiceDetail):
         invoice = get_object_or_404(EntryGroup, pk=pk)
         self.object = invoice
         initial = {
-            'project': invoice.project,
+            'single_project':invoice.single_project,
             'user': request.user,
             'from_date': invoice.start,
             'to_date': invoice.end,
         }
+
+        if invoice.single_project:
+            initial.update({'project': invoice.project})
+        else:
+            initial.update({'contract': invoice.contract})
+
         invoice_form = InvoiceForm(request.POST,
                                    initial=initial,
                                    instance=invoice)
@@ -744,7 +1126,7 @@ def contract_upload_attachment(request, contract_id):
                 'upload_time': str(datetime.datetime.now()),
                 'filename': content['filename']}
         memo.update(content)
-        
+
         # save attachment to ticket
         attachment = ContractAttachment(
             contract=ProjectContract.objects.get(id=int(contract_id)),

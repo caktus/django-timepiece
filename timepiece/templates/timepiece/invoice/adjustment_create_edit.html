@@ -1,0 +1,33 @@
+{% extends 'timepiece/invoice/base.html' %}
+{% load bootstrap_toolkit %}
+{% load url from future %}
+
+{% block title %}{% if object %}Update{% else %}Create{% endif %} Invoice Adjustment{% endblock title %}
+
+{% block crumbs %}
+    {{ block.super }}
+    {% if object %}
+        <li><span class="divider">/</span> <a href="{% url 'edit_invoice_adjustment' invoice.pk  object.pk %}">Update Invoice Adjustment</a></li>
+    {% else %}
+        <li><span class="divider">/</span> <a href="{% url 'add_invoice_adjustment' invoice.pk %}">Create Invoice Adjustment</a></li>
+    {% endif %}
+{% endblock crumbs %}
+
+{% block content %}
+    <div class="row-fluid">
+        <div class="span12">
+            <h2>{% if object %}Update{% else %}Create{% endif %} Invoice Adjustment for {{ invoice }}</h2>
+
+            <br style="clear: both;" />
+
+            <form class="form-horizontal" action="" method="post" accept-charset="utf-8">
+                {% csrf_token %}
+                {{ form|as_bootstrap:"horizontal" }}
+                <div class="form-actions">
+                    <input class="btn btn-primary" type='submit' name='submit' value='Save' />
+                    <input class="btn" type='button' value='Cancel' onclick="history.back()" />
+                </div>
+            </form>
+        </div>
+    </div>
+{% endblock content %}
