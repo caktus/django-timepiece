@@ -60,7 +60,7 @@ class OutstandingHoursFilterForm(DateForm):
         month_start = utils.get_month_start().date()
         self.fields['to_date'].required = True
         self.fields['to_date'].initial = month_start - relativedelta(days=1)
-        self.fields['from_date'].initial = None
+        self.fields['from_date'].initial = self.fields['to_date'].initial.replace(day=1)
 
         #
         self.fields['invoice_grouping'].initial = 'by_contract'

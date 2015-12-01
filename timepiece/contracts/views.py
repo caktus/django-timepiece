@@ -903,10 +903,10 @@ def list_outstanding_invoices(request):
         # Calculate hours for each project
         if grouping == 'by_project':
             ordering = ('project__type__label', 'project__status__label',
-                    'project__business__name', 'project__name', 'status')
+                    'project__code', 'status')
         else:
-            ordering = ('project__type__label', 'project__business__name',
-                    'project__contracts__name', 'project__name', 'status')
+            ordering = ('project__type__label', 'project__code',
+                    'project__contracts__name', 'status')
         project_totals = Entry.objects.filter(
             dates, billable, entry_status, project_status).order_by(*ordering)
         # Find users with unverified/unapproved entries to warn invoice creator
