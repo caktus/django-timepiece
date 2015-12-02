@@ -121,6 +121,25 @@ class PayrollTest(ViewTestMixin, LogTimeMixin, TestCase):
             '',
         ])
 
+    def testWeeklyTotalsSameFirstLastName(self):
+        """Ensure that the totals are aggregated correctly for users with the
+        same last name and first name
+        """
+        User.objects.all().update(last_name='Smith', first_name='John')
+        self.all_logs(self.user)
+        self.all_logs(self.user2)
+        self.login_user(self.superuser)
+        response = self.client.get(self.url, self.args)
+        weekly_totals = response.context['weekly_totals']
+        self.assertEqual(weekly_totals[0][0][0][2], [
+            Decimal('22.00'),
+            Decimal('11.00'),
+            '',
+            Decimal('11.00'),
+            Decimal('11.00'),
+            '',
+        ])
+
     def testWeeklyOvertimes(self):
         """Date_trunc on week should result in correct overtime totals"""
         dates = self.dates

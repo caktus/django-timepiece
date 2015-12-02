@@ -82,6 +82,7 @@ class EntryQuerySet(models.query.QuerySet):
         qs = qs.annotate(hours=Sum('hours')).order_by(
             'user__last_name',
             'user__first_name',
+            'user__pk',
             'date')
         return qs
 
