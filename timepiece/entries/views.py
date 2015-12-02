@@ -21,7 +21,6 @@ from django.utils.decorators import method_decorator
 from django.views.generic import TemplateView, View
 
 from timepiece import utils
-from timepiece.crm.models import ProjectRelationship
 from timepiece.forms import DATE_FORM_FORMAT
 from timepiece.utils.csv import DecimalEncoder
 from timepiece.utils.views import cbv_decorator
@@ -575,16 +574,6 @@ class ScheduleAjaxView(ScheduleMixin, View):
         duplicate = request.POST.get('duplicate', None)
         week_update = request.POST.get('week_update', None)
         week_start = request.POST.get('week_start', None)
-
-        # since hours are being assigned to a user, add the user
-        # to the project if they are not already in it so they can track time
-        user = User.objects.get(pk=request.POST.get('user', None))
-        project = Project.objects.get(pk=request.POST.get('project', None))
-        if user and project:
-            pr, created = ProjectRelationship.objects.get_or_create(user=user, project=project)
-            if created:
-                message = 'Added {0} to {1}.'.format(pr.user, pr.project)
-                messages.info(request, message)
 
         if duplicate and week_update:
             return self.duplicate_entries(duplicate, week_update)

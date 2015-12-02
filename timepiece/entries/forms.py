@@ -2,9 +2,10 @@ import datetime
 from dateutil.relativedelta import relativedelta
 
 from django import forms
+from django.contrib.auth.models import User
 
 from timepiece import utils
-from timepiece.crm.models import Project
+from timepiece.crm.models import Project, ProjectRelationship
 from timepiece.entries.models import Entry, Location, ProjectHours
 from timepiece.forms import (
     INPUT_FORMATS, TimepieceSplitDateTimeField, TimepieceDateInput)
@@ -159,6 +160,14 @@ class ProjectHoursForm(forms.ModelForm):
     class Meta:
         model = ProjectHours
         fields = ['week_start', 'project', 'user', 'hours', 'published']
+
+    def save(self, commit=True):
+        ph = super(ProjectHoursForm, self).save()
+        # since hours are being assigned to a user, add the user
+        # to the project if they are not already in it so they can track time
+        ProjectRelationship.objects.get_or_create(user=self.cleaned_data['user'],
+                                                  project=self.cleaned_data['project'])
+        return ph
 
 
 class ProjectHoursSearchForm(forms.Form):
