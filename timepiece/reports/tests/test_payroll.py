@@ -3,7 +3,7 @@ from decimal import Decimal
 
 from django.conf import settings
 from django.core.urlresolvers import reverse
-from django.contrib.auth.models import Permission
+from django.contrib.auth.models import Permission, User
 from django.test import TestCase
 
 from timepiece import utils
@@ -88,6 +88,25 @@ class PayrollTest(ViewTestMixin, LogTimeMixin, TestCase):
                          1.01)
 
     def testWeeklyTotals(self):
+        self.all_logs(self.user)
+        self.all_logs(self.user2)
+        self.login_user(self.superuser)
+        response = self.client.get(self.url, self.args)
+        weekly_totals = response.context['weekly_totals']
+        self.assertEqual(weekly_totals[0][0][0][2], [
+            Decimal('22.00'),
+            Decimal('11.00'),
+            '',
+            Decimal('11.00'),
+            Decimal('11.00'),
+            '',
+        ])
+
+    def testWeeklyTotalsSameLastName(self):
+        """Ensure that the totals are aggregated correctly for users with the
+        same last name
+        """
+        User.objects.all().update(last_name='Smith')
         self.all_logs(self.user)
         self.all_logs(self.user2)
         self.login_user(self.superuser)
