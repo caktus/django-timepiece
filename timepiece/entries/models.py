@@ -79,8 +79,11 @@ class EntryQuerySet(models.query.QuerySet):
         extra_values = extra_values or ()
         qs = self.extra(select=select[key])
         qs = qs.values(*basic_values + extra_values)
-        qs = qs.annotate(hours=Sum('hours')).order_by('user__last_name',
-                                                      'date')
+        qs = qs.annotate(hours=Sum('hours')).order_by(
+            'user__last_name',
+            'user__first_name',
+            'user__pk',
+            'date')
         return qs
 
     def timespan(self, from_date, to_date=None, span=None, current=False):
