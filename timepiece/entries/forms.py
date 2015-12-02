@@ -2,7 +2,6 @@ import datetime
 from dateutil.relativedelta import relativedelta
 
 from django import forms
-from django.contrib.auth.models import User
 
 from timepiece import utils
 from timepiece.crm.models import Project, ProjectRelationship
