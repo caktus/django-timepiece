@@ -96,8 +96,10 @@ class ProjectContract(models.Model):
     client_expense_category = models.CharField(
         choices=CLIENT_EXPENSE_CATEGORIES.items(),
         default=CEC_UNKNOWN, max_length=16)
-    po_number = models.CharField(max_length=100,null=True, blank=True)
-    po_line_item = models.CharField(max_length=10,null=True, blank=True)
+    po_number = models.CharField(max_length=100,null=True, blank=True, 
+        verbose_name='PO Number')
+    po_line_item = models.CharField(max_length=10,null=True, blank=True,
+        verbose_name='PO Line Item')
 
     tags = TaggableManager()
 
