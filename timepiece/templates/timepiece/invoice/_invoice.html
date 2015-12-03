@@ -43,7 +43,7 @@
     {% if invoice.start %}
         <tr>
             <th>Starting on:</th>
-            <td>{{ invoice.start|date|default:"Not specified" }}</td>
+            <td>{{ invoice.start|date:'M j, Y'|default:"Not specified" }}</td>
         </tr>
     {% endif %}
     <tr>
