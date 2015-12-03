@@ -595,7 +595,7 @@ def view_invoice_pdf(request, invoice_id):
         c.drawRightString(invoice_x,invoice_y,"INVOICE")
 
         #table upper right
-        ur_table_data = [["INVOICE", invoice.auto_number],["PAGE","%d of %d" % (pg_num,len(split_items))],["DATE",invoice_date],["TERMS",contract.payment_terms],["PURCHASE ORDER",contract.po_number]]
+        ur_table_data = [["INVOICE", invoice.auto_number],["PAGE","%d of %d" % (pg_num,len(split_items))],["DATE",invoice_date],["TERMS",contract.get_payment_terms_display()],["PURCHASE ORDER",contract.po_number]]
         ur_table_font_size = 12
 
         ur_table = Table(data=ur_table_data)
