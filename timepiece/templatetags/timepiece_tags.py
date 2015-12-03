@@ -186,6 +186,8 @@ def get_uninvoiced_hours(entries, billable=None):
     if billable is not None:
         billable = (billable.lower() == u'billable')
         entries = [e for e in entries if e.activity.billable == billable]
+    # remove duplicate entries, just in case
+    entries = list(set(entries))
     hours = sum([e.hours for e in entries if e.status not in statuses])
     return hours
 
