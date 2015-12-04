@@ -357,7 +357,6 @@ class Entry(models.Model):
         )
         if (entries.exists() and not self.id
                 or self.id and self.status == Entry.INVOICED):
-            # if not user.is_superuser:
             msg = 'You cannot add/edit entries after a timesheet has been ' \
                 'approved or invoiced. Please correct the start and end times.'
             raise ValidationError(msg)
