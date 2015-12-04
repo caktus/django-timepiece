@@ -272,11 +272,13 @@ class Entry(models.Model):
         if not self.start_time:
             raise ValidationError('Please enter a valid start time')
         start = self.start_time
+
         if self.end_time:
             end = self.end_time
         # Current entries have no end_time
         else:
             end = start + relativedelta(seconds=1)
+
         entries = self.user.timepiece_entries.filter(
             Q(end_time__range=(start, end)) |
             Q(start_time__range=(start, end)) |

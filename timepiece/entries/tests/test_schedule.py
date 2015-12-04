@@ -196,6 +196,17 @@ class ProjectHoursEditTestCase(ProjectHoursTestCase):
             week_start=self.next_week, project=self.tracked_project,
             user=self.manager, hours="2.0")
 
+    def add_user_to_project_when_assigning_hours(self):
+        newbie = factories.User()
+        self.assertNotIn(newbie, self.tracked_project.users.all())
+        self.client.post(self.ajax_url, data={
+            'hours': 5,
+            'week_start': '2012-07-23',
+            'user': newbie.id,
+            'project': self.tracked_project.id
+        })
+        self.assertIn(newbie, self.tracked_project.users.all())
+
     def ajax_posts(self):
         date_msg = 'Parameter week_start must be a date in the format ' \
             'yyyy-mm-dd'
