@@ -8,6 +8,8 @@ from timepiece import utils
 from timepiece.tests import factories
 from timepiece.tests.base import ViewTestMixin, LogTimeMixin
 
+from ..models import Project
+
 
 class TestProjectTimesheet(ViewTestMixin, LogTimeMixin, TestCase):
     url_name = 'view_project_timesheet'
@@ -52,6 +54,7 @@ class TestProjectTimesheet(ViewTestMixin, LogTimeMixin, TestCase):
         self.assertEqual(response.status_code, 302)
 
     def testNoProject(self):
+        Project.objects.all().delete()
         self.login_user(self.superuser)
         response = self._get(url_args=(999,))
         self.assertEqual(response.status_code, 404)

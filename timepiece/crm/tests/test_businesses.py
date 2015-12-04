@@ -103,6 +103,7 @@ class TestDeleteBusiness(ViewTestMixin, TestCase):
 
     def test_bad_pk(self):
         """View should return 404 response if no object is found."""
+        Business.objects.all().delete()
         self.url_kwargs[self.pk_url_kwarg] = 1234
         response = self._get()
         self.assertEquals(response.status_code, 404)
@@ -168,6 +169,7 @@ class TestEditBusiness(ViewTestMixin, TestCase):
 
     def test_bad_pk(self):
         """View should return 404 response if no object is found."""
+        Business.objects.all().delete()
         self.url_kwargs[self.pk_url_kwarg] = 1234
         response = self._get()
         self.assertEquals(response.status_code, 404)
@@ -323,6 +325,7 @@ class TestViewBusiness(ViewTestMixin, TestCase):
 
     def test_bad_pk(self):
         """View should return 404 response if no object is found."""
+        Business.objects.all().delete()
         self.url_kwargs[self.pk_url_kwarg] = 1234
         response = self._get()
         self.assertEquals(response.status_code, 404)
