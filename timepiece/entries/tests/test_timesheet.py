@@ -1317,7 +1317,14 @@ class CreateEditEntry(ViewTestMixin, TestCase):
         response = self.client.post(url, data=data)
         self.assertEqual(response.status_code, 404)
 
-    def test_edit_invoiced_entry(self):
+    def test_user_cannot_edit_invoiced_entry(self):
+        """User should not be able to edit an invoiced entry"""
+        url, entry, data = self.edit_entry_helper(Entry.INVOICED)
+
+        response = self.client.post(url, data=data, follow=True)
+        self.assertEqual(response.status_code, 404)
+
+    def test_superuser_can_edit_invoiced_entry(self):
         """Superuser should be able to edit an invoiced entry"""
         self.client.logout()
         self.login_user(self.superuser)
