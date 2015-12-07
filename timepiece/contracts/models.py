@@ -61,6 +61,16 @@ class ProjectContract(models.Model):
         return reverse('view_contract', args=[self.pk])
 
     @property
+    def pre_launch_entries(self):
+        """
+        All Entries worked on projects in this contract during the contract
+        period.
+        """
+        return Entry.objects.filter(
+            project__in=self.projects.all(),
+            start_time__lte=self.start_date,)
+
+    @property
     def entries(self):
         """
         All Entries worked on projects in this contract during the contract
@@ -106,6 +116,15 @@ class ProjectContract(models.Model):
     @property
     def hours_remaining(self):
         return self.contracted_hours() - self.hours_worked
+
+    @property
+    def pre_launch_hours_worked(self):
+        """Number of billable hours worked before the contract start date."""
+        if not hasattr(self, '_worked_pre_launch'):
+            # TODO put this in a .extra w/a subselect
+            entries = self.pre_launch_entries.filter(activity__billable=True)
+            self._worked_pre_launch = entries.aggregate(s=Sum('hours'))['s'] or 0
+        return self._worked_pre_launch or 0
 
     @property
     def hours_worked(self):
