@@ -199,7 +199,7 @@ class ProjectHoursEditTestCase(ProjectHoursTestCase):
     def add_user_to_project_when_assigning_hours(self):
         newbie = factories.User()
         self.assertNotIn(newbie, self.tracked_project.users.all())
-        response = self.client.post(self.ajax_url, data={
+        self.client.post(self.ajax_url, data={
             'hours': 5,
             'week_start': '2012-07-23',
             'user': newbie.id,
