@@ -1291,7 +1291,7 @@ class CreateEditEntry(ViewTestMixin, TestCase):
     def test_admin_edit_approved_entry(self):
         """
         An administrator (or anyone with view_payroll_summary perm) should
-        be able to edit an entry even if theyve been approved
+        be able to edit an entry even if the entries have been approved
         """
         self.client.logout()
         self.login_user(self.superuser)
@@ -1317,8 +1317,15 @@ class CreateEditEntry(ViewTestMixin, TestCase):
         response = self.client.post(url, data=data)
         self.assertEqual(response.status_code, 404)
 
-    def test_edit_invoiced_entry(self):
-        """You shouldnt be able to edit an invoiced entry"""
+    def test_user_cannot_edit_invoiced_entry(self):
+        """User should not be able to edit an invoiced entry"""
+        url, entry, data = self.edit_entry_helper(Entry.INVOICED)
+
+        response = self.client.post(url, data=data, follow=True)
+        self.assertEqual(response.status_code, 404)
+
+    def test_superuser_can_edit_invoiced_entry(self):
+        """Superuser should be able to edit an invoiced entry"""
         self.client.logout()
         self.login_user(self.superuser)
 
@@ -1326,10 +1333,7 @@ class CreateEditEntry(ViewTestMixin, TestCase):
 
         response = self.client.post(url, data=data, follow=True)
         self.assertEqual(response.status_code, 200)
-
-        msg = ('You cannot add/edit entries after a timesheet has been '
-               'approved or invoiced. Please correct the start and end times.')
-        self.assertContains(response, msg)
+        self.assertContains(response, 'The entry has been updated successfully.')
 
 
 class StatusTest(ViewTestMixin, TestCase):
