@@ -220,8 +220,12 @@ def create_edit_entry(request, entry_id=None):
         entry = None
 
     entry_user = entry.user if entry else request.user
+
     if request.method == 'POST':
-        form = AddUpdateEntryForm(data=request.POST, instance=entry, user=entry_user)
+        form = AddUpdateEntryForm(data=request.POST,
+                                  instance=entry,
+                                  user=entry_user,
+                                  acting_user=request.user)
         if form.is_valid():
             entry = form.save()
             if entry_id:
@@ -236,7 +240,10 @@ def create_edit_entry(request, entry_id=None):
             messages.error(request, message)
     else:
         initial = dict([(k, request.GET[k]) for k in request.GET.keys()])
-        form = AddUpdateEntryForm(instance=entry, user=entry_user, initial=initial)
+        form = AddUpdateEntryForm(instance=entry,
+                                  user=entry_user,
+                                  initial=initial,
+                                  acting_user=request.user)
 
     return render(request, 'timepiece/entry/create_edit.html', {
         'form': form,

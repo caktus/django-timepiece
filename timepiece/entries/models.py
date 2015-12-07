@@ -346,18 +346,7 @@ class Entry(models.Model):
                     end.strftime('%H:%M:%S')
                 )
             raise ValidationError(err_msg)
-        month_start = utils.get_month_start(start)
-        next_month = month_start + relativedelta(months=1)
-        entries = self.user.timepiece_entries.filter(
-            Q(status=Entry.APPROVED) | Q(status=Entry.INVOICED),
-            start_time__gte=month_start,
-            end_time__lt=next_month
-        )
-        if (entries.exists() and not self.id
-                or self.id and self.status == Entry.INVOICED):
-            msg = 'You cannot add/edit entries after a timesheet has been ' \
-                'approved or invoiced. Please correct the start and end times.'
-            raise ValidationError(msg)
+
         return True
 
     def save(self, *args, **kwargs):
