@@ -23,6 +23,11 @@
     </script>
     <script charset="utf-8" src="{% static "timepiece/js/dashboard.js" %}"></script>
     <script charset="utf-8" src="{% static "timepiece/js/prevent_double_click.js" %}"></script>
+    <script>
+    $(document).ready(function(){
+        $('[data-toggle="popover"]').popover();
+    });
+    </script>
 {% endblock extrajs %}
 
 {% block content %}
@@ -68,7 +73,17 @@
                             {% endif %}
                         {% endifnotequal %}
                         ({{ active_entry.get_total_seconds|humanize_seconds }} time clocked{% if active_entry.seconds_paused or active_entry.is_paused %} and {{ active_entry.get_paused_seconds|humanize_seconds }} paused{% endif %}).
-                        {% if active_entry.comments %}<blockquote>{{ active_entry.comments }}</blockquote>{% endif %}
+                        {% if active_entry.comments %}
+                            <a class="btn btn-primary btn-mini" data-toggle="popover"
+                               data-html="true"
+                               title="Active Entry Comment"
+                               data-content="{{ active_entry.comments|linebreaks }}"
+                               data-placement="bottom"
+                               data-container="body">
+                                   <i class="icon-white icon-comment"></i>
+                           </a>
+                        {% endif %}
+
                     {% else %}
                         You are not currently clocked into a project.
                     {% endif %}
