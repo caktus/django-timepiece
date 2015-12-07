@@ -79,8 +79,11 @@ class EntryQuerySet(models.query.QuerySet):
         extra_values = extra_values or ()
         qs = self.extra(select=select[key])
         qs = qs.values(*basic_values + extra_values)
-        qs = qs.annotate(hours=Sum('hours')).order_by('user__last_name',
-                                                      'date')
+        qs = qs.annotate(hours=Sum('hours')).order_by(
+            'user__last_name',
+            'user__first_name',
+            'user__pk',
+            'date')
         return qs
 
     def timespan(self, from_date, to_date=None, span=None, current=False):
@@ -269,11 +272,13 @@ class Entry(models.Model):
         if not self.start_time:
             raise ValidationError('Please enter a valid start time')
         start = self.start_time
+
         if self.end_time:
             end = self.end_time
         # Current entries have no end_time
         else:
             end = start + relativedelta(seconds=1)
+
         entries = self.user.timepiece_entries.filter(
             Q(end_time__range=(start, end)) |
             Q(start_time__range=(start, end)) |
