@@ -256,6 +256,7 @@ class ContractHourEmailTestCase(TestCase):
         (subject, ctx) = send_mail.call_args[0]
         self.assertTrue(subject.startswith("Changed"))
 
+
 class ProjectContractEntryTestCase(TestCase):
     """
     Set up two projects and two contracts. The relationship diagram looks like a Z,

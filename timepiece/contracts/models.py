@@ -1,6 +1,5 @@
 from collections import OrderedDict
 import datetime
-from itertools import chain
 
 from dateutil.relativedelta import relativedelta
 

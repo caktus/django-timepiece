@@ -56,6 +56,24 @@
                         ({% widthratio contract.hours_worked contract.contracted_hours 100 %}%)
                     </td>
                 </tr>
+                {% if contract.pre_launch_hours_worked %}
+                    <tr class="error"><th>Pre-Contract Hours Worked</th>
+                        <td>
+                            {{ contract.pre_launch_hours_worked|floatformat:2 }}
+                            ({% widthratio contract.pre_launch_hours_worked contract.contracted_hours 100 %}%)
+                        </td>
+                    </tr>
+                {% endif %}
+
+                {% if contract.post_launch_hours_worked %}
+                    <tr class="error"><th>Post-Contract Hours Worked</th>
+                        <td>
+                            {{ contract.post_launch_hours_worked|floatformat:2 }}
+                            ({% widthratio contract.post_launch_hours_worked contract.contracted_hours 100 %}%)
+                        </td>
+                    </tr>
+                {% endif %}
+
                 <tr><th>Hours Remaining</th><td>{{ contract.hours_remaining|floatformat:2 }}</td></tr>
                 <tr><th>Type</th><td>{{  contract.get_type_display }}</td></tr>
             </table>
