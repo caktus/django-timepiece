@@ -374,8 +374,7 @@ class ScheduleView(ScheduleMixin, TemplateView):
         project_hours = project_hours.values(
             'project__id', 'project__name', 'user__id', 'user__first_name',
             'user__last_name', 'hours', 'published')
-        project_hours = project_hours.order_by(
-            '-project__type__billable', 'project__name')
+        project_hours = project_hours.order_by('project__name')
         if not self.request.user.has_perm('entries.add_projecthours'):
             project_hours = project_hours.filter(published=True)
         users = self.get_users_from_project_hours(project_hours)
@@ -490,7 +489,7 @@ class ScheduleAjaxView(ScheduleMixin, View):
             'id', 'user', 'user__first_name', 'user__last_name',
             'project', 'hours', 'published')
         project_hours = project_hours.order_by(
-            '-project__type__billable', 'project__name',
+            'project__name',
             'user__first_name', 'user__last_name')
         inner_qs = project_hours.values_list('project', flat=True)
         projects = Project.objects.filter(pk__in=inner_qs).values() \
