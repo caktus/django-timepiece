@@ -1,11 +1,14 @@
 import datetime
+from dateutil.relativedelta import relativedelta
 import mock
 
 from django.contrib.auth.models import Permission
 from django.core.exceptions import ValidationError
 from django.test import TestCase
+from django.utils import timezone
 
 from timepiece.contracts.models import ProjectContract, ContractHour
+from timepiece.entries.models import Entry
 from timepiece.tests.base import ViewTestMixin
 from timepiece.tests import factories
 
@@ -252,3 +255,92 @@ class ContractHourEmailTestCase(TestCase):
         self.assertTrue(send_mail.called)
         (subject, ctx) = send_mail.call_args[0]
         self.assertTrue(subject.startswith("Changed"))
+
+class ProjectContractEntryTestCase(TestCase):
+    """
+    Set up two projects and two contracts. The relationship diagram looks like a Z,
+    with the following instances:
+
+           Project A ----- Contract 1
+                          /
+              Project B  /______Contract 2
+
+    User A logs one hour per day to Project A and user B logs one hour per day to
+    project B.
+    """
+
+    def setUp(self):
+        super(ProjectContractEntryTestCase, self).setUp()
+        self.user_a = factories.User(username='userA')
+        self.user_b = factories.User(username='userB')
+        self.project_a = factories.Project(
+            type__enable_timetracking=True,
+            status__enable_timetracking=True,
+            name='Project A')
+        self.project_b = factories.Project(
+            type__enable_timetracking=True,
+            status__enable_timetracking=True,
+            name='Project B')
+
+        self.contract1 = factories.ProjectContract(
+            name='Contract 1',
+            projects=[self.project_a, self.project_b],
+            status=ProjectContract.STATUS_CURRENT,
+            start_date=timezone.now().replace(
+                hour=0, minute=0, second=0, microsecond=0) - relativedelta(days=16),
+            end_date=timezone.now().replace(
+                hour=0, minute=0, second=0, microsecond=0) - relativedelta(days=12),
+            )
+
+        self.contract2 = factories.ProjectContract(
+            name='Contract 2',
+            projects=[self.project_b],
+            status=ProjectContract.STATUS_CURRENT,
+            start_date=timezone.now().replace(
+                hour=0, minute=0, second=0, microsecond=0) - relativedelta(days=8),
+            end_date=timezone.now().replace(
+                hour=0, minute=0, second=0, microsecond=0) - relativedelta(days=4),
+            )
+
+        for x in range(20):
+            factories.Entry(**{
+                'user': self.user_a,
+                'project': self.project_a,
+                'start_time': timezone.now() - relativedelta(days=x),
+                'end_time':  (timezone.now() - relativedelta(days=x)) + relativedelta(hours=1),
+                'seconds_paused': 0,
+                'status': Entry.UNVERIFIED,
+            })
+
+            factories.Entry(**{
+                'user': self.user_b,
+                'project': self.project_b,
+                'start_time': timezone.now() - relativedelta(days=x),
+                'end_time':  (timezone.now() - relativedelta(days=x)) + relativedelta(hours=1),
+                'seconds_paused': 0,
+                'status': Entry.UNVERIFIED,
+            })
+
+    def testContract1PreValues(self):
+        self.assertEqual(self.contract1.pre_launch_entries.count(), 6)
+        self.assertEqual(self.contract1.pre_launch_hours_worked, 6.0)
+
+    def testContract1Values(self):
+        self.assertEqual(self.contract1.entries.count(), 10)
+        self.assertEqual(self.contract1.hours_worked, 10.0)
+
+    def testContract1PostValues(self):
+        self.assertEqual(self.contract1.post_launch_entries.count(), 24)
+        self.assertEqual(self.contract1.post_launch_hours_worked, 24.0)
+
+    def testContract2PreValues(self):
+        self.assertEqual(self.contract2.pre_launch_entries.count(), 11)
+        self.assertEqual(self.contract2.pre_launch_hours_worked, 11.0)
+
+    def testContract2Values(self):
+        self.assertEqual(self.contract2.entries.count(), 5)
+        self.assertEqual(self.contract2.hours_worked, 5.0)
+
+    def testContract2PostValues(self):
+        self.assertEqual(self.contract2.post_launch_entries.count(), 4)
+        self.assertEqual(self.contract2.post_launch_hours_worked, 4.0)

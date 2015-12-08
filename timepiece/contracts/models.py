@@ -1,5 +1,6 @@
 from collections import OrderedDict
 import datetime
+from itertools import chain
 
 from dateutil.relativedelta import relativedelta
 
@@ -60,15 +61,29 @@ class ProjectContract(models.Model):
     def get_absolute_url(self):
         return reverse('view_contract', args=[self.pk])
 
+    def get_noncontract_entries(self, entries=None):
+        """
+        Given a set of entries, exclude those included in any contract affiliated
+        with any project associated with this contract.
+        """
+        contracts = []
+        for project in self.projects.all():
+            contracts.extend(project.contracts.all())
+
+        for contract in contracts:
+            entries.exclude(
+                project__in=contract.projects.all(),
+                start_time__gte=contract.start_date,
+                end_time__lt=contract.end_date + relativedelta(days=1)
+                )
+        return entries
+
     @property
     def pre_launch_entries(self):
-        """
-        All Entries worked on projects in this contract during the contract
-        period.
-        """
-        return Entry.objects.filter(
+        pce = Entry.objects.filter(
             project__in=self.projects.all(),
-            start_time__lte=self.start_date,)
+            start_time__lt=self.start_date,)
+        return self.get_noncontract_entries(pce)
 
     @property
     def entries(self):
@@ -80,6 +95,17 @@ class ProjectContract(models.Model):
             project__in=self.projects.all(),
             start_time__gte=self.start_date,
             end_time__lt=self.end_date + relativedelta(days=1))
+
+    @property
+    def post_launch_entries(self):
+        """
+        All Entries worked on projects in this contract after the contract
+        period.
+        """
+        pce = Entry.objects.filter(
+            project__in=self.projects.all(),
+            start_time__gt=self.end_date + relativedelta(days=1),)
+        return self.get_noncontract_entries(pce)
 
     def contracted_hours(self, approved_only=True):
         """Compute the hours contracted for this contract.
@@ -125,6 +151,15 @@ class ProjectContract(models.Model):
             entries = self.pre_launch_entries.filter(activity__billable=True)
             self._worked_pre_launch = entries.aggregate(s=Sum('hours'))['s'] or 0
         return self._worked_pre_launch or 0
+
+    @property
+    def post_launch_hours_worked(self):
+        """Number of billable hours worked after the contract end date."""
+        if not hasattr(self, '_worked_post_launch'):
+            # TODO put this in a .extra w/a subselect
+            entries = self.post_launch_entries.filter(activity__billable=True)
+            self._worked_post_launch = entries.aggregate(s=Sum('hours'))['s'] or 0
+        return self._worked_post_launch or 0
 
     @property
     def hours_worked(self):
