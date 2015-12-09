@@ -9,6 +9,14 @@
     <li><span class="divider">/</span> <a href="{% url 'view_contract' contract.pk %}">{{ contract }}</a></li>
 {% endblock crumbs %}
 
+{% block extrajs %}
+    <script>
+    $(document).ready(function(){
+        $('[data-toggle="popover"]').popover();
+    });
+    </script>
+{% endblock extrajs %}
+
 {% block content %}
     <div class="row-fluid">
         <div class="span12">
@@ -61,6 +69,31 @@
                         <td>
                             {{ contract.pre_launch_hours_worked|floatformat:2 }}
                             ({% widthratio contract.pre_launch_hours_worked contract.contracted_hours 100 %}%)
+                            <a class="btn btn-danger btn-mini" data-toggle="popover"
+                               data-html="true"
+                               title="Precontract Entries"
+                               data-content="
+                                   <table class='table table-bordered'>
+                                      <tr>
+                                        <td>Project</td>
+                                        <td>User</td>
+                                        <td>Start</td>
+                                        <td>End</td>
+                                      </tr>
+                                      {% for e in contract.pre_launch_entries %}
+                                         <tr>
+                                           <td>{{e.project}}</td>
+                                           <td>{{e.user}}</td>
+                                           <td>{{e.start_time}}</td>
+                                           <td>{{e.end_time}}</td>
+                                         </tr>
+                                      {% endfor %}
+                                   </table>
+                               "
+                               data-placement="bottom"
+                               data-container="body">
+                                   <i class="icon-white icon-comment"></i>
+                           </a>
                         </td>
                     </tr>
                 {% endif %}
@@ -81,7 +114,7 @@
         <div class="span7 offset1">
             <h3>Projects</h3>
             {% if contract.projects.exists %}
-                <table class="table table-bordered">
+                <table class="table table-bordered table-condensed">
                     <thead>
                     <tr>
                         <th rowspan="2">Name</th>
