@@ -75,10 +75,10 @@
                                data-content="
                                    <table class='table table-bordered'>
                                       <tr>
-                                        <td>Project</td>
-                                        <td>User</td>
-                                        <td>Start</td>
-                                        <td>End</td>
+                                        <td class='table'>Project</td>
+                                        <td class='th-continued'>User</td>
+                                        <td class='th-continued'>Start</td>
+                                        <td class='th-continued'>End</td>
                                       </tr>
                                       {% for e in contract.pre_launch_entries %}
                                          <tr>
@@ -103,6 +103,32 @@
                         <td>
                             {{ contract.post_launch_hours_worked|floatformat:2 }}
                             ({% widthratio contract.post_launch_hours_worked contract.contracted_hours 100 %}%)
+
+                             <a class="btn btn-danger btn-mini" data-toggle="popover"
+                               data-html="true"
+                               title="Post-contract Entries"
+                               data-content="
+                                   <table class='table table-bordered'>
+                                      <tr>
+                                        <td class='table'>Project</td>
+                                        <td class='th-continued'>User</td>
+                                        <td class='th-continued'>Start</td>
+                                        <td class='th-continued'>End</td>
+                                      </tr>
+                                      {% for e in contract.post_launch_entries %}
+                                         <tr>
+                                           <td>{{e.project}}</td>
+                                           <td>{{e.user}}</td>
+                                           <td>{{e.start_time}}</td>
+                                           <td>{{e.end_time}}</td>
+                                         </tr>
+                                      {% endfor %}
+                                   </table>
+                               "
+                               data-placement="bottom"
+                               data-container="body">
+                                   <i class="icon-white icon-comment"></i>
+                           </a>
                         </td>
                     </tr>
                 {% endif %}
