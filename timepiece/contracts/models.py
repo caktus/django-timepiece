@@ -60,7 +60,7 @@ class ProjectContract(models.Model):
     def get_absolute_url(self):
         return reverse('view_contract', args=[self.pk])
 
-    def get_noncontract_entries(self, entries=None):
+    def get_noncontract_entries(self, entries):
         """
         Given a set of entries, exclude those included in any contract affiliated
         with any project associated with this contract.
@@ -79,10 +79,10 @@ class ProjectContract(models.Model):
 
     @property
     def pre_launch_entries(self):
-        pce = Entry.objects.filter(
+        entries = Entry.objects.filter(
             project__in=self.projects.all(),
             start_time__lt=self.start_date,)
-        return self.get_noncontract_entries(pce)
+        return self.get_noncontract_entries(entries)
 
     @property
     def entries(self):
@@ -101,10 +101,10 @@ class ProjectContract(models.Model):
         All Entries worked on projects in this contract after the contract
         period.
         """
-        pce = Entry.objects.filter(
+        entries = Entry.objects.filter(
             project__in=self.projects.all(),
             start_time__gt=self.end_date + relativedelta(days=1),)
-        return self.get_noncontract_entries(pce)
+        return self.get_noncontract_entries(entries)
 
     def contracted_hours(self, approved_only=True):
         """Compute the hours contracted for this contract.
