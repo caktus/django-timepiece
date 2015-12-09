@@ -9,6 +9,14 @@
     <li><span class="divider">/</span> <a href="{% url 'view_contract' contract.pk %}">{{ contract }}</a></li>
 {% endblock crumbs %}
 
+{% block extrajs %}
+    <script>
+    $(document).ready(function(){
+        $('[data-toggle="popover"]').popover();
+    });
+    </script>
+{% endblock extrajs %}
+
 {% block content %}
     <div class="row-fluid">
         <div class="span12">
@@ -56,6 +64,83 @@
                         ({% widthratio contract.hours_worked contract.contracted_hours 100 %}%)
                     </td>
                 </tr>
+                {% if contract.pre_launch_hours_worked %}
+                    <tr class="error"><th>Pre-Contract Hours Worked</th>
+                        <td>
+                            {{ contract.pre_launch_hours_worked|floatformat:2 }}
+                            ({% widthratio contract.pre_launch_hours_worked contract.contracted_hours 100 %}%)
+                            <a class="btn btn-danger btn-mini" data-toggle="popover"
+                               data-html="true"
+                               title="Precontract Entries"
+                               data-content="
+                                   <table class='table table-bordered'>
+                                      <tr>
+                                        <td class='table span2'>Project</td>
+                                        <td class='th-continued'>User</td>
+                                        <td class='th-continued'>Start</td>
+                                        <td class='th-continued'>End</td>
+                                        <td class='th-continued'>Activity</td>
+                                        <td class='th-continued'>Hours</td>
+                                      </tr>
+                                      {% for e in contract.pre_launch_entries %}
+                                         <tr>
+                                           <td>{{e.project}}</td>
+                                           <td>{{e.user}}</td>
+                                           <td>{{e.start_time}}</td>
+                                           <td>{{e.end_time}}</td>
+                                           <td>{{e.activity}}</td>
+                                           <td>{{e.hours}}</td>
+                                         </tr>
+                                      {% endfor %}
+                                   </table>
+                               "
+                               data-placement="bottom"
+                               data-container="body">
+                                   <i class="icon-white icon-comment"></i>
+                           </a>
+                        </td>
+                    </tr>
+                {% endif %}
+
+                {% if contract.post_launch_hours_worked %}
+                    <tr class="error"><th>Post-Contract Hours Worked</th>
+                        <td>
+                            {{ contract.post_launch_hours_worked|floatformat:2 }}
+                            ({% widthratio contract.post_launch_hours_worked contract.contracted_hours 100 %}%)
+
+                             <a class="btn btn-danger btn-mini" data-toggle="popover"
+                               data-html="true"
+                               title="Post-contract Entries"
+                               data-content="
+                                   <table class='table table-bordered'>
+                                      <tr>
+                                        <td class='table span2'>Project</td>
+                                        <td class='th-continued'>User</td>
+                                        <td class='th-continued'>Start</td>
+                                        <td class='th-continued'>End</td>
+                                        <td class='th-continued'>Activity</td>
+                                        <td class='th-continued'>Hours</td>
+                                      </tr>
+                                      {% for e in contract.post_launch_entries %}
+                                         <tr>
+                                           <td>{{e.project}}</td>
+                                           <td>{{e.user}}</td>
+                                           <td>{{e.start_time}}</td>
+                                           <td>{{e.end_time}}</td>
+                                           <td>{{e.activity}}</td>
+                                           <td>{{e.hours}}</td>
+                                         </tr>
+                                      {% endfor %}
+                                   </table>
+                               "
+                               data-placement="bottom"
+                               data-container="body">
+                                   <i class="icon-white icon-comment"></i>
+                           </a>
+                        </td>
+                    </tr>
+                {% endif %}
+
                 <tr><th>Hours Remaining</th><td>{{ contract.hours_remaining|floatformat:2 }}</td></tr>
                 <tr><th>Type</th><td>{{  contract.get_type_display }}</td></tr>
             </table>
@@ -63,7 +148,7 @@
         <div class="span7 offset1">
             <h3>Projects</h3>
             {% if contract.projects.exists %}
-                <table class="table table-bordered">
+                <table class="table table-bordered table-condensed">
                     <thead>
                     <tr>
                         <th rowspan="2">Name</th>
