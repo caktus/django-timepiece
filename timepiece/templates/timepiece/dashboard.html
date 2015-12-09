@@ -173,11 +173,11 @@
                         <tbody>
                             {% for day in daily_entries %}
                                 {% sum_hours day.list as daily_total %}
-                                <tr class="emphasized-row">
+                                <tr>
                                     <th colspan="3" style="border-right: 0px;">{{ day.grouper }}</th>
-                                    <th class="hidden-phone" colspan="2" style="border-left: 0px;"></th>
-                                    <th>{{ daily_total|humanize_seconds:"{hours:02d}:{minutes:02d}" }}</th>
-                                    <th class="hidden-phone"></th>
+                                    <th colspan="2" style="border-left: 0px;" class="hidden-phone th-continued" ></th>
+                                    <th class="th-continued" >{{ daily_total|humanize_seconds:"{hours:02d}:{minutes:02d}" }}</th>
+                                    <th class="hidden-phone th-continued"></th>
                                 </tr>
                                 {% for entry in day.list %}
                                     <tr rel="tooltip" title="{{ entry.comments|escape }}">

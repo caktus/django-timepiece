@@ -2,6 +2,8 @@ import datetime
 from dateutil.relativedelta import relativedelta
 
 from django import forms
+from django.db.models import Q
+
 
 from timepiece import utils
 from timepiece.crm.models import Project, ProjectRelationship
@@ -123,9 +125,9 @@ class AddUpdateEntryForm(forms.ModelForm):
 
     def __init__(self, *args, **kwargs):
         self.user = kwargs.pop('user')
+        self.acting_user = kwargs.pop('acting_user')
         super(AddUpdateEntryForm, self).__init__(*args, **kwargs)
         self.instance.user = self.user
-
         self.fields['project'].queryset = Project.trackable.filter(
             users=self.user)
         # If editing the active entry, remove the end_time field.
@@ -138,9 +140,10 @@ class AddUpdateEntryForm(forms.ModelForm):
         conflict with or come after the active entry.
         """
         active = utils.get_active_entry(self.user)
+        start_time = self.cleaned_data.get('start_time', None)
+        end_time = self.cleaned_data.get('end_time', None)
+
         if active and active.pk != self.instance.pk:
-            start_time = self.cleaned_data.get('start_time', None)
-            end_time = self.cleaned_data.get('end_time', None)
             if (start_time and start_time > active.start_time) or \
                     (end_time and end_time > active.start_time):
                 raise forms.ValidationError(
@@ -151,6 +154,22 @@ class AddUpdateEntryForm(forms.ModelForm):
                         activity=active.activity,
                         start_time=active.start_time.strftime('%H:%M:%S'),
                     ))
+
+        month_start = utils.get_month_start(start_time)
+        next_month = month_start + relativedelta(months=1)
+        entries = self.instance.user.timepiece_entries.filter(
+            Q(status=Entry.APPROVED) | Q(status=Entry.INVOICED),
+            start_time__gte=month_start,
+            end_time__lt=next_month
+        )
+        entry = self.instance
+
+        if not self.acting_user.is_superuser:
+            if (entries.exists() and not entry.id or entry.id and entry.status == Entry.INVOICED):
+                message = 'You cannot add/edit entries after a timesheet has been ' \
+                    'approved or invoiced. Please correct the start and end times.'
+                raise forms.ValidationError(message)
+
         return self.cleaned_data
 
 
