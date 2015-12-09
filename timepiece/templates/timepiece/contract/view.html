@@ -75,10 +75,12 @@
                                data-content="
                                    <table class='table table-bordered'>
                                       <tr>
-                                        <td class='table'>Project</td>
+                                        <td class='table span2'>Project</td>
                                         <td class='th-continued'>User</td>
                                         <td class='th-continued'>Start</td>
                                         <td class='th-continued'>End</td>
+                                        <td class='th-continued'>Activity</td>
+                                        <td class='th-continued'>Hours</td>
                                       </tr>
                                       {% for e in contract.pre_launch_entries %}
                                          <tr>
@@ -86,6 +88,8 @@
                                            <td>{{e.user}}</td>
                                            <td>{{e.start_time}}</td>
                                            <td>{{e.end_time}}</td>
+                                           <td>{{e.activity}}</td>
+                                           <td>{{e.hours}}</td>
                                          </tr>
                                       {% endfor %}
                                    </table>
@@ -110,10 +114,12 @@
                                data-content="
                                    <table class='table table-bordered'>
                                       <tr>
-                                        <td class='table'>Project</td>
+                                        <td class='table span2'>Project</td>
                                         <td class='th-continued'>User</td>
                                         <td class='th-continued'>Start</td>
                                         <td class='th-continued'>End</td>
+                                        <td class='th-continued'>Activity</td>
+                                        <td class='th-continued'>Hours</td>
                                       </tr>
                                       {% for e in contract.post_launch_entries %}
                                          <tr>
@@ -121,6 +127,8 @@
                                            <td>{{e.user}}</td>
                                            <td>{{e.start_time}}</td>
                                            <td>{{e.end_time}}</td>
+                                           <td>{{e.activity}}</td>
+                                           <td>{{e.hours}}</td>
                                          </tr>
                                       {% endfor %}
                                    </table>
