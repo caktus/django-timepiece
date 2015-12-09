@@ -1,6 +1,7 @@
 import datetime
-from dateutil.relativedelta import relativedelta
 import mock
+
+from dateutil.relativedelta import relativedelta
 
 from django.contrib.auth.models import Permission
 from django.core.exceptions import ValidationError
