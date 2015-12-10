@@ -26,6 +26,7 @@ function drawChart() {
                 },
                 chartArea: {
                     width: '100%',
+                    height: '95%',
                     left: '5%',
                     top: '0',
                 }
