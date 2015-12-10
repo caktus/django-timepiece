@@ -20,6 +20,7 @@ static/timepiece.
 @tableBackgroundAccent: rgba(0, 0, 0, 0.05);
 @tableBackgroundHover: #D0D0EC;
 @tableBorder: #DDDDDD;
+@tableHeader: #E8E8E8;
 
 
 @navbarCollapseWidth: 840px;
@@ -235,6 +236,10 @@ body {
             }
         }
     }
+
+    // ENSURE CONSISTENT TH BG
+    .th-continued {background-color: @tableHeader;}
+    .table-hover tbody tr:hover > th { background-color: @tableHeader;}
 
     .inline {
         display: inline;

@@ -174,8 +174,8 @@
                             {% for day in daily_entries %}
                                 {% sum_hours day.list as daily_total %}
                                 <tr>
-                                    <th colspan="3" style="border-right: 0px;">{{ day.grouper }}</th>
-                                    <th colspan="2" style="border-left: 0px;" class="hidden-phone th-continued" ></th>
+                                    <th colspan="4" style="border-right: 0px;">{{ day.grouper }}</th>
+                                    <th style="border-left: 0px;" class="hidden-phone th-continued" ></th>
                                     <th class="th-continued" >{{ daily_total|humanize_seconds:"{hours:02d}:{minutes:02d}" }}</th>
                                     <th class="hidden-phone th-continued"></th>
                                 </tr>
