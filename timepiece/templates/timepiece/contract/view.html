@@ -25,11 +25,6 @@
                 {% if perms.contracts.change_contract %}  {# FIXME: permission doesn't exist #}
                     <li><a href="{{ contract.get_admin_url }}">Edit</a></li>
                 {% endif %}
-                {% if perms.crm.view_project_time_sheet %}
-                    <li>
-                      <a href="{% url 'view_project_timesheet' object.id %}">View Time Sheet</a>
-                    </li>
-                {% endif %}
             </ul>
         </div>
     </div>
