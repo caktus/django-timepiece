@@ -238,6 +238,7 @@
                                     <td class="hours">{{ week_totals.billable|humanize_hours:"{hours:02d}:{minutes:02d}" }}</td>
                                     <td class="hours">{{ week_totals.non_billable|humanize_hours:"{hours:02d}:{minutes:02d}" }}</td>
                                     <td class="hours">{{ week_totals.total|humanize_hours:"{hours:02d}:{minutes:02d}" }}</td>
+
                                 </tr>
                                 {% if not forloop.last %}
                                     <tr><td colspan="5">&nbsp;</td></tr>

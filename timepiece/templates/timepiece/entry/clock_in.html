@@ -13,6 +13,14 @@
 
 {% block extrajs %}
     <script charset="utf-8" src="{% static "timepiece/js/prevent_double_click.js" %}"></script>
+    <script type="text/javascript">
+    $(document).ready(function() {
+        function newParameters(query) {
+            query.project = $('#id_project').val();
+        }
+        $('#id_activity_0').djselectable('option', 'prepareQuery', newParameters);
+    });
+</script>
 {% endblock extrajs %}
 
 {% block content %}
