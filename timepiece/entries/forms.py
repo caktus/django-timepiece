@@ -9,7 +9,7 @@ from selectable import forms as selectable
 from timepiece import utils
 from timepiece.crm.models import Project, ProjectRelationship
 from timepiece.entries.models import Entry, Location, ProjectHours
-from timepiece.entries.lookups import (ActivityLookup)
+from timepiece.entries.lookups import ActivityLookup
 from timepiece.forms import (
     INPUT_FORMATS, TimepieceSplitDateTimeField, TimepieceDateInput)
 
@@ -18,7 +18,6 @@ class ClockInForm(forms.ModelForm):
     activity = selectable.AutoCompleteSelectField(
         lookup_class=ActivityLookup,
         label='Activity',
-        required=False,
     )
     active_comment = forms.CharField(
         label='Notes for the active entry', widget=forms.Textarea,
