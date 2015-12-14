@@ -26,7 +26,7 @@ var stickyHeader = function(){
 			thead.style.MozTransform = 'translate(0px,0px)';
 		}
 		if(difference_top > 0){
-			if(table.getAttribute('id') == 'schedule'){
+			if(table.id == 'schedule'){
 				thead.style.webkitTransform = 'translate(0px,'+ (difference_top -1) +'px)';
 				thead.style.MozTransform = 'translate(0px,'+ (difference_top -1)  +'px)';
 			}else{
