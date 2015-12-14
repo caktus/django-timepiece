@@ -26,8 +26,13 @@ var stickyHeader = function(){
 			thead.style.MozTransform = 'translate(0px,0px)';
 		}
 		if(difference_top > 0){
-			thead.style.webkitTransform = 'translate(0px,'+ difference_top +'px)';
-			thead.style.MozTransform = 'translate(0px,'+ difference_top +'px)';
+			if(table.getAttribute('id') == 'schedule'){
+				thead.style.webkitTransform = 'translate(0px,'+ (difference_top -1) +'px)';
+				thead.style.MozTransform = 'translate(0px,'+ (difference_top -1)  +'px)';
+			}else{
+				thead.style.webkitTransform = 'translate(0px,'+ (difference_top - 10) +'px)';
+				thead.style.MozTransform = 'translate(0px,'+ (difference_top -10) +'px)';
+			}
 		}
 		if(difference_top > table.dataset.bottom){
 			thead.style.webkitTransform = 'translate(0px,'+ table.dataset.bottom +'px)';
@@ -37,7 +42,6 @@ var stickyHeader = function(){
 
 
 	for (i = 0; i < tables.length; i++) {
-		// attach x scroll event to container
 		calculateHeaderCutoffs(tables[i]);
 		positionHeaders(tables[i]);
 	}
