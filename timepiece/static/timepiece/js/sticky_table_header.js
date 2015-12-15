@@ -26,8 +26,13 @@ var stickyHeader = function(){
 			thead.style.MozTransform = 'translate(0px,0px)';
 		}
 		if(difference_top > 0){
-			thead.style.webkitTransform = 'translate(0px,'+ difference_top +'px)';
-			thead.style.MozTransform = 'translate(0px,'+ difference_top +'px)';
+			if(table.id == 'schedule'){
+				thead.style.webkitTransform = 'translate(0px,'+ (difference_top -1) +'px)';
+				thead.style.MozTransform = 'translate(0px,'+ (difference_top -1)  +'px)';
+			}else{
+				thead.style.webkitTransform = 'translate(0px,'+ (difference_top - 10) +'px)';
+				thead.style.MozTransform = 'translate(0px,'+ (difference_top -10) +'px)';
+			}
 		}
 		if(difference_top > table.dataset.bottom){
 			thead.style.webkitTransform = 'translate(0px,'+ table.dataset.bottom +'px)';
@@ -35,32 +40,10 @@ var stickyHeader = function(){
 		}
 	}
 
-	function calculateColumnCutoffs(table){
-		table.dataset.left = $(table).find('tr td:first').offset().left;
-	}
-
-	function positionColumns(scrollContainer){
-		var difference_left = $(scrollContainer).scrollLeft();
-		var table = scrollContainer.querySelector('table');
-
-		if(difference_left <= 0){
-			$(table).find('tbody tr > :first-child').css('WebkitTransform', 'translate(0px,0px)');
-			$(table).find('tbody tr > :first-child').css('MozTransform', 'translate(0px,0px)');
-		}
-		if(difference_left > 0){
-			$(table).find('tbody tr > :first-child').css('WebkitTransform', 'translate('+ difference_left +'px, 0px)');
-			$(table).find('tbody tr > :first-child').css('MozTransform', 'translate('+ difference_left +'px, 0px)');
-		}
-	}
 
 	for (i = 0; i < tables.length; i++) {
-		// attach x scroll event to container
-		$(tables[i]).parent().on('scroll', function(){ positionColumns(this); });
-		// init positions
-		calculateColumnCutoffs(tables[i]);
 		calculateHeaderCutoffs(tables[i]);
 		positionHeaders(tables[i]);
-		positionColumns(tables[i]);
 	}
 
 	window.onscroll = function(){
@@ -72,7 +55,6 @@ var stickyHeader = function(){
 	window.onresize = function(){
 		calculateNavbar();
 		for (i = 0; i < tables.length; i++) {
-			calculateColumnCutoffs(tables[i]);
 			calculateHeaderCutoffs(tables[i]);
 			positionHeaders(tables[i]);
 		}
