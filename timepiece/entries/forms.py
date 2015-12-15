@@ -15,9 +15,8 @@ from timepiece.forms import (
 
 
 class ClockInForm(forms.ModelForm):
-    activity = selectable.AutoCompleteSelectField(
+    activity = selectable.AutoComboboxSelectWidget(
         lookup_class=ActivityLookup,
-        label='Activity',
     )
     active_comment = forms.CharField(
         label='Notes for the active entry', widget=forms.Textarea,
@@ -28,6 +27,9 @@ class ClockInForm(forms.ModelForm):
         model = Entry
         fields = ('active_comment', 'location', 'project', 'activity',
                   'start_time', 'comments')
+        widgets = {
+            'activity': selectable.AutoComboboxSelectWidget(lookup_class=ActivityLookup),
+        }
 
     def __init__(self, *args, **kwargs):
         self.user = kwargs.pop('user')
