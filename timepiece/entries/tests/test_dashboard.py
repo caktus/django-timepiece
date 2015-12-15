@@ -152,16 +152,16 @@ class DashboardViewTestCase(ViewTestMixin, TestCase):
         the second Activity. """
         factory = RequestFactory()
         lookup = ActivityLookup()
-        activity2 = factories.Activity()
+        factories.Activity()
         activity_group = factories.ActivityGroup()
         activity_group.activities.add(self.activity)
         project2 = factories.Project(activity_group=activity_group)
-        project2.users.add(self.user)
+        factories.ProjectRelationship(project=project2, user=self.user)
         request = factory.get("/entry/clock_in/", {'project': project2.pk})
         response = lookup.results(request)
-        data = json.loads(response.content)['data']
+        data = json.loads(response.content.decode("utf-8"))['data']
         self.assertEqual(1, len(data))
-        self.assertEqual(self.activity.pk, data[1]['id'])
+        self.assertEqual(self.activity.pk, data[0]['id'])
 
 
 class ProcessProgressTestCase(TestCase):
