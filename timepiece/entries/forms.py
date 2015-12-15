@@ -15,9 +15,6 @@ from timepiece.forms import (
 
 
 class ClockInForm(forms.ModelForm):
-    # activity = selectable.AutoComboboxSelectWidget(
-    #     lookup_class=ActivityLookup,
-    # )
     active_comment = forms.CharField(
         label='Notes for the active entry', widget=forms.Textarea,
         required=False)
