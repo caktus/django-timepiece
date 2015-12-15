@@ -160,13 +160,10 @@ class HourlyReport(ReportMixin, CSVViewMixin, TemplateView):
         headers.append('Total')
         content.append(headers)
 
-        if self.export_projects:
-            key = 'By Project'
-        else:
-            key = 'By User'
-
         summaries = context['summaries']
-        summary = summaries[key] if key in summaries else []
+
+        summary = summaries.get(self.export, [])
+
         for rows, totals in summary:
             for name, user_id, hours in rows:
                 data = [name]
@@ -193,13 +190,9 @@ class HourlyReport(ReportMixin, CSVViewMixin, TemplateView):
         }
 
     def get(self, request, *args, **kwargs):
-        self.export_users = request.GET.get('export_users', False)
-        self.export_projects = request.GET.get('export_projects', False)
+        self.export = request.GET.get('export', False)
         context = self.get_context_data()
-        if self.export_users or self.export_projects:
-            kls = CSVViewMixin
-        else:
-            kls = TemplateView
+        kls = CSVViewMixin if self.export else TemplateView
         return kls.render_to_response(self, context)
 
     def get_context_data(self, **kwargs):
