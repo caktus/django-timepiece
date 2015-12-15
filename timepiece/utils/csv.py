@@ -23,17 +23,19 @@ class CSVViewMixin(object):
         response['Content-Disposition'] = 'attachment; filename="%s.csv"' % fn
         rows = self.convert_context_to_csv(context)
         writer = csv.writer(response)
-        row_errors = 0
         for row in rows:
             try:
                 writer.writerow(row)
             except:
-                try:
-                    writer.writerow([row[0]])
-                except:
-                    row_errors += 1
-        if row_errors:
-            writer.writerow(['There were %d rows that caused an error when exporting and are not included.'])
+                new_row = []
+                for item in row:
+                    try:
+                        new_row.append(str(item).encode('ascii'))
+                    except:
+                        new_row.append('ERROR: There is a special character '
+                            'in this field.  Remove the special character(s) '
+                            'using FirmBase and re-export.')
+                writer.writerow(new_row)
         return response
 
     def get_filename(self, context):

@@ -252,6 +252,12 @@ class CreateUserForm(UserCreationForm):
         self.fields['groups'].widget = forms.CheckboxSelectMultiple()
         self.fields['groups'].help_text = None
 
+    def clean_email(self):
+        email = self.cleaned_data.get('email', None)
+        if email and User.objects.filter(email=email).count() > 0:
+            raise forms.ValidationError('Another user is using this email address.')
+        return email
+
     def save(self, commit=True):
         user = super(CreateUserForm, self).save(commit)
         up = UserProfile(user=user,
@@ -330,6 +336,10 @@ class EditUserForm(UserChangeForm):
         password2 = self.cleaned_data.get('password2', None)
         if password1 and password1 != password2:
             raise forms.ValidationError('Passwords must match.')
+        email = self.cleaned_data.get('email', None)
+        if email and User.objects.filter(email=email).exclude(
+            username=self.cleaned_data.get('username', None)):
+            raise forms.ValidationError('Another user is using this email address.')
         return self.cleaned_data
 
     def save(self, commit=True):
