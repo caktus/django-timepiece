@@ -4,10 +4,12 @@ from dateutil.relativedelta import relativedelta
 from django import forms
 from django.db.models import Q
 
+from selectable import forms as selectable
 
 from timepiece import utils
 from timepiece.crm.models import Project, ProjectRelationship
 from timepiece.entries.models import Entry, Location, ProjectHours
+from timepiece.entries.lookups import ActivityLookup
 from timepiece.forms import (
     INPUT_FORMATS, TimepieceSplitDateTimeField, TimepieceDateInput)
 
@@ -22,6 +24,9 @@ class ClockInForm(forms.ModelForm):
         model = Entry
         fields = ('active_comment', 'location', 'project', 'activity',
                   'start_time', 'comments')
+        widgets = {
+            'activity': selectable.AutoComboboxSelectWidget(lookup_class=ActivityLookup),
+        }
 
     def __init__(self, *args, **kwargs):
         self.user = kwargs.pop('user')
