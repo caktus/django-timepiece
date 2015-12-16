@@ -368,9 +368,17 @@ class Entry(models.Model):
         start = self.start_time
         end = self.end_time
         if not end:
-            end = self.pause_time if self.is_paused else timezone.now()
+            if self.is_paused:
+                end = self.pause_time
+            else:
+                end = timezone.now()
         delta = end - start
-        seconds = delta.seconds - self.get_paused_seconds()
+        if self.is_paused:
+            # get_paused_seconds() takes elapsed time into account, which we do not want
+            # in this case, so subtract seconds_paused instead to account for previous pauses
+            seconds = delta.seconds - self.seconds_paused
+        else:
+            seconds = delta.seconds - self.get_paused_seconds()
         return seconds + (delta.days * 86400)
 
     def get_paused_seconds(self):
