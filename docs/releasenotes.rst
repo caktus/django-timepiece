@@ -4,8 +4,8 @@ Release Notes
 0.10.0 (In Development)
 -----------------------
 
-* Compatibility with Django 1.6 with Python 2.7 or Python 3.3
-* Compatibility with Django 1.7 with Python 2.7 or Python 3.4
+* Compatibility with Django 1.9 with Python 2.7 or Python 3.4/3.5
+* Compatibility with Django 1.8 with Python 2.7 or Python 3.4/3.5
 * Drops support for all other combinations of Django and Python
 * Drops support for testing with Jenkins
 * Flake8 compliance
