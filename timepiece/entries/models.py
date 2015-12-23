@@ -189,7 +189,7 @@ class Entry(models.Model):
     comments = models.TextField(blank=True)
     date_updated = models.DateTimeField(auto_now=True)
 
-    hours = models.DecimalField(max_digits=8, decimal_places=2, default=0)
+    hours = models.DecimalField(max_digits=11, decimal_places=5, default=0)
 
     objects = EntryManager()
     worked = EntryWorkedManager()
@@ -355,7 +355,7 @@ class Entry(models.Model):
         return True
 
     def save(self, *args, **kwargs):
-        self.hours = Decimal('%.2f' % round(self.total_hours, 2))
+        self.hours = Decimal('%.5f' % round(self.total_hours, 5))
         super(Entry, self).save(*args, **kwargs)
 
     def get_total_seconds(self):
@@ -518,8 +518,8 @@ class ProjectHours(models.Model):
     project = models.ForeignKey('crm.Project')
     user = models.ForeignKey(User)
     hours = models.DecimalField(
-        max_digits=8, decimal_places=2, default=0,
-        validators=[validators.MinValueValidator(Decimal("0.01"))])
+        max_digits=11, decimal_places=5, default=0,
+        validators=[validators.MinValueValidator(Decimal("0.00001"))])
     published = models.BooleanField(default=False)
 
     def __str__(self):

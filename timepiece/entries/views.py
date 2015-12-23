@@ -124,7 +124,7 @@ class Dashboard(TemplateView):
 
         for entry in entries:
             pk = entry.project_id
-            hours = Decimal('%.2f' % (entry.get_total_seconds() / 3600.0))
+            hours = Decimal('%.5f' % (entry.get_total_seconds() / 3600.0))
             project_data[pk]['worked'] += hours
 
         # Sort by maximum of worked or assigned hours (highest first).

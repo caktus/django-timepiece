@@ -1824,7 +1824,6 @@ class TestTotals(ViewTestMixin, LogTimeMixin, TestCase):
                         self.assertEqual(totals['billable'], 1)
                         self.assertEqual(totals['total'], 1)
 
-
 class HourlySummaryTest(ViewTestMixin, TestCase):
 
     def setUp(self):
