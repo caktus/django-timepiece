@@ -747,7 +747,7 @@ class ClockOutTest(ViewTestMixin, TestCase):
         }
         self.client.post(reverse('clock_out'), data)
         paused_entry = Entry.objects.get(pk=paused_entry.pk)
-        self.assertAlmostEqual(paused_entry.hours, 1)
+        self.assertAlmostEqual(paused_entry.hours, 1, places=2)
 
     def testClockOutReverse(self):
         """
@@ -1823,6 +1823,7 @@ class TestTotals(ViewTestMixin, LogTimeMixin, TestCase):
                     if project == self.p4:
                         self.assertEqual(totals['billable'], 1)
                         self.assertEqual(totals['total'], 1)
+
 
 class HourlySummaryTest(ViewTestMixin, TestCase):
 

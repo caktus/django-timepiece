@@ -152,19 +152,19 @@ class TestProjectTimesheet(ViewTestMixin, LogTimeMixin, TestCase):
         xtime = timezone.now() - relativedelta(minutes=10)
         factories.Entry(**{
             'user': self.superuser,
+            'project': self.p2,
             'start_time': xtime,
             'end_time': xtime + relativedelta(seconds=29)
         })
         factories.Entry(**{
             'user': self.superuser,
+            'project': self.p2,
             'start_time': xtime + relativedelta(seconds=30),
             'end_time': xtime + relativedelta(seconds=60)
         })
 
         self.login_user(self.superuser)
-        response = self._get()
-        import ipdb; ipdb.set_trace()
-        self.assertEqual(len(response.context['entries']), 2)
-        self.assertEqual(response.context['total'], Decimal(1))
-        user_entry = response.context['user_entries'][0]
-        self.assertEqual(user_entry['sum'], Decimal(1))
+        response = self._get(url_args=(self.p2.pk,))
+        entries = response.context['entries']
+        self.assertEqual(len(entries), 2)
+        self.assertAlmostEqual(sum(e['hours'] for e in entries), Decimal(0.016), places=2)

@@ -194,8 +194,8 @@ class TestHourlyReport(ViewTestMixin, LogTimeMixin, ReportsTestBase):
         args = self.args_helper(**args)
         data = [
             ['01/02/2011', '01/03/2011', 'Total'],
-            ['12.00', '24.00', '36.00'],
-            ['6.00', '12.00', '18.00'],
+            ['12.00000', '24.00000', '36.00000'],
+            ['6.00000', '12.00000', '18.00000'],
         ]
         self.check_totals(args, data)
 
@@ -206,8 +206,8 @@ class TestHourlyReport(ViewTestMixin, LogTimeMixin, ReportsTestBase):
         args = self.args_helper(**args)
         data = [
             ['01/02/2011', '01/03/2011', 'Total'],
-            ['6.00', '12.00', '18.00'],
-            ['3.00', '6.00', '9.00'],
+            ['6.00000', '12.00000', '18.00000'],
+            ['3.00000', '6.00000', '9.00000'],
         ]
         self.check_totals(args, data)
 
@@ -218,8 +218,8 @@ class TestHourlyReport(ViewTestMixin, LogTimeMixin, ReportsTestBase):
         args = self.args_helper(**args)
         data = [
             ['01/02/2011', '01/03/2011', 'Total'],
-            ['8.00', '16.00', '24.00'],
-            ['4.00', '8.00', '12.00'],
+            ['8.00000', '16.00000', '24.00000'],
+            ['4.00000', '8.00000', '12.00000'],
         ]
         self.check_totals(args, data)
 
@@ -230,9 +230,9 @@ class TestHourlyReport(ViewTestMixin, LogTimeMixin, ReportsTestBase):
         args = self.args_helper(**args)
         data = [
             ['01/02/2011', '01/03/2011', 'Total'],
-            ['10.00', '20.00', '30.00'],
-            ['5.00', '10.00', '15.00'],
-            ['15.00', '30.00', '45.00'],
+            ['10.00000', '20.00000', '30.00000'],
+            ['5.00000', '10.00000', '15.00000'],
+            ['15.00000', '30.00000', '45.00000'],
         ]
         self.check_totals(args, data)
 
@@ -243,9 +243,9 @@ class TestHourlyReport(ViewTestMixin, LogTimeMixin, ReportsTestBase):
         args = self.args_helper(**args)
         data = [
             ['01/02/2011', '01/03/2011', 'Total'],
-            ['6.00', '12.00', '18.00'],
-            ['3.00', '6.00', '9.00'],
-            ['9.00', '18.00', '27.00'],
+            ['6.00000', '12.00000', '18.00000'],
+            ['3.00000', '6.00000', '9.00000'],
+            ['9.00000', '18.00000', '27.00000'],
         ]
         self.check_totals(args, data)
 
@@ -256,9 +256,9 @@ class TestHourlyReport(ViewTestMixin, LogTimeMixin, ReportsTestBase):
         args = self.args_helper(**args)
         data = [
             ['01/02/2011', '01/03/2011', 'Total'],
-            ['4.00', '8.00', '12.00'],
-            ['2.00', '4.00', '6.00'],
-            ['6.00', '12.00', '18.00'],
+            ['4.00000', '8.00000', '12.00000'],
+            ['2.00000', '4.00000', '6.00000'],
+            ['6.00000', '12.00000', '18.00000'],
         ]
         self.check_totals(args, data)
 
@@ -269,8 +269,8 @@ class TestHourlyReport(ViewTestMixin, LogTimeMixin, ReportsTestBase):
         args = self.args_helper(**args)
         data = [
             ['01/02/2011', '01/03/2011', 'Total'],
-            ['2.00', '4.00', '6.00'],
-            ['1.00', '2.00', '3.00'],
+            ['2.00000', '4.00000', '6.00000'],
+            ['1.00000', '2.00000', '3.00000'],
         ]
         self.check_totals(args, data)
 
@@ -285,9 +285,9 @@ class TestHourlyReport(ViewTestMixin, LogTimeMixin, ReportsTestBase):
         args = self.args_helper(**args)
         data = [
             ['01/02/2011', '01/03/2011', '01/04/2011', 'Total'],
-            ['6.00', '6.00', '6.00', '18.00'],
-            ['3.00', '3.00', '3.00', '9.00'],
-            ['9.00', '9.00', '9.00', '27.00'],
+            ['6.00000', '6.00000', '6.00000', '18.00000'],
+            ['3.00000', '3.00000', '3.00000', '9.00000'],
+            ['9.00000', '9.00000', '9.00000', '27.00000'],
         ]
         self.bulk_entries()
         self.check_totals(args, data)
@@ -303,9 +303,9 @@ class TestHourlyReport(ViewTestMixin, LogTimeMixin, ReportsTestBase):
         args = self.args_helper(**args)
         data = [
             ['01/02/2011', '01/03/2011', 'Total'],
-            ['12.00', '24.00', '36.00'],
-            ['6.00', '12.00', '18.00'],
-            ['18.00', '36.00', '54.00'],
+            ['12.00000', '24.00000', '36.00000'],
+            ['6.00000', '12.00000', '18.00000'],
+            ['18.00000', '36.00000', '54.00000'],
         ]
         self.bulk_entries()
         self.check_totals(args, data)
@@ -324,9 +324,9 @@ class TestHourlyReport(ViewTestMixin, LogTimeMixin, ReportsTestBase):
         args = self.args_helper(start=start, end=end, **args)
         data = [
             ['01/04/2011', '02/01/2011', '03/01/2011', 'Total'],
-            ['168.00', '168.00', '168.00', '504.00'],
-            ['84.00', '84.00', '84.00', '252.00'],
-            ['252.00', '252.00', '252.00', '756.00'],
+            ['168.00000', '168.00000', '168.00000', '504.00000'],
+            ['84.00000', '84.00000', '84.00000', '252.00000'],
+            ['252.00000', '252.00000', '252.00000', '756.00000'],
         ]
         self.bulk_entries(start, end)
         self.check_totals(args, data)
@@ -345,9 +345,9 @@ class TestHourlyReport(ViewTestMixin, LogTimeMixin, ReportsTestBase):
         args = self.args_helper(**args)
         data = [
             ['01/02/2011', '01/03/2011', '01/04/2011', 'Total'],
-            ['2.00', '2.00', '2.00', '6.00'],
-            ['1.00', '1.00', '1.00', '3.00'],
-            ['3.00', '3.00', '3.00', '9.00'],
+            ['2.00000', '2.00000', '2.00000', '6.00000'],
+            ['1.00000', '1.00000', '1.00000', '3.00000'],
+            ['3.00000', '3.00000', '3.00000', '9.00000'],
         ]
         self.check_totals(args, data)
 
@@ -362,9 +362,9 @@ class TestHourlyReport(ViewTestMixin, LogTimeMixin, ReportsTestBase):
         args = self.args_helper(**args)
         data = [
             ['01/02/2011', '01/03/2011', '01/04/2011', 'Total'],
-            ['4.00', '4.00', '4.00', '12.00'],
-            ['2.00', '2.00', '2.00', '6.00'],
-            ['6.00', '6.00', '6.00', '18.00'],
+            ['4.00000', '4.00000', '4.00000', '12.00000'],
+            ['2.00000', '2.00000', '2.00000', '6.00000'],
+            ['6.00000', '6.00000', '6.00000', '18.00000'],
         ]
         self.check_totals(args, data)
 
@@ -379,9 +379,9 @@ class TestHourlyReport(ViewTestMixin, LogTimeMixin, ReportsTestBase):
         args = self.args_helper(**args)
         data = [
             ['01/02/2011', '01/03/2011', '01/04/2011', 'Total'],
-            ['6.00', '6.00', '6.00', '18.00'],
-            ['3.00', '3.00', '3.00', '9.00'],
-            ['9.00', '9.00', '9.00', '27.00'],
+            ['6.00000', '6.00000', '6.00000', '18.00000'],
+            ['3.00000', '3.00000', '3.00000', '9.00000'],
+            ['9.00000', '9.00000', '9.00000', '27.00000'],
         ]
         self.check_totals(args, data)
 
