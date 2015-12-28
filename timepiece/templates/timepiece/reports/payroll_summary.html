@@ -1,6 +1,8 @@
 {% extends "timepiece/reports/base.html" %}
-{% load timepiece_tags bootstrap_toolkit %}
-{% load url from future %}
+
+{% load bootstrap_toolkit %}
+{% load static %}
+{% load timepiece_tags %}
 
 {% block title %}Payroll Summary Report{% endblock title %}
 
@@ -21,7 +23,7 @@
 {% endblock report_nav %}
 
 {% block extrajs %}
-    <script charset="utf-8" src="{{ STATIC_URL }}timepiece/js/highlight.js"></script>
+    <script charset="utf-8" src="{% static "timepiece/js/highlight.js" %}"></script>
     <script type="text/javascript">
         $(function() {
             // Since the #hourly-summary thead has cells that go across
@@ -72,6 +74,7 @@
     <div class="row-fluid">
         <div class="span12">
             <h3>Hourly Summary</h3>
+            <div>
             {% if monthly_totals %}
                 <table id="hourly-summary"
                         class="table table-bordered table-striped table-condensed">
@@ -145,6 +148,7 @@
             {% else %}
                 <p> No entries found.</p>
             {% endif %}
+            </div>
         </div>
     </div>
 

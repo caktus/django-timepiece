@@ -4,13 +4,12 @@ from timepiece.contracts.models import ProjectContract, ContractHour,\
         ContractAssignment, ContractRate, HourGroup, ContractBudget, \
         ContractNote, ContractAttachment
 
-
 class ContractAssignmentInline(admin.TabularInline):
     model = ContractAssignment
     raw_id_fields = ('user',)
 
-    def queryset(self, request):
-        qs = super(ContractAssignmentInline, self).queryset(request)
+    def get_queryset(self, request):
+        qs = super(ContractAssignmentInline, self).get_queryset(request)
         return qs.select_related()
 
 

@@ -1,5 +1,4 @@
 {% load timepiece_tags %}
-{% load url from future %}
 
 {# FIXME: Some of those permissions don't exist #}
 {% if perms.entries.can_clock_in or perms.entries.view_entry_summary or perms.entries.view_payroll_summary or perms.contracts.change_entrygroup or user.is_staff %}
@@ -30,6 +29,8 @@
                 {% if perms.crm.view_user_revenue_report %}
                 <li><a href="{% url 'report_revenue' %}">Revenue Report</a></li>
                 {% endif %}
+
+                <li><a href="{% url 'report_estimation_accuracy' %}">Estimation Accuracy</a></li>
 
                 {% if user.is_staff or perms.contracts.change_entrygroup or perms.entries.can_clock_in %}
                     <li class="divider"></li>

@@ -1,98 +1,48 @@
 #!/usr/bin/env python
 import os
 import sys
-import optparse
-
-from django.conf import settings
+import argparse
 
 
-parser = optparse.OptionParser()
-opts, args = parser.parse_args()
-
-if not settings.configured:
-    directory = os.path.abspath('%s' % os.path.dirname(__file__))
-    jenkins = ()
-    db_name = 'test_django_timepiece'
-    if 'jenkins' in args:
-        jenkins = ('django_jenkins',)
-        db_name = 'timepiece_%s' % os.environ.get('TESTENV', db_name)
-
-    settings.configure(
-        DATABASES={
-            'default': {
-                'ENGINE': 'django.db.backends.postgresql_psycopg2',
-                'NAME': 'django_timepiece',
-                'TEST_NAME': db_name,
-            }
-        },
-        INSTALLED_APPS=(
-            'django.contrib.auth',
-            'django.contrib.contenttypes',
-            'django.contrib.sessions',
-            'django.contrib.messages',
-            'django.contrib.markup',
-            'django.contrib.sites',
-            'bootstrap_toolkit',
-            'compressor',
-            'pagination',
-            'selectable',
-            'timepiece',
-            'timepiece.contracts',
-            'timepiece.crm',
-            'timepiece.entries',
-            'timepiece.reports',
-        ) + jenkins,
-        MIDDLEWARE_CLASSES=(
-            'django.middleware.common.CommonMiddleware',
-            'django.contrib.sessions.middleware.SessionMiddleware',
-            'django.middleware.csrf.CsrfViewMiddleware',
-            'django.contrib.auth.middleware.AuthenticationMiddleware',
-            'django.contrib.messages.middleware.MessageMiddleware',
-            'pagination.middleware.PaginationMiddleware',
-        ),
-        ROOT_URLCONF='example_project.urls',
-        SITE_ID=1,
-        STATIC_URL='%s/timepiece/static/' % directory,
-        TEMPLATE_CONTEXT_PROCESSORS=(
-            'django.contrib.auth.context_processors.auth',
-            'django.core.context_processors.debug',
-            'django.core.context_processors.i18n',
-            'django.core.context_processors.media',
-            'django.core.context_processors.static',
-            'django.contrib.messages.context_processors.messages',
-            'django.core.context_processors.request',
-            'timepiece.context_processors.quick_search',
-            'timepiece.context_processors.quick_clock_in',
-            'timepiece.context_processors.extra_settings',
-        ),
-        TEMPLATE_DIRS=(
-            '%s/example_project/templates' % directory,
-        ),
-
-        # In tests, compressor has a habit of choking on failing tests & masking the real error.
-        COMPRESS_ENABLED=False,
-
-        # jenkins settings.
-        PROJECT_APPS=('timepiece',),
-        JENKINS_TASKS=(
-            'django_jenkins.tasks.with_coverage',
-            'django_jenkins.tasks.django_tests',
-            'django_jenkins.tasks.run_pep8',
-        ),
-
-        # Increase speed in 1.4.
-        PASSWORD_HASHERS=('django.contrib.auth.hashers.MD5PasswordHasher',),
-    )
+# By default, tests will be run for these apps.
+# Other tests can be specified via command-line arguments.
+DEFAULT_APPS = [
+    'timepiece',
+    'timepiece.contracts',
+    'timepiece.crm',
+    'timepiece.entries',
+    'timepiece.reports',
+]
 
 
-def run_django_tests():
+parser = argparse.ArgumentParser(
+    description="Run tests for the django-timepiece application.")
+parser.add_argument(
+    'apps',
+    nargs="*",
+)
+parser.add_argument(
+    '--settings',
+    dest="settings",
+    default="example_project.settings.tests",
+    help="Django settings file to use.",
+)
+
+
+def run_django_tests(settings, apps):
+    os.environ['DJANGO_SETTINGS_MODULE'] = settings
+
+    import django
+    if hasattr(django, 'setup'):  # Django 1.7+
+        django.setup()
+
+    from django.conf import settings
     from django.test.utils import get_runner
-    TestRunner = get_runner(settings)
-    test_runner = TestRunner(verbosity=1, interactive=True, failfast=False)
-    apps = ['timepiece', 'contracts', 'crm', 'entries', 'reports']
-    failures = test_runner.run_tests(args or apps)
+    runner = get_runner(settings)(verbosity=1, interactive=True, failfast=False)
+    failures = runner.run_tests(apps or DEFAULT_APPS)
     sys.exit(failures)
 
 
 if __name__ == '__main__':
-    run_django_tests()
+    options = parser.parse_args()
+    run_django_tests(options.settings, options.apps)

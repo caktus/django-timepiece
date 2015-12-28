@@ -1,6 +1,10 @@
 {% extends "timepiece/business/base.html" %}
-{% load timepiece_tags bootstrap_toolkit humanize %}
-{% load url from future %}
+
+{% load timepiece_tags %}
+{% load bootstrap_toolkit %}
+{% load humanize %}
+{% load static %}
+
 
 {% block title %}{{ object.name }}{% endblock title %}
 
@@ -194,8 +198,8 @@
 {% endblock content %}
 
 {% block extrajs %}
-<script src="{{ STATIC_URL }}project-toolbox/js/tags.js" ></script>
-<script src="{{ STATIC_URL }}ajaxuploader/js/fileuploader.js" ></script>
+<script src='{% static "project-toolbox/js/tags.js" %}'></script>
+<script src='{% static "ajaxuploader/js/fileuploader.js" %}'></script>
 <script>
     $(document).ready( function () {
         create_remove_tag_handler("{% url 'remove_business_tag' object.id %}");

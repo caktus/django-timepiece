@@ -23,33 +23,32 @@ class ProjectHoursTestCase(ViewTestMixin, TestCase):
         permissions = Permission.objects.filter(
             content_type=ContentType.objects.get_for_model(Entry),
             codename__in=('can_clock_in', 'can_clock_out', 'can_pause',
-                    'change_entry')
-        )
+                          'change_entry'))
         self.user.user_permissions = permissions
         self.user.save()
         self.superuser = factories.Superuser()
 
         self.tracked_status = factories.StatusAttribute(
-                label='Current', billable=True, enable_timetracking=True)
+            label='Current', billable=True, enable_timetracking=True)
         self.untracked_status = factories.StatusAttribute(
-                label='Closed', billable=False, enable_timetracking=False)
+            label='Closed', billable=False, enable_timetracking=False)
         self.tracked_type = factories.TypeAttribute(
-                label='Tracked', billable=True, enable_timetracking=True)
+            label='Tracked', billable=True, enable_timetracking=True)
         self.untracked_type = factories.TypeAttribute(
-                label='Untracked', billable=False, enable_timetracking=False)
+            label='Untracked', billable=False, enable_timetracking=False)
 
         self.work_activities = factories.ActivityGroup(name='Work')
         self.leave_activities = factories.ActivityGroup(name='Leave')
         self.all_activities = factories.ActivityGroup(name='All')
 
-        self.leave_activity = factories.Activity(code='leave',
-                name='Leave', billable=False)
-        self.leave_activity.activity_group.add(self.leave_activities,
-                self.all_activities)
-        self.work_activity = factories.Activity(code='work',
-                name='Work', billable=True)
-        self.work_activity.activity_group.add(self.work_activities,
-                self.all_activities)
+        self.leave_activity = factories.Activity(
+            code='leave', name='Leave', billable=False)
+        self.leave_activity.activity_group.add(
+            self.leave_activities, self.all_activities)
+        self.work_activity = factories.Activity(
+            code='work', name='Work', billable=True)
+        self.work_activity.activity_group.add(
+            self.work_activities, self.all_activities)
 
         data = {
             'type': self.tracked_type,
@@ -57,26 +56,25 @@ class ProjectHoursTestCase(ViewTestMixin, TestCase):
             'activity_group': self.work_activities,
         }
         self.tracked_project = factories.BillableProject(
-                name='Tracked', **data)
+            name='Tracked', **data)
         data = {
             'type': self.untracked_type,
             'status': self.untracked_status,
             'activity_group': self.all_activities,
         }
         self.untracked_project = factories.BillableProject(
-                name='Untracked', **data)
+            name='Untracked', **data)
 
 
 class ProjectHoursModelTestCase(ProjectHoursTestCase):
 
     def test_week_start(self):
         """week_start should always save to Monday of the given week."""
-        monday = datetime.date(2012, 07, 16)
+        monday = datetime.date(2012, 7, 16)
         for i in range(7):
             date = monday + relativedelta(days=i)
             entry = ProjectHours.objects.create(
-                    week_start=date, project=self.tracked_project,
-                    user=self.user)
+                week_start=date, project=self.tracked_project, user=self.user)
             self.assertEquals(entry.week_start.date(), monday)
             ProjectHours.objects.all().delete()
 
@@ -88,10 +86,8 @@ class ProjectHoursListViewTestCase(ProjectHoursTestCase):
         self.past_week = utils.get_week_start(datetime.date(2012, 4, 1)).date()
         self.current_week = utils.get_week_start().date()
         for i in range(5):
-            factories.ProjectHours(week_start=self.past_week,
-                    published=True)
-            factories.ProjectHours(week_start=self.current_week,
-                    published=True)
+            factories.ProjectHours(week_start=self.past_week, published=True)
+            factories.ProjectHours(week_start=self.current_week, published=True)
         self.url = reverse('view_schedule')
         self.login_user(self.user)
         self.date_format = '%Y-%m-%d'
@@ -136,8 +132,8 @@ class ProjectHoursListViewTestCase(ProjectHoursTestCase):
                 if entry:
                     count += 1
                     self.assertTrue(all_entries.filter(project__id=proj_id,
-                            user__id=users[i][0],
-                            hours=entry['hours']).exists())
+                                    user__id=users[i][0],
+                                    hours=entry['hours']).exists())
         self.assertEquals(count, all_entries.count())
 
     def test_week_filter_midweek(self):
@@ -200,6 +196,17 @@ class ProjectHoursEditTestCase(ProjectHoursTestCase):
             week_start=self.next_week, project=self.tracked_project,
             user=self.manager, hours="2.0")
 
+    def add_user_to_project_when_assigning_hours(self):
+        newbie = factories.User()
+        self.assertNotIn(newbie, self.tracked_project.users.all())
+        self.client.post(self.ajax_url, data={
+            'hours': 5,
+            'week_start': '2012-07-23',
+            'user': newbie.id,
+            'project': self.tracked_project.id
+        })
+        self.assertIn(newbie, self.tracked_project.users.all())
+
     def ajax_posts(self):
         date_msg = 'Parameter week_start must be a date in the format ' \
             'yyyy-mm-dd'
@@ -210,7 +217,7 @@ class ProjectHoursEditTestCase(ProjectHoursTestCase):
             'week_start': '2012-07-23'
         })
         self.assertEquals(response.status_code, 500)
-        self.assertEquals(response.content, msg)
+        self.assertEquals(response.content.decode('utf-8'), msg)
 
         response = self.client.post(self.ajax_url, data={
             'hours': 5,
@@ -218,14 +225,14 @@ class ProjectHoursEditTestCase(ProjectHoursTestCase):
             'week_start': '2012-07-23'
         })
         self.assertEquals(response.status_code, 500)
-        self.assertEquals(response.content, msg)
+        self.assertEquals(response.content.decode('utf-8'), msg)
 
         response = self.client.post(self.ajax_url, data={
             'project': self.tracked_project.pk,
             'week_start': '2012-07-23'
         })
         self.assertEquals(response.status_code, 500)
-        self.assertEquals(response.content, msg)
+        self.assertEquals(response.content.decode('utf-8'), msg)
 
         response = self.client.post(self.ajax_url, data={
             'project': self.tracked_project.pk,
@@ -233,14 +240,14 @@ class ProjectHoursEditTestCase(ProjectHoursTestCase):
             'week_start': '2012-07-23'
         })
         self.assertEquals(response.status_code, 500)
-        self.assertEquals(response.content, msg)
+        self.assertEquals(response.content.decode('utf-8'), msg)
 
         response = self.client.post(self.ajax_url, data={
             'user': self.manager.pk,
             'week_start': '2012-07-23'
         })
         self.assertEquals(response.status_code, 500)
-        self.assertEquals(response.content, msg)
+        self.assertEquals(response.content.decode('utf-8'), msg)
 
         response = self.client.post(self.ajax_url, data={
             'hours': 5,
@@ -248,13 +255,13 @@ class ProjectHoursEditTestCase(ProjectHoursTestCase):
             'week_start': '2012-07-23'
         })
         self.assertEquals(response.status_code, 500)
-        self.assertEquals(response.content, msg)
+        self.assertEquals(response.content.decode('utf-8'), msg)
 
         response = self.client.post(self.ajax_url, data={
             'week_start': '2012-07-23'
         })
         self.assertEquals(response.status_code, 500)
-        self.assertEquals(response.content, msg)
+        self.assertEquals(response.content.decode('utf-8'), msg)
 
         response = self.client.post(self.ajax_url, data={
             'hours': 5,
@@ -262,12 +269,12 @@ class ProjectHoursEditTestCase(ProjectHoursTestCase):
             'project': self.tracked_project.pk
         })
         self.assertEquals(response.status_code, 500)
-        self.assertEquals(response.content, date_msg)
+        self.assertEquals(response.content.decode('utf-8'), date_msg)
 
     def process_default_call(self, response):
         self.assertEquals(response.status_code, 200)
 
-        data = json.loads(response.content)
+        data = json.loads(response.content.decode('utf-8'))
 
         self.assertEquals(len(data['project_hours']), 2)
         self.assertEquals(len(data['projects']), 1)
@@ -312,7 +319,7 @@ class ProjectHoursEditTestCase(ProjectHoursTestCase):
         response = self.client.get(self.ajax_url)
         self.assertEquals(response.status_code, 200)
 
-        data = json.loads(response.content)
+        data = json.loads(response.content.decode('utf-8'))
 
         self.assertEquals(data['project_hours'], [])
         self.assertEquals(data['projects'], [])
@@ -331,7 +338,7 @@ class ProjectHoursEditTestCase(ProjectHoursTestCase):
         self.login_user(self.manager)
         response = self.client.get(self.ajax_url)
         self.assertEquals(response.status_code, 200)
-        users = [u['id'] for u in json.loads(response.content)['all_users']]
+        users = [u['id'] for u in json.loads(response.content.decode('utf-8'))['all_users']]
         self.assertEquals(len(users), 3)
         self.assertTrue(group_user.id in users)
         self.assertTrue(perm_user.id in users)
@@ -377,7 +384,7 @@ class ProjectHoursEditTestCase(ProjectHoursTestCase):
         })
         self.assertEquals(response.status_code, 200)
 
-        data = json.loads(response.content)
+        data = json.loads(response.content.decode('utf-8'))
 
         self.assertEquals(len(data['project_hours']), 2)
         self.assertEquals(len(data['projects']), 1)
@@ -408,7 +415,7 @@ class ProjectHoursEditTestCase(ProjectHoursTestCase):
 
         ph = ProjectHours.objects.get()
         self.assertEquals(ProjectHours.objects.count(), 1)
-        self.assertEquals(int(response.content), ph.pk)
+        self.assertEquals(int(response.content.decode('utf-8')), ph.pk)
         self.assertEquals(ph.hours, Decimal("5.0"))
 
     def test_ajax_create_unsuccessful(self):

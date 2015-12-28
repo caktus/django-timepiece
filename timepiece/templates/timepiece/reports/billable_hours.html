@@ -1,6 +1,8 @@
 {% extends "timepiece/reports/base.html" %}
-{% load timepiece_tags bootstrap_toolkit %}
-{% load url from future %}
+
+{% load bootstrap_toolkit %}
+{% load static %}
+{% load timepiece_tags %}
 
 {% block title %}Billable Hours Report{% endblock title %}
 
@@ -23,7 +25,7 @@
 {% block extrajs %}
     {{ block.super }}
     <script charset="utf-8" src="https://www.google.com/jsapi"></script>
-    <script charset="utf-8" src="{{ STATIC_URL }}timepiece/js/chart/billable_chart.js"
+    <script charset="utf-8" src="{% static "timepiece/js/chart/billable_chart.js" %}"
             data-hours="{{ data }}"></script>
 {% endblock extrajs %}
 

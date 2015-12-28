@@ -1,5 +1,6 @@
 {% extends "timepiece/base.html" %}
-{% load url from future %}
+
+{% load static %}
 {% load timepiece_tags %}
 
 {% block title %}Dashboard{% endblock title %}
@@ -14,14 +15,19 @@
             tabIds = ['progress', 'all-entries', 'online-users'],
             defaultTab = 'progress';
     </script>
-    <script charset="utf-8" src="{{ STATIC_URL }}timepiece/js/permanent_tabs.js"></script>
+    <script charset="utf-8" src="{% static "timepiece/js/permanent_tabs.js" %}"></script>
 
     <script>
         // The largest number of hours worked or assigned on any project.
         var max_hours = {% get_max_hours %};
     </script>
-    <script charset="utf-8" src="{{ STATIC_URL }}timepiece/js/dashboard.js"></script>
-    <script charset="utf-8" src="{{ STATIC_URL }}timepiece/js/prevent_double_click.js"></script>
+    <script charset="utf-8" src="{% static "timepiece/js/dashboard.js" %}"></script>
+    <script charset="utf-8" src="{% static "timepiece/js/prevent_double_click.js" %}"></script>
+    <script>
+    $(document).ready(function(){
+        $('[data-toggle="popover"]').popover();
+    });
+    </script>
 {% endblock extrajs %}
 
 {% block content %}
@@ -34,7 +40,7 @@
                 <div id="active-buttons">
                     <div class="pull-left">
                         <a class="btn btn-primary" href="{% url 'clock_in' %}">
-                            {% if active_entry %}Switch Entry{% else %}Clock In{% endif %}
+                            {% if active_entry %}Switch{% else %}Clock In{% endif %}
                         </a>
                         {% if active_entry %}
                             <a class="btn btn-primary" href="{% url 'clock_out' %}">Clock Out</a>
@@ -67,6 +73,17 @@
                             {% endif %}
                         {% endifnotequal %}
                         ({{ active_entry.get_total_seconds|humanize_seconds }} time clocked{% if active_entry.seconds_paused or active_entry.is_paused %} and {{ active_entry.get_paused_seconds|humanize_seconds }} paused{% endif %}).
+                        {% if active_entry.comments %}
+                            <a class="btn btn-primary btn-mini" data-toggle="popover"
+                               data-html="true"
+                               title="Active Entry Comment"
+                               data-content="{{ active_entry.comments|linebreaks }}"
+                               data-placement="bottom"
+                               data-container="body">
+                                   <i class="icon-white icon-comment"></i>
+                           </a>
+                        {% endif %}
+
                     {% else %}
                         You are not currently clocked into a project.
                     {% endif %}

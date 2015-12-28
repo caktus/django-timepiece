@@ -36,7 +36,7 @@ class SearchMixin(GetDataFormMixin, FormMixin):
 
     def filter_form_valid(self, form, queryset):
         raise NotImplemented("Subclass must implement queryset filtering "
-                "when the search form is valid.")
+                             "when the search form is valid.")
 
     def filter_form_unbound(self, form, queryset):
         """Return all results."""
@@ -52,8 +52,7 @@ class SearchMixin(GetDataFormMixin, FormMixin):
         if not allow_empty and len(self.object_list) == 0:
             raise Http404("No results found.")
 
-        context = self.get_context_data(form=self.form,
-                object_list=self.object_list)
+        context = self.get_context_data(form=self.form, object_list=self.object_list)
         return self.render_to_response(context)
 
     def post(self, request, *args, **kwargs):

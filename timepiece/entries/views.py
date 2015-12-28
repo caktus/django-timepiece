@@ -4,7 +4,8 @@ from dateutil.relativedelta import relativedelta
 from decimal import Decimal
 from itertools import groupby
 import json
-import urllib
+
+from six.moves.urllib.parse import urlencode
 
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required, permission_required
@@ -95,9 +96,9 @@ class Dashboard(TemplateView):
         total_worked = sum([p['worked'] for p in project_progress])
 
         # Others' active entries.
-        others_active_entries = Entry.objects.filter(end_time__isnull=True) \
-                .exclude(user=self.user).select_related('user', 'project',
-                'activity')
+        others_active_entries = Entry.objects.filter(end_time__isnull=True)
+        others_active_entries = others_active_entries.exclude(user=self.user)
+        others_active_entries = others_active_entries.select_related('user', 'project', 'activity')
 
         return {
             'active_tab': self.active_tab,
@@ -150,7 +151,7 @@ class Dashboard(TemplateView):
 
 
 @permission_required('entries.can_clock_in')
-@transaction.commit_on_success
+@transaction.atomic
 def clock_in(request):
     """For clocking the user into a project."""
     user = request.user
@@ -168,7 +169,7 @@ def clock_in(request):
             entry.mechanism = Entry.TIMECLOCK
             entry.save()
         message = 'You have clocked into {0} on {1}.'.format(
-                entry.activity.name, entry.project)
+            entry.activity.name, entry.project)
         messages.info(request, message)
         return HttpResponseRedirect(reverse('dashboard'))
 
@@ -201,7 +202,7 @@ def clock_out(request):
                 entry.mechanism = Entry.MANUAL
                 entry.save()
             message = 'You have clocked out of {0} on {1}.'.format(
-                    entry.activity.name, entry.project)
+                entry.activity.name, entry.project)
             messages.info(request, message)
             return HttpResponseRedirect(reverse('dashboard'))
         else:
@@ -229,7 +230,7 @@ def toggle_pause(request):
     # create a message that can be displayed to the user
     action = 'paused' if entry.is_paused else 'resumed'
     message = 'Your entry, {0} on {1}, has been {2}.'.format(
-            entry.activity.name, entry.project, action)
+        entry.activity.name, entry.project, action)
     messages.info(request, message)
 
     # redirect to the log entry list
@@ -243,22 +244,24 @@ def create_edit_entry(request, entry_id=None):
             entry = Entry.no_join.get(pk=entry_id)
         except Entry.DoesNotExist:
             entry = None
-        if not entry or not (entry.is_editable or
-                request.user.has_perm('entries.view_payroll_summary')):
-            raise Http404
+        else:
+            if not (entry.is_editable or request.user.has_perm('entries.view_payroll_summary')):
+                raise Http404
     else:
         entry = None
 
     entry_user = entry.user if entry else request.user
+
     if request.method == 'POST':
         form = AddUpdateEntryForm(data=request.POST, instance=entry,
-                user=entry_user)
+                user=entry_user, acting_user=request.user)
         proj_id = request.POST.get('project', None)
         if proj_id:
             proj = Project.objects.get(id=int(proj_id))
             if proj.activity_group:
                 form.fields['activity'].queryset = Activity.objects.filter(
                     id__in=[v['id'] for v in proj.activity_group.activities.values()])
+
         if form.is_valid():
             entry = form.save()
             # make sure that the mechanism is MANUAL rather than TIMECLOCK
@@ -269,15 +272,17 @@ def create_edit_entry(request, entry_id=None):
             else:
                 message = 'The entry has been created successfully.'
             messages.info(request, message)
-            url = request.REQUEST.get('next', reverse('dashboard'))
+            url = request.GET.get('next', reverse('dashboard'))
             return HttpResponseRedirect(url)
         else:
             message = 'Please fix the errors below.'
             messages.error(request, message)
     else:
         initial = dict([(k, request.GET[k]) for k in request.GET.keys()])
-        form = AddUpdateEntryForm(instance=entry, user=entry_user,
-                initial=initial)
+        form = AddUpdateEntryForm(instance=entry,
+                                  user=entry_user,
+                                  initial=initial,
+                                  acting_user=request.user)
 
     return render(request, 'timepiece/entry/create_edit.html', {
         'form': form,
@@ -291,7 +296,7 @@ def reject_entry(request, entry_id):
     Admins can reject an entry that has been verified or approved but not
     invoiced to set its status to 'unverified' for the user to fix.
     """
-    return_url = request.REQUEST.get('next', reverse('dashboard'))
+    return_url = request.GET.get('next', reverse('dashboard'))
     try:
         entry = Entry.no_join.get(pk=entry_id)
     except:
@@ -312,7 +317,7 @@ def reject_entry(request, entry_id):
         return redirect(return_url)
     return render(request, 'timepiece/entry/reject.html', {
         'entry': entry,
-        'next': request.REQUEST.get('next'),
+        'next': request.GET.get('next'),
     })
 
 
@@ -345,10 +350,9 @@ def delete_entry(request, entry_id):
         key = request.POST.get('key', None)
         if key and key == entry.delete_key:
             entry.delete()
-            message = 'Deleted {0} for {1}.'.format(entry.activity.name,
-                    entry.project)
+            message = 'Deleted {0} for {1}.'.format(entry.activity.name, entry.project)
             messages.info(request, message)
-            url = request.REQUEST.get('next', reverse('dashboard'))
+            url = request.GET.get('next', reverse('dashboard'))
             return HttpResponseRedirect(url)
         else:
             message = 'You are not authorized to delete this entry!'
@@ -436,8 +440,7 @@ class ScheduleMixin(object):
             datetime.datetime.combine(self.period_start, 
                 datetime.datetime.min.time()), self.period_end) * 8
 
-        return super(ScheduleMixin, self).dispatch(request, *args,
-                **kwargs)
+        return super(ScheduleMixin, self).dispatch(request, *args, **kwargs)
 
     def get_hours_for_period(self, period_start=None):
         """
@@ -512,6 +515,7 @@ class ScheduleView(ScheduleMixin, TemplateView):
                 'published')
         project_hours = project_hours.order_by('-project__type__billable',
                 'project__name')
+
         if not self.request.user.has_perm('entries.add_projecthours'):
             project_hours = project_hours.filter(published=True)
         users = self.get_users_from_project_hours(project_hours)
@@ -551,8 +555,7 @@ class EditScheduleView(ScheduleMixin, TemplateView):
         if not request.user.has_perm('entries.add_projecthours'):
             return HttpResponseRedirect(reverse('view_schedule'))
 
-        return super(EditScheduleView, self).dispatch(request, *args,
-                **kwargs)
+        return super(EditScheduleView, self).dispatch(request, *args, **kwargs)
 
     def get_context_data(self, **kwargs):
         context = super(EditScheduleView, self).get_context_data(**kwargs)
@@ -583,7 +586,7 @@ class EditScheduleView(ScheduleMixin, TemplateView):
         param = {
             'period_start': self.period_start.strftime(DATE_FORM_FORMAT)
         }
-        url = '?'.join((reverse('edit_schedule'), urllib.urlencode(param),))
+        url = '?'.join((reverse('edit_schedule'), urlencode(param),))
 
         return HttpResponseRedirect(url)
 
@@ -595,8 +598,7 @@ class ScheduleAjaxView(ScheduleMixin, View):
         if not request.user.has_perm('entries.add_projecthours'):
             return HttpResponseRedirect(reverse('auth_login'))
 
-        return super(ScheduleAjaxView, self).dispatch(request, *args,
-                **kwargs)
+        return super(ScheduleAjaxView, self).dispatch(request, *args, **kwargs)
 
     def get_instance(self, data, period_start):
         try:
@@ -629,8 +631,9 @@ class ScheduleAjaxView(ScheduleMixin, View):
         )
         project_hours = self.get_hours_for_period().values(
             'id', 'user', 'user__first_name', 'user__last_name',
-            'project', 'hours', 'published'
-        ).order_by('-project__type__billable', 'project__name',
+            'project', 'hours', 'published')
+        project_hours = project_hours.order_by(
+            'project__name',
             'user__first_name', 'user__last_name')
         inner_qs = project_hours.values_list('project', flat=True)
         projects = Project.objects.filter(pk__in=inner_qs).values() \
@@ -684,7 +687,7 @@ class ScheduleAjaxView(ScheduleMixin, View):
             'ajax_url': reverse('ajax_schedule'),
         }
         return HttpResponse(json.dumps(data, cls=DecimalEncoder),
-            mimetype='application/json')
+                            content_type='application/json')
 
     def duplicate_entries(self, duplicate, period_update):
         def duplicate_builder(queryset, new_date):
@@ -716,8 +719,7 @@ class ScheduleAjaxView(ScheduleMixin, View):
         param = {
             'week_start': period_update
         }
-        url = '?'.join((reverse('edit_schedule'),
-            urllib.urlencode(param),))
+        url = '?'.join((reverse('edit_schedule'), urlencode(param),))
 
         if not prev_period_qs.exists():
             msg = 'There are no hours to copy'
@@ -739,7 +741,7 @@ class ScheduleAjaxView(ScheduleMixin, View):
 
         if form.is_valid():
             ph = form.save()
-            return HttpResponse(str(ph.pk), mimetype='text/plain')
+            return HttpResponse(str(ph.pk), content_type='text/plain')
 
         msg = 'The request must contain values for user, project, and hours'
         return HttpResponse(msg, status=500)
@@ -775,7 +777,7 @@ class ScheduleDetailView(ScheduleMixin, View):
 
         if assignment_id:
             ProjectHours.objects.filter(pk=assignment_id).delete()
-            return HttpResponse('ok', mimetype='text/plain')
+            return HttpResponse('ok', content_type='text/plain')
 
         return HttpResponse('', status=500)
 

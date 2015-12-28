@@ -1,9 +1,9 @@
-from django.conf.urls import patterns, url
+from django.conf.urls import url
 
 from timepiece.entries import views
 
 
-urlpatterns = patterns('',
+urlpatterns = [
     url(r'^dashboard/(?:(?P<active_tab>progress|all-entries|online-users)/)?$',
         views.Dashboard.as_view(),
         name='dashboard'),
@@ -59,4 +59,4 @@ urlpatterns = patterns('',
     url(r'^activity/cheat-sheet$',
         views.activity_cheat_sheet,
         name='activity_cheat_sheet'),
-)
+]

@@ -17,7 +17,8 @@ class HumanizeTimeTestCase(TestCase):
     def test_seconds(self):
         seconds_display = tags.humanize_seconds((5.5 * 3600) + 3)
         expected = u'05:30:03'
-        self.assertEquals(seconds_display, expected,
+        self.assertEquals(
+            seconds_display, expected,
             "Should return {0}, returned {1}".format(expected, seconds_display)
         )
 
@@ -26,42 +27,48 @@ class HumanizeTimeTestCase(TestCase):
         expected = u'-02:30:04'
         self.assertTrue(seconds_display.startswith('<span'))
         self.assertTrue('negative-time' in seconds_display)
-        self.assertEquals(strip_tags(seconds_display), expected,
+        self.assertEquals(
+            strip_tags(seconds_display), expected,
             "Should return {0}, returned {1}".format(expected, seconds_display)
         )
 
     def test_seconds_overnight(self):
         seconds_display = tags.humanize_seconds((30 * 3600) + 2)
         expected = u'30:00:02'
-        self.assertEquals(seconds_display, expected,
+        self.assertEquals(
+            seconds_display, expected,
             "Should return {0}, returned {1}".format(expected, seconds_display)
         )
 
     def test_seconds_format(self):
         seconds_display = tags.humanize_seconds(120, '{minutes:02d}:{minutes}')
         expected = u'02:2'
-        self.assertEquals(seconds_display, expected,
+        self.assertEquals(
+            seconds_display, expected,
             "Should return {0}, returned {1}".format(expected, seconds_display)
         )
 
     def test_seconds_negative_format(self):
         seconds_display = tags.humanize_seconds(-120, None, '-{minutes:02d}')
         expected = u'-02'
-        self.assertEquals(seconds_display, expected,
+        self.assertEquals(
+            seconds_display, expected,
             "Should return {0}, returned {1}".format(expected, seconds_display)
         )
 
     def test_hours(self):
         hours_display = tags.humanize_hours(7.5)
         expected = u'07:30:00'
-        self.assertEquals(hours_display, expected,
+        self.assertEquals(
+            hours_display, expected,
             "Should return {0}, returned {1}".format(expected, hours_display)
         )
 
     def test_hours_format(self):
         hours_display = tags.humanize_hours(7.1, '{minutes:02d}:{minutes}')
         expected = u'06:6'
-        self.assertEquals(hours_display, expected,
+        self.assertEquals(
+            hours_display, expected,
             "Should return {0}, returned {1}".format(expected, hours_display)
         )
 
@@ -123,8 +130,8 @@ class DateFiltersTagTestCase(TestCase):
 
     def test_no_use_range(self):
         # sniff test of turning off use_range
-        retval = tags.date_filters("FORM_ID", options=('years',),
-            use_range=False)
+        retval = tags.date_filters(
+            "FORM_ID", options=('years',), use_range=False)
         filter = retval['filters']['Years']
         for year, first_date, last_date in filter:
             # first date is blank
@@ -164,18 +171,34 @@ class MiscTagTestCase(TestCase):
         self.assertEqual(49, retval)
 
     def test_project_report_url_for_contract(self):
-        with mock.patch('timepiece.templatetags.timepiece_tags.reverse')\
-        as reverse:
-            reverse.return_value = "Boo"
-            dt = datetime.date(2013, 1, 10)
-            contract = mock.Mock(start_date=dt, end_date=dt)
-            project = mock.Mock(id=54)
-            retval = tags.project_report_url_for_contract(contract, project)
-            url = 'Boo?billable=1&projects_1=54&from_date=' \
-                '2013-01-10&to_date=2013-01-10&non_billable=0' \
-                '&paid_time_off=0&trunc=month'
-            self.assertEqual(url, retval)
-            self.assertEqual('report_hourly', reverse.call_args[0][0])
+        ## this was an old test from a merge conflict
+        # with mock.patch('timepiece.templatetags.timepiece_tags.reverse')\
+        # as reverse:
+        #     reverse.return_value = "Boo"
+        #     dt = datetime.date(2013, 1, 10)
+        #     contract = mock.Mock(start_date=dt, end_date=dt)
+        #     project = mock.Mock(id=54)
+        #     retval = tags.project_report_url_for_contract(contract, project)
+        #     url = 'Boo?billable=1&projects_1=54&from_date=' \
+        #         '2013-01-10&to_date=2013-01-10&non_billable=0' \
+        #         '&paid_time_off=0&trunc=month'
+        #     self.assertEqual(url, retval)
+        #     self.assertEqual('report_hourly', reverse.call_args[0][0])
+        
+        dt = datetime.date(2013, 1, 10)
+        contract = mock.Mock(start_date=dt, end_date=dt)
+        project = mock.Mock(id=54)
+        result = tags._project_report_url_params(contract, project)
+        expected_url = {
+            'from_date': '2013-01-10',
+            'to_date': '2013-01-10',
+            'billable': 1,
+            'non_billable': 0,
+            'paid_leave': 0,
+            'trunc': 'month',
+            'projects_1': project.id,
+        }
+        self.assertEqual(expected_url, result)
 
 
 class SumHoursTagTestCase(TestCase):
@@ -184,6 +207,7 @@ class SumHoursTagTestCase(TestCase):
         class Entry(object):
             def __init__(self, seconds):
                 self.seconds = seconds
+
             def get_total_seconds(self):
                 return self.seconds
 
@@ -209,9 +233,9 @@ class ArithmeticTagTestCase(TestCase):
     def test_get_max_hours(self):
         ctx = {
             'project_progress': [
-                { 'worked': 1, 'assigned': 2},
-                { 'worked': 3, 'assigned': 0},
-                { 'worked': 2, 'assigned': 1},
+                {'worked': 1, 'assigned': 2},
+                {'worked': 3, 'assigned': 0},
+                {'worked': 2, 'assigned': 1},
             ]
         }
         self.assertEqual(3, tags.get_max_hours(ctx))
@@ -220,8 +244,8 @@ class ArithmeticTagTestCase(TestCase):
         # min of max hours is zero
         ctx = {
             'project_progress': [
-                { 'worked': -1, 'assigned': -4},
-                { 'worked': -3, 'assigned': -5},
+                {'worked': -1, 'assigned': -4},
+                {'worked': -3, 'assigned': -5},
                 ]
         }
         self.assertEqual(0, tags.get_max_hours(ctx))
@@ -240,7 +264,7 @@ class TestProjectHoursForContract(TestCase):
             self.a_project,
             self.another_project,
             self.billable_project,
-            self.project_without_hours
+            self.project_without_hours,
         ]
 
         self.contract = factories.ProjectContract(projects=projects)
@@ -248,21 +272,21 @@ class TestProjectHoursForContract(TestCase):
         unbillable_activity = factories.Activity(billable=False)
 
         start_time = datetime.datetime.now()
-        factories.Entry(project=self.a_project,
-                activity=activity, start_time=start_time,
-                end_time=start_time + relativedelta(hours=1))
-        factories.Entry(project=self.a_project,
-                activity=unbillable_activity, start_time=start_time,
-                end_time=start_time + relativedelta(hours=16))
-        factories.Entry(project=self.another_project,
-                activity=activity, start_time=start_time,
-                end_time=start_time + relativedelta(hours=2))
-        factories.Entry(project=self.billable_project,
-                activity=activity, start_time=start_time,
-                end_time=start_time + relativedelta(hours=4))
-        factories.Entry(project=self.billable_project,
-                activity=unbillable_activity, start_time=start_time,
-                end_time=start_time + relativedelta(hours=8))
+        factories.Entry(
+            project=self.a_project, activity=activity, start_time=start_time,
+            end_time=start_time + relativedelta(hours=1))
+        factories.Entry(
+            project=self.a_project, activity=unbillable_activity,
+            start_time=start_time, end_time=start_time + relativedelta(hours=16))
+        factories.Entry(
+            project=self.another_project, activity=activity,
+            start_time=start_time, end_time=start_time + relativedelta(hours=2))
+        factories.Entry(
+            project=self.billable_project, activity=activity,
+            start_time=start_time, end_time=start_time + relativedelta(hours=4))
+        factories.Entry(
+            project=self.billable_project, activity=unbillable_activity,
+            start_time=start_time, end_time=start_time + relativedelta(hours=8))
 
     def test_project_hours_for_contract(self):
         retval = tags.project_hours_for_contract(self.contract, self.a_project)
@@ -271,27 +295,27 @@ class TestProjectHoursForContract(TestCase):
 
     def test_project_hours_for_contract_none(self):
         # Try it with the aggregate returning None
-        retval = tags.project_hours_for_contract(self.contract,
-            self.project_without_hours)
+        retval = tags.project_hours_for_contract(
+            self.contract, self.project_without_hours)
         self.assertEqual(0, retval)
 
     def test_project_hours_for_contract_billable(self):
         # only include billable hours
-        retval = tags.project_hours_for_contract(self.contract,
-            self.billable_project, 'billable')
+        retval = tags.project_hours_for_contract(
+            self.contract, self.billable_project, 'billable')
         self.assertEqual(4, retval)
 
     def test_project_hours_for_contract_nonbillable(self):
         # only include non-billable hours
-        retval = tags.project_hours_for_contract(self.contract,
-            self.billable_project, 'nonbillable')
+        retval = tags.project_hours_for_contract(
+            self.contract, self.billable_project, 'nonbillable')
         self.assertEqual(8, retval)
 
     def test_project_hours_for_contract_badbillable(self):
         # template tag does syntax check on the 'billable' arg
         with self.assertRaises(template.TemplateSyntaxError):
-            tags.project_hours_for_contract(self.contract,
-                self.a_project, 'invalidarg')
+            tags.project_hours_for_contract(
+                self.contract, self.a_project, 'invalidarg')
 
 
 class AddParametersTest(TestCase):

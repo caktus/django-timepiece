@@ -4,6 +4,7 @@ import urllib
 import json
 import os
 
+from six.moves.urllib.parse import urlencode
 
 from django.conf import settings
 from django.contrib import messages
@@ -102,7 +103,7 @@ def reject_user_timesheet(request, user_id):
         if request.POST.get('yes'):
             if entries.exists():
                 count = entries.count()
-                entries.update(status=Entry.UNVERIFIED)
+                Entry.no_join.filter(pk__in=entries).update(status=Entry.UNVERIFIED)
                 msg = 'You have rejected %d previously verified entries.' \
                     % count
             else:
@@ -153,7 +154,7 @@ def view_user_timesheet(request, user_id, active_tab):
                     # 'project': project_id,
                     'user': form_user.pk,  # Keep so that user appears in form.
                 }
-                url += '?{0}'.format(urllib.urlencode(request_data))
+                url += '?{0}'.format(urlencode(request_data))
                 return HttpResponseRedirect(url)
         else:  # User must be viewing their own time sheet; no redirect needed.
             from_date, to_date, status = form.save()
@@ -182,8 +183,8 @@ def view_user_timesheet(request, user_id, active_tab):
     first_week = utils.get_period_start(from_date)
     month_week = first_week + relativedelta(weeks=1)
     grouped_qs = entries_qs.timespan(first_week, to_date=to_date)
-    intersection = grouped_qs.filter(start_time__lt=month_week,
-        start_time__gte=from_date)
+    intersection = grouped_qs.filter(
+        start_time__lt=month_week, start_time__gte=from_date)
     # If the month of the first week starts in the previous
     # month and we dont have entries in that previous ISO
     # week, then update the first week to start at the first
@@ -207,8 +208,11 @@ def view_user_timesheet(request, user_id, active_tab):
     if can_change or user == request.user:
         show_verify = unverified_count != 0
     if can_approve:
-        show_approve = verified_count + approved_count == total_statuses \
-                and verified_count > 0 and total_statuses != 0
+        show_approve = all([
+            verified_count + approved_count == total_statuses,
+            verified_count > 0,
+            total_statuses != 0,
+        ])
 
     # # TODO: for some reason I have to loop over this in order to
     # # remedy an error... does not make any sense
@@ -244,8 +248,7 @@ def change_user_timesheet(request, user_id, action):
         perm = False
 
     if not perm:
-        return HttpResponseForbidden('Forbidden: You cannot {0} this '
-                'timesheet.'.format(action))
+        return HttpResponseForbidden('Forbidden: You cannot {0} this timesheet.'.format(action))
 
     try:
         (start, end) = utils.get_bimonthly_dates(datetime.date.today())
@@ -295,9 +298,8 @@ def change_user_timesheet(request, user_id, action):
             'verify': 'verified',
             'approve': 'approved',
         }
-        entries.update(status=update_status[action])
-        messages.info(request,
-            'Your entries have been %s' % update_status[action])
+        Entry.no_join.filter(pk__in=entries).update(status=update_status[action])
+        messages.info(request, 'Your entries have been %s' % update_status[action])
         return redirect(return_url)
     hours = entries.all().aggregate(s=Sum('hours'))['s']
     if not hours:
@@ -318,21 +320,21 @@ def change_user_timesheet(request, user_id, action):
 
 
 @cbv_decorator(permission_required('entries.view_project_timesheet'))
-class ProjectTimesheet(CSVViewMixin, DetailView):
+class ProjectTimesheet(DetailView):
     template_name = 'timepiece/project/timesheet.html'
     model = Project
     context_object_name = 'project'
     pk_url_kwarg = 'project_id'
 
     def get(self, *args, **kwargs):
-        self.object = self.model.objects.get(id=kwargs[self.pk_url_kwarg])
-        context = self.get_context_data()
-        if self.request.GET.get('export_project_timesheet', False):
-            kls = CSVViewMixin
-        else:
-            kls = DetailView
-        return kls.render_to_response(self, context)
-
+        if 'csv' in self.request.GET:
+            request_get = self.request.GET.copy()
+            request_get.pop('csv')
+            return_url = reverse('view_project_timesheet_csv',
+                                 args=(self.get_object().pk,))
+            return_url += '?%s' % urlencode(request_get)
+            return redirect(return_url)
+        return super(ProjectTimesheet, self).get(*args, **kwargs)
 
     def get_context_data(self, **kwargs):
         context = super(ProjectTimesheet, self).get_context_data(**kwargs)
@@ -381,14 +383,10 @@ class ProjectTimesheet(CSVViewMixin, DetailView):
                 'status', 'writedown', 'activity__billable')
         month_entries = entries_qs.date_trunc('month', extra_values)
         total = entries_qs.aggregate(hours=Sum('hours'))['hours']
-        user_entries = entries_qs.order_by().values(
-            'user__first_name', 'user__last_name').annotate(
-            sum=Sum('hours')).order_by('-sum'
-        )
-        activity_entries = entries_qs.order_by().values(
-            'activity__name').annotate(
-            sum=Sum('hours')).order_by('-sum'
-        )
+        user_entries = entries_qs.order_by().values('user__first_name', 'user__last_name')
+        user_entries = user_entries.annotate(sum=Sum('hours')).order_by('-sum')
+        activity_entries = entries_qs.order_by().values('activity__name')
+        activity_entries = activity_entries.annotate(sum=Sum('hours')).order_by('-sum')
         context.update({
             'project': project,
             #'year_month_form': year_month_form,
@@ -437,6 +435,9 @@ class ProjectTimesheet(CSVViewMixin, DetailView):
             form.fields[field].widget = widgets.HiddenInput()
         return form
 
+
+class ProjectTimesheetCSV(CSVViewMixin, ProjectTimesheet):
+
     def get_filename(self, context):
         project = self.object.code
         from_date_str = context['from_date'].strftime('%m-%d-%Y')
@@ -483,6 +484,7 @@ class ProjectTimesheet(CSVViewMixin, DetailView):
 class ListBusinesses(SearchListView, CSVViewMixin):
     model = Business
     form_class = BusinessSearchForm
+    paginate_by = 20
     redirect_if_one_result = True
     search_fields = ['name__icontains', 'description__icontains','businessnote__text__icontains']
     template_name = 'timepiece/business/list.html'
@@ -823,15 +825,16 @@ class EditSettings(UpdateView):
 
     def get_success_url(self):
         messages.info(self.request, 'Your settings have been updated.')
-        return self.request.REQUEST.get('next', None) or reverse('dashboard')
+        return self.request.GET.get('next', None) or reverse('dashboard')
 
 
 @cbv_decorator(permission_required('auth.view_user'))
 class ListUsers(SearchListView):
     model = User
+    paginate_by = 20
     redirect_if_one_result = True
     search_fields = ['first_name__icontains', 'last_name__icontains',
-            'email__icontains', 'username__icontains']
+                     'email__icontains', 'username__icontains']
     template_name = 'timepiece/user/list.html'
 
     def get_queryset(self):
@@ -917,6 +920,7 @@ class EditLimitedAccessUserProfile(UpdateView):
 class ListProjects(SearchListView, CSVViewMixin):
     model = Project
     form_class = ProjectSearchForm
+    paginate_by = 20
     redirect_if_one_result = True
     search_fields = ['name__icontains', 'description__icontains', 'code__icontains',
     'point_person__first_name__icontains', 'point_person__last_name__icontains']
@@ -1161,7 +1165,7 @@ class RemoveProjectTag(View):
 
 @cbv_decorator(permission_required('crm.add_projectrelationship'))
 @cbv_decorator(csrf_exempt)
-@cbv_decorator(transaction.commit_on_success)
+@cbv_decorator(transaction.atomic)
 class CreateRelationship(View):
 
     def post(self, request, *args, **kwargs):
@@ -1169,17 +1173,17 @@ class CreateRelationship(View):
         project = self.get_project()
         if user and project:
             ProjectRelationship.objects.get_or_create(user=user, project=project)
-        redirect_to = request.REQUEST.get('next', None) or reverse('dashboard')
+        redirect_to = request.GET.get('next', None) or reverse('dashboard')
         return HttpResponseRedirect(redirect_to)
 
     def get_user(self):
-        user_id = self.request.REQUEST.get('user_id', None)
+        user_id = self.request.GET.get('user_id', None)
         if user_id:
             return get_object_or_404(User, pk=user_id)
         return SelectUserForm(self.request.POST).get_user()
 
     def get_project(self):
-        project_id = self.request.REQUEST.get('project_id', None)
+        project_id = self.request.GET.get('project_id', None)
         if project_id:
             return get_object_or_404(Project, pk=project_id)
         return SelectProjectForm(self.request.POST).get_project()
@@ -1190,18 +1194,16 @@ class RelationshipObjectMixin(object):
 
     def get_object(self, queryset=None):
         queryset = self.get_queryset() if queryset is None else queryset
-        user_id = self.request.REQUEST.get('user_id', None)
-        project_id = self.request.REQUEST.get('project_id', None)
-        return get_object_or_404(self.model, user__id=user_id,
-                project__id=project_id)
+        user_id = self.request.GET.get('user_id', None)
+        project_id = self.request.GET.get('project_id', None)
+        return get_object_or_404(self.model, user__id=user_id, project__id=project_id)
 
     def get_success_url(self):
-        return self.request.REQUEST.get('next',
-                self.object.project.get_absolute_url())
+        return self.request.GET.get('next', self.object.project.get_absolute_url())
 
 
 @cbv_decorator(permission_required('crm.change_projectrelationship'))
-@cbv_decorator(transaction.commit_on_success)
+@cbv_decorator(transaction.atomic)
 class EditRelationship(RelationshipObjectMixin, UpdateView):
     model = ProjectRelationship
     template_name = 'timepiece/relationship/edit.html'
@@ -1210,7 +1212,7 @@ class EditRelationship(RelationshipObjectMixin, UpdateView):
 
 @cbv_decorator(permission_required('crm.delete_projectrelationship'))
 @cbv_decorator(csrf_exempt)
-@cbv_decorator(transaction.commit_on_success)
+@cbv_decorator(transaction.atomic)
 class DeleteRelationship(RelationshipObjectMixin, DeleteView):
     model = ProjectRelationship
     template_name = 'timepiece/relationship/delete.html'

@@ -1,10 +1,8 @@
-from django.conf.urls import patterns, url
+from django.conf.urls import url
 
 from timepiece.contracts import views
 
-
-urlpatterns = patterns('',
-
+urlpatterns = [
     # Contracts
     url(r'^contract/$',
         views.ContractList.as_view(),
@@ -140,4 +138,4 @@ urlpatterns = patterns('',
     url(r'invoice/(?P<invoice_id>\d+)/delete/$',
         views.InvoiceDelete.as_view(),
         name='delete_invoice'),
-)
+]

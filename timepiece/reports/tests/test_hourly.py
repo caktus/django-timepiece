@@ -19,7 +19,7 @@ class TestHourlyReport(ViewTestMixin, LogTimeMixin, ReportsTestBase):
 
     def test_generate_months(self):
         dates = [utils.add_timezone(datetime.datetime(2011, month, 1))
-            for month in xrange(1, 13)]
+                 for month in range(1, 13)]
         start = datetime.date(2011, 1, 1)
         end = datetime.date(2011, 12, 1)
         self.check_generate_dates(start, end, 'month', dates)
@@ -39,7 +39,7 @@ class TestHourlyReport(ViewTestMixin, LogTimeMixin, ReportsTestBase):
 
     def test_generate_days(self):
         dates = [utils.add_timezone(datetime.datetime(2011, 1, day))
-            for day in xrange(1, 32)]
+                 for day in range(1, 32)]
         start = utils.add_timezone(datetime.datetime(2011, 1, 1))
         end = utils.add_timezone(datetime.datetime(2011, 1, 31))
         self.check_generate_dates(start, end, 'day', dates)
@@ -139,8 +139,8 @@ class TestHourlyReport(ViewTestMixin, LogTimeMixin, ReportsTestBase):
         last_day = randint(5, 10)
         worked1 = randint(1, 3)
         worked2 = randint(1, 3)
-        for month in xrange(1, 7):
-            for day in xrange(1, last_day + 1):
+        for month in range(1, 7):
+            for day in range(1, last_day + 1):
                 day = utils.add_timezone(datetime.datetime(2011, month, day))
                 self.log_time(start=day, delta=(worked1, 0), user=self.user)
                 self.log_time(start=day, delta=(worked2, 0), user=self.user2)
@@ -152,14 +152,12 @@ class TestHourlyReport(ViewTestMixin, LogTimeMixin, ReportsTestBase):
             self.assertEqual(hour, last_day * worked2)
 
     def args_helper(self, **kwargs):
-        start = utils.add_timezone(
-                kwargs.pop('start', datetime.datetime(2011, 1, 2)))
-        end = utils.add_timezone(
-                kwargs.pop('end', datetime.datetime(2011, 1, 4)))
+        start = utils.add_timezone(kwargs.pop('start', datetime.datetime(2011, 1, 2)))
+        end = utils.add_timezone(kwargs.pop('end', datetime.datetime(2011, 1, 4)))
         defaults = {
-            'from_date': start.strftime('%m/%d/%Y'),
-            'to_date': end.strftime('%m/%d/%Y'),
-            'export': True,
+            'from_date': start.strftime('%Y-%m-%d'),
+            'to_date': end.strftime('%Y-%m-%d'),
+            'export_users': True,
             'billable': True,
             'non_billable': True,
             'paid_time_off': True,
@@ -172,8 +170,8 @@ class TestHourlyReport(ViewTestMixin, LogTimeMixin, ReportsTestBase):
         """Return CSV from hourly report for verification in tests"""
         self.login_user(self.superuser)
         response = self._get(data=args, follow=True)
-        return [item.split(',') \
-                for item in response.content.split('\r\n')][:-1]
+        return [item.split(',')
+                for item in response.content.decode('utf-8').split('\r\n')][:-1]
 
     def check_totals(self, args, data):
         """assert that project_totals contains the data passed in"""
@@ -335,7 +333,7 @@ class TestHourlyReport(ViewTestMixin, LogTimeMixin, ReportsTestBase):
 
     def test_form_projects(self):
         """Filter hours for specific projects."""
-        #Test project 1
+        # Test project 1
         self.bulk_entries()
         args = {
             'billable': True,
@@ -353,7 +351,7 @@ class TestHourlyReport(ViewTestMixin, LogTimeMixin, ReportsTestBase):
         ]
         self.check_totals(args, data)
 
-        #Test with project 2
+        # Test with project 2
         args = {
             'billable': True,
             'non_billable': True,
@@ -370,7 +368,7 @@ class TestHourlyReport(ViewTestMixin, LogTimeMixin, ReportsTestBase):
         ]
         self.check_totals(args, data)
 
-        #Test with 2 project filters
+        # Test with 2 project filters
         args = {
             'billable': True,
             'non_billable': True,

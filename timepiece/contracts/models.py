@@ -1,4 +1,6 @@
+from collections import OrderedDict
 import datetime
+
 from dateutil.relativedelta import relativedelta
 
 from django.contrib.auth.models import User
@@ -11,6 +13,9 @@ from django.db.models import Sum
 from django.template import Context
 from django.template.loader import get_template
 from django.conf import settings
+from django.template.loader import render_to_string
+from django.utils.encoding import python_2_unicode_compatible
+
 
 from timepiece import utils
 from timepiece.crm.models import Contact
@@ -25,25 +30,26 @@ from random import randint
 
 from taggit.managers import TaggableManager
 
+@python_2_unicode_compatible
 class ProjectContract(models.Model):
     STATUS_UPCOMING = 'upcoming'
     STATUS_CURRENT = 'current'
     STATUS_COMPLETE = 'complete'
-    CONTRACT_STATUS = {
-        STATUS_UPCOMING: 'Upcoming',
-        STATUS_CURRENT: 'Current',
-        STATUS_COMPLETE: 'Complete',
-    }
+    CONTRACT_STATUS = OrderedDict((
+        (STATUS_UPCOMING, 'Upcoming'),
+        (STATUS_CURRENT, 'Current'),
+        (STATUS_COMPLETE, 'Complete'),
+    ))
 
     PROJECT_UNSET = 0  # Have to set existing contracts to something...
     PROJECT_FIXED = 1
     PROJECT_PRE_PAID_HOURLY = 2
     PROJECT_POST_PAID_HOURLY = 3
-    PROJECT_TYPE = {   # UNSET is not an option
-        PROJECT_FIXED: 'Fixed',
-        PROJECT_PRE_PAID_HOURLY: 'Pre-paid Hourly',
-        PROJECT_POST_PAID_HOURLY: 'Post-paid Hourly',
-    }
+    PROJECT_TYPE = OrderedDict((   # UNSET is not an option
+        (PROJECT_FIXED, 'Fixed'),
+        (PROJECT_PRE_PAID_HOURLY, 'Pre-paid Hourly'),
+        (PROJECT_POST_PAID_HOURLY, 'Post-paid Hourly'),
+    ))
 
     PYMT_NET0  = 'net0'
     PYMT_NET15 = 'net15'
@@ -84,8 +90,8 @@ class ProjectContract(models.Model):
     projects = models.ManyToManyField('crm.Project', related_name='contracts')
     start_date = models.DateField()
     end_date = models.DateField()
-    status = models.CharField(choices=CONTRACT_STATUS.items(),
-            default=STATUS_UPCOMING, max_length=32)
+    status = models.CharField(
+        choices=CONTRACT_STATUS.items(), default=STATUS_UPCOMING, max_length=32)
     type = models.IntegerField(choices=PROJECT_TYPE.items())
     payment_terms = models.CharField(max_length=32,
         choices=CONTRACT_PYMT_TERMS.items(), default=PYMT_NET30)
@@ -111,8 +117,8 @@ class ProjectContract(models.Model):
             ('view_contract', 'Can view contracts'),
         )
 
-    def __unicode__(self):
-        return unicode(self.name)
+    def __str__(self):
+        return self.name
 
     def get_admin_url(self):
         return reverse('admin:contracts_projectcontract_change', args=[self.pk])
@@ -120,15 +126,51 @@ class ProjectContract(models.Model):
     def get_absolute_url(self):
         return reverse('view_contract', args=[self.pk])
 
+    def get_noncontract_entries(self, entries):
+        """
+        Given a set of entries, exclude those included in any contract affiliated
+        with any project associated with this contract.
+        """
+        contracts = []
+        for project in self.projects.all():
+            contracts.extend(project.contracts.all())
+
+        for contract in contracts:
+            entries.exclude(
+                project__in=contract.projects.all(),
+                start_time__gte=contract.start_date,
+                end_time__lt=contract.end_date + relativedelta(days=1)
+                )
+        return entries
+
+    @property
+    def pre_launch_entries(self):
+        entries = Entry.objects.filter(
+            project__in=self.projects.all(),
+            start_time__lt=self.start_date,)
+        return self.get_noncontract_entries(entries)
+
     @property
     def entries(self):
         """
         All Entries worked on projects in this contract during the contract
         period.
         """
-        return Entry.objects.filter(project__in=self.projects.all(),
-                start_time__gte=self.start_date,
-                end_time__lt=self.end_date + relativedelta(days=1))
+        return Entry.objects.filter(
+            project__in=self.projects.all(),
+            start_time__gte=self.start_date,
+            end_time__lt=self.end_date + relativedelta(days=1))
+
+    @property
+    def post_launch_entries(self):
+        """
+        All Entries worked on projects in this contract after the contract
+        period.
+        """
+        entries = Entry.objects.filter(
+            project__in=self.projects.all(),
+            start_time__gt=self.end_date + relativedelta(days=1),)
+        return self.get_noncontract_entries(entries)
 
     @property
     def increments(self):
@@ -258,6 +300,24 @@ class ProjectContract(models.Model):
         return self.not_to_exceed() - self.invoiced_budget
 
     @property
+    def pre_launch_hours_worked(self):
+        """Number of billable hours worked before the contract start date."""
+        if not hasattr(self, '_worked_pre_launch'):
+            # TODO put this in a .extra w/a subselect
+            entries = self.pre_launch_entries.filter(activity__billable=True)
+            self._worked_pre_launch = entries.aggregate(s=Sum('hours'))['s'] or 0
+        return self._worked_pre_launch or 0
+
+    @property
+    def post_launch_hours_worked(self):
+        """Number of billable hours worked after the contract end date."""
+        if not hasattr(self, '_worked_post_launch'):
+            # TODO put this in a .extra w/a subselect
+            entries = self.post_launch_entries.filter(activity__billable=True)
+            self._worked_post_launch = entries.aggregate(s=Sum('hours'))['s'] or 0
+        return self._worked_post_launch or 0
+
+    @property
     def hours_worked(self):
         """Number of billable hours worked on the contract."""
         if not hasattr(self, '_worked'):
@@ -333,10 +393,10 @@ class ProjectContract(models.Model):
         If the contract status is not current, or either the start or end
         date is not set, returns 0.0
         """
-        if self.status != ProjectContract.STATUS_CURRENT or \
-            not self.start_date or \
-            not self.end_date:
-                return 0.0
+        if not all([self.status == ProjectContract.STATUS_CURRENT,
+                    bool(self.start_date),
+                    bool(self.end_date)]):
+            return 0.0
         contract_period = (self.end_date - self.start_date).days
         if contract_period <= 0.0:
             return 0.0
@@ -420,8 +480,8 @@ class ContractIncrement(models.Model):
     contract = models.ForeignKey(ProjectContract)
     date_requested = models.DateField()
     date_approved = models.DateField(blank=True, null=True)
-    status = models.IntegerField(choices=CONTRACT_HOUR_STATUS,
-            default=PENDING_STATUS)
+    status = models.IntegerField(
+        choices=CONTRACT_HOUR_STATUS, default=PENDING_STATUS)
     notes = models.TextField(blank=True)
 
     class Meta:
@@ -441,9 +501,7 @@ class ContractIncrement(models.Model):
         if not emails:
             return
         from_email = utils.get_setting('DEFAULT_FROM_EMAIL')
-        template = get_template('timepiece/contract/hours_email.txt')
-        context = Context(ctx)
-        msg = template.render(context)
+        msg = render_to_string('timepiece/contract/hours_email.txt', ctx)
         send_mail(
             subject=subject,
             message=msg,
@@ -505,6 +563,7 @@ class ContractIncrement(models.Model):
             subject = "Deleted pending %s for %s" % (name, contract)
             self._send_mail(subject, ctx)
 
+@python_2_unicode_compatible
 class ContractHour(ContractIncrement):
     hours = models.DecimalField(max_digits=8, decimal_places=2,
             default=0)
@@ -513,6 +572,10 @@ class ContractHour(ContractIncrement):
         verbose_name = 'contracted hours'
         verbose_name_plural = verbose_name
         db_table = 'timepiece_contracthour'  # Using legacy table name.
+
+    def __str__(self):
+        return "{} on {} ({})".format(
+            self.hours, self.contract, self.get_status_display())
 
     def __init__(self, *args, **kwargs):
         super(ContractHour, self).__init__(*args, **kwargs)
@@ -585,6 +648,7 @@ class ContractBudget(ContractIncrement):
             args=(self.contract.id, self.id))
 
 
+@python_2_unicode_compatible
 class ContractAssignment(models.Model):
     contract = models.ForeignKey(ProjectContract, related_name='assignments')
     user = models.ForeignKey(User, related_name='assignments')
@@ -597,14 +661,15 @@ class ContractAssignment(models.Model):
         unique_together = (('contract', 'user'),)
         db_table = 'timepiece_contractassignment'  # Using legacy table name.
 
-    def __unicode__(self):
+    def __str__(self):
         return u'{0} / {1}'.format(self.user, self.contract)
 
     @property
     def entries(self):
-        return Entry.objects.filter(project__in=self.contract.projects.all(),
-                user=self.user, start_time__gte=self.start_date,
-                end_time__lt=self.end_date + relativedelta(days=1))
+        return Entry.objects.filter(
+            project__in=self.contract.projects.all(),
+            user=self.user, start_time__gte=self.start_date,
+            end_time__lt=self.end_date + relativedelta(days=1))
 
     @property
     def hours_remaining(self):
@@ -637,29 +702,27 @@ class ContractRate(models.Model):
 class HourGroupManager(models.Manager):
 
     def summaries(self, entries):
-        #Get the list of bundle names and hour sums
+        # Get the list of bundle names and hour sums
         bundled_entries = entries.values('activity__activity_bundle',
                                          'activity__activity_bundle__name')
         bundled_entries = bundled_entries.annotate(Sum('hours'))
         bundled_entries = bundled_entries.order_by(
-                                            'activity__activity_bundle__order',
-                                            'activity__activity_bundle__name'
-        )
+            'activity__activity_bundle__order', 'activity__activity_bundle__name')
         bundled_totals = list(bundled_entries.values_list(
-                                             'activity__activity_bundle__name',
-                                             'activity__activity_bundle',
-                                             'hours__sum')
-        )
-        #Get the list of activity names and hour sums
+            'activity__activity_bundle__name',
+            'activity__activity_bundle',
+            'hours__sum',
+        ))
+        # Get the list of activity names and hour sums
         activity_entries = entries.values('activity', 'activity__name',
                                           'activity__activity_bundle')
         activity_entries = activity_entries.annotate(Sum('hours'))
         activity_entries = activity_entries.order_by('activity')
         activity_totals = list(activity_entries.values_list(
-                                                   'activity__name',
-                                                   'activity__activity_bundle',
-                                                   'hours__sum')
-        )
+            'activity__name',
+            'activity__activity_bundle',
+            'hours__sum',
+        ))
         totals = {}
         other_values = ()
         for bundle in bundled_totals:
@@ -678,11 +741,12 @@ class HourGroupManager(models.Manager):
         return totals
 
 
+@python_2_unicode_compatible
 class HourGroup(models.Model):
     """Activities that are bundled together for billing"""
     name = models.CharField(max_length=255, unique=True)
-    activities = models.ManyToManyField('entries.Activity',
-            related_name='activity_bundle')
+    activities = models.ManyToManyField(
+        'entries.Activity', related_name='activity_bundle')
     order = models.PositiveIntegerField(unique=True, blank=True, null=True)
 
     objects = HourGroupManager()
@@ -690,17 +754,18 @@ class HourGroup(models.Model):
     class Meta:
         db_table = 'timepiece_hourgroup'  # Using legacy table name.
 
-    def __unicode__(self):
+    def __str__(self):
         return self.name
 
 
+@python_2_unicode_compatible
 class EntryGroup(models.Model):
     INVOICED = Entry.INVOICED
     NOT_INVOICED = Entry.NOT_INVOICED
-    STATUSES = {
-        INVOICED: 'Invoiced',
-        NOT_INVOICED: 'Not Invoiced',
-    }
+    STATUSES = OrderedDict((
+        (INVOICED, 'Invoiced'),
+        (NOT_INVOICED, 'Not Invoiced'),
+    ))
 
     user = models.ForeignKey(User, related_name='entry_group')
 
@@ -736,7 +801,7 @@ class EntryGroup(models.Model):
             ).order_by('date')
 
     def delete(self):
-        self.entries.update(status=Entry.APPROVED)
+        Entry.no_join.filter(pk__in=self.entries.all()).update(status=Entry.APPROVED)
         super(EntryGroup, self).delete()
 
     def save(self, *args, **kwargs):

@@ -106,6 +106,8 @@ class ContractList(SearchListView, CSVViewMixin):
     redirect_if_one_result = True
     search_fields = ['name__icontains']
     context_object_name = 'contracts'
+    # queryset = ProjectContract.objects.filter(
+    #     status=ProjectContract.STATUS_CURRENT).order_by('name')
     template_name = 'timepiece/contract/list.html'
 
     def get(self, request, *args, **kwargs):
@@ -775,7 +777,7 @@ def view_invoice_pdf(request, invoice_id):
 
 
 @login_required
-@transaction.commit_on_success
+@transaction.atomic
 def create_invoice(request):
     pk = request.GET.get('project', None)
     single_project=True
@@ -841,8 +843,8 @@ def create_invoice(request):
             else:
                 # We got the lock, we can carry on
                 invoice = invoice_form.save()
-                entries.update(status=invoice.status,
-                               entry_group=invoice)
+                Entry.no_join.filter(pk__in=entries).update(
+                    status=invoice.status, entry_group=invoice)
                 messages.add_message(request, messages.INFO,
                                      "Invoice created")
                 return HttpResponseRedirect(reverse('view_invoice',
@@ -869,6 +871,7 @@ def create_invoice(request):
             .summaries(billable_entries),
         'nonbillable_totals': HourGroup.objects
             .summaries(nonbillable_entries),
+        'project': project,
         'from_date': from_date,
         'to_date': to_date,
     }
@@ -898,8 +901,7 @@ def list_outstanding_invoices(request):
 
         billable = Q(project__type__billable=True, project__status__billable=True)
         entry_status = Q(status=Entry.APPROVED)
-        project_status = Q(project__status__in=statuses)\
-                if statuses is not None else Q()
+        project_status = Q(project__status__in=statuses) if statuses is not None else Q()
         # Calculate hours for each project
         if grouping == 'by_project':
             ordering = ('project__type__label', 'project__status__label',
@@ -912,10 +914,10 @@ def list_outstanding_invoices(request):
         # Find users with unverified/unapproved entries to warn invoice creator
         date_range_entries = Entry.objects.filter(dates)
         user_values = ['user__pk', 'user__first_name', 'user__last_name']
-        unverified = date_range_entries.filter(
-            status=Entry.UNVERIFIED).values_list(*user_values).order_by('user__first_name').distinct()
-        unapproved = date_range_entries.filter(
-            status=Entry.VERIFIED).values_list(*user_values).order_by('user__first_name').distinct()
+        unverified = date_range_entries.filter(status=Entry.UNVERIFIED)
+        unverified = unverified.values_list(*user_values).order_by('user__first_name').distinct()
+        unapproved = date_range_entries.filter(status=Entry.VERIFIED)
+        unapproved = unapproved.values_list(*user_values).order_by('user__first_name').distinct()
     else:
         project_totals = unverified = unapproved = Entry.objects.none()
     return render(request, 'timepiece/invoice/outstanding.html', {
@@ -932,9 +934,15 @@ def list_outstanding_invoices(request):
 @cbv_decorator(permission_required('contracts.add_entrygroup'))
 class ListInvoices(SearchListView):
     model = EntryGroup
+    paginate_by = 20
     search_fields = ['user__username__icontains', 'project__name__icontains',
-            'comments__icontains', 'number__icontains','contract__name__icontains','auto_number__icontains']
+            'comments__icontains', 'number__icontains',
+            'contract__name__icontains','auto_number__icontains']
     template_name = 'timepiece/invoice/list.html'
+
+    def get_queryset(self):
+        qs = super(ListInvoices, self).get_queryset()
+        return qs.order_by('-end', '-id')
 
 
     def get_queryset(self):
@@ -982,10 +990,8 @@ class InvoiceEntriesDetail(InvoiceDetail):
         billable_entries = context['billable_entries']
         nonbillable_entries = context['nonbillable_entries']
         context.update({
-            'billable_total': billable_entries \
-                              .aggregate(hours=Sum('hours'))['hours'],
-            'nonbillable_total': nonbillable_entries\
-                                 .aggregate(hours=Sum('hours'))['hours'],
+            'billable_total': billable_entries.aggregate(hours=Sum('hours'))['hours'],
+            'nonbillable_total': nonbillable_entries.aggregate(hours=Sum('hours'))['hours'],
         })
         return context
 

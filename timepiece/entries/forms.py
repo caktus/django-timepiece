@@ -3,23 +3,25 @@ from dateutil.relativedelta import relativedelta
 
 from django import forms
 from django.core.urlresolvers import reverse, reverse_lazy
-from django.db.models import Sum
+from django.db.models import Q, Sum
 
 from timepiece import utils
-from timepiece.crm.models import Project
+from timepiece.crm.models import Project, ProjectRelationship
 from timepiece.entries.models import Entry, Location, ProjectHours, Activity
-from timepiece.forms import INPUT_FORMATS, TimepieceSplitDateTimeWidget,\
+from timepiece.forms import INPUT_FORMATS, TimepieceSplitDateTimeField,\
         TimepieceDateInput
 
 
 class ClockInForm(forms.ModelForm):
-    active_comment = forms.CharField(label='Notes for the active entry',
-            widget=forms.Textarea, required=False)
+    active_comment = forms.CharField(
+        label='Notes for the active entry', widget=forms.Textarea,
+        required=False)
+    start_time = TimepieceSplitDateTimeField(required=False)
 
     class Meta:
         model = Entry
         fields = ('active_comment', 'location', 'project', 'activity',
-                'start_time', 'comments')
+                  'start_time', 'comments')
 
     def __init__(self, *args, **kwargs):
         self.user = kwargs.pop('user')
@@ -45,10 +47,11 @@ class ClockInForm(forms.ModelForm):
 
         super(ClockInForm, self).__init__(*args, **kwargs)
 
+        # TODO: Danny - WHY DID I ADD THESE TWO LINES?
         self.fields['start_time'].required = False
         self.fields['start_time'].read_only = True
+
         self.fields['start_time'].initial = datetime.datetime.now()
-        self.fields['start_time'].widget = TimepieceSplitDateTimeWidget()
         self.fields['project'].queryset = Project.trackable.filter(
                 users=self.user)
         
@@ -121,8 +124,8 @@ class ClockInForm(forms.ModelForm):
 
 
 class ClockOutForm(forms.ModelForm):
-    start_time = forms.DateTimeField(widget=TimepieceSplitDateTimeWidget)
-    end_time = forms.DateTimeField(widget=TimepieceSplitDateTimeWidget)
+    start_time = TimepieceSplitDateTimeField()
+    end_time = TimepieceSplitDateTimeField()
 
     class Meta:
         model = Entry
@@ -142,9 +145,8 @@ class ClockOutForm(forms.ModelForm):
 
 
 class AddUpdateEntryForm(forms.ModelForm):
-    start_time = forms.DateTimeField(widget=TimepieceSplitDateTimeWidget(),
-            required=True)
-    end_time = forms.DateTimeField(widget=TimepieceSplitDateTimeWidget())
+    start_time = TimepieceSplitDateTimeField()
+    end_time = TimepieceSplitDateTimeField()
     hours_paused = forms.FloatField(required=False, label='Hours Paused')
 
     class Meta:
@@ -156,9 +158,9 @@ class AddUpdateEntryForm(forms.ModelForm):
 
     def __init__(self, *args, **kwargs):
         self.user = kwargs.pop('user')
+        self.acting_user = kwargs.pop('acting_user')
         super(AddUpdateEntryForm, self).__init__(*args, **kwargs)
         self.instance.user = self.user
-
         self.fields['project'].queryset = Project.trackable.filter(
                 users=self.user)
         
@@ -184,19 +186,19 @@ class AddUpdateEntryForm(forms.ModelForm):
         conflict with or come after the active entry.
         """
         active = utils.get_active_entry(self.user)
-        end_time = None
+        start_time = self.cleaned_data.get('start_time', None)
+        end_time = self.cleaned_data.get('end_time', None)
+
         if active and active.pk != self.instance.pk:
-            start_time = self.cleaned_data.get('start_time', None)
-            end_time = self.cleaned_data.get('end_time', None)
             if (start_time and start_time > active.start_time) or \
                     (end_time and end_time > active.start_time):
                 raise forms.ValidationError('The start time or end time '
                         'conflict with the active entry: {activity} on '
-                        '{project} starting at {start_time}.'.format(**{
-                            'project': active.project,
-                            'activity': active.activity,
-                            'start_time': active.start_time.strftime('%H:%M:%S'),
-                        }))
+                        '{project} starting at {start_time}.'.format(
+                            project=active.project,
+                            activity=active.activity,
+                            start_time=active.start_time.strftime('%H:%M:%S'),
+                        ))
         hours_paused = self.cleaned_data.get('hours_paused', 0)
         if type(hours_paused) != float and type(hours_paused) != int:
             self.cleaned_data['hours_paused'] = 0
@@ -212,6 +214,29 @@ class AddUpdateEntryForm(forms.ModelForm):
             raise forms.ValidationError('The total time entry, '
                 'including paused time, must be less than 20.0 hours.  '
                 'Ensure that you entered the pause time in hours.')
+
+        # month_start = utils.get_month_start(start_time)
+        # next_month = month_start + relativedelta(months=1)
+        # entries = self.instance.user.timepiece_entries.filter(
+        #     Q(status=Entry.APPROVED) | Q(status=Entry.INVOICED),
+        #     start_time__gte=month_start,
+        #     end_time__lt=next_month
+        # )
+        period_start, period_end = utils.get_bimonthly_dates(start_time)
+        entries = self.instance.user.timepiece_entries.filter(
+            Q(status=Entry.APPROVED) | Q(status=Entry.INVOICED),
+            start_time__gte=period_start,
+            end_time__lt=period_end
+        )
+
+        entry = self.instance
+
+        if not self.acting_user.is_superuser:
+            if (entries.exists() and not entry.id or entry.id and entry.status == Entry.INVOICED):
+                message = 'You cannot add/edit entries after a timesheet has been ' \
+                    'approved or invoiced. Please correct the start and end times.'
+                raise forms.ValidationError(message)
+
         return self.cleaned_data
 
     def save(self, commit=True):
@@ -259,6 +284,15 @@ class ProjectHoursForm(forms.ModelForm):
 
     class Meta:
         model = ProjectHours
+        fields = ['week_start', 'project', 'user', 'hours', 'published']
+
+    def save(self, commit=True):
+        ph = super(ProjectHoursForm, self).save()
+        # since hours are being assigned to a user, add the user
+        # to the project if they are not already in it so they can track time
+        ProjectRelationship.objects.get_or_create(user=self.cleaned_data['user'],
+                                                  project=self.cleaned_data['project'])
+        return ph
 
 
 class ProjectHoursSearchForm(forms.Form):

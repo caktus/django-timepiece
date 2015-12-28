@@ -17,9 +17,10 @@ static/timepiece.
 @lightblue: lighten(@blue, 20%);
 @red: #DA4F49;
 
-@tableBackgroundAccent: #EEEEEE;
+@tableBackgroundAccent: rgba(0, 0, 0, 0.05);
 @tableBackgroundHover: #D0D0EC;
 @tableBorder: #DDDDDD;
+@tableHeader: #E8E8E8;
 
 
 @navbarCollapseWidth: 840px;
@@ -139,8 +140,13 @@ body {
                 .hide;
             }
         }
+        thead{
+            background-color:#E8E8E8;
+        }
+        tbody tr > :first-child{
+            background-color:#E8E8E8 !important;
+        }
         tr {
-
             td {
                 &.break {
                     .word-wrap(true);
@@ -231,6 +237,10 @@ body {
         }
     }
 
+    // ENSURE CONSISTENT TH BG
+    .th-continued {background-color: @tableHeader;}
+    .table-hover tbody tr:hover > th { background-color: @tableHeader;}
+
     .inline {
         display: inline;
     }
@@ -240,6 +250,7 @@ body {
     }
 
     .popover {
+        max-width: 600px;
         width: auto;
         margin-top: 15px !important;
         .popover-inner {
@@ -268,6 +279,13 @@ body {
         .popover-title {
             display: none;
         }
+    }
+
+    .popover-content {
+        padding: 15px 15px 0 15px;
+        max-width: 600px;
+        height: 250px;
+        overflow-y:scroll;
     }
 
     #ui-datepicker-div {
@@ -693,6 +711,12 @@ body {
          * End general content
          *****************************************/
     }
+
+    blockquote{
+        font-style:italic;
+        margin-bottom: 0;
+    }
+
 
     /*****************************************
      * End content

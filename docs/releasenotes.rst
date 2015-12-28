@@ -1,13 +1,25 @@
 Release Notes
 =============
 
-0.9.5 (Unreleased)
-------------------
+0.10.0 (In Development)
+-----------------------
+
+* Compatibility with Django 1.6 with Python 2.7 or Python 3.3
+* Compatibility with Django 1.7 with Python 2.7 or Python 3.4
+* Drops support for all other combinations of Django and Python
+* Drops support for testing with Jenkins
+* Flake8 compliance
+
+0.9.5 (Released 06-16-2014)
+---------------------------
 
 *Features*
 
 * Use Bootstrap 2.3.2
 * Estimation Accuracy report
+* Sticky headers on all tables!
+* Show active entry comment on dashboard page.
+* Order previous invoices by end date descending.
 
 *Bugfixes*
 
@@ -15,11 +27,20 @@ Release Notes
 * Require `crm.change_business` permission rather than `crm.edit_business`
   permission for EditUser view.
 * Don't use transaction.commit_on_success on ViewUser or ViewProject views.
+* Fix bug preventing passage of custom default value to `utils.get_setting`.
+* Manually calculate height/width in hours (#147b95a).
+* Fixed migrations so that they will run on a fresh database. If you have
+  an existing database, you will need to run ``django-admin.py migrate
+  entries 0002 --fake``.
 
 *Code Quality*
 
 * Additional tests and code cleanup in the CRM app.
-* Use Model.add_to_class to augment class
+* Use Model.add_to_class to augment class.
+* Make use of @cbv_decorator to avoid creating new Mixin classes for every
+  decorator.
+* Reorganized navbar templates to make extension easier when Timepiece is a
+  secondary app. Thanks @dannybrowne86!
 
 0.9.4 (Released 04-01-2014)
 ---------------------------

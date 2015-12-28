@@ -1,6 +1,5 @@
 {% extends "timepiece/business/base.html" %}
 {% load bootstrap_toolkit %}
-{% load url from future %}
 
 {% block title %}Businesses{% endblock title %}
 
@@ -68,7 +67,7 @@
                     {% endfor %}
                 </tbody>
             </table>
-            {% paginate %}
+            {% include "timepiece/pagination.html" %}
         </div>
     </div>
 {% endblock content %}

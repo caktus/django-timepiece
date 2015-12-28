@@ -147,11 +147,9 @@ class ReportMixin(object):
         # Filter by whether a project is billable or non-billable.
         billableQ = None
         if incl_billable and not incl_nonbillable:
-            billableQ = Q(activity__billable=True,
-                    project__type__billable=True)
+            billableQ = Q(activity__billable=True, project__type__billable=True)
         if incl_nonbillable and not incl_billable:
-            billableQ = Q(activity__billable=False) |\
-                    Q(project__type__billable=False)
+            billableQ = Q(activity__billable=False) | Q(project__type__billable=False)
 
         # Filter by whether the entry is paid leave.
         leave_ids = utils.get_setting('TIMEPIECE_PAID_LEAVE_PROJECTS').values()
@@ -182,8 +180,8 @@ class ReportMixin(object):
             count = len(date_headers)
             range_headers = [0] * count
             for i in range(count - 1):
-                range_headers[i] = (date_headers[i], date_headers[i + 1] -
-                        relativedelta(days=1))
+                range_headers[i] = (
+                    date_headers[i], date_headers[i + 1] - relativedelta(days=1))
             range_headers[count - 1] = (date_headers[count - 1], to_date)
         else:
             range_headers = date_headers
@@ -329,12 +327,12 @@ class HourlyReport(ReportMixin, CSVViewMixin, TemplateView):
         to_date = context['to_date']
         to_date = utils.add_timezone(to_date) if to_date else None
         trunc = context['trunc']
-        date_headers, range_headers = self.get_headers(date_headers,
-                from_date, to_date, trunc)
+        date_headers, range_headers = self.get_headers(
+            date_headers, from_date, to_date, trunc)
 
         context.update({
             'date_headers': date_headers,
-            'summaries': summaries,
+            'summaries': dict(summaries),
             'range_headers': range_headers,
         })
         return context
@@ -343,8 +341,8 @@ class HourlyReport(ReportMixin, CSVViewMixin, TemplateView):
         request = self.request.GET.copy()
         from_date = request.get('from_date')
         to_date = request.get('to_date')
-        return 'hours_{0}_to_{1}_by_{2}.csv'.format(from_date, to_date,
-            context.get('trunc', ''))
+        return 'hours_{0}_to_{1}_by_{2}.csv'.format(
+            from_date, to_date, context.get('trunc', ''))
 
     def get_form(self):
         data = self.request.GET or self.defaults
@@ -552,8 +550,7 @@ class BillableHours(ReportMixin, TemplateView):
             return BillableHoursReportForm(self.request.GET)
         else:
             # Select all available users, activities, and project types.
-            return BillableHoursReportForm(self.defaults,
-                    select_all=True)
+            return BillableHoursReportForm(self.defaults, select_all=True)
 
     def get_hours_data(self, entries, date_headers):
         """
@@ -780,10 +777,13 @@ def report_payroll_summary(request):
     # from_date = utils.get_month_start(date).date()
     # to_date = from_date + relativedelta(months=1)
     (from_date, to_date) = utils.get_bimonthly_dates(timezone.now())
-    (from_date, to_date) = utils.get_bimonthly_dates(from_date - relativedelta(days=1))
+    (from_date, to_date) = utils.get_bimonthly_dates(
+        from_date - relativedelta(days=1))
 
     year_month_form = PayrollSummaryReportForm(request.GET or None,
-        initial={'month': from_date.month, 'year': from_date.year, 'half':1 if from_date.day <= 15 else 2})
+        initial={'month': from_date.month,
+                 'year': from_date.year,
+                 'half':1 if from_date.day <= 15 else 2})
 
     if year_month_form.is_valid():
         from_date, to_date = year_month_form.save()
@@ -925,13 +925,13 @@ def report_productivity(request):
             # Determine the project's time range.
             amin, amax, pmin, pmax = (None, None, None, None)
             if actuals.count() > 0:
-                amin = actuals.aggregate(Min('start_time')).values()[0]
+                amin = list(actuals.aggregate(Min('start_time')).values())[0]
                 amin = utils.get_week_start(amin).date()
-                amax = actuals.aggregate(Max('start_time')).values()[0]
+                amax = list(actuals.aggregate(Max('start_time')).values())[0]
                 amax = utils.get_week_start(amax).date()
             if projections.count() > 0:
-                pmin = projections.aggregate(Min('week_start')).values()[0]
-                pmax = projections.aggregate(Max('week_start')).values()[0]
+                pmin = list(projections.aggregate(Min('week_start')).values())[0]
+                pmax = list(projections.aggregate(Max('week_start')).values())[0]
             current = min(amin, pmin) if (amin and pmin) else (amin or pmin)
             latest = max(amax, pmax) if (amax and pmax) else (amax or pmax)
 
@@ -1071,6 +1071,7 @@ def report_productivity(request):
         'total_remaining': sum([r[3] for r in report[1:]]),
     })
 
+
 @permission_required('contracts.view_estimation_accuracy')
 def report_estimation_accuracy(request):
     """
@@ -1087,7 +1088,7 @@ def report_estimation_accuracy(request):
         pt_label = "%s (%.2f%%)" % (c.name,
                                     c.hours_worked / c.contracted_hours() * 100)
         data.append((c.contracted_hours(), c.hours_worked, pt_label))
-        chart_max = max([max(x[0], x[1]) for x in data[1:]]) #max of all targets & actuals
+        chart_max = max([max(x[0], x[1]) for x in data[1:]])  # max of all targets & actuals
     return render(request, 'timepiece/reports/estimation_accuracy.html', {
         'data': json.dumps(data, cls=DecimalEncoder),
         'chart_max': chart_max,

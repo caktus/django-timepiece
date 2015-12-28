@@ -16,9 +16,9 @@ class ProjectLookup(ModelLookup):
     search_fields = ('name__icontains', 'code__icontains',
         'business__name__icontains', 'business__short_name__icontains')
 
+
     def get_item_label(self, project):
-        return mark_safe(u'<span class="project">%s</span>' %
-                self.get_item_value(project))
+        return mark_safe(u'<span class="project">%s</span>' % self.get_item_value(project))
 
     def get_item_value(self, project):
         # return str(project) if project else ''
@@ -40,8 +40,7 @@ class BusinessLookup(ModelLookup):
     search_fields = ('name__icontains', 'short_name__icontains')
 
     def get_item_label(self, business):
-        return mark_safe(u'<span class="business">%s</span>' %
-                self.get_item_value(business))
+        return mark_safe(u'<span class="business">%s</span>' % self.get_item_value(business))
 
     def get_item_value(self, business):
         return business.name if business else ''
@@ -50,14 +49,13 @@ class BusinessLookup(ModelLookup):
 class UserLookup(ModelLookup):
     model = User
     search_fields = ('username__icontains', 'first_name__icontains',
-            'last_name__icontains', 'email__icontains')
+                     'last_name__icontains', 'email__icontains')
 
     def get_query(self, request, q):
         return super(UserLookup, self).get_query(request, q).order_by('last_name')
 
     def get_item_label(self, user):
-        return mark_safe(u'<span class="user">%s</span>' %
-                self.get_item_value(user))
+        return mark_safe(u'<span class="user">%s</span>' % self.get_item_value(user))
 
     def get_item_value(self, user):
         return user.get_name_or_username() if user else ''
@@ -96,7 +94,7 @@ class QuickLookup(LookupBase):
                 value = lookup.get_item_value(item)
                 results.append(SearchResult(result_type, item, label, value))
 
-        results.sort(lambda a, b: cmp(a.value, b.value))
+        results.sort(lambda a, b: a.value > b.value - a.value < b.value)
         return results
 
     def get_item_label(self, item):

@@ -1,6 +1,7 @@
 import datetime
 from dateutil.relativedelta import relativedelta
-import urllib
+
+from six.moves.urllib.parse import urlencode
 
 from django import template
 from django.core.urlresolvers import reverse
@@ -34,7 +35,7 @@ def add_parameters(url, parameters):
     """
     if parameters:
         sep = '&' if '?' in url else '?'
-        return '{0}{1}{2}'.format(url, sep, urllib.urlencode(parameters))
+        return '{0}{1}{2}'.format(url, sep, urlencode(parameters))
     return url
 
 
@@ -85,9 +86,9 @@ def date_filters(form_id, options=None, use_range=True):
             from_date = to_date - single_month
             to_date = to_date - single_day
             filters['Past 12 Months'].append((
-                    date_format_filter(from_date, 'M Y'),  # displayed
-                    from_date.strftime(date_format) if use_range else "",  # used in code
-                    to_date.strftime(date_format)  # used in code
+                date_format_filter(from_date, 'M Y'),  # displayed
+                from_date.strftime(date_format) if use_range else "",  # used in code
+                to_date.strftime(date_format)  # used in code
             ))
         filters['Past 12 Months'].reverse()
 
@@ -98,9 +99,9 @@ def date_filters(form_id, options=None, use_range=True):
             from_date = datetime.datetime(year, 1, 1)
             to_date = from_date + single_year - single_day
             filters['Years'].append((
-                    str(from_date.year),
-                    from_date.strftime(date_format) if use_range else "",
-                    to_date.strftime(date_format)
+                str(from_date.year),
+                from_date.strftime(date_format) if use_range else "",
+                to_date.strftime(date_format)
             ))
 
     if 'quarters' in options:
@@ -110,9 +111,9 @@ def date_filters(form_id, options=None, use_range=True):
             from_date = to_date + single_day
             to_date = from_date + relativedelta(months=3) - single_day
             filters['Quarters (Calendar Year)'].append((
-                    'Q%s %s' % ((x % 4) + 1, from_date.year),
-                    from_date.strftime(date_format) if use_range else "",
-                    to_date.strftime(date_format)
+                'Q%s %s' % ((x % 4) + 1, from_date.year),
+                from_date.strftime(date_format) if use_range else "",
+                to_date.strftime(date_format)
             ))
 
     return {'filters': filters, 'form_id': form_id}
@@ -194,7 +195,7 @@ def get_uninvoiced_hours(entries, billable=None):
 
 @register.filter
 def humanize_hours(total_hours, frmt='{hours:02d}:{minutes:02d}:{seconds:02d}',
-        negative_frmt=None):
+                   negative_frmt=None):
     """Given time in hours, return a string representing the time."""
     if total_hours == '':
         return humanize_seconds(0, frmt, negative_frmt)
@@ -206,7 +207,8 @@ def humanize_hours(total_hours, frmt='{hours:02d}:{minutes:02d}:{seconds:02d}',
 
 @register.filter
 def humanize_seconds(total_seconds,
-        frmt='{hours:02d}:{minutes:02d}:{seconds:02d}', negative_frmt=None):
+                     frmt='{hours:02d}:{minutes:02d}:{seconds:02d}',
+                     negative_frmt=None):
     """Given time in int(seconds), return a string representing the time.
 
     If negative_frmt is not given, a negative sign is prepended to frmt
@@ -252,9 +254,8 @@ def project_hours_for_contract(contract, project, billable=None):
     return hours
 
 
-@register.simple_tag
-def project_report_url_for_contract(contract, project):
-    data = {
+def _project_report_url_params(contract, project):
+    return {
         'from_date': contract.start_date.strftime(DATE_FORM_FORMAT),
         'to_date': contract.end_date.strftime(DATE_FORM_FORMAT),
         'billable': 1,
@@ -263,7 +264,12 @@ def project_report_url_for_contract(contract, project):
         'trunc': 'month',
         'projects_1': project.id,
     }
-    return '{0}?{1}'.format(reverse('report_hourly'), urllib.urlencode(data))
+
+
+@register.simple_tag
+def project_report_url_for_contract(contract, project):
+    data = _project_report_url_params(contract, project)
+    return '{0}?{1}'.format(reverse('report_hourly'), urlencode(data))
 
 
 @register.simple_tag
@@ -297,7 +303,14 @@ def _timesheet_url(url_name, pk, from_date=None, to_date=None):
         params = {'from_date': from_date.strftime('%Y-%m-%d'),
                   'to_date': to_date.strftime('%Y-%m-%d'),
                   'user': pk}
-        return '?'.join((url, urllib.urlencode(params)))
+        return '?'.join((url, urlencode(params)))
+
+    # this is from a merge conflict that I chose not to accept
+    # the main update from the merge was a change to getting urlencode
+    # if date:
+    #     params = {'month': date.month, 'year': date.year}
+    #     return '?'.join((url, urlencode(params)))
+
     return url
 
 

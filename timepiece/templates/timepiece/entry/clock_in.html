@@ -1,6 +1,8 @@
 {% extends 'timepiece/base.html' %}
-{% load timepiece_tags bootstrap_toolkit %}
-{% load url from future %}
+
+{% load bootstrap_toolkit %}
+{% load static %}
+{% load timepiece_tags %}
 
 {% block crumbs %}
     {{ block.super }}
@@ -10,8 +12,8 @@
 {% block title %}Clock In{% endblock title %}
 
 {% block extrajs %}
-    <script charset="utf-8" src="{{ STATIC_URL }}timepiece/js/prevent_double_click.js"></script>
-    <script charset="utf-8" src="{{ STATIC_URL }}timepiece/js/filter_activity_list.js"></script>
+    <script charset="utf-8" src="{% static "timepiece/js/prevent_double_click.js" %}"></script>
+    <script charset="utf-8" src="{% static "timepiece/js/filter_activity_list.js" %}"></script>
     <script>
         $('#id_project').change( 
             function () {

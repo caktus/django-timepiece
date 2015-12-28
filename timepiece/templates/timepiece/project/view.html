@@ -1,5 +1,4 @@
 {% extends "timepiece/project/base.html" %}
-{% load url from future %}
 {% load timepiece_tags bootstrap_toolkit %}
 
 {% block title %}{{ object }}{% endblock title %}
@@ -27,6 +26,7 @@
                 {% if perms.crm.view_project_time_sheet %}
                     <li><a href="{% url 'view_project_timesheet' object.id %}">View Time Sheet</a></li>
                 {% endif %}
+                <li><a href="{% url 'report_hourly' %}?projects_1={{ object.id }}">View Hourly Report</a></li>
             </ul>
         </div>
     </div>

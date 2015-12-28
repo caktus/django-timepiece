@@ -12,6 +12,13 @@ from itertools import groupby
 from timepiece.utils import get_active_entry, get_setting
 from timepiece.models import MongoAttachment
 
+
+from collections import OrderedDict
+
+from django.apps import apps
+from django.utils.encoding import python_2_unicode_compatible
+
+
 from holidays.models import Holiday
 
 from taggit.managers import TaggableManager
@@ -73,8 +80,7 @@ class Department(models.Model):
       ## TODO Actually make the department class with options and not a static, hardcoded list.
 
 
-
-
+@python_2_unicode_compatible
 class UserProfile(models.Model):
     SALARY = 'salary'
     HOURLY = 'hourly'
@@ -106,8 +112,8 @@ class UserProfile(models.Model):
     class Meta:
         db_table = 'timepiece_userprofile'  # Using legacy table name.
 
-    def __unicode__(self):
-        return unicode(self.user)
+    def __str__(self):
+        return self.user
 
     @property
     def week_schedule(self):
@@ -345,35 +351,37 @@ class PaidTimeOffLog(models.Model):
 class TypeAttributeManager(models.Manager):
     """Object manager for type attributes."""
 
-    def get_query_set(self):
-        qs = super(TypeAttributeManager, self).get_query_set()
+    def get_queryset(self):
+        qs = super(TypeAttributeManager, self).get_queryset()
         return qs.filter(type=Attribute.PROJECT_TYPE)
 
 
 class StatusAttributeManager(models.Manager):
     """Object manager for status attributes."""
 
-    def get_query_set(self):
-        qs = super(StatusAttributeManager, self).get_query_set()
+    def get_queryset(self):
+        qs = super(StatusAttributeManager, self).get_queryset()
         return qs.filter(type=Attribute.PROJECT_STATUS)
 
 
+@python_2_unicode_compatible
 class Attribute(models.Model):
     PROJECT_TYPE = 'project-type'
     PROJECT_STATUS = 'project-status'
-    ATTRIBUTE_TYPES = {
-        PROJECT_TYPE: 'Project Type',
-        PROJECT_STATUS: 'Project Status',
-    }
-    SORT_ORDER_CHOICES = [(x, x) for x in xrange(-20, 21)]
+    ATTRIBUTE_TYPES = OrderedDict((
+        (PROJECT_TYPE, 'Project Type'),
+        (PROJECT_STATUS, 'Project Status'),
+    ))
+    SORT_ORDER_CHOICES = [(x, x) for x in range(-20, 21)]
 
     type = models.CharField(max_length=32, choices=ATTRIBUTE_TYPES.items())
     label = models.CharField(max_length=255)
-    sort_order = models.SmallIntegerField(null=True, blank=True,
-            choices=SORT_ORDER_CHOICES)
-    enable_timetracking = models.BooleanField(default=False,
-            help_text='Enable time tracking functionality for projects '
-            'with this type or status.')
+    sort_order = models.SmallIntegerField(
+        null=True, blank=True, choices=SORT_ORDER_CHOICES)
+    enable_timetracking = models.BooleanField(
+        default=False,
+        help_text=('Enable time tracking functionality for projects '
+                   'with this type or status.'))
     billable = models.BooleanField(default=False)
 
     objects = models.Manager()
@@ -385,10 +393,11 @@ class Attribute(models.Model):
         unique_together = ('type', 'label')
         ordering = ('sort_order',)
 
-    def __unicode__(self):
+    def __str__(self):
         return self.label
 
 
+@python_2_unicode_compatible
 class Business(models.Model):
     BIZ_CLASS = (('client', 'Client'),
                  ('construction', 'Construction'),
@@ -517,7 +526,7 @@ class Business(models.Model):
             ('view_business', 'Can view businesses'),
         )
 
-    def __unicode__(self):
+    def __str__(self):
         return self.get_display_name()
 
     def get_absolute_url(self):
@@ -1004,13 +1013,14 @@ class ContactNote(models.Model):
 
 class TrackableProjectManager(models.Manager):
 
-    def get_query_set(self):
-        return super(TrackableProjectManager, self).get_query_set().filter(
+    def get_queryset(self):
+        return super(TrackableProjectManager, self).get_queryset().filter(
             status__enable_timetracking=True,
             type__enable_timetracking=True,
         )
 
 
+@python_2_unicode_compatible
 class Project(models.Model):
     MINDERS_GROUP_ID = 3
 
@@ -1102,17 +1112,13 @@ class Project(models.Model):
     def save(self, *args, **kwargs):
         # if this is a CREATE, create Project Code
         if self.id is None:
-            print 'got to there'
             # get the current year, if year not provided
             if not self.year:
                 self.year = datetime.datetime.now().year
-            print 'year', self.year
             # determine the project counter incrementer and create unique code
             proj_count = Project.objects.filter(business=self.business, year=self.year).count() + 1
-            print 'proj_count', proj_count
             self.code = '%s-%s-%03d' % (self.business.short_name, str(self.year)[2:], proj_count)
-            print 'code', self.code
-
+            
             # create new wiki
             try:
                 project_parent = URLPath.objects.get(id=settings.WIKI_PROJECT_ID)
@@ -1147,7 +1153,7 @@ class Project(models.Model):
 
     def get_active_contracts(self):
         """Returns all associated contracts which are not marked complete."""
-        ProjectContract = get_model('contracts', 'ProjectContract')
+        ProjectContract = apps.get_model('contracts', 'ProjectContract')
         return self.contracts.exclude(status=ProjectContract.STATUS_COMPLETE)
 
     @property
@@ -1170,6 +1176,7 @@ class Project(models.Model):
             status__in=[Milestone.NEW, Milestone.MODIFIED])
 
 
+@python_2_unicode_compatible
 class RelationshipType(models.Model):
     name = models.CharField(max_length=255, unique=True)
     slug = models.SlugField(max_length=255)
@@ -1177,13 +1184,14 @@ class RelationshipType(models.Model):
     class Meta:
         db_table = 'timepiece_relationshiptype'  # Using legacy table name.
 
-    def __unicode__(self):
+    def __str__(self):
         return self.name
 
 
+@python_2_unicode_compatible
 class ProjectRelationship(models.Model):
-    types = models.ManyToManyField(RelationshipType, blank=True,
-        related_name='project_relationships')
+    types = models.ManyToManyField(
+        RelationshipType, blank=True, related_name='project_relationships')
     user = models.ForeignKey(User, related_name='project_relationships')
     project = models.ForeignKey(Project, related_name='project_relationships')
 
@@ -1191,7 +1199,7 @@ class ProjectRelationship(models.Model):
         db_table = 'timepiece_projectrelationship'  # Using legacy table name.
         unique_together = ('user', 'project')
 
-    def __unicode__(self):
+    def __str__(self):
         return "{project}'s relationship to {user}".format(
             project=self.project.name,
             user=self.user.get_name_or_username(),

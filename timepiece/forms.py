@@ -18,8 +18,12 @@ INPUT_FORMATS = [DATE_FORM_FORMAT]
 class TimepieceSplitDateTimeWidget(forms.SplitDateTimeWidget):
 
     def __init__(self, *args, **kwargs):
-        kwargs['date_format'] = kwargs.get('date_format', DATE_FORM_FORMAT)
+        kwargs.setdefault('date_format', DATE_FORM_FORMAT)
         super(TimepieceSplitDateTimeWidget, self).__init__(*args, **kwargs)
+
+
+class TimepieceSplitDateTimeField(forms.SplitDateTimeField):
+    widget = TimepieceSplitDateTimeWidget
 
 
 class TimepieceDateInput(forms.DateInput):
@@ -30,17 +34,19 @@ class TimepieceDateInput(forms.DateInput):
 
 
 class DateForm(forms.Form):
-    from_date = forms.DateField(label='From', required=False,
-        input_formats=INPUT_FORMATS, widget=TimepieceDateInput())
-    to_date = forms.DateField(label='To', required=False,
-        input_formats=INPUT_FORMATS, widget=TimepieceDateInput())
+    from_date = forms.DateField(
+        label='From', required=False, input_formats=INPUT_FORMATS,
+        widget=TimepieceDateInput())
+    to_date = forms.DateField(
+        label='To', required=False, input_formats=INPUT_FORMATS,
+        widget=TimepieceDateInput())
 
     def clean(self):
         from_date = self.cleaned_data.get('from_date', None)
         to_date = self.cleaned_data.get('to_date', None)
         if from_date and to_date and from_date > to_date:
             raise forms.ValidationError('The ending date must exceed the '
-                    'beginning date.')
+                                        'beginning date.')
         return self.cleaned_data
 
     def save(self):
@@ -110,7 +116,7 @@ class YearMonthForm(forms.Form):
             first_year = this_year
         else:
             first_year = first_entry['end_time'].year
-        years = [(year, year) for year in xrange(first_year, this_year + 1)]
+        years = [(year, year) for year in range(first_year, this_year + 1)]
         self.fields['year'].choices = years
         initial = kwargs.get('initial')
         if initial:

@@ -40,7 +40,6 @@ class InvoiceForm(forms.ModelForm):
 
 
 class OutstandingHoursFilterForm(DateForm):
-
     CHOICES=[('by_contract','By Contract'),
              ('by_project','By Project')]
 

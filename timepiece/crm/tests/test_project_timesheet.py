@@ -8,6 +8,8 @@ from timepiece import utils
 from timepiece.tests import factories
 from timepiece.tests.base import ViewTestMixin, LogTimeMixin
 
+from ..models import Project
+
 
 class TestProjectTimesheet(ViewTestMixin, LogTimeMixin, TestCase):
     url_name = 'view_project_timesheet'
@@ -52,6 +54,7 @@ class TestProjectTimesheet(ViewTestMixin, LogTimeMixin, TestCase):
         self.assertEqual(response.status_code, 302)
 
     def testNoProject(self):
+        Project.objects.all().delete()
         self.login_user(self.superuser)
         response = self._get(url_args=(999,))
         self.assertEqual(response.status_code, 404)
@@ -109,8 +112,7 @@ class TestProjectTimesheet(ViewTestMixin, LogTimeMixin, TestCase):
         self.assertEqual(user_entry0['sum'], Decimal(2))
         self.assertEqual(user_entry1['user__last_name'], self.user2.last_name)
         self.assertEqual(user_entry1['user__first_name'],
-                         self.user2.first_name
-        )
+                         self.user2.first_name)
         self.assertEqual(user_entry1['sum'], Decimal(1))
 
     def testOtherProjectTimesheet(self):
@@ -129,14 +131,14 @@ class TestProjectTimesheet(ViewTestMixin, LogTimeMixin, TestCase):
     def test_project_csv(self):
         self.login_user(self.superuser)
         self.make_entries()
-        response = self._get(url_name='view_project_timesheet_csv',
-                url_args=(self.p1.pk,))
+        response = self._get(
+            url_name='view_project_timesheet_csv', url_args=(self.p1.pk,))
         self.assertEqual(response.status_code, 200)
         data = dict(response.items())
         self.assertEqual(data['Content-Type'], 'text/csv')
         disposition = data['Content-Disposition']
         self.assertTrue(disposition.startswith('attachment; filename='))
-        contents = response.content.splitlines()
+        contents = response.content.decode('utf-8').splitlines()
         headers = contents[0].split(',')
         # Assure user's comments are not included.
         self.assertTrue('comments' not in headers)

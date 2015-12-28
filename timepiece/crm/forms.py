@@ -8,7 +8,6 @@ from selectable import forms as selectable
 
 from timepiece.utils.search import SearchForm
 from timepiece.utils import get_setting
-
 from timepiece.crm.lookups import (BusinessLookup, ProjectLookup, UserLookup,
         QuickLookup, ContactLookup)
 from timepiece.crm.models import (Attribute, Business, Project, Department,
@@ -64,7 +63,6 @@ class CreateEditBusinessDepartmentForm(forms.ModelForm):
 
     def __init__(self, *args, **kwargs):
         super(CreateEditBusinessDepartmentForm, self).__init__(*args, **kwargs)
-        print kwargs
         self.fields['business'].widget = widgets.HiddenInput()
         self.fields['business'].initial = kwargs.get('business', None)
 
@@ -245,7 +243,7 @@ class CreateUserForm(UserCreationForm):
     class Meta:
         model = User
         fields = ('username', 'first_name', 'last_name', 'email', 'is_active',
-                'is_staff', 'groups')
+                  'is_staff', 'groups')
 
     def __init__(self, *args, **kwargs):
         super(CreateUserForm, self).__init__(*args, **kwargs)
@@ -285,7 +283,7 @@ class EditProjectRelationshipForm(forms.ModelForm):
     def __init__(self, *args, **kwargs):
         super(EditProjectRelationshipForm, self).__init__(*args, **kwargs)
         self.fields['types'].widget = forms.CheckboxSelectMultiple(
-                choices=self.fields['types'].choices)
+            choices=self.fields['types'].choices)
 
 
 class EditUserForm(UserChangeForm):
@@ -308,7 +306,7 @@ class EditUserForm(UserChangeForm):
     class Meta:
         model = User
         fields = ('username', 'first_name', 'last_name', 'email', 'is_active',
-                'is_staff', 'groups')
+                  'is_staff', 'groups')
 
     def __init__(self, *args, **kwargs):
         super(EditUserForm, self).__init__(*args, **kwargs)

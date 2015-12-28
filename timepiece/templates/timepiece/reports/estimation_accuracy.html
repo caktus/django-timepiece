@@ -1,6 +1,8 @@
 {% extends "timepiece/reports/base.html" %}
-{% load timepiece_tags bootstrap_toolkit %}
-{% load url from future %}
+
+{% load bootstrap_toolkit %}
+{% load static %}
+{% load timepiece_tags %}
 
 {% block title %}Estimation Accuracy Report{% endblock title %}
 
@@ -23,7 +25,7 @@
 {% block extrajs %}
     {{ block.super }}
     <script charset="utf-8" src="https://www.google.com/jsapi"></script>
-    <script charset="utf-8" src="{{ STATIC_URL }}timepiece/js/chart/estimation_accuracy_chart.js"
+    <script charset="utf-8" src="{% static "timepiece/js/chart/estimation_accuracy_chart.js" %}"
 	    data="{{ data }}" chart_max="{{ chart_max }}"></script>
 {% endblock extrajs %}
 
@@ -33,7 +35,9 @@
         <div class="span12">
             <div id="chart-container">
                 {% if data %}
-                    <div id="chart" style="width: 900px; height: 900px;"></div>
+                    <h3>Estimation Accuracy Report</h3>
+                    <h4>Based on Completed Fixed Contracts</h4>
+                    <div id="chart" style="width: 750px; height: 650px;"></div>
                 {% else %}
                     <p>There are no entries which match your query.</p>
                 {% endif %}

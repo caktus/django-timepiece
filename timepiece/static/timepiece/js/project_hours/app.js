@@ -332,7 +332,6 @@ $(function() {
                             hours.row = project.row;
                             hours.col = user.col;
                             project_hours.add(hours);
-
                             updateTotals(col, time);
                         }, function(xhr, status, error) {
                             $('.dataTable').handsontable('setDataAtCell', row, col, '');

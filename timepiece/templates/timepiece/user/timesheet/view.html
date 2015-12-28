@@ -1,6 +1,8 @@
 {% extends "timepiece/base.html" %}
-{% load url from future %}
-{% load timepiece_tags bootstrap_toolkit %}
+
+{% load bootstrap_toolkit %}
+{% load static %}
+{% load timepiece_tags %}
 
 {% block title %}
     {{ timesheet_user.get_name_or_username }}
@@ -17,7 +19,7 @@
             tabIds = ['overview', 'all-entries', 'daily-summary'],
             defaultTab = 'overview';
     </script>
-    <script charset="utf-8" src="{{ STATIC_URL }}timepiece/js/permanent_tabs.js"></script>
+    <script charset="utf-8" src="{% static "timepiece/js/permanent_tabs.js" %}"></script>
 {% endblock extrajs %}
 
 {% block content %}
@@ -232,7 +234,7 @@
                                     <th>Total</th>
                                 </tr>
                                 {% for day, projects in days %}
-                                    {% for project, totals in projects.1.iteritems %}
+                                    {% for project, totals in projects.1.items %}
                                         <tr class="{% if day|add_timezone < from_date %}before_from_date{% endif %}">
                                             <td>
                                                 {% if forloop.counter == 1 %}

@@ -31,8 +31,8 @@ class ProjectAdmin(admin.ModelAdmin):
     list_display = ('name', 'business', 'point_person', 'status', 'type')
     list_filter = ('type', 'status')
     search_fields = ('name', 'business__name', 'point_person__username',
-            'point_person__first_name', 'point_person__last_name',
-            'description')
+                     'point_person__first_name', 'point_person__last_name',
+                     'description')
 
 class ContactAdmin(admin.ModelAdmin):
     pass

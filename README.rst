@@ -2,8 +2,7 @@ django-timepiece
 ================
 
 django-timepiece is a multi-user application for tracking people's time on
-projects. Complete documentation is available on `Read The Docs
-<http://django-timepiece.readthedocs.org>`_.
+projects. Documentation is available on `Read The Docs`_.
 
 :master: |master-status|
 :develop: |develop-status|
@@ -31,40 +30,45 @@ Features
 Requirements
 ------------
 
-django-timepiece is compatible with Python 2.{6,7}, Django 1.{4,5}, and
-PostgreSQL. PostgreSQL is the only offically supported database backend and,
-therefore, requires `psycopg2 <http://initd.org/psycopg/>`_. django-timepiece
-also depends on the following Django apps:
-
- * `python-dateutil <http://labix.org/python-dateutil>`_
- * `django-selectable <http://pypi.python.org/pypi/django-selectable>`_
- * `django-pagination <http://pypi.python.org/pypi/django-pagination>`_
- * `django-compressor <https://github.com/jezdez/django_compressor>`_
- * `django-bootstrap-toolkit <https://github.com/dyve/django-bootstrap-toolkit>`_
+django-timepiece is compatible with Django 1.7 (on Python 2.7 and Python 3.4),
+and Django 1.8 (on Python 2.7 and Python 3.4). PostgreSQL is the only
+officially supported backend. For a full list of required libraries, see
+the `requirements/base.txt` from the project source on `GitHub`_.
 
 We actively support desktop versions of Chrome and Firefox, as well as common
 mobile platforms. We do not support most versions of Internet Explorer. We
 welcome pull requests to fix bugs on unsupported browsers.
 
-django-timepiece uses Sphinx and RST for documentation. You can use Sphinx to
-build the documentation:
+Documentation
+-------------
 
- * `docutils <http://docutils.sourceforge.net/>`_
- * `Sphinx <http://sphinx.pocoo.org/>`_
+Documentation is hosted on `Read The Docs`_.
 
-A makefile is included with the documentation so you can run `make html` in the
-`doc/` directory to build the documentation.
+To build the documentation locally:
+
+#. Download a copy of the `django-timepiece` source, either through
+   use of `git clone` or by downloading a zipfile from `GitHub`_.
+
+#. Make sure that the top-level directory is on your Python path. If you're
+   using a virtual environment, this can be accomplished via::
+
+        cd /path/to/django-timepiece/ && add2virtualenv .
+
+#. Install the requirements in `requirements/docs.txt` from the project
+   source on `GitHub`_.
+
+#. Run ``make html`` from within the `docs/` directory. HTML files will be
+   output in the `docs/_build/html/` directory.
 
 Installation
 ------------
 
-#. django-timepiece is available on `PyPI
-   <http://pypi.python.org/pypi/django-timepiece>`_, so the easiest way to
-   install it is to use `pip <http://pip.openplans.org/>`_::
+#. django-timepiece is available on `PyPI`_, so the easiest way to
+   install it and its dependencies is to use `pip`_::
 
     $ pip install django-timepiece
 
-#. Ensure that `less <http://lesscss.org>`_ is installed on your machine::
+#. Ensure that `less`_ is installed on your machine and the version is <=1.4.0::
 
     # Install node.js and npm:
     $ sudo apt-get install python-software-properties
@@ -72,8 +76,8 @@ Installation
     $ sudo apt-get update
     $ sudo apt-get install nodejs npm
 
-    # Use npm to install less:
-    $ npm install less -g
+    # Use npm to install less from package.json:
+    $ npm install
 
 #. If you are starting from the included example project, copy the example
    local settings file at `example_project/settings/local.py.example` to
@@ -88,15 +92,14 @@ Installation
             ...
             'bootstrap_toolkit',
             'compressor',
-            'pagination',
             'selectable',
 
+            # Must come last.
             'timepiece',
             'timepiece.contracts',
             'timepiece.crm',
             'timepiece.entries',
             'timepiece.reports',
-            ...
         )
 
    - Configure your middleware::
@@ -107,7 +110,6 @@ Installation
             'django.middleware.csrf.CsrfViewMiddleware',
             'django.contrib.auth.middleware.AuthenticationMiddleware',
             'django.contrib.messages.middleware.MessageMiddleware',
-            'pagination.middleware.PaginationMiddleware',
         )
 
    - Add `django.core.context_processors.request` and django-timepiece context
@@ -122,7 +124,7 @@ Installation
             "django.core.context_processors.request",           # <----
             "timepiece.context_processors.quick_clock_in",      # <----
             "timepiece.context_processors.quick_search",        # <----
-            "timepiece.context_processors.extra_settings",        # <----
+            "timepiece.context_processors.extra_settings",      # <----
         )
 
    - Configure compressor settings::
@@ -136,20 +138,20 @@ Installation
    - Set ``USE_TZ`` to ``False``. django-timepiece does not currently support
      timezones.
 
-#. Run ``syncdb``.
+#. Run ``syncdb`` and ``migrate``.
 
 #. Add URLs for django-timepiece and selectable to `urls.py`, e.g.::
 
-    urlpatterns = patterns('',
+    urlpatterns = [
         ...
         (r'^selectable/', include('selectable.urls')),
         (r'', include('timepiece.urls')),
         ...
-    )
+    ]
 
 #. Add the ``django.contrib.auth`` URLs to `urls.py`, e.g.::
 
-    urlpatterns = patterns('',
+    urlpatterns = [
         ...
         url(r'^accounts/login/$', 'django.contrib.auth.views.login',
             name='auth_login'),
@@ -170,7 +172,7 @@ Installation
         url(r'^accounts/reset/done/$',
             'django.contrib.auth.views.password_reset_complete'),
         ...
-    )
+    ]
 
 #. Create registration templates. For examples, see the registration templates
    in `example_project/templates/registration`. Ensure that your project's
@@ -182,5 +184,12 @@ Installation
         ...
     )
 
-Development sponsored by `Caktus Consulting Group, LLC
-<http://www.caktusgroup.com/services>`_.
+Development sponsored by `Caktus Group`_.
+
+
+.. _Caktus Group: https://www.caktusgroup.com/services
+.. _GitHub: https://github.com/caktus/django-timepiece
+.. _less: http://lesscss.org
+.. _pip: http://pip.openplans.org/
+.. _PyPI: http://pypi.python.org/pypi/django-timepiece
+.. _Read The Docs: http://django-timepiece.readthedocs.org
