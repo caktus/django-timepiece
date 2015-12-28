@@ -30,8 +30,8 @@ var stickyHeader = function(){
 				thead.style.webkitTransform = 'translate(0px,'+ (difference_top -1) +'px)';
 				thead.style.MozTransform = 'translate(0px,'+ (difference_top -1)  +'px)';
 			}else{
-				thead.style.webkitTransform = 'translate(0px,'+ (difference_top - 10) +'px)';
-				thead.style.MozTransform = 'translate(0px,'+ (difference_top -10) +'px)';
+				thead.style.webkitTransform = 'translate(0px,'+ (difference_top - 7) +'px)';
+				thead.style.MozTransform = 'translate(0px,'+ (difference_top -7) +'px)';
 			}
 		}
 		if(difference_top > table.dataset.bottom){
