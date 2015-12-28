@@ -5,6 +5,7 @@ from dateutil.relativedelta import relativedelta
 
 from django.contrib.auth.models import Permission
 from django.core.exceptions import ValidationError
+from django.core.urlresolvers import reverse
 from django.test import TestCase
 from django.utils import timezone
 
@@ -223,7 +224,8 @@ class ContractHourTestCase(TestCase):
 
     def test_get_absolute_url(self):
         ch = factories.ContractHour.create()
-        url = '/admin/contracts/contracthour/%d/' % ch.pk
+        url = reverse(
+            'admin:contracts_contracthour_change', args=(ch.pk,), current_app='timepiece')
         self.assertEqual(url, ch.get_absolute_url())
 
 

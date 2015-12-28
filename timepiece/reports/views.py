@@ -234,10 +234,14 @@ class HourlyReport(ReportMixin, CSVViewMixin, TemplateView):
         content.append(headers)
 
         summaries = context['summaries']
+        # <<<<<<< HEAD
         try:
             summary = filter(lambda x:x[0]==key, summaries)[0][1]
         except:
             summary = []
+        # =======
+        # summary = summaries.get(self.export, [])
+        # >>>>>>> caktus/develop
         for rows, totals in summary:
             for name, user_id, hours in rows:
                 if self.export_projects:

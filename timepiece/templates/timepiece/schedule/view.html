@@ -64,6 +64,13 @@
             });
         });
 
+        $("#schedule tr:last td").text(function(i){
+            var t = 0;
+            $(this).parent().prevAll().find("td:nth-child("+(i+2)+")").each(function(){
+                t += parseInt( $(this).text(), 10 ) || 0;
+            });
+            return t;
+        });
     </script>
 {% endblock extrajs %}
 
@@ -137,6 +144,12 @@
                                 {% endfor %}
                             </tr>
                         {% endfor %}
+                        <tr>
+                            <th>Totals</th>
+                            {% for x in users %}
+                                <td class="hours"></td>
+                            {% endfor %}
+                        </tr>
                     </tbody>
                 </table>
             {% else %}

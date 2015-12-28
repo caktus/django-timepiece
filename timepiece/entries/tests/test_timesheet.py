@@ -2,6 +2,7 @@ import datetime
 from dateutil.relativedelta import relativedelta
 from decimal import Decimal
 import random
+from time import sleep
 
 from six.moves.urllib.parse import urlencode
 
@@ -325,6 +326,23 @@ class ClockInTest(ViewTestMixin, TestCase):
         self.assertTrue(e_id.is_closed)
         self.assertTrue(e_id.hours)
         self.assertEqual(e_id.comments, 'test comment')
+
+    def testPausedEntryReportsCorrectTime(self):
+        """
+        Account for progress of time when reporting a paused entry.
+        """
+        self.login_user(self.user)
+        xtime = self.now
+        entry1 = factories.Entry(**{
+            'user': self.user,
+            'start_time': xtime - relativedelta(seconds=1),
+            'pause_time': xtime,
+        })
+        entry = Entry.objects.get(pk=entry1.id)
+        self.assertEqual(entry.get_total_seconds(), 1)
+        sleep(2)
+        entry = Entry.objects.get(pk=entry1.id)
+        self.assertEqual(entry.get_total_seconds(), 1)
 
     def testClockInBlock(self):
         """

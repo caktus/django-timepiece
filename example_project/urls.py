@@ -1,6 +1,6 @@
 from django.conf.urls import include, url
+from django.contrib.auth import views as auth_views
 from django.contrib import admin
-
 
 admin.autodiscover()  # For Django 1.6
 
@@ -11,22 +11,22 @@ urlpatterns = [
     url(r'', include('timepiece.urls')),
 
     # authentication views
-    url(r'^accounts/login/$', 'django.contrib.auth.views.login',
+    url(r'^accounts/login/$', auth_views.login,
         name='auth_login'),
-    url(r'^accounts/logout/$', 'django.contrib.auth.views.logout_then_login',
+    url(r'^accounts/logout/$', auth_views.logout_then_login,
         name='auth_logout'),
     url(r'^accounts/password-change/$',
-        'django.contrib.auth.views.password_change',
+        auth_views.password_change,
         name='change_password'),
     url(r'^accounts/password-change/done/$',
-        'django.contrib.auth.views.password_change_done'),
+        auth_views.password_change_done),
     url(r'^accounts/password-reset/$',
-        'django.contrib.auth.views.password_reset',
+        auth_views.password_reset,
         name='reset_password'),
     url(r'^accounts/password-reset/done/$',
-        'django.contrib.auth.views.password_reset_done'),
+        auth_views.password_reset_done),
     url(r'^accounts/reset/(?P<uidb36>[0-9A-Za-z]+)-(?P<token>.+)/$',
-        'django.contrib.auth.views.password_reset_confirm'),
+        auth_views.password_reset_confirm),
     url(r'^accounts/reset/done/$',
-        'django.contrib.auth.views.password_reset_complete'),
+        auth_views.password_reset_complete),
 ]

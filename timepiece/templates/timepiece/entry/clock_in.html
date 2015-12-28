@@ -21,6 +21,30 @@
             }
         );
     </script>
+    <script type="text/javascript">
+        $(document).ready(function() {
+            function newParameters(query) {
+                query.project = $('#id_project').val();
+            }
+            $('#id_activity_0').djselectable('option', 'prepareQuery', newParameters);
+        });
+    </script>
+    <script>
+        $.ui.djselectable.prototype._comboButtonTemplate = function (input) {
+            var icon = $("<i>").addClass("icon-chevron-down");
+            // Remove current classes on the text input
+            $(input).attr("class", "");
+            // Wrap with input-append
+            $(input).wrap('<div class="input-append" />');
+            // Return button link with the chosen icon
+            return $("<a>").append(icon).addClass("btn ");
+        };
+        $.ui.djselectable.prototype._removeButtonTemplate = function (item) {
+            var icon = $("<i>").addClass("icon-remove-sign");
+            // Return button link with the chosen icon
+            return $("<a>").append(icon).addClass("btn pull-right");
+        };
+    </script>
 {% endblock extrajs %}
 
 {% block content %}

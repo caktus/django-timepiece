@@ -7,9 +7,12 @@ from django.db.models import Q, Sum
 
 from timepiece import utils
 from timepiece.crm.models import Project, ProjectRelationship
+from timepiece.entries.lookups import ActivityLookup
 from timepiece.entries.models import Entry, Location, ProjectHours, Activity
 from timepiece.forms import INPUT_FORMATS, TimepieceSplitDateTimeField,\
         TimepieceDateInput
+
+from selectable import forms as selectable
 
 
 class ClockInForm(forms.ModelForm):
@@ -22,6 +25,9 @@ class ClockInForm(forms.ModelForm):
         model = Entry
         fields = ('active_comment', 'location', 'project', 'activity',
                   'start_time', 'comments')
+        widgets = {
+            'activity': selectable.AutoComboboxSelectWidget(lookup_class=ActivityLookup),
+        }
 
     def __init__(self, *args, **kwargs):
         self.user = kwargs.pop('user')
