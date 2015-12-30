@@ -147,7 +147,7 @@ class DashboardViewTestCase(ViewTestMixin, TestCase):
         self.assertEqual(len(response.context['others_active_entries']), 0)
 
     def test_clock_in_form_activity_lookup(self):
-        """Create an ActivityGroup that includes the Activity, and accosiate it with the project.
+        """Create an ActivityGroup that includes the Activity, and associate it with the project.
         Add a second Activity that is not included.  Ensure that the ActivityLookup disallows
         the second Activity. """
         factory = RequestFactory()
@@ -162,6 +162,17 @@ class DashboardViewTestCase(ViewTestMixin, TestCase):
         data = json.loads(response.content.decode("utf-8"))['data']
         self.assertEqual(1, len(data))
         self.assertEqual(self.activity.pk, data[0]['id'])
+
+    def test_clock_in_form_activity_without_project_activity_group(self):
+        """Ensure that the ActivityLookup provides all Activities if Project does not have an
+        activity group. """
+        factory = RequestFactory()
+        lookup = ActivityLookup()
+        factories.Activity()
+        request = factory.get("/entry/clock_in/", {'project': self.project.pk})
+        response = lookup.results(request)
+        data = json.loads(response.content.decode("utf-8"))['data']
+        self.assertEqual(2, len(data))
 
 
 class ProcessProgressTestCase(TestCase):

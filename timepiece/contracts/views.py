@@ -53,6 +53,10 @@ class ContractList(ListView):
             [0.0] + [c.fraction_hours for c in self.queryset.all()])
         kwargs['max_schedule_fraction'] = max(
             [0.0] + [c.fraction_schedule for c in self.queryset.all()])
+        kwargs['projects_pending'] = ProjectContract.objects.filter(
+            status=ProjectContract.STATUS_UPCOMING).order_by('name')
+        kwargs['projects_complete'] = ProjectContract.objects.filter(
+            status=ProjectContract.STATUS_COMPLETE).order_by('name')
         return super(ContractList, self).get_context_data(*args, **kwargs)
 
 

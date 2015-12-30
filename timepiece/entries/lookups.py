@@ -13,7 +13,8 @@ class ActivityLookup(ModelLookup):
         results = super(ActivityLookup, self).get_query(request, term)
         project = Project.objects.get(pk=request.GET.get('project', ''))
         if project:
-            results = project.activity_group.activities.all()
+            if project.activity_group:
+                return project.activity_group.activities.all()
         return results
 
     def get_item_label(self, item):
