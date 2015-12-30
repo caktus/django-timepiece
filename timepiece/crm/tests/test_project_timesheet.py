@@ -1,5 +1,6 @@
 import datetime
 from decimal import Decimal
+from dateutil.relativedelta import relativedelta
 
 from django.utils import timezone
 from django.test import TestCase
@@ -142,3 +143,28 @@ class TestProjectTimesheet(ViewTestMixin, LogTimeMixin, TestCase):
         headers = contents[0].split(',')
         # Assure user's comments are not included.
         self.assertTrue('comments' not in headers)
+
+    def testRoundingConversions(self):
+        """
+        Verify that entries (which are in seconds) approximate a correct hourly value
+        once each decimal conversion per entry is summed.
+        """
+        xtime = timezone.now() - relativedelta(minutes=10)
+        factories.Entry(**{
+            'user': self.superuser,
+            'project': self.p2,
+            'start_time': xtime,
+            'end_time': xtime + relativedelta(seconds=29)
+        })
+        factories.Entry(**{
+            'user': self.superuser,
+            'project': self.p2,
+            'start_time': xtime + relativedelta(seconds=30),
+            'end_time': xtime + relativedelta(seconds=60)
+        })
+
+        self.login_user(self.superuser)
+        response = self._get(url_args=(self.p2.pk,))
+        entries = response.context['entries']
+        self.assertEqual(len(entries), 2)
+        self.assertAlmostEqual(sum(e['hours'] for e in entries), Decimal(0.016), places=2)

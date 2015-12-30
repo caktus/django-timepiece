@@ -765,7 +765,7 @@ class ClockOutTest(ViewTestMixin, TestCase):
         }
         self.client.post(reverse('clock_out'), data)
         paused_entry = Entry.objects.get(pk=paused_entry.pk)
-        self.assertAlmostEqual(paused_entry.hours, 1)
+        self.assertAlmostEqual(paused_entry.hours, 1, places=2)
 
     def testClockOutReverse(self):
         """

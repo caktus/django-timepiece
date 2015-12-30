@@ -111,7 +111,7 @@
                 <div id="overall-progress">
                     <div id="overall-label">
                         <span>Total:</span>
-                        {{ total_worked|humanize_hours:"{hours:02d}:{minutes:02d}" }} worked
+                        {{ total_worked|humanize_hours:"{hours:02d}:{minutes:02d}:{seconds:02d}" }} worked
                         of {{ total_assigned|humanize_hours:"{hours:02d}:{minutes:02d}" }} expected
                     </div>
                     <div id="overall-bar"
@@ -138,7 +138,7 @@
                                             {{ data.assigned|humanize_hours:"{hours:02d}:{minutes:02d}" }}
                                         </td>
                                         <td class="nowrap">
-                                            {{ data.worked|humanize_hours:"{hours:02d}:{minutes:02d}" }}
+                                            {{ data.worked|humanize_hours:"{hours:02d}:{minutes:02d}:{seconds:02d}" }}
                                         </td>
                                         <td class="hidden-phone progress-col project-bar"
                                             data-worked = "{{ data.worked }}"
@@ -176,7 +176,7 @@
                                 <tr>
                                     <th colspan="4" style="border-right: 0px;">{{ day.grouper }}</th>
                                     <th style="border-left: 0px;" class="hidden-phone th-continued" ></th>
-                                    <th class="th-continued" >{{ daily_total|humanize_seconds:"{hours:02d}:{minutes:02d}" }}</th>
+                                    <th class="th-continued" >{{ daily_total|humanize_seconds:"{hours:02d}:{minutes:02d}:{seconds:02d}" }}</th>
                                     <th class="hidden-phone th-continued"></th>
                                 </tr>
                                 {% for entry in day.list %}
@@ -206,7 +206,7 @@
                                                 {% endif %}
                                             {% endwith %}
                                         </td>
-                                        <td class="nowrap">{{ entry.get_total_seconds|humanize_seconds:"{hours:02d}:{minutes:02d}" }}</td>
+                                        <td class="nowrap">{{ entry.get_total_seconds|humanize_seconds:"{hours:02d}:{minutes:02d}:{seconds:02d}" }}</td>
                                         <td class="hidden-phone">
                                             {% if entry.comments|length > 50 %}
                                                 {{entry.comments|slice:':50'}}&hellip;
