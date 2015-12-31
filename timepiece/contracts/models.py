@@ -607,6 +607,7 @@ class ContractHour(ContractIncrement):
         return reverse('delete_contract_hours',
             args=(self.contract.id, self.id))
 
+@python_2_unicode_compatible
 class ContractBudget(ContractIncrement):
     budget = models.DecimalField(max_digits=11, decimal_places=2,
             default=0)
@@ -627,8 +628,10 @@ class ContractBudget(ContractIncrement):
             'date_approved': self.date_approved,
             'contract': self.contract if self.contract_id else None,
             }
-    def __unicode__(self):
-        return '%s - %f' % (self.contract, self.budget)
+    
+    def __str__(self):
+        return "{} on {} ({})".format(
+            self.budget, self.contract, self.get_status_display())
 
     def get_absolute_url(self):
         return reverse('admin:contracts_contracthour_change', args=[self.pk])
@@ -822,7 +825,7 @@ class EntryGroup(models.Model):
         super(EntryGroup, self).save(*args, **kwargs)
 
 
-    def __unicode__(self):
+    def __str__(self):
         if self.single_project:
             invoice_data = {
                 'number': self.number,

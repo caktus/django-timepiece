@@ -1096,7 +1096,7 @@ class Project(models.Model):
             ('generate_project_invoice', 'Can generate project invoice'),
         )
 
-    def __unicode__(self):
+    def __str__(self):
         return '{0}: {1}'.format(self.code, self.name)
 
     def delete(self, *args, **kwargs):

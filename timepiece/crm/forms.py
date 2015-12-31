@@ -368,6 +368,7 @@ class EditLimitedUserProfileForm(forms.ModelForm):
 
     class Meta:
         model = LimitedAccessUserProfile
+        exclude = ()
 
     def clean(self):
         cleaned_data = super(EditLimitedUserProfileForm, self).clean()

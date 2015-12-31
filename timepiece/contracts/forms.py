@@ -113,17 +113,20 @@ class CreateEditContractBudgetForm(forms.ModelForm):
 
     class Meta:
         model = ContractBudget
+        exclude = ()
 
 class CreateEditContractHourForm(forms.ModelForm):
 
     class Meta:
         model = ContractHour
+        exclude = ()
 
 
 class CreateEditContractForm(forms.ModelForm):
 
     class Meta:
         model = ProjectContract
+        exclude = ()
 
     def __init__(self, *args, **kwargs):
         super(CreateEditContractForm, self).__init__(*args, **kwargs)
