@@ -1847,7 +1847,7 @@ def burnup_chart_data(request, project_id):
     #         {'project': project.id,
     #          'date': str(datetime.date.today())})
     #     if data:
-    #         return HttpResponse(json.dumps(data), status=200, mimetype='application/json')
+    #         return HttpResponse(json.dumps(data), status=200, content_type='application/json')
     # except:
     #     pass
     try:
@@ -2027,10 +2027,10 @@ def burnup_chart_data(request, project_id):
         except:
             print sys.exc_info(), traceback.format_exc()
             pass
-        return HttpResponse(json.dumps(data), status=200, mimetype='application/json')
+        return HttpResponse(json.dumps(data), status=200, content_type='application/json')
     except:
         print sys.exc_info(), traceback.format_exc()
-        return HttpResponse(json.dumps({}), status=200, mimetype='application/json')
+        return HttpResponse(json.dumps({}), status=200, content_type='application/json')
 
 @login_required
 def burnup_chart(request, project_id):

@@ -113,7 +113,7 @@ class UserProfile(models.Model):
         db_table = 'timepiece_userprofile'  # Using legacy table name.
 
     def __str__(self):
-        return self.user
+        return str(self.user)
 
     @property
     def week_schedule(self):
@@ -326,6 +326,7 @@ class PaidTimeOffRequest(models.Model):
         return '/timepiece/pto'#reverse('view_project', args=(self.pk,))
 
 
+@python_2_unicode_compatible
 class PaidTimeOffLog(models.Model):
     user_profile = models.ForeignKey(UserProfile)
     date = models.DateField()
@@ -338,8 +339,8 @@ class PaidTimeOffLog(models.Model):
     class Meta:
         ordering = ('user_profile', '-date',)
 
-    def __unicode__(self):
-        return '%s %s %f' % (self.user_profile, str(self.date), float(self.amount))
+    def __str__(self):
+        return '%s %s %f' % (str(self.user_profile), str(self.date), float(self.amount))
 
     def get_time_entry(self):
         try:

@@ -900,7 +900,7 @@ class BulkEntryAjaxView(ScheduleMixin, View):
         }
         
         return HttpResponse(json.dumps(data, cls=DecimalEncoder),
-            mimetype='application/json')
+            content_type='application/json')
 
     def update_charges(self, period_start):
         try:
@@ -972,7 +972,7 @@ class BulkEntryAjaxView(ScheduleMixin, View):
                     'activity': entry.activity.id,
                     'location': entry.location.id,
                     'comment': entry.comments}
-            return HttpResponse(json.dumps(data), status=200, mimetype='application/json')
+            return HttpResponse(json.dumps(data), status=200, content_type='application/json')
         except:
             print sys.exc_info(), traceback.format_exc()
             msg = 'The request must contain values for user, project, activity, location and hours'

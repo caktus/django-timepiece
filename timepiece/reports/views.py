@@ -2020,7 +2020,7 @@ def get_employee_backlog_chart_data(user_id):
 def employee_backlog_chart_data(request, user_id):
     if request.user.has_perm('crm.view_backlog') or request.user==employee:
         return HttpResponse(json.dumps(get_employee_backlog_chart_data(user_id)),
-            status=200, mimetype='application/json')
+            status=200, content_type='application/json')
 
 @permission_required('crm.view_backlog')
 def report_overrun_backlog(request):
