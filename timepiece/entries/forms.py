@@ -25,9 +25,11 @@ class ClockInForm(forms.ModelForm):
         model = Entry
         fields = ('active_comment', 'location', 'project', 'activity',
                   'start_time', 'comments')
-        widgets = {
-            'activity': selectable.AutoComboboxSelectWidget(lookup_class=ActivityLookup),
-        }
+        # disabling this widget because it does not seem to work as nicely
+        # as what I previously had working
+        # widgets = {
+        #     'activity': selectable.AutoComboboxSelectWidget(lookup_class=ActivityLookup),
+        # }
 
     def __init__(self, *args, **kwargs):
         self.user = kwargs.pop('user')
