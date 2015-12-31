@@ -406,7 +406,7 @@ class Entry(models.Model):
                     end.strftime('%H:%M:%S')
                 )
             raise ValidationError(err_msg)
-<<<<<<< HEAD
+
         #month_start = utils.get_month_start(start)
         #next_month = month_start + relativedelta(months=1)
         (period_start, period_end) = utils.get_bimonthly_dates(start)
@@ -422,9 +422,7 @@ class Entry(models.Model):
             msg = 'You cannot add/edit entries after a timesheet has been ' \
                 'approved or invoiced. Please correct the start and end times.'
             raise ValidationError(msg)
-=======
 
->>>>>>> caktus/develop
         return True
 
     def save(self, *args, **kwargs):
@@ -625,13 +623,8 @@ class Entry(models.Model):
             else:
                 data['non_billable'] += row['s']
         data['total_worked'] = data['billable'] + data['non_billable']
-<<<<<<< HEAD
-        data['paid_time_off'] = {}
+        data['paid_time_off'] = {} # or paid_leave?
         for name, pk in projects.iteritems():
-=======
-        data['paid_leave'] = {}
-        for name, pk in projects.items():
->>>>>>> caktus/develop
             qs = entries.filter(project=projects[name])
             data['paid_time_off'][name] = qs.aggregate(s=Sum('hours'))['s']
         return data
@@ -661,17 +654,10 @@ class ProjectHours(models.Model):
         validators=[validators.MinValueValidator(Decimal("0.01"))])
     published = models.BooleanField(default=False)
 
-<<<<<<< HEAD
-    def __unicode__(self):
+    def __str__(self):
         return "{0} on {1} for Period starting {2}".format(
                 self.user.get_name_or_username(),
                 self.project, self.week_start.strftime('%B %d, %Y'))
-=======
-    def __str__(self):
-        return "{0} on {1} for Week of {2}".format(
-            self.user.get_name_or_username(),
-            self.project, self.week_start.strftime('%B %d, %Y'))
->>>>>>> caktus/develop
 
     def save(self, *args, **kwargs):
         # Ensure that week_start is the Monday of a given week.
