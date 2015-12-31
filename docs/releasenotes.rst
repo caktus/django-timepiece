@@ -1,23 +1,61 @@
 Release Notes
 =============
 
-0.10.0 (In Development)
------------------------
+1.0.0 (2016-01-04)
+----------------------------
 
-* Compatibility with Django 1.9 with Python 2.7 or Python 3.4/3.5
-* Compatibility with Django 1.8 with Python 2.7 or Python 3.4/3.5
+Release 1.0.0 is a comprehensive update of the django-timepiece codebase. It is
+based on 0.9.5, which was not released to PyPI because it was unofficial. Release
+1.0.0 includes the bulk of the unofficial 0.9.5 release, along with several critical
+code quality improvements to 0.9.5.
+
+Please note that *release 1.0.0 is not backwards compatible with any 0.9.x release.*
+It is a new and separate refactoring of django-timepiece.
+
+*Features*
+
+* Assigning Project hours to a User not associated with the Project will automatically associate
+User with Project
+* Admins are now able to add entries after User's timesheet has been approved
+* Payroll summary now groups by User last name
+* Dashboard comments converted to modal popups to keep interface clean
+* Contract detail now shows total hours worked before contract start date and post contract end
+date
+* Sticky headers on all tables
+* Time Entries are now more precise to prevent the number of seconds being off in totals
+* Tabs for pending and completed projects in the Contracts page
+* Users can only log activities that are allowed for a project
+* Estimation Accuracy report has been refined for readability
+
+
+
+*Bugfixes*
+
+* Alphabetized entries in weekly schedule
+* Previous/Next options returned to the bottom of pages
+* Hourly Report outputs correct data
+* Sum of parts now accurately matches title (rounding display has been removed to show explicit
+times)
+* Dashboard header styling has been made consistent (hover styling removed and background color
+matched)
+
+*Code Quality*
+
+* Compatibility with Django 1.6 with Python 2.7 or Python 3.3
+* Compatibility with Django 1.7 with Python 2.7 or Python 3.4
 * Drops support for all other combinations of Django and Python
 * Drops support for testing with Jenkins
 * Flake8 compliance
+* lessc installs locally rather than globally
+* Tests updated to clean up stray data which led to inconsistent failures
 
-0.9.5 (Released 06-16-2014)
----------------------------
+0.9.5 (Not Released to PyPI)
+----------------------------
 
 *Features*
 
 * Use Bootstrap 2.3.2
 * Estimation Accuracy report
-* Sticky headers on all tables!
 * Show active entry comment on dashboard page.
 * Order previous invoices by end date descending.
 
