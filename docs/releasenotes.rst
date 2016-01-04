@@ -5,29 +5,27 @@ Release Notes
 ----------------------------
 
 Release 1.0.0 is a comprehensive update of the django-timepiece codebase. It is
-based on 0.9.5, which was not released to PyPI because it was unofficial. Release
+based on 0.9.5, which was not officially released to PyPI. Release
 1.0.0 includes the bulk of the unofficial 0.9.5 release, along with several critical
 code quality improvements to 0.9.5.
 
-Please note that *release 1.0.0 is not backwards compatible with any 0.9.x release.*
+Please note that **release 1.0.0 is not backwards compatible with any 0.9.x release.**
 It is a new and separate refactoring of django-timepiece.
 
 *Features*
 
-* Assigning Project hours to a User not associated with the Project will automatically associate
-User with Project
-* Admins are now able to add entries after User's timesheet has been approved
+* Assigning Project hours to a User not associated with the Project will automatically
+associate User with Project
+* Admins are now able to add Entries after User's timesheet has been approved
 * Payroll summary now groups by User last name
-* Dashboard comments converted to modal popups to keep interface clean
-* Contract detail now shows total hours worked before contract start date and post contract end
-date
-* Sticky headers on all tables
+* Dashboard comments have been converted to modal popups to keep interface clean
+* Contract detail now shows total hours worked before Contract start date and post
+Contract end date
+* Sticky headers have been added to all tables
 * Time Entries are now more precise to prevent the number of seconds being off in totals
-* Tabs for pending and completed projects in the Contracts page
-* Users can only log activities that are allowed for a project
+* Tabs for pending and completed Projects in the Contracts page
+* Users can only log activities that are allowed for a Project
 * Estimation Accuracy report has been refined for readability
-
-
 
 *Bugfixes*
 
@@ -38,6 +36,7 @@ date
 times)
 * Dashboard header styling has been made consistent (hover styling removed and background color
 matched)
+* lessc installs locally rather than globally
 
 *Code Quality*
 
@@ -46,7 +45,6 @@ matched)
 * Drops support for all other combinations of Django and Python
 * Drops support for testing with Jenkins
 * Flake8 compliance
-* lessc installs locally rather than globally
 * Tests updated to clean up stray data which led to inconsistent failures
 
 0.9.5 (Not Released to PyPI)
