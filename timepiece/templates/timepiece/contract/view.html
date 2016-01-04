@@ -65,7 +65,7 @@
                     </td>
                 </tr>
                 {% if contract.pre_launch_hours_worked %}
-                    <tr class="error"><th>Pre-Contract Hours Worked</th>
+                    <tr class="error"><th>Pre-Contract Hours Worked (Billable)</th>
                         <td>
                             {{ contract.pre_launch_hours_worked|floatformat:2 }}
                             ({% widthratio contract.pre_launch_hours_worked contract.contracted_hours 100 %}%)
