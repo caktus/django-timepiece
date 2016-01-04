@@ -105,7 +105,7 @@ class TestProjectTimesheet(ViewTestMixin, LogTimeMixin, TestCase):
         self.assertEqual(response.status_code, 200)
         self.assertEqual(response.context['project'], self.p1)
         self.assertEqual(len(response.context['entries']), 3)
-        self.assertEqual(Decimal(), Decimal(3))
+        self.assertEqual(Decimal(response.context['total']), Decimal(3))
         user_entry0 = response.context['user_entries'][0]
         user_entry1 = response.context['user_entries'][1]
         self.assertEqual(user_entry0['user__last_name'], self.user.last_name)
