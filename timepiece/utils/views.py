@@ -10,6 +10,12 @@ def cbv_decorator(function_decorator):
     return class_decorator
 
 
+def format_totals(entry_dict, key="sum"):
+    for entry in entry_dict:
+        if entry[key]:
+            entry[key] = "{0:.2f}".format(entry[key])
+
+
 class GetDataFormMixin(object):
     """Used with subclasses of FormMixin to use GET data from the request."""
 

@@ -88,11 +88,11 @@ class TestProjectTimesheet(ViewTestMixin, LogTimeMixin, TestCase):
         self.assertEqual(response.status_code, 200)
         self.assertEqual(response.context['project'], self.p1)
         self.assertEqual(len(response.context['entries']), 1)
-        self.assertEqual(response.context['total'], Decimal(1))
+        self.assertEqual(Decimal(response.context['total']), Decimal(1))
         user_entry = response.context['user_entries'][0]
         self.assertEqual(user_entry['user__last_name'], self.user.last_name)
         self.assertEqual(user_entry['user__first_name'], self.user.first_name)
-        self.assertEqual(user_entry['sum'], Decimal(1))
+        self.assertEqual(Decimal(user_entry['sum']), Decimal(1))
 
     def testOldProjectTimesheet(self):
         self.login_user(self.superuser)
@@ -105,16 +105,16 @@ class TestProjectTimesheet(ViewTestMixin, LogTimeMixin, TestCase):
         self.assertEqual(response.status_code, 200)
         self.assertEqual(response.context['project'], self.p1)
         self.assertEqual(len(response.context['entries']), 3)
-        self.assertEqual(response.context['total'], Decimal(3))
+        self.assertEqual(Decimal(), Decimal(3))
         user_entry0 = response.context['user_entries'][0]
         user_entry1 = response.context['user_entries'][1]
         self.assertEqual(user_entry0['user__last_name'], self.user.last_name)
         self.assertEqual(user_entry0['user__first_name'], self.user.first_name)
-        self.assertEqual(user_entry0['sum'], Decimal(2))
+        self.assertEqual(Decimal(user_entry0['sum']), Decimal(2))
         self.assertEqual(user_entry1['user__last_name'], self.user2.last_name)
         self.assertEqual(user_entry1['user__first_name'],
                          self.user2.first_name)
-        self.assertEqual(user_entry1['sum'], Decimal(1))
+        self.assertEqual(Decimal(user_entry1['sum']), Decimal(1))
 
     def testOtherProjectTimesheet(self):
         self.login_user(self.superuser)
@@ -123,11 +123,11 @@ class TestProjectTimesheet(ViewTestMixin, LogTimeMixin, TestCase):
         self.assertEqual(response.status_code, 200)
         self.assertEqual(response.context['project'], self.p2)
         self.assertEqual(len(response.context['entries']), 1)
-        self.assertEqual(response.context['total'], Decimal(1))
+        self.assertEqual(Decimal(response.context['total']), Decimal(1))
         user_entry = response.context['user_entries'][0]
         self.assertEqual(user_entry['user__last_name'], self.user.last_name)
         self.assertEqual(user_entry['user__first_name'], self.user.first_name)
-        self.assertEqual(user_entry['sum'], Decimal(1))
+        self.assertEqual(Decimal(user_entry['sum']), Decimal(1))
 
     def test_project_csv(self):
         self.login_user(self.superuser)
@@ -167,4 +167,4 @@ class TestProjectTimesheet(ViewTestMixin, LogTimeMixin, TestCase):
         response = self._get(url_args=(self.p2.pk,))
         entries = response.context['entries']
         self.assertEqual(len(entries), 2)
-        self.assertAlmostEqual(sum(e['hours'] for e in entries), Decimal(0.016), places=2)
+        self.assertAlmostEqual(sum(Decimal(e['hours']) for e in entries), Decimal(0.016), places=2)
