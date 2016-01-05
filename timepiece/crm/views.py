@@ -116,7 +116,7 @@ def view_user_timesheet(request, user_id, active_tab):
     extra_values = ('start_time', 'end_time', 'comments', 'seconds_paused',
                     'id', 'location__name', 'project__name', 'activity__name',
                     'status')
-    month_entries = month_qs.date_trunc('month', extra_values)
+    month_entries = month_qs.date_trunc('month', extra_values).order_by('start_time')
     # For grouped entries, back date up to the start of the week.
     first_week = utils.get_week_start(from_date)
     month_week = first_week + relativedelta(weeks=1)
