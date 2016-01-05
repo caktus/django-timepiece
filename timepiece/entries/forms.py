@@ -127,6 +127,9 @@ class AddUpdateEntryForm(forms.ModelForm):
         model = Entry
         exclude = ('user', 'pause_time', 'site', 'hours', 'status',
                    'entry_group')
+        widgets = {
+            'activity': selectable.AutoComboboxSelectWidget(lookup_class=ActivityLookup),
+        }
 
     def __init__(self, *args, **kwargs):
         self.user = kwargs.pop('user')

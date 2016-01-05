@@ -1,4 +1,6 @@
 import datetime
+
+from collections import OrderedDict
 from dateutil.relativedelta import relativedelta
 
 from six.moves.urllib.parse import urlencode
@@ -55,7 +57,7 @@ def create_dict(**kwargs):
 def date_filters(form_id, options=None, use_range=True):
     if not options:
         options = ('months', 'quarters', 'years')
-    filters = {}
+    filters = OrderedDict()
     date_format = DATE_FORM_FORMAT  # Expected for dates used in code
     today = datetime.date.today()
     single_day = relativedelta(days=1)
@@ -76,18 +78,6 @@ def date_filters(form_id, options=None, use_range=True):
             ))
         filters['Past 12 Months'].reverse()
 
-    if 'years' in options:
-        filters['Years'] = []
-        start = today.year - 3
-        for year in range(start, start + 4):
-            from_date = datetime.datetime(year, 1, 1)
-            to_date = from_date + single_year - single_day
-            filters['Years'].append((
-                str(from_date.year),
-                from_date.strftime(date_format) if use_range else "",
-                to_date.strftime(date_format)
-            ))
-
     if 'quarters' in options:
         filters['Quarters (Calendar Year)'] = []
         to_date = datetime.date(today.year - 1, 1, 1) - single_day
@@ -96,6 +86,18 @@ def date_filters(form_id, options=None, use_range=True):
             to_date = from_date + relativedelta(months=3) - single_day
             filters['Quarters (Calendar Year)'].append((
                 'Q%s %s' % ((x % 4) + 1, from_date.year),
+                from_date.strftime(date_format) if use_range else "",
+                to_date.strftime(date_format)
+            ))
+
+    if 'years' in options:
+        filters['Years'] = []
+        start = today.year - 3
+        for year in range(start, start + 4):
+            from_date = datetime.datetime(year, 1, 1)
+            to_date = from_date + single_year - single_day
+            filters['Years'].append((
+                str(from_date.year),
                 from_date.strftime(date_format) if use_range else "",
                 to_date.strftime(date_format)
             ))

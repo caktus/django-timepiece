@@ -274,9 +274,11 @@ class ProjectTimesheet(DetailView):
         extra_values = ('start_time', 'end_time', 'comments', 'seconds_paused',
                         'id', 'location__name', 'project__name',
                         'activity__name', 'status')
-        month_entries = entries_qs.date_trunc('month', extra_values)
+
+        month_entries = entries_qs.date_trunc('month', extra_values).order_by('start_time')
         if month_entries:
             format_totals(month_entries, "hours")
+
         total = entries_qs.aggregate(hours=Sum('hours'))['hours']
         if total:
             total = "{0:.2f}".format(total)

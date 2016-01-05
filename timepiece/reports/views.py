@@ -1,7 +1,9 @@
 import csv
+import json
+
+from collections import OrderedDict
 from dateutil.relativedelta import relativedelta
 from itertools import groupby
-import json
 
 from django.contrib.auth.decorators import permission_required
 from django.db.models import Sum, Q, Min, Max
@@ -235,7 +237,7 @@ class HourlyReport(ReportMixin, CSVViewMixin, TemplateView):
 
         context.update({
             'date_headers': date_headers,
-            'summaries': dict(summaries),
+            'summaries': OrderedDict(summaries),
             'range_headers': range_headers,
         })
         return context
