@@ -115,7 +115,7 @@ def get_max_hours(context):
 @register.simple_tag
 def get_uninvoiced_hours(entries, billable=None):
     """Given an iterable of entries, return the total hours that have
-    not been invoices. If billable is passed as 'billable' or 'nonbillable',
+    not been invoiced. If billable is passed as 'billable' or 'nonbillable',
     limit to the corresponding entries.
     """
     statuses = ('invoiced', 'not-invoiced')
@@ -123,7 +123,7 @@ def get_uninvoiced_hours(entries, billable=None):
         billable = (billable.lower() == u'billable')
         entries = [e for e in entries if e.activity.billable == billable]
     hours = sum([e.hours for e in entries if e.status not in statuses])
-    return hours
+    return '{0:.2f}'.format(hours)
 
 
 @register.filter

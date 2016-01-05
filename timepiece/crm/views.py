@@ -20,7 +20,7 @@ from timepiece.forms import YearMonthForm, UserYearMonthForm
 from timepiece.templatetags.timepiece_tags import seconds_to_hours
 from timepiece.utils.csv import CSVViewMixin
 from timepiece.utils.search import SearchListView
-from timepiece.utils.views import cbv_decorator
+from timepiece.utils.views import cbv_decorator, format_totals
 
 from timepiece.crm.forms import (
     CreateEditBusinessForm, CreateEditProjectForm, EditUserSettingsForm,
@@ -274,12 +274,23 @@ class ProjectTimesheet(DetailView):
         extra_values = ('start_time', 'end_time', 'comments', 'seconds_paused',
                         'id', 'location__name', 'project__name',
                         'activity__name', 'status')
+
         month_entries = entries_qs.date_trunc('month', extra_values).order_by('start_time')
+        if month_entries:
+            format_totals(month_entries, "hours")
+
         total = entries_qs.aggregate(hours=Sum('hours'))['hours']
+        if total:
+            total = "{0:.2f}".format(total)
         user_entries = entries_qs.order_by().values('user__first_name', 'user__last_name')
         user_entries = user_entries.annotate(sum=Sum('hours')).order_by('-sum')
+        if user_entries:
+            format_totals(user_entries)
         activity_entries = entries_qs.order_by().values('activity__name')
         activity_entries = activity_entries.annotate(sum=Sum('hours')).order_by('-sum')
+        if activity_entries:
+            format_totals(activity_entries)
+
         context.update({
             'project': project,
             'year_month_form': year_month_form,

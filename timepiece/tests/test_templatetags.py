@@ -168,7 +168,7 @@ class MiscTagTestCase(TestCase):
             Entry('shoes', 12)
         ]
         retval = tags.get_uninvoiced_hours(entries)
-        self.assertEqual(49, retval)
+        self.assertEqual('{0:.2f}'.format(49.00), retval)
 
     def test_project_report_url_for_contract(self):
         dt = datetime.date(2013, 1, 10)

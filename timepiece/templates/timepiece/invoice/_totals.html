@@ -1,3 +1,5 @@
+
+{% load timepiece_tags %}
 <table class="table table-bordered">
     <tr>
         <th>Activity Type</th>
@@ -6,12 +8,12 @@
     {% for name, hours_activities in totals %}
         <tr class="ledger_header">
             <th>{{ name|title }}</th>
-            <td class="hours"> {{ hours_activities.0 }} </td>
+            <td class="hours"> {{ hours_activities.0|floatformat:2  }} </td>
         </tr>
         {% for name, hours in hours_activities.1 %}
             <tr>
                 <td>{{ name|title }}</td>
-                <td class="hours">{{ hours }} </td>
+                <td class="hours">{{ hours|floatformat:2 }} </td>
             </tr>
         {% endfor %}
     {% endfor %}

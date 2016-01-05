@@ -1,8 +1,9 @@
 import datetime
+from decimal import Decimal
 
 from django.test import TestCase
 from timepiece.utils import get_active_entry, ActiveEntryError
-
+from timepiece.utils.views import format_totals
 from timepiece import utils
 
 from . import factories
@@ -59,3 +60,28 @@ class GetActiveEntryTest(TestCase):
         factories.Entry(user=self.user, start_time=now)
         factories.Entry(user=self.user, start_time=now)
         self.assertRaises(ActiveEntryError, get_active_entry, self.user)
+
+
+class FormatTotalsTest(TestCase):
+
+    def test_default_format_totals(self):
+        entries = [
+            {'sum': Decimal('60.50000'), 'user__first_name': 'Rob', 'user__last_name': 'Lin'},
+            {'sum': Decimal('30.75000'), 'user__first_name': 'Dave', 'user__last_name': 'Roy'},
+            {'sum': Decimal('20.20500'), 'user__first_name': 'Mike', 'user__last_name': 'Jones'},
+            ]
+        format_totals(entries)
+        self.assertEqual(entries[0]['sum'], "{0:.2f}".format(60.50))
+        self.assertEqual(entries[1]['sum'], "{0:.2f}".format(30.75))
+        self.assertEqual(entries[2]['sum'], "{0:.2f}".format(20.20))
+
+    def test_format_totals_with_param(self):
+        entries = [
+            {'smurf': Decimal('60.50000'), 'user__first_name': 'Rob', 'user__last_name': 'Lin'},
+            {'smurf': Decimal('30.75000'), 'user__first_name': 'Dave', 'user__last_name': 'Roy'},
+            {'smurf': Decimal('20.20500'), 'user__first_name': 'Mike', 'user__last_name': 'Jones'},
+            ]
+        format_totals(entries, 'smurf')
+        self.assertEqual(entries[0]['smurf'], "{0:.2f}".format(60.50))
+        self.assertEqual(entries[1]['smurf'], "{0:.2f}".format(30.75))
+        self.assertEqual(entries[2]['smurf'], "{0:.2f}".format(20.20))

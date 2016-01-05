@@ -270,11 +270,11 @@ class InvoiceDetailCSV(CSVViewMixin, InvoiceDetail):
                 entry.start_time.strftime('%X'),
                 entry.end_time.strftime('%X'),
                 seconds_to_hours(entry.seconds_paused),
-                entry.hours,
+                "{0:.2f}".format(entry.hours),
             ]
             rows.append(data)
         total = context['billable_entries'].aggregate(hours=Sum('hours'))['hours']
-        rows.append(('', '', '', '', '', '', 'Total:', total))
+        rows.append(('', '', '', '', '', '', 'Total:', "{0:.2f}".format(total)))
         return rows
 
 
