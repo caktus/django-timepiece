@@ -943,8 +943,11 @@ class ListProjects(SearchListView, CSVViewMixin):
             if not allow_empty and len(self.object_list) == 0:
                 raise Http404("No results found.")
 
+            # this is paginating results...
             context = self.get_context_data(form=self.form,
                 object_list=self.object_list)
+            # so I'm overriding the project list here
+            context['project_list'] = self.object_list
 
             return kls.render_to_response(self, context)
         else:

@@ -871,7 +871,7 @@ def create_invoice(request):
             .summaries(billable_entries),
         'nonbillable_totals': HourGroup.objects
             .summaries(nonbillable_entries),
-        'project': project,
+        # 'project': project,
         'from_date': from_date,
         'to_date': to_date,
     }

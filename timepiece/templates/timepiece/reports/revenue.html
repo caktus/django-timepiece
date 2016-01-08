@@ -58,6 +58,8 @@
                     {% endif %}
                 {% endfor %}
             </div>
+            {% endif %}
+            {% if missing_rates %}
             <div class="alert alert-block alert-error">
                 <button type="button" class="close" data-dismiss="alert">&times;</button>
                 This following Contract + Activity combinations do not have associated rates, therefore $0.00/hr is used in the calculations for this report.:

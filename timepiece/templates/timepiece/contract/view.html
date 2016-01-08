@@ -16,14 +16,6 @@
     <li><span class="divider">/</span> <a href="{% url 'view_contract' contract.pk %}">{{ contract }}</a></li>
 {% endblock crumbs %}
 
-{% block extrajs %}
-    <script>
-    $(document).ready(function(){
-        $('[data-toggle="popover"]').popover();
-    });
-    </script>
-{% endblock extrajs %}
-
 {% block content %}
     <div class="row-fluid">
         <div class="span12">
@@ -436,8 +428,14 @@
 {% endblock content %}
 
 {% block extrajs %}
-<script src='{% static "s3.jquery.fine-uploader/s3.jquery.fine-uploader.min.js" %}'></script>
-<script src='{% static "project-toolbox/js/tags.js" %}'></script>
+<script>
+$(document).ready(function(){
+    $('[data-toggle="popover"]').popover();
+});
+</script>
+
+<script src='{{ STATIC_URL }}s3.jquery.fine-uploader/s3.jquery.fine-uploader.min.js'></script>
+<script src='{{ STATIC_URL }}project-toolbox/js/tags.js'></script>
 
 <script type="text/template" id="qq-template">
     <div class="qq-uploader-selector qq-uploader" qq-drop-area-text="Drop files here">

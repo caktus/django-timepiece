@@ -195,6 +195,7 @@ class ReportMixin(object):
         return start, end
 
 
+import sys, traceback
 class HourlyReport(ReportMixin, CSVViewMixin, TemplateView):
     template_name = 'timepiece/reports/hourly.html'
 
@@ -234,14 +235,20 @@ class HourlyReport(ReportMixin, CSVViewMixin, TemplateView):
         content.append(headers)
 
         summaries = context['summaries']
-        # <<<<<<< HEAD
-        try:
-            summary = filter(lambda x:x[0]==key, summaries)[0][1]
-        except:
-            summary = []
+        # print 'summaries', summaries
+        # print 'key', key
+        # # <<<<<<< HEAD
+        # try:
+        #     summary = filter(lambda x:x[0]==key, summaries)#[0][1]
+        #     print 'summary', summary
+        #     print '[0]', summary[0]
+        # except:
+        #     print sys.exc_info(), traceback.format_exc()
+        #     summary = []
         # =======
         # summary = summaries.get(self.export, [])
         # >>>>>>> caktus/develop
+        summary = summaries.get(key, [])
         for rows, totals in summary:
             for name, user_id, hours in rows:
                 if self.export_projects:
