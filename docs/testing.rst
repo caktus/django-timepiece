@@ -18,7 +18,7 @@ supports, download the source and navigate to the `django-timepiece`
 directory. From there, you can use tox to run tests against a specific
 environment::
 
-    tox -e py3.4-django1.8
+    tox -e py3.5-django1.8
 
 Or omit the `-e` argument to run tests against all combinations of Python
 and Django that `django-timepiece` supports. By default tox uses the example
