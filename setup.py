@@ -22,7 +22,7 @@ setup(
     author='Caktus Consulting Group, LLC',
     author_email='solutions@caktusgroup.com',
     classifiers=[
-        'Development Status :: 4 - Beta',
+        'Development Status :: 5 - Production/Stable',
         'Framework :: Django',
         'Intended Audience :: Developers',
         'License :: OSI Approved :: BSD License',
@@ -30,7 +30,7 @@ setup(
         'Natual Language :: English',
         'Programming Language :: Python',
         'Programming Language :: Python :: 2.7',
-        'Programming Language :: Python :: 3.4',
+        'Programming Language :: Python :: 3.5',
         'Topic :: Internet :: WWW/HTTP :: Dynamic Content',
         'Topic :: Office/Business :: Financial :: Accounting',
         'Topic :: Office/Business :: Scheduling',
