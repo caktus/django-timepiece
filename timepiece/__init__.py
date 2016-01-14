@@ -4,10 +4,10 @@ projects.
 """
 
 __version_info__ = {
-    'major': 0,
-    'minor': 10,
+    'major': 1,
+    'minor': 0,
     'micro': 0,
-    'release_level': 'dev',
+    'release_level': 'final',
 }
 
 
