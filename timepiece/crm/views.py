@@ -361,7 +361,7 @@ class ProjectTimesheet(DetailView):
         to_datetime = datetime.datetime.combine(to_date,
             datetime.datetime.min.time())
 
-        entries_qs = Entry.objects.filter(start_time__gte=from_datetime,
+        entries_qs = Entry.objects.filter(end_time__gte=from_datetime,
                                           end_time__lt=to_datetime,
                                           project=project)
         if incl_billable and not incl_non_billable:
