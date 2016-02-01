@@ -13,7 +13,6 @@ from timepiece import utils
 from timepiece.tests.base import ViewTestMixin
 from timepiece.tests import factories
 from timepiece.entries.models import Entry, ProjectHours
-from timepiece.entries.lookups import ActivityLookup
 from timepiece.entries.views import Dashboard
 
 
@@ -145,23 +144,6 @@ class DashboardViewTestCase(ViewTestMixin, TestCase):
         response = self.client.get(self.url)
         self.assertEqual(response.status_code, 200)
         self.assertEqual(len(response.context['others_active_entries']), 0)
-
-    def test_clock_in_form_activity_lookup(self):
-        """Create an ActivityGroup that includes the Activity, and associate it with the project.
-        Add a second Activity that is not included.  Ensure that the ActivityLookup disallows
-        the second Activity. """
-        factory = RequestFactory()
-        lookup = ActivityLookup()
-        factories.Activity()
-        activity_group = factories.ActivityGroup()
-        activity_group.activities.add(self.activity)
-        project2 = factories.Project(activity_group=activity_group)
-        factories.ProjectRelationship(project=project2, user=self.user)
-        request = factory.get("/entry/clock_in/", {'project': project2.pk})
-        response = lookup.results(request)
-        data = json.loads(response.content.decode("utf-8"))['data']
-        self.assertEqual(1, len(data))
-        self.assertEqual(self.activity.pk, data[0]['id'])
 
     def test_clock_in_form_activity_without_project_activity_group(self):
         """Ensure that the ActivityLookup provides all Activities if Project does not have an
