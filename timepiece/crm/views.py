@@ -10,11 +10,13 @@ from django.conf import settings
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required, permission_required
 from django.contrib.auth.models import User, Group
+from django.core import serializers
 from django.core.urlresolvers import reverse, reverse_lazy
 from django.core.exceptions import ObjectDoesNotExist
 from django.db import transaction
 from django.db.models import Sum, Q
-from django.http import HttpResponseRedirect, HttpResponseForbidden, Http404, HttpResponse
+from django.http import HttpResponseRedirect, HttpResponseForbidden, Http404, HttpResponse, \
+    JsonResponse
 from django.shortcuts import get_object_or_404, render, redirect
 from django.views.decorators.csrf import csrf_exempt
 from django.views.generic import (CreateView, DeleteView, DetailView,
@@ -3084,3 +3086,20 @@ def project_download_attachment(request, project_id, attachment_id):
         return HttpResponseRedirect(project_attachment.get_download_url())
     except:
         return HttpResponse('Project attachment could not be found.')
+
+def get_minding(request):
+    user = request.user
+    projects = Project.objects.filter(
+        point_person=user)[:3]
+    projects_json = []
+    for project in projects:
+        projects_json.append({
+            'code': project.code,
+            'name': project.name,
+            'business': project.business.name,
+            'business_short': project.business.short_name,
+            'id': project.id,
+        })
+
+    return JsonResponse(projects_json, safe=False)
+    # return JsonResponse(serializers.serialize('json', projects), safe=False)
