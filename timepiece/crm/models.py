@@ -1157,7 +1157,7 @@ class Project(models.Model):
         # Changed for AAC Engineering since they want ALL contracts
         # ProjectContract = apps.get_model('contracts', 'ProjectContract')
         # return self.contracts.exclude(status=ProjectContract.STATUS_COMPLETE)
-        return self.contracts
+        return self.contracts.all()
 
     @property
     def milestones(self):
