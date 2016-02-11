@@ -11,7 +11,7 @@ from django.contrib import messages
 from django.contrib.auth.decorators import login_required, permission_required
 from django.contrib.auth.models import User, Permission
 from django.contrib.contenttypes.models import ContentType
-from django.core import exceptions, serializers
+from django.core import exceptions
 from django.core.exceptions import ValidationError
 from django.core.urlresolvers import reverse
 from django.db import transaction
@@ -1005,10 +1005,7 @@ def activity_cheat_sheet(request):
         'activities': Activity.objects.all().order_by('name'),
     })
 
-def get_entries(request):
-    entries = serializers.serialize("json", Project.objects.all())
-    return JsonResponse(entries, safe=False)
-
+@login_required
 def get_active_entry(request):
     active_entry = utils.get_active_entry(request.user)
     if active_entry:

@@ -10,7 +10,6 @@ from django.conf import settings
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required, permission_required
 from django.contrib.auth.models import User, Group
-from django.core import serializers
 from django.core.urlresolvers import reverse, reverse_lazy
 from django.core.exceptions import ObjectDoesNotExist
 from django.db import transaction
@@ -3107,8 +3106,6 @@ def get_recent(request):
     user = request.user
     entries = Entry.objects.order_by('project__id', '-start_time')
     projects = entries.values('project').distinct('project')[0:3]
-    # projects = Project.objects.filter(
-    #     point_person=user, status=4)[:3]
     projects_json = []
     for uid in projects:
         project = Project.objects.get(id=uid['project'])
@@ -3121,4 +3118,3 @@ def get_recent(request):
         })
 
     return JsonResponse(projects_json, safe=False)
-    # return JsonResponse(serializers.serialize('json', projects), safe=False)

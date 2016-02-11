@@ -60,10 +60,6 @@ urlpatterns = [
         views.activity_cheat_sheet,
         name='activity_cheat_sheet'),
 
-    url(r'^entries/$',
-        views.get_entries,
-        name="get_entries"),
-
     url(r'^get_active_entry/$',
         views.get_active_entry,
         name="get_active_entry"),
