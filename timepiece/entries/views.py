@@ -1008,3 +1008,12 @@ def activity_cheat_sheet(request):
 def get_entries(request):
     entries = serializers.serialize("json", Project.objects.all())
     return JsonResponse(entries, safe=False)
+
+def get_active_entry(request):
+    active_entry = utils.get_active_entry(request.user)
+    if active_entry:
+        active_entry_json = {
+            'start_time': active_entry.start_time,
+            'project': active_entry.project.name
+        }
+        return JsonResponse(active_entry_json, safe=False)

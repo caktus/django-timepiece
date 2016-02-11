@@ -402,4 +402,8 @@ urlpatterns = [
     url(r'^get_minding/$',
         views.get_minding,
         name='get_minding'),
+
+    url(r'^get_recent/$',
+        views.get_recent,
+        name='get_recent'),
 ]
