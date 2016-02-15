@@ -1013,4 +1013,4 @@ def get_active_entry(request):
             'start_time': active_entry.start_time,
             'project': active_entry.project.name
         }
-        return JsonResponse(active_entry_json, safe=False)
+        return JsonResponse(active_entry_json)

@@ -3089,32 +3089,21 @@ def project_download_attachment(request, project_id, attachment_id):
 def get_minding(request):
     user = request.user
     projects = Project.objects.filter(
-        point_person=user, status=4)[:3]
+        point_person=user, status=get_setting(
+            'TIMEPIECE_DEFAULT_PROJECT_STATUS'))[:3]
     projects_json = []
     for project in projects:
-        projects_json.append({
-            'code': project.code,
-            'name': project.name,
-            'business': project.business.name,
-            'business_short': project.business.short_name,
-            'id': project.id,
-        })
+        projects_json.append(project.to_json())
 
     return JsonResponse(projects_json, safe=False)
 
 def get_recent(request):
     user = request.user
     entries = Entry.objects.order_by('project__id', '-start_time')
-    projects = entries.values('project').distinct('project')[0:3]
+    projects_ids = entries.values('project').distinct('project')[:3]
+    projects = Project.objects.filter(id__in=projects_ids)
     projects_json = []
-    for uid in projects:
-        project = Project.objects.get(id=uid['project'])
-        projects_json.append({
-            'code': project.code,
-            'name': project.name,
-            'business': project.business.name,
-            'business_short': project.business.short_name,
-            'id': project.id,
-        })
+    for project in projects:
+        projects_json.append(project.to_json())
 
     return JsonResponse(projects_json, safe=False)
