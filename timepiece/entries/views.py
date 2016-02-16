@@ -1014,3 +1014,5 @@ def get_active_entry(request):
             'project': active_entry.project.name
         }
         return JsonResponse(active_entry_json)
+    else:
+        return HttpResponse('')
