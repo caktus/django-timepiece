@@ -133,7 +133,7 @@ def get_project_totals(entries, date_headers, hour_type=None, overtime=False,
         if total_column:
             dates.append(sum(dates))
         if overtime:
-            dates.append(find_overtime(dates))
+            #dates.append(find_overtime(dates)) # this is the old wrong method
             if by == 'user' and from_date is not None and to_date is not None:
                 user = User.objects.get(id=thing)
                 weeks = [date for date in date_headers]
