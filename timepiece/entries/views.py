@@ -892,7 +892,7 @@ class BulkEntryAjaxView(ScheduleMixin, View):
         data = {
             'charged_hours': list(charged_hours),
             'projects': list(projects),
-            'all_projects': list(all_projects),
+            'all_projects': list(all_projects) + list(Project.objects.filter(pk__in=inner_qs).values('id', 'code', 'name', 'activity_group__activities')),
             'all_activities': list(all_activities),
             'all_locations': list(all_locations),
             'period_dates': utils.get_period_dates(self.day),
