@@ -14,7 +14,8 @@ from django.core.urlresolvers import reverse, reverse_lazy
 from django.core.exceptions import ObjectDoesNotExist
 from django.db import transaction
 from django.db.models import Sum, Q
-from django.http import HttpResponseRedirect, HttpResponseForbidden, Http404, HttpResponse
+from django.http import HttpResponseRedirect, HttpResponseForbidden, Http404, HttpResponse, \
+    JsonResponse
 from django.shortcuts import get_object_or_404, render, redirect
 from django.views.decorators.csrf import csrf_exempt
 from django.views.generic import (CreateView, DeleteView, DetailView,
@@ -3089,3 +3090,25 @@ def project_download_attachment(request, project_id, attachment_id):
         return HttpResponseRedirect(project_attachment.get_download_url())
     except:
         return HttpResponse('Project attachment could not be found.')
+
+def get_minding(request):
+    user = request.user
+    projects = Project.objects.filter(
+        point_person=user, status=get_setting(
+            'TIMEPIECE_DEFAULT_PROJECT_STATUS'))[:3]
+    projects_json = []
+    for project in projects:
+        projects_json.append(project.to_json())
+
+    return JsonResponse(projects_json, safe=False)
+
+def get_recent(request):
+    user = request.user
+    entries = Entry.objects.order_by('project__id', '-start_time')
+    projects_ids = entries.values('project').distinct('project')[:3]
+    projects = Project.objects.filter(id__in=projects_ids)
+    projects_json = []
+    for project in projects:
+        projects_json.append(project.to_json())
+
+    return JsonResponse(projects_json, safe=False)

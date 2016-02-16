@@ -1100,6 +1100,15 @@ class Project(models.Model):
     def __str__(self):
         return '{0}: {1}'.format(self.code, self.name)
 
+    def to_json(self):
+        return {
+            'code': self.code,
+            'name': self.name,
+            'business': self.business.name,
+            'business_short': self.business.short_name,
+            'id': self.id,
+        }
+
     def delete(self, *args, **kwargs):
         try:
             # we need to delete the associate wiki to free up the slug
@@ -1119,7 +1128,7 @@ class Project(models.Model):
             # determine the project counter incrementer and create unique code
             proj_count = Project.objects.filter(business=self.business, year=self.year).count() + 1
             self.code = '%s-%s-%03d' % (self.business.short_name, str(self.year)[2:], proj_count)
-            
+
             # create new wiki
             try:
                 project_parent = URLPath.objects.get(id=settings.WIKI_PROJECT_ID)
