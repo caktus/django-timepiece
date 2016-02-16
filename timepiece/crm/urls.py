@@ -398,4 +398,12 @@ urlpatterns = [
     url(r'^lead/(?P<lead_id>\d+)/differentiating_value/(?P<dvc_id>\d+)/cost_item/(?P<cost_item_id>\d+)/delete$',
         views.DeleteDVCostItem.as_view(),
         name='delete_dv_cost_item'),
+
+    url(r'^get_minding/$',
+        views.get_minding,
+        name='get_minding'),
+
+    url(r'^get_recent/$',
+        views.get_recent,
+        name='get_recent'),
 ]

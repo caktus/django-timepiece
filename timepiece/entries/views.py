@@ -16,7 +16,7 @@ from django.core.exceptions import ValidationError
 from django.core.urlresolvers import reverse
 from django.db import transaction
 from django.db.models import Q
-from django.http import HttpResponse, HttpResponseRedirect, Http404
+from django.http import HttpResponse, HttpResponseRedirect, Http404, JsonResponse
 from django.shortcuts import redirect, render
 from django.utils.decorators import method_decorator
 from django.views.generic import TemplateView, View
@@ -181,7 +181,7 @@ def clock_in(request):
         ret_data['project'] = int(data.get('project', [0])[0])
     except:
         pass
-    
+
     return render(request, 'timepiece/entry/clock_in.html', ret_data)
 
 
@@ -437,7 +437,7 @@ class ScheduleMixin(object):
                 period_start_str, '%Y-%m-%d').date())
         self.period_end = utils.get_period_end(self.period_start)
         self.period_hours = utils.get_weekdays_count(
-            datetime.datetime.combine(self.period_start, 
+            datetime.datetime.combine(self.period_start,
                 datetime.datetime.min.time()), self.period_end) * 8
 
         return super(ScheduleMixin, self).dispatch(request, *args, **kwargs)
@@ -472,9 +472,9 @@ class ScheduleMixin(object):
         """
         try:
             day = day or self.day
-            period_start = datetime.datetime.combine(day, 
+            period_start = datetime.datetime.combine(day,
                 datetime.datetime.min.time())
-            period_end = datetime.datetime.combine(day, 
+            period_end = datetime.datetime.combine(day,
                 datetime.datetime.max.time())
 
             return Entry.objects.filter(
@@ -864,7 +864,7 @@ class BulkEntryAjaxView(ScheduleMixin, View):
             all_projects: all of the projects; used for autocomplete
             period_dates: all dates in the period
         """
-        
+
         perm = Permission.objects.filter(
             content_type=ContentType.objects.get_for_model(Entry),
             codename='can_clock_in'
@@ -882,7 +882,7 @@ class BulkEntryAjaxView(ScheduleMixin, View):
         all_locations = Location.objects.values('id', 'name')
         user_q = Q(groups__permissions=perm) | Q(user_permissions=perm)
         user_q |= Q(is_superuser=True)
-        
+
         # further process charged_hours to get exactly what we want
         for ch in charged_hours:
             ch['total_hours'] = Entry.objects.get(id=ch['id']).total_hours
@@ -898,7 +898,7 @@ class BulkEntryAjaxView(ScheduleMixin, View):
             'period_dates': utils.get_period_dates(self.day),
             'ajax_url': reverse('ajax_bulk_entry'),
         }
-        
+
         return HttpResponse(json.dumps(data, cls=DecimalEncoder),
             content_type='application/json')
 
@@ -931,7 +931,7 @@ class BulkEntryAjaxView(ScheduleMixin, View):
             else:
                 date = datetime.datetime.strptime(
                     self.request.POST.get('date'), DATE_FORM_FORMAT).date()
-                start = datetime.datetime.combine(date, 
+                start = datetime.datetime.combine(date,
                     datetime.datetime.min.time())
                 entry = Entry(user=self.request.user,
                               project=p,
@@ -1004,3 +1004,13 @@ def activity_cheat_sheet(request):
     return render(request, 'timepiece/entry/activity_cheat_sheet.html', {
         'activities': Activity.objects.all().order_by('name'),
     })
+
+@login_required
+def get_active_entry(request):
+    active_entry = utils.get_active_entry(request.user)
+    if active_entry:
+        active_entry_json = {
+            'start_time': active_entry.start_time,
+            'project': active_entry.project.name
+        }
+        return JsonResponse(active_entry_json)
