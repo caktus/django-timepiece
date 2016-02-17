@@ -15,7 +15,7 @@ class ActivityLookup(ModelLookup):
         if project_pk not in [None, '']:
             project = Project.objects.get(pk=project_pk)
             if project and project.activity_group:
-                return project.activity_group.activities.all().filter(name__startswith=term)
+                return project.activity_group.activities.all().filter(name__icontains=term)
         return results
 
     def get_item_label(self, item):
