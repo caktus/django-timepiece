@@ -4,6 +4,7 @@ from django.test.client import RequestFactory
 from timepiece.tests import factories
 from timepiece.entries.lookups import ActivityLookup
 
+
 class ActivityLookupTestCase(TestCase):
     """
     Tests that the ActivityLookup used by Selectable is looking up models
@@ -58,9 +59,6 @@ class ActivityLookupTestCase(TestCase):
         activity_group2 = factories.ActivityGroup()
         activity_group2.activities.add(activity3)
         activity_group2.activities.add(activity4)
-
-        project1 = factories.Project(activity_group=activity_group1)
-        project2 = factories.Project(activity_group=activity_group2)
 
         request = RequestFactory().get('/selectable/entries-activitylookup', {
             'project': ''
