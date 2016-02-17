@@ -1037,8 +1037,13 @@ class ViewProject(DetailView):
     template_name = 'timepiece/project/view.html'
 
     def get_context_data(self, **kwargs):
+        start, end = utils.get_bimonthly_dates(datetime.date.today())
         kwargs.update({'add_user_form': SelectUserForm(),
-                       'activity_goals': project_activity_goals_with_progress(self.object)})
+                       'activity_goals': project_activity_goals_with_progress(self.object),
+                       'from_date': str(start.date()),
+                       'to_date': str(end.date()),
+                       'billable': True,
+                       'trunc': 'day'})
 
         context = super(ViewProject, self).get_context_data(**kwargs)
         try:

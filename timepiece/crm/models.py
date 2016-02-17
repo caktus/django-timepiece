@@ -1163,8 +1163,10 @@ class Project(models.Model):
 
     def get_active_contracts(self):
         """Returns all associated contracts which are not marked complete."""
-        ProjectContract = apps.get_model('contracts', 'ProjectContract')
-        return self.contracts.exclude(status=ProjectContract.STATUS_COMPLETE)
+        # Changed for AAC Engineering since they want ALL contracts
+        # ProjectContract = apps.get_model('contracts', 'ProjectContract')
+        # return self.contracts.exclude(status=ProjectContract.STATUS_COMPLETE)
+        return self.contracts.all()
 
     @property
     def milestones(self):
