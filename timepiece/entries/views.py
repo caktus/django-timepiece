@@ -1011,7 +1011,8 @@ def get_active_entry(request):
     if active_entry:
         active_entry_json = {
             'start_time': active_entry.start_time,
-            'project': active_entry.project.name
+            'project': active_entry.project.name,
+            'id': active_entry.id
         }
         return JsonResponse(active_entry_json)
     else:
