@@ -12,7 +12,7 @@ class ActivityLookup(ModelLookup):
     def get_query(self, request, term):
         results = super(ActivityLookup, self).get_query(request, term)
         project_pk = request.GET.get('project', None)
-        if project_pk != None and project_pk != '':
+        if project_pk not in [None, '']:
             project = Project.objects.get(pk=project_pk)
             if project and project.activity_group:
                 return project.activity_group.activities.all().filter(name__startswith=term)
