@@ -10,6 +10,7 @@ from django.core.mail import send_mail
 from django.core.urlresolvers import reverse
 from django.db import models
 from django.db.models import Sum
+from django.db.models.expressions import F, Func, Value
 from django.template.loader import render_to_string
 from django.utils.encoding import python_2_unicode_compatible
 
@@ -371,7 +372,9 @@ class HourGroupManager(models.Manager):
         # Get the list of bundle names and hour sums
         bundled_entries = entries.values('activity__activity_bundle',
                                          'activity__activity_bundle__name')
-        bundled_entries = bundled_entries.annotate(Sum('hours'))
+        bundled_entries = bundled_entries.annotate(hours__sum=Sum(
+            Func(F('hours'), Value(2), function='ROUND'))
+        )
         bundled_entries = bundled_entries.order_by(
             'activity__activity_bundle__order', 'activity__activity_bundle__name')
         bundled_totals = list(bundled_entries.values_list(
@@ -382,7 +385,9 @@ class HourGroupManager(models.Manager):
         # Get the list of activity names and hour sums
         activity_entries = entries.values('activity', 'activity__name',
                                           'activity__activity_bundle')
-        activity_entries = activity_entries.annotate(Sum('hours'))
+        activity_entries = activity_entries.annotate(hours__sum=Sum(
+            Func(F('hours'), Value(2), function='ROUND'))
+        )
         activity_entries = activity_entries.order_by('activity')
         activity_totals = list(activity_entries.values_list(
             'activity__name',
