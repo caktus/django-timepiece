@@ -6,6 +6,7 @@ from django.contrib import messages
 from django.core.urlresolvers import reverse
 from django.db import transaction, DatabaseError
 from django.db.models import Sum, Q
+from django.db.models.expressions import F, Func, Value
 from django.http import HttpResponseRedirect, Http404, HttpResponseForbidden
 from django.shortcuts import get_object_or_404, redirect, render
 from django.views.generic import ListView, DetailView
@@ -235,8 +236,12 @@ class InvoiceEntriesDetail(InvoiceDetail):
         billable_entries = context['billable_entries']
         nonbillable_entries = context['nonbillable_entries']
         context.update({
-            'billable_total': billable_entries.aggregate(hours=Sum('hours'))['hours'],
-            'nonbillable_total': nonbillable_entries.aggregate(hours=Sum('hours'))['hours'],
+            'billable_total': billable_entries.aggregate(hours=Sum(
+                Func(F('hours'), Value(2), function='ROUND'))
+            )['hours'],
+            'nonbillable_total': nonbillable_entries.aggregate(hours=Sum(
+                Func(F('hours'), Value(2), function='ROUND'))
+            )['hours'],
         })
         return context
 
@@ -273,7 +278,9 @@ class InvoiceDetailCSV(CSVViewMixin, InvoiceDetail):
                 "{0:.2f}".format(entry.hours),
             ]
             rows.append(data)
-        total = context['billable_entries'].aggregate(hours=Sum('hours'))['hours']
+        total = context['billable_entries'].aggregate(hours=Sum(
+            Func(F('hours'), Value(2), function='ROUND'))
+        )['hours']
         rows.append(('', '', '', '', '', '', 'Total:', "{0:.2f}".format(total)))
         return rows
 
