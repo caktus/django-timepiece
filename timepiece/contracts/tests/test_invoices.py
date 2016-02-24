@@ -447,12 +447,13 @@ class InvoiceCreateTestCase(ViewTestMixin, TestCase):
 
     def test_invoice_confirm_totals(self):
         """Verify that the per activity totals are valid."""
+        ACTIVITY_NAME = 'activity_n'
         # Make a few extra entries to test per activity totals
         start = utils.add_timezone(datetime.datetime(2011, 1, 1, 8))
         end = utils.add_timezone(datetime.datetime(2011, 1, 1, 12))
         # start = utils.add_timezone(datetime.datetime.now())
         # end = start + relativedelta(hours=4)
-        activity = factories.Activity(billable=True, name='activity1')
+        activity = factories.Activity(billable=True, name=ACTIVITY_NAME)
         for num in range(0, 4):
             factories.Entry(
                 user=self.user, project=self.project_billable,
@@ -470,7 +471,7 @@ class InvoiceCreateTestCase(ViewTestMixin, TestCase):
         self.assertEqual(response.status_code, 200)
         for name, hours_activities in response.context['billable_totals']:
             total, activities = hours_activities
-            if name == 'activity1':
+            if name == ACTIVITY_NAME:
                 self.assertEqual(total, 16)
                 self.assertEqual(total, activities[0][1])
                 self.assertEqual(name, activities[0][0])
@@ -482,6 +483,42 @@ class InvoiceCreateTestCase(ViewTestMixin, TestCase):
                 self.assertEqual(total, 4)
                 self.assertEqual(total, activities[0][1])
                 self.assertEqual(name, activities[0][0])
+
+    def test_invoice_confirm_rounding(self):
+        """Verify that the per activity totals are rounded correctly."""
+        ACTIVITY_NAME = 'activity_n'
+        # Make a few extra entries to test per activity totals
+        start = utils.add_timezone(datetime.datetime(2011, 1, 1, 8, 0, 0))
+        end = utils.add_timezone(datetime.datetime(2011, 1, 1, 8, 3, 1))
+        # 3m1s = 0.05166667h
+        # 0.05166667 rounds to 0.05, at two decimal places
+        # 0.05 * 5 = 0.25
+        # 0.05166667 * 5 = 0.25833335
+        # 0.25833335 rounds to 0.26, at two decimal places
+        # If rounding happens before summation, then the total will be 0.25
+        # If rounding happens after summation, then the total will be 0.26
+
+        activity = factories.Activity(billable=True, name=ACTIVITY_NAME)
+        for num in range(0, 5):
+            factories.Entry(
+                user=self.user, project=self.project_billable,
+                start_time=start - relativedelta(days=num),
+                end_time=end - relativedelta(days=num),
+                status=Entry.APPROVED, activity=activity)
+        self.make_hourgroups()
+        to_date = datetime.datetime(2011, 1, 31)
+        kwargs = {
+            'project': self.project_billable.id,
+            'to_date': to_date.strftime(DATE_FORM_FORMAT),
+        }
+        url = self.get_create_url(**kwargs)
+        response = self.client.get(url)
+        self.assertEqual(response.status_code, 200)
+        for name, hours_activities in response.context['billable_totals']:
+            total, activities = hours_activities
+            if name == ACTIVITY_NAME:
+                self.assertEqual(total, 0.25)
+                self.assertNotAlmostEqual(float(total), 0.26, places=2)
 
     def test_invoice_confirm_bad_args(self):
         # A year/month/project with no entries should raise a 404
