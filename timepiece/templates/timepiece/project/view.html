@@ -26,7 +26,7 @@
                 {% if perms.crm.view_project_time_sheet %}
                     <li><a href="{% url 'view_project_timesheet' object.id %}">View Time Sheet</a></li>
                 {% endif %}
-                <li><a href="{% url 'report_hourly' %}?projects_1={{ object.id }}&from_date={{ from_date }}&to_date={{ to_date }}&billable={{ billable }}&trunc={{ trunc }}">View Hourly Report</a></li>
+                <li><a href="{% url 'report_hourly' %}?projects_1={{ object.id }}&from_date={{ from_date }}&to_date={{ to_date }}&billable={{ billable }}&non_billable={{ non_billable }}&paid_time_off={{ paid_time_off }}&unpaid_time_off={{ unpaid_time_off }}&writedown={{ writedown }}&trunc={{ trunc }}">View Hourly Report</a></li>
             </ul>
         </div>
     </div>
