@@ -536,10 +536,11 @@ class ListBusinesses(SearchListView, CSVViewMixin):
                        'Status', 'Phone', 'Fax', 'Website', 'Account Number',
                        'Industry', 'Ownership', 'Annual Revenue',
                        'Number of Employees', 'Ticket Symbol', 'Tags',
-                       'Billing Street','Billing City', 'Billing State',
-                       'Billing Zip', 'Billing Mailstop', 'Billing Country',
-                       'Billing Latitude', 'Billing Longitude',
-                       'Shipping Street', 'Shipping City', 'Shipping State',
+                       'Billing Street','Billing Street 2','Billing City',
+                       'Billing State', 'Billing Zip', 'Billing Mailstop',
+                       'Billing Country', 'Billing Latitude',
+                       'Billing Longitude', 'Shipping Street',
+                       'Shipping Street 2', 'Shipping City', 'Shipping State',
                        'Shipping Zip', 'Shipping Mailstop', 'Shipping Country',
                        'Shipping Latitude', 'Shipping Longitude'
                        ]
@@ -565,8 +566,9 @@ class ListBusinesses(SearchListView, CSVViewMixin):
                        business.billing_state, business.billing_postalcode,
                        business.billing_mailstop, business.billing_country,
                        business.billing_lat, business.billing_lon,
-                       business.shipping_street, business.shipping_city,
-                       business.shipping_state, business.shipping_postalcode,
+                       business.shipping_street, business.shipping_street_2,
+                       business.shipping_city, business.shipping_state,
+                       business.shipping_postalcode,
                        business.shipping_mailstop, business.shipping_country,
                        business.shipping_lat, business.shipping_lon]
                 content.append(row)
@@ -3082,7 +3084,7 @@ def project_s3_attachment(request, project_id):
 
     return HttpResponse(status=200)
 
-@permission_required('crm.view_projectattachment')
+@permission_required('crm.add_projectattachment')
 def project_download_attachment(request, project_id, attachment_id):
     try:
         project_attachment = ProjectAttachment.objects.get(
