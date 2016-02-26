@@ -1529,7 +1529,7 @@ class DistinguishingValueChallenge(models.Model):
     order = models.PositiveSmallIntegerField(help_text='Define order/priority of this DV.')
     probing_question = models.TextField(blank=True, help_text='Provide a probing question that could be used in a conversation with a potential client.')
     description = models.TextField(blank=True, help_text='Have the potential customer describe the pain/challenge.')
-    short_name = models.CharField(max_length=32, blank=True, help_text='Provide a short identifying name for this DV.')
+    short_name = models.CharField(max_length=32, blank=True, help_text='Provide a short (32 chars or less) identifying name for this DV.')
     longevity = models.TextField(blank=True, help_text='How long have you been facing this pain/challenge?')
     start_date = models.DateField(blank=True, null=True, help_text='Based on the response to the above question, estimate the date when the pain/challenge started.')
     steps = models.TextField(blank=True, help_text='What steps have you already taken to overcome it?')

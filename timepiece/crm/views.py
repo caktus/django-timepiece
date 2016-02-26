@@ -2728,7 +2728,7 @@ class UpdateDistinguishingValueChallenge(View):
 
         dvc = DistinguishingValueChallenge.objects.get(id=int(request.POST.get('dvc', None)))
         dvc.probing_question = request.POST.get('probing_question', '')
-        dvc.short_name = request.POST.get('short_name', '')
+        dvc.short_name = request.POST.get('short_name', '')[:32]
         dvc.description = request.POST.get('description', '')
         dvc.longevity = request.POST.get('longevity', '')
         if request.POST.get('start_date', None):
