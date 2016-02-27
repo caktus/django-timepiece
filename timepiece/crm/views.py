@@ -30,6 +30,7 @@ from timepiece.templatetags.timepiece_tags import seconds_to_hours
 from timepiece.utils.csv import CSVViewMixin
 from timepiece.utils.search import SearchListView
 from timepiece.utils.views import cbv_decorator
+from timepiece.context_processors import quick_clock_in
 
 from timepiece.crm.forms import (CreateEditBusinessForm, CreateProjectForm, EditProjectForm,
         EditUserSettingsForm, EditProjectRelationshipForm, SelectProjectForm,
@@ -3103,10 +3104,7 @@ def get_minding(request):
     return JsonResponse(projects_json, safe=False)
 
 def get_recent(request):
-    user = request.user
-    entries = Entry.objects.order_by('project__id', '-start_time')
-    projects_ids = entries.values('project').distinct('project')[:3]
-    projects = Project.objects.filter(id__in=projects_ids)
+    projects = quick_clock_in(request)['work_projects']
     projects_json = []
     for project in projects:
         projects_json.append(project.to_json())
