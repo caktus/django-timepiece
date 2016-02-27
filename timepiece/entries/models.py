@@ -225,9 +225,9 @@ class Entry(models.Model):
     writedown_user = models.ForeignKey(
         User, related_name='writedown_user', null=True, blank=True,
         on_delete=models.SET_NULL)
-    writedown = models.BooleanField(default=False, 
+    writedown = models.BooleanField(default=False,
         help_text='Select this if the entry is a writedown for another entry.')
-    writedown_entry = models.ForeignKey('self', blank=True, null=True, 
+    writedown_entry = models.ForeignKey('self', blank=True, null=True,
         help_text='If this is a writedown, select the entry being written-down.',
         on_delete=models.SET_NULL)
 
@@ -315,7 +315,7 @@ class Entry(models.Model):
             raise ValidationError('An unexpected error has occured')
         if not self.start_time:
             raise ValidationError('Please enter a valid start time')
-        
+
         try:
             if not self.project:
                 raise ValidationError('Please select a Project')
@@ -448,7 +448,7 @@ class Entry(models.Model):
             #     msg = 'You cannot '
             #     raise ValidationError(msg)
 
-        
+
         super(Entry, self).save(*args, **kwargs)
 
     def delete(self, *args, **kwargs):
@@ -638,10 +638,18 @@ class Entry(models.Model):
 
     @property
     def written_down_hours(self):
-        hours = Entry.objects.filter(writedown=True, 
+        hours = Entry.objects.filter(writedown=True,
             writedown_entry=self).aggregate(
             Sum('hours'))['hours__sum'] or 0.0
         return -1 * float(hours)
+
+    def to_json(self):
+        return {
+            'start_time': self.start_time,
+            'project': self.project.name,
+            'id': self.id,
+            'pause_time': self.pause_time
+        }
 
 
 @python_2_unicode_compatible
