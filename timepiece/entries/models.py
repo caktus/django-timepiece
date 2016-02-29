@@ -494,6 +494,14 @@ class Entry(models.Model):
             return self.seconds_paused + extra_pause
         return self.seconds_paused
 
+    def get_current_pause_seconds(self):
+        if self.is_paused:
+            date = timezone.now()
+            delta = date - self.pause_time
+            extra_pause = max(0, delta.seconds + (delta.days * 24 * 60 * 60))
+            return extra_pause
+        return self.seconds_paused
+
     @property
     def total_hours(self):
         """
@@ -650,7 +658,7 @@ class Entry(models.Model):
             'id': self.id,
             'pause_time': self.pause_time,
             'total_seconds': self.get_total_seconds(),
-            'paused_seconds': self.get_paused_seconds()
+            'paused_seconds': self.get_current_pause_seconds()
         }
 
 
