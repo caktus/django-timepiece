@@ -1,6 +1,19 @@
 Release Notes
 =============
 
+1.1.0 (2016-02-29)
+----------------------------
+
+*Bugfixes*
+
+* Activity autocomplete on entry creation / editing now works. Activity search
+results were previously not actually being restricted by the search term, and
+incorrect handling of empty project values was causing errors when the user
+started to search for an activity without selecting a project.
+* Invoice totals now reflect the summing up of values rounded to two decimal
+places rather than the rounding to two decimal places of a sum of numbers
+with five decimal places.
+
 1.0.0 (2016-01-04)
 ----------------------------
 
