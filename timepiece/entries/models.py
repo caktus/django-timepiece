@@ -648,7 +648,9 @@ class Entry(models.Model):
             'start_time': self.start_time,
             'project': self.project.name,
             'id': self.id,
-            'pause_time': self.pause_time
+            'pause_time': self.pause_time,
+            'total_seconds': self.get_total_seconds(),
+            'paused_seconds': self.get_paused_seconds()
         }
 
 
