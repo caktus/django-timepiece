@@ -63,4 +63,7 @@ urlpatterns = [
     url(r'^get_active_entry/$',
         views.get_active_entry,
         name="get_active_entry"),
+    url(r'^toggle_pause_entry/$',
+        views.toggle_pause_entry,
+        name="toggle_pause_entry"),
 ]
