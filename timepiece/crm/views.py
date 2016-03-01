@@ -3105,8 +3105,11 @@ def get_minding(request):
 
 def get_recent(request):
     projects = quick_clock_in(request)['work_projects']
+    leave_projects = quick_clock_in(request)['leave_projects']
     projects_json = []
     for project in projects:
+        projects_json.append(project.to_json())
+    for project in leave_projects:
         projects_json.append(project.to_json())
 
     return JsonResponse(projects_json, safe=False)
