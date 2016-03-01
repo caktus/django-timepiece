@@ -1009,11 +1009,16 @@ def activity_cheat_sheet(request):
 def get_active_entry(request):
     active_entry = utils.get_active_entry(request.user)
     if active_entry:
-        active_entry_json = {
-            'start_time': active_entry.start_time,
-            'project': active_entry.project.name,
-            'id': active_entry.id
-        }
-        return JsonResponse(active_entry_json)
+        return JsonResponse(active_entry.to_json())
+    else:
+        return HttpResponse('')
+
+
+def toggle_pause_entry(request):
+    active_entry = utils.get_active_entry(request.user)
+    active_entry.toggle_paused()
+    active_entry.save()
+    if active_entry:
+        return JsonResponse(active_entry.to_json())
     else:
         return HttpResponse('')
