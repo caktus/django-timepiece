@@ -171,7 +171,7 @@ def clock_in(request):
         message = 'You have clocked into {0} on {1}.'.format(
             entry.activity.name, entry.project)
         messages.info(request, message)
-        return HttpResponseRedirect(reverse('dashboard'))
+        return HttpResponseRedirect('/')
 
     ret_data = {
         'form': form,
@@ -191,7 +191,7 @@ def clock_out(request):
     if not entry:
         message = "Not clocked in"
         messages.info(request, message)
-        return HttpResponseRedirect(reverse('dashboard'))
+        return HttpResponseRedirect('/')
     if request.POST:
         form = ClockOutForm(request.POST, instance=entry)
         if form.is_valid():
@@ -204,7 +204,7 @@ def clock_out(request):
             message = 'You have clocked out of {0} on {1}.'.format(
                 entry.activity.name, entry.project)
             messages.info(request, message)
-            return HttpResponseRedirect(reverse('dashboard'))
+            return HttpResponseRedirect('/')
         else:
             message = 'Please correct the errors below.'
             messages.error(request, message)
@@ -272,7 +272,7 @@ def create_edit_entry(request, entry_id=None):
             else:
                 message = 'The entry has been created successfully.'
             messages.info(request, message)
-            url = request.GET.get('next', reverse('dashboard'))
+            url = request.GET.get('next', '/')
             return HttpResponseRedirect(url)
         else:
             message = 'Please fix the errors below.'
