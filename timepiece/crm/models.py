@@ -1485,6 +1485,14 @@ class Lead(models.Model):
             history = LeadHistory(lead=self,status=self.status)
             history.save()
 
+    def get_first_contacting_status_date(self):
+        history = LeadHistory.objects.filter(lead=self,
+            status=self.STATUS_CONTACTING).order_by('created_at')
+        if len(history):
+            return history[0]
+        else:
+            return None
+
 class LeadAttachment(MongoAttachment):
     lead = models.ForeignKey(Lead)
 
