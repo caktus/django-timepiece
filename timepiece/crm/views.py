@@ -207,11 +207,18 @@ def view_user_timesheet(request, user_id, active_tab):
         unverified_count = statuses.count(Entry.UNVERIFIED)
         verified_count = statuses.count(Entry.VERIFIED)
         approved_count = statuses.count(Entry.APPROVED)
+        invoiced_count = statuses.count(Entry.INVOICED)
     if can_change or user == request.user:
         show_verify = unverified_count != 0
     if can_approve:
         show_approve = all([
             verified_count + approved_count == total_statuses,
+            verified_count > 0,
+            total_statuses != 0,
+        ])
+        if not show_approve and request.user.is_superuser:
+            show_approve = all([
+            verified_count + approved_count + invoiced_count == total_statuses,
             verified_count > 0,
             total_statuses != 0,
         ])
