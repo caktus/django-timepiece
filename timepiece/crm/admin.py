@@ -4,7 +4,7 @@ from timepiece.crm.models import (Attribute, Business, Project,
         RelationshipType, UserProfile, PaidTimeOffRequest,
         PaidTimeOffLog, Milestone, ActivityGoal,
         Contact, ContactNote, BusinessNote, BusinessAttachment,
-        Lead, LeadNote, DistinguishingValueChallenge, 
+        Lead, LeadNote, LeadAttachment, DistinguishingValueChallenge, 
         TemplateDifferentiatingValue, DVCostItem,
         MilestoneNote)
 
@@ -46,6 +46,9 @@ class LeadAdmin(admin.ModelAdmin):
 class LeadNoteAdmin(admin.ModelAdmin):
     pass
 
+class LeadAttachmentAdmin(admin.ModelAdmin):
+    pass
+
 class RelationshipTypeAdmin(admin.ModelAdmin):
     pass
 
@@ -82,6 +85,7 @@ admin.site.register(Contact, ContactAdmin)
 admin.site.register(ContactNote, ContactNoteAdmin)
 admin.site.register(Lead, LeadAdmin)
 admin.site.register(LeadNote, LeadNoteAdmin)
+admin.site.register(LeadAttachment, LeadAttachmentAdmin)
 admin.site.register(DistinguishingValueChallenge)
 admin.site.register(TemplateDifferentiatingValue)
 admin.site.register(DVCostItem)
