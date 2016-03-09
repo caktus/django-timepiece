@@ -179,3 +179,17 @@ def get_bimonthly_dates(start_date):
         else:
             end = datetime.datetime(start_date.year+1, 1, 1)
     return (start,end)
+
+def get_last_bimonthly_dates(start_date=datetime.date.today()):
+    """ex. if March 1, return Feb 15 and Feb 29"""
+    if start_date.day <= 15:
+        start = start_date.replace(day=16)
+        start -= relativedelta(months=1)
+        end = start.replace(day=1)
+        end += relativedelta(months=1)
+        end -= relativedelta(days=1)
+    else:
+        start = start_date.replace(day=1)
+        end = start.replace(day=16)
+    return (datetime.datetime(start.year, start.month, start.day),
+        datetime.datetime(end.year, end.month, end.day))
