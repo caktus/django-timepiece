@@ -2212,6 +2212,10 @@ class PendingMilestonesReport(TemplateView):
 class ThroughputReport(CSVViewMixin, TemplateView):
     template_name = 'timepiece/reports/throughput.html'
 
+    @method_decorator(permission_required('entries.view_entry_summary'))
+    def dispatch(self, request, *args, **kwargs):
+        return super(ThroughputReport, self).dispatch(request, *args, **kwargs)
+
     def get(self, request, *args, **kwargs):
         self.request = request
         self.export_throughput_report = request.GET.get(
