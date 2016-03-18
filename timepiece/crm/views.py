@@ -2353,7 +2353,12 @@ class ListLeads(SearchListView, CSVViewMixin):
                        'Primary Contact Opted Out of Fax',
                        'Primary Contact DO NOT CALL',
                        'Primary Contact Birthday',
-                       'Lead Source Email', 'Tags -->']
+                       'Lead Source Email',
+                       'Tags -->',
+                       'Date First entered "contacting"',
+                       'Date First entered "contacted"',]
+                       'Date First entered "Qualified" or "Unqaulified"',]
+                       'Date First entered "Complete"']
             content.append(headers)
             for lead in lead_list:
                 if lead.primary_contact:
