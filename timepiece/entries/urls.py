@@ -66,4 +66,8 @@ urlpatterns = [
     url(r'^toggle_pause_entry/$',
         views.toggle_pause_entry,
         name="toggle_pause_entry"),
+
+    url(r'^get_verification_information/$',
+        views.get_verification_information,
+        name="get_verification_information"),
 ]
