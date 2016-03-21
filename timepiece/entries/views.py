@@ -1023,6 +1023,7 @@ def toggle_pause_entry(request):
     else:
         return HttpResponse('')
 
+@login_required
 def get_verification_information(request):
     pay_period_entries = Entry.objects.filter()
 
