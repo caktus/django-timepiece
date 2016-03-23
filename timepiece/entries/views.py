@@ -1013,7 +1013,7 @@ def get_active_entry(request):
     else:
         return HttpResponse('')
 
-
+@login_required
 def toggle_pause_entry(request):
     active_entry = utils.get_active_entry(request.user)
     active_entry.toggle_paused()
@@ -1022,3 +1022,17 @@ def toggle_pause_entry(request):
         return JsonResponse(active_entry.to_json())
     else:
         return HttpResponse('')
+
+@login_required
+def get_verification_information(request):
+    (period_start, period_end) = utils.get_last_bimonthly_dates()
+    entries = request.user.timepiece_entries.filter(
+        Q(status=Entry.UNVERIFIED),
+        start_time__gte=period_start,
+        end_time__lt=period_end
+    )
+
+    return JsonResponse({
+        'verified': not bool(entries),
+        'user_id': request.user.id
+    })
