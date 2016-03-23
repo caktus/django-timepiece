@@ -1025,17 +1025,14 @@ def toggle_pause_entry(request):
 
 @login_required
 def get_verification_information(request):
-    pay_period_entries = Entry.objects.filter()
-
     (period_start, period_end) = utils.get_last_bimonthly_dates()
     entries = request.user.timepiece_entries.filter(
         Q(status=Entry.UNVERIFIED),
-        # start_time__gte=period_start,
-        # end_time__lt=period_end
-        start_time__gte=period_start
+        start_time__gte=period_start,
+        end_time__lt=period_end
     )
 
     return JsonResponse({
-        'verified': bool(entries),
+        'verified': not bool(entries),
         'user_id': request.user.id
     })
