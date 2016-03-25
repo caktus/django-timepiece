@@ -12,7 +12,7 @@ from django.shortcuts import render
 from django.template.defaultfilters import date as date_format_filter
 from django.utils import timezone
 from django.utils.decorators import method_decorator
-from django.views.generic import TemplateView, DetailView
+from django.views.generic import TemplateView
 
 from timepiece import utils
 from timepiece.utils.csv import CSVViewMixin, DecimalEncoder
@@ -470,6 +470,7 @@ class ReportPayrollSummary(CSVViewMixin, TemplateView):
         if labels.get('leave', None):
             for label in labels.get('leave'):
                 headers.append('Paid Leave: %s' % label)
+            headers.append('Total Leave Hours')
 
         headers.append('Grand Total')
 
@@ -501,94 +502,6 @@ class ReportPayrollSummary(CSVViewMixin, TemplateView):
         context = self.get_context_data()
         kls = CSVViewMixin if self.export else TemplateView
         return kls.render_to_response(self, context)
-
-    def get_filename(self, context):
-        request = self.request.GET.copy()
-        month = request.get('month', 'month')
-        year = request.get('year', 'year')
-        return 'hours_{0}_{1}.csv'.format(
-            month, year, )
-
-
-@cbv_decorator(permission_required('entries.view_payroll_summary'))
-class ReportPayrollSummaryCSV(CSVViewMixin, TemplateView):
-    def get_context_data(request, **kwargs):
-        date = timezone.now() - relativedelta(months=1)
-        from_date = utils.get_month_start(date).date()
-        to_date = from_date + relativedelta(months=1)
-
-        projects = utils.get_setting('TIMEPIECE_PAID_LEAVE_PROJECTS')
-
-        monthQ = Q(end_time__gt=from_date, end_time__lt=to_date)
-        workQ = ~Q(project__in=projects.values())
-        statusQ = Q(status=Entry.INVOICED) | Q(status=Entry.APPROVED)
-
-        # Monthly totals
-        leave = Entry.objects.filter(monthQ, ~workQ)
-        leave = leave.values('user', 'hours', 'project__name')
-        extra_values = ('project__type__label',)
-        month_entries = Entry.objects.date_trunc('month', extra_values)
-        month_entries_valid = month_entries.filter(monthQ, statusQ, workQ)
-        labels, monthly_totals = get_payroll_totals(month_entries_valid, leave)
-
-        return render(request, 'timepiece/reports/payroll_summary.html', {
-            'monthly_totals': monthly_totals,
-            'labels': labels,
-        })
-
-    def convert_context_to_csv(self, context):
-        """Convert the context dictionary into a CSV file."""
-        content = []
-        headers = ['Name']
-        labels = context['labels']
-        monthly_totals = context['monthly_totals']
-
-        # Header row setup
-        TYPES = ['hours', 'percent']
-        if labels.get('billable', None):
-            for label in labels.get('billable'):
-                for type in TYPES:
-                    headers.append('Billable Projects: %s (%s)' % (label, type))
-            for type in TYPES:
-                headers.append('Total Billable Hours (%s)' % type)
-
-        if labels.get('nonbillable', None):
-            for label in labels.get('nonbillable'):
-                for type in TYPES:
-                    headers.append('Non-Billable Projects: %s (%s)' % (label, type))
-            for type in TYPES:
-                headers.append('Total Non-Billable Hours (%s)' % type)
-
-        headers.append('Total Worked Hours')
-
-        if labels.get('leave', None):
-            for label in labels.get('leave'):
-                headers.append('Paid Leave: %s' % label)
-
-        headers.append('Grand Total')
-
-        content.append(headers)
-
-        for row in monthly_totals:
-            data = []
-            data.append(row['name'])
-            if labels.get('billable', None):
-                for entry in row.get('billable'):
-                    data.append(entry.get('hours',''))
-                    data.append(entry.get('percent',''))
-            if labels.get('nonbillable', None):
-                for entry in row.get('nonbillable'):
-                    data.append(entry.get('hours',''))
-                    data.append(entry.get('percent',''))
-            data.append(row.get('work_total'))
-            if labels.get('leave', None):
-                for entry in row.get('leave'):
-                    data.append(entry.get('hours'))
-            data.append(row.get('grand_total'))
-
-            content.append(data)
-
-        return content
 
     def get_filename(self, context):
         request = self.request.GET.copy()

@@ -12,10 +12,6 @@ urlpatterns = [
         views.ReportPayrollSummary.as_view(),
         name='report_payroll_summary'),
 
-    url(r'^reports/payroll/csv/$',
-        views.ReportPayrollSummaryCSV.as_view(),
-        name='report_payroll_summary_csv'),
-
     url(r'^reports/billable_hours/$',
         views.BillableHours.as_view(),
         name='report_billable_hours'),
