@@ -1491,7 +1491,7 @@ class Lead(models.Model):
         if len(history):
             return history[0].created_at
         else:
-            return 'None'
+            return None
 
     def get_first_contacted_status_date(self):
         history = LeadHistory.objects.filter(lead=self,
