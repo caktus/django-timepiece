@@ -1489,7 +1489,32 @@ class Lead(models.Model):
         history = LeadHistory.objects.filter(lead=self,
             status=self.STATUS_CONTACTING).order_by('created_at')
         if len(history):
-            return history[0]
+            return history[0].created_at
+        else:
+            return 'None'
+
+    def get_first_contacted_status_date(self):
+        history = LeadHistory.objects.filter(lead=self,
+            status=self.STATUS_CONTACTED).order_by('created_at')
+        if len(history):
+            return history[0].created_at
+        else:
+            return None
+
+    def get_first_qual_or_unqual_status_date(self):
+        history = LeadHistory.objects.filter(
+            Q(status=self.STATUS_QUALIFIED) | Q(status=self.STATUS_UNQUALIFIED),
+            lead=self).order_by('created_at')
+        if len(history):
+            return history[0].created_at
+        else:
+            return None
+
+    def get_first_complete_status_date(self):
+        history = LeadHistory.objects.filter(lead=self,
+            status=self.STATUS_COMPLETE).order_by('created_at')
+        if len(history):
+            return history[0].created_at
         else:
             return None
 
