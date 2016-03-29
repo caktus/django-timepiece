@@ -144,7 +144,11 @@
             {% if object.get_attachments|length %}
             {% for attachment in object.get_attachments %}
             <blockquote>
-            <p><a href="{% url 'download_project_attachment' object.id attachment.id %}" target="_blank">{{ attachment.filename }}</a></p>
+            <p>
+                <a href="{% url 'download_project_attachment' object.id attachment.id %}" target="_blank">
+                    {{ attachment.filename }}
+                </a>
+            </p>
             <small>{{ attachment.uploader }} @ {{ attachment.upload_datetime }}</small>
             </blockquote>
             {% endfor %}

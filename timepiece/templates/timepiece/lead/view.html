@@ -211,7 +211,7 @@
             </form>
 
             <h3>Attachments</h3>
-            <div id="file-uploader" name="File" class="controls">
+            <div id="fine-uploader">
               <noscript>
                 <p>Please enable JavaScript to use file uploader.</p>
               </noscript>
@@ -220,7 +220,11 @@
             {% if object.get_attachments|length %}
             {% for attachment in object.get_attachments %}
             <blockquote>
-            <p><a href="{% url 'download_lead_attachment' object.id attachment.id %}?next={{ request.get_full_path }}" target="_blank">{{ attachment.filename }}</a></p>
+            <p>
+                <a href="{% url 'download_lead_attachment' object.id attachment.id %}" target="_blank">
+                    {{ attachment.filename }}
+                </a>
+            </p>
             <small>{{ attachment.uploader }} @ {{ attachment.upload_datetime }}</small>
             </blockquote>
             {% endfor %}
@@ -298,3 +302,46 @@
         </div>
     </div>
 {% endblock lead_content %}
+
+{% block extrajs %}
+<script>
+var uploader = new qq.s3.FineUploader({
+    debug: true,
+    element: document.getElementById('fine-uploader'),
+    request: {
+        endpoint: 'https://{{ AWS_UPLOAD_BUCKET_NAME }}.s3.amazonaws.com',
+        accessKey: '{{ AWS_CLIENT_ACCESS_KEY }}',
+        params: {
+            'user': '{{ request.user }}',
+            'username': '{{ request.user.username }}',
+            'firmbase-userid': '{{ request.user.id }}',
+            'user-email': '{{ request.user.email }}'
+        }
+    },
+    objectProperties: {
+        serverSideEncryption: true
+    },
+    signature: {
+        endpoint: '{% url "ajaxuploader:s3_signature" %}'
+    },
+    uploadSuccess: {
+        endpoint: '{% url "s3_lead_attachment" object.id %}'
+    },
+    iframeSupport: {
+        localBlankPagePath: '/success.html'
+    },
+    deleteFile: {
+        enabled: true,
+        endpoint: '{% url "ajaxuploader:s3_delete" %}'
+    },
+    callbacks: {
+        onUpload: function (id, name) {
+            console.log('onUpload', id, name);
+        },
+        onSubmitted: function (id, name) {
+            console.log('onSubmitted', id, name);
+        }
+    }
+});
+</script>
+{% endblock extrajs %}

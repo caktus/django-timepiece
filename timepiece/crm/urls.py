@@ -356,6 +356,13 @@ urlpatterns = [
     url(r'^lead/(?P<lead_id>\d+)/download-attachment/(?P<attachment_id>\w+)/$',
         views.lead_download_attachment,
         name='download_lead_attachment'),
+    # Attachments
+    url(r'^lead/(?P<lead_id>\d+)/attachment/s3/$',
+        views.lead_s3_attachment,
+        name='s3_lead_attachment'),
+    url(r'^lead/(?P<lead_id>\d+)/attachment/(?P<attachment_id>\d+)/$',
+        views.lead_download_attachment,
+        name='download_lead_attachment'),
     # Add Contact
     url(r'^lead/(?P<lead_id>\d+)/add-contact$',
         views.AddLeadContact.as_view(),

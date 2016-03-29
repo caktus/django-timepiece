@@ -3116,6 +3116,33 @@ def project_download_attachment(request, project_id, attachment_id):
     except:
         return HttpResponse('Project attachment could not be found.')
 
+@csrf_exempt
+# @permission_required('project.add_projectattachment')
+def lead_s3_attachment(request, lead_id):
+    bucket = request.POST.get('bucket', None)
+    uuid = request.POST.get('key', None)
+    userid = int(request.POST.get('firmbase-userid', 4))
+    filename = request.POST.get('name', '')
+
+    attachment = LeadAttachment(
+        lead=Lead.objects.get(id=int(lead_id)),
+        bucket=bucket,
+        uuid=uuid,
+        filename=filename,
+        uploader=User.objects.get(id=userid))
+    attachment.save()
+
+    return HttpResponse(status=200)
+
+# @permission_required('crm.add_projectattachment')
+def lead_download_attachment(request, lead_id, attachment_id):
+    try:
+        lead_attachment = LeadAttachment.objects.get(
+            lead_id=lead_id, id=attachment_id)
+        return HttpResponseRedirect(lead_attachment.get_download_url())
+    except:
+        return HttpResponse('Lead attachment could not be found.')
+
 def get_minding(request):
     user = request.user
     projects = Project.objects.filter(
