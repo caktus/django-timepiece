@@ -1033,6 +1033,7 @@ def get_verification_information(request):
     )
 
     return JsonResponse({
-        'verified': not bool(entries),
-        'user_id': request.user.id
+        'verified': not bool(len(entries)),
+        'user_id': request.user.id,
+        'len': len(entries),
     })
