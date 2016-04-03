@@ -10,7 +10,7 @@ import sys, traceback
 from decimal import Decimal
 from itertools import groupby
 from timepiece.utils import get_active_entry, get_setting
-from timepiece.models import MongoAttachment
+from timepiece.models import AwsAttachment
 
 
 from collections import OrderedDict
@@ -827,7 +827,7 @@ class BusinessNote(models.Model):
         # send email to note author and business account owner
         timepiece_emails.business_new_note(self, url)
 
-class BusinessAttachment(MongoAttachment):
+class BusinessAttachment(AwsAttachment):
     business = models.ForeignKey(Business)
 
     def __unicode__(self):
