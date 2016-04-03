@@ -1417,7 +1417,7 @@ class Lead(models.Model):
         'identified, this field will be ignored.  If the business is not yet '
         'in the Business database, <a href="/timepiece/business/create" '
         'target="_blank">add</a> it first.'))
-    contacts = models.ManyToManyField(Contact, null=True, blank=True,
+    contacts = models.ManyToManyField(Contact, blank=True,
         related_name='lead_contacts', verbose_name='Other Contacts')
 
     created_by = models.ForeignKey(User, related_name='lead_created_by')
@@ -1675,7 +1675,7 @@ class Opportunity(models.Model):
     proposal_status = models.CharField(max_length=16, default='in-progress', choices=PROPOSAL_STATUSES)
     proposal_status_date = models.DateTimeField(auto_now_add=True,
         help_text='Timestamp for when the proposal status was set.')
-    project = models.ManyToManyField(Project, null=True, blank=True,
+    project = models.ManyToManyField(Project, blank=True,
         help_text='If this Opportunity results in a project, identify the project(s) here.')
 
     @property
