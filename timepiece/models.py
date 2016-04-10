@@ -17,7 +17,7 @@ class MongoAttachment(models.Model):
 
 class AwsAttachment(models.Model):
     bucket = models.CharField(max_length=64, default='aaceng-firmbase')
-    file_id = models.CharField(max_length=24)
+    file_id = models.CharField(max_length=24, blank=True,  help_text='DEPRECATED')
     uuid = models.TextField() # AWS S3 uuid
     filename = models.CharField(max_length=128)
     upload_time = models.DateTimeField(auto_now_add=True)
