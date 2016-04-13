@@ -150,10 +150,13 @@ urlpatterns = [
         name='add_business_note'),
 
     # Business Attachments
-    url(r'^business/(?P<business_id>\d+)/add-attachment$', # expects querystring of transition_id=<int>
-        views.business_upload_attachment,
-        name='add_business_attachment'),
-    url(r'^business/(?P<business_id>\d+)/download-attachment/(?P<attachment_id>\w+)/$',
+    # url(r'^business/(?P<business_id>\d+)/add-attachment$', # expects querystring of transition_id=<int>
+    #     views.business_upload_attachment,
+    #     name='add_business_attachment'),
+    url(r'^business/(?P<business_id>\d+)/attachment/s3/$',
+        views.business_s3_attachment,
+        name='s3_business_attachment'),
+    url(r'^business/(?P<business_id>\d+)/attachment/(?P<attachment_id>\w+)/$',
         views.business_download_attachment,
         name='download_business_attachment'),
 
@@ -350,9 +353,9 @@ urlpatterns = [
     url(r'^lead/(?P<lead_id>\d+)/tags/remove$',
         views.RemoveLeadTag.as_view(),
         name='remove_lead_tag'),
-    url(r'^lead/(?P<lead_id>\d+)/add-attachment$', # expects querystring of transition_id=<int>
-        views.lead_upload_attachment,
-        name='add_lead_attachment'),
+    # url(r'^lead/(?P<lead_id>\d+)/add-attachment$', # expects querystring of transition_id=<int>
+    #     views.lead_upload_attachment,
+    #     name='add_lead_attachment'),
     url(r'^lead/(?P<lead_id>\d+)/download-attachment/(?P<attachment_id>\w+)/$',
         views.lead_download_attachment,
         name='download_lead_attachment'),

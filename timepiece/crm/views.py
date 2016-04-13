@@ -632,44 +632,59 @@ class AddBusinessNote(View):
             note.save()
         return HttpResponseRedirect(request.GET.get('next', None) or reverse('view_business', args=(business.id,)))
 
-@permission_required('workflow.view_business')
-def business_upload_attachment(request, business_id):
-    try:
-        afu = AjaxFileUploader(MongoDBUploadBackend, db='business_attachments')
-        hr = afu(request)
-        content = json.loads(hr.content)
-        memo = {'uploader': str(request.user),
-                'file_id': str(content['_id']),
-                'upload_time': str(datetime.datetime.now()),
-                'filename': content['filename']}
-        memo.update(content)
-        # save attachment to ticket
-        attachment = BusinessAttachment(
-            business=Business.objects.get(id=int(business_id)),
-            file_id=str(content['_id']),
-            filename=content['filename'],
-            upload_time=datetime.datetime.now(),
-            uploader=request.user,
-            description='n/a')
-        attachment.save()
-        return HttpResponse(json.dumps(memo),
-                            content_type="application/json")
-    except:
-        print sys.exc_info(), traceback.format_exc()
-    return hr
+# @permission_required('workflow.view_business')
+# def business_upload_attachment(request, business_id):
+#     try:
+#         afu = AjaxFileUploader(MongoDBUploadBackend, db='business_attachments')
+#         hr = afu(request)
+#         content = json.loads(hr.content)
+#         memo = {'uploader': str(request.user),
+#                 'file_id': str(content['_id']),
+#                 'upload_time': str(datetime.datetime.now()),
+#                 'filename': content['filename']}
+#         memo.update(content)
+#         # save attachment to ticket
+#         attachment = BusinessAttachment(
+#             business=Business.objects.get(id=int(business_id)),
+#             file_id=str(content['_id']),
+#             filename=content['filename'],
+#             upload_time=datetime.datetime.now(),
+#             uploader=request.user,
+#             description='n/a')
+#         attachment.save()
+#         return HttpResponse(json.dumps(memo),
+#                             content_type="application/json")
+#     except:
+#         print sys.exc_info(), traceback.format_exc()
+#     return hr
 
-@permission_required('workflow.view_business')
+@csrf_exempt
+# @permission_required('project.add_projectattachment')
+def business_s3_attachment(request, business_id):
+    bucket = request.POST.get('bucket', None)
+    uuid = request.POST.get('key', None)
+    userid = int(request.POST.get('firmbase-userid', 4))
+    filename = request.POST.get('name', '')
+
+    attachment = BusinessAttachment(
+        business=Business.objects.get(id=int(business_id)),
+        bucket=bucket,
+        uuid=uuid,
+        filename=filename,
+        uploader=User.objects.get(id=userid))
+    attachment.save()
+
+    return HttpResponse(status=200)
+
+# @permission_required('crm.add_projectattachment')
 def business_download_attachment(request, business_id, attachment_id):
-    MONGO_DB_INSTANCE = project_settings.MONGO_CLIENT.business_attachments
-    MONGO_DB_INSTANCE.authenticate( project_settings.MONGO_User,  project_settings.MONGO_PW)
-    GRID_FS_INSTANCE = gridfs.GridFS(MONGO_DB_INSTANCE)
     try:
-        business_attachment = BusinessAttachment.objects.get(
-            business__id=business_id, id=attachment_id)
-        f = GRID_FS_INSTANCE.get(ObjectId(business_attachment.file_id))
-        return HttpResponse(f.read(), content_type=f.content_type)
+        business = Business.objects.get(id=int(business_id))
+        attachment = BusinessAttachment.objects.get(
+            business=business, id=attachment_id)
+        return HttpResponseRedirect(attachment.get_download_url())
     except:
-        return HttpResponse("Business attachment could not be found.")
+        return HttpResponse('Business attachment could not be found.')
 
 
 @cbv_decorator(permission_required('crm.add_business'))
@@ -2585,44 +2600,44 @@ class RemoveLeadTag(View):
                             content_type="application/json",
                             status=200)
 
-@permission_required('crm.view_lead')
-def lead_upload_attachment(request, lead_id):
-    try:
-        afu = AjaxFileUploader(MongoDBUploadBackend, db='lead_attachments')
-        hr = afu(request)
-        content = json.loads(hr.content)
-        memo = {'uploader': str(request.user),
-                'file_id': str(content['_id']),
-                'upload_time': str(datetime.datetime.now()),
-                'filename': content['filename']}
-        memo.update(content)
-        # save attachment to ticket
-        attachment = LeadAttachment(
-            lead=Lead.objects.get(id=int(lead_id)),
-            file_id=str(content['_id']),
-            filename=content['filename'],
-            upload_time=datetime.datetime.now(),
-            uploader=request.user,
-            description='n/a')
-        attachment.save()
-        return HttpResponse(json.dumps(memo),
-                            content_type="application/json")
-    except:
-        print sys.exc_info(), traceback.format_exc()
-    return hr
+# @permission_required('crm.view_lead')
+# def lead_upload_attachment(request, lead_id):
+#     try:
+#         afu = AjaxFileUploader(MongoDBUploadBackend, db='lead_attachments')
+#         hr = afu(request)
+#         content = json.loads(hr.content)
+#         memo = {'uploader': str(request.user),
+#                 'file_id': str(content['_id']),
+#                 'upload_time': str(datetime.datetime.now()),
+#                 'filename': content['filename']}
+#         memo.update(content)
+#         # save attachment to ticket
+#         attachment = LeadAttachment(
+#             lead=Lead.objects.get(id=int(lead_id)),
+#             file_id=str(content['_id']),
+#             filename=content['filename'],
+#             upload_time=datetime.datetime.now(),
+#             uploader=request.user,
+#             description='n/a')
+#         attachment.save()
+#         return HttpResponse(json.dumps(memo),
+#                             content_type="application/json")
+#     except:
+#         print sys.exc_info(), traceback.format_exc()
+#     return hr
 
-@permission_required('crm.view_lead')
-def lead_download_attachment(request, lead_id, attachment_id):
-    MONGO_DB_INSTANCE = project_settings.MONGO_CLIENT.lead_attachments
-    MONGO_DB_INSTANCE.authenticate(project_settings.MONGO_USER, project_settings.MONGO_PW)
-    GRID_FS_INSTANCE = gridfs.GridFS(MONGO_DB_INSTANCE)
-    try:
-        lead_attachment = LeadAttachment.objects.get(
-            lead__id=lead_id, id=attachment_id)
-        f = GRID_FS_INSTANCE.get(ObjectId(lead_attachment.file_id))
-        return HttpResponse(f.read(), content_type=f.content_type)
-    except:
-        return HttpResponse("Lead attachment could not be found.")
+# @permission_required('crm.view_lead')
+# def lead_download_attachment(request, lead_id, attachment_id):
+#     MONGO_DB_INSTANCE = project_settings.MONGO_CLIENT.lead_attachments
+#     MONGO_DB_INSTANCE.authenticate(project_settings.MONGO_USER, project_settings.MONGO_PW)
+#     GRID_FS_INSTANCE = gridfs.GridFS(MONGO_DB_INSTANCE)
+#     try:
+#         lead_attachment = LeadAttachment.objects.get(
+#             lead__id=lead_id, id=attachment_id)
+#         f = GRID_FS_INSTANCE.get(ObjectId(lead_attachment.file_id))
+#         return HttpResponse(f.read(), content_type=f.content_type)
+#     except:
+#         return HttpResponse("Lead attachment could not be found.")
 
 @cbv_decorator(permission_required('crm.add_lead'))
 class CreateLead(CreateView):
@@ -3137,8 +3152,9 @@ def lead_s3_attachment(request, lead_id):
 # @permission_required('crm.add_projectattachment')
 def lead_download_attachment(request, lead_id, attachment_id):
     try:
+        lead = Lead.objects.get(id=int(lead_id))
         lead_attachment = LeadAttachment.objects.get(
-            lead_id=lead_id, id=attachment_id)
+            lead=lead, id=attachment_id)
         return HttpResponseRedirect(lead_attachment.get_download_url())
     except:
         return HttpResponse('Lead attachment could not be found.')

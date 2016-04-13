@@ -9,7 +9,7 @@
 {% block title %}{{ object.name }}{% endblock title %}
 
 {% block extracss %}
-<link href="{{ STATIC_URL }}ajaxuploader/css/fileuploader.css" media="screen" rel="stylesheet" type="text/css" />
+<link href="{{ STATIC_URL }}s3.jquery.fine-uploader/fine-uploader-new.min.css" rel="stylesheet" type="text/css" />
 {% endblock extracss %}
 
 {% block crumbs %}
@@ -177,7 +177,7 @@
             </ul>
 
             <h3>Attachments</h3>
-            <div id="file-uploader" name="File" class="controls">
+            <div id="fine-uploader">
               <noscript>
                 <p>Please enable JavaScript to use file uploader.</p>
               </noscript>
@@ -186,12 +186,16 @@
             {% if object.get_attachments|length %}
             {% for attachment in object.get_attachments %}
             <blockquote>
-            <p><a href="{% url 'download_business_attachment' object.id attachment.id %}" target="_blank">{{ attachment.filename }}</a></p>
+            <p>
+                <a href="{% url 'download_business_attachment' object.id attachment.id %}" target="_blank">
+                    {{ attachment.filename }}
+                </a>
+            </p>
             <small>{{ attachment.uploader }} @ {{ attachment.upload_time }}</small>
             </blockquote>
             {% endfor %}
             {% else %}
-            <br/><em>There are no attachments.</em>
+            <br/><em>There are no attachments for this ticket yet.</em>
             {% endif %}
         </div>
     </div>
@@ -199,40 +203,103 @@
 
 {% block extrajs %}
 <script src='{% static "project-toolbox/js/tags.js" %}'></script>
-<script src='{% static "ajaxuploader/js/fileuploader.js" %}'></script>
+<script src="{{ STATIC_URL }}s3.jquery.fine-uploader/s3.jquery.fine-uploader.min.js" ></script>
+<script type="text/template" id="qq-template">
+    <div class="qq-uploader-selector qq-uploader" qq-drop-area-text="Drop files here">
+        <div class="qq-total-progress-bar-container-selector qq-total-progress-bar-container">
+            <div role="progressbar" aria-valuenow="0" aria-valuemin="0" aria-valuemax="100" class="qq-total-progress-bar-selector qq-progress-bar qq-total-progress-bar"></div>
+        </div>
+        <div class="qq-upload-drop-area-selector qq-upload-drop-area" qq-hide-dropzone>
+            <span class="qq-upload-drop-area-text-selector"></span>
+        </div>
+        <div class="qq-upload-button-selector qq-upload-button">
+            <div>Upload a file</div>
+        </div>
+        <span class="qq-drop-processing-selector qq-drop-processing">
+            <span>Processing dropped files...</span>
+            <span class="qq-drop-processing-spinner-selector qq-drop-processing-spinner"></span>
+        </span>
+        <ul class="qq-upload-list-selector qq-upload-list" aria-live="polite" aria-relevant="additions removals">
+            <li>
+                <div class="qq-progress-bar-container-selector">
+                    <div role="progressbar" aria-valuenow="0" aria-valuemin="0" aria-valuemax="100" class="qq-progress-bar-selector qq-progress-bar"></div>
+                </div>
+                <span class="qq-upload-spinner-selector qq-upload-spinner"></span>
+                <img class="qq-thumbnail-selector" qq-max-size="100" qq-server-scale>
+                <span class="qq-upload-file-selector qq-upload-file"></span>
+                <span class="qq-edit-filename-icon-selector qq-edit-filename-icon" aria-label="Edit filename"></span>
+                <input class="qq-edit-filename-selector qq-edit-filename" tabindex="0" type="text">
+                <span class="qq-upload-size-selector qq-upload-size"></span>
+                <button class="qq-btn qq-upload-cancel-selector qq-upload-cancel">Cancel</button>
+                <button class="qq-btn qq-upload-retry-selector qq-upload-retry">Retry</button>
+                <button class="qq-btn qq-upload-delete-selector qq-upload-delete">Delete</button>
+                <span role="status" class="qq-upload-status-text-selector qq-upload-status-text"></span>
+            </li>
+        </ul>
+
+        <dialog class="qq-alert-dialog-selector">
+            <div class="qq-dialog-message-selector"></div>
+            <div class="qq-dialog-buttons">
+                <button class="qq-cancel-button-selector">Close</button>
+            </div>
+        </dialog>
+
+        <dialog class="qq-confirm-dialog-selector">
+            <div class="qq-dialog-message-selector"></div>
+            <div class="qq-dialog-buttons">
+                <button class="qq-cancel-button-selector">No</button>
+                <button class="qq-ok-button-selector">Yes</button>
+            </div>
+        </dialog>
+
+        <dialog class="qq-prompt-dialog-selector">
+            <div class="qq-dialog-message-selector"></div>
+            <input type="text">
+            <div class="qq-dialog-buttons">
+                <button class="qq-cancel-button-selector">Cancel</button>
+                <button class="qq-ok-button-selector">Ok</button>
+            </div>
+        </dialog>
+    </div>
+</script>
 <script>
-    $(document).ready( function () {
-        create_remove_tag_handler("{% url 'remove_business_tag' object.id %}");
-        create_add_tag_handler("{% url 'business_tags' object.id %}");
-    });
-
-    ATTACHMENTS = {};
-    $(function(){
-    var uploader = new qq.FileUploader({
-        action: "{% url 'add_business_attachment' object.id %}",
-        element: $('#file-uploader')[0],
-        multiple: true,
-        onComplete: function(id, filename, responseJSON) {
-            if(responseJSON.success) {
-                ATTACHMENTS[id] = {'id': id,
-                                   'filename': filename,
-                                   'json': responseJSON};
-            } else {
-                console.log('fail', id, filename, responseJSON);
-            }
-        },
-        onAllComplete: function(uploads) {
-            // uploads is an array of maps
-            // the maps look like this: {file: FileObject, response: JSONServerResponse}
-            // do nothing
-        },
+var uploader = new qq.s3.FineUploader({
+    debug: true,
+    element: document.getElementById('fine-uploader'),
+    request: {
+        endpoint: 'https://{{ AWS_UPLOAD_BUCKET_NAME }}.s3.amazonaws.com',
+        accessKey: '{{ AWS_CLIENT_ACCESS_KEY }}',
         params: {
-            'csrf_token': '{{ csrf_token }}',
-            'csrf_name': 'csrfmiddlewaretoken',
-            'csrf_xname': 'X-CSRFToken',
+            'user': '{{ request.user }}',
+            'username': '{{ request.user.username }}',
+            'firmbase-userid': '{{ request.user.id }}',
+            'user-email': '{{ request.user.email }}'
+        }
+    },
+    objectProperties: {
+        serverSideEncryption: true
+    },
+    signature: {
+        endpoint: '{% url "ajaxuploader:s3_signature" %}'
+    },
+    uploadSuccess: {
+        endpoint: '{% url "s3_business_attachment" object.id %}'
+    },
+    iframeSupport: {
+        localBlankPagePath: '/success.html'
+    },
+    deleteFile: {
+        enabled: true,
+        endpoint: '{% url "ajaxuploader:s3_delete" %}'
+    },
+    callbacks: {
+        onUpload: function (id, name) {
+            console.log('onUpload', id, name);
         },
-    });
-    });
-
+        onSubmitted: function (id, name) {
+            console.log('onSubmitted', id, name);
+        }
+    }
+});
 </script>
 {% endblock extrajs %}
