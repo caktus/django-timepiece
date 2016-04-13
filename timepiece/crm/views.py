@@ -501,6 +501,7 @@ class ListBusinesses(SearchListView, CSVViewMixin):
     def get(self, request, *args, **kwargs):
         self.export_business_list = request.GET.get('export_business_list', False)
         if self.export_business_list:
+            self.paginate_by = None
             kls = CSVViewMixin
 
             form_class = self.get_form_class()
