@@ -283,6 +283,13 @@ class ProjectContract(models.Model):
     def value_expended(self):
         return self.contract_value() - self.value_remaining()
 
+    @property
+    def expended_percentage(self):
+        try:
+            return 100.0 * (float(self.value_expended) / float(self.contract_value()))
+        except:
+            return 0.0
+
     def display_value_remaining(self):
         if self.ceiling_type == self.HOURS:
             return '{:,.2f}'.format(self.hours_remaining)

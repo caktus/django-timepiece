@@ -18,8 +18,8 @@ function drawChart() {
             chartType: 'ScatterChart',
             dataTable: dataTable,
             options: {
-                vAxis: {title: 'Actual Hours', minValue: 0, maxValue: chart_max, textPosition : 'in'},
-                hAxis: {title: 'Target Hours', minValue: 0, maxValue: chart_max, textPosition : 'in'},
+                vAxis: {title: 'Actual Expenditures ($)', minValue: 0, maxValue: chart_max, textPosition : 'in', logScale: true},
+                hAxis: {title: 'Not to Exceed ($)', minValue: 0, maxValue: chart_max, textPosition : 'in', logScale: true},
                 titlePosition: 'in',
                 trendlines: {
                        0: {color: 'purple', opacity: 0.2, showR2: true, visibleInLegend: true}

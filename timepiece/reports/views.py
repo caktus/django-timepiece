@@ -1090,19 +1090,22 @@ def report_estimation_accuracy(request):
     """
     contracts = ProjectContract.objects.filter(
         status=ProjectContract.STATUS_COMPLETE,
-        type=ProjectContract.PROJECT_FIXED
+        # type=ProjectContract.PROJECT_FIXED,
+        ceiling_type=ProjectContract.BUDGET,
     )
     data = [('Target (hrs)', 'Actual (hrs)', 'Point Label')]
+    chart_max = 1.0
     for c in contracts:
-        if c.contracted_hours() == 0:
+        if c.contract_value() == 0:
             continue
         pt_label = "%s (%.2f%%)" % (c.name,
-                                    c.hours_worked / c.contracted_hours() * 100)
-        data.append((c.contracted_hours(), c.hours_worked, pt_label))
+                                    c.value_expended / c.contract_value() * 100)
+        data.append((c.contract_value(), c.value_expended, pt_label))
         chart_max = max([max(x[0], x[1]) for x in data[1:]])  # max of all targets & actuals
     return render(request, 'timepiece/reports/estimation_accuracy.html', {
         'data': json.dumps(data, cls=DecimalEncoder),
         'chart_max': chart_max,
+        'contracts': contracts,
     })
 
 

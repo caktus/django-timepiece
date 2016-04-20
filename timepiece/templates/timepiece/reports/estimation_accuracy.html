@@ -36,10 +36,35 @@
             <div id="chart-container">
                 {% if data %}
                     <h3>Estimation Accuracy Report</h3>
-                    <h4>Based on Completed Fixed Contracts</h4>
+                    <h4>Based on Completed NTE Contracts</h4>
                     <div id="chart" style="width: 750px; height: 650px;"></div>
                 {% else %}
                     <p>There are no entries which match your query.</p>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+    <div>
+        <div class="span12">
+            <div id="data-container">
+                <h3>Data Table</h3>
+                {% if data %}
+                    <table class="table table-bordered">
+                        <tr>
+                            <th>Contract</th>
+                            <th>NTE</th>
+                            <th>Expended Value</th>
+                            <th>Percentage</th>
+                        </tr>
+                        {% for c in contracts %}
+                        <tr {% if c.expended_percentage > 100 %}class="error"{% endif %}>
+                            <td><a href="{% url 'view_contract' c.id %}" target="_blank">{{ c.name }}</a></td>
+                            <td>$ {{ c.not_to_exceed|floatformat:2 }}</td>
+                            <td>$ {{ c.value_expended|floatformat:2 }}</td>
+                            <td>{{ c.expended_percentage|floatformat:2 }} %</td>
+                        </tr>
+                        {% endfor %}
+                    </table>
                 {% endif %}
             </div>
         </div>
