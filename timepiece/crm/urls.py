@@ -356,9 +356,9 @@ urlpatterns = [
     # url(r'^lead/(?P<lead_id>\d+)/add-attachment$', # expects querystring of transition_id=<int>
     #     views.lead_upload_attachment,
     #     name='add_lead_attachment'),
-    url(r'^lead/(?P<lead_id>\d+)/download-attachment/(?P<attachment_id>\w+)/$',
-        views.lead_download_attachment,
-        name='download_lead_attachment'),
+    # url(r'^lead/(?P<lead_id>\d+)/download-attachment/(?P<attachment_id>\w+)/$',
+    #     views.lead_download_attachment,
+    #     name='download_lead_attachment'),
     # Attachments
     url(r'^lead/(?P<lead_id>\d+)/attachment/s3/$',
         views.lead_s3_attachment,
