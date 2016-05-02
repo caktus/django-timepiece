@@ -1036,4 +1036,6 @@ def get_verification_information(request):
         'verified': entries_count == 0,
         'user_id': request.user.id,
         'len': entries_count,
+        'from_date': period_start.date(),
+        'to_date': period_end.date()
     })

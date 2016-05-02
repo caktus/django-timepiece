@@ -191,5 +191,10 @@ def get_last_bimonthly_dates(start_date=datetime.date.today()):
     else:
         start = start_date.replace(day=1)
         end = start.replace(day=16)
-    return (datetime.datetime(start.year, start.month, start.day),
-        datetime.datetime(end.year, end.month, end.day))
+    
+    start_of_bimonthly = datetime.datetime(start.year, start.month, start.day)
+    end_of_bimonthly = datetime.datetime.combine(
+        datetime.datetime(end.year, end.month, end.day),
+        datetime.time.max
+    )
+    return (start_of_bimonthly, end_of_bimonthly)
