@@ -1026,14 +1026,14 @@ def toggle_pause_entry(request):
 @login_required
 def get_verification_information(request):
     (period_start, period_end) = utils.get_last_bimonthly_dates()
-    entries = request.user.timepiece_entries.filter(
+    entries_count = request.user.timepiece_entries.filter(
         Q(status=Entry.UNVERIFIED),
         start_time__gte=period_start,
         end_time__lt=period_end
-    )
+    ).count()
 
     return JsonResponse({
-        'verified': not bool(len(entries)),
+        'verified': entries_count == 0,
         'user_id': request.user.id,
-        'len': len(entries),
+        'len': entries_count,
     })
