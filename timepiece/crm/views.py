@@ -336,9 +336,12 @@ class ProjectTimesheet(DetailView):
     pk_url_kwarg = 'project_id'
 
     def get(self, *args, **kwargs):
-        if 'csv' in self.request.GET:
+        csv_keys = ['csv', 'export_project_timesheet']
+        present_keys = [key for key in csv_keys if key in self.request.GET]
+        if present_keys:
             request_get = self.request.GET.copy()
-            request_get.pop('csv')
+            for key in present_keys:
+                request_get.pop(key)
             return_url = reverse('view_project_timesheet_csv',
                                  args=(self.get_object().pk,))
             return_url += '?%s' % urlencode(request_get)
