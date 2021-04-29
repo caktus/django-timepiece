@@ -1,5 +1,5 @@
 {% extends 'timepiece/invoice/base.html' %}
-{% load timepiece_tags bootstrap_toolkit %}
+{% load timepiece_tags bootstrap3 %}
 
 {% block title %}Invoices{% endblock title %}
 
@@ -21,7 +21,7 @@
     <div class="row-fluid">
         <div class="span12">
             <form class="form-inline" accept-charset="UTF-8" method="get" action="">
-                {{ form|as_bootstrap:"inline" }}
+                {% bootstrap_form form layout='inline' %}
                 <button type="submit" class="btn">Search</button>
             </form>
         </div>

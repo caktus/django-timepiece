@@ -12,7 +12,7 @@ from django.contrib.auth.decorators import login_required, permission_required
 from django.contrib.auth.models import User, Permission
 from django.contrib.contenttypes.models import ContentType
 from django.core import exceptions
-from django.core.urlresolvers import reverse
+from django.urls import reverse
 from django.db import transaction
 from django.db.models import Q
 from django.http import HttpResponse, HttpResponseRedirect, Http404
@@ -36,7 +36,7 @@ class Dashboard(TemplateView):
     template_name = 'timepiece/dashboard.html'
 
     @method_decorator(login_required)
-    def dispatch(self, request, active_tab, *args, **kwargs):
+    def dispatch(self, request, active_tab=None, *args, **kwargs):
         self.active_tab = active_tab or 'progress'
         self.user = request.user
         return super(Dashboard, self).dispatch(request, *args, **kwargs)

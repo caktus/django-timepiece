@@ -19,7 +19,7 @@ def quick_clock_in(request):
     work_projects = []
     leave_projects = []
 
-    if user.is_authenticated() and user.is_active:
+    if user.is_authenticated and user.is_active:
         # Display all active paid leave projects that the user is assigned to.
         leave_ids = utils.get_setting('TIMEPIECE_PAID_LEAVE_PROJECTS').values()
         lq = Q(users=user) & Q(id__in=leave_ids)

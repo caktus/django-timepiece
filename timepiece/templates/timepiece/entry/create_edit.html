@@ -1,5 +1,5 @@
 {% extends 'timepiece/base.html' %}
-{% load bootstrap_toolkit %}
+{% load bootstrap3 %}
 
 {% block title %}{% if entry %}Update{% else %}Create{% endif %} Entry{% endblock title %}
 
@@ -48,7 +48,7 @@
 
             <form class="form-horizontal" action="" method="post" accept-charset="utf-8">
                 {% csrf_token %}
-                {{ form|as_bootstrap:"horizontal" }}
+                {% bootstrap_form form layout='horizontal' %}
                 <div class="form-actions">
                     <input class="btn btn-primary" type='submit' name='submit' value='Save' />
                     <input class="btn" type='button' value='Cancel' onclick="history.back()" />

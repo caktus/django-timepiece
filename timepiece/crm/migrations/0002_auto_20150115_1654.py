@@ -17,31 +17,31 @@ class Migration(migrations.Migration):
         migrations.AddField(
             model_name='project',
             name='activity_group',
-            field=models.ForeignKey(related_name='activity_group', verbose_name=b'restrict activities to', blank=True, to='entries.ActivityGroup', null=True),
+            field=models.ForeignKey(related_name='activity_group', verbose_name=b'restrict activities to', blank=True, to='entries.ActivityGroup', null=True, on_delete=models.deletion.CASCADE),
             preserve_default=True,
         ),
         migrations.AddField(
             model_name='project',
             name='business',
-            field=models.ForeignKey(related_name='new_business_projects', to='crm.Business'),
+            field=models.ForeignKey(related_name='new_business_projects', to='crm.Business', on_delete=models.deletion.CASCADE),
             preserve_default=True,
         ),
         migrations.AddField(
             model_name='project',
             name='point_person',
-            field=models.ForeignKey(to=settings.AUTH_USER_MODEL),
+            field=models.ForeignKey(to=settings.AUTH_USER_MODEL, on_delete=models.deletion.CASCADE),
             preserve_default=True,
         ),
         migrations.AddField(
             model_name='project',
             name='status',
-            field=models.ForeignKey(related_name='projects_with_status', to='crm.Attribute'),
+            field=models.ForeignKey(related_name='projects_with_status', to='crm.Attribute', on_delete=models.deletion.CASCADE),
             preserve_default=True,
         ),
         migrations.AddField(
             model_name='project',
             name='type',
-            field=models.ForeignKey(related_name='projects_with_type', to='crm.Attribute'),
+            field=models.ForeignKey(related_name='projects_with_type', to='crm.Attribute', on_delete=models.deletion.CASCADE),
             preserve_default=True,
         ),
         migrations.AddField(

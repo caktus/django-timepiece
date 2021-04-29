@@ -7,18 +7,16 @@ from django.contrib.auth.models import User
 from django.contrib.sites.models import Site
 from django.core.exceptions import ValidationError
 from django.core.mail import send_mail
-from django.core.urlresolvers import reverse
+from django.urls import reverse
 from django.db import models
 from django.db.models import Sum
 from django.db.models.expressions import F, Func, Value
 from django.template.loader import render_to_string
-from django.utils.encoding import python_2_unicode_compatible
 
 from timepiece import utils
 from timepiece.entries.models import Entry
 
 
-@python_2_unicode_compatible
 class ProjectContract(models.Model):
     STATUS_UPCOMING = 'upcoming'
     STATUS_CURRENT = 'current'
@@ -211,7 +209,6 @@ class ProjectContract(models.Model):
         return float(days_elapsed) / contract_period
 
 
-@python_2_unicode_compatible
 class ContractHour(models.Model):
     PENDING_STATUS = 1
     APPROVED_STATUS = 2
@@ -223,7 +220,7 @@ class ContractHour(models.Model):
     hours = models.DecimalField(
         max_digits=8, decimal_places=2, default=0)
     contract = models.ForeignKey(
-        ProjectContract, related_name='contract_hours')
+        ProjectContract, related_name='contract_hours', on_delete=models.deletion.CASCADE)
     date_requested = models.DateField()
     date_approved = models.DateField(blank=True, null=True)
     status = models.IntegerField(
@@ -332,10 +329,9 @@ class ContractHour(models.Model):
             self._send_mail(subject, ctx)
 
 
-@python_2_unicode_compatible
 class ContractAssignment(models.Model):
-    contract = models.ForeignKey(ProjectContract, related_name='assignments')
-    user = models.ForeignKey(User, related_name='assignments')
+    contract = models.ForeignKey(ProjectContract, related_name='assignments', on_delete=models.deletion.CASCADE)
+    user = models.ForeignKey(User, related_name='assignments', on_delete=models.deletion.CASCADE)
     start_date = models.DateField()
     end_date = models.DateField()
     num_hours = models.DecimalField(max_digits=8, decimal_places=2, default=0)
@@ -412,7 +408,6 @@ class HourGroupManager(models.Manager):
         return totals
 
 
-@python_2_unicode_compatible
 class HourGroup(models.Model):
     """Activities that are bundled together for billing"""
     name = models.CharField(max_length=255, unique=True)
@@ -429,7 +424,6 @@ class HourGroup(models.Model):
         return self.name
 
 
-@python_2_unicode_compatible
 class EntryGroup(models.Model):
     INVOICED = Entry.INVOICED
     NOT_INVOICED = Entry.NOT_INVOICED
@@ -438,8 +432,8 @@ class EntryGroup(models.Model):
         (NOT_INVOICED, 'Not Invoiced'),
     ))
 
-    user = models.ForeignKey(User, related_name='entry_group')
-    project = models.ForeignKey('crm.Project', related_name='entry_group')
+    user = models.ForeignKey(User, related_name='entry_group', on_delete=models.deletion.CASCADE)
+    project = models.ForeignKey('crm.Project', related_name='entry_group', on_delete=models.deletion.CASCADE)
     status = models.CharField(max_length=24, choices=STATUSES.items(),
                               default=INVOICED)
     number = models.CharField("Reference #", max_length=50, blank=True,

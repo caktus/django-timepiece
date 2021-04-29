@@ -6,7 +6,7 @@ from dateutil.relativedelta import relativedelta
 from six.moves.urllib.parse import urlencode
 
 from django import template
-from django.core.urlresolvers import reverse
+from django.urls import reverse
 from django.db.models import Sum
 from django.template.defaultfilters import date as date_format_filter
 from django.utils.safestring import mark_safe
@@ -47,7 +47,7 @@ def add_timezone(date, tz=None):
     return utils.add_timezone(date, tz)
 
 
-@register.assignment_tag
+@register.simple_tag
 def create_dict(**kwargs):
     """Utility to create a dictionary from keyword arguments."""
     return kwargs
@@ -164,7 +164,7 @@ def multiply(a, b):
     return float(a) * float(b)
 
 
-@register.assignment_tag
+@register.simple_tag
 def project_hours_for_contract(contract, project, billable=None):
     """Total billable hours worked on project for contract.
     If billable is passed as 'billable' or 'nonbillable', limits to
@@ -213,7 +213,7 @@ def seconds_to_hours(seconds):
     return round(seconds / 3600.0, 2)
 
 
-@register.assignment_tag
+@register.simple_tag
 def sum_hours(entries):
     """Return the sum total of get_total_seconds() for each entry."""
     return sum([e.get_total_seconds() for e in entries])

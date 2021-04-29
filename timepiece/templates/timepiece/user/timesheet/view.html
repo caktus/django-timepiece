@@ -1,6 +1,6 @@
 {% extends "timepiece/base.html" %}
 
-{% load bootstrap_toolkit %}
+{% load bootstrap3 %}
 {% load static %}
 {% load timepiece_tags %}
 
@@ -53,11 +53,11 @@
 
             {# We have to duplicate the form so the hidden fields are not in the same form #}
             <form class="form-inline visible-desktop" method="get" action="" accept-charset="utf-8">
-                {{ year_month_form|as_bootstrap:"inline" }}
+                {% bootstrap_form year_month_form layout='inline' %}
                 <input type="submit" name="yearmonth" class="btn" value="Update" />
             </form>
             <form class="hidden-desktop" method="get" action="" accept-charset="utf-8">
-                {{ year_month_form|as_bootstrap }}
+                {% bootstrap_form year_month_form %}
                 <input type="submit" name="yearmonth" class="btn" value="Update" />
             </form>
         </div>

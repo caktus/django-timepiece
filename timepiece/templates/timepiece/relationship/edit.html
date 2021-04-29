@@ -1,5 +1,5 @@
 {% extends "timepiece/project/base.html" %}
-{% load bootstrap_toolkit %}
+{% load bootstrap3 %}
 
 {% block title %}Edit Project Relationship{% endblock title %}
 
@@ -17,7 +17,7 @@
 
             <form class="form-horizontal" id="edit-project-relationship" action="" method="post" accept-charset="utf-8">
                 {% csrf_token %}
-                {{ form|as_bootstrap:"horizontal" }}
+                {% bootstrap_form form layout='horizontal' %}
                 <div class="form-actions">
                     <input class="btn btn-primary" type='submit' name='submit' value='Save' />
                     <input class="btn" type='button' value='Cancel' onclick='history.go(-1)' />

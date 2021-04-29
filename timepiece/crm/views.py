@@ -6,7 +6,7 @@ from six.moves.urllib.parse import urlencode
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required, permission_required
 from django.contrib.auth.models import User
-from django.core.urlresolvers import reverse, reverse_lazy
+from django.urls import reverse, reverse_lazy
 from django.db import transaction
 from django.db.models import Sum
 from django.http import HttpResponseRedirect, HttpResponseForbidden, Http404
@@ -78,7 +78,7 @@ def reject_user_timesheet(request, user_id):
 
 
 @login_required
-def view_user_timesheet(request, user_id, active_tab):
+def view_user_timesheet(request, user_id, active_tab=None):
     # User can only view their own time sheet unless they have a permission.
     user = get_object_or_404(User, pk=user_id)
     has_perm = request.user.has_perm('entries.view_entry_summary')

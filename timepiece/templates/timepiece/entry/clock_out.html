@@ -1,6 +1,6 @@
 {% extends 'timepiece/base.html' %}
 
-{% load bootstrap_toolkit %}
+{% load bootstrap3 %}
 {% load static %}
 
 {% block crumbs %}
@@ -24,7 +24,7 @@
             <form class="form-horizontal prevent-doubleclick" accept-charset="utf-8"
                     action="" method="post">
                 {% csrf_token %}
-                {{ form|as_bootstrap:"horizontal" }}
+                {% bootstrap_form form layout='horizontal' %}
                 <div class="form-actions">
                     <input class="btn btn-primary" type="submit" name="submit" value="Clock Out" />
                     <input class="btn" type="button" value="Cancel" onclick="history.back()" />

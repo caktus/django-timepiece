@@ -66,7 +66,7 @@ class Migration(migrations.Migration):
             name='ProjectRelationship',
             fields=[
                 ('id', models.AutoField(verbose_name='ID', serialize=False, auto_created=True, primary_key=True)),
-                ('project', models.ForeignKey(related_name='project_relationships', to='crm.Project')),
+                ('project', models.ForeignKey(related_name='project_relationships', to='crm.Project', on_delete=models.deletion.CASCADE)),
             ],
             options={
                 'db_table': 'timepiece_projectrelationship',
@@ -90,7 +90,7 @@ class Migration(migrations.Migration):
             fields=[
                 ('id', models.AutoField(verbose_name='ID', serialize=False, auto_created=True, primary_key=True)),
                 ('hours_per_week', models.DecimalField(default=40, max_digits=8, decimal_places=2)),
-                ('user', models.OneToOneField(related_name='profile', to=settings.AUTH_USER_MODEL)),
+                ('user', models.OneToOneField(related_name='profile', to=settings.AUTH_USER_MODEL, on_delete=models.deletion.CASCADE)),
             ],
             options={
                 'db_table': 'timepiece_userprofile',
@@ -106,7 +106,7 @@ class Migration(migrations.Migration):
         migrations.AddField(
             model_name='projectrelationship',
             name='user',
-            field=models.ForeignKey(related_name='project_relationships', to=settings.AUTH_USER_MODEL),
+            field=models.ForeignKey(related_name='project_relationships', to=settings.AUTH_USER_MODEL, on_delete=models.deletion.CASCADE),
             preserve_default=True,
         ),
         migrations.AlterUniqueTogether(

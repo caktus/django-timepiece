@@ -30,31 +30,31 @@ class Migration(migrations.Migration):
         migrations.AddField(
             model_name='entrygroup',
             name='project',
-            field=models.ForeignKey(related_name='entry_group', to='crm.Project'),
+            field=models.ForeignKey(related_name='entry_group', to='crm.Project', on_delete=models.deletion.CASCADE),
             preserve_default=True,
         ),
         migrations.AddField(
             model_name='entrygroup',
             name='user',
-            field=models.ForeignKey(related_name='entry_group', to=settings.AUTH_USER_MODEL),
+            field=models.ForeignKey(related_name='entry_group', to=settings.AUTH_USER_MODEL, on_delete=models.deletion.CASCADE),
             preserve_default=True,
         ),
         migrations.AddField(
             model_name='contracthour',
             name='contract',
-            field=models.ForeignKey(related_name='contract_hours', to='contracts.ProjectContract'),
+            field=models.ForeignKey(related_name='contract_hours', to='contracts.ProjectContract', on_delete=models.deletion.CASCADE),
             preserve_default=True,
         ),
         migrations.AddField(
             model_name='contractassignment',
             name='contract',
-            field=models.ForeignKey(related_name='assignments', to='contracts.ProjectContract'),
+            field=models.ForeignKey(related_name='assignments', to='contracts.ProjectContract', on_delete=models.deletion.CASCADE),
             preserve_default=True,
         ),
         migrations.AddField(
             model_name='contractassignment',
             name='user',
-            field=models.ForeignKey(related_name='assignments', to=settings.AUTH_USER_MODEL),
+            field=models.ForeignKey(related_name='assignments', to=settings.AUTH_USER_MODEL, on_delete=models.deletion.CASCADE),
             preserve_default=True,
         ),
         migrations.AlterUniqueTogether(

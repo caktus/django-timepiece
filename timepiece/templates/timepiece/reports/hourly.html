@@ -1,5 +1,5 @@
 {% extends "timepiece/reports/base.html" %}
-{% load timepiece_tags bootstrap_toolkit %}
+{% load timepiece_tags bootstrap3 %}
 
 {% block title %}Hourly Report{% endblock title %}
 
@@ -30,7 +30,7 @@
     <div class="row-fluid">
 
         <form class="span12 form-horizontal" method="get" action="" id="report-filters" accept-charset="utf-8">
-            {{ filter_form|as_bootstrap:"horizontal" }}
+			{% bootstrap_form filter_form layout='horizontal' %}
             <button type="submit" class="btn btn-primary" name="ok" id="billable">Update Filters</button>
 
             <div class="row-fluid">

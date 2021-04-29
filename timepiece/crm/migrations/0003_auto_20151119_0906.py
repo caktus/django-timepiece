@@ -29,7 +29,7 @@ class Migration(migrations.Migration):
         migrations.AlterField(
             model_name='project',
             name='activity_group',
-            field=models.ForeignKey(verbose_name='restrict activities to', null=True, blank=True, to='entries.ActivityGroup', related_name='activity_group'),
+            field=models.ForeignKey(verbose_name='restrict activities to', null=True, blank=True, to='entries.ActivityGroup', related_name='activity_group', on_delete=models.deletion.CASCADE),
         ),
         migrations.AlterField(
             model_name='project',

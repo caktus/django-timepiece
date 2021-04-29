@@ -1,5 +1,5 @@
 {% extends "timepiece/business/base.html" %}
-{% load bootstrap_toolkit %}
+{% load bootstrap3 %}
 
 {% block title %}{% if not object %}Create Business{% else %}Edit {{ object }}{% endif %}{% endblock title %}
 
@@ -24,7 +24,7 @@
 
             <form id="create-edit-business" class="form-horizontal" action="" method="post" accept-charset="utf-8">
                 {% csrf_token %}
-                {{ form|as_bootstrap:"horizontal" }}
+                {% bootstrap_form form layout='horizontal' %}
                 <div class="form-actions">
                     <input class="btn btn-primary" type="submit" value="Save" name="submit">
                     <input class="btn" type="button" onclick="history.go(-1)" value="Cancel">

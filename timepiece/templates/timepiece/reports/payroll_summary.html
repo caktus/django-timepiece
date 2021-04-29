@@ -1,6 +1,6 @@
 {% extends "timepiece/reports/base.html" %}
 
-{% load bootstrap_toolkit %}
+{% load bootstrap3 %}
 {% load static %}
 {% load timepiece_tags %}
 
@@ -37,7 +37,7 @@
     <div class="row-fluid">
         <div class="span12">
             <form class="form-inline" method="get" action="" id="date-filter" accept-charset="utf-8">
-                {{ year_month_form|as_bootstrap:"inline" }}
+                {% bootstrap_form year_month_form layout='inline' %}
                 <input class="btn btn-primary" type='submit' name='yearmonth' value="Update" id='yearmonth'/>
             </form>
         </div>

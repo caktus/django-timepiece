@@ -1,5 +1,5 @@
 {% extends "timepiece/business/base.html" %}
-{% load bootstrap_toolkit %}
+{% load bootstrap3 %}
 
 {% block title %}Businesses{% endblock title %}
 
@@ -18,7 +18,7 @@
     <div class="row-fluid">
         <div class="span12">
             <form class='form-inline' accept-charset='UTF-8' method='get' action=''>
-                {{ form|as_bootstrap:"inline" }}
+                {% bootstrap_form form layout='inline' %}
                 <button type='submit' class='btn' name='submit'>Search</button>
             </form>
         </div>
