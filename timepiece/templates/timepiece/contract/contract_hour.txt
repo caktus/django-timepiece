@@ -1,7 +1,0 @@
-Contract:       {{ hours.contract }}
-Hours:          {{ hours.hours }}
-Status:         {{ hours.get_status_display }}
-Date requested: {{ hours.date_requested }}
-Date approved:  {{ hours.date_approved }}
-Notes:
-{{ hours.notes }}

@@ -1,9 +1,0 @@
-{% extends 'timepiece/base.html' %}
-
-{% block crumbs %}
-    {{ block.super }}
-    <li>
-        <span class="divider">/</span>
-        <a href="{% url 'view_schedule' %}?week_start={{ week|date:'Y-m-d' }}">Weekly Schedule</a>
-    </li>
-{% endblock crumbs %}

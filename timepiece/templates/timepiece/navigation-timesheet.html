@@ -1,5 +1,0 @@
-{% load timepiece_tags %}
-
-{% if perms.entries.add_entry %}
-    <li><a href="{% url 'view_user_timesheet' request.user.pk %}">Time Sheet</a></li>
-{% endif %}
