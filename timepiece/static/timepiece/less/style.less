@@ -1,0 +1,725 @@
+// Includes
+@import "../../bootstrap/less/bootstrap.less";
+@import "../../bootstrap/less/responsive.less";
+
+/*
+Change default sprite paths to point inside of static/bootstrap instead of
+static/timepiece.
+*/
+@iconSpritePath:      "../../bootstrap/img/glyphicons-halflings.png";
+@iconWhiteSpritePath: "../../bootstrap/img/glyphicons-halflings-white.png";
+
+
+// Variables & Mixins
+@white: #FFFFFF;
+@lightgray: #DDDDDD;
+@blue: #049CDB;
+@lightblue: lighten(@blue, 20%);
+@red: #DA4F49;
+
+@tableBackgroundAccent: rgba(0, 0, 0, 0.05);
+@tableBackgroundHover: #D0D0EC;
+@tableBorder: #DDDDDD;
+@tableHeader: #E8E8E8;
+
+
+@navbarCollapseWidth: 840px;
+@media (min-width: @navbarCollapseWidth) {
+    #collapsed-nav { display: none !important; }
+    #full-nav      { display: inherit !important; }
+}
+@media (max-width: @navbarCollapseWidth) {
+    #collapsed-nav { display: inherit !important; }
+    #full-nav      { display: none !important; }
+}
+
+
+.bg-icon(@icon) {
+    background: url('../../images/icons/@{icon}') no-repeat;
+}
+
+.list-icon(@icon) {
+    list-style-image: url('../../images/icons/@{icon}');
+}
+
+.word-wrap(@wrap) {
+    word-wrap: normal;
+    word-break: normal;
+    -ms-word-break: normal;
+}
+
+.word-wrap(@wrap) when (@wrap = true) {
+    word-wrap: break-word;
+    word-break: break-all;
+    -ms-word-break: break-all;
+}
+
+@media (min-width: 981px) {
+    body {
+        padding-top: 60px;
+    }
+}
+
+body {
+    /*****************************************
+     * Start HTML entities
+     *****************************************/
+
+    h1, h2, h3, h4, h5, h6 {
+        margin: 0px 0px 6px 0px;
+    }
+
+    h2 {
+        border-bottom: 1px solid #593E1A;
+
+        &.page-title {
+            margin-bottom: 20px;
+        }
+    }
+
+    textarea {
+        width: 100%;
+        height: 10em;
+    }
+
+    caption {
+        font-weight: bold;
+    }
+
+    img.icon {
+        padding-right: 0.5em;
+        height: 16px;
+        width: 16px;
+    }
+
+    span {
+        &.user {
+            .bg-icon('user.png');
+            padding-left: 20px;
+        }
+
+        &.business {
+            .bg-icon('business.png');
+            padding-left: 20px;
+        }
+
+        &.project {
+            .bg-icon('project.png');
+            padding-left: 20px;
+        }
+    }
+
+    ul {
+        &.users {
+            li {
+                .list-icon('user.png');
+            }
+        }
+
+        &.businesses {
+            li {
+                .list-icon('business.png');
+                padding: 0.2em;
+            }
+        }
+
+        &.projects {
+            li {
+                .list-icon('project.png');
+                padding: 0.2em;
+            }
+        }
+    }
+
+    table {
+        @blue: #BBBFDD;
+        @lightblue: #DFDFEF;
+        @lightgray: #AAAAAA;
+        .desktop {
+            @media (max-width: 767px){
+                .hide;
+            }
+        }
+        thead{
+            background-color:#E8E8E8;
+        }
+        tbody tr > :first-child{
+            background-color:#E8E8E8 !important;
+        }
+        tr {
+            td {
+                &.break {
+                    .word-wrap(true);
+                }
+            }
+
+            &.emphasized-row {
+                background-color: @tableBackgroundAccent;
+            }
+            &.ledger_header th {
+                background-color: @lightblue !important;
+            }
+
+            &.before_from_date {
+                color: @lightgray;
+            }
+
+            &.daily_total {
+                background-color: @lightblue !important;
+                border-color: @blue;
+
+                td {
+                    border-right-color: @blue;
+                    border-left-color: @blue;
+                }
+            }
+
+            &.weekly_total {
+                background-color: @blue !important;
+            }
+        }
+    }
+
+    form {
+        .field-wrapper {
+            padding: 1em 0.1em 0.5em 0.1em;
+
+            label {
+                font-weight: bold;
+            }
+        }
+    }
+
+    /*****************************************
+     * End HTML entities
+     *****************************************/
+
+
+    /*****************************************
+     * Start general site-wide classes/ids
+     *****************************************/
+
+    .nav-pills li span {
+        display: block;
+        line-height: 14px;
+        padding: 8px 12px 8px 12px;
+        margin: 2px 2px 2px 0px;
+    }
+
+    .right {
+        float: right;
+    }
+
+    .dataTable {
+        width: 100%;
+
+        td {
+            background-color: #FF0000;
+            color: #FFFFFF;
+        }
+
+        td:empty {
+            background-color: #FFFFFF;
+        }
+
+        td:first-child {
+            background-color: #FFFFFF;
+            color: #000000;
+            min-width: 170px;
+        }
+
+        tr:first-child, tr:nth-last-child(2) {
+            td {
+                min-width: 75px;
+                color: #000000;
+                background-color: #FFFFFF;
+            }
+        }
+    }
+
+    // ENSURE CONSISTENT TH BG
+    .th-continued {background-color: @tableHeader;}
+    .table-hover tbody tr:hover > th { background-color: @tableHeader;}
+
+    .inline {
+        display: inline;
+    }
+
+    .nowrap {
+        white-space: nowrap
+    }
+
+    .popover {
+        max-width: 600px;
+        width: auto;
+        margin-top: 15px !important;
+        .popover-inner {
+            width: auto;
+            h3.popover-title {
+                font-size: 18px;
+                font-weight: bold;
+            }
+            .popover-content {
+                width: auto;
+                padding: 15px 15px 0 15px;
+            }
+        }
+    }
+
+    a#popover-toggle {
+        cursor: hand;
+        cursor: pointer;
+    }
+
+    .hidden {
+        display: none;
+    }
+
+    #active-popover {
+        .popover-title {
+            display: none;
+        }
+    }
+
+    .popover-content {
+        padding: 15px 15px 0 15px;
+        max-width: 600px;
+        height: 250px;
+        overflow-y:scroll;
+    }
+
+    #ui-datepicker-div {
+        font-size: 80%;
+    }
+
+    /*****************************************
+     * End general site-wide classes
+     *****************************************/
+
+
+    /*****************************************
+     * Start navbar classes
+     *****************************************/
+
+     .navbar {
+        .navbar-search {
+            input[type="text"]{
+                font-family: Helvetica, Arial, sans-serif;
+                color: @grayLight;
+                font-weight: normal;
+                line-height: 1;
+                margin-bottom: 0;
+                width: 100px;
+                border: 1px solid @black;
+                &:focus {
+                    width: 150px;
+                }
+            }
+        }
+     }
+
+    /*****************************************
+     * End navbar classes
+     *****************************************/
+
+
+    /*****************************************
+     * Start specific body ids
+     *****************************************/
+
+    &#user-timesheet {
+        #header {
+            margin-bottom: 25px;
+            #options-buttons {
+                margin-bottom: 20px;
+                margin-top: 10px;
+            }
+        }
+
+        .totals {
+            border: 0px;
+            empty-cells: hide;
+            border-radius: 0px;
+            -webkit-border-radius: 0px;
+            -moz-border-radius: 0px;
+
+            td {
+                border-bottom: 1px solid #DDD;
+                empty-cells: show;
+                &:last-child {
+                    border-right: 1px solid #DDD;
+                }
+            }
+        }
+
+        #full-timesheet {
+            width: 100%;
+            min-width: 800px;
+
+            table {
+                width: 100%;
+                table-layout: fixed;
+
+                th, td {
+                    width: 10%;
+                    overflow-x: auto;
+
+                    &.comments {
+                        width: 25%;
+                    }
+
+                    &.time {
+                        width: 7%;
+                        .word-wrap(false);
+                    }
+
+                    &.aux {
+                        width: 5%;
+                    }
+
+                    &.project {
+                        width: 13%;
+                    }
+
+                    &.activity {
+                        width: 15%;
+                    }
+                }
+            }
+        }
+
+        #hourly-summary {
+            table {
+                width: 100%;
+                table-layout: fixed;
+
+                th, td {
+                    &.billable, &.non-billable {
+                        width: 20%;
+                    }
+
+                    &.total {
+                        width: 15%;
+                    }
+                }
+            }
+        }
+    }
+
+    &#dashboard, &#contracts {
+        .negative-time {
+            color: @red;
+        }
+        #active-entry {
+            margin-bottom: 35px;
+            #active-buttons {
+                white-space: nowrap;
+                display: inline;
+                div {
+                    margin-bottom: 10px;
+                    margin-top: 5px;
+                }
+            }
+            #active-text {
+                font-size: 16px;
+            }
+        }
+        #progress, .contracts {
+            .progress {
+                border: 1px solid @lightgray;
+                margin-bottom: 0px;
+            }
+            .contract-progress {
+              height: 9px;
+            }
+            .bar, .remaining {
+                float: left;
+                overflow: hidden;
+                text-indent: 100%;
+                white-space: nowrap;
+            }
+            .bar-worked {
+                #gradient > .vertical(#62c462, #57a957);  // green
+            }
+            .bar-overtime {
+                #gradient > .vertical(#458745, #346534);  // dark green
+            }
+            .bar-yellow {
+                #gradient > .vertical(@yellow, @yellow);
+            }
+            .bar-red {
+                #gradient > .vertical(@red, @red);
+            }
+        }
+       #overall-progress {
+            #overall-label {
+                font-size: 16px;
+                margin-bottom: 3px;
+                span {
+                    font-weight: bold;
+                }
+            }
+            #overall-bar .progress {
+                height: 28px;
+            }
+        }
+        #project-progress, #contract-progress {
+            margin-top: 18px;
+            table {
+                table-layout: fixed;
+                td, th {
+                    overflow: hidden;
+                }
+                #active-project {
+                    background-color: #E2F3DD;
+                }
+                .progress-col {
+                    width: 50%;
+                }
+            }
+        }
+    }
+
+    &#billable-hours {
+        #chart-container {
+            margin-top: 10px;
+            margin-bottom: 20px;
+            #chart {
+                width: 100%;
+                min-height: 500px;
+            }
+        }
+        .filter {
+            margin: 0px 0px 20px 20px;
+
+            label.control-label, p > label {
+                font-size: 1.5em;
+                font-weight: bold;
+            }
+
+            ul {
+                list-style-type: none;
+                margin-left: 10px;
+
+                input {
+                    margin-top: -4px;
+                }
+            }
+
+            span {
+                font-size: 0.6em;
+                font-weight: normal;
+                float: right;
+                margin-right: 20px;
+            }
+
+            .control-group {
+                display: inline-block;
+                vertical-align: top;
+                width: 22%;
+                // height: 200px;
+                overflow: auto;
+                margin-right: 15px;
+
+                &.users {
+                    width: 25%;
+
+                    ul li {
+                        display: inline;
+                        float: left;
+                        width: 50%;
+                    }
+
+                    ul li:nth-child(even) {
+                        float: right;
+                    }
+                }
+            }
+
+            .dates {
+                div {
+                    display: block;
+                    width: auto;
+                    height: auto;
+                }
+
+                input {
+                    width: 100px;
+                    margin: 0px 10px 0px 0px;
+                }
+            }
+        }
+    }
+
+    &#project-hours {
+        form.right {
+            margin-left: 10px;
+        }
+
+        #schedule {
+            .hover {
+                background-color: @tableBackgroundHover !important;
+            }
+            .hours {
+                text-align: center !important;
+            }
+            .unpublished {
+                color: @red;
+            }
+        }
+    }
+
+    &#productivity-report {
+        #productivity-summary {
+            margin-top: 10px;
+            font-size: 16px;
+            span {
+                font-weight: bold;
+            }
+        }
+    }
+
+    &#hourly-report {
+        .controls {
+            width: 100%;
+        }
+    }
+
+    &#payroll-summary {
+        .hover {
+            background-color: @tableBackgroundHover !important;
+        }
+    }
+
+    &#contracts {
+        table .past {
+            font-weight: bold;
+            color: @red;
+        }
+    }
+
+    /*****************************************
+     * End specific body ids
+     *****************************************/
+
+    /*****************************************
+     * Start content
+     *****************************************/
+
+    #content {
+
+        /*****************************************
+         * Start general content
+         *****************************************/
+
+        form#date-filter table {
+            margin: 0;
+        }
+
+        form#date-filter input[name=from_date],
+        form#date-filter input[name=date],
+        form#date-filter input[name=to_date] {
+            width: 7em;
+        }
+
+        #cal_wrapper {
+            width: 900px;
+            margin: 10px 0px;
+        }
+
+        .cal_wrapper {
+            th {
+                padding-right: 4px;
+            }
+
+            .cal {
+                float: left;
+                padding: 18px;
+
+                &.left, &.right {
+                    background-color: #EDEDFF;
+                }
+
+                &.middle {
+                    background-color: #DFDFEF;
+                }
+            }
+        }
+
+        ul.date-filters {
+            margin: 0px 0px 1em;
+        }
+
+        ul.date-filters li {
+            list-style-type: none;
+        }
+
+        ul.date-filters ul {
+            margin: 0.2em 0;
+            font-size: 93%;
+        }
+
+        ul.date-filters ul li {
+            display: inline;
+            border-left: 1px solid lightgray;
+            padding: 0 0.2em 0 0.5em;
+        }
+
+        ul.date-filters ul li:first-child {
+            padding: 0 0.2em 0 0;
+            border-left: none;
+        }
+
+        ul.date-filters ul li.label {
+            padding: 1px 3px;
+            font-weight: bold;
+        }
+
+        ul.actions {
+            margin: 0;
+            font-size: 93%;
+        }
+
+        ul.actions li {
+            display: inline;
+            border-left: 1px solid lightgray;
+            padding: 0 0.2em 0 0.5em;
+        }
+
+        ul.actions li:first-child {
+            padding: 0 0.2em 0 0;
+            border-left: none;
+        }
+
+        .row {
+            margin-top: 13px;
+        }
+
+        .active {
+            color: inherit;
+        }
+
+        .hours {
+            text-align: right;
+        }
+
+        .pending_hours {
+            color: @green;
+        }
+
+        /*****************************************
+         * End general content
+         *****************************************/
+    }
+
+    blockquote{
+        font-style:italic;
+        margin-bottom: 0;
+    }
+
+
+    /*****************************************
+     * End content
+     *****************************************/
+}
+

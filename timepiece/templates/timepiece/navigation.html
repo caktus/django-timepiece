@@ -1,0 +1,79 @@
+{% load timepiece_tags %}
+
+<div class="navbar navbar-fixed-top navbar-inverse">
+    <div class="navbar-inner">
+
+        <div id="full-nav" class="container-fluid">
+            {% block navbar-left %}
+                <a class="brand" href="/">Timepiece</a>
+                <ul class="nav pull-left">
+                    {% include "timepiece/navigation-quick-clock-in.html" %}
+                    {% include "timepiece/navigation-timesheet.html" %}
+                    {% include "timepiece/navigation-crm.html" %}
+                    {% include "timepiece/navigation-management.html" %}
+
+                    {% include "timepiece/extra_nav.html" %}
+                </ul>
+            {% endblock navbar-left %}
+
+            {% block navbar-right %}
+                {% if user.is_authenticated %}
+                    <ul class="nav pull-right">
+                        <li class="dropdown">
+                            <a href="" class="dropdown-toggle" data-toggle="dropdown"><i class="icon-user icon-white"></i> {{ user.first_name }} <b class="caret"></b></a>
+                            <ul class="dropdown-menu">
+                                <li><a href="{% url 'edit_settings' %}">Settings</a></li>
+                                <li><a href="{% url 'change_password' %}">Change Password</a></li>
+                                <li class="divider"></li>
+                                <li><a href="{% url 'auth_logout' %}">Logout</a></li>
+                            </ul>
+                        </li>
+                    </ul>
+                {% else %}
+                    <a class="btn btn-primary pull-right" href="{% url 'auth_login' %}">Login</a>
+                {% endif %}
+
+                {% block quick-search %}
+                    {% if perms.crm.view_business %}
+                        <form id="quick_search" class="navbar-search pull-right" action="{% url 'quick_search' %}" method="post" accept-charset="utf-8">
+                            {% csrf_token %}
+                            {{ quick_search_form.quick_search }}
+                        </form>
+                        <script>
+                            $(document).ready(function() {
+                                var quick_search = $('#quick_search :input[name=quick_search_0]');
+                                quick_search.bind('djselectableselect', function(event, ui) {
+                                    $(this).parents('form').submit();
+                                });
+                            });
+                        </script>
+                    {% endif %}
+                {% endblock quick-search %}
+            {% endblock navbar-right %}
+        </div>
+
+        <div id="collapsed-nav" class="container-fluid">
+            <a class="brand" href="/">Timepiece</a>
+
+            {% if user.is_authenticated %}
+                <a class="btn btn-navbar" data-toggle="collapse" data-target=".nav-collapse">
+                    <span class="icon-bar"></span>
+                    <span class="icon-bar"></span>
+                    <span class="icon-bar"></span>
+                </a>
+            {% endif %}
+
+            <div class="nav-collapse">
+                <ul class="nav">
+                    {% if perms.entries.add_entry %}
+                        <li><a href="{% url 'dashboard' %}">Dashboard</a></li>
+                        <li><a href="{% url 'view_user_timesheet' request.user.pk %}">Time Sheet</a></li>
+                        <li><a href="{% url 'view_schedule' %}">Schedule</a></li>
+                        <li><a href="{% url 'create_entry' %}">Add Entry</a></li>
+                        <li><a href="{% url 'auth_logout' %}">Logout</a></li>
+                    {% endif %}
+                </ul>
+            </div>
+        </div>
+    </div>
+</div>

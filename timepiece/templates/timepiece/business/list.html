@@ -1,0 +1,49 @@
+{% extends "timepiece/business/base.html" %}
+{% load bootstrap3 %}
+
+{% block title %}Businesses{% endblock title %}
+
+{% block content %}
+    <div class="row-fluid">
+        <div class="span12">
+            <h2>Businesses</h2>
+            <ul class="nav nav-pills">
+                {% if perms.crm.add_business %}
+                    <li><a href='{% url 'create_business' %}'>Create Business</a></li>
+                {% endif %}
+            </ul>
+        </div>
+    </div>
+
+    <div class="row-fluid">
+        <div class="span12">
+            <form class='form-inline' accept-charset='UTF-8' method='get' action=''>
+                {% bootstrap_form form layout='inline' %}
+                <button type='submit' class='btn' name='submit'>Search</button>
+            </form>
+        </div>
+    </div>
+
+    <div class="row-fluid">
+        <div class="span12">
+            {% include "timepiece/pagination.html" %}
+            <table class='table table-bordered table-striped table-condensed'>
+                <thead>
+                    <tr>
+                        <th>Name</th>
+                        <th>Description</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for business in object_list %}
+                        <tr>
+                            <td><a href='{% url 'view_business' business.pk %}'>{{ business.name }}</a></td>
+                            <td>{{ business.description|truncatewords:8 }}</td>
+                        </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+            {% include "timepiece/pagination.html" %}
+        </div>
+    </div>
+{% endblock content %}

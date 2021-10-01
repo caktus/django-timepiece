@@ -1,0 +1,22 @@
+<script>
+    function update_dates(node) {
+        var from_date = $("#id_from_date");
+        var to_date = $("#id_to_date");
+        from_date.val($(node).attr("from_date"));
+        to_date.val($(node).attr("to_date"));
+        $("#{{ form_id }}").submit();
+    };
+</script>
+
+<ul class="date-filters">
+    {% for filter_category, filter_list in filters.items %}
+        <li>
+            <ul>
+                <li class="label">{{ filter_category }}</li>
+                {% for label, from_date, to_date in filter_list %}
+                    <li><a href="javascript:void(0);" class="date-filter" from_date="{{ from_date }}" to_date="{{ to_date }}" onclick="update_dates(this);">{{ label }}</a></li>
+                {% endfor %}
+            </ul>
+        </li>
+    {% endfor %}
+</ul>

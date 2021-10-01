@@ -1,0 +1,35 @@
+{% extends 'timepiece/base.html' %}
+
+{% load bootstrap3 %}
+{% load static %}
+
+{% block crumbs %}
+    {{ block.super }}
+    <li><span class="divider">/</span> <a href="{% url 'clock_out' %}">Clock Out</a></li>
+{% endblock crumbs %}
+
+{% block title %}Clock Out of {{ entry.project }}{% endblock title %}
+
+{% block extrajs %}
+    <script charset="utf-8" src="{% static "timepiece/js/prevent_double_click.js" %}"></script>
+{% endblock extrajs %}
+
+{% block content %}
+    <div class="row-fluid">
+        <div class="span12">
+            <h2>Clock Out of {{ entry.activity.name }} on {{ entry.project }}</h2>
+
+            <br style="clear: both;" />
+
+            <form class="form-horizontal prevent-doubleclick" accept-charset="utf-8"
+                    action="" method="post">
+                {% csrf_token %}
+                {% bootstrap_form form layout='horizontal' %}
+                <div class="form-actions">
+                    <input class="btn btn-primary" type="submit" name="submit" value="Clock Out" />
+                    <input class="btn" type="button" value="Cancel" onclick="history.back()" />
+                </div>
+            </form>
+        </div>
+    </div>
+{% endblock content %}
