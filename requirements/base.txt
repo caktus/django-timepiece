@@ -1,4 +1,4 @@
-Django>=1.7,<1.9
+Django>=3.2
 
 django-bootstrap-toolkit>=2.15.0
 django-compressor>=1.5
