@@ -57,7 +57,7 @@
             <form class="form-horizontal prevent-doubleclick" accept-charset="utf-8"
                     action="" method="post">
                 {% csrf_token %}
-                {% bootstrap_form form layout='horizontal' %}
+                {% bootstrap_form form layout='horizontal' field_class="controls" form_group_class="control-group" %}
                 <div class="form-actions">
                     <input class="btn btn-primary" type="submit" name="submit" value="Clock In" />
                     <input class="btn cancel" type="button" value="Cancel" onclick="history.back()" />

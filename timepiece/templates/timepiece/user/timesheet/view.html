@@ -53,7 +53,7 @@
 
             {# We have to duplicate the form so the hidden fields are not in the same form #}
             <form class="form-inline visible-desktop" method="get" action="" accept-charset="utf-8">
-                {% bootstrap_form year_month_form layout='inline' %}
+                {% bootstrap_form year_month_form layout='inline' form_group_class="control-group" %}
                 <input type="submit" name="yearmonth" class="btn" value="Update" />
             </form>
             <form class="hidden-desktop" method="get" action="" accept-charset="utf-8">

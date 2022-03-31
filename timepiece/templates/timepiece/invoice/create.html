@@ -19,7 +19,7 @@
         <div class="span8">
             <form class="form-horizontal" method="post">
                 {% csrf_token %}
-				{% bootstrap_form invoice_form layout='horizontal' %}
+				{% bootstrap_form invoice_form layout='horizontal' field_class="controls" form_group_class="control-group" %}
                 <input class="btn btn-primary" type='submit' name='submit' value='Create Invoice' />
                 <input class="btn" type='button' value='Cancel' onclick='history.go(-1)' />
             </form>

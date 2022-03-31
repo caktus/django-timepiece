@@ -33,7 +33,7 @@
     <div class="row-fluid">
         <div class="span12">
             <form class="form-horizontal" action="" method="GET">
-                {% bootstrap_form form layout='horizontal' %}
+                {% bootstrap_form form layout='horizontal' field_class="controls" form_group_class="control-group" %}
                 <button type="submit" class="btn btn-primary">Submit</button>
                 <button type="submit" class="btn" name="export" value="True">Export as CSV</button>
             </form>

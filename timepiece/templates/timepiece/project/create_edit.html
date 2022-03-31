@@ -24,7 +24,7 @@
 
             <form id="create-edit-project" class="form-horizontal" action="" method="post" accept-charset="utf-8">
                 {% csrf_token %}
-                {% bootstrap_form form layout='horizontal' %}
+                {% bootstrap_form form layout='horizontal' field_class="controls" form_group_class="control-group" %}
                 <div class="form-actions">
                     <input class="btn btn-primary" type='submit' name='submit' value='Save' />
                     <input class="btn" type='button' value='Cancel' onclick='history.go(-1)' />

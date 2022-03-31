@@ -68,7 +68,7 @@
             {% if perms.crm.add_projectrelationship %}
                 <form class="form-inline" action="{% url 'create_relationship' %}?user_id={{ object.pk }}&next={{ next_url|add_parameters:request.GET|urlencode }}" method="post" accept-charset="utf-8">
                     {% csrf_token %}
-					{% bootstrap_form add_project_form layout='inline' %}
+					{% bootstrap_form add_project_form layout='inline' form_group_class="control-group" %}
                     <input class="btn" type="submit" name="submit" id="submit" value="Add" />
                 </form>
             {% endif %}
