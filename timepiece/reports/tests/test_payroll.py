@@ -279,6 +279,29 @@ class PayrollTest(ViewTestMixin, LogTimeMixin, TestCase):
 
         self.assertEquals(totals['grand_total'], Decimal('230.00'))
 
+    def testCSVExport(self):
+        self._setupMonthlyTotals()
+        response = self.client.get(self.url, dict(self.args, **{'export': True}))
+        rows = [row.split(',') for row in response.content.decode().strip().split('\r\n')]
+
+        # Well-formed CSV: all rows are same length
+        length = len(rows[0])
+        for row in rows:
+            self.assertEqual(length, len(row))
+
+        # Expected headers are present
+        labels = self.response.context['labels']
+        # minimum: "Name", "Total Worked Hours", "Grand Total"
+        headers_length = 3
+        # headers for each category of hours
+        if 'billable' in labels.keys():
+            headers_length += (len(labels['billable']) * 2) + 2
+        if 'nonbillable' in labels.keys():
+            headers_length += (len(labels['nonbillable']) * 2) + 2
+        if 'leave' in labels.keys():
+            headers_length += len(labels['leave']) + 1
+        self.assertEqual(length, headers_length)
+
     def testNoPermission(self):
         """
         Regular users shouldn't be able to retrieve the payroll report
