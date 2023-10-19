@@ -16,6 +16,7 @@ from django.views.generic import TemplateView
 
 from timepiece import utils
 from timepiece.utils.csv import CSVViewMixin, DecimalEncoder
+from timepiece.utils.views import cbv_decorator
 
 from timepiece.contracts.models import ProjectContract
 from timepiece.entries.models import Entry, ProjectHours
@@ -380,6 +381,134 @@ def report_payroll_summary(request):
         'unapproved': unapproved,
         'labels': labels,
     })
+
+
+@cbv_decorator(permission_required('entries.view_payroll_summary'))
+class ReportPayrollSummary(CSVViewMixin, TemplateView):
+    template_name = 'timepiece/reports/payroll_summary.html'
+
+    def get_context_data(self, **kwargs):
+        context = super(ReportPayrollSummary, self).get_context_data(**kwargs)
+        request = self.request
+        date = timezone.now() - relativedelta(months=1)
+        from_date = utils.get_month_start(date).date()
+        to_date = from_date + relativedelta(months=1)
+
+        year_month_form = PayrollSummaryReportForm(request.GET or None, initial={
+            'month': from_date.month,
+            'year': from_date.year,
+        })
+
+        if year_month_form.is_valid():
+            from_date, to_date = year_month_form.save()
+        last_billable = utils.get_last_billable_day(from_date)
+        projects = utils.get_setting('TIMEPIECE_PAID_LEAVE_PROJECTS')
+        weekQ = Q(end_time__gt=utils.get_week_start(from_date),
+                  end_time__lt=last_billable + relativedelta(days=1))
+        monthQ = Q(end_time__gt=from_date, end_time__lt=to_date)
+        workQ = ~Q(project__in=projects.values())
+        statusQ = Q(status=Entry.INVOICED) | Q(status=Entry.APPROVED)
+        # Weekly totals
+        week_entries = Entry.objects.date_trunc('week').filter(
+            weekQ, statusQ, workQ
+        )
+        date_headers = generate_dates(from_date, last_billable, by='week')
+        weekly_totals = list(get_project_totals(week_entries, date_headers,
+                                                'total', overtime=True))
+        # Monthly totals
+        leave = Entry.objects.filter(monthQ, ~workQ)
+        leave = leave.values('user', 'hours', 'project__name')
+        extra_values = ('project__type__label',)
+        month_entries = Entry.objects.date_trunc('month', extra_values)
+        month_entries_valid = month_entries.filter(monthQ, statusQ, workQ)
+        labels, monthly_totals = get_payroll_totals(month_entries_valid, leave)
+        # Unapproved and unverified hours
+        entries = Entry.objects.filter(monthQ).order_by()  # No ordering
+        user_values = ['user__pk', 'user__first_name', 'user__last_name']
+        unverified = entries.filter(status=Entry.UNVERIFIED, user__is_active=True) \
+                            .values_list(*user_values).distinct()
+        unapproved = entries.filter(status=Entry.VERIFIED) \
+                            .values_list(*user_values).distinct()
+        context.update({
+            'from_date': from_date,
+            'year_month_form': year_month_form,
+            'date_headers': date_headers,
+            'weekly_totals': weekly_totals,
+            'monthly_totals': monthly_totals,
+            'unverified': unverified,
+            'unapproved': unapproved,
+            'labels': labels,
+        })
+
+        return context
+
+    def convert_context_to_csv(self, context):
+        """Convert the context dictionary into a CSV file."""
+        content = []
+        headers = ['Name']
+        labels = context['labels']
+        monthly_totals = context['monthly_totals']
+
+        # Header row setup
+        TYPES = ['hours', 'percent']
+        if labels.get('billable', None):
+            for label in labels.get('billable'):
+                for type in TYPES:
+                    headers.append('Billable Projects: %s (%s)' % (label, type))
+            for type in TYPES:
+                headers.append('Total Billable Hours (%s)' % type)
+
+        if labels.get('nonbillable', None):
+            for label in labels.get('nonbillable'):
+                for type in TYPES:
+                    headers.append('Non-Billable Projects: %s (%s)' % (label, type))
+            for type in TYPES:
+                headers.append('Total Non-Billable Hours (%s)' % type)
+
+        headers.append('Total Worked Hours')
+
+        if labels.get('leave', None):
+            for label in labels.get('leave'):
+                headers.append('Paid Leave: %s' % label)
+            headers.append('Total Leave Hours')
+
+        headers.append('Grand Total')
+
+        content.append(headers)
+
+        for row in monthly_totals:
+            data = []
+            data.append(row['name'])
+            if labels.get('billable', None):
+                for entry in row.get('billable'):
+                    data.append(entry.get('hours',''))
+                    data.append(entry.get('percent',''))
+            if labels.get('nonbillable', None):
+                for entry in row.get('nonbillable'):
+                    data.append(entry.get('hours',''))
+                    data.append(entry.get('percent',''))
+            data.append(row.get('work_total'))
+            if labels.get('leave', None):
+                for entry in row.get('leave'):
+                    data.append(entry.get('hours'))
+            data.append(row.get('grand_total'))
+
+            content.append(data)
+
+        return content
+
+    def get(self, request, *args, **kwargs):
+        self.export = request.GET.get('export', False)
+        context = self.get_context_data()
+        kls = CSVViewMixin if self.export else TemplateView
+        return kls.render_to_response(self, context)
+
+    def get_filename(self, context):
+        request = self.request.GET.copy()
+        month = request.get('month', 'month')
+        year = request.get('year', 'year')
+        return 'hours_{0}_{1}.csv'.format(
+            month, year, )
 
 
 @permission_required('entries.view_entry_summary')

@@ -9,7 +9,7 @@ urlpatterns = [
         name='report_hourly'),
 
     url(r'^reports/payroll/$',
-        views.report_payroll_summary,
+        views.ReportPayrollSummary.as_view(),
         name='report_payroll_summary'),
 
     url(r'^reports/billable_hours/$',
