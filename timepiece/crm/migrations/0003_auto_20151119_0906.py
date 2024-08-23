@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 from __future__ import unicode_literals
 
+import django.db.models.deletion
 from django.db import migrations, models
 
 
@@ -29,7 +30,7 @@ class Migration(migrations.Migration):
         migrations.AlterField(
             model_name='project',
             name='activity_group',
-            field=models.ForeignKey(verbose_name='restrict activities to', null=True, blank=True, to='entries.ActivityGroup', related_name='activity_group'),
+            field=models.ForeignKey(verbose_name='restrict activities to', null=True, blank=True, to='entries.ActivityGroup', related_name='activity_group', on_delete=django.db.models.deletion.CASCADE),
         ),
         migrations.AlterField(
             model_name='project',

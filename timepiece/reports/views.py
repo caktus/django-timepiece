@@ -213,8 +213,7 @@ class HourlyReport(ReportMixin, CSVViewMixin, TemplateView):
 
             entries = entries.order_by('project__type__label', 'project__name',
                                        'project__id', 'date')
-            func = lambda x: x['project__type__label']
-            for label, group in groupby(entries, func):
+            for label, group in groupby(entries, lambda x: x['project__type__label']):
                 title = label + ' Projects'
                 summaries.append((
                     title,
@@ -481,12 +480,12 @@ class ReportPayrollSummary(CSVViewMixin, TemplateView):
             data.append(row['name'])
             if labels.get('billable', None):
                 for entry in row.get('billable'):
-                    data.append(entry.get('hours',''))
-                    data.append(entry.get('percent',''))
+                    data.append(entry.get('hours', ''))
+                    data.append(entry.get('percent', ''))
             if labels.get('nonbillable', None):
                 for entry in row.get('nonbillable'):
-                    data.append(entry.get('hours',''))
-                    data.append(entry.get('percent',''))
+                    data.append(entry.get('hours', ''))
+                    data.append(entry.get('percent', ''))
             data.append(row.get('work_total'))
             if labels.get('leave', None):
                 for entry in row.get('leave'):
@@ -559,8 +558,7 @@ def report_productivity(request):
             vals = ('user', 'user__first_name', 'user__last_name')
             ausers = list(actuals.values_list(*vals).distinct())
             pusers = list(projections.values_list(*vals).distinct())
-            key = lambda x: (x[1] + x[2]).lower()  # Sort by name
-            users = sorted(list(set(ausers + pusers)), key=key)
+            users = sorted(list(set(ausers + pusers)), key=lambda x: (x[1] + x[2]).lower())  # sort by name
 
             # Report for each user.
             for user in users:

@@ -24,7 +24,7 @@ class TestQuickSearchView(ViewTestMixin, TestCase):
         response = self._post(data={
             'quick_search_1': 'user-12345',
         })
-        self.assertEquals(response.status_code, 200)
+        self.assertEqual(response.status_code, 200)
         self.assertTemplateUsed(self.template_name)
         self.assertFalse(response.context['form'].is_valid())
 
@@ -39,7 +39,7 @@ class TestQuickSearchView(ViewTestMixin, TestCase):
         response = self._post(data={
             'quick_search_1': 'business-12345',
         })
-        self.assertEquals(response.status_code, 200)
+        self.assertEqual(response.status_code, 200)
         self.assertTemplateUsed(self.template_name)
         self.assertFalse(response.context['form'].is_valid())
 
@@ -54,7 +54,7 @@ class TestQuickSearchView(ViewTestMixin, TestCase):
         response = self._post(data={
             'quick_search_1': 'project-12345',
         })
-        self.assertEquals(response.status_code, 200)
+        self.assertEqual(response.status_code, 200)
         self.assertTemplateUsed(response, self.template_name)
         self.assertFalse(response.context['form'].is_valid())
 
@@ -62,7 +62,7 @@ class TestQuickSearchView(ViewTestMixin, TestCase):
         response = self._post(data={
             'quick_search_1': 'project no dash 12345',
         })
-        self.assertEquals(response.status_code, 200)
+        self.assertEqual(response.status_code, 200)
         self.assertTemplateUsed(response, self.template_name)
         self.assertFalse(response.context['form'].is_valid())
 
@@ -70,7 +70,7 @@ class TestQuickSearchView(ViewTestMixin, TestCase):
         response = self._post(data={
             'quick_search_1': 'hello-12345',
         })
-        self.assertEquals(response.status_code, 200)
+        self.assertEqual(response.status_code, 200)
         self.assertTemplateUsed(response, self.template_name)
         self.assertFalse(response.context['form'].is_valid())
 
@@ -78,6 +78,6 @@ class TestQuickSearchView(ViewTestMixin, TestCase):
         response = self._post(data={
             'quick_search_1': '',
         })
-        self.assertEquals(response.status_code, 200)
+        self.assertEqual(response.status_code, 200)
         self.assertTemplateUsed(response, self.template_name)
         self.assertFalse(response.context['form'].is_valid())

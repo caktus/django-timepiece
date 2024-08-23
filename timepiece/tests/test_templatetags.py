@@ -17,7 +17,7 @@ class HumanizeTimeTestCase(TestCase):
     def test_seconds(self):
         seconds_display = tags.humanize_seconds((5.5 * 3600) + 3)
         expected = u'05:30:03'
-        self.assertEquals(
+        self.assertEqual(
             seconds_display, expected,
             "Should return {0}, returned {1}".format(expected, seconds_display)
         )
@@ -27,7 +27,7 @@ class HumanizeTimeTestCase(TestCase):
         expected = u'-02:30:04'
         self.assertTrue(seconds_display.startswith('<span'))
         self.assertTrue('negative-time' in seconds_display)
-        self.assertEquals(
+        self.assertEqual(
             strip_tags(seconds_display), expected,
             "Should return {0}, returned {1}".format(expected, seconds_display)
         )
@@ -35,7 +35,7 @@ class HumanizeTimeTestCase(TestCase):
     def test_seconds_overnight(self):
         seconds_display = tags.humanize_seconds((30 * 3600) + 2)
         expected = u'30:00:02'
-        self.assertEquals(
+        self.assertEqual(
             seconds_display, expected,
             "Should return {0}, returned {1}".format(expected, seconds_display)
         )
@@ -43,7 +43,7 @@ class HumanizeTimeTestCase(TestCase):
     def test_seconds_format(self):
         seconds_display = tags.humanize_seconds(120, '{minutes:02d}:{minutes}')
         expected = u'02:2'
-        self.assertEquals(
+        self.assertEqual(
             seconds_display, expected,
             "Should return {0}, returned {1}".format(expected, seconds_display)
         )
@@ -51,7 +51,7 @@ class HumanizeTimeTestCase(TestCase):
     def test_seconds_negative_format(self):
         seconds_display = tags.humanize_seconds(-120, None, '-{minutes:02d}')
         expected = u'-02'
-        self.assertEquals(
+        self.assertEqual(
             seconds_display, expected,
             "Should return {0}, returned {1}".format(expected, seconds_display)
         )
@@ -59,7 +59,7 @@ class HumanizeTimeTestCase(TestCase):
     def test_hours(self):
         hours_display = tags.humanize_hours(7.5)
         expected = u'07:30:00'
-        self.assertEquals(
+        self.assertEqual(
             hours_display, expected,
             "Should return {0}, returned {1}".format(expected, hours_display)
         )
@@ -67,7 +67,7 @@ class HumanizeTimeTestCase(TestCase):
     def test_hours_format(self):
         hours_display = tags.humanize_hours(7.1, '{minutes:02d}:{minutes}')
         expected = u'06:6'
-        self.assertEquals(
+        self.assertEqual(
             hours_display, expected,
             "Should return {0}, returned {1}".format(expected, hours_display)
         )
@@ -346,13 +346,13 @@ class CreateDictTest(TestCase):
 
     def test_create_dict(self):
         retVal = tags.create_dict(foo='bar', a='b')
-        self.assertEquals(len(retVal), 2)
-        self.assertEquals(retVal['foo'], 'bar')
-        self.assertEquals(retVal['a'], 'b')
+        self.assertEqual(len(retVal), 2)
+        self.assertEqual(retVal['foo'], 'bar')
+        self.assertEqual(retVal['a'], 'b')
 
     def test_create_empty_dict(self):
         retVal = tags.create_dict()
-        self.assertEquals(retVal, {})
+        self.assertEqual(retVal, {})
 
 
 class AddTimezoneTest(TestCase):
@@ -360,4 +360,4 @@ class AddTimezoneTest(TestCase):
     def test_add_timezone(self):
         d = datetime.datetime.now()
         retVal = tags.add_timezone(d)
-        self.assertEquals(retVal, utils.add_timezone(d))
+        self.assertEqual(retVal, utils.add_timezone(d))

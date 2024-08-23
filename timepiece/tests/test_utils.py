@@ -32,7 +32,7 @@ class UtilityFunctionsTest(TestCase):
 
     def test_get_last_billable_day(self):
         for idx, date in enumerate(self.dates):
-            self.assertEquals(
+            self.assertEqual(
                 self.last_billable[idx], utils.get_last_billable_day(date))
 
 

@@ -5,7 +5,7 @@ from dateutil.relativedelta import relativedelta
 
 from django.contrib.auth.models import Permission
 from django.core.exceptions import ValidationError
-from django.core.urlresolvers import reverse
+from django.urls import reverse
 from django.test import TestCase
 from django.utils import timezone
 
@@ -20,9 +20,12 @@ class ContractListTestCase(ViewTestMixin, TestCase):
     perm_names = [('contracts', 'add_projectcontract')]
 
     def setUp(self):
-        get_perm = lambda ct, n: Permission.objects.get(
-            content_type__app_label=ct, codename=n)
-        self.permissions = [get_perm(*perm) for perm in self.perm_names]
+        self.permissions = [
+            Permission.objects.get(
+                content_type__app_label=perm[0],
+                codename=perm[1]
+            ) for perm in self.perm_names
+        ]
 
         self.user = factories.User()
         self.user.user_permissions.add(*self.permissions)
@@ -93,9 +96,12 @@ class ContractViewTestCase(ViewTestMixin, TestCase):
         return (self.contract.pk,)
 
     def setUp(self):
-        get_perm = lambda ct, n: Permission.objects.get(
-            content_type__app_label=ct, codename=n)
-        self.permissions = [get_perm(*perm) for perm in self.perm_names]
+        self.permissions = [
+            Permission.objects.get(
+                content_type__app_label=perm[0],
+                codename=perm[1]
+            ) for perm in self.perm_names
+        ]
 
         self.user = factories.User()
         self.user.user_permissions.add(*self.permissions)
@@ -319,8 +325,8 @@ class ProjectContractEntryTestCase(TestCase):
             factories.Entry(**{
                 'user': self.user_b,
                 'project': self.project_b,
-                'start_time': timezone.now() - relativedelta(days=x),
-                'end_time':  (timezone.now() - relativedelta(days=x)) + relativedelta(hours=1),
+                'start_time': timezone.now() - relativedelta(days=x) + relativedelta(hours=2),
+                'end_time':  (timezone.now() - relativedelta(days=x)) + relativedelta(hours=3),
                 'seconds_paused': 0,
                 'status': Entry.UNVERIFIED,
             })

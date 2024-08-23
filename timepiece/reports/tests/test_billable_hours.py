@@ -3,7 +3,7 @@ from dateutil.relativedelta import relativedelta
 import json
 
 from django.contrib.auth.models import Permission
-from django.core.urlresolvers import reverse
+from django.urls import reverse
 from django.db.models import Q
 
 from timepiece.forms import DATE_FORM_FORMAT
@@ -25,7 +25,7 @@ class TestBillableHours(ViewTestMixin, LogTimeMixin, ReportsTestBase):
         self.url = reverse('report_billable_hours')
         self.perm = Permission.objects.filter(codename='view_entry_summary')
         self.admin = factories.User()
-        self.admin.user_permissions = self.perm
+        self.admin.user_permissions.set(self.perm)
 
     def get_entries_data(self):
         # Account for the day added by the form

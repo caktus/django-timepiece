@@ -1,5 +1,4 @@
 from functools import reduce
-from optparse import make_option
 
 from dateutil.relativedelta import relativedelta
 
@@ -22,33 +21,32 @@ class Command(BaseCommand):
     help = ("Check the database for time entries that overlap.\n"
             "Use --help for options.")
 
-    option_list = BaseCommand.option_list + (
-        make_option('--thisweek',
-                    action='store_true',
-                    dest='week',
-                    default=False,
-                    help='Show entries from this week only'),
-        make_option('--thismonth',
-                    action='store_true',
-                    dest='month',
-                    default=False,
-                    help='Show entries from this month only'),
-        make_option('-y', '--thisyear',
-                    action='store_true',
-                    dest='year',
-                    default=False,
-                    help='Show entries from this year only'),
-        make_option('-a', '--all', '--forever',
-                    action='store_true',
-                    dest='all',
-                    default=False,
-                    help='Show entries from all recorded history'),
-        make_option('-d', '--days',
-                    dest='days',
-                    type='int',
-                    default=0,
-                    help='Show entries for the last n days only'),
-    )
+    def add_arguments(self, parser):
+        parser.add_argument('--thisweek',
+                            action='store_true',
+                            dest='week',
+                            default=False,
+                            help='Show entries from this week only')
+        parser.add_argument('--thismonth',
+                            action='store_true',
+                            dest='month',
+                            default=False,
+                            help='Show entries from this month only')
+        parser.add_argument('-y', '--thisyear',
+                            action='store_true',
+                            dest='year',
+                            default=False,
+                            help='Show entries from this year only')
+        parser.add_argument('-a', '--all', '--forever',
+                            action='store_true',
+                            dest='all',
+                            default=False,
+                            help='Show entries from all recorded history')
+        parser.add_argument('-d', '--days',
+                            dest='days',
+                            type='int',
+                            default=0,
+                            help='Show entries for the last n days only')
 
     def usage(self, subcommand):
         usage = "python manage.py check_entries {} [options]\n\n{}".format(
@@ -138,9 +136,11 @@ class Command(BaseCommand):
         Return all users if there are no args provided.
         """
         if args:
-            names = reduce(lambda query, arg: query |
+            names = reduce(
+                lambda query, arg: query |
                 (Q(first_name__icontains=arg) | Q(last_name__icontains=arg)),
-                args, Q())  # noqa
+                args, Q()
+            )  # noqa
             users = User.objects.filter(names)
         # If no args given, check every user
         else:
@@ -187,7 +187,7 @@ class Command(BaseCommand):
 
     def show_overlap(self, entry_a, entry_b=None, **kwargs):
         def make_output_data(entry):
-            return{
+            return {
                 'first_name': entry.user.first_name,
                 'last_name': entry.user.last_name,
                 'entry': entry.id,

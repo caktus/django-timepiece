@@ -28,8 +28,8 @@ class CSVViewMixin(object):
         return response
 
     def get_filename(self, context):
-        raise NotImplemented('You must implement this in the subclass')
+        raise NotImplementedError('You must implement this in the subclass')
 
     def convert_context_to_csv(self, context):
         """Convert the context dictionary into a CSV file."""
-        raise NotImplemented('You must implement this in the subclass')
+        raise NotImplementedError('You must implement this in the subclass')

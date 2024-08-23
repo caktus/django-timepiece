@@ -30,8 +30,8 @@ Features
 Requirements
 ------------
 
-django-timepiece is compatible with Django 1.8 (on Python 2.7 and Python 3.5) and
-Django 1.9 (on Python 2.7 and Python 3.5). PostgreSQL is the only
+django-timepiece is compatible with Django 4.2 (on Python 3.9+) and
+Django 5.1 (Python 3.10+). PostgreSQL is the only
 officially supported backend. For a full list of required libraries, see
 the `requirements/base.txt` from the project source on `GitHub`_.
 
@@ -68,7 +68,7 @@ Installation
 
     $ pip install django-timepiece
 
-#. Ensure that `less`_ is installed on your machine and the version is <=1.4.0::
+#. Ensure that `less`_ is installed on your machine and the version is >=4.2.0::
 
     # Install node.js and npm:
     $ sudo apt-get install python-software-properties

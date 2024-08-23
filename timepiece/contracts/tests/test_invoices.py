@@ -5,7 +5,7 @@ import random
 from six.moves.urllib.parse import urlencode
 
 from django.contrib.auth.models import Permission
-from django.core.urlresolvers import reverse
+from django.urls import reverse
 from django.test import TestCase
 
 from timepiece import utils
@@ -40,9 +40,9 @@ class TestListInvoicesView(ViewTestMixin, TestCase):
         """If no filters are provided, all objects should be listed."""
         object_list = [self.factory.create() for i in range(3)]
         response = self._get()
-        self.assertEquals(response.status_code, 200)
+        self.assertEqual(response.status_code, 200)
         self.assertTemplateUsed(response, self.template_name)
-        self.assertEquals(response.context['object_list'].count(), 3)
+        self.assertEqual(response.context['object_list'].count(), 3)
         for obj in object_list:
             self.assertTrue(obj in response.context['object_list'])
 
@@ -50,35 +50,35 @@ class TestListInvoicesView(ViewTestMixin, TestCase):
         """Page should render if there is one object & no search query."""
         obj = self.factory.create()
         response = self._get()
-        self.assertEquals(response.status_code, 200)
+        self.assertEqual(response.status_code, 200)
         self.assertTemplateUsed(response, self.template_name)
-        self.assertEquals(response.context['object_list'].count(), 1)
-        self.assertEquals(response.context['object_list'].get(), obj)
+        self.assertEqual(response.context['object_list'].count(), 1)
+        self.assertEqual(response.context['object_list'].get(), obj)
 
     def test_no_results(self):
         """Page should render if there are no search results."""
         self.factory.create()
         response = self._get(get_kwargs={'search': 'hello'})
-        self.assertEquals(response.status_code, 200)
+        self.assertEqual(response.status_code, 200)
         self.assertTemplateUsed(response, self.template_name)
-        self.assertEquals(response.context['object_list'].count(), 0)
+        self.assertEqual(response.context['object_list'].count(), 0)
 
     def test_one_result(self):
         """Page should render if there is only one search result."""
         obj = self.factory.create(comments='hello')
         response = self._get(get_kwargs={'search': 'hello'})
-        self.assertEquals(response.status_code, 200)
+        self.assertEqual(response.status_code, 200)
         self.assertTemplateUsed(response, self.template_name)
-        self.assertEquals(response.context['object_list'].count(), 1)
-        self.assertEquals(response.context['object_list'].get(), obj)
+        self.assertEqual(response.context['object_list'].count(), 1)
+        self.assertEqual(response.context['object_list'].get(), obj)
 
     def test_multiple_results(self):
         """Page should render if there are multiple search results."""
         obj_list = [self.factory.create(comments='hello') for i in range(2)]
         response = self._get(get_kwargs={'search': 'hello'})
-        self.assertEquals(response.status_code, 200)
+        self.assertEqual(response.status_code, 200)
         self.assertTemplateUsed(response, self.template_name)
-        self.assertEquals(response.context['object_list'].count(), 2)
+        self.assertEqual(response.context['object_list'].count(), 2)
         for obj in obj_list:
             self.assertTrue(obj in response.context['object_list'])
 
@@ -87,32 +87,32 @@ class TestListInvoicesView(ViewTestMixin, TestCase):
         obj = self.factory.create(number='hello')
         self.factory.create()
         response = self._get(get_kwargs={'search': 'hello'})
-        self.assertEquals(response.status_code, 200)
-        self.assertEquals(response.context['object_list'].get(), obj)
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.context['object_list'].get(), obj)
 
     def test_filter_comments(self):
         """User should be able to filter by search query."""
         obj = self.factory.create(comments='hello')
         self.factory.create()
         response = self._get(get_kwargs={'search': 'hello'})
-        self.assertEquals(response.status_code, 200)
-        self.assertEquals(response.context['object_list'].get(), obj)
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.context['object_list'].get(), obj)
 
     def test_filter_project_name(self):
         """User should be able to filter by search query."""
         obj = self.factory.create(project__name='hello')
         self.factory.create()
         response = self._get(get_kwargs={'search': 'hello'})
-        self.assertEquals(response.status_code, 200)
-        self.assertEquals(response.context['object_list'].get(), obj)
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.context['object_list'].get(), obj)
 
     def test_filter_user_username(self):
         """User should be able to filter by search query."""
         obj = self.factory.create(user__username='hello')
         self.factory.create()
         response = self._get(get_kwargs={'search': 'hello'})
-        self.assertEquals(response.status_code, 200)
-        self.assertEquals(response.context['object_list'].get(), obj)
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.context['object_list'].get(), obj)
 
 
 class InvoiceViewPreviousTestCase(ViewTestMixin, LogTimeMixin, TestCase):
@@ -204,7 +204,7 @@ class InvoiceViewPreviousTestCase(ViewTestMixin, LogTimeMixin, TestCase):
 
         # No results
         results = search("You won't find me here")
-        self.assertEquals(len(results), 0)
+        self.assertEqual(len(results), 0)
 
     def test_invoice_detail(self):
         invoices = EntryGroup.objects.all()
@@ -278,7 +278,7 @@ class InvoiceViewPreviousTestCase(ViewTestMixin, LogTimeMixin, TestCase):
         response = self.client.post(url, params)
         err_msg = 'Select a valid choice. not_in_choices is not one of ' + \
                   'the available choices.'
-        self.assertFormError(response, 'invoice_form', 'status', err_msg)
+        self.assertFormError(response.context['invoice_form'], 'status', err_msg)
 
     def test_invoice_delete_get(self):
         invoice = self.get_invoice()
@@ -405,7 +405,7 @@ class InvoiceCreateTestCase(ViewTestMixin, TestCase):
             to_date=to_date.strftime(DATE_FORM_FORMAT))
 
         response = self.client.get(url)
-        self.assertEquals(response.status_code, 403)
+        self.assertEqual(response.status_code, 403)
 
     def test_invoice_confirm_view_permission(self):
         """
@@ -419,7 +419,7 @@ class InvoiceCreateTestCase(ViewTestMixin, TestCase):
             to_date=to_date.strftime(DATE_FORM_FORMAT))
 
         response = self.client.get(url)
-        self.assertEquals(response.status_code, 200)
+        self.assertEqual(response.status_code, 200)
 
     def test_invoice_confirm_view(self):
         to_date = utils.add_timezone(datetime.datetime(2011, 1, 31))
@@ -636,28 +636,31 @@ class ListOutstandingInvoicesViewTestCase(ViewTestMixin, TestCase):
     def test_unauthenticated(self):
         self.client.logout()
         response = self._get()
-        self.assertEquals(response.status_code, 302)
+        self.assertEqual(response.status_code, 302)
 
     def test_list_no_kwargs(self):
         response = self._get(get_kwargs={})
-        self.assertEquals(response.status_code, 200)
-        form = response.context['form']
-        self.assertFalse(form.is_bound)
-        self.assertFalse(form.is_valid())
-        self.assertEquals(response.context['project_totals'].count(), 3)
+        self.assertEqual(response.status_code, 200)
+        for key in ['date_form', 'quick_search_form']:
+            form = response.context[key]
+            self.assertFalse(form.is_bound)
+            self.assertFalse(form.is_valid())
+        self.assertEqual(response.context['project_totals'].count(), 3)
 
     def test_list_outstanding(self):
         """Only billable projects should be listed."""
         response = self._get()
-        self.assertEquals(response.status_code, 200)
-        form = response.context['form']
-        self.assertTrue(form.is_valid(), form.errors)
+        self.assertEqual(response.status_code, 200)
+        for key in [x for x in response.context.keys() if 'form' in x and x != 'form_id']:
+            form = response.context[key]
+            self.assertTrue(form.is_valid()) if key == 'date_form' else self.assertFalse(form.is_valid())
+            self.assertFalse(form.errors)
         # The number of projects should be 3 because entry4 has billable=False
-        self.assertEquals(response.context['project_totals'].count(), 3)
+        self.assertEqual(response.context['project_totals'].count(), 3)
         # Verify that the date on the mark as invoiced links will be correct
-        self.assertEquals(response.context['to_date'], self.to_date.date())
-        self.assertEquals(list(response.context['unverified']), [])
-        self.assertEquals(list(response.context['unapproved']), [])
+        self.assertEqual(response.context['to_date'], self.to_date.date())
+        self.assertEqual(list(response.context['unverified']), [])
+        self.assertEqual(list(response.context['unapproved']), [])
 
     def test_unverified(self):
         start = utils.add_timezone(datetime.datetime(2011, 1, 1, 8))
@@ -669,16 +672,18 @@ class ListOutstandingInvoicesViewTestCase(ViewTestMixin, TestCase):
             end_time=end + relativedelta(hours=15), status=Entry.UNVERIFIED
         )  # unverified
         response = self._get()
-        self.assertEquals(response.status_code, 200)
-        form = response.context['form']
-        self.assertTrue(form.is_valid(), form.errors)
+        self.assertEqual(response.status_code, 200)
+        for key in [x for x in response.context.keys() if 'form' in x and x != 'form_id']:
+            form = response.context[key]
+            self.assertTrue(form.is_valid()) if key == 'date_form' else self.assertFalse(form.is_valid())
+            self.assertFalse(form.errors)
         unverified = list(response.context['unverified'])
         unapproved = list(response.context['unapproved'])
         expected_unverified = [
             (self.user.pk, self.user.first_name, self.user.last_name)
         ]
-        self.assertEquals(unverified, expected_unverified)
-        self.assertEquals(unapproved, [])
+        self.assertEqual(unverified, expected_unverified)
+        self.assertEqual(unapproved, [])
 
     def test_approved(self):
         start = utils.add_timezone(datetime.datetime(2011, 1, 1, 8))
@@ -692,9 +697,11 @@ class ListOutstandingInvoicesViewTestCase(ViewTestMixin, TestCase):
             start_time=start + relativedelta(hours=11),
             end_time=end + relativedelta(hours=15), status=Entry.VERIFIED)
         response = self._get()
-        self.assertEquals(response.status_code, 200)
-        form = response.context['form']
-        self.assertTrue(form.is_valid(), form.errors)
+        self.assertEqual(response.status_code, 200)
+        for key in [x for x in response.context.keys() if 'form' in x and x != 'form_id']:
+            form = response.context[key]
+            self.assertTrue(form.is_valid()) if key == 'date_form' else self.assertFalse(form.is_valid())
+            self.assertFalse(form.errors)
         unverified = set(response.context['unverified'])
         unapproved = set(response.context['unapproved'])
         user_a, user_b = unapproved_entry_a.user, unapproved_entry_b.user
@@ -702,36 +709,42 @@ class ListOutstandingInvoicesViewTestCase(ViewTestMixin, TestCase):
             (user_a.pk, user_a.first_name, user_a.last_name),
             (user_b.pk, user_b.first_name, user_b.last_name),
         ])
-        self.assertEquals(unverified, set())
-        self.assertEquals(unapproved, expected_unapproved)
+        self.assertEqual(unverified, set())
+        self.assertEqual(unapproved, expected_unapproved)
 
     def test_no_statuses(self):
         self.get_kwargs.pop('statuses')
         response = self._get()
-        self.assertEquals(response.status_code, 200)
-        form = response.context['form']
-        self.assertTrue(form.is_valid(), form.errors)
-        self.assertEquals(response.context['project_totals'].count(), 0)
+        self.assertEqual(response.status_code, 200)
+        for key in [x for x in response.context.keys() if 'form' in x and x != 'form_id']:
+            form = response.context[key]
+            self.assertTrue(form.is_valid()) if key == 'date_form' else self.assertFalse(form.is_valid())
+            self.assertFalse(form.errors)
+        self.assertEqual(response.context['project_totals'].count(), 0)
 
     def test_to_date_required(self):
         """to_date is required."""
         self.get_kwargs['to_date'] = ''
         response = self._get()
-        self.assertEquals(response.status_code, 200)
-        form = response.context['form']
-        self.assertFalse(form.is_valid(), form.errors)
+        self.assertEqual(response.status_code, 200)
+        for key in [x for x in response.context.keys() if 'form' in x and x != 'form_id']:
+            form = response.context[key]
+            self.assertFalse(form.is_valid()) if key == 'date_form' else self.assertFalse(form.is_valid())
+            self.assertFalse(form.errors) if key != 'date_form' else self.assertTrue(form.errors)
         # The number of projects should be 1 because entry3 has billable=False
-        self.assertEquals(response.context['project_totals'].count(), 0)
+        self.assertEqual(response.context['project_totals'].count(), 0)
 
     def test_from_date(self):
         from_date = utils.add_timezone(datetime.datetime(2011, 1, 1, 0, 0, 0))
         self.get_kwargs['from_date'] = from_date.strftime(DATE_FORM_FORMAT)
         response = self._get()
-        self.assertEquals(response.status_code, 200)
-        form = response.context['form']
-        self.assertTrue(form.is_valid(), form.errors)
+        self.assertEqual(response.status_code, 200)
+        for key in [x for x in response.context.keys() if 'form' in x and x != 'form_id']:
+            form = response.context[key]
+            self.assertTrue(form.is_valid()) if key == 'date_form' else self.assertFalse(form.is_valid())
+            self.assertFalse(form.errors)
         # From date filters out one entry
-        self.assertEquals(response.context['project_totals'].count(), 1)
+        self.assertEqual(response.context['project_totals'].count(), 1)
         # Verify that the date on the mark as invoiced links will be correct
-        self.assertEquals(response.context['to_date'], self.to_date.date())
-        self.assertEquals(response.context['from_date'], from_date.date())
+        self.assertEqual(response.context['to_date'], self.to_date.date())
+        self.assertEqual(response.context['from_date'], from_date.date())

@@ -1,8 +1,14 @@
+"""
+Most of this module's use of assertRedirectsToLogin have been replaced
+with an assertEqual for status_code 403. This change is from the switch
+from the homebrew class-based application of the permission_required
+decorator to the now more standard PermissionRequiredMixin
+"""
+
 import mock
 
 from django.contrib.auth.models import User, Permission
-from django.contrib.contenttypes.models import ContentType
-from django.core.urlresolvers import reverse, reverse_lazy
+from django.urls import reverse, reverse_lazy
 from django.test import TestCase
 
 from timepiece.tests import factories
@@ -27,16 +33,16 @@ class TestAddToUserClass(TestCase):
         self.assertFalse(self.user.clocked_in)
 
     def test_get_name(self):
-        self.assertEquals(self.user.get_name_or_username(), self.user.get_full_name())
+        self.assertEqual(self.user.get_name_or_username(), self.user.get_full_name())
 
     def test_get_username(self):
         self.user.first_name = ""
         self.user.last_name = ""
-        self.assertEquals(self.user.get_name_or_username(), self.user.username)
+        self.assertEqual(self.user.get_name_or_username(), self.user.username)
 
     def test_get_absolute_url(self):
         correct = reverse('view_user', args=(self.user.pk,))
-        self.assertEquals(self.user.get_absolute_url(), correct)
+        self.assertEqual(self.user.get_absolute_url(), correct)
 
 
 class TestCreateUser(ViewTestMixin, TestCase):
@@ -48,7 +54,8 @@ class TestCreateUser(ViewTestMixin, TestCase):
 
     def setUp(self):
         super(TestCreateUser, self).setUp()
-        self.user = factories.User(permissions=self.permissions)
+        self.user = factories.User()
+        self.user.user_permissions.add(Permission.objects.get(codename='add_user'))
         self.login_user(self.user)
         self.post_data = {
             'username': 'hello',
@@ -66,37 +73,37 @@ class TestCreateUser(ViewTestMixin, TestCase):
         """Permission is required for this view."""
         self.user.user_permissions.clear()
         response = self._get()
-        self.assertRedirectsToLogin(response)
-        self.assertEquals(self.model.objects.count(), 1)
+        self.assertEqual(response.status_code, 403)
+        self.assertEqual(self.model.objects.count(), 1)
 
     def test_post_no_permission(self):
         """Permission is required for this view."""
         self.user.user_permissions.clear()
         response = self._post()
-        self.assertRedirectsToLogin(response)
-        self.assertEquals(self.model.objects.count(), 1)
+        self.assertEqual(response.status_code, 403)
+        self.assertEqual(self.model.objects.count(), 1)
 
     def test_get(self):
         """GET should return the page with an unbound form."""
         response = self._get()
-        self.assertEquals(response.status_code, 200)
+        self.assertEqual(response.status_code, 200)
         self.assertTemplateUsed(response, self.template_name)
         self.assertTrue('form' in response.context)
         self.assertFalse(response.context['form'].is_bound)
-        self.assertEquals(self.model.objects.count(), 1)
+        self.assertEqual(self.model.objects.count(), 1)
 
     def test_post_valid(self):
         """POST should create a new object and redirect."""
         response = self._post()
-        self.assertEquals(self.model.objects.count(), 2)
+        self.assertEqual(self.model.objects.count(), 2)
         obj = self.model.objects.exclude(pk=self.user.pk).get()
         self.assertRedirectsNoFollow(response, obj.get_absolute_url())
-        self.assertEquals(obj.username, self.post_data['username'])
-        self.assertEquals(obj.first_name, self.post_data['first_name'])
-        self.assertEquals(obj.last_name, self.post_data['last_name'])
-        self.assertEquals(obj.email, self.post_data['email'])
-        self.assertEquals(obj.is_active, self.post_data['is_active']),
-        self.assertEquals(obj.is_staff, self.post_data['is_staff']),
+        self.assertEqual(obj.username, self.post_data['username'])
+        self.assertEqual(obj.first_name, self.post_data['first_name'])
+        self.assertEqual(obj.last_name, self.post_data['last_name'])
+        self.assertEqual(obj.email, self.post_data['email'])
+        self.assertEqual(obj.is_active, self.post_data['is_active']),
+        self.assertEqual(obj.is_staff, self.post_data['is_staff']),
         groups = obj.groups.values_list('pk', flat=True)
         self.assertEqual(sorted(groups), sorted(self.post_data['groups']))
         self.assertTrue(obj.check_password(self.post_data['password1']))
@@ -105,8 +112,8 @@ class TestCreateUser(ViewTestMixin, TestCase):
         """Passwords must match."""
         self.post_data['password2'] = 'bbb'
         response = self._post()
-        self.assertEquals(self.model.objects.count(), 1)
-        self.assertEquals(response.status_code, 200)
+        self.assertEqual(self.model.objects.count(), 1)
+        self.assertEqual(response.status_code, 200)
         self.assertTemplateUsed(response, self.template_name)
         self.assertTrue('form' in response.context)
         self.assertTrue(response.context['form'].is_bound)
@@ -116,8 +123,8 @@ class TestCreateUser(ViewTestMixin, TestCase):
         """Invalid POST should not create a new object."""
         self.post_data['username'] = ''
         response = self._post()
-        self.assertEquals(self.model.objects.count(), 1)
-        self.assertEquals(response.status_code, 200)
+        self.assertEqual(self.model.objects.count(), 1)
+        self.assertEqual(response.status_code, 200)
         self.assertTemplateUsed(response, self.template_name)
         self.assertTrue('form' in response.context)
         self.assertTrue(response.context['form'].is_bound)
@@ -135,7 +142,8 @@ class TestDeleteUser(ViewTestMixin, TestCase):
 
     def setUp(self):
         super(TestDeleteUser, self).setUp()
-        self.user = factories.User(permissions=self.permissions)
+        self.user = factories.User()
+        self.user.user_permissions.add(Permission.objects.get(codename='delete_user'))
         self.login_user(self.user)
         self.obj = self.factory.create()
         self.url_kwargs = {self.pk_url_kwarg: self.obj.pk}
@@ -144,37 +152,37 @@ class TestDeleteUser(ViewTestMixin, TestCase):
         """Permission is required for this view."""
         self.user.user_permissions.clear()
         response = self._get()
-        self.assertRedirectsToLogin(response)
-        self.assertEquals(self.model.objects.count(), 2)
+        self.assertEqual(response.status_code, 403)
+        self.assertEqual(self.model.objects.count(), 2)
 
     def test_post_no_permission(self):
         """Permission is required for this view."""
         self.user.user_permissions.clear()
         response = self._post()
-        self.assertRedirectsToLogin(response)
-        self.assertEquals(User.objects.count(), 2)
+        self.assertEqual(response.status_code, 403)
+        self.assertEqual(User.objects.count(), 2)
 
     def test_bad_pk(self):
         """View should return 404 response if no object is found."""
         User.objects.exclude(id=self.user.id).delete()
         self.url_kwargs[self.pk_url_kwarg] = 1234
         response = self._get()
-        self.assertEquals(response.status_code, 404)
+        self.assertEqual(response.status_code, 404)
 
     def test_get(self):
         """GET should returd return a confirmation page."""
         response = self._get()
-        self.assertEquals(response.status_code, 200)
+        self.assertEqual(response.status_code, 200)
         self.assertTemplateUsed(response, self.template_name)
         self.assertTrue('object' in response.context)
-        self.assertEquals(response.context['object'], self.obj)
-        self.assertEquals(self.model.objects.count(), 2)
+        self.assertEqual(response.context['object'], self.obj)
+        self.assertEqual(self.model.objects.count(), 2)
 
     def test_post(self):
         """POST should delete the object."""
         response = self._post()
         self.assertRedirectsNoFollow(response, self.success_url)
-        self.assertEquals(User.objects.count(), 1)
+        self.assertEqual(User.objects.count(), 1)
 
 
 class TestEditUser(ViewTestMixin, TestCase):
@@ -187,7 +195,8 @@ class TestEditUser(ViewTestMixin, TestCase):
 
     def setUp(self):
         super(TestEditUser, self).setUp()
-        self.user = factories.User(permissions=self.permissions)
+        self.user = factories.User()
+        self.user.user_permissions.add(Permission.objects.get(codename='change_user'))
         self.login_user(self.user)
         self.obj = self.factory.create()
         self.url_kwargs = {self.pk_url_kwarg: self.obj.pk}
@@ -202,14 +211,14 @@ class TestEditUser(ViewTestMixin, TestCase):
         }
 
     def _assert_no_change(self):
-        self.assertEquals(self.model.objects.count(), 2)
+        self.assertEqual(self.model.objects.count(), 2)
         obj = self.model.objects.get(pk=self.obj.pk)
-        self.assertEquals(obj.username, self.obj.username)
-        self.assertEquals(obj.first_name, self.obj.first_name)
-        self.assertEquals(obj.last_name, self.obj.last_name)
-        self.assertEquals(obj.email, self.obj.email)
-        self.assertEquals(obj.is_active, self.obj.is_active)
-        self.assertEquals(obj.is_staff, self.obj.is_staff)
+        self.assertEqual(obj.username, self.obj.username)
+        self.assertEqual(obj.first_name, self.obj.first_name)
+        self.assertEqual(obj.last_name, self.obj.last_name)
+        self.assertEqual(obj.email, self.obj.email)
+        self.assertEqual(obj.is_active, self.obj.is_active)
+        self.assertEqual(obj.is_staff, self.obj.is_staff)
         groups1 = obj.groups.values_list('pk', flat=True)
         groups2 = self.obj.groups.values_list('pk', flat=True)
         self.assertEqual(sorted(groups1), sorted(groups2))
@@ -218,14 +227,14 @@ class TestEditUser(ViewTestMixin, TestCase):
         """Permission is required for this view."""
         self.user.user_permissions.clear()
         response = self._get()
-        self.assertRedirectsToLogin(response)
+        self.assertEqual(response.status_code, 403)
         self._assert_no_change()
 
     def test_post_no_permission(self):
         """Permission is required for this view."""
         self.user.user_permissions.clear()
         response = self._post()
-        self.assertRedirectsToLogin(response)
+        self.assertEqual(response.status_code, 403)
         self._assert_no_change()
 
     def test_bad_pk(self):
@@ -233,32 +242,32 @@ class TestEditUser(ViewTestMixin, TestCase):
         User.objects.exclude(id=self.user.id).delete()
         self.url_kwargs[self.pk_url_kwarg] = 1234
         response = self._get()
-        self.assertEquals(response.status_code, 404)
+        self.assertEqual(response.status_code, 404)
 
     def test_get(self):
         """GET should return the page with an unbound form."""
         response = self._get()
-        self.assertEquals(response.status_code, 200)
+        self.assertEqual(response.status_code, 200)
         self.assertTemplateUsed(response, self.template_name)
         self.assertTrue('object' in response.context)
-        self.assertEquals(response.context['object'], self.obj)
+        self.assertEqual(response.context['object'], self.obj)
         self.assertTrue('form' in response.context)
         self.assertFalse(response.context['form'].is_bound)
-        self.assertEquals(response.context['form'].instance, self.obj)
+        self.assertEqual(response.context['form'].instance, self.obj)
         self._assert_no_change()
 
     def test_post_valid(self):
         """POST should edit the object."""
         response = self._post()
-        self.assertEquals(self.model.objects.count(), 2)
+        self.assertEqual(self.model.objects.count(), 2)
         obj = self.model.objects.get(pk=self.obj.pk)
-        self.assertEquals(obj.pk, self.obj.pk)
+        self.assertEqual(obj.pk, self.obj.pk)
         self.assertRedirectsNoFollow(response, obj.get_absolute_url())
-        self.assertEquals(obj.first_name, self.post_data['first_name'])
-        self.assertEquals(obj.last_name, self.post_data['last_name'])
-        self.assertEquals(obj.email, self.post_data['email'])
-        self.assertEquals(obj.is_active, self.post_data['is_active'])
-        self.assertEquals(obj.is_staff, self.post_data['is_staff'])
+        self.assertEqual(obj.first_name, self.post_data['first_name'])
+        self.assertEqual(obj.last_name, self.post_data['last_name'])
+        self.assertEqual(obj.email, self.post_data['email'])
+        self.assertEqual(obj.is_active, self.post_data['is_active'])
+        self.assertEqual(obj.is_staff, self.post_data['is_staff'])
         groups = obj.groups.values_list('pk', flat=True)
         self.assertEqual(sorted(groups), sorted(self.post_data['groups']))
 
@@ -266,10 +275,10 @@ class TestEditUser(ViewTestMixin, TestCase):
         """Invalid POST should not edit the object."""
         self.post_data['username'] = ''
         response = self._post()
-        self.assertEquals(response.status_code, 200)
+        self.assertEqual(response.status_code, 200)
         self.assertTemplateUsed(response, self.template_name)
         self.assertTrue('object' in response.context)
-        self.assertEquals(response.context['object'], self.obj)
+        self.assertEqual(response.context['object'], self.obj)
         self.assertTrue('form' in response.context)
         self.assertTrue(response.context['form'].is_bound)
         self.assertFalse(response.context['form'].is_valid())
@@ -289,7 +298,7 @@ class TestEditUser(ViewTestMixin, TestCase):
         self.post_data['password1'] = 'aaa'
         self.post_data['password2'] = 'bbb'
         response = self._post()
-        self.assertEquals(response.status_code, 200)
+        self.assertEqual(response.status_code, 200)
         self.assertTemplateUsed(response, self.template_name)
         form = response.context['form']
         self.assertTrue(form.is_bound)
@@ -302,7 +311,7 @@ class TestEditUser(ViewTestMixin, TestCase):
         response = self._post()
         self.assertRedirectsNoFollow(response, self.obj.get_absolute_url())
         updated_user = User.objects.get(pk=self.obj.pk)
-        self.assertEquals(updated_user.groups.count(), 2)
+        self.assertEqual(updated_user.groups.count(), 2)
         self.assertTrue(groups[0] in updated_user.groups.all())
         self.assertTrue(groups[1] in updated_user.groups.all())
 
@@ -316,42 +325,44 @@ class TestListUsers(ViewTestMixin, TestCase):
     def setUp(self):
         super(TestListUsers, self).setUp()
         # This permission is not created by Django by default.
-        ct = ContentType.objects.get(model='user')
-        p = Permission.objects.create(content_type=ct, codename='view_user')
-        self.user = factories.User(permissions=[p])
+        self.user = factories.User()
+        self.user.user_permissions.add(Permission.objects.get(codename='view_user'))
         self.login_user(self.user)
 
     def test_get_no_permission(self):
         """Permission is required for this view."""
         self.user.user_permissions.clear()
         response = self._get()
-        self.assertRedirectsToLogin(response)
+        self.assertEqual(response.status_code, 403)
 
     def test_list_all(self):
         """If no filters are provided, all objects should be listed."""
         object_list = [self.factory.create() for i in range(2)] + [self.user]
         response = self._get()
-        self.assertEquals(response.status_code, 200)
+        # Gets an HttpResponseRedirect, a 302 status code
+        self.assertEqual(response.status_code, 200)
         self.assertTemplateUsed(response, self.template_name)
-        self.assertEquals(response.context['object_list'].count(), 3)
+        self.assertEqual(response.context['object_list'].count(), 3)
         for obj in object_list:
             self.assertTrue(obj in response.context['object_list'])
 
     def test_list_one(self):
         """Page should render if there is one object & no search query."""
         response = self._get()
-        self.assertEquals(response.status_code, 200)
+        # Gets an HttpResponseRedirct, a 302 status code
+        self.assertEqual(response.status_code, 200)
         self.assertTemplateUsed(response, self.template_name)
-        self.assertEquals(response.context['object_list'].count(), 1)
-        self.assertEquals(response.context['object_list'].get(), self.user)
+        self.assertEqual(response.context['object_list'].count(), 1)
+        self.assertEqual(response.context['object_list'].get(), self.user)
 
     def test_no_results(self):
         """Page should render if there are no search results."""
         self.factory.create()
         response = self._get(get_kwargs={'search': 'hello'})
-        self.assertEquals(response.status_code, 200)
+        # The above call returns an HttpResponseRedirect, yielding a 302 status code
+        self.assertEqual(response.status_code, 200)
         self.assertTemplateUsed(response, self.template_name)
-        self.assertEquals(response.context['object_list'].count(), 0)
+        self.assertEqual(response.context['object_list'].count(), 0)
 
     def test_one_result(self):
         """If there is only one search result, user should be redirected."""
@@ -363,9 +374,10 @@ class TestListUsers(ViewTestMixin, TestCase):
         """Page should render if there are multiple search results."""
         obj_list = [self.factory.create(first_name='hello') for i in range(2)]
         response = self._get(get_kwargs={'search': 'hello'})
-        self.assertEquals(response.status_code, 200)
+        # The above response is an HttpResponseRedirect, yielding a 302
+        self.assertEqual(response.status_code, 200)
         self.assertTemplateUsed(response, self.template_name)
-        self.assertEquals(response.context['object_list'].count(), 2)
+        self.assertEqual(response.context['object_list'].count(), 2)
         for obj in obj_list:
             self.assertTrue(obj in response.context['object_list'])
 
@@ -405,12 +417,12 @@ class TestViewUser(ViewTestMixin, TestCase):
     factory = factories.User
     permissions = ('auth.view_user')
     pk_url_kwarg = 'user_id'
+    login_url = reverse('auth_login')
 
     def setUp(self):
         super(TestViewUser, self).setUp()
-        ct = ContentType.objects.get(model='user')
-        p = Permission.objects.create(content_type=ct, codename='view_user')
-        self.user = factories.User(permissions=[p])
+        self.user = factories.User()
+        self.user.user_permissions.add(Permission.objects.get(codename='view_user'))
         self.login_user(self.user)
         self.obj = self.factory.create()
         self.url_kwargs = {self.pk_url_kwarg: self.obj.pk}
@@ -419,27 +431,27 @@ class TestViewUser(ViewTestMixin, TestCase):
         """Permission is required for this view."""
         self.user.user_permissions.clear()
         response = self._get()
-        self.assertRedirectsToLogin(response)
+        self.assertEqual(response.status_code, 403)
 
     def test_post(self):
         """This is a GET-only view."""
         response = self._post()
-        self.assertEquals(response.status_code, 405)
+        self.assertEqual(response.status_code, 405)
 
     def test_bad_pk(self):
         """View should return 404 response if no object is found."""
         User.objects.exclude(id=self.user.id).delete()
         self.url_kwargs[self.pk_url_kwarg] = 1234
         response = self._get()
-        self.assertEquals(response.status_code, 404)
+        self.assertEqual(response.status_code, 404)
 
     def test_get(self):
         """User should be able to view the object detail."""
         response = self._get()
-        self.assertEquals(response.status_code, 200)
+        self.assertEqual(response.status_code, 200)
         self.assertTemplateUsed(response, self.template_name)
         self.assertTrue('object' in response.context)
-        self.assertEquals(response.context['object'], self.obj)
+        self.assertEqual(response.context['object'], self.obj)
 
 
 class TestEditSettings(ViewTestMixin, TestCase):
@@ -464,7 +476,7 @@ class TestEditSettings(ViewTestMixin, TestCase):
     def test_get(self):
         """GET should return the page with an unbound form."""
         response = self._get()
-        self.assertEquals(response.status_code, 200)
+        self.assertEqual(response.status_code, 200)
         self.assertTemplateUsed(response, self.template_name)
         self.assertFalse(response.context['form'].is_bound)
 
@@ -474,21 +486,21 @@ class TestEditSettings(ViewTestMixin, TestCase):
         self.assertRedirectsNoFollow(response, reverse('dashboard'))
         updated_user = User.objects.get(pk=self.user.pk)
         for k, v in self.post_data.items():
-            self.assertEquals(getattr(updated_user, k), v)
+            self.assertEqual(getattr(updated_user, k), v)
 
     def test_post_invalid(self):
         """Invalid POST should not edit data."""
         self.post_data['email'] = ''
         response = self._post()
-        self.assertEquals(response.status_code, 200)
+        self.assertEqual(response.status_code, 200)
         self.assertTemplateUsed(response, self.template_name)
         self.assertTrue('form' in response.context)
         self.assertTrue(response.context['form'].is_bound)
         self.assertFalse(response.context['form'].is_valid())
         obj = User.objects.get(pk=self.user.pk)
-        self.assertEquals(obj.first_name, self.user.first_name)
-        self.assertEquals(obj.last_name, self.user.last_name)
-        self.assertEquals(obj.email, self.user.email)
+        self.assertEqual(obj.first_name, self.user.first_name)
+        self.assertEqual(obj.last_name, self.user.last_name)
+        self.assertEqual(obj.email, self.user.email)
 
     def test_redirect_to_next(self):
         """Passing next parameter should customize the redirect location."""
@@ -496,4 +508,4 @@ class TestEditSettings(ViewTestMixin, TestCase):
         self.assertRedirectsNoFollow(response, '/hello/')
         updated_user = User.objects.get(pk=self.user.pk)
         for k, v in self.post_data.items():
-            self.assertEquals(getattr(updated_user, k), v)
+            self.assertEqual(getattr(updated_user, k), v)

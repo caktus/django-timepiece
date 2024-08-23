@@ -65,13 +65,13 @@
                         You have been clocked into
                         <strong>{{ active_entry.activity.name }} for {{ active_entry.project }}</strong>
                         since {{ active_entry.start_time|time }}
-                        {% ifnotequal active_entry.start_time.date today %}
+                        {% if active_entry.start_time.date != today %}
                             {% if active_entry.start_time.date < week_start or active_entry.start_time.date > week_end %}
                                 on {{ active_entry.start_time|date:'M j' }}
                             {% else %}
                                 on {{ active_entry.start_time|date:"l" }}
                             {% endif %}
-                        {% endifnotequal %}
+                        {% endif %}
                         ({{ active_entry.get_total_seconds|humanize_seconds }} time clocked{% if active_entry.seconds_paused or active_entry.is_paused %} and {{ active_entry.get_paused_seconds|humanize_seconds }} paused{% endif %}).
                         {% if active_entry.comments %}
                             <a class="btn btn-primary btn-mini" data-toggle="popover"
@@ -241,13 +241,13 @@
                                     <td><span class="hidden-phone">{{ entry.activity.name }} for </span>{{ entry.project }}</td>
                                     <td class="hidden-phone nowrap">
                                         {{ entry.start_time|time }}
-                                        {% ifnotequal entry.start_time.date today %}
+                                        {% if entry.start_time.date != today %}
                                             {% if entry.start_time.date < week_start or entry.start_time.date > week_end %}
                                                 on {{ entry.start_time|date:'M j' }}
                                             {% else %}
                                                 on {{ entry.start_time|date:"l" }}
                                             {% endif %}
-                                        {% endifnotequal %}
+                                        {% endif %}
                                     </td>
                                 </tr>
                             {% endfor %}

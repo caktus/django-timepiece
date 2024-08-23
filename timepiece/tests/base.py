@@ -3,12 +3,12 @@ from six.moves.urllib.parse import urlencode
 
 from dateutil.relativedelta import relativedelta
 
-from django.core.urlresolvers import reverse, reverse_lazy
+from django.urls import reverse, reverse_lazy
 from django.conf import settings
 from django.contrib.auth import login
 from django.http import HttpRequest
 from django.utils import timezone
-from django.utils.encoding import force_text
+from django.utils.encoding import force_str
 
 from . import factories
 
@@ -89,13 +89,13 @@ class ViewTestMixin(object):
             "(expected {1})".format(response.status_code, status_code))
 
         # Assert that the response redirects to the correct base URL.
-        # Use force_text to force evaluation of anything created by
+        # Use force_str to force evaluation of anything created by
         # reverse_lazy.
-        response_url = force_text(response['location'])
-        expected_url = force_text(expected_url)
+        response_url = force_str(response['location'])
+        expected_url = force_str(expected_url)
         parsed1 = urlparse(response_url)
         parsed2 = urlparse(expected_url)
-        self.assertEquals(
+        self.assertEqual(
             parsed1.path, parsed2.path,
             "Response did not redirect to the expected URL: Redirect "
             "location was {0} (expected {1})".format(parsed1.path, parsed2.path))
@@ -130,7 +130,7 @@ class ViewTestMixin(object):
         # Create a fake request to store login details.
         request = HttpRequest()
         request.session = self.client.session or engine.SessionStore()
-        login(request, user)
+        login(request, user, user.backend)
 
         # Set the cookie to represent the session.
         session_cookie = settings.SESSION_COOKIE_NAME

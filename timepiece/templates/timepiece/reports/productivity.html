@@ -1,6 +1,6 @@
 {% extends "timepiece/reports/base.html" %}
 
-{% load bootstrap_toolkit %}
+{% load bootstrap3 %}
 {% load static %}
 {% load timepiece_tags %}
 
@@ -33,7 +33,7 @@
     <div class="row-fluid">
         <div class="span12">
             <form class="form-horizontal" action="" method="GET">
-                {{ form|as_bootstrap:"horizontal" }}
+                {% bootstrap_form form layout='horizontal' %}
                 <button type="submit" class="btn btn-primary">Submit</button>
                 <button type="submit" class="btn" name="export" value="True">Export as CSV</button>
             </form>

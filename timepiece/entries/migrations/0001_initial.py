@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 from __future__ import unicode_literals
 
+import django.db.models.deletion
 from django.db import models, migrations
 from decimal import Decimal
 import django.db.models.deletion
@@ -56,7 +57,7 @@ class Migration(migrations.Migration):
                 ('comments', models.TextField(blank=True)),
                 ('date_updated', models.DateTimeField(auto_now=True)),
                 ('hours', models.DecimalField(default=0, max_digits=8, decimal_places=2)),
-                ('activity', models.ForeignKey(related_name='entries', to='entries.Activity')),
+                ('activity', models.ForeignKey(related_name='entries', to='entries.Activity', on_delete=django.db.models.deletion.CASCADE)),
                 ('entry_group', models.ForeignKey(related_name='entries', on_delete=django.db.models.deletion.SET_NULL, blank=True, to='contracts.EntryGroup', null=True)),
             ],
             options={
@@ -86,8 +87,8 @@ class Migration(migrations.Migration):
                 ('week_start', models.DateField(verbose_name=b'start of week')),
                 ('hours', models.DecimalField(default=0, max_digits=8, decimal_places=2, validators=[django.core.validators.MinValueValidator(Decimal('0.01'))])),
                 ('published', models.BooleanField(default=False)),
-                ('project', models.ForeignKey(to='crm.Project')),
-                ('user', models.ForeignKey(to=settings.AUTH_USER_MODEL)),
+                ('project', models.ForeignKey(to='crm.Project', on_delete=django.db.models.deletion.CASCADE)),
+                ('user', models.ForeignKey(to=settings.AUTH_USER_MODEL, on_delete=django.db.models.deletion.CASCADE)),
             ],
             options={
                 'db_table': 'timepiece_projecthours',
@@ -103,19 +104,19 @@ class Migration(migrations.Migration):
         migrations.AddField(
             model_name='entry',
             name='location',
-            field=models.ForeignKey(related_name='entries', to='entries.Location'),
+            field=models.ForeignKey(related_name='entries', to='entries.Location', on_delete=django.db.models.deletion.CASCADE),
             preserve_default=True,
         ),
         migrations.AddField(
             model_name='entry',
             name='project',
-            field=models.ForeignKey(related_name='entries', to='crm.Project'),
+            field=models.ForeignKey(related_name='entries', to='crm.Project', on_delete=django.db.models.deletion.CASCADE),
             preserve_default=True,
         ),
         migrations.AddField(
             model_name='entry',
             name='user',
-            field=models.ForeignKey(related_name='timepiece_entries', to=settings.AUTH_USER_MODEL),
+            field=models.ForeignKey(related_name='timepiece_entries', to=settings.AUTH_USER_MODEL, on_delete=django.db.models.deletion.CASCADE),
             preserve_default=True,
         ),
     ]

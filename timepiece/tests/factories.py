@@ -15,7 +15,7 @@ from timepiece.entries import models as entries
 from timepiece import utils
 
 
-class User(factory.DjangoModelFactory):
+class User(factory.django.DjangoModelFactory):
 
     class Meta:
         model = auth.User
@@ -29,6 +29,7 @@ class User(factory.DjangoModelFactory):
     @factory.post_generation
     def password(self, create, extracted, **kwargs):
         self.set_password(extracted or "password")
+        self.plain_passwd = extracted or "password"
 
     @factory.post_generation
     def permissions(self, create, extracted, **kwargs):
@@ -48,7 +49,7 @@ class Superuser(User):
     is_staff = True
 
 
-class Group(factory.DjangoModelFactory):
+class Group(factory.django.DjangoModelFactory):
 
     class Meta:
         model = auth.Group
@@ -56,7 +57,7 @@ class Group(factory.DjangoModelFactory):
     name = factory.Sequence(lambda n: 'group{0}'.format(n))
 
 
-class ProjectContract(factory.DjangoModelFactory):
+class ProjectContract(factory.django.DjangoModelFactory):
 
     class Meta:
         model = contracts.ProjectContract
@@ -80,7 +81,7 @@ class ProjectContract(factory.DjangoModelFactory):
             self.projects.add(*extracted)
 
 
-class ContractHour(factory.DjangoModelFactory):
+class ContractHour(factory.django.DjangoModelFactory):
 
     class Meta:
         model = contracts.ContractHour
@@ -90,7 +91,7 @@ class ContractHour(factory.DjangoModelFactory):
     contract = factory.SubFactory('timepiece.tests.factories.ProjectContract')
 
 
-class ContractAssignment(factory.DjangoModelFactory):
+class ContractAssignment(factory.django.DjangoModelFactory):
 
     class Meta:
         model = contracts.ContractAssignment
@@ -101,7 +102,7 @@ class ContractAssignment(factory.DjangoModelFactory):
     end_date = datetime.date.today() + relativedelta(weeks=2)
 
 
-class HourGroup(factory.DjangoModelFactory):
+class HourGroup(factory.django.DjangoModelFactory):
 
     class Meta:
         model = contracts.HourGroup
@@ -109,7 +110,7 @@ class HourGroup(factory.DjangoModelFactory):
     name = factory.Sequence(lambda n: 'hourgroup{0}'.format(n))
 
 
-class EntryGroup(factory.DjangoModelFactory):
+class EntryGroup(factory.django.DjangoModelFactory):
 
     class Meta:
         model = contracts.EntryGroup
@@ -119,7 +120,7 @@ class EntryGroup(factory.DjangoModelFactory):
     end = FuzzyDate(datetime.date.today() - relativedelta(months=1))
 
 
-class TypeAttribute(factory.DjangoModelFactory):
+class TypeAttribute(factory.django.DjangoModelFactory):
 
     class Meta:
         model = crm.Attribute
@@ -128,7 +129,7 @@ class TypeAttribute(factory.DjangoModelFactory):
     type = crm.Attribute.PROJECT_TYPE
 
 
-class StatusAttribute(factory.DjangoModelFactory):
+class StatusAttribute(factory.django.DjangoModelFactory):
 
     class Meta:
         model = crm.Attribute
@@ -137,7 +138,7 @@ class StatusAttribute(factory.DjangoModelFactory):
     type = crm.Attribute.PROJECT_STATUS
 
 
-class Business(factory.DjangoModelFactory):
+class Business(factory.django.DjangoModelFactory):
 
     class Meta:
         model = crm.Business
@@ -145,7 +146,7 @@ class Business(factory.DjangoModelFactory):
     name = factory.Sequence(lambda n: 'business{0}'.format(n))
 
 
-class Project(factory.DjangoModelFactory):
+class Project(factory.django.DjangoModelFactory):
 
     class Meta:
         model = crm.Project
@@ -167,7 +168,7 @@ class NonbillableProject(Project):
     status = factory.SubFactory('timepiece.tests.factories.StatusAttribute', billable=False)
 
 
-class RelationshipType(factory.DjangoModelFactory):
+class RelationshipType(factory.django.DjangoModelFactory):
 
     class Meta:
         model = crm.RelationshipType
@@ -175,7 +176,7 @@ class RelationshipType(factory.DjangoModelFactory):
     name = factory.Sequence(lambda n: 'reltype{0}'.format(n))
 
 
-class ProjectRelationship(factory.DjangoModelFactory):
+class ProjectRelationship(factory.django.DjangoModelFactory):
 
     class Meta:
         model = crm.ProjectRelationship
@@ -184,7 +185,7 @@ class ProjectRelationship(factory.DjangoModelFactory):
     project = factory.SubFactory('timepiece.tests.factories.Project')
 
 
-class UserProfile(factory.DjangoModelFactory):
+class UserProfile(factory.django.DjangoModelFactory):
 
     class Meta:
         model = crm.UserProfile
@@ -192,7 +193,7 @@ class UserProfile(factory.DjangoModelFactory):
     user = factory.SubFactory('timepiece.tests.factories.User')
 
 
-class Activity(factory.DjangoModelFactory):
+class Activity(factory.django.DjangoModelFactory):
 
     class Meta:
         model = entries.Activity
@@ -209,7 +210,7 @@ class NonbillableActivityFactory(Activity):
     billable = False
 
 
-class ActivityGroup(factory.DjangoModelFactory):
+class ActivityGroup(factory.django.DjangoModelFactory):
 
     class Meta:
         model = entries.ActivityGroup
@@ -217,7 +218,7 @@ class ActivityGroup(factory.DjangoModelFactory):
     name = factory.Sequence(lambda n: 'activitygroup{0}'.format(n))
 
 
-class Location(factory.DjangoModelFactory):
+class Location(factory.django.DjangoModelFactory):
 
     class Meta:
         model = entries.Location
@@ -226,7 +227,7 @@ class Location(factory.DjangoModelFactory):
     slug = factory.Sequence(lambda n: 'location{0}'.format(n))
 
 
-class Entry(factory.DjangoModelFactory):
+class Entry(factory.django.DjangoModelFactory):
 
     class Meta:
         model = entries.Entry
@@ -238,7 +239,7 @@ class Entry(factory.DjangoModelFactory):
     location = factory.SubFactory('timepiece.tests.factories.Location')
 
 
-class ProjectHours(factory.DjangoModelFactory):
+class ProjectHours(factory.django.DjangoModelFactory):
 
     class Meta:
         model = entries.ProjectHours
