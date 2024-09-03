@@ -132,8 +132,6 @@ USE_TZ = False  # NOTE: django-timepiece does not currently support timezones.
 
 WSGI_APPLICATION = 'example_project.wsgi.application'
 
-DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
-
 
 # === Third-party app settings. === #
 
@@ -141,7 +139,8 @@ COMPRESS_PRECOMPILERS = [
     ('text/less', 'lessc {infile} {outfile}'),
 ]
 
-COMPRESS_ROOT = '%s/static/' % PROJECT_PATH
+COMPRESS_ROOT = f"{PROJECT_PATH}/static/"
+COMPRESS_OFFLINE = 1
 
 
 # === Timepiece settings. === #

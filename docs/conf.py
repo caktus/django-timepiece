@@ -41,8 +41,8 @@ source_suffix = '.rst'
 master_doc = 'index'
 
 # General information about the project.
-project = 'django-timepiece'
-copyright = '2013,  '
+project = 'django-timepiece3'
+copyright = '2024, 2013,  '
 
 # The version info for the project you're documenting, acts as replacement for
 # |version| and |release|, also used in various other places throughout the

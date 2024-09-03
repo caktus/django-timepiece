@@ -4,19 +4,6 @@ django-timepiece
 django-timepiece is a multi-user application for tracking people's time on
 projects. Documentation is available on `Read The Docs`_.
 
-:master: |master-status|
-:develop: |develop-status|
-
-.. |master-status| image::
-    https://api.travis-ci.org/caktus/django-timepiece.png?branch=master
-    :alt: Build Status
-    :target: https://travis-ci.org/caktus/django-timepiece
-
-.. |develop-status| image::
-    https://api.travis-ci.org/caktus/django-timepiece.png?branch=develop
-    :alt: Build Status
-    :target: https://travis-ci.org/caktus/django-timepiece
-
 Features
 --------
 
@@ -31,7 +18,7 @@ Requirements
 ------------
 
 django-timepiece is compatible with Django 4.2 (on Python 3.9+) and
-Django 5.1 (Python 3.10+). PostgreSQL is the only
+Django 5.x (Python 3.10+). PostgreSQL is the only
 officially supported backend. For a full list of required libraries, see
 the `requirements/base.txt` from the project source on `GitHub`_.
 
@@ -68,13 +55,14 @@ Installation
 
     $ pip install django-timepiece
 
-#. Ensure that `less`_ is installed on your machine and the version is >=4.2.0::
+#. Ensure that `less`_ is installed on your machine and the version is 1.4.0::
 
     # Install node.js and npm:
     $ sudo apt-get install python-software-properties
     $ sudo add-apt-repository ppa:chris-lea/node.js
     $ sudo apt-get update
     $ sudo apt-get install nodejs npm
+    $ npm install less@1.4.0
 
     # Use npm to install less from package.json:
     $ npm install
@@ -113,39 +101,50 @@ Installation
         )
 
    - Add `django.core.context_processors.request` and django-timepiece context
-     processors to ``TEMPLATE_CONTEXT_PROCESSORS``::
+     processors to the ``context_processors`` in the ``TEMPLATES`` config::
 
-        TEMPLATE_CONTEXT_PROCESSORS = (
-            "django.contrib.auth.context_processors.auth",
-            "django.core.context_processors.debug",
-            "django.core.context_processors.i18n",
-            "django.core.context_processors.media",
-            "django.contrib.messages.context_processors.messages",
-            "django.core.context_processors.request",           # <----
-            "timepiece.context_processors.quick_clock_in",      # <----
-            "timepiece.context_processors.quick_search",        # <----
-            "timepiece.context_processors.extra_settings",      # <----
-        )
+        TEMPLATES = [
+            {
+                'BACKEND': 'django.template.backends.django.DjangoTemplates',
+                'APP_DIRS': True,
+                'OPTIONS': {
+                    'context_processors': [
+                        "django.contrib.auth.context_processors.auth",
+                        "django.template.context_processors.debug",
+                        "django.template.context_processors.i18n",
+                        "django.template.context_processors.media",
+                        "django.contrib.messages.context_processors.messages",
+                        "django.template.context_processors.request",           # <----
+                        "timepiece.context_processors.quick_clock_in",      # <----
+                        "timepiece.context_processors.quick_search",        # <----
+                        "timepiece.context_processors.extra_settings",      # <----
+                    ],
+                },
+            },
+        ]
 
    - Configure compressor settings::
 
-        COMPRESS_PRECOMPILERS = (
+        COMPRESS_PRECOMPILERS = [
             ('text/less', 'lessc {infile} {outfile}'),
-        )
-        COMPRESS_ROOT = '%s/static/' % PROJECT_PATH
+        ]
+        COMPRESS_ROOT = f"{PROJECT_PATH}/static/"
         INTERNAL_IPS = ('127.0.0.1',)
+        COMPRESS_OFFLINE = 1
 
    - Set ``USE_TZ`` to ``False``. django-timepiece does not currently support
      timezones.
 
 #. Run ``syncdb`` and ``migrate``.
 
+#. Run ``./manage.py compress`` to compress less css
+
 #. Add URLs for django-timepiece and selectable to `urls.py`, e.g.::
 
     urlpatterns = [
         ...
-        (r'^selectable/', include('selectable.urls')),
-        (r'', include('timepiece.urls')),
+        re_path(r'^selectable/', include('selectable.urls')),
+        path(r'', include('timepiece.urls')),
         ...
     ]
 
@@ -158,31 +157,33 @@ Installation
         url(r'^accounts/logout/$', 'django.contrib.auth.views.logout_then_login',
             name='auth_logout'),
         url(r'^accounts/password-change/$',
-            'django.contrib.auth.views.password_change',
+            auth_views.PasswordChangeView.as_view(),
             name='change_password'),
         url(r'^accounts/password-change/done/$',
-            'django.contrib.auth.views.password_change_done'),
+            auth_views.PasswordChangeDoneView.as_view()),
         url(r'^accounts/password-reset/$',
-            'django.contrib.auth.views.password_reset',
+            auth_views.PasswordResetView.as_view(),
             name='reset_password'),
         url(r'^accounts/password-reset/done/$',
-            'django.contrib.auth.views.password_reset_done'),
+            auth_views.PasswordResetDoneView.as_view()),
         url(r'^accounts/reset/(?P<uidb36>[0-9A-Za-z]+)-(?P<token>.+)/$',
-            'django.contrib.auth.views.password_reset_confirm'),
+            auth_views.PasswordResetConfirmView.as_view()),
         url(r'^accounts/reset/done/$',
-            'django.contrib.auth.views.password_reset_complete'),
+            auth_views.PasswordResetCompleteView.as_view()),
         ...
     ]
 
 #. Create registration templates. For examples, see the registration templates
    in `example_project/templates/registration`. Ensure that your project's
-   template directory is added to ``TEMPLATE_DIRS``::
+   template directory is added to ``DIRS`` in the ``TEMPLATES`` config::
 
-    TEMPLATE_DIRS = (
-        ...
-        '%s/templates' % PROJECT_PATH,
-        ...
-    )
+    TEMPLATES = [
+        {
+            ...
+            'DIRS': [os.path.join(BASE_DIR, 'templates')],
+            ...
+        }
+    ]
 
 Development sponsored by `Caktus Group`_.
 
@@ -193,3 +194,5 @@ Development sponsored by `Caktus Group`_.
 .. _pip: http://pip.openplans.org/
 .. _PyPI: http://pypi.python.org/pypi/django-timepiece
 .. _Read The Docs: http://django-timepiece.readthedocs.org
+django-timepiece
+django-timepiece
