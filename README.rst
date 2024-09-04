@@ -78,7 +78,7 @@ Installation
 
         INSTALLED_APPS = [
             ...
-            'bootstrap_toolkit',
+            'bootstrap3',
             'compressor',
             'selectable',
 
