@@ -135,7 +135,7 @@ Installation
    - Set ``USE_TZ`` to ``False``. django-timepiece does not currently support
      timezones.
 
-#. Run ``syncdb`` and ``migrate``.
+#. Run ``migrate``.
 
 #. Run ``./manage.py compress`` to compress less css
 
