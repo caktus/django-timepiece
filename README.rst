@@ -76,7 +76,7 @@ Installation
 
    - Add `timepiece` and its dependencies to ``INSTALLED_APPS``::
 
-        INSTALLED_APPS = (
+        INSTALLED_APPS = [
             ...
             'bootstrap_toolkit',
             'compressor',
@@ -88,17 +88,17 @@ Installation
             'timepiece.crm',
             'timepiece.entries',
             'timepiece.reports',
-        )
+        ]
 
    - Configure your middleware::
 
-        MIDDLEWARE_CLASSES = (
+        MIDDLEWARE = [
             'django.middleware.common.CommonMiddleware',
             'django.contrib.sessions.middleware.SessionMiddleware',
             'django.middleware.csrf.CsrfViewMiddleware',
             'django.contrib.auth.middleware.AuthenticationMiddleware',
             'django.contrib.messages.middleware.MessageMiddleware',
-        )
+        ]
 
    - Add `django.core.context_processors.request` and django-timepiece context
      processors to the ``context_processors`` in the ``TEMPLATES`` config::
@@ -192,7 +192,6 @@ Development sponsored by `Caktus Group`_.
 .. _GitHub: https://github.com/caktus/django-timepiece
 .. _less: http://lesscss.org
 .. _pip: http://pip.openplans.org/
-.. _PyPI: http://pypi.python.org/pypi/django-timepiece
-.. _Read The Docs: http://django-timepiece.readthedocs.org
-django-timepiece
-django-timepiece
+.. _PyPI: http://pypi.python.org/pypi/django-timepiece3
+.. _Read The Docs: http://django-timepiece3.readthedocs.io
+

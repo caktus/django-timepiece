@@ -4,9 +4,9 @@ from dateutil.relativedelta import relativedelta
 from six.moves.urllib.parse import urlencode
 
 from django.contrib import messages
+from django.contrib.auth import get_user_model
 from django.contrib.auth.decorators import login_required, permission_required
 from django.contrib.auth.mixins import LoginRequiredMixin, PermissionRequiredMixin
-from django.contrib.auth.models import User
 from django.urls import reverse, reverse_lazy
 from django.db import transaction
 from django.db.models import Sum
@@ -30,6 +30,9 @@ from timepiece.crm.forms import (
 from timepiece.crm.models import Business, Project, ProjectRelationship
 from timepiece.crm.utils import grouped_totals
 from timepiece.entries.models import Entry
+
+
+User = get_user_model()
 
 
 class QuickSearch(LoginRequiredMixin, FormView):

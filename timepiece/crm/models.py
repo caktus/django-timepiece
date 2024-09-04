@@ -1,11 +1,14 @@
 from collections import OrderedDict
 
 from django.apps import apps
-from django.contrib.auth.models import User
+from django.contrib.auth import get_user_model
 from django.urls import reverse
 from django.db import models
 
 from timepiece.utils import get_active_entry
+
+
+User = get_user_model()
 
 
 # Add a utility method to the User class that will tell whether or not a

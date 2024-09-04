@@ -232,7 +232,7 @@ class ArithmeticTagTestCase(TestCase):
             'project_progress': [
                 {'worked': -1, 'assigned': -4},
                 {'worked': -3, 'assigned': -5},
-                ]
+            ]
         }
         self.assertEqual(0, tags.get_max_hours(ctx))
 

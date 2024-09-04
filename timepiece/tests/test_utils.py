@@ -69,7 +69,7 @@ class FormatTotalsTest(TestCase):
             {'sum': Decimal('60.50000'), 'user__first_name': 'Rob', 'user__last_name': 'Lin'},
             {'sum': Decimal('30.75000'), 'user__first_name': 'Dave', 'user__last_name': 'Roy'},
             {'sum': Decimal('20.20500'), 'user__first_name': 'Mike', 'user__last_name': 'Jones'},
-            ]
+        ]
         format_totals(entries)
         self.assertEqual(entries[0]['sum'], "{0:.2f}".format(60.50))
         self.assertEqual(entries[1]['sum'], "{0:.2f}".format(30.75))
@@ -80,7 +80,7 @@ class FormatTotalsTest(TestCase):
             {'smurf': Decimal('60.50000'), 'user__first_name': 'Rob', 'user__last_name': 'Lin'},
             {'smurf': Decimal('30.75000'), 'user__first_name': 'Dave', 'user__last_name': 'Roy'},
             {'smurf': Decimal('20.20500'), 'user__first_name': 'Mike', 'user__last_name': 'Jones'},
-            ]
+        ]
         format_totals(entries, 'smurf')
         self.assertEqual(entries[0]['smurf'], "{0:.2f}".format(60.50))
         self.assertEqual(entries[1]['smurf'], "{0:.2f}".format(30.75))

@@ -8,9 +8,10 @@ import json
 from six.moves.urllib.parse import urlencode
 
 from django.contrib import messages
+from django.contrib.auth import get_user_model
 from django.contrib.auth.decorators import permission_required
 from django.contrib.auth.mixins import PermissionRequiredMixin, LoginRequiredMixin
-from django.contrib.auth.models import User, Permission
+from django.contrib.auth.models import Permission
 from django.contrib.contenttypes.models import ContentType
 from django.core import exceptions
 from django.urls import reverse
@@ -29,6 +30,9 @@ from timepiece.entries.forms import (
     ClockInForm, ClockOutForm, AddUpdateEntryForm, ProjectHoursForm,
     ProjectHoursSearchForm)
 from timepiece.entries.models import Entry, ProjectHours
+
+
+User = get_user_model()
 
 
 class Dashboard(LoginRequiredMixin, TemplateView):

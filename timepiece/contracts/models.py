@@ -73,7 +73,7 @@ class ProjectContract(models.Model):
                 project__in=contract.projects.all(),
                 start_time__gte=contract.start_date,
                 end_time__lt=contract.end_date + relativedelta(days=1)
-                )
+            )
         return entries
 
     @property

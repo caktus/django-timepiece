@@ -2,13 +2,16 @@ from functools import reduce
 
 from dateutil.relativedelta import relativedelta
 
-from django.contrib.auth.models import User
+from django.contrib.auth import get_user_model
 from django.core.management.base import BaseCommand, CommandError
 from django.db.models import Q
 from django.utils import timezone
 
 from timepiece import utils
 from timepiece.entries.models import Entry
+
+
+User = get_user_model()
 
 
 class Command(BaseCommand):
@@ -103,8 +106,10 @@ class Command(BaseCommand):
                 'last': user.last_name,
                 'total': user_total_overlaps,
             }
-            self.stdout.write('Total overlapping entries for user ' +
-                              '%(first)s %(last)s: %(total)d' % overlap_data)
+            self.stdout.write(
+                'Total overlapping entries for user '
+                + '%(first)s %(last)s: %(total)d' % overlap_data
+            )
         return user_total_overlaps
 
     def find_start(self, **kwargs):
@@ -137,8 +142,8 @@ class Command(BaseCommand):
         """
         if args:
             names = reduce(
-                lambda query, arg: query |
-                (Q(first_name__icontains=arg) | Q(last_name__icontains=arg)),
+                lambda query, arg: query
+                | (Q(first_name__icontains=arg) | Q(last_name__icontains=arg)),
                 args, Q()
             )  # noqa
             users = User.objects.filter(names)
@@ -199,8 +204,8 @@ class Command(BaseCommand):
         if entry_b:
             data_b = make_output_data(entry_b)
             output = ('Entry %(entry)d for %(first_name)s %(last_name)s from '
-                      '%(start)s to %(end)s on %(project)s overlaps ' % data_a +
-                      'entry %(entry)d from %(start)s to %(end)s on '
+                      '%(start)s to %(end)s on %(project)s overlaps ' % data_a
+                      + 'entry %(entry)d from %(start)s to %(end)s on '
                       '%(project)s.' % data_b)
         else:
             output = ('Entry %(entry)d for %(first_name)s %(last_name)s from '

@@ -8,6 +8,7 @@ import random
 import six
 
 from django.contrib.auth import models as auth
+from django.contrib.auth import get_user_model
 
 from timepiece.contracts import models as contracts
 from timepiece.crm import models as crm
@@ -18,7 +19,7 @@ from timepiece import utils
 class User(factory.django.DjangoModelFactory):
 
     class Meta:
-        model = auth.User
+        model = get_user_model()
 
     # FIXME: Some tests depend on first_name/last_name being unique.
     first_name = factory.Sequence(lambda n: 'Sam{0}'.format(n))
@@ -73,7 +74,7 @@ class ProjectContract(factory.django.DjangoModelFactory):
         if create:
             num_hours = extracted or random.randint(10, 400)
             for i in range(2):
-                ContractHour(contract=self, hours=Decimal(str(num_hours/2.0)))
+                ContractHour(contract=self, hours=Decimal(str(num_hours / 2.0)))
 
     @factory.post_generation
     def projects(self, create, extracted, **kwargs):

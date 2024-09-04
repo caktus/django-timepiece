@@ -229,9 +229,9 @@ class Entry(models.Model):
     def is_overlapping(self):
         if self.start_time and self.end_time:
             entries = self.user.timepiece_entries.filter(
-                Q(end_time__range=(self.start_time, self.end_time)) |
-                Q(start_time__range=(self.start_time, self.end_time)) |
-                Q(start_time__lte=self.start_time, end_time__gte=self.end_time)
+                Q(end_time__range=(self.start_time, self.end_time))
+                | Q(start_time__range=(self.start_time, self.end_time))
+                | Q(start_time__lte=self.start_time, end_time__gte=self.end_time)
             )
 
             totals = entries.aggregate(max=Max('end_time'), min=Min('start_time'))
@@ -265,9 +265,9 @@ class Entry(models.Model):
             end = start + relativedelta(seconds=1)
 
         entries = self.user.timepiece_entries.filter(
-            Q(end_time__range=(start, end)) |
-            Q(start_time__range=(start, end)) |
-            Q(start_time__lte=start, end_time__gte=end))
+            Q(end_time__range=(start, end))
+            | Q(start_time__range=(start, end))
+            | Q(start_time__lte=start, end_time__gte=end))
         # An entry can not conflict with itself so remove it from the list
         if self.id:
             entries = entries.exclude(pk=self.id)
@@ -476,7 +476,7 @@ class Entry(models.Model):
             'billable': Decimal('0'), 'non_billable': Decimal('0'),
             'invoiced': Decimal('0'), 'uninvoiced': Decimal('0'),
             'total': Decimal('0')
-            }
+        }
         invoiced = entries.filter(
             status=Entry.INVOICED).aggregate(i=Sum('hours'))['i']
         uninvoiced = entries.exclude(

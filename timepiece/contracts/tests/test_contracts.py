@@ -300,7 +300,7 @@ class ProjectContractEntryTestCase(TestCase):
                 hour=0, minute=0, second=0, microsecond=0) - relativedelta(days=16),
             end_date=timezone.now().replace(
                 hour=0, minute=0, second=0, microsecond=0) - relativedelta(days=12),
-            )
+        )
 
         self.contract2 = factories.ProjectContract(
             name='Contract 2',
@@ -310,14 +310,14 @@ class ProjectContractEntryTestCase(TestCase):
                 hour=0, minute=0, second=0, microsecond=0) - relativedelta(days=8),
             end_date=timezone.now().replace(
                 hour=0, minute=0, second=0, microsecond=0) - relativedelta(days=4),
-            )
+        )
 
         for x in range(20):
             factories.Entry(**{
                 'user': self.user_a,
                 'project': self.project_a,
                 'start_time': timezone.now() - relativedelta(days=x),
-                'end_time':  (timezone.now() - relativedelta(days=x)) + relativedelta(hours=1),
+                'end_time': (timezone.now() - relativedelta(days=x)) + relativedelta(hours=1),
                 'seconds_paused': 0,
                 'status': Entry.UNVERIFIED,
             })
@@ -326,7 +326,7 @@ class ProjectContractEntryTestCase(TestCase):
                 'user': self.user_b,
                 'project': self.project_b,
                 'start_time': timezone.now() - relativedelta(days=x) + relativedelta(hours=2),
-                'end_time':  (timezone.now() - relativedelta(days=x)) + relativedelta(hours=3),
+                'end_time': (timezone.now() - relativedelta(days=x)) + relativedelta(hours=3),
                 'seconds_paused': 0,
                 'status': Entry.UNVERIFIED,
             })

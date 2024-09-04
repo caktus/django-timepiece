@@ -32,7 +32,7 @@ class EditableTest(TestCase):
             'user': self.user,
             'project': self.project,
             'start_time': timezone.now() - relativedelta(days=6),
-            'end_time':  timezone.now() - relativedelta(days=6),
+            'end_time': timezone.now() - relativedelta(days=6),
             'seconds_paused': 0,
             'status': Entry.VERIFIED,
         })
@@ -40,7 +40,7 @@ class EditableTest(TestCase):
             'user': self.user,
             'project': self.project,
             'start_time': timezone.now() - relativedelta(days=2),
-            'end_time':  timezone.now() - relativedelta(days=2),
+            'end_time': timezone.now() - relativedelta(days=2),
             'seconds_paused': 0,
             'status': Entry.UNVERIFIED,
         })
@@ -400,8 +400,8 @@ class ClockInTest(ViewTestMixin, TestCase):
                              'Please enter a valid start time')
         self.assertFormError(
             response.context['form'], 'start_time',
-            'The start time is on or before the current entry: ' +
-            '%(project)s - %(activity)s starting at %(st_str)s' % entry1_data)
+            'The start time is on or before the current entry: '
+            + '%(project)s - %(activity)s starting at %(st_str)s' % entry1_data)
 
     def testClockInBeforeCurrent(self):
         """
@@ -876,16 +876,16 @@ class ClockOutTest(ViewTestMixin, TestCase):
             'end_time_0': self.default_end_time.strftime('%m/%d/%Y'),
             'end_time_1': self.default_end_time.strftime('%H:%M:%S'),
             'location': self.location.pk,
-            }
+        }
         response = self.client.post(
             self.url, data,
             follow=True,
-            )
+        )
         # Do it again - make sure we redirect to the dashboard
         response = self.client.post(
             self.url, data,
             follow=False,
-            )
+        )
         self.assertRedirects(response, reverse('dashboard'),
                              status_code=302, target_status_code=200)
 
@@ -1601,7 +1601,7 @@ class StatusTest(ViewTestMixin, TestCase):
         entry = factories.Entry(**{
             'user': self.user,
             'start_time': timezone.now() - relativedelta(hours=1),
-            'end_time':  timezone.now(),
+            'end_time': timezone.now(),
         })
         response = self.client.get(self.sheet_url)
         self.assertTrue(response.context['show_verify'])
@@ -1617,7 +1617,7 @@ class StatusTest(ViewTestMixin, TestCase):
         entry = factories.Entry(**{
             'user': self.user,
             'start_time': timezone.now() - relativedelta(hours=1),
-            'end_time':  timezone.now(),
+            'end_time': timezone.now(),
         })
         response = self.client.get(self.sheet_url)
         self.assertFalse(response.context['show_approve'])
@@ -1701,7 +1701,7 @@ class StatusTest(ViewTestMixin, TestCase):
         entry = factories.Entry(**{
             'user': self.user,
             'start_time': timezone.now() - relativedelta(hours=1),
-            'end_time':  timezone.now(),
+            'end_time': timezone.now(),
         })
         reject_url = self.get_reject_url(entry.id)
 
@@ -1724,7 +1724,7 @@ class StatusTest(ViewTestMixin, TestCase):
         entry = factories.Entry(**{
             'user': self.user,
             'start_time': timezone.now() - relativedelta(hours=1),
-            'end_time':  timezone.now(),
+            'end_time': timezone.now(),
         })
         reject_url = self.get_reject_url(entry.id)
         response = self.client.get(reject_url)
