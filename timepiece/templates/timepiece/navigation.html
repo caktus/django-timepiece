@@ -25,7 +25,10 @@
                                 <li><a href="{% url 'edit_settings' %}">Settings</a></li>
                                 <li><a href="{% url 'change_password' %}">Change Password</a></li>
                                 <li class="divider"></li>
-                                <li><a href="{% url 'auth_logout' %}">Logout</a></li>
+                                <form id="logoutForm" action="{% url 'auth_logout' %}" method="post">
+                                    {% csrf_token %}
+                                    <li onclick="logoutForm.submit();">Logout</li></button>
+                                </form>
                             </ul>
                         </li>
                     </ul>

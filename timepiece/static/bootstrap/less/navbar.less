@@ -196,7 +196,8 @@
 .navbar-static-top .container,
 .navbar-fixed-top .container,
 .navbar-fixed-bottom .container {
-  #grid > .core > .span(@gridColumns);
+//  #grid > .core > .span(12)//.span(@gridColumns);
+width: (@gridColumnWidth * @gridColumns) + (@gridGutterWidth * (@gridColumns - 1))
 }
 
 // Fixed to top
@@ -239,6 +240,7 @@
 }
 
 // Links
+.navbar .nav > #logoutForm > li,
 .navbar .nav > li > a {
   float: none;
   // Vertically center the text given @navbarHeight
@@ -298,6 +300,7 @@
 // --------------
 
 // Menu position and menu carets
+.navbar .nav > li > .dropdown-menu > #logoutForm > li,
 .navbar .nav > li > .dropdown-menu {
   &:before {
     content: '';
