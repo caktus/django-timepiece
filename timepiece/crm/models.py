@@ -1,32 +1,42 @@
 from collections import OrderedDict
 
 from django.apps import apps
-from django.contrib.auth.models import User
-from django.core.urlresolvers import reverse
+from django.contrib.auth import get_user_model
+from django.urls import reverse
 from django.db import models
-from django.utils.encoding import python_2_unicode_compatible
 
 from timepiece.utils import get_active_entry
 
 
+User = get_user_model()
+
+
 # Add a utility method to the User class that will tell whether or not a
 # particular user has any unclosed entries
-_clocked_in = lambda user: bool(get_active_entry(user))
+def _clocked_in(self):
+    return bool(get_active_entry(self))
+
+
 User.add_to_class('clocked_in', property(_clocked_in))
 
 
 # Utility method to get user's name, falling back to username.
-_get_name_or_username = lambda user: user.get_full_name() or user.username
+def _get_name_or_username(self):
+    return self.get_full_name() or self.username
+
+
 User.add_to_class('get_name_or_username', _get_name_or_username)
 
 
-_get_absolute_url = lambda user: reverse('view_user', args=(user.pk,))
+def _get_absolute_url(self):
+    return reverse('view_user', args=[self.id])
+
+
 User.add_to_class('get_absolute_url', _get_absolute_url)
 
 
-@python_2_unicode_compatible
 class UserProfile(models.Model):
-    user = models.OneToOneField(User, unique=True, related_name='profile')
+    user = models.OneToOneField(User, unique=True, related_name='profile', on_delete=models.CASCADE)
     hours_per_week = models.DecimalField(
         max_digits=8, decimal_places=2, default=40)
 
@@ -53,7 +63,6 @@ class StatusAttributeManager(models.Manager):
         return qs.filter(type=Attribute.PROJECT_STATUS)
 
 
-@python_2_unicode_compatible
 class Attribute(models.Model):
     PROJECT_TYPE = 'project-type'
     PROJECT_STATUS = 'project-status'
@@ -86,7 +95,6 @@ class Attribute(models.Model):
         return self.label
 
 
-@python_2_unicode_compatible
 class Business(models.Model):
     name = models.CharField(max_length=255)
     short_name = models.CharField(max_length=255, blank=True)
@@ -99,9 +107,6 @@ class Business(models.Model):
         db_table = 'timepiece_business'  # Using legacy table name.
         ordering = ('name',)
         verbose_name_plural = 'Businesses'
-        permissions = (
-            ('view_business', 'Can view businesses'),
-        )
 
     def __str__(self):
         return self.get_display_name()
@@ -122,25 +127,24 @@ class TrackableProjectManager(models.Manager):
         )
 
 
-@python_2_unicode_compatible
 class Project(models.Model):
     name = models.CharField(max_length=255)
     tracker_url = models.CharField(
         max_length=255, blank=True, null=False, default="")
     business = models.ForeignKey(
-        Business, related_name='new_business_projects')
-    point_person = models.ForeignKey(User, limit_choices_to={'is_staff': True})
+        Business, related_name='new_business_projects', on_delete=models.CASCADE)
+    point_person = models.ForeignKey(User, limit_choices_to={'is_staff': True}, on_delete=models.CASCADE)
     users = models.ManyToManyField(
         User, related_name='user_projects', through='ProjectRelationship')
     activity_group = models.ForeignKey(
         'entries.ActivityGroup', related_name='activity_group', null=True,
-        blank=True, verbose_name='restrict activities to')
+        blank=True, verbose_name='restrict activities to', on_delete=models.CASCADE)
     type = models.ForeignKey(
         Attribute, limit_choices_to={'type': 'project-type'},
-        related_name='projects_with_type')
+        related_name='projects_with_type', on_delete=models.CASCADE)
     status = models.ForeignKey(
         Attribute, limit_choices_to={'type': 'project-status'},
-        related_name='projects_with_status')
+        related_name='projects_with_status', on_delete=models.CASCADE)
     description = models.TextField()
 
     objects = models.Manager()
@@ -150,7 +154,6 @@ class Project(models.Model):
         db_table = 'timepiece_project'  # Using legacy table name.
         ordering = ('name', 'status', 'type',)
         permissions = (
-            ('view_project', 'Can view project'),
             ('email_project_report', 'Can email project report'),
             ('view_project_time_sheet', 'Can view project time sheet'),
             ('export_project_time_sheet', 'Can export project time sheet'),
@@ -173,7 +176,6 @@ class Project(models.Model):
         return self.contracts.exclude(status=ProjectContract.STATUS_COMPLETE)
 
 
-@python_2_unicode_compatible
 class RelationshipType(models.Model):
     name = models.CharField(max_length=255, unique=True)
     slug = models.SlugField(max_length=255)
@@ -185,12 +187,11 @@ class RelationshipType(models.Model):
         return self.name
 
 
-@python_2_unicode_compatible
 class ProjectRelationship(models.Model):
     types = models.ManyToManyField(
         RelationshipType, blank=True, related_name='project_relationships')
-    user = models.ForeignKey(User, related_name='project_relationships')
-    project = models.ForeignKey(Project, related_name='project_relationships')
+    user = models.ForeignKey(User, related_name='project_relationships', on_delete=models.CASCADE)
+    project = models.ForeignKey(Project, related_name='project_relationships', on_delete=models.CASCADE)
 
     class Meta:
         db_table = 'timepiece_projectrelationship'  # Using legacy table name.

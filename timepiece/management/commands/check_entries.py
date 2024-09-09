@@ -1,15 +1,17 @@
 from functools import reduce
-from optparse import make_option
 
 from dateutil.relativedelta import relativedelta
 
-from django.contrib.auth.models import User
+from django.contrib.auth import get_user_model
 from django.core.management.base import BaseCommand, CommandError
 from django.db.models import Q
 from django.utils import timezone
 
 from timepiece import utils
 from timepiece.entries.models import Entry
+
+
+User = get_user_model()
 
 
 class Command(BaseCommand):
@@ -22,33 +24,32 @@ class Command(BaseCommand):
     help = ("Check the database for time entries that overlap.\n"
             "Use --help for options.")
 
-    option_list = BaseCommand.option_list + (
-        make_option('--thisweek',
-                    action='store_true',
-                    dest='week',
-                    default=False,
-                    help='Show entries from this week only'),
-        make_option('--thismonth',
-                    action='store_true',
-                    dest='month',
-                    default=False,
-                    help='Show entries from this month only'),
-        make_option('-y', '--thisyear',
-                    action='store_true',
-                    dest='year',
-                    default=False,
-                    help='Show entries from this year only'),
-        make_option('-a', '--all', '--forever',
-                    action='store_true',
-                    dest='all',
-                    default=False,
-                    help='Show entries from all recorded history'),
-        make_option('-d', '--days',
-                    dest='days',
-                    type='int',
-                    default=0,
-                    help='Show entries for the last n days only'),
-    )
+    def add_arguments(self, parser):
+        parser.add_argument('--thisweek',
+                            action='store_true',
+                            dest='week',
+                            default=False,
+                            help='Show entries from this week only')
+        parser.add_argument('--thismonth',
+                            action='store_true',
+                            dest='month',
+                            default=False,
+                            help='Show entries from this month only')
+        parser.add_argument('-y', '--thisyear',
+                            action='store_true',
+                            dest='year',
+                            default=False,
+                            help='Show entries from this year only')
+        parser.add_argument('-a', '--all', '--forever',
+                            action='store_true',
+                            dest='all',
+                            default=False,
+                            help='Show entries from all recorded history')
+        parser.add_argument('-d', '--days',
+                            dest='days',
+                            type='int',
+                            default=0,
+                            help='Show entries for the last n days only')
 
     def usage(self, subcommand):
         usage = "python manage.py check_entries {} [options]\n\n{}".format(
@@ -105,8 +106,10 @@ class Command(BaseCommand):
                 'last': user.last_name,
                 'total': user_total_overlaps,
             }
-            self.stdout.write('Total overlapping entries for user ' +
-                              '%(first)s %(last)s: %(total)d' % overlap_data)
+            self.stdout.write(
+                'Total overlapping entries for user '
+                + '%(first)s %(last)s: %(total)d' % overlap_data
+            )
         return user_total_overlaps
 
     def find_start(self, **kwargs):
@@ -138,9 +141,11 @@ class Command(BaseCommand):
         Return all users if there are no args provided.
         """
         if args:
-            names = reduce(lambda query, arg: query |
-                (Q(first_name__icontains=arg) | Q(last_name__icontains=arg)),
-                args, Q())  # noqa
+            names = reduce(
+                lambda query, arg: query
+                | (Q(first_name__icontains=arg) | Q(last_name__icontains=arg)),
+                args, Q()
+            )  # noqa
             users = User.objects.filter(names)
         # If no args given, check every user
         else:
@@ -187,7 +192,7 @@ class Command(BaseCommand):
 
     def show_overlap(self, entry_a, entry_b=None, **kwargs):
         def make_output_data(entry):
-            return{
+            return {
                 'first_name': entry.user.first_name,
                 'last_name': entry.user.last_name,
                 'entry': entry.id,
@@ -199,8 +204,8 @@ class Command(BaseCommand):
         if entry_b:
             data_b = make_output_data(entry_b)
             output = ('Entry %(entry)d for %(first_name)s %(last_name)s from '
-                      '%(start)s to %(end)s on %(project)s overlaps ' % data_a +
-                      'entry %(entry)d from %(start)s to %(end)s on '
+                      '%(start)s to %(end)s on %(project)s overlaps ' % data_a
+                      + 'entry %(entry)d from %(start)s to %(end)s on '
                       '%(project)s.' % data_b)
         else:
             output = ('Entry %(entry)d for %(first_name)s %(last_name)s from '

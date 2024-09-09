@@ -2,7 +2,7 @@ import datetime
 from decimal import Decimal
 
 from django.conf import settings
-from django.core.urlresolvers import reverse
+from django.urls import reverse
 from django.contrib.auth.models import Permission, User
 from django.test import TestCase
 
@@ -195,11 +195,11 @@ class PayrollTest(ViewTestMixin, LogTimeMixin, TestCase):
         as well as all leave project names.
         """
         self._setupMonthlyTotals()
-        self.assertEquals(
+        self.assertEqual(
             self.labels['billable'], [self.billable_project.type.label])
-        self.assertEquals(
+        self.assertEqual(
             self.labels['nonbillable'], [self.nonbillable_project.type.label])
-        self.assertEquals(len(self.labels['leave']), 2)
+        self.assertEqual(len(self.labels['leave']), 2)
         self.assertTrue(self.sick.name in self.labels['leave'])
         self.assertTrue(self.vacation.name in self.labels['leave'])
 
@@ -208,40 +208,40 @@ class PayrollTest(ViewTestMixin, LogTimeMixin, TestCase):
         self._setupMonthlyTotals()
 
         # 1 row for each user, plus totals row.
-        self.assertEquals(len(self.rows), 2 + 1)
+        self.assertEqual(len(self.rows), 2 + 1)
 
         for row in self.rows[:-1]:  # Exclude totals row.
             work_total = Decimal('55.00')
-            self.assertEquals(row['work_total'], work_total)
+            self.assertEqual(row['work_total'], work_total)
 
             # Last entry is summary of status.
-            self.assertEquals(len(row['billable']), 1 + 1)
+            self.assertEqual(len(row['billable']), 1 + 1)
             for entry in row['billable']:
-                self.assertEquals(entry['hours'], Decimal('45.00'))
-                self.assertEquals(entry['percent'], Decimal('45.00') / work_total * 100)
+                self.assertEqual(entry['hours'], Decimal('45.00'))
+                self.assertEqual(entry['percent'], Decimal('45.00') / work_total * 100)
 
             # Last entry is summary of status.
-            self.assertEquals(len(row['nonbillable']), 1 + 1)
+            self.assertEqual(len(row['nonbillable']), 1 + 1)
             for entry in row['nonbillable']:
-                self.assertEquals(entry['hours'], Decimal('10.00'))
-                self.assertEquals(entry['percent'], Decimal('10.00') / work_total * 100)
+                self.assertEqual(entry['hours'], Decimal('10.00'))
+                self.assertEqual(entry['percent'], Decimal('10.00') / work_total * 100)
 
-            self.assertEquals(len(row['leave']), 2 + 1)
+            self.assertEqual(len(row['leave']), 2 + 1)
             sick_index = self.labels['leave'].index(self.sick.name)
             vacation_index = self.labels['leave'].index(self.vacation.name)
-            self.assertEquals(
+            self.assertEqual(
                 row['leave'][sick_index]['hours'], Decimal('40.00'))
-            self.assertEquals(
+            self.assertEqual(
                 row['leave'][sick_index]['percent'],
                 Decimal('40.00') / Decimal('60.00') * 100)
-            self.assertEquals(
+            self.assertEqual(
                 row['leave'][vacation_index]['hours'], Decimal('20.00'))
-            self.assertEquals(
+            self.assertEqual(
                 row['leave'][vacation_index]['percent'],
                 Decimal('20.00') / Decimal('60.00') * 100)
-            self.assertEquals(row['leave'][-1]['hours'], Decimal('60.00'))
-            self.assertEquals(row['leave'][-1]['percent'], Decimal('100.00'))
-            self.assertEquals(row['grand_total'], Decimal('115.00'))
+            self.assertEqual(row['leave'][-1]['hours'], Decimal('60.00'))
+            self.assertEqual(row['leave'][-1]['percent'], Decimal('100.00'))
+            self.assertEqual(row['grand_total'], Decimal('115.00'))
 
     def testMonthlyPayrollTotals(self):
         """Last row should contain summary totals over all users."""
@@ -249,35 +249,58 @@ class PayrollTest(ViewTestMixin, LogTimeMixin, TestCase):
         totals = self.rows[-1]
 
         work_total = Decimal('110.00')
-        self.assertEquals(totals['work_total'], work_total)
+        self.assertEqual(totals['work_total'], work_total)
 
-        self.assertEquals(len(totals['billable']), 1 + 1)
+        self.assertEqual(len(totals['billable']), 1 + 1)
         for entry in totals['billable']:
-            self.assertEquals(entry['hours'], Decimal('90.00'))
-            self.assertEquals(entry['percent'], Decimal('90.00') / work_total * 100)
+            self.assertEqual(entry['hours'], Decimal('90.00'))
+            self.assertEqual(entry['percent'], Decimal('90.00') / work_total * 100)
 
-        self.assertEquals(len(totals['nonbillable']), 1 + 1)
+        self.assertEqual(len(totals['nonbillable']), 1 + 1)
         for entry in totals['nonbillable']:
-            self.assertEquals(entry['hours'], Decimal('20.00'))
-            self.assertEquals(entry['percent'], Decimal('20.00') / work_total * 100)
+            self.assertEqual(entry['hours'], Decimal('20.00'))
+            self.assertEqual(entry['percent'], Decimal('20.00') / work_total * 100)
 
-        self.assertEquals(len(totals['leave']), 2 + 1)
+        self.assertEqual(len(totals['leave']), 2 + 1)
         sick_index = self.labels['leave'].index(self.sick.name)
         vacation_index = self.labels['leave'].index(self.vacation.name)
-        self.assertEquals(
+        self.assertEqual(
             totals['leave'][sick_index]['hours'], Decimal('80.00'))
-        self.assertEquals(
+        self.assertEqual(
             totals['leave'][sick_index]['percent'],
             Decimal('80.00') / Decimal('120.00') * 100)
-        self.assertEquals(
+        self.assertEqual(
             totals['leave'][vacation_index]['hours'], Decimal('40.00'))
-        self.assertEquals(
+        self.assertEqual(
             totals['leave'][vacation_index]['percent'],
             Decimal('40.00') / Decimal('120.00') * 100)
-        self.assertEquals(totals['leave'][-1]['hours'], Decimal('120.00'))
-        self.assertEquals(totals['leave'][-1]['percent'], Decimal('100.00'))
+        self.assertEqual(totals['leave'][-1]['hours'], Decimal('120.00'))
+        self.assertEqual(totals['leave'][-1]['percent'], Decimal('100.00'))
 
-        self.assertEquals(totals['grand_total'], Decimal('230.00'))
+        self.assertEqual(totals['grand_total'], Decimal('230.00'))
+
+    def testCSVExport(self):
+        self._setupMonthlyTotals()
+        response = self.client.get(self.url, dict(self.args, **{'export': True}))
+        rows = [row.split(',') for row in response.content.decode().strip().split('\r\n')]
+
+        # Well-formed CSV: all rows are same length
+        length = len(rows[0])
+        for row in rows:
+            self.assertEqual(length, len(row))
+
+        # Expected headers are present
+        labels = self.response.context['labels']
+        # minimum: "Name", "Total Worked Hours", "Grand Total"
+        headers_length = 3
+        # headers for each category of hours
+        if 'billable' in labels.keys():
+            headers_length += (len(labels['billable']) * 2) + 2
+        if 'nonbillable' in labels.keys():
+            headers_length += (len(labels['nonbillable']) * 2) + 2
+        if 'leave' in labels.keys():
+            headers_length += len(labels['leave']) + 1
+        self.assertEqual(length, headers_length)
 
     def testNoPermission(self):
         """

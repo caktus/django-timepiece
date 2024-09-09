@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 from __future__ import unicode_literals
 
+import django.db.models.deletion
 from django.db import models, migrations
 from django.conf import settings
 
@@ -43,7 +44,6 @@ class Migration(migrations.Migration):
                 'ordering': ('name',),
                 'db_table': 'timepiece_business',
                 'verbose_name_plural': 'Businesses',
-                'permissions': (('view_business', 'Can view businesses'),),
             },
             bases=(models.Model,),
         ),
@@ -58,7 +58,7 @@ class Migration(migrations.Migration):
             options={
                 'ordering': ('name', 'status', 'type'),
                 'db_table': 'timepiece_project',
-                'permissions': (('view_project', 'Can view project'), ('email_project_report', 'Can email project report'), ('view_project_time_sheet', 'Can view project time sheet'), ('export_project_time_sheet', 'Can export project time sheet'), ('generate_project_invoice', 'Can generate project invoice')),
+                'permissions': (('email_project_report', 'Can email project report'), ('view_project_time_sheet', 'Can view project time sheet'), ('export_project_time_sheet', 'Can export project time sheet'), ('generate_project_invoice', 'Can generate project invoice')),
             },
             bases=(models.Model,),
         ),
@@ -66,7 +66,7 @@ class Migration(migrations.Migration):
             name='ProjectRelationship',
             fields=[
                 ('id', models.AutoField(verbose_name='ID', serialize=False, auto_created=True, primary_key=True)),
-                ('project', models.ForeignKey(related_name='project_relationships', to='crm.Project')),
+                ('project', models.ForeignKey(related_name='project_relationships', to='crm.Project', on_delete=django.db.models.deletion.CASCADE)),
             ],
             options={
                 'db_table': 'timepiece_projectrelationship',
@@ -90,7 +90,7 @@ class Migration(migrations.Migration):
             fields=[
                 ('id', models.AutoField(verbose_name='ID', serialize=False, auto_created=True, primary_key=True)),
                 ('hours_per_week', models.DecimalField(default=40, max_digits=8, decimal_places=2)),
-                ('user', models.OneToOneField(related_name='profile', to=settings.AUTH_USER_MODEL)),
+                ('user', models.OneToOneField(related_name='profile', to=settings.AUTH_USER_MODEL, on_delete=django.db.models.deletion.CASCADE)),
             ],
             options={
                 'db_table': 'timepiece_userprofile',
@@ -106,7 +106,7 @@ class Migration(migrations.Migration):
         migrations.AddField(
             model_name='projectrelationship',
             name='user',
-            field=models.ForeignKey(related_name='project_relationships', to=settings.AUTH_USER_MODEL),
+            field=models.ForeignKey(related_name='project_relationships', to=settings.AUTH_USER_MODEL, on_delete=django.db.models.deletion.CASCADE),
             preserve_default=True,
         ),
         migrations.AlterUniqueTogether(

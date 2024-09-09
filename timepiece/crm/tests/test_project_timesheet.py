@@ -52,7 +52,7 @@ class TestProjectTimesheet(ViewTestMixin, LogTimeMixin, TestCase):
         self.login_user(self.user)
         self.make_entries()
         response = self._get()
-        self.assertEqual(response.status_code, 302)
+        self.assertEqual(response.status_code, 403)  # formerly 302, now a forbidden
 
     def testNoProject(self):
         Project.objects.all().delete()

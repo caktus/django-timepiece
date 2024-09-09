@@ -35,8 +35,8 @@ class SearchMixin(GetDataFormMixin, FormMixin):
         return queryset.none()
 
     def filter_form_valid(self, form, queryset):
-        raise NotImplemented("Subclass must implement queryset filtering "
-                             "when the search form is valid.")
+        raise NotImplementedError("Subclass must implement queryset filtering "
+                                  "when the search form is valid.")
 
     def filter_form_unbound(self, form, queryset):
         """Return all results."""

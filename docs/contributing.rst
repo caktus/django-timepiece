@@ -52,5 +52,4 @@ pull request to have it merged in. Here's a quick guide:
 Contact Us
 ----------
 
-If you have any questions, feel free to reach out to us on GitHub or through
-`our website <http://caktusgroup.com>`_.
+If you have any questions, feel free to add an issue on github

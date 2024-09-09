@@ -80,7 +80,7 @@ class EditUserForm(UserChangeForm):
 
         # In 1.4 this field is created even if it is excluded in Meta.
         if 'password' in self.fields:
-            del(self.fields['password'])
+            del self.fields['password']
 
     def clean(self):
         super(EditUserForm, self).clean()
@@ -134,7 +134,7 @@ class QuickSearchForm(forms.Form):
             raise forms.ValidationError(msg)
         return item
 
-    def get_result(self):
+    def get_results(self):
         return self.cleaned_data['quick_search'].get_absolute_url()
 
 

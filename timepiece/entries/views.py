@@ -8,22 +8,22 @@ import json
 from six.moves.urllib.parse import urlencode
 
 from django.contrib import messages
-from django.contrib.auth.decorators import login_required, permission_required
-from django.contrib.auth.models import User, Permission
+from django.contrib.auth import get_user_model
+from django.contrib.auth.decorators import permission_required
+from django.contrib.auth.mixins import PermissionRequiredMixin, LoginRequiredMixin
+from django.contrib.auth.models import Permission
 from django.contrib.contenttypes.models import ContentType
 from django.core import exceptions
-from django.core.urlresolvers import reverse
+from django.urls import reverse
 from django.db import transaction
 from django.db.models import Q
 from django.http import HttpResponse, HttpResponseRedirect, Http404
-from django.shortcuts import redirect, render
-from django.utils.decorators import method_decorator
+from django.shortcuts import redirect, render, get_object_or_404
 from django.views.generic import TemplateView, View
 
 from timepiece import utils
 from timepiece.forms import DATE_FORM_FORMAT
 from timepiece.utils.csv import DecimalEncoder
-from timepiece.utils.views import cbv_decorator
 
 from timepiece.crm.models import Project, UserProfile
 from timepiece.entries.forms import (
@@ -32,11 +32,13 @@ from timepiece.entries.forms import (
 from timepiece.entries.models import Entry, ProjectHours
 
 
-class Dashboard(TemplateView):
+User = get_user_model()
+
+
+class Dashboard(LoginRequiredMixin, TemplateView):
     template_name = 'timepiece/dashboard.html'
 
-    @method_decorator(login_required)
-    def dispatch(self, request, active_tab, *args, **kwargs):
+    def dispatch(self, request, active_tab=None, *args, **kwargs):
         self.active_tab = active_tab or 'progress'
         self.user = request.user
         return super(Dashboard, self).dispatch(request, *args, **kwargs)
@@ -48,7 +50,7 @@ class Dashboard(TemplateView):
             param = self.request.GET.get('week_start')
             try:
                 day = datetime.datetime.strptime(param, '%Y-%m-%d').date()
-            except:
+            except Exception:
                 pass
         week_start = utils.get_week_start(day)
         week_end = week_start + relativedelta(days=6)
@@ -128,8 +130,10 @@ class Dashboard(TemplateView):
             project_data[pk]['worked'] += hours
 
         # Sort by maximum of worked or assigned hours (highest first).
-        key = lambda x: x['project'].name.lower()
-        project_progress = sorted(project_data.values(), key=key)
+        project_progress = sorted(
+            project_data.values(),
+            key=lambda x: x['project'].name.lower()
+        )
 
         return project_progress
 
@@ -260,7 +264,7 @@ def reject_entry(request, entry_id):
     return_url = request.GET.get('next', reverse('dashboard'))
     try:
         entry = Entry.no_join.get(pk=entry_id)
-    except:
+    except Exception:
         message = 'No such log entry.'
         messages.error(request, message)
         return redirect(return_url)
@@ -381,8 +385,7 @@ class ScheduleView(ScheduleMixin, TemplateView):
         id_list = [user[0] for user in users]
         projects = []
 
-        func = lambda o: o['project__id']
-        for project, entries in groupby(project_hours, func):
+        for project, entries in groupby(project_hours, lambda o: o['project__id']):
             entries = list(entries)
             proj_id = entries[0]['project__id']
             name = entries[0]['project__name']
@@ -448,8 +451,8 @@ class EditScheduleView(ScheduleMixin, TemplateView):
         return HttpResponseRedirect(url)
 
 
-@cbv_decorator(permission_required('entries.add_projecthours'))
-class ScheduleAjaxView(ScheduleMixin, View):
+class ScheduleAjaxView(PermissionRequiredMixin, ScheduleMixin, View):
+    permission_required = 'entries.add_projecthours'
 
     def dispatch(self, request, *args, **kwargs):
         if not request.user.has_perm('entries.add_projecthours'):
@@ -480,10 +483,7 @@ class ScheduleAjaxView(ScheduleMixin, View):
             all_projects: all of the projects; used for autocomplete
             all_users: all users that can clock in; used for completion
         """
-        perm = Permission.objects.filter(
-            content_type=ContentType.objects.get_for_model(Entry),
-            codename='can_clock_in'
-        )
+        perm = get_object_or_404(Permission, content_type=ContentType.objects.get_for_model(Entry), codename='can_clock_in')
         project_hours = self.get_hours_for_week()
         project_hours = project_hours.values(
             'id', 'user', 'user__first_name', 'user__last_name',
@@ -495,10 +495,8 @@ class ScheduleAjaxView(ScheduleMixin, View):
         projects = Project.objects.filter(pk__in=inner_qs).values() \
             .order_by('name')
         all_projects = Project.objects.values('id', 'name')
-        user_q = Q(groups__permissions=perm) | Q(user_permissions=perm)
-        user_q |= Q(is_superuser=True)
-        all_users = User.objects.filter(user_q) \
-            .values('id', 'first_name', 'last_name')
+        user_q = Q(groups__permissions=perm) | Q(user_permissions=perm) | Q(is_superuser=True)
+        all_users = User.objects.filter(user_q).values('id', 'first_name', 'last_name')
 
         data = {
             'project_hours': list(project_hours),
@@ -587,8 +585,8 @@ class ScheduleAjaxView(ScheduleMixin, View):
         return self.update_week(week_start)
 
 
-@cbv_decorator(permission_required('entries.add_projecthours'))
-class ScheduleDetailView(ScheduleMixin, View):
+class ScheduleDetailView(PermissionRequiredMixin, ScheduleMixin, View):
+    permission_required = 'entries.add_projecthours'
 
     def delete(self, request, *args, **kwargs):
         """Remove a project from the database."""

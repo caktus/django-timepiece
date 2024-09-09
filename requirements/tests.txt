@@ -1,8 +1,11 @@
 coverage==4.0a5
+bs4
 factory-boy>=2.5.2
 flake8>=2.4.0
   mccabe>=0.3
   pep8<1.6
   pyflakes>=0.8.1
+lessc
 mock>=1.0.1
 tox>=1.9.2
+tox-uv>=1.11.2

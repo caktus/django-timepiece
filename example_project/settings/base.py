@@ -33,7 +33,7 @@ INSTALLED_APPS = [
     'timepiece.entries',
     'timepiece.reports',
 
-    'bootstrap_toolkit',
+    'bootstrap3',
     'compressor',
     'selectable',
 ]
@@ -68,7 +68,7 @@ MEDIA_ROOT = os.path.join(PROJECT_PATH, 'public', 'media')
 
 MEDIA_URL = '/media/'
 
-MIDDLEWARE_CLASSES = [
+MIDDLEWARE = [
     'django.middleware.common.CommonMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
@@ -94,26 +94,30 @@ STATICFILES_FINDERS = [
     'compressor.finders.CompressorFinder',
 ]
 
-TEMPLATE_CONTEXT_PROCESSORS = [
-    'django.contrib.auth.context_processors.auth',
-    'django.core.context_processors.debug',
-    'django.core.context_processors.i18n',
-    'django.core.context_processors.media',
-    'django.core.context_processors.static',
-    'django.contrib.messages.context_processors.messages',
-    'django.core.context_processors.request',
-    'timepiece.context_processors.quick_search',
-    'timepiece.context_processors.quick_clock_in',
-    'timepiece.context_processors.extra_settings',
-]
-
-TEMPLATE_DIRS = [
-    os.path.join(PROJECT_PATH, 'templates'),
-]
-
-TEMPLATE_LOADERS = [
-    'django.template.loaders.filesystem.Loader',
-    'django.template.loaders.app_directories.Loader',
+TEMPLATES = [
+    {
+        "BACKEND": "django.template.backends.django.DjangoTemplates",
+        "DIRS": [os.path.join(PROJECT_PATH, 'templates')],
+        #"APP_DIRS": True,
+        "OPTIONS": {
+            "context_processors": [
+                'django.template.context_processors.request',
+                'django.contrib.auth.context_processors.auth',
+                'django.template.context_processors.debug',
+                'django.template.context_processors.i18n',
+                'django.template.context_processors.media',
+                'django.template.context_processors.static',
+                'django.contrib.messages.context_processors.messages',
+                'timepiece.context_processors.quick_search',
+                'timepiece.context_processors.quick_clock_in',
+                'timepiece.context_processors.extra_settings',
+            ],
+            'loaders': [
+                'django.template.loaders.filesystem.Loader',
+                'django.template.loaders.app_directories.Loader',
+            ],
+        }
+    }
 ]
 
 TEST_RUNNER = 'django.test.runner.DiscoverRunner'
@@ -135,7 +139,8 @@ COMPRESS_PRECOMPILERS = [
     ('text/less', 'lessc {infile} {outfile}'),
 ]
 
-COMPRESS_ROOT = '%s/static/' % PROJECT_PATH
+COMPRESS_ROOT = f"{PROJECT_PATH}/static/"
+COMPRESS_OFFLINE = 1
 
 
 # === Timepiece settings. === #

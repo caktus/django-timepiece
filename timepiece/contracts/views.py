@@ -3,9 +3,9 @@ from dateutil.relativedelta import relativedelta
 
 from django.contrib.auth.decorators import login_required, permission_required
 from django.contrib import messages
-from django.core.urlresolvers import reverse
+from django.urls import reverse
 from django.db import transaction, DatabaseError
-from django.db.models import Sum, Q
+from django.db.models import DecimalField, Sum, Q
 from django.db.models.expressions import F, Func, Value
 from django.http import HttpResponseRedirect, Http404, HttpResponseForbidden
 from django.shortcuts import get_object_or_404, redirect, render
@@ -237,10 +237,10 @@ class InvoiceEntriesDetail(InvoiceDetail):
         nonbillable_entries = context['nonbillable_entries']
         context.update({
             'billable_total': billable_entries.aggregate(hours=Sum(
-                Func(F('hours'), Value(2), function='ROUND'))
+                Func(F('hours'), Value(2), function='ROUND'), output_field=DecimalField())
             )['hours'],
             'nonbillable_total': nonbillable_entries.aggregate(hours=Sum(
-                Func(F('hours'), Value(2), function='ROUND'))
+                Func(F('hours'), Value(2), function='ROUND'), output_field=DecimalField())
             )['hours'],
         })
         return context
@@ -279,7 +279,7 @@ class InvoiceDetailCSV(CSVViewMixin, InvoiceDetail):
             ]
             rows.append(data)
         total = context['billable_entries'].aggregate(hours=Sum(
-            Func(F('hours'), Value(2), function='ROUND'))
+            Func(F('hours'), Value(2), function='ROUND'), output_field=DecimalField())
         )['hours']
         rows.append(('', '', '', '', '', '', 'Total:', "{0:.2f}".format(total)))
         return rows

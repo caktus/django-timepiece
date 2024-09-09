@@ -1,5 +1,5 @@
 from django import forms
-from django.contrib.auth.models import User
+from django.contrib.auth import get_user_model
 
 from selectable import forms as selectable
 
@@ -9,6 +9,9 @@ from timepiece.forms import DateForm, YearMonthForm
 from timepiece.crm.lookups import ProjectLookup
 from timepiece.crm.models import Attribute
 from timepiece.entries.models import Entry, Activity
+
+
+User = get_user_model()
 
 
 class BillableHoursReportForm(DateForm):

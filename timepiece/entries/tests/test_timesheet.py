@@ -8,7 +8,7 @@ from six.moves.urllib.parse import urlencode
 
 from django.contrib.auth.models import Permission
 from django.contrib.contenttypes.models import ContentType
-from django.core.urlresolvers import reverse
+from django.urls import reverse
 from django.utils import timezone
 from django.test import TestCase
 
@@ -32,7 +32,7 @@ class EditableTest(TestCase):
             'user': self.user,
             'project': self.project,
             'start_time': timezone.now() - relativedelta(days=6),
-            'end_time':  timezone.now() - relativedelta(days=6),
+            'end_time': timezone.now() - relativedelta(days=6),
             'seconds_paused': 0,
             'status': Entry.VERIFIED,
         })
@@ -40,7 +40,7 @@ class EditableTest(TestCase):
             'user': self.user,
             'project': self.project,
             'start_time': timezone.now() - relativedelta(days=2),
-            'end_time':  timezone.now() - relativedelta(days=2),
+            'end_time': timezone.now() - relativedelta(days=2),
             'seconds_paused': 0,
             'status': Entry.UNVERIFIED,
         })
@@ -75,7 +75,7 @@ class MyLedgerTest(ViewTestMixin, LogTimeMixin, TestCase):
         """A user with the correct permissions should see the menu"""
         self.login_with_permissions()
         response = self.client.get(self.url)
-        self.assertEquals(response.status_code, 200)
+        self.assertEqual(response.status_code, 200)
         self.assertTrue('user' in response.context['year_month_form'].fields)
 
     def test_timesheet_view_no_permission(self):
@@ -88,8 +88,8 @@ class MyLedgerTest(ViewTestMixin, LogTimeMixin, TestCase):
     def testEmptyTimeSheet(self):
         self.login_user(self.user)
         response = self.client.get(self.url)
-        self.assertEquals(response.status_code, 200)
-        self.assertEquals(list(response.context['entries']), [])
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(list(response.context['entries']), [])
 
     def testEmptyHourlySummary(self):
         self.login_user(self.user)
@@ -101,13 +101,13 @@ class MyLedgerTest(ViewTestMixin, LogTimeMixin, TestCase):
         }
         url = reverse('view_user_timesheet', args=[self.user.pk])
         response = self.client.get(url, data)
-        self.assertEquals(response.status_code, 200)
-        self.assertEquals(response.context['grouped_totals'], '')
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.context['grouped_totals'], '')
 
     def testNotMyLedger(self):
         self.login_user(self.user2)
         response = self.client.get(self.url)
-        self.assertEquals(response.status_code, 403)
+        self.assertEqual(response.status_code, 403)
 
     def testNoLedger(self):
         self.login_user(self.user2)
@@ -149,7 +149,7 @@ class MyLedgerTest(ViewTestMixin, LogTimeMixin, TestCase):
         self.login_user(self.user)
         self.make_entries()
         response = self.client.get(self.url)
-        self.assertEquals(response.status_code, 200)
+        self.assertEqual(response.status_code, 200)
         self.assertEqual(len(response.context['entries']), 3)
         self.assertEqual(response.context['summary']['total'], Decimal(3))
 
@@ -161,7 +161,7 @@ class MyLedgerTest(ViewTestMixin, LogTimeMixin, TestCase):
             'year': 2011,
         }
         response = self.client.get(self.url, data)
-        self.assertEquals(response.status_code, 200)
+        self.assertEqual(response.status_code, 200)
         self.assertEqual(len(response.context['entries']), 9)
         self.assertEqual(response.context['summary']['total'], Decimal(9))
 
@@ -178,8 +178,8 @@ class ClockInTest(ViewTestMixin, TestCase):
             codename__in=('can_clock_in', 'can_clock_out',
                           'can_pause', 'change_entry')
         )
-        self.user.user_permissions = permissions
-        self.user2.user_permissions = permissions
+        self.user.user_permissions.set(permissions)
+        self.user2.user_permissions.set(permissions)
         self.user.save()
         self.user2.save()
         self.activity = factories.Activity(code='WRK', name='Work')
@@ -370,7 +370,7 @@ class ClockInTest(ViewTestMixin, TestCase):
         # This clock in attempt should be blocked by entry1
         response = self.client.post(self.url, data)
         form = response.context['form']
-        self.assertEquals(len(form.errors), 1, form.errors)
+        self.assertEqual(len(form.errors), 1, form.errors)
         self.assertTrue('__all__' in form.errors, form.errors.keys())
 
     def testClockInSameTime(self):
@@ -396,12 +396,12 @@ class ClockInTest(ViewTestMixin, TestCase):
         })
         # This clock in attempt should be blocked by entry1 (same start time)
         response = self.client.post(self.url, data)
-        self.assertFormError(response, 'form', None,
+        self.assertFormError(response.context['form'], None,
                              'Please enter a valid start time')
         self.assertFormError(
-            response, 'form', 'start_time',
-            'The start time is on or before the current entry: ' +
-            '%(project)s - %(activity)s starting at %(st_str)s' % entry1_data)
+            response.context['form'], 'start_time',
+            'The start time is on or before the current entry: '
+            + '%(project)s - %(activity)s starting at %(st_str)s' % entry1_data)
 
     def testClockInBeforeCurrent(self):
         """
@@ -429,7 +429,7 @@ class ClockInTest(ViewTestMixin, TestCase):
         # (It is before the start time of the current entry)
         response = self.client.post(self.url, data)
         form = response.context['form']
-        self.assertEquals(len(form.errors), 2, form.errors)
+        self.assertEqual(len(form.errors), 2, form.errors)
         self.assertTrue('start_time' in form.errors, form.errors.keys)
         self.assertTrue('__all__' in form.errors, form.errors.keys)
 
@@ -458,7 +458,7 @@ class ClockInTest(ViewTestMixin, TestCase):
                 end_time.strftime('%m/%d/%Y'),
                 end_time.strftime('%H:%M:%S')
             )
-        self.assertFormError(response, 'form', None, err_msg)
+        self.assertFormError(response.context['form'], None, err_msg)
 
     def test_clockin_error_active_entry(self):
         """
@@ -470,15 +470,15 @@ class ClockInTest(ViewTestMixin, TestCase):
 
         # Create a valid entry and follow the redirect to the homepage
         response = self.client.post(self.url, self.clock_in_form, follow=True)
-        self.assertEquals(response.status_code, 200)
+        self.assertEqual(response.status_code, 200)
         self.assertTrue(response.context['messages'])
 
         data = self.clock_in_form
-        data.update({'start_time_0': None})
+        data.update({'start_time_0': ''})
         response = self.client.post(self.url, data)
 
         msg = 'Enter a valid date.'
-        self.assertFormError(response, 'form', 'start_time', msg)
+        self.assertFormError(response.context['form'], 'start_time', msg)
 
         active = Entry.objects.get()
         self.assertIsNone(active.end_time)
@@ -492,7 +492,7 @@ class ClockInTest(ViewTestMixin, TestCase):
 
         # Create a valid entry and follow the redirect to the homepage
         response = self.client.post(self.url, self.clock_in_form, follow=True)
-        self.assertEquals(response.status_code, 200)
+        self.assertEqual(response.status_code, 200)
         self.assertTrue(response.context['messages'])
 
         active = Entry.objects.get()
@@ -511,7 +511,7 @@ class ClockInTest(ViewTestMixin, TestCase):
     def testProjectListFiltered(self):
         self.login_user(self.user)
         response = self.client.get(self.url)
-        self.assertEquals(response.status_code, 200)
+        self.assertEqual(response.status_code, 200)
         projects = list(response.context['form'].fields['project'].queryset)
         self.assertTrue(self.project in projects)
         self.assertFalse(self.project2 in projects)
@@ -523,10 +523,10 @@ class ClockInTest(ViewTestMixin, TestCase):
 
     def testClockInLogin(self):
         response = self.client.get(self.url)
-        self.assertEquals(response.status_code, 302)
+        self.assertEqual(response.status_code, 302)
         self.login_user(self.user)
         response = self.client.get(self.url)
-        self.assertEquals(response.status_code, 200)
+        self.assertEqual(response.status_code, 200)
 
     def testClockInUnauthorizedProject(self):
         self.login_user(self.user)
@@ -537,7 +537,7 @@ class ClockInTest(ViewTestMixin, TestCase):
         self.assertTrue(response.context['form'].errors)
         err_msg = 'Select a valid choice. That choice is not one of the ' + \
                   'available choices.'
-        self.assertFormError(response, 'form', 'project', err_msg)
+        self.assertFormError(response.context['form'], 'project', err_msg)
 
     def testClockInBadActivity(self):
         self.login_user(self.user)
@@ -548,8 +548,8 @@ class ClockInTest(ViewTestMixin, TestCase):
         })
         response = self.client.post(self.url, data)
         err_msg = 'sick/personal is not allowed for this project. Please '
-        err_msg += 'choose among development, and Work'
-        self.assertFormError(response, 'form', None, err_msg)
+        err_msg += 'choose among Work, and development'
+        self.assertFormError(response.context['form'], None, err_msg)
 
     def test_clock_in_active_comments(self):
         """
@@ -582,8 +582,8 @@ class AutoActivityTest(ViewTestMixin, LogTimeMixin, TestCase):
             codename__in=('can_clock_in', 'can_clock_out',
                           'can_pause', 'change_entry')
         )
-        self.user.user_permissions = permissions
-        self.user2.user_permissions = permissions
+        self.user.user_permissions.set(permissions)
+        self.user2.user_permissions.set(permissions)
         self.user.save()
         self.user2.save()
         self.activity = factories.Activity(code='WRK', name='Work')
@@ -672,8 +672,8 @@ class ClockOutTest(ViewTestMixin, TestCase):
             codename__in=('can_clock_in', 'can_clock_out',
                           'can_pause', 'change_entry')
         )
-        self.user.user_permissions = permissions
-        self.user2.user_permissions = permissions
+        self.user.user_permissions.set(permissions)
+        self.user2.user_permissions.set(permissions)
         self.user.save()
         self.user2.save()
         self.activity = factories.Activity(code='WRK', name='Work')
@@ -782,7 +782,7 @@ class ClockOutTest(ViewTestMixin, TestCase):
             'location': self.location.pk,
         }
         response = self.client.post(reverse('clock_out'), data)
-        self.assertFormError(response, 'form', None,
+        self.assertFormError(response.context['form'], None,
                              'Ending time must exceed the starting time')
 
     def testClockOutTooLong(self):
@@ -803,7 +803,7 @@ class ClockOutTest(ViewTestMixin, TestCase):
                 end_time.strftime('%m/%d/%Y'),
                 end_time.strftime('%H:%M:%S')
             )
-        self.assertFormError(response, 'form', None, err_msg)
+        self.assertFormError(response.context['form'], None, err_msg)
 
     def testClockOutPauseTooLong(self):
         paused_entry = self.entry
@@ -825,7 +825,7 @@ class ClockOutTest(ViewTestMixin, TestCase):
                 self.default_end_time.strftime('%m/%d/%Y'),
                 self.default_end_time.strftime('%H:%M:%S')
             )
-        self.assertFormError(response, 'form', None, err_msg)
+        self.assertFormError(response.context['form'], None, err_msg)
 
     def testClockOutOverlap(self):
         """
@@ -862,7 +862,7 @@ class ClockOutTest(ViewTestMixin, TestCase):
         # fail
         response = self.client.post(reverse('clock_out'), data)
         form = response.context['form']
-        self.assertEquals(len(form.errors), 1, form.errors.keys)
+        self.assertEqual(len(form.errors), 1, form.errors.keys)
         self.assertTrue('__all__' in form.errors, form.errors)
 
     def test_clocking_out_inactive(self):
@@ -876,16 +876,16 @@ class ClockOutTest(ViewTestMixin, TestCase):
             'end_time_0': self.default_end_time.strftime('%m/%d/%Y'),
             'end_time_1': self.default_end_time.strftime('%H:%M:%S'),
             'location': self.location.pk,
-            }
+        }
         response = self.client.post(
             self.url, data,
             follow=True,
-            )
+        )
         # Do it again - make sure we redirect to the dashboard
         response = self.client.post(
             self.url, data,
             follow=False,
-            )
+        )
         self.assertRedirects(response, reverse('dashboard'),
                              status_code=302, target_status_code=200)
 
@@ -907,8 +907,8 @@ class CheckOverlap(ViewTestMixin, LogTimeMixin, TestCase):
             codename__in=('can_clock_in', 'can_clock_out',
                           'can_pause', 'change_entry')
         )
-        self.user.user_permissions = permissions
-        self.user2.user_permissions = permissions
+        self.user.user_permissions.set(permissions)
+        self.user2.user_permissions.set(permissions)
         self.user.save()
         self.user2.save()
         self.activity = factories.Activity(
@@ -1017,8 +1017,8 @@ class CreateEditEntry(ViewTestMixin, TestCase):
             codename__in=('can_clock_in', 'can_clock_out',
                           'can_pause', 'change_entry')
         )
-        self.user.user_permissions = permissions
-        self.user2.user_permissions = permissions
+        self.user.user_permissions.set(permissions)
+        self.user2.user_permissions.set(permissions)
         self.user.save()
         self.user2.save()
         self.activity = factories.Activity(code='WRK', name='Work')
@@ -1134,7 +1134,7 @@ class CreateEditEntry(ViewTestMixin, TestCase):
             response, 'The entry has been updated successfully', count=1)
         entries = Entry.objects.filter(
             user=self.user, end_time__isnull=True)
-        self.assertEquals(entries.count(), 1)
+        self.assertEqual(entries.count(), 1)
 
     def testEditCurrentDiffTime(self):
         """
@@ -1153,7 +1153,7 @@ class CreateEditEntry(ViewTestMixin, TestCase):
         self.assertRedirects(response, reverse('dashboard'),
                              status_code=302, target_status_code=200)
         entries = Entry.objects.filter(user=self.user, end_time__isnull=True)
-        self.assertEquals(entries.count(), 1)
+        self.assertEqual(entries.count(), 1)
 
     def testCreateBlockByClosed(self):
         """
@@ -1168,7 +1168,7 @@ class CreateEditEntry(ViewTestMixin, TestCase):
         })
         response = self.client.post(self.create_url, overlap_entry, follow=True)
         form = response.context['form']
-        self.assertEquals(len(form.errors), 1, form.errors)
+        self.assertEqual(len(form.errors), 1, form.errors)
         self.assertTrue('__all__' in form.errors, form.errors.keys())
 
     def testCreateBlockByCurrent(self):
@@ -1184,7 +1184,7 @@ class CreateEditEntry(ViewTestMixin, TestCase):
         })
         response = self.client.post(self.create_url, overlap_entry, follow=True)
         form = response.context['form']
-        self.assertEquals(len(form.errors), 1, form.errors)
+        self.assertEqual(len(form.errors), 1, form.errors)
         self.assertTrue('__all__' in form.errors, form.errors.keys())
 
     def testCreateTooLongEntry(self):
@@ -1200,7 +1200,7 @@ class CreateEditEntry(ViewTestMixin, TestCase):
             'end_time_1': end_time.strftime('%H:%M:%S'),
         })
         response = self.client.post(self.create_url, long_entry, follow=True)
-        err_msg = 'Ending time exceeds starting time by 12 hours ' \
+        err_msg_2 = 'Ending time exceeds starting time by 12 hours ' \
             'or more for {0} on {1} at {2} to {3} at {4}.'.format(
                 self.project,
                 self.now.strftime('%m/%d/%Y'),
@@ -1208,7 +1208,10 @@ class CreateEditEntry(ViewTestMixin, TestCase):
                 end_time.strftime('%m/%d/%Y'),
                 end_time.strftime('%H:%M:%S')
             )
-        self.assertFormError(response, 'form', None, err_msg)
+        err_msg = 'The start time or end time conflict with the active entry: '
+        err_msg += f"{self.devl_activity} on {self.project} starting at {self.ten_min_ago.strftime('%H:%M:%S')}."
+        err_msgs = [err_msg, err_msg_2]
+        self.assertFormError(response.context['form'], None, err_msgs)
 
     def testCreateLongPauseEntry(self):
         """
@@ -1242,8 +1245,8 @@ class CreateEditEntry(ViewTestMixin, TestCase):
         data.update({'activity': self.sick_activity.id})
         response = self.client.post(self.create_url, data)
         err_msg = 'sick/personal is not allowed for this project. Please '
-        err_msg += 'choose among development, and Work'
-        self.assertFormError(response, 'form', None, err_msg)
+        err_msg += 'choose among Work, and development'
+        self.assertFormError(response.context['form'], None, err_msg)
 
     def add_entry_test_helper(self):
         self.login_user(self.user)
@@ -1367,8 +1370,8 @@ class StatusTest(ViewTestMixin, TestCase):
             codename__in=('can_clock_in', 'can_clock_out',
                           'can_pause', 'change_entry')
         )
-        self.user.user_permissions = permissions
-        self.user2.user_permissions = permissions
+        self.user.user_permissions.set(permissions)
+        self.user2.user_permissions.set(permissions)
         self.user.save()
         self.user2.save()
         self.activity = factories.Activity(code='WRK', name='Work')
@@ -1468,33 +1471,33 @@ class StatusTest(ViewTestMixin, TestCase):
             status=Entry.VERIFIED,
         )
         response = self.client.get(self.sheet_url)
-        self.assertEquals(response.status_code, 200)
+        self.assertEqual(response.status_code, 200)
 
         self.assertTrue(response.context['show_approve'])
         self.assertFalse(response.context['show_verify'])
 
     def test_no_hours_verify(self):
         response = self.client.get(self.verify_url(), follow=True)
-        self.assertEquals(response.status_code, 200)
+        self.assertEqual(response.status_code, 200)
 
         msg = 'You cannot verify/approve a timesheet with no hours'
         messages = response.context['messages']
-        self.assertEquals(messages._loaded_messages[0].message, msg)
+        self.assertEqual(messages._loaded_messages[0].message, msg)
 
         response = self.client.post(self.verify_url(), follow=True)
-        self.assertEquals(messages._loaded_messages[0].message, msg)
+        self.assertEqual(messages._loaded_messages[0].message, msg)
 
     def test_no_hours_approve(self):
         self.login_with_permissions('approve_timesheet', 'view_entry_summary')
         response = self.client.get(self.approve_url(), follow=True)
-        self.assertEquals(response.status_code, 200)
+        self.assertEqual(response.status_code, 200)
 
         msg = 'You cannot verify/approve a timesheet with no hours'
         messages = response.context['messages']
-        self.assertEquals(messages._loaded_messages[0].message, msg)
+        self.assertEqual(messages._loaded_messages[0].message, msg)
 
         response = self.client.post(self.approve_url(), follow=True)
-        self.assertEquals(messages._loaded_messages[0].message, msg)
+        self.assertEqual(messages._loaded_messages[0].message, msg)
 
     def test_verify_other_user(self):
         """A user should not be able to verify another's timesheet"""
@@ -1506,12 +1509,12 @@ class StatusTest(ViewTestMixin, TestCase):
         url = self.verify_url(self.user2)
         response = self.client.get(url)
 
-        self.assertEquals(response.status_code, 403)
-        self.assertEquals(entry.status, Entry.UNVERIFIED)
+        self.assertEqual(response.status_code, 403)
+        self.assertEqual(entry.status, Entry.UNVERIFIED)
 
         response = self.client.post(url, {'do_action': 'Yes'})
-        self.assertEquals(response.status_code, 403)
-        self.assertEquals(entry.status, Entry.UNVERIFIED)
+        self.assertEqual(response.status_code, 403)
+        self.assertEqual(entry.status, Entry.UNVERIFIED)
 
     def test_approve_user(self):
         """A regular user should not be able to approve their timesheet"""
@@ -1522,11 +1525,11 @@ class StatusTest(ViewTestMixin, TestCase):
         })
 
         response = self.client.get(self.approve_url())
-        self.assertEquals(response.status_code, 403)
+        self.assertEqual(response.status_code, 403)
 
         response = self.client.post(self.approve_url(), {'do_action': 'Yes'})
-        self.assertEquals(response.status_code, 403)
-        self.assertNotEquals(entry.status, Entry.APPROVED)
+        self.assertEqual(response.status_code, 403)
+        self.assertNotEqual(entry.status, Entry.APPROVED)
         self.assertContains(
             response,
             'Forbidden: You cannot approve this timesheet',
@@ -1542,11 +1545,11 @@ class StatusTest(ViewTestMixin, TestCase):
         })
 
         response = self.client.get(self.approve_url())
-        self.assertEquals(response.status_code, 403)
+        self.assertEqual(response.status_code, 403)
 
         response = self.client.post(self.approve_url(), {'do_action': 'Yes'})
-        self.assertEquals(response.status_code, 403)
-        self.assertNotEquals(entry.status, Entry.APPROVED)
+        self.assertEqual(response.status_code, 403)
+        self.assertNotEqual(entry.status, Entry.APPROVED)
         self.assertContains(
             response,
             'Forbidden: You cannot approve this timesheet',
@@ -1573,24 +1576,24 @@ class StatusTest(ViewTestMixin, TestCase):
         })
 
         response = self.client.get(self.verify_url(), follow=True)
-        self.assertEquals(response.status_code, 200)
+        self.assertEqual(response.status_code, 200)
 
         messages = response.context['messages']
         msg = 'You cannot verify/approve this timesheet while the user {0} ' \
             'has an active entry. Please have them close any active ' \
             'entries.'.format(self.user.get_name_or_username())
 
-        self.assertEquals(messages._loaded_messages[0].message, msg)
-        self.assertEquals(entry1.status, Entry.UNVERIFIED)
-        self.assertEquals(entry2.status, Entry.UNVERIFIED)
+        self.assertEqual(messages._loaded_messages[0].message, msg)
+        self.assertEqual(entry1.status, Entry.UNVERIFIED)
+        self.assertEqual(entry2.status, Entry.UNVERIFIED)
 
         response = self.client.post(self.verify_url(), follow=True)
-        self.assertEquals(response.status_code, 200)
+        self.assertEqual(response.status_code, 200)
         messages = response.context['messages']
 
-        self.assertEquals(messages._loaded_messages[0].message, msg)
-        self.assertEquals(entry1.status, Entry.UNVERIFIED)
-        self.assertEquals(entry2.status, Entry.UNVERIFIED)
+        self.assertEqual(messages._loaded_messages[0].message, msg)
+        self.assertEqual(entry1.status, Entry.UNVERIFIED)
+        self.assertEqual(entry2.status, Entry.UNVERIFIED)
 
     def testVerifyButton(self):
         response = self.client.get(self.sheet_url)
@@ -1598,7 +1601,7 @@ class StatusTest(ViewTestMixin, TestCase):
         entry = factories.Entry(**{
             'user': self.user,
             'start_time': timezone.now() - relativedelta(hours=1),
-            'end_time':  timezone.now(),
+            'end_time': timezone.now(),
         })
         response = self.client.get(self.sheet_url)
         self.assertTrue(response.context['show_verify'])
@@ -1614,7 +1617,7 @@ class StatusTest(ViewTestMixin, TestCase):
         entry = factories.Entry(**{
             'user': self.user,
             'start_time': timezone.now() - relativedelta(hours=1),
-            'end_time':  timezone.now(),
+            'end_time': timezone.now(),
         })
         response = self.client.get(self.sheet_url)
         self.assertFalse(response.context['show_approve'])
@@ -1635,9 +1638,9 @@ class StatusTest(ViewTestMixin, TestCase):
         )
         self.client.get(self.verify_url())
         entries = self.user.timepiece_entries.all()
-        self.assertEquals(entries[0].status, Entry.UNVERIFIED)
+        self.assertEqual(entries[0].status, Entry.UNVERIFIED)
         self.client.post(self.verify_url(), {'do_action': 'Yes'})
-        self.assertEquals(entries[0].status, Entry.VERIFIED)
+        self.assertEqual(entries[0].status, Entry.VERIFIED)
 
     def testApprovePage(self):
         self.login_with_permissions('approve_timesheet', 'view_entry_summary')
@@ -1647,16 +1650,16 @@ class StatusTest(ViewTestMixin, TestCase):
             end_time=timezone.now(),
         )
 
-        self.assertEquals(entry.status, Entry.UNVERIFIED)
+        self.assertEqual(entry.status, Entry.UNVERIFIED)
         entry.status = Entry.VERIFIED
         entry.save()
 
         self.client.get(self.approve_url(),)
-        self.assertEquals(entry.status, Entry.VERIFIED)
+        self.assertEqual(entry.status, Entry.VERIFIED)
 
         self.client.post(self.approve_url(), {'do_action': 'Yes'})
         entry = Entry.objects.get(pk=entry.pk)
-        self.assertEquals(entry.status, Entry.APPROVED)
+        self.assertEqual(entry.status, Entry.APPROVED)
 
     def test_reject_user(self):
         """A regular user should not be able to reject an entry"""
@@ -1672,7 +1675,7 @@ class StatusTest(ViewTestMixin, TestCase):
         url = self.get_reject_url(entry.pk)
 
         self.client.post(url, {'Yes': 'yes'})
-        self.assertEquals(entry.status, Entry.VERIFIED)
+        self.assertEqual(entry.status, Entry.VERIFIED)
 
     def test_reject_other_user(self):
         """
@@ -1691,14 +1694,14 @@ class StatusTest(ViewTestMixin, TestCase):
         url = self.get_reject_url(entry.pk)
 
         self.client.post(url, {'Yes': 'yes'})
-        self.assertEquals(entry.status, Entry.VERIFIED)
+        self.assertEqual(entry.status, Entry.VERIFIED)
 
     def testRejectPage(self):
         self.login_as_admin()
         entry = factories.Entry(**{
             'user': self.user,
             'start_time': timezone.now() - relativedelta(hours=1),
-            'end_time':  timezone.now(),
+            'end_time': timezone.now(),
         })
         reject_url = self.get_reject_url(entry.id)
 
@@ -1721,7 +1724,7 @@ class StatusTest(ViewTestMixin, TestCase):
         entry = factories.Entry(**{
             'user': self.user,
             'start_time': timezone.now() - relativedelta(hours=1),
-            'end_time':  timezone.now(),
+            'end_time': timezone.now(),
         })
         reject_url = self.get_reject_url(entry.id)
         response = self.client.get(reject_url)
@@ -1750,8 +1753,8 @@ class TestTotals(ViewTestMixin, LogTimeMixin, TestCase):
             codename__in=('can_clock_in', 'can_clock_out',
                           'can_pause', 'change_entry')
         )
-        self.user.user_permissions = permissions
-        self.user2.user_permissions = permissions
+        self.user.user_permissions.set(permissions)
+        self.user2.user_permissions.set(permissions)
         self.user.save()
         self.user2.save()
         self.activity = factories.Activity(code='WRK', name='Work')
@@ -1856,8 +1859,8 @@ class HourlySummaryTest(ViewTestMixin, TestCase):
             codename__in=('can_clock_in', 'can_clock_out',
                           'can_pause', 'change_entry')
         )
-        self.user.user_permissions = permissions
-        self.user2.user_permissions = permissions
+        self.user.user_permissions.set(permissions)
+        self.user2.user_permissions.set(permissions)
         self.user.save()
         self.user2.save()
         self.activity = factories.Activity(code='WRK', name='Work')
@@ -1920,7 +1923,7 @@ class HourlySummaryTest(ViewTestMixin, TestCase):
         self.create_month_entries()
 
         response = self.client.get(self.url)
-        self.assertEquals(response.status_code, 200)
+        self.assertEqual(response.status_code, 200)
 
         start_date = utils.get_week_start(self.month)
         # Week of {{ week|date:'M j, Y'}}
@@ -1940,7 +1943,7 @@ class HourlySummaryTest(ViewTestMixin, TestCase):
         })
 
         response = self.client.get(self.url)
-        self.assertEquals(response.status_code, 200)
+        self.assertEqual(response.status_code, 200)
         self.assertFalse(old_entry in response.context['entries'])
 
     def test_single_entry_in_week(self):
@@ -1977,13 +1980,13 @@ class HourlySummaryTest(ViewTestMixin, TestCase):
         response = self.client.get(self.url + '?{0}'.format(
             urlencode({'year': 2012, 'month': 4})
         ))
-        self.assertEquals(response.status_code, 200)
+        self.assertEqual(response.status_code, 200)
         # entries context object is a ValuesQuerySet
         extra_values = ('start_time', 'end_time', 'comments', 'seconds_paused',
                         'id', 'location__name', 'project__name',
                         'activity__name', 'status')
         entries = Entry.objects.timespan(april, span='month').date_trunc('month', extra_values)
-        self.assertEquals(list(entries), list(response.context['entries']))
+        self.assertEqual(list(entries), list(response.context['entries']))
 
 
 class MonthlyRejectTestCase(ViewTestMixin, TestCase):
@@ -1999,8 +2002,8 @@ class MonthlyRejectTestCase(ViewTestMixin, TestCase):
             codename__in=('can_clock_in', 'can_clock_out',
                           'can_pause', 'change_entry')
         )
-        self.user.user_permissions = permissions
-        self.user2.user_permissions = permissions
+        self.user.user_permissions.set(permissions)
+        self.user2.user_permissions.set(permissions)
         self.user.save()
         self.user2.save()
         self.activity = factories.Activity(code='WRK', name='Work')
@@ -2067,7 +2070,7 @@ class MonthlyRejectTestCase(ViewTestMixin, TestCase):
         response = self.client.post(self.url, data=self.data)
 
         entries = Entry.no_join.filter(status=Entry.VERIFIED)
-        self.assertEquals(entries.count(), 0)
+        self.assertEqual(entries.count(), 0)
 
     def test_page_no_permissions(self):
         """
@@ -2083,7 +2086,7 @@ class MonthlyRejectTestCase(ViewTestMixin, TestCase):
         response = self.client.post(self.url, data=self.data)
 
         entries = Entry.no_join.filter(status=Entry.VERIFIED)
-        self.assertEquals(entries.count(), 2)
+        self.assertEqual(entries.count(), 2)
 
     def test_reject_entries_no_date(self):
         """
@@ -2119,7 +2122,7 @@ class MonthlyRejectTestCase(ViewTestMixin, TestCase):
         self.client.post(self.url, data=data)
 
         entries = Entry.no_join.filter(status=Entry.VERIFIED)
-        self.assertEquals(entries.count(), 2)
+        self.assertEqual(entries.count(), 2)
 
     def test_reject_approved_invoiced_entries(self):
         """Entries that are approved invoiced should not be rejected"""
@@ -2130,4 +2133,4 @@ class MonthlyRejectTestCase(ViewTestMixin, TestCase):
         self.client.post(self.url, data=self.data)
 
         entries = Entry.no_join.filter(status=Entry.UNVERIFIED)
-        self.assertEquals(entries.count(), 0)
+        self.assertEqual(entries.count(), 0)
