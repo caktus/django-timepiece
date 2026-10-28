@@ -11,7 +11,7 @@
 {% block crumbs %}
     {{ block.super }}
     <li>
-        <span class="divider">/</span>
+        
         <a href="{% url 'report_billable_hours' %}">Billable Hours Report</a>
     </li>
 {% endblock crumbs %}
@@ -24,20 +24,20 @@
 
 {% block extrajs %}
     {{ block.super }}
-    <script charset="utf-8" src="https://www.google.com/jsapi"></script>
-    <script charset="utf-8" src="{% static "timepiece/js/chart/billable_chart.js" %}"
+    <script charset="utf-8" src="{% static "timepiece/js/chart/chart.umd.min.js" %}"></script>
+    <script charset="utf-8" src="{% static "timepiece/js/chart/billable_chart.js" %}?v=chartjs"
             data-hours="{{ data }}"></script>
 {% endblock extrajs %}
 
 {% block report_content %}
-    <div class="row-fluid">
-        <div class="span12">
+    <div class="row">
+        <div class="col-md-12">
             {% date_filters "filter_form" %}
         </div>
     </div>
 
-    <div class="row-fluid">
-        <div class="span12">
+    <div class="row">
+        <div class="col-md-12">
             <div id="chart-container">
                 {% if entries %}
                     <div id="chart"></div>
@@ -48,8 +48,8 @@
         </div>
     </div>
 
-    <div class="row-fluid">
-        <div class="span12">
+    <div class="row">
+        <div class="col-md-12">
             <form class="filter" method="get" id="filter_form">
                 <div class="control-group">
                     {% for field in filter_form %}

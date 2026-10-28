@@ -5,22 +5,22 @@
 
 {% block crumbs %}
     {{ block.super }}
-    <li><span class="divider">/</span> <a href="{% url 'view_invoice' invoice.pk %}">Invoice Detail</a></li>
+    <li><a href="{% url 'view_invoice' invoice.pk %}">Invoice Detail</a></li>
 {% endblock crumbs %}
 
 {% block content %}
-    <div class="row-fluid">
-        <div class="span12">
+    <div class="row">
+        <div class="col-md-12">
             {% include "timepiece/invoice/_subnav.html" with invoice=invoice current="detail" %}
         </div>
     </div>
 
-    <div class="row-fluid">
-        <div class="span6">
+    <div class="row">
+        <div class="col-md-6">
             {% include 'timepiece/invoice/_invoice.html' %}
         </div>
 
-        <div class="span6">
+        <div class="col-md-6">
             {% if billable_totals %}
                 <h3>Billable Totals</h3>
                 {% with totals=billable_totals %}

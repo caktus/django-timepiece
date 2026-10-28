@@ -1,13 +1,5 @@
 // Includes
 @import "../../bootstrap/less/bootstrap.less";
-@import "../../bootstrap/less/responsive.less";
-
-/*
-Change default sprite paths to point inside of static/bootstrap instead of
-static/timepiece.
-*/
-@iconSpritePath:      "../../bootstrap/img/glyphicons-halflings.png";
-@iconWhiteSpritePath: "../../bootstrap/img/glyphicons-halflings-white.png";
 
 
 // Variables & Mixins
@@ -16,6 +8,8 @@ static/timepiece.
 @blue: #049CDB;
 @lightblue: lighten(@blue, 20%);
 @red: #DA4F49;
+@yellow: #F0AD4E;
+@green: #5CB85C;
 
 @tableBackgroundAccent: rgba(0, 0, 0, 0.05);
 @tableBackgroundHover: #D0D0EC;
@@ -54,10 +48,8 @@ static/timepiece.
     -ms-word-break: break-all;
 }
 
-@media (min-width: 981px) {
-    body {
-        padding-top: 60px;
-    }
+body {
+    padding-top: 60px;
 }
 
 body {
@@ -70,7 +62,7 @@ body {
     }
 
     h2 {
-        border-bottom: 1px solid #593E1A;
+        border-bottom: 1px solid #DDDDDD;
 
         &.page-title {
             margin-bottom: 20px;
@@ -137,7 +129,8 @@ body {
         @lightgray: #AAAAAA;
         .desktop {
             @media (max-width: 767px){
-                .hide;
+                display: none !important;
+                visibility: hidden !important;
             }
         }
         thead{
@@ -305,12 +298,12 @@ body {
         .navbar-search {
             input[type="text"]{
                 font-family: Helvetica, Arial, sans-serif;
-                color: @grayLight;
+                color: @gray-light;
                 font-weight: normal;
                 line-height: 1;
                 margin-bottom: 0;
                 width: 100px;
-                border: 1px solid @black;
+                border: 1px solid #000;
                 &:focus {
                     width: 150px;
                 }
@@ -493,8 +486,31 @@ body {
             margin: 0px 0px 20px 20px;
 
             label.control-label, p > label {
-                font-size: 1.5em;
+                font-size: 1.1em;
                 font-weight: bold;
+            }
+
+            .controls {
+                input[type='text'], input[type='date'], select {
+                    display: block;
+                    width: 100%;
+                    height: 34px;
+                    padding: 6px 12px;
+                    font-size: 14px;
+                    line-height: 1.42857143;
+                    color: #555555;
+                    background-color: #FFFFFF;
+                    background-image: none;
+                    border: 1px solid #CCCCCC;
+                    border-radius: 4px;
+                    box-shadow: inset 0 1px 1px rgba(0, 0, 0, 0.075);
+
+                    &:focus {
+                        border-color: #66AFE9;
+                        outline: 0;
+                        box-shadow: inset 0 1px 1px rgba(0, 0, 0, 0.075), 0 0 8px rgba(102, 175, 233, 0.6);
+                    }
+                }
             }
 
             ul {

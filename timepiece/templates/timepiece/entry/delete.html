@@ -4,12 +4,12 @@
 
 {% block crumbs %}
     {{ block.super }}
-    <li><span class="divider">/</span> <a href="{% url 'delete_entry' entry.pk %}">Delete Entry</a></li>
+    <li><a href="{% url 'delete_entry' entry.pk %}">Delete Entry</a></li>
 {% endblock crumbs %}
 
 {% block content %}
-    <div class="row-fluid">
-        <div class="span12">
+    <div class="row">
+        <div class="col-md-12">
             <h2>Delete Entry</h2>
 
             <br style="clear: both;" />

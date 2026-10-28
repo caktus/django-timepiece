@@ -5,25 +5,25 @@
 
 {% block crumbs %}
     {{ block.super }}
-    <li><span class="divider">/</span> <a href="{% url 'delete_invoice_entry' invoice.pk entry.pk %}">Remove Entry</a></li>
+    <li><a href="{% url 'delete_invoice_entry' invoice.pk entry.pk %}">Remove Entry</a></li>
 {% endblock crumbs %}
 
 {% block content %}
-    <div class="row-fluid">
-        <div class="span12">
+    <div class="row">
+        <div class="col-md-12">
             <h2>Are you sure you want to remove this entry from the current invoice?</h2>
         </div>
     </div>
 
-    <div class="row-fluid">
-        <div class="span12">
+    <div class="row">
+        <div class="col-md-12">
             <h3>Invoice</h3>
             {% include 'timepiece/invoice/_invoice.html' %}
         </div>
     </div>
 
-    <div class="row-fluid">
-        <div class="span12">
+    <div class="row">
+        <div class="col-md-12">
             <h3>Entry</h3>
             <table class="table table-bordered">
                 <thead>
@@ -52,8 +52,8 @@
         </div>
     </div>
 
-    <div class="row-fluid">
-        <div class="span6">
+    <div class="row">
+        <div class="col-md-6">
             <form class="form-inline" method="post">
                 {% csrf_token %}
                 <input class="btn btn-primary" type='submit' name='submit' value='Remove Entry' />

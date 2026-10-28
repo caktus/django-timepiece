@@ -8,14 +8,14 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
 
     {% block javascript %}
-    <script charset="utf-8" src="//ajax.googleapis.com/ajax/libs/jquery/1.7.2/jquery.min.js"></script>
+    <script charset="utf-8" src="https://code.jquery.com/jquery-1.12.4.min.js"></script>
     {% comment %}
     .button() is in both bootstrap & jqueryui. Selectable depends on
     jqueryui's, and bootstrap's is not currently used, so we'll load
     jqueryui last so that it has precedence.
     {% endcomment %}
     <script charset="utf-8" src="{% static "bootstrap/js/bootstrap.min.js" %}"></script>
-    <script charset="utf-8" src="//ajax.googleapis.com/ajax/libs/jqueryui/1.8.18/jquery-ui.min.js"></script>
+    <script charset="utf-8" src="https://code.jquery.com/ui/1.12.1/jquery-ui.min.js"></script>
     <script charset="utf-8" src="{% static "selectable/js/jquery.dj.selectable.js" %}"></script>
     {% endblock javascript %}
 
@@ -28,7 +28,7 @@
 
     {% block css %}
         <link type="text/css" rel="stylesheet"
-                href="//ajax.googleapis.com/ajax/libs/jqueryui/1.8/themes/smoothness/jquery-ui.css" />
+                href="https://code.jquery.com/ui/1.12.1/themes/smoothness/jquery-ui.css" />
     {% endblock css %}
 
     {% block staticfiles %}

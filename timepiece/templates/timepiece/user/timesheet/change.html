@@ -5,12 +5,12 @@
 
 {% block crumbs %}
     {{ block.super }}
-    <li><span class="divider">/</span> <a href="{% url 'change_user_timesheet' timesheet_user.id action %}?from_date={{ from_date|date:"Y-m-d" }}">{{ action.capitalize }} Time Sheet</a></li>
+    <li><a href="{% url 'change_user_timesheet' timesheet_user.id action %}?from_date={{ from_date|date:"Y-m-d" }}">{{ action.capitalize }} Time Sheet</a></li>
 {% endblock crumbs %}
 
 {% block content %}
-    <div class="row-fluid">
-        <div class="span12">
+    <div class="row">
+        <div class="col-md-12">
             <h2>{{ action.capitalize }} Hours for Time Sheet</h2>
             <h3>
                 Are you sure you want to {{ action }} all of {{ timesheet_user.get_name_or_username }}'s time sheet,
@@ -24,8 +24,8 @@
         </div>
     </div>
 
-    <div class="row-fluid">
-        <div class="span12">
+    <div class="row">
+        <div class="col-md-12">
             <form method="post">
                 {% csrf_token %}
                 <input class="btn btn-primary" type="submit" name="do_action" value="Yes"/>

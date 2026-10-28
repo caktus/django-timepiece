@@ -11,7 +11,7 @@
 {% block crumbs %}
     {{ block.super }}
     <li>
-        <span class="divider">/</span>
+        
         <a href="{% url 'report_estimation_accuracy' %}">Estimation Accuracy Report</a>
     </li>
 {% endblock crumbs %}
@@ -24,15 +24,15 @@
 
 {% block extrajs %}
     {{ block.super }}
-    <script charset="utf-8" src="https://www.google.com/jsapi"></script>
-    <script charset="utf-8" src="{% static "timepiece/js/chart/estimation_accuracy_chart.js" %}"
+    <script charset="utf-8" src="{% static "timepiece/js/chart/chart.umd.min.js" %}"></script>
+    <script charset="utf-8" src="{% static "timepiece/js/chart/estimation_accuracy_chart.js" %}?v=chartjs"
 	    data="{{ data }}" chart_max="{{ chart_max }}"></script>
 {% endblock extrajs %}
 
 {% block report_content %}
 
-    <div class="row-fluid">
-        <div class="span12">
+    <div class="row">
+        <div class="col-md-12">
             <div id="chart-container">
                 {% if data %}
                     <h3>Estimation Accuracy Report</h3>
