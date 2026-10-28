@@ -23,7 +23,7 @@ class Activity(models.Model):
         max_length=5, unique=True,
         help_text='Enter a short code to describe the type of activity that took place.')
     name = models.CharField(
-        max_length=50,
+        max_length=255,
         help_text='Now enter a more meaningful name for the activity.')
     billable = models.BooleanField(default=True)
 

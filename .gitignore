@@ -14,3 +14,6 @@ htmlcov/
 .coverage
 node_modules
 .project
+
+# Local data imports
+harvest_time_report.csv
