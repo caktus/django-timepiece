@@ -601,6 +601,7 @@ def report_estimation_accuracy(request):
         type=ProjectContract.PROJECT_FIXED
     )
     data = [('Target (hrs)', 'Actual (hrs)', 'Point Label')]
+    chart_max = 0
     for c in contracts:
         if c.contracted_hours() == 0:
             continue

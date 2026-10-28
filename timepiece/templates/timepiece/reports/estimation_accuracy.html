@@ -24,7 +24,7 @@
 
 {% block extrajs %}
     {{ block.super }}
-    <script charset="utf-8" src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+    <script charset="utf-8" src="{% static "timepiece/js/chart/chart.umd.min.js" %}"></script>
     <script charset="utf-8" src="{% static "timepiece/js/chart/estimation_accuracy_chart.js" %}?v=chartjs"
 	    data="{{ data }}" chart_max="{{ chart_max }}"></script>
 {% endblock extrajs %}
