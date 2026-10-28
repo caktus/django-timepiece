@@ -1,7 +1,6 @@
 {% load i18n %}
 {% load timepiece_tags %}
-<div class="pagination">
-  <ul>
+<ul class="pagination">
     {% if page_obj.has_previous %}
       <li>
         {% with base_url="?" %}
@@ -42,4 +41,3 @@
       </li>
     {% endif %}
   </ul>
-</div>
