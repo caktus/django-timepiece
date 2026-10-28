@@ -5,13 +5,13 @@
 
 {% block crumbs %}
     {{ block.super }}
-    <li><span class="divider">/</span> <a href="{% url 'view_project' project.pk %}">{{ project }}</a></li>
-    <li><span class="divider">/</span> <a href="">Time Sheet</a></li>
+    <li><a href="{% url 'view_project' project.pk %}">{{ project }}</a></li>
+    <li><a href="">Time Sheet</a></li>
 {% endblock crumbs %}
 
 {% block content %}
-    <div class="row-fluid">
-        <div class="span12">
+    <div class="row">
+        <div class="col-md-12">
             <h2>{{ project }} - Time Sheet for {{ from_date|date:'M Y' }}</h2>
             <ul class="nav nav-pills">
                 <li><a href='{% url 'view_project' project.id %}'>Project Information</a></li>
@@ -19,8 +19,8 @@
         </div>
     </div>
 
-    <div class="row-fluid">
-        <div class="span12">
+    <div class="row">
+        <div class="col-md-12">
             <form class="form-inline" method="get" action="" id="date-filter" accept-charset="utf-8">
                 {{ year_month_form }}
                 <input class="btn" type='submit' name='yearmonth' value="Update" id='yearmonth'/>
@@ -31,9 +31,9 @@
         </div>
     </div>
 
-    <div class="row-fluid">
+    <div class="row">
         {% if user_entries %}
-            <div class="span3">
+            <div class="col-md-3">
                 <table class='table table-bordered table-striped'>
                     <caption>User Summary</caption>
                 {% for entry in user_entries %}
@@ -47,7 +47,7 @@
         {% endif %}
 
         {% if activity_entries %}
-            <div class="span3">
+            <div class="col-md-3">
                 <table class='table table-bordered table-striped'>
                     <caption>Activity Summary</caption>
                 {% for entry in activity_entries %}
@@ -62,8 +62,8 @@
     </div>
 
 
-    <div class="row-fluid">
-        <div class="span12">
+    <div class="row">
+        <div class="col-md-12">
             {% if entries %}
                 <table class="table table-bordered table-striped">
                     <tr>

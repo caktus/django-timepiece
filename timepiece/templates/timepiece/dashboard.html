@@ -34,8 +34,8 @@
     {% if perms.entries.can_clock_in %}
         <h2>{{ week_start|date:'M j' }} to {{ week_end|date:'M j' }}</h2>
 
-        <div class="row-fluid">
-            <div class="span12" id="active-entry">
+        <div class="row">
+            <div class="col-md-12" id="active-entry">
 
                 <div id="active-buttons">
                     <div class="pull-left">
@@ -53,7 +53,7 @@
                     </div>
                     <div class="hidden-phone pull-right">
                         <a class="btn btn-primary" href="{% url 'create_entry' %}" title="Add Entry">
-                            <i class="icon-white icon-plus"></i>
+                            <i class=" glyphicon glyphicon-plus"></i>
                         </a>
                     </div>
                 </div>
@@ -80,7 +80,7 @@
                                data-content="{{ active_entry.comments|linebreaks }}"
                                data-placement="bottom"
                                data-container="body">
-                                   <i class="icon-white icon-comment"></i>
+                                   <i class=" glyphicon glyphicon-comment"></i>
                            </a>
                         {% endif %}
 
@@ -183,10 +183,10 @@
                                     <tr rel="tooltip" title="{{ entry.comments|escape }}">
                                         <td>
                                             {% if entry.status == "unverified" %}
-                                                <a href="{% url 'edit_entry' entry.id %}?next={{ next_url|add_parameters:request.GET|urlencode }}"><i class="icon-pencil"></i></a>
-                                                <a href="{% url 'delete_entry' entry.id %}?next={{ next_url|add_parameters:request.GET|urlencode }}"><i class="icon-remove"></i></a>
+                                                <a href="{% url 'edit_entry' entry.id %}?next={{ next_url|add_parameters:request.GET|urlencode }}"><i class="glyphicon glyphicon-pencil"></i></a>
+                                                <a href="{% url 'delete_entry' entry.id %}?next={{ next_url|add_parameters:request.GET|urlencode }}"><i class="glyphicon glyphicon-remove"></i></a>
                                             {% else %}
-                                                <span class="label label-success"><i class="icon-ok icon-white"></i></span>
+                                                <span class="label label-success"><i class="glyphicon glyphicon-ok "></i></span>
                                             {% endif %}
                                             {{ entry.project }}
                                         </td>
@@ -237,7 +237,7 @@
                         <tbody>
                             {% for entry in others_active_entries %}
                                 <tr>
-                                    <td><i class="icon-user"></i> {{ entry.user.first_name }} {{ entry.user.last_name }}</td>
+                                    <td><i class="glyphicon glyphicon-user"></i> {{ entry.user.first_name }} {{ entry.user.last_name }}</td>
                                     <td><span class="hidden-phone">{{ entry.activity.name }} for </span>{{ entry.project }}</td>
                                     <td class="hidden-phone nowrap">
                                         {{ entry.start_time|time }}

@@ -5,12 +5,12 @@
 
 {% block crumbs %}
     {{ block.super }}
-    <li><span class="divider">/</span> <a href="">{{ object }}</a></li>
+    <li><a href="">{{ object }}</a></li>
 {% endblock crumbs %}
 
 {% block content %}
-    <div class="row-fluid">
-        <div class="span12">
+    <div class="row">
+        <div class="col-md-12">
             <h2>{{ object }}</h2>
             <ul class="nav nav-pills">
                 {% if perms.crm.change_project %}
@@ -25,8 +25,8 @@
         </div>
     </div>
 
-    <div class="row-fluid">
-        <div class="span6">
+    <div class="row">
+        <div class="col-md-6">
             <table class="table table-bordered">
                 <tr><th>Type</th><td>{{ object.type }}</td></tr>
                 <tr>
@@ -70,7 +70,7 @@
             </table>
         </div>
 
-        <div class="span4 offset2">
+        <div class="col-md-4 offset2">
             {% url 'view_project' object.id as next_url %}
             <h3>Users</h3>
             <ul class="users">
@@ -79,12 +79,12 @@
                         {{ user.get_name_or_username }}
                         {% if perms.crm.change_projectrelationship %}
                             {% with caption="Edit "|add:user.get_name_or_username|add:"'s relationship to "|add:object.name %}
-                                <a title="{{ caption }}" href="{% url 'edit_relationship' %}?project_id={{ object.id}}&user_id={{ user.id }}&next={{ next_url|add_parameters:request.GET|urlencode }}"><i alt="{{ caption }}" class="icon-pencil"></i></a>
+                                <a title="{{ caption }}" href="{% url 'edit_relationship' %}?project_id={{ object.id}}&user_id={{ user.id }}&next={{ next_url|add_parameters:request.GET|urlencode }}"><i alt="{{ caption }}" class="glyphicon glyphicon-pencil"></i></a>
                             {% endwith %}
                         {% endif %}
                         {% if perms.crm.delete_projectrelationship %}
                             {% with caption="Remove "|add:user.get_name_or_username|add:" from "|add:object.name %}
-                                <a title="{{ caption }}" href="{% url 'delete_relationship' %}?project_id={{ object.id }}&user_id={{ user.id }}&next={{ next_url|add_parameters:request.GET|urlencode }}"><i alt="{{ caption }}" class="icon-remove"></i></a>
+                                <a title="{{ caption }}" href="{% url 'delete_relationship' %}?project_id={{ object.id }}&user_id={{ user.id }}&next={{ next_url|add_parameters:request.GET|urlencode }}"><i alt="{{ caption }}" class="glyphicon glyphicon-remove"></i></a>
                             {% endwith %}
                         {% endif %}
                     </li>

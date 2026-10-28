@@ -21,10 +21,14 @@ def add_timezone(value, tz=None):
     tz = tz or timezone.get_current_timezone()
     try:
         if timezone.is_naive(value):
-            return timezone.make_aware(value, tz)
+            if settings.USE_TZ:
+                return timezone.make_aware(value, tz)
+            return value
     except AttributeError:  # 'datetime.date' object has no attribute 'tzinfo'
         dt = datetime.datetime.combine(value, datetime.time())
-        return timezone.make_aware(dt, tz)
+        if settings.USE_TZ:
+            return timezone.make_aware(dt, tz)
+        return dt
     return value
 
 

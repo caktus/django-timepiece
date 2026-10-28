@@ -25,8 +25,8 @@
 {% block content %}
     <h2>{{ timesheet_user.get_name_or_username }} - Time Sheet for {{ from_date|date:'M Y' }}</h2>
 
-    <div class="row-fluid">
-        <div class="span12" id="header">
+    <div class="row">
+        <div class="col-md-12" id="header">
             <div id="options-buttons">
                 {% if show_verify %}
                     {% url 'change_user_timesheet' timesheet_user.id 'verify' as base_url %}
@@ -63,8 +63,8 @@
         </div>
     </div>
 
-    <div class="row-fluid">
-        <div class="span12">
+    <div class="row">
+        <div class="col-md-12">
             <ul class="nav nav-tabs">
                 <li{% if active_tab == 'overview' %} class="active"{% endif %}>
                     {% url "view_user_timesheet" user.pk "overview" as link %}
@@ -81,9 +81,9 @@
             </ul>
             <div class="tab-content">
                 <div class="tab-pane{% if active_tab == 'overview' %} active{% endif %}" id="overview">
-                    <div class="row-fluid">
+                    <div class="row">
                         {% if project_entries %}
-                            <div class="span6">
+                            <div class="col-md-6">
                                 <h3>Project Summary</h3>
                                 <table class="table table-bordered table-striped table-condensed">
                                     <thead>
@@ -104,7 +104,7 @@
                             </div>
                         {% endif %}
                         {% if entries %}
-                            <div class="span6">
+                            <div class="col-md-6">
                                 <h3>Billable Summary</h3>
                                 <table class="table table-bordered table-striped table-condensed">
                                     <thead>
@@ -130,7 +130,7 @@
                                 </table>
                             </div>
                         {% else %}
-                            <div class="span12">
+                            <div class="col-md-12">
                                 <p>No entries exist for this time sheet.</p>
                             </div>
                         {% endif %}

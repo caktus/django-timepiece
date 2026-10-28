@@ -1,18 +1,18 @@
 {% extends "timepiece/base.html" %}
-{% load bootstrap_toolkit %}
+{% load bootstrap3 %}
 
 {% block title %}Login{% endblock %}
 
 {% block content %}
-<h1>minibooks Authentication</h1>
+<h1>Timepiece</h1>
 
 <form id="login" class="form-horizontal" accept-charset="UTF-8" method="post" action="">
     {% csrf_token %}
-    {{ form|as_bootstrap:"horizontal" }}
+    {% bootstrap_form form layout="horizontal" %}
 
     <div class="form-actions">
         <input class="btn btn-primary" type="submit" name="submit" value="Login" />&nbsp;
-        <a href="{% url reset_password %}">Forgot your password?</a>
+        <a href="{% url 'reset_password' %}">Forgot your password?</a>
     </div>
 </form>
 {% endblock %}

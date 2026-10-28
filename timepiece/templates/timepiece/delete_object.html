@@ -5,8 +5,8 @@
 {% endblock title %}
 
 {% block content %}
-    <div class="row-fluid">
-        <div class="span12">
+    <div class="row">
+        <div class="col-md-12">
             {% if object.get_name_or_username %}
                 <h3>Are you sure you want to delete {{ object.get_name_or_username }}?</h3>
             {% else %}

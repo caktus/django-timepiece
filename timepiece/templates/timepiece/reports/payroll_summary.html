@@ -11,7 +11,7 @@
 {% block crumbs %}
     {{ block.super }}
     <li>
-        <span class="divider">/</span>
+        
         <a href="{% url 'report_payroll_summary' %}">Payroll Summary Report</a>
     </li>
 {% endblock crumbs %}
@@ -34,8 +34,8 @@
 {% endblock extrajs %}
 
 {% block report_content %}
-    <div class="row-fluid">
-        <div class="span12">
+    <div class="row">
+        <div class="col-md-12">
             <form class="form-inline" method="get" action="" id="date-filter" accept-charset="utf-8">
                 {% bootstrap_form year_month_form layout="inline" %}
                 <input class="btn btn-primary" type='submit' name='yearmonth' value="Update" id='yearmonth'/>
@@ -44,8 +44,8 @@
         </div>
     </div>
 
-    <div class="row-fluid">
-        <div class="span6">
+    <div class="row">
+        <div class="col-md-6">
             {% if unverified %}
                 <p><strong>Warning:</strong> The following users have <strong>unverified</strong> time during this period:</p>
                 <ul>
@@ -72,8 +72,8 @@
         </div>
     </div>
 
-    <div class="row-fluid">
-        <div class="span12">
+    <div class="row">
+        <div class="col-md-12">
             <h3>Hourly Summary</h3>
             <div>
             {% if monthly_totals %}
@@ -153,8 +153,8 @@
         </div>
     </div>
 
-    <div class="row-fluid">
-        <div class="span12">
+    <div class="row">
+        <div class="col-md-12">
             <h3>Weekly Summary</h3>
             {% if weekly_totals.0.0 %}
                 <table id="weekly-summary"

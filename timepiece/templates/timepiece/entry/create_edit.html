@@ -14,7 +14,7 @@
     </script>
     <script>
         $.ui.djselectable.prototype._comboButtonTemplate = function (input) {
-            var icon = $("<i>").addClass("icon-chevron-down");
+            var icon = $("<i>").addClass("glyphicon glyphicon-chevron-down");
             // Remove current classes on the text input
             $(input).attr("class", "");
             // Wrap with input-append
@@ -23,7 +23,7 @@
             return $("<a>").append(icon).addClass("btn ");
         };
         $.ui.djselectable.prototype._removeButtonTemplate = function (item) {
-            var icon = $("<i>").addClass("icon-remove-sign");
+            var icon = $("<i>").addClass("glyphicon glyphicon-remove-sign");
             // Return button link with the chosen icon
             return $("<a>").append(icon).addClass("btn pull-right");
         };
@@ -33,15 +33,15 @@
 {% block crumbs %}
     {{ block.super }}
     {% if entry %}
-        <li><span class="divider">/</span> <a href="{% url 'edit_entry' entry.pk %}">Update Entry</a></li>
+        <li><a href="{% url 'edit_entry' entry.pk %}">Update Entry</a></li>
     {% else %}
-        <li><span class="divider">/</span> <a href="{% url 'create_entry' %}">Create Entry</a></li>
+        <li><a href="{% url 'create_entry' %}">Create Entry</a></li>
     {% endif %}
 {% endblock crumbs %}
 
 {% block content %}
-    <div class="row-fluid">
-        <div class="span12">
+    <div class="row">
+        <div class="col-md-12">
             <h2>{% if entry %}Update{% else %}Create{% endif %} Entry</h2>
 
             <br style="clear: both;" />

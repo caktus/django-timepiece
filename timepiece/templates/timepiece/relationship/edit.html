@@ -5,12 +5,12 @@
 
 {% block crumbs %}
     {{ block.super }}
-    <li><span class="divider">/</span> <a href="">Edit Relationship</a></li>
+    <li><a href="">Edit Relationship</a></li>
 {% endblock crumbs %}
 
 {% block content %}
-    <div class="row-fluid">
-        <div class="span12">
+    <div class="row">
+        <div class="col-md-12">
             <h2>Edit {{ object.user.get_name_or_username }}'s {{ object.project }} Relationship</h2>
 
             <br style="clear: both;" />

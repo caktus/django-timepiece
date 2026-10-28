@@ -15,8 +15,8 @@
 {% endblock extrajs %}
 
 {% block content %}
-    <div class="row-fluid">
-        <div class="span12">
+    <div class="row">
+        <div class="col-md-12">
 
         <ul class="nav nav-tabs">
           <li role="presentation" class="active"><a href="#current" data-toggle="tab">Current Contracts</a></li>
@@ -56,7 +56,7 @@
                             <td class="nowrap{% if contract.end_date < today %} past{% endif %}">
                                 {{ contract.end_date|date:'M j, Y' }}
                                 {% if contract.end_date >= today and contract.end_date < warning_date %}
-                                    <i class="icon-warning-sign"></i>
+                                    <i class="glyphicon glyphicon-warning-sign"></i>
                                 {% endif %}
                             </td>
                             <td class="nowrap hours">
@@ -111,7 +111,7 @@
                             <td class="nowrap{% if contract.end_date < today %} past{% endif %}">
                                 {{ contract.end_date|date:'M j, Y' }}
                                 {% if contract.end_date >= today and contract.end_date < warning_date %}
-                                    <i class="icon-warning-sign"></i>
+                                    <i class="glyphicon glyphicon-warning-sign"></i>
                                 {% endif %}
                             </td>
                             <td class="nowrap hours">
@@ -166,7 +166,7 @@
                             <td class="nowrap{% if contract.end_date < today %} past{% endif %}">
                                 {{ contract.end_date|date:'M j, Y' }}
                                 {% if contract.end_date >= today and contract.end_date < warning_date %}
-                                    <i class="icon-warning-sign"></i>
+                                    <i class="glyphicon glyphicon-warning-sign"></i>
                                 {% endif %}
                             </td>
                             <td class="nowrap hours">
